@@ -1,0 +1,71 @@
+inputs:
+  chat_history:
+    type: list
+  question:
+    type: string
+    default: What is the difference between this model and previous ones?
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${augmented_chat.output}
+    is_chat_output: true
+nodes:
+- name: extract_query_from_question
+  type: llm
+  source:
+    type: code
+    path: extract_query_from_question.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    temperature: '0.7'
+    top_p: '1.0'
+    stop: ''
+    max_tokens: '256'
+    presence_penalty: '0'
+    frequency_penalty: '0'
+    logit_bias: ''
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+- name: get_wiki_url
+  type: python
+  source:
+    type: code
+    path: get_wiki_url.py
+  inputs:
+    entity: ${extract_query_from_question.output}
+    count: '2'
+- name: search_result_from_url
+  type: python
+  source:
+    type: code
+    path: search_result_from_url.py
+  inputs:
+    url_list: ${get_wiki_url.output}
+    count: '10'
+- name: process_search_result
+  type: python
+  source:
+    type: code
+    path: process_search_result.py
+  inputs:
+    search_result: ${search_result_from_url.output}
+- name: augmented_chat
+  type: llm
+  source:
+    type: code
+    path: augmented_chat.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    temperature: '0.8'
+    question: ${inputs.question}
+    chat_history: ${inputs.chat_history}
+    contexts: ${process_search_result.output}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+id: chat_with_wikipedia
+name: Chat With Wikipedia
