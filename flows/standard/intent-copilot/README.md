@@ -23,7 +23,7 @@ TODO introduce the generated files
 
 2. create needed custom connection
 ```bash
-pf connection create -f .env --type custom --name custom_connection
+pf connection create -f .env --name custom_connection
 ```
 
 3. run locally with single line input

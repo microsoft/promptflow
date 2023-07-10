@@ -14,7 +14,8 @@ nodes:
     type: code
     path: hello.jinja2
 - inputs:
-    input1: ${hello_prompt.output}
+    prompt: ${hello_prompt.output}
+    deployment_name: gpt-35-turbo
   name: echo_my_prompt
   type: python
   source:

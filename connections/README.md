@@ -9,7 +9,7 @@ pf connection create -f custom.yml
 
 - To create a custom connection using an `.env` file, execute following command:
 ```bash
-pf connection create -f .env --type custom
+pf connection create -f .env --type custom --name custom_connection
 ```
 
 - To list the created connection, execute following command:
