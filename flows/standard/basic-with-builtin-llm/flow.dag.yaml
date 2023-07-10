@@ -14,7 +14,9 @@ nodes:
     type: code
     path: hello.jinja2
 - inputs:
-    input1: ${hello_prompt.output}
+    prompt: ${hello_prompt.output}
+    deployment_name: text-davinci-003
+    max_tokens: "120"
   name: echo_my_prompt
   type: python
   source:

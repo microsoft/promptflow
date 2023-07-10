@@ -1,12 +1,12 @@
 # Basic
-A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
+A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in custom connection. 
 
 Tools used in this flow：
 - Prompt
 - Python Tool
 
 Connections used in this flow:
-- None
+- Custom Connection
 
 ## Prerequisites
 
@@ -21,6 +21,11 @@ cat .env
 ```
 
 ## Run flow in local
+### create custom connection
+
+```bash
+pf connection create -f .env --name custom_connection
+```
 
 ### run locally with single line input
 
