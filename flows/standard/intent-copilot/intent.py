@@ -6,14 +6,17 @@ from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplat
 
 
 def extract_intent(customer_info: str, history: list, user_prompt_template: str):
-    try:
-        from dotenv import load_dotenv
-    except ImportError:
-        # This can be removed if user using custom image.
-        pip.main(["install", "python-dotenv"])
-        from dotenv import load_dotenv
+    if not "AZURE_OPENAI_API_KEY" in os.environ:
+        # load environment variables from .env file
+        try:
+            from dotenv import load_dotenv
+        except ImportError:
+            # This can be removed if user using custom image.
+            pip.main(["install", "python-dotenv"])
+            from dotenv import load_dotenv
 
-    load_dotenv()
+        load_dotenv()
+
     chat_history_text = "\n".join(
         [message["role"] + ": " + message["content"] for message in history]
     )

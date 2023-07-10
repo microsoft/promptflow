@@ -1,5 +1,6 @@
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 promptflow-sdk[builtins]==0.0.98996567
+prompt-flow-tools==0.0.2
 python-dotenv
 langchain
 jinja2
