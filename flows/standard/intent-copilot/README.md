@@ -28,12 +28,21 @@ pf connection create -f .env --name custom_connection
 
 3. run locally with single line input
 ```bash
-pf flow test --flow . --input ./data/denormalized-flat.jsonl --env .env
+pf flow test --flow . --input ./data/denormalized-flat.jsonl
 ```
 
 4. bulk run with multiple lines input
 ```bash
-pf run create --type bulk --input ./data/denormalized-flat.jsonl --output ./outputs/ --env .env
+pf run create --flow . --type bulk --data ./data/denormalized-flat.jsonl
+```
+
+5. list/show 
+```bash
+```bash
+# list created run
+pf run list
+# show specific run detail
+pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
 ```
 
 6. evaluation
