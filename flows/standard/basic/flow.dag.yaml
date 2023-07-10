@@ -15,7 +15,8 @@ nodes:
     path: hello.jinja2
 - inputs:
     prompt: ${hello_prompt.output}
-    deployment_name: gpt-35-turbo
+    deployment_name: text-davinci-003
+    max_tokens: "120"
   name: echo_my_prompt
   type: python
   source:

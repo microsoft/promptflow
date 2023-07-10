@@ -36,8 +36,12 @@ def my_python_tool(
     if not "AZURE_OPENAI_API_KEY" in os.environ:
         # load environment variables from .env file
         load_dotenv()
-    openai.api_key = os.environ["AZURE_OPENAI_API_KEY"]
-    openai.api_base = os.environ["AZURE_OPENAI_API_BASE"]
+    conn = dict(
+        api_key = os.environ["AZURE_OPENAI_API_KEY"],
+        api_base = os.environ["AZURE_OPENAI_API_BASE"],
+        api_type = os.environ["AZURE_OPENAI_API_TYPE"],
+        api_version = os.environ["AZURE_OPENAI_API_VERSION"],
+    )
 
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
@@ -67,6 +71,7 @@ def my_python_tool(
         logit_bias=logit_bias if logit_bias else {},
         user=user,
         request_timeout=30,
+        **conn,
     )
 
     if stream:
