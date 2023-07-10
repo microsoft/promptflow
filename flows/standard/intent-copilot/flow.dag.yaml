@@ -1,0 +1,27 @@
+inputs:
+  customer_info:
+    type: string
+  history:
+    type: list
+outputs:
+  output:
+    type: string
+    reference: ${extract_intent.output}
+nodes:
+- inputs: {}
+  name: user_prompt_template
+  type: prompt
+  source:
+    type: code
+    path: user_intent_zero_shot.md
+- inputs:
+    customer_info: ${inputs.customer_info}
+    history: ${inputs.history}
+    user_prompt_template: ${user_prompt_template.output}
+    connection: custom_connection
+  name: extract_intent
+  type: python
+  source:
+    type: code
+    path: extract_intent_tool.py
+node_variants: {}

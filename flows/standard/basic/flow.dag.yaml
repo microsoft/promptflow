@@ -6,17 +6,18 @@ outputs:
     type: string
     reference: ${echo_my_prompt.output}
 nodes:
-- name: hello_prompt
+- inputs:
+    text: ${inputs.text}
+  name: hello_prompt
   type: prompt
   source:
     type: code
     path: hello.jinja2
-  inputs:
-    text: ${inputs.text}
-- name: echo_my_prompt
+- inputs:
+    input1: ${hello_prompt.output}
+  name: echo_my_prompt
   type: python
   source:
     type: code
     path: hello.py
-  inputs:
-    input1: ${hello_prompt.output}
+node_variants: {}

@@ -1,0 +1,23 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_prompt:
+    type: string
+    reference: ${echo_my_prompt.output}
+nodes:
+- inputs:
+    text: ${inputs.text}
+  name: hello_prompt
+  type: prompt
+  source:
+    type: code
+    path: hello.jinja2
+- inputs:
+    input1: ${hello_prompt.output}
+  name: echo_my_prompt
+  type: python
+  source:
+    type: code
+    path: hello.py
+node_variants: {}

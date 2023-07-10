@@ -1,14 +1,21 @@
-# Project
+# Prompt-flow examples
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+Welcome to the prompt flow examples repository!
 
-As the maintainer of this project, please make a few updates:
+## Prerequisites
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+- Bootstrap your python env. 
+  - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
+  - install required packages in python environment : `pip install -r requirements.txt`
+
+
+## Examples
+
+TODO list a table here.
+
+path|status|
+-|-
+[quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)
 
 ## Contributing
 
