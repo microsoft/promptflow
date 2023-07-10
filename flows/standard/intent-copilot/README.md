@@ -38,7 +38,7 @@ pf run create --type bulk --input ./data/denormalized-flat.jsonl --output ./outp
 
 6. evaluation
 ```bash
-pf run create --type evaluate --flow ../../evaluate/classification_accuracy_evaluation --input ./data/denormalized-flat.jsonl --bulk-run-output ./outputs/ --eval-output ./outputs/eval_output.jsonl --column-mapping "groundtruth=data.intent,prediction=variants.output.output"
+pf run create --type evaluation --flow ../../evaluation/classification_accuracy_evaluation --input ./data/denormalized-flat.jsonl --bulk-run-output ./outputs/ --eval-output ./outputs/eval_output.jsonl --column-mapping "groundtruth=data.intent,prediction=variants.output.output"
 ```
 
 6. visualize
