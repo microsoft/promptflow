@@ -10,6 +10,13 @@ Welcome to the prompt flow examples repository!
 
 
 ## Examples
+**Tutorials** ([tutorials](tutorials))
+path|status|description
+-|-|-
+[quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| get started
+[deploy.ipynb](tutorials/flow-deploy/deploy.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| deploy flow as endpoint
+[pipeline.ipynb](tutorials/flow-deploy/deploy.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| flow as component in pipeline
+[run.ipynb](tutorials/flow-deploy/deploy.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| advanced flow run management
 
 **Flows** ([flows](flows))
 
@@ -35,10 +42,7 @@ path|status|description
 [basic-chat](flows/standard/basic-chat/flow.dag.yaml)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| a basic chat flow.
 [chat-with-wikipedia](flows/standard/chat-with-wikipedia/flow.dag.yaml)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| a flow demonstrating Q&A with GPT3.5 using information from Wikipedia to make the answer more grounded. 
 
-**Tutorials** ([tutorials](tutorials))
-path|status|
--|-
-[quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)
+
 
 ## Contributing
 
