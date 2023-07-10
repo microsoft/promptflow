@@ -31,25 +31,34 @@ pf connection create --file azure_openai.yml
 ### 2 Configure the flow with your connection
 `flow.dag.yaml` is already configured with connection named `azure_open_ai_connection`.
 
-### 3 Test flow
+### 3 Test flow with single line data
 
 ```bash
 pf flow test --flow . --input data.jsonl
 ```
 
-### 4 Run with classification evaluation flow
+### 4 Bulk Run with multi-line data
 
 ```bash
 pf run create --flow . --type bulk --data ./data.jsonl --stream
 ```
 
+```bash
+# list run
+pf run list
+# show run
+pf run show -n "202a66f7-3b83-420c-bc0d-2e0a97cd2d99"
+```
+
 ### 5 Run with classification evaluation flow
 
-* Run 'Classification Accuracy Evaluation' from an existing Web Classification flow run
-    * step 1: submit a bulk test Web Classification flow
-    * step 2: click on 'View run history' to go to all submitted runs page and select a bulk test in bulk runs panel to go to details page
-    * step 3: click on 'New evaluation', select one or more variants and the classification evaluation flow from Sample or Customer evaluation flows. Then set connections, input mappings and submit
+create `evaluation` run:
+```bash
+pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --inputs_mapping "groundtruth=data.answer,prediction=variant.outputs.category" --variant "202a66f7-3b83-420c-bc0d-2e0a97cd2d99" 
+```
 
 ```bash
-TODO
+pf run show-details -n c11b8760-4849-4880-a3e2-b6d4d40924f0
+pf run show-metrics -n c11b8760-4849-4880-a3e2-b6d4d40924f0
+pf run visualize c11b8760-4849-4880-a3e2-b6d4d40924f0
 ```
