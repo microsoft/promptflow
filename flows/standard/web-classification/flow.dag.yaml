@@ -18,18 +18,7 @@ nodes:
   inputs:
     url: ${inputs.url}
 - name: summarize_text_content
-  type: llm
-  source:
-    type: code
-    path: summarize_text_content.jinja2
-  inputs:
-    deployment_name: text-davinci-003
-    max_tokens: '128'
-    temperature: '0.2'
-    text: ${fetch_text_content_from_url.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
+  use_variants: true
 - name: prepare_examples
   type: python
   source:
@@ -60,3 +49,38 @@ nodes:
     input_str: ${classify_with_llm.output}
 id: web_classification
 name: Web Classification
+
+node_variants:
+  summarize_text_content:
+    default_variant_id: variant_0
+    variants:
+      variant_0:
+        node:
+          type: llm
+          source:
+            type: code
+            path: summarize_text_content.jinja2
+          inputs:
+            deployment_name: text-davinci-003
+            max_tokens: '128'
+            temperature: '0.2'
+            text: ${fetch_text_content_from_url.output}
+          provider: AzureOpenAI
+          connection: azure_open_ai_connection
+          api: completion
+          module: promptflow.tools.aoai
+      variant_1:
+        node:
+          type: llm
+          source:
+            type: code
+            path: summarize_text_content__variant_1.jinja2
+          inputs:
+            deployment_name: text-davinci-003
+            max_tokens: '256'
+            temperature: '0.3'
+            text: ${fetch_text_content_from_url.output}
+          provider: AzureOpenAI
+          connection: azure_open_ai_connection
+          api: completion
+          module: promptflow.tools.aoai
