@@ -2,36 +2,63 @@
 
 This is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
+## Tools used in this flow
+- LLM Tool
+- Python Tool
+
 ## What you will learn
 
 In this flow, you will learn
 - how to compose a classification flow with LLM.
 - how to feed few shots to LLM classifier.
 
+## Prerequisites
+
+install promptflow-sdk and other dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 ## Getting Started
 
 ### 1 Create Azure OpenAI or OpenAI connection
-Go to Prompt Flow "Connection" tab. Click on "Add" button, and start to set up your "AzureOpenAI" or "OpenAI" connection.
+
+```bash
+# replace your api key in azure_openai.yml before run this command
+pf connection create --file azure_openai.yml
+```
 
 ### 2 Configure the flow with your connection
-Create or clone a new flow, go to the step need to configure connection. Select your connection from the connection drop-down box and fill in the configurations.
+`flow.dag.yaml` is already configured with connection named `azure_open_ai_connection`.
 
-### 3 Run with classification evaluation flow
-There are two ways to run with classification evaluation flow.
-* Run an Web Classification flow and evaluation flow all together
-    * step 1: clone an Web Classification flow
-    * step 2: select bulk test and fill in variants, then click on next
-    * step 3: fill in test data, then click on next
-    * step 3: select an classification evaluation flow from Sample or Customer evaluation flows, select the evaluation flow's inputs mapping from normal flow's inputs or outputs and click on next
-    * step 4: review run settings and submit
+### 3 Test flow with single line data
 
-* Run 'Classification Accuracy Evaluation' from an existing Web Classification flow run
-    * step 1: submit a bulk test Web Classification flow
-    * step 2: click on 'View run history' to go to all submitted runs page and select a bulk test in bulk runs panel to go to details page
-    * step 3: click on 'New evaluation', select one or more variants and the classification evaluation flow from Sample or Customer evaluation flows. Then set connections, input mappings and submit
+```bash
+pf flow test --flow . --input data.jsonl
+```
 
+### 4 Bulk Run with multi-line data
 
-## Tools used in this flow
-- LLM Tool
-- Python Tool
+```bash
+pf run create --flow . --type bulk --data ./data.jsonl --stream
+```
+
+```bash
+# list run
+pf run list
+# show run
+pf run show -n "202a66f7-3b83-420c-bc0d-2e0a97cd2d99"
+```
+
+### 5 Run with classification evaluation flow
+
+create `evaluation` run:
+```bash
+pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --inputs_mapping "groundtruth=data.answer,prediction=variant.outputs.category" --variant "202a66f7-3b83-420c-bc0d-2e0a97cd2d99" 
+```
+
+```bash
+pf run show-details -n c11b8760-4849-4880-a3e2-b6d4d40924f0
+pf run show-metrics -n c11b8760-4849-4880-a3e2-b6d4d40924f0
+pf run visualize c11b8760-4849-4880-a3e2-b6d4d40924f0
+```
