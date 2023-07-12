@@ -19,7 +19,7 @@ pf connection list
 
 - To show one connection details, execute following command:
 ```bash
-pf connection show --name my_custom_connection
+pf connection show --name custom_connection
 ```
 
 - To update a connection that in workspace, execute following command. Currently only a few fields(description, display_name) support update:

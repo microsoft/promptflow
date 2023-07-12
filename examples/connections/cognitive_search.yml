@@ -1,5 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/CognitiveSearchConnection.schema.json
-name: my_cognitive_search_connection
+name: cognitive_search_connection
 type: cognitive_search
 api_key: "<to-be-replaced>"
 api_base: "endpoint"

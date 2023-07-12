@@ -1,5 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureContentSafetyConnection.schema.json
-name: my_azure_content_safety_connection
+name: azure_content_safety_connection
 type: azure_content_safety
 api_key: "<to-be-replaced>"
 endpoint: "endpoint"
