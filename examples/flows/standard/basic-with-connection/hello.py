@@ -1,8 +1,7 @@
-import os
 import openai
 
-from dotenv import load_dotenv
 from promptflow import tool
+from promptflow.connections import CustomConnection
 
 # The inputs section will change based on the arguments of the tool function, after you save the code
 # Adding type to arguments and return value will help the system show the types properly
@@ -29,18 +28,10 @@ def my_python_tool(
     best_of: int = 1,
     logit_bias: dict = {},
     user: str = "",
+    connection: CustomConnection = None,
     **kwargs,
 ) -> str:
-    if not "AZURE_OPENAI_API_KEY" in os.environ:
-        # load environment variables from .env file
-        load_dotenv()
-    conn = dict(
-        api_key = os.environ["AZURE_OPENAI_API_KEY"],
-        api_base = os.environ["AZURE_OPENAI_API_BASE"],
-        api_type = os.environ["AZURE_OPENAI_API_TYPE"],
-        api_version = os.environ["AZURE_OPENAI_API_VERSION"],
-    )
-
+    
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
 
@@ -64,7 +55,7 @@ def my_python_tool(
         logit_bias=logit_bias if logit_bias else {},
         user=user,
         request_timeout=30,
-        **conn,
+        **dict(connection), # custom connection is dict like object contains the configs and secrets
     )
 
     # get first element because prompt is single.

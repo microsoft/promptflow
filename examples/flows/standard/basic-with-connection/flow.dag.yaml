@@ -17,6 +17,7 @@ nodes:
     prompt: ${hello_prompt.output}
     deployment_name: text-davinci-003
     max_tokens: "120"
+    connection: basic_custom_connection
   name: echo_my_prompt
   type: python
   source:
