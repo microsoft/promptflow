@@ -1,25 +1,29 @@
 inputs:
   text:
     type: string
+    default: "Hello, world!"
 outputs:
   output_prompt:
     type: string
-    reference: ${echo_my_prompt.output}
+    reference: ${llm.output}
 nodes:
-- inputs:
-    text: ${inputs.text}
-  name: hello_prompt
+- name: hello_prompt
   type: prompt
+  inputs:
+    text: ${inputs.text}
   source:
     type: code
     path: hello.jinja2
-- inputs:
+- name: llm
+  type: llm
+  inputs:
     prompt: ${hello_prompt.output}
     deployment_name: text-davinci-003
-    max_tokens: "120"
-  name: echo_my_prompt
-  type: python
+    max_tokens: '120'
   source:
     type: code
-    path: hello.py
+    path: hello.jinja2
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
 node_variants: {}

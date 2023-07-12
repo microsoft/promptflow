@@ -2,35 +2,41 @@
 A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
 
 Tools used in this flow：
-- Prompt
-- Python Tool
+- `prompt` tool
+- built-in `llm` tool
 
 Connections used in this flow:
-- None
+- `azure_open_ai` connection
 
 ## Prerequisites
 
-install promptflow-sdk and other dependencies:
+Install prompt-flow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-Ensure you have put enough your azure open ai endpoint key in .env file.
+## Setup connections
+Ensure you have created `azure_open_ai_connection` connection before.
 ```bash
-cat .env
+pf connection show -n azure_open_ai_connection
+```
+
+Create connection if you haven't done that. Ensure you have put your azure open ai endpoint key in [azure_openai.yml](azure_openai.yml) file. 
+```bash
+pf connection create -f azure_openai.yml
 ```
 
 ## Run flow in local
 
-### run locally with single line input
+### Run locally with single line input
 
 ```bash
 pf flow test --flow . --input data.jsonl
 ```
 
-### bulk run with multiple lines input
+### Batch run with multiple lines data
 
-- create bulk run
+- create batch run
 ```bash
 pf run create --flow . --type bulk --data ./data.jsonl --stream
 ```
@@ -39,10 +45,14 @@ pf run create --flow . --type bulk --data ./data.jsonl --stream
 ```bash
 # list created run
 pf run list
+
 # show specific run detail
-pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pf run show --name "18fb849b-7da4-4be8-b989-be22c4b03a13"
 
 # show output
-pf run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pf run show-details --name "18fb849b-7da4-4be8-b989-be22c4b03a13"
+
+# visualize run in browser
+pf run visualize "18fb849b-7da4-4be8-b989-be22c4b03a13"
 ```
 
