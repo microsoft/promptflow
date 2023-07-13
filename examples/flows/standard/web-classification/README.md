@@ -37,28 +37,30 @@ pf connection create --file azure_openai.yml
 pf flow test --flow . --input data.jsonl
 ```
 
-### 4 Bulk Run with multi-line data
+### 4 batch Run with multi-line data
 
 ```bash
-pf run create --flow . --type bulk --data ./data.jsonl --stream
+pf run create --flow . --type batch --data ./data.jsonl --stream
 ```
 
 ```bash
 # list run
 pf run list
 # show run
-pf run show -n "202a66f7-3b83-420c-bc0d-2e0a97cd2d99"
+pf run show -n "eff911b7-0a59-4002-8882-86c554c75716"
+# show run outputs
+pf run show-details -n "eff911b7-0a59-4002-8882-86c554c75716"
 ```
 
 ### 5 Run with classification evaluation flow
 
 create `evaluation` run:
 ```bash
-pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --inputs_mapping "groundtruth=data.answer,prediction=variant.outputs.category" --variant "202a66f7-3b83-420c-bc0d-2e0a97cd2d99" 
+pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --inputs-mapping "groundtruth=${data.answer},prediction=${batch-run.outputs.category}" --batch-run "eff911b7-0a59-4002-8882-86c554c75716" 
 ```
 
 ```bash
-pf run show-details -n c11b8760-4849-4880-a3e2-b6d4d40924f0
-pf run show-metrics -n c11b8760-4849-4880-a3e2-b6d4d40924f0
-pf run visualize c11b8760-4849-4880-a3e2-b6d4d40924f0
+pf run show-details -n 60e69d27-3481-461f-aeb6-a78e0c87ea9e
+pf run show-metrics -n 60e69d27-3481-461f-aeb6-a78e0c87ea9e
+pf run visualize 60e69d27-3481-461f-aeb6-a78e0c87ea9e
 ```

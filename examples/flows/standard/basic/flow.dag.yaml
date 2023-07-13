@@ -3,9 +3,9 @@ inputs:
     type: string
     default: Hello World!
 outputs:
-  output_prompt:
+  output:
     type: string
-    reference: ${echo_my_prompt.output}
+    reference: ${llm.output}
 nodes:
 - inputs:
     text: ${inputs.text}
@@ -18,7 +18,7 @@ nodes:
     prompt: ${hello_prompt.output}
     deployment_name: text-davinci-003
     max_tokens: "120"
-  name: echo_my_prompt
+  name: llm
   type: python
   source:
     type: code

@@ -38,7 +38,7 @@ pf flow test --flow . --input data.jsonl
 
 - create batch run
 ```bash
-pf run create --flow . --type bulk --data ./data.jsonl --stream
+pf run create --flow . --type batch --data ./data.jsonl --stream
 ```
 
 - list and show run meta

@@ -31,28 +31,40 @@ pf connection create -f .env --name custom_connection
 pf flow test --flow . --input ./data/denormalized-flat.jsonl
 ```
 
-4. bulk run with multiple lines input
+4. batch run with multiple lines input
 ```bash
-pf run create --flow . --type bulk --data ./data
+pf run create --flow . --type batch --data ./data
 ```
 
 5. list/show 
-```bash
+
 ```bash
 # list created run
 pf run list
-# show specific run detail
-pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+# show run
+pf run show --name "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5"
+# show specific run detail, top 3 lines
+pf run show-details -n "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" -r 3
 ```
 
 6. evaluation
+
 ```bash
-pf run create --type evaluation --flow ../../evaluation/classification_accuracy_evaluation --input ./data --bulk-run-output ./outputs/ --eval-output ./outputs/eval_output.jsonl --column-mapping "groundtruth=data.intent,prediction=variants.output.output"
+# create evaluation run
+pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data --inputs-mapping "groundtruth=${data.intent},prediction=${batch_run.outputs.output}" --batch-run "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" 
+```
+
+```bash
+# show run
+pf run show -n 6b3810a5-9bd7-41c1-bb45-1b296602783e
+# show run output
+pf run show-details -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" -r 3
 ```
 
 6. visualize
 ```bash
-pf run visualize --evaluations your_evaluate_run_name
+# visualize in browser
+pf run visualize "6b3810a5-9bd7-41c1-bb45-1b296602783e" # your evaluation run name
 ```
 
 ## Tuning node variant

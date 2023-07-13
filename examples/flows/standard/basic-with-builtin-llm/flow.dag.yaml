@@ -3,7 +3,7 @@ inputs:
     type: string
     default: "Hello, world!"
 outputs:
-  output_prompt:
+  output:
     type: string
     reference: ${llm.output}
 nodes:

@@ -2,9 +2,9 @@ inputs:
   text:
     type: string
 outputs:
-  output_prompt:
+  output:
     type: string
-    reference: ${echo_my_prompt.output}
+    reference: ${llm.output}
 nodes:
 - inputs:
     text: ${inputs.text}
@@ -18,7 +18,7 @@ nodes:
     deployment_name: text-davinci-003
     max_tokens: "120"
     connection: basic_custom_connection
-  name: echo_my_prompt
+  name: llm
   type: python
   source:
     type: code
