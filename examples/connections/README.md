@@ -24,7 +24,7 @@ pf connection show --name custom_connection
 
 - To update a connection that in workspace, execute following command. Currently only a few fields(description, display_name) support update:
 ```bash
-pf connection update -f custom.yml
+pf connection update -n custom_connection --set configs.key1='abc'
 ```
 
 - To delete a connection:
