@@ -26,6 +26,7 @@ cat .env
 ### Run locally with single line input
 
 ```bash
+# TODO remove the --input parameter
 pf flow test --flow . --input data.jsonl
 ```
 

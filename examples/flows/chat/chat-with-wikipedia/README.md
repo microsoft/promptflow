@@ -2,6 +2,11 @@
 
 This is a companion flow to "Ask Wikipedia". It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
 
+Tools used in this flow：
+- `llm` tool
+- custom `python` Tool
+
+
 ## What you will learn
 
 In this flow, you will learn
@@ -32,12 +37,28 @@ Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of L
 
 Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
 
-### 2 Configure the flow with your connection
-Click "Clone" button to start a new flow, and go to nodes "extract_query_from_question" and "augmented_chat". Pick the connection you created in step 1 in the node parameter "Connection" dropdown list.
+```bash
+# replace your api key in azure_openai.yml before run this command
+pf connection create --file azure_openai.yml
+```
 
-### 3 Start chatting
-Click "Chat" button to open the chat window. Type in your question and click "Send" button. The chatbot will reply with an answer. You can continue chatting with the chatbot by typing in your next question and click "Send" button again.
+Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open_ai_connection`.
+```bash
+# show registered connection 
+pf connection show --name azure_open_ai_connection
+```
 
-## Used tools
-- LLM Tool
-- Python Tool
+### 2 Start chatting
+
+```bash
+# run chat flow with default question in flow.dag.yaml
+pf flow test --flow . 
+
+# start a interactive chat session in CLI
+pf flow test --flow . --interactive
+
+# start a interactive chat session in CLI with verbose info
+pf flow test --flow . --interactive --verbose
+```
+
+
