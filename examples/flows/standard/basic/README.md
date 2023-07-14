@@ -26,8 +26,8 @@ cat .env
 ### Run locally with single line input
 
 ```bash
-# TODO remove the --input parameter
-pf flow test --flow . --input data.jsonl
+# test with default input value in flow.dag.yaml
+pf flow test --flow .
 ```
 
 ### Batch run with multiple lines data
