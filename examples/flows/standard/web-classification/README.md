@@ -40,7 +40,10 @@ pf flow test --flow . --input data.jsonl
 ### 4 batch Run with multi-line data
 
 ```bash
+# create run using command line args
 pf run create --flow . --type batch --data ./data.jsonl --stream
+# create run using yaml flie
+pf run create --file run.yml
 ```
 
 ```bash
@@ -56,7 +59,10 @@ pf run show-details -n "eff911b7-0a59-4002-8882-86c554c75716"
 
 create `evaluation` run:
 ```bash
-pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --inputs-mapping "groundtruth=${data.answer},prediction=${batch-run.outputs.category}" --batch-run "eff911b7-0a59-4002-8882-86c554c75716" 
+# create run using command line args
+pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --inputs-mapping "groundtruth=${data.answer},prediction=${batch_run.outputs.category}" --batch-run "eff911b7-0a59-4002-8882-86c554c75716" 
+# create run using yaml flie
+pf run create --file run_evaluation.yml --batch-run eff911b7-0a59-4002-8882-86c554c75716
 ```
 
 ```bash

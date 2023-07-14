@@ -1,0 +1,4 @@
+type: batch
+flow: .
+data: data.jsonl
+variant: ${summarize_text_content.variant_1}
