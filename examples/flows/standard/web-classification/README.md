@@ -71,3 +71,14 @@ pf run show-details -n 60e69d27-3481-461f-aeb6-a78e0c87ea9e
 pf run show-metrics -n 60e69d27-3481-461f-aeb6-a78e0c87ea9e
 pf run visualize 60e69d27-3481-461f-aeb6-a78e0c87ea9e
 ```
+
+
+### 6 Submit run to cloud (TODO)
+```bash
+
+pfazure run create --file run.yml --runtime demo-mir -g promptflow -w promptflow-eastus
+pfazure run stream --name d00c8e81-c724-44d3-8e5f-27af0cf03942 -g promptflow -w promptflow-eastus
+pfazure run show --name 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 -g promptflow -w promptflow-eastus
+pfazure run show-details --name 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 -g promptflow -w promptflow-eastus
+pfazure run show-metrics --name 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 -g promptflow -w promptflow-eastus
+```
