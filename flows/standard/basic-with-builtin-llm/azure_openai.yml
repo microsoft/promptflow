@@ -1,7 +1,0 @@
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
-name: my_azure_open_ai_connection
-type: azure_open_ai  # snake case
-api_key: "<to-be-replaced>"
-api_base: "aoai-api-endpoint"
-api_type: "azure"
-api_version: "2023-03-15-preview"

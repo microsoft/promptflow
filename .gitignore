@@ -160,7 +160,7 @@ cython_debug/
 #.idea/
 
 # ignore 
-# TODO: add this back before merging
+# TODO: ignore when PFS supports submit without tools.json
 # .promptflow
 .runs
 connection.json

@@ -1,0 +1,7 @@
+type: evaluation
+flow: ../../evaluation/classification-accuracy-eval
+data: data.jsonl
+batch_run: eff911b7-0a59-4002-8882-86c554c75716 # replace with your run name
+inputs_mapping:
+  groundtruth: ${data.answer}
+  prediction: ${batch_run.outputs.category}

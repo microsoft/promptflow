@@ -1,4 +1,0 @@
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/SerpConnection.schema.json
-name: my_serp_connection
-type: serp
-api_key: "<to-be-replaced>"

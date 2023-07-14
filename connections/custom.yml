@@ -1,7 +1,0 @@
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomConnection.schema.json
-name: my_custom_connection
-type: custom
-configs:
-  key1: "test1"
-secrets:  # must-have
-  api-key: "<to-be-replaced>"

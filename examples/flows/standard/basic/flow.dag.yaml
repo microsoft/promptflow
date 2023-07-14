@@ -1,0 +1,26 @@
+inputs:
+  text:
+    type: string
+    default: Hello World!
+outputs:
+  output:
+    type: string
+    reference: ${llm.output}
+nodes:
+- inputs:
+    text: ${inputs.text}
+  name: hello_prompt
+  type: prompt
+  source:
+    type: code
+    path: hello.jinja2
+- inputs:
+    prompt: ${hello_prompt.output}
+    deployment_name: text-davinci-003
+    max_tokens: "120"
+  name: llm
+  type: python
+  source:
+    type: code
+    path: hello.py
+node_variants: {}

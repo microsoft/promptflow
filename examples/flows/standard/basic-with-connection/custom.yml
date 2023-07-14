@@ -1,0 +1,9 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomConnection.schema.json
+name: basic_custom_connection
+type: custom
+configs:
+  api_type: azure
+  api_version: 2023-03-15-preview
+secrets:  # must-have
+  api_key: <to-be-replaced>
+  api_base: https://<to-be-replaced>.openai.azure.com/
