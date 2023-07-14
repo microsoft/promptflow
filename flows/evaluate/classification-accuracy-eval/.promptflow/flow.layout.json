@@ -1,0 +1,25 @@
+{
+  "nodeLayouts": {
+    "inputs": {
+      "x": 187,
+      "y": 62,
+      "index": -1
+    },
+    "outputs": {
+      "x": 362,
+      "y": 282,
+      "index": -1
+    },
+    "grade": {
+      "x": 362,
+      "y": 172,
+      "index": 0
+    },
+    "calculate_accuracy": {
+      "x": 12,
+      "y": 282,
+      "index": 1
+    }
+  },
+  "orientation": "Vertical"
+}

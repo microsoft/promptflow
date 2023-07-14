@@ -31,7 +31,8 @@ pf connection create -f azure_openai.yml
 ### Run locally with single line input
 
 ```bash
-pf flow test --flow . --input data.jsonl
+# test with default input value in flow.dag.yaml
+pf flow test --flow .
 ```
 
 ### Batch run with multiple lines data

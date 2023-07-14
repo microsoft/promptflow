@@ -12,11 +12,14 @@
 
 
 ## Examples available
+
+NOTE: the status in below table is a fake one. WIP.
+
 **Tutorials** ([tutorials](tutorials))
 path|status|description
 -|-|-
 [quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| get started
-[deploy.ipynb](tutorials/flow-deploy/deploy.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| deploy flow as endpoint
+[deploy.md](tutorials/flow-deploy/deploy.md)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| deploy flow as endpoint
 [run.ipynb](tutorials/advanced-run-management/run.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| advanced flow run management
 [quickstart-azure.ipynb](tutorials/get-started/quickstart-azure.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| get started - local to cloud
 [pipeline.ipynb](tutorials/flow-in-pipeline/pipeline.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| flow as component in pipeline
@@ -56,4 +59,5 @@ path|status|description
 
 ## Reference
 
-* [Documentation](https://promptflow.azurewebsites.net/)
+* [Promptflow public documentation](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2)
+* [Promptflow internal documentation](https://promptflow.azurewebsites.net/)

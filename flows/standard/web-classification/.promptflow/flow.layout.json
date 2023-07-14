@@ -1,0 +1,40 @@
+{
+  "nodeLayouts": {
+    "inputs": {
+      "x": 67,
+      "y": 62,
+      "index": -1
+    },
+    "outputs": {
+      "x": 122,
+      "y": 612,
+      "index": -1
+    },
+    "fetch_text_content_from_url": {
+      "x": 12,
+      "y": 172,
+      "index": 0
+    },
+    "summarize_text_content": {
+      "x": 12,
+      "y": 282,
+      "index": 1
+    },
+    "prepare_examples": {
+      "x": 233,
+      "y": 282,
+      "index": 2
+    },
+    "classify_with_llm": {
+      "x": 122,
+      "y": 392,
+      "index": 3
+    },
+    "convert_to_dict": {
+      "x": 122,
+      "y": 502,
+      "index": 4
+    }
+  },
+  "orientation": "Vertical"
+}
