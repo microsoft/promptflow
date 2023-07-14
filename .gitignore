@@ -160,7 +160,8 @@ cython_debug/
 #.idea/
 
 # ignore 
-.promptflow
+# TODO: add this back before merging
+# .promptflow
 .runs
 connection.json
 .env
