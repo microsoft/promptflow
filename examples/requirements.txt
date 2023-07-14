@@ -2,9 +2,6 @@
 # we keep the recommended version (manual validated) only in this file
 # not sure if we should include azure here
 promptflow-sdk[builtins,azure]==0.0.99531891
---extra-index-url https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/
-# this is a private version conflict with current promptflow-sdk, will be removed after it's released
-azure-ai-ml==1.9.0a20230703002
 prompt-flow-tools==0.0.3
 python-dotenv
 langchain
