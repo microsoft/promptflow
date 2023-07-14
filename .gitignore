@@ -164,3 +164,4 @@ cython_debug/
 .runs
 connection.json
 .env
+.azureml
