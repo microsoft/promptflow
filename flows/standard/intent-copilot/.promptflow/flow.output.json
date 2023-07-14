@@ -1,0 +1,281 @@
+{
+  "flow_runs": [
+    {
+      "run_id": "run_20230710162250",
+      "status": "Completed",
+      "error": null,
+      "inputs": null,
+      "output": {
+        "output": [
+          "The customer's intent is \"product return\"."
+        ]
+      },
+      "metrics": null,
+      "request": null,
+      "parent_run_id": "",
+      "root_run_id": "run_20230710162250",
+      "source_run_id": "mock-bulk-test-run-id",
+      "flow_id": "default_flow_id",
+      "start_time": "2023-07-10T08:22:50.114704Z",
+      "end_time": "2023-07-10T08:22:52.165091Z",
+      "index": null,
+      "api_calls": null,
+      "variant_id": "",
+      "name": "",
+      "description": "",
+      "tags": null,
+      "system_metrics": {
+        "total_tokens": 574,
+        "total_child_runs": 1,
+        "duration": 2.050387
+      },
+      "result": {
+        "output": [
+          "The customer's intent is \"product return\"."
+        ]
+      },
+      "upload_metrics": false
+    },
+    {
+      "run_id": "run_20230710162250_0",
+      "status": "Completed",
+      "error": null,
+      "inputs": {
+        "customer_info": "## Customer_Info\n\nFirst Name: Sarah \nLast Name: Lee \nAge: 38 \nEmail Address: sarahlee@example.com \nPhone Number: 555-867-5309 \nShipping Address: 321 Maple St, Bigtown USA, 90123 \nMembership: Platinum \n\n## Recent_Purchases\n\norder_number: 2 \ndate: 2023-02-10 \nitem:\n- description:  TrailMaster X4 Tent, quantity 1, price $250 \n\u00a0 item_number: 1 \n\norder_number: 26 \ndate: 2023-02-05 \nitem:\n- description:  CozyNights Sleeping Bag, quantity 1, price $100 \n\u00a0 item_number: 7 \n\norder_number: 35 \ndate: 2023-02-20 \nitem:\n- description:  TrailBlaze Hiking Pants, quantity 1, price $75 \n\u00a0 item_number: 10 \n\norder_number: 42 \ndate: 2023-04-06 \nitem:\n- description:  TrekMaster Camping Chair, quantity 2, price $100 \n\u00a0 item_number: 12 \n\norder_number: 51 \ndate: 2023-04-21 \nitem:\n- description:  SkyView 2-Person Tent, quantity 1, price $200 \n\u00a0 item_number: 15 \n\norder_number: 56 \ndate: 2023-03-26 \nitem:\n- description:  RainGuard Hiking Jacket, quantity 1, price $110 \n\u00a0 item_number: 17 \n\norder_number: 65 \ndate: 2023-04-11 \nitem:\n- description:  CompactCook Camping Stove, quantity 1, price $60 \n\u00a0 item_number: 20 \n\n",
+        "history": [
+          {
+            "role": "customer",
+            "content": "I recently bought the TrailMaster X4 Tent, and it leaked during a light rain. This is unacceptable! I expected a reliable and waterproof tent, but it failed to deliver. I'm extremely disappointed in the quality."
+          }
+        ],
+        "item_number": 1,
+        "order_number": 2,
+        "description": "TrailMaster X4 Tent, quantity 1, price $250",
+        "intent": "product return"
+      },
+      "output": {
+        "output": "The customer's intent is \"product return\"."
+      },
+      "metrics": null,
+      "request": null,
+      "parent_run_id": "run_20230710162250",
+      "root_run_id": "run_20230710162250",
+      "source_run_id": null,
+      "flow_id": "default_flow_id",
+      "start_time": "2023-07-10T08:22:50.129702Z",
+      "end_time": "2023-07-10T08:22:52.161091Z",
+      "index": 0,
+      "api_calls": [
+        {
+          "name": "user_prompt_template",
+          "type": "Tool",
+          "inputs": {
+            "template": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string.",
+            "mock": "mock"
+          },
+          "output": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string.",
+          "start_time": 1688948570.130702,
+          "end_time": 1688948570.132702,
+          "error": null,
+          "children": [],
+          "node_name": "user_prompt_template"
+        },
+        {
+          "name": "extract_intent",
+          "type": "Tool",
+          "inputs": {
+            "customer_info": "## Customer_Info\n\nFirst Name: Sarah \nLast Name: Lee \nAge: 38 \nEmail Address: sarahlee@example.com \nPhone Number: 555-867-5309 \nShipping Address: 321 Maple St, Bigtown USA, 90123 \nMembership: Platinum \n\n## Recent_Purchases\n\norder_number: 2 \ndate: 2023-02-10 \nitem:\n- description:  TrailMaster X4 Tent, quantity 1, price $250 \n\u00a0 item_number: 1 \n\norder_number: 26 \ndate: 2023-02-05 \nitem:\n- description:  CozyNights Sleeping Bag, quantity 1, price $100 \n\u00a0 item_number: 7 \n\norder_number: 35 \ndate: 2023-02-20 \nitem:\n- description:  TrailBlaze Hiking Pants, quantity 1, price $75 \n\u00a0 item_number: 10 \n\norder_number: 42 \ndate: 2023-04-06 \nitem:\n- description:  TrekMaster Camping Chair, quantity 2, price $100 \n\u00a0 item_number: 12 \n\norder_number: 51 \ndate: 2023-04-21 \nitem:\n- description:  SkyView 2-Person Tent, quantity 1, price $200 \n\u00a0 item_number: 15 \n\norder_number: 56 \ndate: 2023-03-26 \nitem:\n- description:  RainGuard Hiking Jacket, quantity 1, price $110 \n\u00a0 item_number: 17 \n\norder_number: 65 \ndate: 2023-04-11 \nitem:\n- description:  CompactCook Camping Stove, quantity 1, price $60 \n\u00a0 item_number: 20 \n\n",
+            "history": [
+              {
+                "role": "customer",
+                "content": "I recently bought the TrailMaster X4 Tent, and it leaked during a light rain. This is unacceptable! I expected a reliable and waterproof tent, but it failed to deliver. I'm extremely disappointed in the quality."
+              }
+            ],
+            "user_prompt_template": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string.",
+            "connection": "custom_connection"
+          },
+          "output": "The customer's intent is \"product return\".",
+          "start_time": 1688948570.134702,
+          "end_time": 1688948572.160092,
+          "error": null,
+          "children": [
+            {
+              "name": "openai.api_resources.chat_completion.ChatCompletion.create",
+              "type": "LLM",
+              "inputs": {
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n## Customer_Info\n\nFirst Name: Sarah \nLast Name: Lee \nAge: 38 \nEmail Address: sarahlee@example.com \nPhone Number: 555-867-5309 \nShipping Address: 321 Maple St, Bigtown USA, 90123 \nMembership: Platinum \n\n## Recent_Purchases\n\norder_number: 2 \ndate: 2023-02-10 \nitem:\n- description:  TrailMaster X4 Tent, quantity 1, price $250 \n\u00a0 item_number: 1 \n\norder_number: 26 \ndate: 2023-02-05 \nitem:\n- description:  CozyNights Sleeping Bag, quantity 1, price $100 \n\u00a0 item_number: 7 \n\norder_number: 35 \ndate: 2023-02-20 \nitem:\n- description:  TrailBlaze Hiking Pants, quantity 1, price $75 \n\u00a0 item_number: 10 \n\norder_number: 42 \ndate: 2023-04-06 \nitem:\n- description:  TrekMaster Camping Chair, quantity 2, price $100 \n\u00a0 item_number: 12 \n\norder_number: 51 \ndate: 2023-04-21 \nitem:\n- description:  SkyView 2-Person Tent, quantity 1, price $200 \n\u00a0 item_number: 15 \n\norder_number: 56 \ndate: 2023-03-26 \nitem:\n- description:  RainGuard Hiking Jacket, quantity 1, price $110 \n\u00a0 item_number: 17 \n\norder_number: 65 \ndate: 2023-04-11 \nitem:\n- description:  CompactCook Camping Stove, quantity 1, price $60 \n\u00a0 item_number: 20 \n\n\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\ncustomer: I recently bought the TrailMaster X4 Tent, and it leaked during a light rain. This is unacceptable! I expected a reliable and waterproof tent, but it failed to deliver. I'm extremely disappointed in the quality.\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string."
+                  }
+                ],
+                "model": "gpt-3.5-turbo",
+                "request_timeout": 60,
+                "max_tokens": null,
+                "stream": false,
+                "n": 1,
+                "temperature": 0.0,
+                "engine": "gpt-35-turbo"
+              },
+              "output": {
+                "id": "chatcmpl-7agSRNkrUN1Bauz3kybldm5Ucmifk",
+                "object": "chat.completion",
+                "created": 1688977371,
+                "model": "gpt-35-turbo",
+                "choices": [
+                  {
+                    "index": 0,
+                    "finish_reason": "stop",
+                    "message": {
+                      "role": "assistant",
+                      "content": "The customer's intent is \"product return\"."
+                    }
+                  }
+                ],
+                "usage": {
+                  "completion_tokens": 9,
+                  "prompt_tokens": 565,
+                  "total_tokens": 574
+                }
+              },
+              "start_time": 1688948570.136704,
+              "end_time": 1688948572.159092,
+              "error": null,
+              "children": null,
+              "node_name": null
+            }
+          ],
+          "node_name": "extract_intent"
+        }
+      ],
+      "variant_id": "",
+      "name": "",
+      "description": "",
+      "tags": null,
+      "system_metrics": {
+        "total_tokens": 574,
+        "duration": 2.031389
+      },
+      "result": {
+        "output": "The customer's intent is \"product return\"."
+      },
+      "upload_metrics": false
+    }
+  ],
+  "node_runs": [
+    {
+      "node": "user_prompt_template",
+      "flow_run_id": "run_20230710162250",
+      "run_id": "run_20230710162250_user_prompt_template_0",
+      "status": "Completed",
+      "inputs": {
+        "template": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string.",
+        "mock": "mock"
+      },
+      "output": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string.",
+      "metrics": null,
+      "error": null,
+      "parent_run_id": "run_20230710162250_0",
+      "start_time": "2023-07-10T08:22:50.130702Z",
+      "end_time": "2023-07-10T08:22:50.132702Z",
+      "index": 0,
+      "api_calls": [],
+      "variant_id": "",
+      "cached_run_id": null,
+      "cached_flow_run_id": null,
+      "logs": {
+        "stdout": "",
+        "stderr": ""
+      },
+      "system_metrics": {
+        "duration": 0.002
+      },
+      "result": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string."
+    },
+    {
+      "node": "extract_intent",
+      "flow_run_id": "run_20230710162250",
+      "run_id": "run_20230710162250_extract_intent_0",
+      "status": "Completed",
+      "inputs": {
+        "customer_info": "## Customer_Info\n\nFirst Name: Sarah \nLast Name: Lee \nAge: 38 \nEmail Address: sarahlee@example.com \nPhone Number: 555-867-5309 \nShipping Address: 321 Maple St, Bigtown USA, 90123 \nMembership: Platinum \n\n## Recent_Purchases\n\norder_number: 2 \ndate: 2023-02-10 \nitem:\n- description:  TrailMaster X4 Tent, quantity 1, price $250 \n\u00a0 item_number: 1 \n\norder_number: 26 \ndate: 2023-02-05 \nitem:\n- description:  CozyNights Sleeping Bag, quantity 1, price $100 \n\u00a0 item_number: 7 \n\norder_number: 35 \ndate: 2023-02-20 \nitem:\n- description:  TrailBlaze Hiking Pants, quantity 1, price $75 \n\u00a0 item_number: 10 \n\norder_number: 42 \ndate: 2023-04-06 \nitem:\n- description:  TrekMaster Camping Chair, quantity 2, price $100 \n\u00a0 item_number: 12 \n\norder_number: 51 \ndate: 2023-04-21 \nitem:\n- description:  SkyView 2-Person Tent, quantity 1, price $200 \n\u00a0 item_number: 15 \n\norder_number: 56 \ndate: 2023-03-26 \nitem:\n- description:  RainGuard Hiking Jacket, quantity 1, price $110 \n\u00a0 item_number: 17 \n\norder_number: 65 \ndate: 2023-04-11 \nitem:\n- description:  CompactCook Camping Stove, quantity 1, price $60 \n\u00a0 item_number: 20 \n\n",
+        "history": [
+          {
+            "role": "customer",
+            "content": "I recently bought the TrailMaster X4 Tent, and it leaked during a light rain. This is unacceptable! I expected a reliable and waterproof tent, but it failed to deliver. I'm extremely disappointed in the quality."
+          }
+        ],
+        "user_prompt_template": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n{customer_info}\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\n{chat_history}\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string.",
+        "connection": "custom_connection"
+      },
+      "output": "The customer's intent is \"product return\".",
+      "metrics": null,
+      "error": null,
+      "parent_run_id": "run_20230710162250_0",
+      "start_time": "2023-07-10T08:22:50.134702Z",
+      "end_time": "2023-07-10T08:22:52.160092Z",
+      "index": 0,
+      "api_calls": [
+        {
+          "name": "openai.api_resources.chat_completion.ChatCompletion.create",
+          "type": "LLM",
+          "inputs": {
+            "messages": [
+              {
+                "role": "user",
+                "content": "You are given a list of orders with item_numbers from a customer and a statement from the customer. It is your job to identify\n\nthe intent that the customer has with their statement. Possible intents can be:\n\n\"product return\", \"product exchange\", \"general question\", \"product question\", \"other\".\n\n\n\n\n\nIn triple backticks below is the customer information and a list of orders.\n\n```\n\n## Customer_Info\n\nFirst Name: Sarah \nLast Name: Lee \nAge: 38 \nEmail Address: sarahlee@example.com \nPhone Number: 555-867-5309 \nShipping Address: 321 Maple St, Bigtown USA, 90123 \nMembership: Platinum \n\n## Recent_Purchases\n\norder_number: 2 \ndate: 2023-02-10 \nitem:\n- description:  TrailMaster X4 Tent, quantity 1, price $250 \n\u00a0 item_number: 1 \n\norder_number: 26 \ndate: 2023-02-05 \nitem:\n- description:  CozyNights Sleeping Bag, quantity 1, price $100 \n\u00a0 item_number: 7 \n\norder_number: 35 \ndate: 2023-02-20 \nitem:\n- description:  TrailBlaze Hiking Pants, quantity 1, price $75 \n\u00a0 item_number: 10 \n\norder_number: 42 \ndate: 2023-04-06 \nitem:\n- description:  TrekMaster Camping Chair, quantity 2, price $100 \n\u00a0 item_number: 12 \n\norder_number: 51 \ndate: 2023-04-21 \nitem:\n- description:  SkyView 2-Person Tent, quantity 1, price $200 \n\u00a0 item_number: 15 \n\norder_number: 56 \ndate: 2023-03-26 \nitem:\n- description:  RainGuard Hiking Jacket, quantity 1, price $110 \n\u00a0 item_number: 17 \n\norder_number: 65 \ndate: 2023-04-11 \nitem:\n- description:  CompactCook Camping Stove, quantity 1, price $60 \n\u00a0 item_number: 20 \n\n\n\n```\n\n\n\n\nIn triple backticks below are the is the chat history with customer statements and replies from the customer service agent:\n\n```\n\ncustomer: I recently bought the TrailMaster X4 Tent, and it leaked during a light rain. This is unacceptable! I expected a reliable and waterproof tent, but it failed to deliver. I'm extremely disappointed in the quality.\n\n```\n\n\n\n\nWhat is the customer's `intent:` here?\n\n\"product return\", \"exchange product\", \"general question\", \"product question\" or \"other\"?\n\nReply with only the intent string."
+              }
+            ],
+            "model": "gpt-3.5-turbo",
+            "request_timeout": 60,
+            "max_tokens": null,
+            "stream": false,
+            "n": 1,
+            "temperature": 0.0,
+            "engine": "gpt-35-turbo"
+          },
+          "output": {
+            "id": "chatcmpl-7agSRNkrUN1Bauz3kybldm5Ucmifk",
+            "object": "chat.completion",
+            "created": 1688977371,
+            "model": "gpt-35-turbo",
+            "choices": [
+              {
+                "index": 0,
+                "finish_reason": "stop",
+                "message": {
+                  "role": "assistant",
+                  "content": "The customer's intent is \"product return\"."
+                }
+              }
+            ],
+            "usage": {
+              "completion_tokens": 9,
+              "prompt_tokens": 565,
+              "total_tokens": 574
+            }
+          },
+          "start_time": 1688948570.136704,
+          "end_time": 1688948572.159092,
+          "error": null,
+          "children": null,
+          "node_name": null
+        }
+      ],
+      "variant_id": "",
+      "cached_run_id": null,
+      "cached_flow_run_id": null,
+      "logs": {
+        "stdout": "",
+        "stderr": ""
+      },
+      "system_metrics": {
+        "completion_tokens": 9,
+        "prompt_tokens": 565,
+        "total_tokens": 574,
+        "duration": 2.02539
+      },
+      "result": "The customer's intent is \"product return\"."
+    }
+  ]
+}
