@@ -161,6 +161,7 @@ cython_debug/
 
 # ignore 
 .promptflow
+!.promptflow/flow.tools.json
 .runs
 connection.json
 .env
