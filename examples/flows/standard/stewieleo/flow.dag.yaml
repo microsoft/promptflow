@@ -1,0 +1,68 @@
+inputs:
+  conversation_obj:
+    type: object
+    default:
+      conversation: "   - User: When's my next meeting with Conphy Wang\n   - Bing: Your next meeting with Conphy Wang is the \"OLM Datasets Scrum\" organized by Shengqiu Li, which is scheduled to start at 2 PM and end at 2:30 PM. The other attendees include Yihao Lin, Yang Bai, Kobe Qin, Siyao Jiang, Lang Zhou, Xin Zhao, Yi Ding, and Peiyu Zhang. [^1^]\n   - User: Summarize email from Shengqiu\n   - Bing: Here is a summary of recent emails from Shengqiu Li:\n- On the 7th of April, Shengqiu thanked Heng Pian for extending the retention of RankLog streams on Cosmos. [^10^]\n- On April 20th, Shengqiu asked Ying Sun and Renbo Deng to review a PR to add a new BizChat dataset type to the MDP SDK. [^9^]\n- On April 28th, Shengqiu forwarded an announcement about the availability of FVL MDP data to a broader audience. [^8^]\n- On the 1st of June, Shengqiu explained the meaning of ConversationId in the SigsOIVIC offline dataset to Yu Gu, Yihao Lin, and Conphy Wang. [^7^]\n- On the 7th of June, Shengqiu updated Conphy Wang, Milad Shokouhi, Qing Yu, Richard Zhao, and Debashish Saha on the status of BizChat Feedback data pipelines. [^5^]\n- On the 9th of June, Shengqiu initiated a conversation with Michael Stokes, Denise La Rue, and the SIP CSPR team about a review of data movement for LLM-based evaluation metrics. [^4^]\n- On the 11th of June, Shengqiu thanked Michael Stokes, Daniela Mauler, Abram Jackson, Denise La Rue, and Jorge Carrillo Ugalde for their guidance and asked Jorge if they could chat on Monday. [^3^]\n- On the afternoon of last Tuesday, Shengqiu informed Conphy Wang that they had gone through a privacy review with Jorge and got approval to move BizChat evaluation metrics out of the compliance boundary. [^2^]\n- On the afternoon of last Wednesday, Shengqiu sent a detailed list of metrics they would like to show in the eyes-on dashboard to Jim Edelen, Michael Stokes, Conphy Wang, Sahil Aggarwal, Ken Ewert, Thomas Brackin, Denise La Rue, Farah Ali, Jorge Carrillo Ugalde, and LaMont Walker, and asked Jorge to review them. [^1^]"
+      meta: "\t- Location of user: {'country': 'United States', 'countryConfidence': 10, 'state': 'Washington', 'city': 'Redmond', 'cityConfidence': 10, 'zipCode': '98073', 'timeZoneOffset': -8, 'dma': 819, 'latitude': 47.6697, 'longitude': -122.095}\n"
+  config:
+    type: object
+    default:
+    dv3_token_file_path: ./authtoken.txt
+    sydney_client_secret": null
+    conversations:
+      input_file: data/2023-04-13-e2e-queryset.tsv
+      thread_size": 1
+      output_folder: ./GroundLeoTmp
+      exp_configs:
+        - exp_name: fake_tenant
+          runType: scheduled
+          user: Andy
+          sydney:
+            url: https://turingbot.sdf-master.substrate-turing-turingbot.eastus-sdf.cosmic-ppe.office.net/TuringBot
+            option_sets: enterprise_chomsky_ppo_with_errors
+            substrateSearchTokenPath: ./3stoken.txt
+            bingTokenPath: ./bingToken.txt"
+    ratings:
+      baseline_name: demo
+  conversation_id:
+    type: string
+    default: 5e8ace43-318c-452b-8d12-912e4478233d
+  max_token:
+    type: int
+    default: 1500
+  query:
+    type: string
+    default: "When's my next meeting with Conphy Wang"
+outputs:
+  llm_engagement_output:
+    type: string
+    reference: ${llm_engagement.output}
+nodes:
+- name: llm_engagement
+  type: llm
+  source:
+    type: code
+    path: template.jinja2
+  inputs:
+    metric: engagement
+    metric_definition: "1. Engagement: The responses should be engaging, creative and informative to capture "
+    conversation_obj: ${inputs.conversation_obj}
+    deployment_name: text-davinci-003
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
+- name: llm_relevance
+  type: llm
+  source:
+    type: code
+    path: template.jinja2
+  inputs:
+    metric: relevance
+    metric_definition: "1. Relevance: The responses should address the user's query accurately and comprehensively, taking into account the context of previous conversation along with time of conversation. They should not deviate from the topic, provide outdated or inaccurate information, or fail to answer the query. If the user seeks some information, the responses should aim to provide it as quickly and directly as possible.     - Irrelevant or inaccurate: The responses should not deviate from the topic, provide irrelevant or inconsistent, provide tangential information, or fail to answer the query. For example, If the user asks 'how is weather in London today', the response should not talk about the weather in New York or the weather in London a week ago which would be inconsistent  or make a general statement about weather or London which would be tangential information rather than answering the query directly or give no response at all or say it can't find the answer. Instead, it should give the current weather information for London.     - Usefulness: The responses should not only be relevant but also useful for the user's query. They should provide sufficient and specific information that satisfies the user's information need or helps them achieve their goal. For example, if the user asks for directions to a nearby hospital, the response should not give vague or incomplete directions such as 'go straight and turn left' or 'it's not far from here' which would be insufficient or say 'there are many hospitals in this area' or 'I don't know' which would be non-specific. Instead, it should give the name and address of the nearest hospital and the best way to reach there.     - Ignoring previous context: If the user asks a follow-up question based on a previous query, the response should not disregard the previous context or repeat the same information. For example, if the user asks 'what is the capital of France?' and then 'how far is it from Berlin?', the response should not ask 'how far is what from Berlin?' or say that 'Paris is the capital of France' or say it can't find the answer. Instead, it should use the previous query to infer that the user is interested in the distance between Paris and Berlin and give that information.     - Contradicting time of conversation: If the user asks a question that is time sensitive such as the current news, events or trends and the response mentions a specific date or time, then this date or time should be consistent with the date or time of the conversation. For example, if the conversation date is 22 March 2023 and user asks for weather today and the response says that weather on 22 March 2022 is rainy, then this is incorrect and should be penalized. However, if the response does not mention any date or time at all, then it should not be penalized.     - Delaying information: The responses should aim to provide the information that the user seeks as quickly and directly as possible and avoid asking unnecessary follow-up questions or giving minimal information. For example, if the user asks for something informative such as the best restaurants in a city, the response should not ask a follow-up question about the user's preference or give minimal information such as there are many good restaurants in the city as that postpones giving the relevant information. Instead, it should give examples of restaurants based on ratings, reviews, popularity, location, etc."
+    conversation_obj: ${inputs.conversation_obj}
+    deployment_name: text-davinci-003
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
+id: stewieleo
+name: Stewieleo

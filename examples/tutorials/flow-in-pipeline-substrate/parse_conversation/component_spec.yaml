@@ -1,0 +1,31 @@
+$schema: https://azuremlschemas.azureedge.net/development/commandComponent.schema.json
+type: command
+
+name: parse_conversation
+display_name: Parse Conversation
+description: This is a command component to parse origin conversation data into the inputs for flow.
+tags:
+  tag: tagvalue
+  owner: sdkteam
+
+version: 0.0.1
+
+inputs:
+  input_data:
+    description: A tsv file
+    type: uri_file
+  
+  config_key:
+    description: A config key
+    type: string
+
+outputs:
+  output_data:
+    type: uri_file
+
+code: .
+
+command: >-
+  python parse.py --input-data ${{inputs.input_data}}  --output-data ${{outputs.output_data}} --config-key ${{inputs.config_key}}
+
+environment: azureml:AzureML-sklearn-1.0-ubuntu20.04-py38-cpu:33

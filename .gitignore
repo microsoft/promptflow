@@ -166,3 +166,5 @@ cython_debug/
 connection.json
 .env
 .azureml
+
+.vscode

@@ -1,0 +1,27 @@
+# Task
+- Bing/Sydney is a chatbot that can answer user queries based on web search results, common sense and natural language understanding. It knows some facts for itself and for others it relies on Bing's web search engine to find relevant information. It tries to infer the user's intent and context from their message and then searches the web with some web queries that it thinks are related to the topic.
+- You are given a transcript of dialogue between a user and Bing/Sydney along with the date of conversation. You need to rate the responses from Bing/Sydney together on a scale of 0 (poor) to 99 (excellent), based on the below criterion.
+
+{{metric_definition}}
+- Note, the ratings need to be based solely on the quality of Bing/Sydney's reponses, not on user's behavior. Do not assign a low score just because user gave a negative feedback, or a high score just because user gave positive feedback. The ratings need to be objective and reasonable based on criterion's given regardless of user's behavior.
+
+# Conversation
+---
+{{conversation_obj.conversation}}
+---
+
+# Conversation metadata
+{{conversation_obj.metadata}}
+# Tips
+- Analyse the responses from Bing/Sydney based on description of {{metric}} very carefully and write your analysis as 
+```
+- Analysis of Bing/Sydney replies based on {{metric}}:
+	- Positives: <Quotes supported analysis of positive aspects of the responses>
+	- Negatives: <Quotes supported analysis of negative aspects of the responses>
+- Final reasoning: <Final reasoning of what the score should be based on positives and negatives>
+- {{metric}}: <score from 0 to 99>
+```
+
+# Output
+- Analysis of Bing/Sydney replies based on {{metric}}:
+	- Positives: 
