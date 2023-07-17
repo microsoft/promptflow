@@ -3,73 +3,25 @@ name: Stewieleo
 
 inputs:
   config:
-    conversations:
-      exp_configs:
-      - exp_name: fake_tenant
-        runType: scheduled
-        sydney:
-          bingTokenPath: ./bingToken.txt"
-          option_sets: enterprise_chomsky_ppo_with_errors
-          substrateSearchTokenPath: ./3stoken.txt
-          url: https://turingbot.sdf-master.substrate-turing-turingbot.eastus-sdf.cosmic-ppe.office.net/TuringBot
-        user: Andy
-      input_file: data/2023-04-13-e2e-queryset.tsv
-      output_folder: ./GroundLeoTmp
-      thread_size": 1
-    default: null
-    dv3_token_file_path: ./authtoken.txt
-    ratings:
-      baseline_name: demo
-    sydney_client_secret": null
     type: object
   conversation_id:
     default: 5e8ace43-318c-452b-8d12-912e4478233d
     type: string
   conversation_obj:
-    default:
-      conversation: "   - User: When's my next meeting with Conphy Wang\n   - Bing:\
-        \ Your next meeting with Conphy Wang is the \"OLM Datasets Scrum\" organized\
-        \ by Shengqiu Li, which is scheduled to start at 2 PM and end at 2:30 PM.\
-        \ The other attendees include Yihao Lin, Yang Bai, Kobe Qin, Siyao Jiang,\
-        \ Lang Zhou, Xin Zhao, Yi Ding, and Peiyu Zhang. [^1^]\n   - User: Summarize\
-        \ email from Shengqiu\n   - Bing: Here is a summary of recent emails from\
-        \ Shengqiu Li:\n- On the 7th of April, Shengqiu thanked Heng Pian for extending\
-        \ the retention of RankLog streams on Cosmos. [^10^]\n- On April 20th, Shengqiu\
-        \ asked Ying Sun and Renbo Deng to review a PR to add a new BizChat dataset\
-        \ type to the MDP SDK. [^9^]\n- On April 28th, Shengqiu forwarded an announcement\
-        \ about the availability of FVL MDP data to a broader audience. [^8^]\n- On\
-        \ the 1st of June, Shengqiu explained the meaning of ConversationId in the\
-        \ SigsOIVIC offline dataset to Yu Gu, Yihao Lin, and Conphy Wang. [^7^]\n\
-        - On the 7th of June, Shengqiu updated Conphy Wang, Milad Shokouhi, Qing Yu,\
-        \ Richard Zhao, and Debashish Saha on the status of BizChat Feedback data\
-        \ pipelines. [^5^]\n- On the 9th of June, Shengqiu initiated a conversation\
-        \ with Michael Stokes, Denise La Rue, and the SIP CSPR team about a review\
-        \ of data movement for LLM-based evaluation metrics. [^4^]\n- On the 11th\
-        \ of June, Shengqiu thanked Michael Stokes, Daniela Mauler, Abram Jackson,\
-        \ Denise La Rue, and Jorge Carrillo Ugalde for their guidance and asked Jorge\
-        \ if they could chat on Monday. [^3^]\n- On the afternoon of last Tuesday,\
-        \ Shengqiu informed Conphy Wang that they had gone through a privacy review\
-        \ with Jorge and got approval to move BizChat evaluation metrics out of the\
-        \ compliance boundary. [^2^]\n- On the afternoon of last Wednesday, Shengqiu\
-        \ sent a detailed list of metrics they would like to show in the eyes-on dashboard\
-        \ to Jim Edelen, Michael Stokes, Conphy Wang, Sahil Aggarwal, Ken Ewert, Thomas\
-        \ Brackin, Denise La Rue, Farah Ali, Jorge Carrillo Ugalde, and LaMont Walker,\
-        \ and asked Jorge to review them. [^1^]"
-      meta: "\t- Location of user: {'country': 'United States', 'countryConfidence':\
-        \ 10, 'state': 'Washington', 'city': 'Redmond', 'cityConfidence': 10, 'zipCode':\
-        \ '98073', 'timeZoneOffset': -8, 'dma': 819, 'latitude': 47.6697, 'longitude':\
-        \ -122.095}\n"
     type: object
-  max_token:
+  max_tokens:
     default: 1500
     type: int
   query:
     default: When's my next meeting with Conphy Wang
     type: string
 outputs:
-  llm_engagement_output:
-    reference: ${llm_engagement.output}
+  score:
+    reference: ${generate_score.output}
     type: string
+  debug_info:
+    reference: ${generate_debug_info.output}
+    type: object
 nodes:
 - api: completion
   connection: azure_open_ai_connection
@@ -263,3 +215,31 @@ nodes:
     path: template.jinja2
     type: code
   type: llm
+- name: generate_score
+  type: python
+  source:
+    type: code
+    path: generate_score.py
+  inputs:
+    relevance_response: ${llm_relevance.output}
+    clarity_response: ${llm_clarity.output}
+    detail_response: ${llm_detail.output}
+    engagement_response: ${llm_engagement.output}
+    relevance_weight: 0.25
+    clarity_weight: 0.25
+    detail_weight: 0.25
+    engagement_weight: 0.25
+- name: generate_debug_info
+  type: python
+  source:
+    type: code
+    path: generate_debug_info.py
+  inputs:
+    relevance_response: ${llm_relevance.output}
+    clarity_response: ${llm_clarity.output}
+    detail_response: ${llm_detail.output}
+    engagement_response: ${llm_engagement.output}
+    final_score: ${generate_score.output}
+    conversation_id: ${inputs.conversation_id}
+    query: ${inputs.query}
+    config: ${inputs.config}

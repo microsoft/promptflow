@@ -1,5 +1,6 @@
 import argparse
 import json
+from pathlib import Path
 
 
 ONE_TURN_CONVERSATION_STEWIE_LEO = """   - User: {user}
@@ -79,6 +80,8 @@ if __name__ == "__main__":
             "conversation_id": raw["ConversationId"],
             "query": raw['Turns'][0]['Human']
         })
+    
+    Path(args.output_data).parent.mkdir(parents=True, exist_ok=True)
     with open(args.output_data, "w", encoding="utf-8") as output_file:
         for raw in output_raws:
             text = json.dumps(raw)
