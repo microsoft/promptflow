@@ -1,9 +1,10 @@
 inputs:
   chat_history:
     type: list
+    default: []
   question:
     type: string
-    default: What is the difference between this model and previous ones?
+    default: What is ChatGPT?
     is_chat_input: true
 outputs:
   answer:

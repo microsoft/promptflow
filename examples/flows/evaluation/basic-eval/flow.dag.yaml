@@ -1,12 +1,16 @@
 inputs:
   groundtruth:
     type: string
+    default: groundtruth
   prediction:
     type: string
+    default: prediction
   variant_id:
     type: string
+    default: variant_0
   line_number:
     type: int
+    default: 0
 outputs:
   results:
     type: string

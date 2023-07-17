@@ -1,16 +1,20 @@
 inputs:
   line_number:
     type: int
+    default: 0
   variant_id:
     type: string
+    default: variant_0
   groundtruth:
     type: string
     description: Please specify the groundtruth column, which contains the true label
       to the outputs that your flow produces.
+    default: APP
   prediction:
     type: string
     description: Please specify the prediction column, which contains the predicted
       outputs that your flow produces.
+    default: APP
 outputs:
   grade:
     type: string
