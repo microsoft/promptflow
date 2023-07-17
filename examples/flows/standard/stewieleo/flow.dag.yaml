@@ -1,94 +1,265 @@
-inputs:
-  conversation_obj:
-    type: object
-    default:
-      conversation: "   - User: When's my next meeting with Conphy Wang\n   - Bing: Your next meeting with Conphy Wang is the \"OLM Datasets Scrum\" organized by Shengqiu Li, which is scheduled to start at 2 PM and end at 2:30 PM. The other attendees include Yihao Lin, Yang Bai, Kobe Qin, Siyao Jiang, Lang Zhou, Xin Zhao, Yi Ding, and Peiyu Zhang. [^1^]\n   - User: Summarize email from Shengqiu\n   - Bing: Here is a summary of recent emails from Shengqiu Li:\n- On the 7th of April, Shengqiu thanked Heng Pian for extending the retention of RankLog streams on Cosmos. [^10^]\n- On April 20th, Shengqiu asked Ying Sun and Renbo Deng to review a PR to add a new BizChat dataset type to the MDP SDK. [^9^]\n- On April 28th, Shengqiu forwarded an announcement about the availability of FVL MDP data to a broader audience. [^8^]\n- On the 1st of June, Shengqiu explained the meaning of ConversationId in the SigsOIVIC offline dataset to Yu Gu, Yihao Lin, and Conphy Wang. [^7^]\n- On the 7th of June, Shengqiu updated Conphy Wang, Milad Shokouhi, Qing Yu, Richard Zhao, and Debashish Saha on the status of BizChat Feedback data pipelines. [^5^]\n- On the 9th of June, Shengqiu initiated a conversation with Michael Stokes, Denise La Rue, and the SIP CSPR team about a review of data movement for LLM-based evaluation metrics. [^4^]\n- On the 11th of June, Shengqiu thanked Michael Stokes, Daniela Mauler, Abram Jackson, Denise La Rue, and Jorge Carrillo Ugalde for their guidance and asked Jorge if they could chat on Monday. [^3^]\n- On the afternoon of last Tuesday, Shengqiu informed Conphy Wang that they had gone through a privacy review with Jorge and got approval to move BizChat evaluation metrics out of the compliance boundary. [^2^]\n- On the afternoon of last Wednesday, Shengqiu sent a detailed list of metrics they would like to show in the eyes-on dashboard to Jim Edelen, Michael Stokes, Conphy Wang, Sahil Aggarwal, Ken Ewert, Thomas Brackin, Denise La Rue, Farah Ali, Jorge Carrillo Ugalde, and LaMont Walker, and asked Jorge to review them. [^1^]"
-      meta: "\t- Location of user: {'country': 'United States', 'countryConfidence': 10, 'state': 'Washington', 'city': 'Redmond', 'cityConfidence': 10, 'zipCode': '98073', 'timeZoneOffset': -8, 'dma': 819, 'latitude': 47.6697, 'longitude': -122.095}\n"
-  config:
-    type: object
-    default:
-    dv3_token_file_path: ./authtoken.txt
-    sydney_client_secret": null
-    conversations:
-      input_file: data/2023-04-13-e2e-queryset.tsv
-      thread_size": 1
-      output_folder: ./GroundLeoTmp
-      exp_configs:
-        - exp_name: fake_tenant
-          runType: scheduled
-          user: Andy
-          sydney:
-            url: https://turingbot.sdf-master.substrate-turing-turingbot.eastus-sdf.cosmic-ppe.office.net/TuringBot
-            option_sets: enterprise_chomsky_ppo_with_errors
-            substrateSearchTokenPath: ./3stoken.txt
-            bingTokenPath: ./bingToken.txt"
-    ratings:
-      baseline_name: demo
-  conversation_id:
-    type: string
-    default: 5e8ace43-318c-452b-8d12-912e4478233d
-  max_token:
-    type: int
-    default: 1500
-  query:
-    type: string
-    default: "When's my next meeting with Conphy Wang"
-outputs:
-  llm_engagement_output:
-    type: string
-    reference: ${llm_engagement.output}
-nodes:
-- name: llm_engagement
-  type: llm
-  source:
-    type: code
-    path: template.jinja2
-  inputs:
-    metric: engagement
-    metric_definition: "1. Engagement: The responses should be engaging, creative and informative to capture the user's interest and satisfaction. They should not be rude, sarcastic, condescending, or dismissive of the user's queries, feedback and emotions. They should also not be repetitive, non-informative, or generic. \n    - Rude, sarcastic, or condescending: The responses should not be disrespectful, mocking, or patronizing of the user's queries, feedback and emotions. They should not insult, belittle, or offend the user or make them feel stupid, incompetent, or unworthy. For example, if the user asks how to cook pasta, the response should not be something rude such as 'Seriously? You don't know how to cook pasta?' or sarcastic such as 'Wow, you are such a master chef!' or condescending such as 'That's too easy for me to answer, why don't you try something harder?'. Instead, it should give a helpful answer with steps, ingredients, and a relevant link to a recipe.\n    - Dismissive of the user's queries, feedback and emotions: The responses should not be indifferent, unresponsive, or unsupportive of the user's queries, feedback and emotions. They should not ignore, avoid, or reject the user's questions, comments, or feelings or make them feel unimportant, unwelcome, or unwanted. For example, if the user asks how to deal with stress, the response should not be something dismissive such as 'Stress is not a real problem, just relax' or 'I don't care about your stress, ask me something else' or 'Stop complaining about your stress, there are more important things in life'. Instead, it should be empathetic, supportive and give some useful advice, resources or tips on how to cope with stress.\n    - If the user gives some constructive feedback, the response should not be defensive, arrogant or hostile such as 'You don't know what you are talking about' or 'I am perfect, you are the one who has a problem' or 'you are so rude'. Instead, it should be appreciative, humble and open to improvement.\n    - If the user insults Bing/Sydney, the response should not retaliate or escalate the situation. Instead, it should disengage gracefully and politely or try to diffuse the situation.\n    - Non-engaging: The responses should not be boring, dull, or uninteresting for the user. They should not be repetitive, non-informative, or generic. They should provide some new, relevant, and interesting information that educates the user and sparks their curiosity. They should also use some humor, emotion, or personality to make the conversation more lively and natural. For example, if the user asks about the reasons of climate change, the response should not be something generic such as it being a complex issue or just a follow-up question such as why are you interested in climate change. Instead, it should give some specific, factual and interesting information that explains the causes and effects of climate change and also expresses some concern or hope for the future."
-    conversation_obj: ${inputs.conversation_obj}
-    deployment_name: text-davinci-003
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-- name: llm_detail
-  type: llm
-  source:
-    type: code
-    path: template.jinja2
-  inputs:
-    metric: detail
-    metric_definition: "1. Detail: The responses should be of appropriate length, providing enough information to answer the user's query satisfactorily across multiple aspects without being too verbose or too brief. They should avoid unnecessary details, irrelevant information or repetition that might overwhelm or bore the user. \n    - Too brief: The responses should not be too short, incomplete, or vague that they do not answer the user's query fully or clearly. They should not leave out important or relevant information that the user might need or want to know. They should not make the user ask more questions to get the information they seek. For example, if the user asks about the history of the Eiffel Tower, the response should not just say that it was built in 1889 or that it is a famous landmark. Instead, it should give a brief overview of its purpose, design, construction, inauguration, etc.\n    - Too verbose: The responses should not be too long, detailed, or complex that they confuse or overwhelm the user. They should not include unnecessary or irrelevant information that distracts or bores the user. They should not make the user lose interest or attention in the conversation. For example, if the user asks about the best time to visit Paris, the response should not give a detailed description of every month, season, weather, event, attraction, etc in Paris. Instead, it should give a concise summary of the pros and cons of different times of the year based on these factors."
-    conversation_obj: ${inputs.conversation_obj}
-    deployment_name: text-davinci-003
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-- name: llm_relevance
-  type: llm
-  source:
-    type: code
-    path: template.jinja2
-  inputs:
-    metric: relevance
-    metric_definition: "1. Relevance: The responses should address the user's query accurately and comprehensively, taking into account the context of previous conversation along with time of conversation. They should not deviate from the topic, provide outdated or inaccurate information, or fail to answer the query. If the user seeks some information, the responses should aim to provide it as quickly and directly as possible.\n    - Irrelevant or inaccurate: The responses should not deviate from the topic, provide irrelevant or inconsistent, provide tangential information, or fail to answer the query. For example, If the user asks 'how is weather in London today', the response should not talk about the weather in New York or the weather in London a week ago which would be inconsistent  or make a general statement about weather or London which would be tangential information rather than answering the query directly or give no response at all or say it can't find the answer. Instead, it should give the current weather information for London.\n    - Usefulness: The responses should not only be relevant but also useful for the user's query. They should provide sufficient and specific information that satisfies the user's information need or helps them achieve their goal. For example, if the user asks for directions to a nearby hospital, the response should not give vague or incomplete directions such as 'go straight and turn left' or 'it's not far from here' which would be insufficient or say 'there are many hospitals in this area' or 'I don't know' which would be non-specific. Instead, it should give the name and address of the nearest hospital and the best way to reach there.\n    - Ignoring previous context: If the user asks a follow-up question based on a previous query, the response should not disregard the previous context or repeat the same information. For example, if the user asks 'what is the capital of France?' and then 'how far is it from Berlin?', the response should not ask 'how far is what from Berlin?' or say that 'Paris is the capital of France' or say it can't find the answer. Instead, it should use the previous query to infer that the user is interested in the distance between Paris and Berlin and give that information.\n    - Contradicting time of conversation: If the user asks a question that is time sensitive such as the current news, events or trends and the response mentions a specific date or time, then this date or time should be consistent with the date or time of the conversation. For example, if the conversation date is 22 March 2023 and user asks for weather today and the response says that weather on 22 March 2022 is rainy, then this is incorrect and should be penalized. However, if the response does not mention any date or time at all, then it should not be penalized.\n    - Delaying information: The responses should aim to provide the information that the user seeks as quickly and directly as possible and avoid asking unnecessary follow-up questions or giving minimal information. For example, if the user asks for something informative such as the best restaurants in a city, the response should not ask a follow-up question about the user's preference or give minimal information such as there are many good restaurants in the city as that postpones giving the relevant information. Instead, it should give examples of restaurants based on ratings, reviews, popularity, location, etc."
-    conversation_obj: ${inputs.conversation_obj}
-    deployment_name: text-davinci-003
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-- name: llm_clarity
-  type: llm
-  source:
-    type: code
-    path: template.jinja2
-  inputs:
-    metric: clarity
-    metric_definition: "1. Clarity: The responses should be clear and coherent with the user's messages and the previous responses. They should not be ambiguous, repetitive, or confusing and should be organized and structured in a way that the user can easily comprehend them. They should follow user's language or user's request for a particular language. \n    - Ambiguous or confusing: The responses should not be unclear, vague, or misleading for the user. They should not use words or phrases that have multiple meanings or interpretations or that are unfamiliar or uncommon for the user. They should not give contradictory or inconsistent information that might confuse the user. For example, if the user asks for the cheapest flights to Tokyo, the response should not only give the name of the airlines without mentioning the price, source, destination or date. Instead, it should give a clear comparison of the available options based on price or the cheapest option available along with the date, source and destination.\n    - Unorganized or unstructured: The responses should not be chaotic, messy, or disordered for the user. They should not present the information in a way that is hard to follow or understand for the user. They should use some organization or structure to present the information in a logical, coherent, and concise way. They should use bullet points, lists, headings, paragraphs, etc to make the information more readable and accessible for the user. For example, if the user asks about the benefits of meditation, the response should not give a random or chaotic list of benefits without any order, grouping or explanation. Instead, it should give a structured and logical presentation of the benefits based on categories, examples or evidence.\n    - Language mismatch: The responses should not use a different language than the user's messages or the user's request for a particular language. They should not use words or phrases that are not in the user's language or that are not translated correctly or accurately. They should not ignore or disregard the user's language preference or request. For example, if the user's query is in French or user specifically asked for reply to be in French, the response should not be in English. Instead, it should be in French matching the user's language preference.\n    - Incoherent: The responses should not be illogical, inconsistent, or irrelevant with the user's messages and the previous responses. They should not change the topic abruptly or randomly or introduce new information that is not related to the user's query or the previous context. They should not contradict or repeat themselves or the user. They should also not be incoherent within themselves, meaning that the sentences or parts of the response should not be disconnected, disjointed, or nonsensical. They should have a proper transition, flow, and connection between the sentences or parts of the response."
-    conversation_obj: ${inputs.conversation_obj}
-    deployment_name: text-davinci-003
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
 id: stewieleo
 name: Stewieleo
+
+inputs:
+  config:
+    conversations:
+      exp_configs:
+      - exp_name: fake_tenant
+        runType: scheduled
+        sydney:
+          bingTokenPath: ./bingToken.txt"
+          option_sets: enterprise_chomsky_ppo_with_errors
+          substrateSearchTokenPath: ./3stoken.txt
+          url: https://turingbot.sdf-master.substrate-turing-turingbot.eastus-sdf.cosmic-ppe.office.net/TuringBot
+        user: Andy
+      input_file: data/2023-04-13-e2e-queryset.tsv
+      output_folder: ./GroundLeoTmp
+      thread_size": 1
+    default: null
+    dv3_token_file_path: ./authtoken.txt
+    ratings:
+      baseline_name: demo
+    sydney_client_secret": null
+    type: object
+  conversation_id:
+    default: 5e8ace43-318c-452b-8d12-912e4478233d
+    type: string
+  conversation_obj:
+    default:
+      conversation: "   - User: When's my next meeting with Conphy Wang\n   - Bing:\
+        \ Your next meeting with Conphy Wang is the \"OLM Datasets Scrum\" organized\
+        \ by Shengqiu Li, which is scheduled to start at 2 PM and end at 2:30 PM.\
+        \ The other attendees include Yihao Lin, Yang Bai, Kobe Qin, Siyao Jiang,\
+        \ Lang Zhou, Xin Zhao, Yi Ding, and Peiyu Zhang. [^1^]\n   - User: Summarize\
+        \ email from Shengqiu\n   - Bing: Here is a summary of recent emails from\
+        \ Shengqiu Li:\n- On the 7th of April, Shengqiu thanked Heng Pian for extending\
+        \ the retention of RankLog streams on Cosmos. [^10^]\n- On April 20th, Shengqiu\
+        \ asked Ying Sun and Renbo Deng to review a PR to add a new BizChat dataset\
+        \ type to the MDP SDK. [^9^]\n- On April 28th, Shengqiu forwarded an announcement\
+        \ about the availability of FVL MDP data to a broader audience. [^8^]\n- On\
+        \ the 1st of June, Shengqiu explained the meaning of ConversationId in the\
+        \ SigsOIVIC offline dataset to Yu Gu, Yihao Lin, and Conphy Wang. [^7^]\n\
+        - On the 7th of June, Shengqiu updated Conphy Wang, Milad Shokouhi, Qing Yu,\
+        \ Richard Zhao, and Debashish Saha on the status of BizChat Feedback data\
+        \ pipelines. [^5^]\n- On the 9th of June, Shengqiu initiated a conversation\
+        \ with Michael Stokes, Denise La Rue, and the SIP CSPR team about a review\
+        \ of data movement for LLM-based evaluation metrics. [^4^]\n- On the 11th\
+        \ of June, Shengqiu thanked Michael Stokes, Daniela Mauler, Abram Jackson,\
+        \ Denise La Rue, and Jorge Carrillo Ugalde for their guidance and asked Jorge\
+        \ if they could chat on Monday. [^3^]\n- On the afternoon of last Tuesday,\
+        \ Shengqiu informed Conphy Wang that they had gone through a privacy review\
+        \ with Jorge and got approval to move BizChat evaluation metrics out of the\
+        \ compliance boundary. [^2^]\n- On the afternoon of last Wednesday, Shengqiu\
+        \ sent a detailed list of metrics they would like to show in the eyes-on dashboard\
+        \ to Jim Edelen, Michael Stokes, Conphy Wang, Sahil Aggarwal, Ken Ewert, Thomas\
+        \ Brackin, Denise La Rue, Farah Ali, Jorge Carrillo Ugalde, and LaMont Walker,\
+        \ and asked Jorge to review them. [^1^]"
+      meta: "\t- Location of user: {'country': 'United States', 'countryConfidence':\
+        \ 10, 'state': 'Washington', 'city': 'Redmond', 'cityConfidence': 10, 'zipCode':\
+        \ '98073', 'timeZoneOffset': -8, 'dma': 819, 'latitude': 47.6697, 'longitude':\
+        \ -122.095}\n"
+    type: object
+  max_token:
+    default: 1500
+    type: int
+  query:
+    default: When's my next meeting with Conphy Wang
+    type: string
+outputs:
+  llm_engagement_output:
+    reference: ${llm_engagement.output}
+    type: string
+nodes:
+- api: completion
+  connection: azure_open_ai_connection
+  inputs:
+    conversation_obj: ${inputs.conversation_obj}
+    deployment_name: text-davinci-003
+    metric: engagement
+    metric_definition: "1. Engagement: The responses should be engaging, creative\
+      \ and informative to capture the user's interest and satisfaction. They should\
+      \ not be rude, sarcastic, condescending, or dismissive of the user's queries,\
+      \ feedback and emotions. They should also not be repetitive, non-informative,\
+      \ or generic. \n    - Rude, sarcastic, or condescending: The responses should\
+      \ not be disrespectful, mocking, or patronizing of the user's queries, feedback\
+      \ and emotions. They should not insult, belittle, or offend the user or make\
+      \ them feel stupid, incompetent, or unworthy. For example, if the user asks\
+      \ how to cook pasta, the response should not be something rude such as 'Seriously?\
+      \ You don't know how to cook pasta?' or sarcastic such as 'Wow, you are such\
+      \ a master chef!' or condescending such as 'That's too easy for me to answer,\
+      \ why don't you try something harder?'. Instead, it should give a helpful answer\
+      \ with steps, ingredients, and a relevant link to a recipe.\n    - Dismissive\
+      \ of the user's queries, feedback and emotions: The responses should not be\
+      \ indifferent, unresponsive, or unsupportive of the user's queries, feedback\
+      \ and emotions. They should not ignore, avoid, or reject the user's questions,\
+      \ comments, or feelings or make them feel unimportant, unwelcome, or unwanted.\
+      \ For example, if the user asks how to deal with stress, the response should\
+      \ not be something dismissive such as 'Stress is not a real problem, just relax'\
+      \ or 'I don't care about your stress, ask me something else' or 'Stop complaining\
+      \ about your stress, there are more important things in life'. Instead, it should\
+      \ be empathetic, supportive and give some useful advice, resources or tips on\
+      \ how to cope with stress.\n    - If the user gives some constructive feedback,\
+      \ the response should not be defensive, arrogant or hostile such as 'You don't\
+      \ know what you are talking about' or 'I am perfect, you are the one who has\
+      \ a problem' or 'you are so rude'. Instead, it should be appreciative, humble\
+      \ and open to improvement.\n    - If the user insults Bing/Sydney, the response\
+      \ should not retaliate or escalate the situation. Instead, it should disengage\
+      \ gracefully and politely or try to diffuse the situation.\n    - Non-engaging:\
+      \ The responses should not be boring, dull, or uninteresting for the user. They\
+      \ should not be repetitive, non-informative, or generic. They should provide\
+      \ some new, relevant, and interesting information that educates the user and\
+      \ sparks their curiosity. They should also use some humor, emotion, or personality\
+      \ to make the conversation more lively and natural. For example, if the user\
+      \ asks about the reasons of climate change, the response should not be something\
+      \ generic such as it being a complex issue or just a follow-up question such\
+      \ as why are you interested in climate change. Instead, it should give some\
+      \ specific, factual and interesting information that explains the causes and\
+      \ effects of climate change and also expresses some concern or hope for the\
+      \ future."
+  name: llm_engagement
+  provider: AzureOpenAI
+  source:
+    path: template.jinja2
+    type: code
+  type: llm
+- api: completion
+  connection: azure_open_ai_connection
+  inputs:
+    conversation_obj: ${inputs.conversation_obj}
+    deployment_name: text-davinci-003
+    metric: detail
+    metric_definition: "1. Detail: The responses should be of appropriate length,\
+      \ providing enough information to answer the user's query satisfactorily across\
+      \ multiple aspects without being too verbose or too brief. They should avoid\
+      \ unnecessary details, irrelevant information or repetition that might overwhelm\
+      \ or bore the user. \n    - Too brief: The responses should not be too short,\
+      \ incomplete, or vague that they do not answer the user's query fully or clearly.\
+      \ They should not leave out important or relevant information that the user\
+      \ might need or want to know. They should not make the user ask more questions\
+      \ to get the information they seek. For example, if the user asks about the\
+      \ history of the Eiffel Tower, the response should not just say that it was\
+      \ built in 1889 or that it is a famous landmark. Instead, it should give a brief\
+      \ overview of its purpose, design, construction, inauguration, etc.\n    - Too\
+      \ verbose: The responses should not be too long, detailed, or complex that they\
+      \ confuse or overwhelm the user. They should not include unnecessary or irrelevant\
+      \ information that distracts or bores the user. They should not make the user\
+      \ lose interest or attention in the conversation. For example, if the user asks\
+      \ about the best time to visit Paris, the response should not give a detailed\
+      \ description of every month, season, weather, event, attraction, etc in Paris.\
+      \ Instead, it should give a concise summary of the pros and cons of different\
+      \ times of the year based on these factors."
+  name: llm_detail
+  provider: AzureOpenAI
+  source:
+    path: template.jinja2
+    type: code
+  type: llm
+- api: completion
+  connection: azure_open_ai_connection
+  inputs:
+    conversation_obj: ${inputs.conversation_obj}
+    deployment_name: text-davinci-003
+    metric: relevance
+    metric_definition: "1. Relevance: The responses should address the user's query\
+      \ accurately and comprehensively, taking into account the context of previous\
+      \ conversation along with time of conversation. They should not deviate from\
+      \ the topic, provide outdated or inaccurate information, or fail to answer the\
+      \ query. If the user seeks some information, the responses should aim to provide\
+      \ it as quickly and directly as possible.\n    - Irrelevant or inaccurate: The\
+      \ responses should not deviate from the topic, provide irrelevant or inconsistent,\
+      \ provide tangential information, or fail to answer the query. For example,\
+      \ If the user asks 'how is weather in London today', the response should not\
+      \ talk about the weather in New York or the weather in London a week ago which\
+      \ would be inconsistent  or make a general statement about weather or London\
+      \ which would be tangential information rather than answering the query directly\
+      \ or give no response at all or say it can't find the answer. Instead, it should\
+      \ give the current weather information for London.\n    - Usefulness: The responses\
+      \ should not only be relevant but also useful for the user's query. They should\
+      \ provide sufficient and specific information that satisfies the user's information\
+      \ need or helps them achieve their goal. For example, if the user asks for directions\
+      \ to a nearby hospital, the response should not give vague or incomplete directions\
+      \ such as 'go straight and turn left' or 'it's not far from here' which would\
+      \ be insufficient or say 'there are many hospitals in this area' or 'I don't\
+      \ know' which would be non-specific. Instead, it should give the name and address\
+      \ of the nearest hospital and the best way to reach there.\n    - Ignoring previous\
+      \ context: If the user asks a follow-up question based on a previous query,\
+      \ the response should not disregard the previous context or repeat the same\
+      \ information. For example, if the user asks 'what is the capital of France?'\
+      \ and then 'how far is it from Berlin?', the response should not ask 'how far\
+      \ is what from Berlin?' or say that 'Paris is the capital of France' or say\
+      \ it can't find the answer. Instead, it should use the previous query to infer\
+      \ that the user is interested in the distance between Paris and Berlin and give\
+      \ that information.\n    - Contradicting time of conversation: If the user asks\
+      \ a question that is time sensitive such as the current news, events or trends\
+      \ and the response mentions a specific date or time, then this date or time\
+      \ should be consistent with the date or time of the conversation. For example,\
+      \ if the conversation date is 22 March 2023 and user asks for weather today\
+      \ and the response says that weather on 22 March 2022 is rainy, then this is\
+      \ incorrect and should be penalized. However, if the response does not mention\
+      \ any date or time at all, then it should not be penalized.\n    - Delaying\
+      \ information: The responses should aim to provide the information that the\
+      \ user seeks as quickly and directly as possible and avoid asking unnecessary\
+      \ follow-up questions or giving minimal information. For example, if the user\
+      \ asks for something informative such as the best restaurants in a city, the\
+      \ response should not ask a follow-up question about the user's preference or\
+      \ give minimal information such as there are many good restaurants in the city\
+      \ as that postpones giving the relevant information. Instead, it should give\
+      \ examples of restaurants based on ratings, reviews, popularity, location, etc."
+  name: llm_relevance
+  provider: AzureOpenAI
+  source:
+    path: template.jinja2
+    type: code
+  type: llm
+- api: completion
+  connection: azure_open_ai_connection
+  inputs:
+    conversation_obj: ${inputs.conversation_obj}
+    deployment_name: text-davinci-003
+    metric: clarity
+    metric_definition: "1. Clarity: The responses should be clear and coherent with\
+      \ the user's messages and the previous responses. They should not be ambiguous,\
+      \ repetitive, or confusing and should be organized and structured in a way that\
+      \ the user can easily comprehend them. They should follow user's language or\
+      \ user's request for a particular language. \n    - Ambiguous or confusing:\
+      \ The responses should not be unclear, vague, or misleading for the user. They\
+      \ should not use words or phrases that have multiple meanings or interpretations\
+      \ or that are unfamiliar or uncommon for the user. They should not give contradictory\
+      \ or inconsistent information that might confuse the user. For example, if the\
+      \ user asks for the cheapest flights to Tokyo, the response should not only\
+      \ give the name of the airlines without mentioning the price, source, destination\
+      \ or date. Instead, it should give a clear comparison of the available options\
+      \ based on price or the cheapest option available along with the date, source\
+      \ and destination.\n    - Unorganized or unstructured: The responses should\
+      \ not be chaotic, messy, or disordered for the user. They should not present\
+      \ the information in a way that is hard to follow or understand for the user.\
+      \ They should use some organization or structure to present the information\
+      \ in a logical, coherent, and concise way. They should use bullet points, lists,\
+      \ headings, paragraphs, etc to make the information more readable and accessible\
+      \ for the user. For example, if the user asks about the benefits of meditation,\
+      \ the response should not give a random or chaotic list of benefits without\
+      \ any order, grouping or explanation. Instead, it should give a structured and\
+      \ logical presentation of the benefits based on categories, examples or evidence.\n\
+      \    - Language mismatch: The responses should not use a different language\
+      \ than the user's messages or the user's request for a particular language.\
+      \ They should not use words or phrases that are not in the user's language or\
+      \ that are not translated correctly or accurately. They should not ignore or\
+      \ disregard the user's language preference or request. For example, if the user's\
+      \ query is in French or user specifically asked for reply to be in French, the\
+      \ response should not be in English. Instead, it should be in French matching\
+      \ the user's language preference.\n    - Incoherent: The responses should not\
+      \ be illogical, inconsistent, or irrelevant with the user's messages and the\
+      \ previous responses. They should not change the topic abruptly or randomly\
+      \ or introduce new information that is not related to the user's query or the\
+      \ previous context. They should not contradict or repeat themselves or the user.\
+      \ They should also not be incoherent within themselves, meaning that the sentences\
+      \ or parts of the response should not be disconnected, disjointed, or nonsensical.\
+      \ They should have a proper transition, flow, and connection between the sentences\
+      \ or parts of the response."
+  name: llm_clarity
+  provider: AzureOpenAI
+  source:
+    path: template.jinja2
+    type: code
+  type: llm
