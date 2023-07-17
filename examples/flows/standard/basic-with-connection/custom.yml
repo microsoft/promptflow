@@ -4,6 +4,6 @@ type: custom
 configs:
   api_type: azure
   api_version: 2023-03-15-preview
+  api_base: https://<to-be-replaced>.openai.azure.com/
 secrets:  # must-have
   api_key: <to-be-replaced>
-  api_base: https://<to-be-replaced>.openai.azure.com/

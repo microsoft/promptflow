@@ -39,7 +39,7 @@ Currently, there are two connection types supported by LLM tool: "AzureOpenAI" a
 
 ```bash
 # replace your api key in azure_openai.yml before run this command
-pf connection create --file azure_openai.yml
+pf connection create --file azure_openai.yml --set api_key=<your_api_key>
 ```
 
 Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open_ai_connection`.

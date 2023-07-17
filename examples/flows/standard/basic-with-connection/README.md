@@ -22,9 +22,9 @@ Ensure you have created `basic_custom_connection` connection before.
 pf connection show -n basic_custom_connection
 ```
 
-Create connection if you haven't done that. Ensure you have put your azure open ai api_key & api_base in [custom.yml](custom.yml) file. 
+Create connection if you haven't done that.
 ```bash
-pf connection create -f custom.yml
+pf connection create -f custom.yml --set secrets.api_key=<your_api_key> configs.api_base=<your_api_base>
 ```
 
 ## Run flow in local

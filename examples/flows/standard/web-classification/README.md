@@ -24,8 +24,7 @@ pip install -r requirements.txt
 ### 1 Create Azure OpenAI or OpenAI connection
 
 ```bash
-# replace your api key in azure_openai.yml before run this command
-pf connection create --file azure_openai.yml
+pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 ### 2 Configure the flow with your connection
