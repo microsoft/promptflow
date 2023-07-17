@@ -13,3 +13,4 @@ suggest_title = data["suggest_title"].replace("\"", "")
 
 # Output the value of "suggest_title"
 print(suggest_title)
+

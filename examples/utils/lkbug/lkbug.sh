@@ -4,6 +4,8 @@
 
 command_to_run=$1
 
+echo "running $command_to_run"
+
 # Check if output file was provided; otherwise use a timestamp-based filename
 if [ -z "$2" ]; then
   output_file="output_$(date +%s).txt"
@@ -30,7 +32,7 @@ output_line=$(echo "$flow_output" | grep "output_path" -m 1)
 output_dir=$(echo "$output_line" | awk -F': ' '{print $2}'| sed 's/,$//' | sed 's/"//g')
 
 
-output_data="${output_dir}\\outputs.jsonl"
+output_data="${output_dir}/outputs.jsonl"
 #echo "$output_data"
 
 suggest_title=$(python ./parse_output.py ${output_data} | tr -d "\"\'\r\n")
@@ -63,7 +65,12 @@ SystemInfo="package information: $pakcage_info \r\n OS Information: $OSType"
 
 #echo "$description"
 
-item_cmd="az boards work-item create --title '$suggest_title' --type Bug --assigned-to $username --area 'Vienna\\Pipelines\\SDK' --iteration 'Vienna\\Gallium' --discussion '$description' --fields Microsoft.VSTS.TCM.SystemInfo='$SystemInfo' Microsoft.VSTS.TCM.ReproSteps='$command_to_run'"
+# repro_steps are html format, replace \n with <br>
+repro_steps=$(python ./prepare_repro_steps.py $output_file $output_data $pakcage_info | tr -d "\"\'" | sed -z 's/\n/<br>/g')
+
+echo "$repro_steps"
+
+item_cmd="az boards work-item create --title '$suggest_title' --type Bug --assigned-to $username --area 'Vienna\\Pipelines\\SDK' --iteration 'Vienna\\Gallium' --fields Microsoft.VSTS.TCM.SystemInfo='$SystemInfo' Microsoft.VSTS.TCM.ReproSteps='$repro_steps'"
 
 eval "$item_cmd"
 
