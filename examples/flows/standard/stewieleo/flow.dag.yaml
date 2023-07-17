@@ -104,7 +104,7 @@ nodes:
   name: llm_detail
   provider: AzureOpenAI
   source:
-    path: template.jinja2
+    path: template1.jinja2
     type: code
   type: llm
 - api: completion
@@ -161,7 +161,7 @@ nodes:
   name: llm_relevance
   provider: AzureOpenAI
   source:
-    path: template.jinja2
+    path: template2.jinja2
     type: code
   type: llm
 - api: completion
@@ -212,7 +212,7 @@ nodes:
   name: llm_clarity
   provider: AzureOpenAI
   source:
-    path: template.jinja2
+    path: template3.jinja2
     type: code
   type: llm
 - name: generate_score
