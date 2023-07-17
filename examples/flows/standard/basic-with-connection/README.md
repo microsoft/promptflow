@@ -24,6 +24,7 @@ pf connection show -n basic_custom_connection
 
 Create connection if you haven't done that.
 ```bash
+# Override keys with --set to avoid yaml file changes
 pf connection create -f custom.yml --set secrets.api_key=<your_api_key> configs.api_base=<your_api_base>
 ```
 
