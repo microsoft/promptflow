@@ -4,12 +4,13 @@ This repository contains example `YAML` files for creating `connection` using pr
 
 - To create a connection using any of the sample `YAML` files provided in this directory, execute following command:
 ```bash
-pf connection create -f custom.yml
+# Override keys with --set to avoid yaml file changes
+pf connection create -f custom.yml --set configs.key1='abc'
 ```
 
 - To create a custom connection using an `.env` file, execute following command:
 ```bash
-pf connection create -f .env --type custom --name custom_connection
+pf connection create -f .env --name custom_connection
 ```
 
 - To list the created connection, execute following command:
@@ -24,6 +25,7 @@ pf connection show --name custom_connection
 
 - To update a connection that in workspace, execute following command. Currently only a few fields(description, display_name) support update:
 ```bash
+# Override keys with --set to avoid yaml file changes
 pf connection update -n custom_connection --set configs.key1='abc'
 ```
 

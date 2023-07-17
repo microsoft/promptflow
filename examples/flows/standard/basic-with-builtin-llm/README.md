@@ -23,7 +23,8 @@ pf connection show -n azure_open_ai_connection
 
 Create connection if you haven't done that. Ensure you have put your azure open ai endpoint key in [azure_openai.yml](azure_openai.yml) file. 
 ```bash
-pf connection create -f azure_openai.yml
+# Override keys with --set to avoid yaml file changes
+pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 ## Run flow in local
