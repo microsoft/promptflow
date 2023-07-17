@@ -1,0 +1,29 @@
+inputs:
+  log_path:
+    type: string
+outputs:
+  suggest_title:
+    type: string
+    reference: ${error_summary.output}
+nodes:
+- name: read_log
+  type: python
+  source:
+    type: code
+    path: read_log.py
+  inputs:
+    log_path: ${inputs.log_path}
+- name: error_summary
+  type: llm
+  source:
+    type: code
+    path: error_details.jinja2
+  inputs:
+    deployment_name: text-davinci-003
+    max_tokens: '128'
+    temperature: '0.2'
+    errormsg: ${read_log.output}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
+node_variants: {}
