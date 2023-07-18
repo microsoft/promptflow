@@ -1,5 +1,5 @@
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow-sdk
+promptflow-sdk[builtins]
 prompt-flow-tools
 python-dotenv
 langchain
