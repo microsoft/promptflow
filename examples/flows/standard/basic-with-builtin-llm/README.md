@@ -36,11 +36,11 @@ pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<
 pf flow test --flow .
 ```
 
-### Batch run with multiple lines data
+### run with multiple lines data
 
-- create batch run
+- create run
 ```bash
-pf run create --flow . --type batch --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --stream
 ```
 
 - list and show run meta
@@ -55,6 +55,6 @@ pf run show --name "18fb849b-7da4-4be8-b989-be22c4b03a13"
 pf run show-details --name "18fb849b-7da4-4be8-b989-be22c4b03a13"
 
 # visualize run in browser
-pf run visualize "18fb849b-7da4-4be8-b989-be22c4b03a13"
+pf run visualize -n "18fb849b-7da4-4be8-b989-be22c4b03a13"
 ```
 
