@@ -1,0 +1,91 @@
+id: web_classification
+inputs:
+  url:
+    default: https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h
+    type: string
+name: Web Classification
+node_variants:
+  summarize_text_content:
+    default_variant_id: variant_0
+    variants:
+      variant_0:
+        node:
+          api: completion
+          connection: azure_open_ai_connection
+          inputs: &id001
+            deployment_name: text-davinci-003
+            max_tokens: '128'
+            temperature: '0.2'
+            text: ${fetch_text_content_from_url.output}
+          module: promptflow.tools.aoai
+          provider: AzureOpenAI
+          source: &id002
+            path: summarize_text_content.jinja2
+            type: code
+          type: llm
+      variant_1:
+        node:
+          api: completion
+          connection: azure_open_ai_connection
+          inputs:
+            deployment_name: text-davinci-003
+            max_tokens: '256'
+            temperature: '0.3'
+            text: ${fetch_text_content_from_url.output}
+          module: promptflow.tools.aoai
+          provider: AzureOpenAI
+          source:
+            path: summarize_text_content__variant_1.jinja2
+            type: code
+          type: llm
+nodes:
+- inputs:
+    url: ${inputs.url}
+  name: fetch_text_content_from_url
+  source:
+    path: fetch_text_content_from_url.py
+    type: code
+  type: python
+- api: completion
+  connection: azure_open_ai_connection
+  inputs: *id001
+  module: promptflow.tools.aoai
+  name: summarize_text_content
+  provider: AzureOpenAI
+  source: *id002
+  type: llm
+- inputs: {}
+  name: prepare_examples
+  source:
+    path: prepare_examples.py
+    type: code
+  type: python
+- api: completion
+  connection: azure_open_ai_connection
+  inputs:
+    deployment_name: text-davinci-003
+    examples: ${prepare_examples.output}
+    max_tokens: '128'
+    temperature: '0.2'
+    text_content: ${summarize_text_content.output}
+    url: ${inputs.url}
+  name: classify_with_llm
+  provider: AzureOpenAI
+  source:
+    path: classify_with_llm.jinja2
+    type: code
+  type: llm
+- inputs:
+    input_str: ${classify_with_llm.output}
+  name: convert_to_dict
+  source:
+    path: convert_to_dict.py
+    type: code
+  type: python
+outputs:
+  category:
+    reference: ${convert_to_dict.output.category}
+    type: string
+  evidence:
+    reference: ${convert_to_dict.output.evidence}
+    type: string
