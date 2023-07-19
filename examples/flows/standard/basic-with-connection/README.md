@@ -37,11 +37,11 @@ pf connection create -f custom.yml --set secrets.api_key=<your_api_key> configs.
 pf flow test --flow .
 ```
 
-### Batch run with multiple lines data
+### Run with multiple lines data
 
-- create batch run
+- create run
 ```bash
-pf run create --flow . --type batch --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --stream
 ```
 
 - list and show run meta

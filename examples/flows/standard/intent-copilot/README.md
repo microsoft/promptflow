@@ -26,14 +26,14 @@ TODO introduce the generated files
 pf connection create -f .env --name custom_connection
 ```
 
-3. run locally with single line input
+3. test flow locally with single line input
 ```bash
 pf flow test --flow . --input ./data/denormalized-flat.jsonl
 ```
 
-4. batch run with multiple lines input
+4. run with multiple lines input
 ```bash
-pf run create --flow . --type batch --data ./data
+pf run create --flow . --data ./data
 ```
 
 5. list/show 
@@ -51,7 +51,7 @@ pf run show-details -n "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" -r 3
 
 ```bash
 # create evaluation run
-pf run create --type evaluation --flow ../../evaluation/classification-accuracy-eval --data ./data --inputs-mapping "groundtruth=${data.intent},prediction=${batch_run.outputs.output}" --batch-run "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" 
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping "groundtruth=${data.intent},prediction=${run.outputs.output}" --run "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" 
 ```
 
 ```bash

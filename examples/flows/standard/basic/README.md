@@ -30,11 +30,11 @@ cat .env
 pf flow test --flow .
 ```
 
-### Batch run with multiple lines data
+### run with multiple lines data
 
-- create batch run
+- create run
 ```bash
-pf run create --flow . --type batch --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --stream
 ```
 
 - list and show run meta
