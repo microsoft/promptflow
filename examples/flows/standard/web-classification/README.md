@@ -90,7 +90,7 @@ pfazure run show-metrics --name d572ce0f-bd8b-48cb-960a-38dc662a63f0
 
 # create evaluation run
 pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "d572ce0f-bd8b-48cb-960a-38dc662a63f0"  --runtime demo-mir
-pfazure run create --file runuation.yml --runtime demo-mir --run d572ce0f-bd8b-48cb-960a-38dc662a63f0
+pfazure run create --file run_evaluation.yml --runtime demo-mir --run d572ce0f-bd8b-48cb-960a-38dc662a63f0
 
 pfazure run stream -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74
 pfazure run show -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74
