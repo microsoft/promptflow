@@ -56,6 +56,6 @@ pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
 pf run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
 
 # visualize run in browser
-pf run visualize "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
+pf run visualize -n "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
 ```
 

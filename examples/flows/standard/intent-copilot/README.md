@@ -64,7 +64,7 @@ pf run show-details -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" -r 3
 6. visualize
 ```bash
 # visualize in browser
-pf run visualize "6b3810a5-9bd7-41c1-bb45-1b296602783e" # your evaluation run name
+pf run visualize -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" # your evaluation run name
 ```
 
 ## Tuning node variant
