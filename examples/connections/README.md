@@ -25,8 +25,8 @@ pf connection show --name custom_connection
 
 - To update a connection that in workspace, execute following command. Currently only a few fields(description, display_name) support update:
 ```bash
-# Override keys with --set
-pf connection update -n custom_connection --set configs.key1='abc'
+# Update an existing connection with --set to override values
+pf connection update -n custom_connection --set configs.key1='abc' secrets.key2='xyz'
 ```
 
 - To delete a connection:
