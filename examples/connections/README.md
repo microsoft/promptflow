@@ -5,7 +5,10 @@ This repository contains example `YAML` files for creating `connection` using pr
 - To create a connection using any of the sample `YAML` files provided in this directory, execute following command:
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create -f custom.yml --set configs.key1='abc'
+# Update an azure open ai connection with a new api base
+pf connection update -n my_azure_open_ai_connection --set api_base='new_value'
+# Update a custom connection
+pf connection update -n my_custom_connection --set configs.key1='abc'
 ```
 
 - To create a custom connection using an `.env` file, execute following command:
