@@ -1,0 +1,79 @@
+name: Promptflow Tools Release
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+  workflow_dispatch:
+    inputs:
+      ReleaseType:
+        description: 'Official release or test'
+        required: true
+        default: "Release"
+        type: choice
+        options:
+          - "Release"
+          - "Test"
+      UploadAsLatest:
+        description: 'True to upload the distribution as latest'
+        required: true
+        default: "False"
+        type: choice
+        options:
+          - "True"
+          - "False"
+      SourceFolderName:
+        description: 'The source folder of the distribution'
+        required: true
+        default: "prompt-flow-tools"
+        type: string
+
+jobs:
+  approve_manual_release:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    name: Approve manual release
+    permissions:
+      issues: write
+    steps:
+      - name: Wait for approval
+        uses: trstringer/manual-approval@v1
+        timeout-minutes: 60
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: 16oeahr,chjinche,DaweiCai
+          minimum-approvals: 1
+          issue-title: "Request to release new prompt-flow-tools version."
+  
+  manual_release:
+    needs: approve_manual_release
+    uses: ./.github/workflows/wheel_distributing.yml
+    name: Manual release
+    with:
+      ReleaseType: ${{ inputs.ReleaseType }}
+      UploadAsLatest: ${{ inputs.UploadAsLatest }}
+      SourceFolderName: ${{ inputs.SourceFolderName }}
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
+
+  continuous_delivery_release:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    uses: ./.github/workflows/wheel_distributing.yml
+    name: Continuous delivery release
+    with:
+      ReleaseType: "Test"
+      UploadAsLatest: "True"
+      SourceFolderName: "prompt-flow-tools"
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
+
+  deploy_runtime_with_updated_tools_package:
+    needs: continuous_delivery_release
+    uses: ./.github/workflows/deploy_runtime.yml
+    name: Deploy runtime
+    with:
+      ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
+    secrets: inherit

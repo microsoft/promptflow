@@ -1,0 +1,122 @@
+from openai.error import OpenAIError
+
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, infer_error_code_from_class
+
+openai_error_code_ref_message = "Error reference: https://platform.openai.com/docs/guides/error-codes/api-errors"
+
+
+def to_openai_error_message(e: Exception) -> str:
+    ex_type = type(e).__name__
+    if str(e) == "<empty message>":
+        msg = "The api key is invalid or revoked. " \
+              "You can correct or regenerate the api key of your connection."
+        return f"OpenAI API hits {ex_type}: {msg}"
+    # for models that do not support the `functions` parameter.
+    elif "Unrecognized request argument supplied: functions" in str(e):
+        msg = "Current model does not support the `functions` parameter. " \
+              "Please use gpt-3.5-turbo, gpt-4, or gpt-4-32k."
+        return f"OpenAI API hits {ex_type}: {msg}"
+    else:
+        return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
+
+
+class WrappedOpenAIError(UserErrorException):
+    """Base exception raised when call openai api."""
+
+    def __init__(self, ex: OpenAIError, **kwargs):
+        super().__init__(target=ErrorTarget.TOOL, **kwargs)
+        self._ex = ex
+
+    @property
+    def message(self):
+        return str(to_openai_error_message(self._ex))
+
+    def to_dict(self, *, include_debug_info=False):
+        """Return a dict representation of the exception.
+
+        This dict specification corresponds to the specification of the Microsoft API Guidelines:
+        https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
+
+        Note that this dict representation the "error" field in the response body of the API.
+        The whole error response is then populated in another place outside of this class.
+        """
+
+        result = {
+            "code": infer_error_code_from_class(UserErrorException),
+            "message": self.message,
+            "messageFormat": "",
+            "messageParameters": {},
+            "innerError": {
+                "code": "OpenAIError",
+                "innerError": {
+                    "code": self._ex.__class__.__name__,
+                    "innerError": None
+                }
+            },
+        }
+        if include_debug_info:
+            result["debugInfo"] = self.debug_info
+
+        return result
+
+
+class ExceedMaxRetryTimes(WrappedOpenAIError):
+    """Base exception raised when retry exceeds max times."""
+
+    @property
+    def message(self):
+        return "Exceed max retry times. " + super().message
+
+
+class ToolValidationError(UserErrorException):
+    """Base exception raised when failed to validate tool."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class LLMError(UserErrorException):
+    """Base exception raised when failed to call openai api with non-OpenAIError."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class JinjaTemplateError(ToolValidationError):
+    """Base exception raised when failed to render jinja template."""
+    pass
+
+
+class ChatAPIInvalidRole(ToolValidationError):
+    """Base exception raised when failed to validate chat api role."""
+    pass
+
+
+class ChatAPIInvalidFunctions(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+    pass
+
+
+class FunctionCallNotSupportedInStreamMode(ToolValidationError):
+    """Base exception raised when use functions parameter in stream mode when call chat api."""
+
+    pass
+
+
+class InvalidConnectionType(ToolValidationError):
+    """Base exception raised when failed to pass invalid connection type."""
+    pass
+
+
+class SerpAPISystemError(SystemErrorException):
+    """Base exception raised when failed to call serp api with system error."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class SerpAPIUserError(UserErrorException):
+    """Base exception raised when failed to call serp api with user error."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)

@@ -1,0 +1,66 @@
+{
+  "azure_open_ai_connection": {
+    "type": "AzureOpenAIConnection",
+    "value": {
+      "api_key": "aoai-api-key",
+      "api_base": "aoai-api-endpoint",
+      "api_type": "azure",
+      "api_version": "2023-03-15-preview"
+    },
+    "module": "promptflow.connections"
+  },
+  "azure_content_safety_config": {
+    "type": "AzureContentSafetyConnection",
+    "value": {
+      "api_key": "content-safety-api-key",
+      "endpoint": "https://content-safety-canary-test.cognitiveservices.azure.com",
+      "api_version": "2023-04-30-preview"
+    },
+    "module": "promptflow.connections"
+  },
+  "serp_connection": {
+    "type": "SerpConnection",
+    "value": {
+      "api_key": "serpapi-api-key"
+    },
+    "module": "promptflow.connections"
+  },
+  "translate_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "api_key": "translator-api-key",
+      "api_endpoint": "https://api.cognitive.microsofttranslator.com/",
+      "api_region": "global"
+    },
+    "module": "promptflow.connections"
+  },
+  "custom_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "key1": "hey",
+      "key2": "val2"
+    },
+    "module": "promptflow.connections",
+    "secret_keys": [
+      "key1"
+    ]
+  },
+  "open_ai_connection": {
+    "type": "OpenAIConnection",
+    "value": {
+      "api_key": "openai-api-key",
+      "organization": "openai-api-org"
+    },
+    "module": "promptflow.connections"
+  },
+  "form_recognizer_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "api_key": "form-recognizer-api-key",
+      "api_endpoint": "https://westus2.api.cognitive.microsoft.com/",
+      "api_region": "global",
+      "api_version": "2023-07-31"
+    },
+    "module": "promptflow.connections"
+  }
+}

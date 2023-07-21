@@ -1,0 +1,19 @@
+{
+    "stagesToSkip": [],
+    "resources": {
+        "repositories": {
+            "self": {
+                "refName": "refs/heads/dev-branch"
+            }
+        }
+    },
+    "templateParameters": {
+        "deployEndpoint": "True"
+    },
+    "variables": {
+        "model-file": {
+            "value": "promptflow-gallery-tool-test.yaml",
+            "isSecret": false
+        }
+    }
+}

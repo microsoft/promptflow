@@ -1,0 +1,36 @@
+promptflow.tools.serpapi.SerpAPI.search:
+  name: Serp API
+  description: Use Serp API to obtain search results from a specific search engine.
+  inputs:
+    connection:
+      type:
+      - SerpConnection
+    engine:
+      default: google
+      enum:
+      - google
+      - bing
+      type:
+      - string
+    location:
+      default: ''
+      type:
+      - string
+    num:
+      default: '10'
+      type:
+      - int
+    query:
+      type:
+      - string
+    safe:
+      default: 'off'
+      enum:
+      - active
+      - 'off'
+      type:
+      - string
+  type: python
+  module: promptflow.tools.serpapi
+  class_name: SerpAPI
+  function: search
