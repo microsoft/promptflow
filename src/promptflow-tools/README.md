@@ -24,7 +24,7 @@
   Fill in the keys and secrets manually in `connections.json` when you run the tool test locally.
 * Write tools tests under [tests folder](tests/). Please also add a test to ensure that tool output is json serializable. Run below command to test:
     ```cmd
-    pytest src\prompt-flow-tools\tests\<your_tool_test>.py
+    pytest src\promptflow-tools\tests\<your_tool_test>.py
     ```
 * If your tool needs a connection with secrets in it, please use this [workflow](https://github.com/Azure/promptflow/actions/workflows/tool_secret_upload.yml) to upload secrets in key vault. The secrets you uploaded would be used in [Tool E2E CI](https://github.com/Azure/promptflow/actions/workflows/tool_tests.yml). Note that you only need to upload the SECRETS.
   > [!NOTE] After triggering the flow, kindly request approval from Promptflow Support before proceeding further.

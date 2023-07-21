@@ -5,7 +5,7 @@ from typing import Any, Match, cast
 
 from setuptools import find_namespace_packages, setup
 
-PACKAGE_NAME = "prompt-flow-tools"
+PACKAGE_NAME = "promptflow-tools"
 PACKAGE_FOLDER_PATH = "promptflow"
 
 # Version extraction inspired from 'requests'

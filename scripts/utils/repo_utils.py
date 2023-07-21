@@ -8,7 +8,7 @@ from pathlib import Path
 import requests
 
 scripts_dir = os.path.join(os.getcwd(), "scripts")
-index_url = "https://azuremlsdktestpypi.azureedge.net/test-promptflow/prompt-flow-tools"
+index_url = "https://azuremlsdktestpypi.azureedge.net/test-promptflow/promptflow-tools"
 ado_promptflow_repo_url_format = "https://{0}@dev.azure.com/msdata/Vienna/_git/PromptFlow"
 
 
@@ -64,7 +64,7 @@ def create_remote_branch_in_ADO_with_new_tool_pkg_version(
 
     new_lines = [
         f"--extra-index-url https://azuremlsdktestpypi.azureedge.net/{blob_prefix}\n",
-        f"prompt_flow_tools=={tool_pkg_version}\n",
+        f"promptflow_tools=={tool_pkg_version}\n",
     ]
     replace_lines_from_file_under_hint(
         file_path="docker_build/linux/extra_requirements.txt",

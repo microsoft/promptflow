@@ -5,8 +5,8 @@ from pathlib import Path
 from utils.secret_manager import get_secret, get_secret_client, list_secret_names
 
 CONNECTION_FILE_NAME = "connections.json"
-PROMPT_FLOW_TOOLS_ROOT = Path(__file__) / "../../src/prompt-flow-tools"
-CONNECTION_TPL_FILE_PATH = PROMPT_FLOW_TOOLS_ROOT / "connections.json.example"
+PROMPTFLOW_TOOLS_ROOT = Path(__file__) / "../../src/promptflow-tools"
+CONNECTION_TPL_FILE_PATH = PROMPTFLOW_TOOLS_ROOT / "connections.json.example"
 
 
 def fill_key_to_dict(template_dict, keys_dict):
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     template_dict = json.loads(open(CONNECTION_TPL_FILE_PATH.resolve().absolute(), "r").read())
-    file_path = (PROMPT_FLOW_TOOLS_ROOT / CONNECTION_FILE_NAME).resolve().absolute().as_posix()
+    file_path = (PROMPTFLOW_TOOLS_ROOT / CONNECTION_FILE_NAME).resolve().absolute().as_posix()
     print(f"file_path: {file_path}")
 
     if not args.local:

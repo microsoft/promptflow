@@ -5,7 +5,7 @@ import json
 import sys
 import os
 
-sys.path.append('src/prompt-flow-tools')
+sys.path.append('src/promptflow-tools')
 sys.path.append(os.getcwd())
 
 from utils.generate_tool_meta_utils import generate_python_tools_in_module_as_dict  # noqa: E402

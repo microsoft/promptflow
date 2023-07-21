@@ -1,10 +1,10 @@
 {
   "releases":{
     "internal":{
-      "prompt-flow-tools-release":{
+      "promptflow-tools-release":{
         "index": "internal-index-release"
       },
-      "prompt-flow-tools-test":{
+      "promptflow-tools-test":{
         "index": "internal-index-test"
       }
     }

@@ -6,7 +6,7 @@ on:
       ToolsPackageVersion:
         type: string
         required: true
-        description: 'Version of the prompt-flow-tools package to deploy'
+        description: 'Version of the promptflow-tools package to deploy'
 
 jobs:
   deploy-runtime:

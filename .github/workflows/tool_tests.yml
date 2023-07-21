@@ -21,12 +21,12 @@ jobs:
         id: check_changes  
         run: |  
           git fetch origin ${{ github.base_ref }} # Fetch the base branch  
-          CHANGED=$(git diff --name-only FETCH_HEAD..HEAD -- 'src/prompt-flow-tools/')  
+          CHANGED=$(git diff --name-only FETCH_HEAD..HEAD -- 'src/promptflow-tools/')  
           if [ -n "$CHANGED" ]; then  
-            echo "Changes detected in src/prompt-flow-tools/"  
+            echo "Changes detected in src/promptflow-tools/"  
             echo "run_tests=true"   >> $GITHUB_OUTPUT
           else  
-            echo "No changes detected in src/prompt-flow-tools/"  
+            echo "No changes detected in src/promptflow-tools/"
             echo "run_tests=false" >> $GITHUB_OUTPUT
           fi 
 
@@ -49,4 +49,4 @@ jobs:
       - name: Run tests
         if: steps.check_changes.outputs.run_tests == 'true'
         run: |
-          pytest ./src/prompt-flow-tools/tests
+          pytest ./src/promptflow-tools/tests

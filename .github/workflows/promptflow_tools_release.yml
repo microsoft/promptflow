@@ -26,7 +26,7 @@ on:
       SourceFolderName:
         description: 'The source folder of the distribution'
         required: true
-        default: "prompt-flow-tools"
+        default: "promptflow-tools"
         type: string
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
           secret: ${{ github.TOKEN }}
           approvers: 16oeahr,chjinche,DaweiCai
           minimum-approvals: 1
-          issue-title: "Request to release new prompt-flow-tools version."
+          issue-title: "Request to release new promptflow-tools version."
   
   manual_release:
     needs: approve_manual_release
@@ -64,7 +64,7 @@ jobs:
     with:
       ReleaseType: "Test"
       UploadAsLatest: "True"
-      SourceFolderName: "prompt-flow-tools"
+      SourceFolderName: "promptflow-tools"
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
 
