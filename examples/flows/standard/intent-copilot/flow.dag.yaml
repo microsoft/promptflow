@@ -13,7 +13,7 @@ nodes:
   type: prompt
   source:
     type: code
-    path: user_intent_zero_shot.md
+    path: user_intent_zero_shot.jinja2
 - inputs:
     customer_info: ${inputs.customer_info}
     history: ${inputs.history}
