@@ -1,0 +1,28 @@
+{
+  "releases":{
+    "internal":{
+      "prompt-flow-tools-release":{
+        "index": "internal-index-release"
+      },
+      "prompt-flow-tools-test":{
+        "index": "internal-index-test"
+      }
+    }
+  },
+  "targets": {
+    "internal-index-release": {
+      "storage_account": "azuremlsdktestpypi",
+      "packages_container": "repo",
+      "index_container": "wheels",
+      "blob_prefix": "promptflow",
+      "endpoint": "azuremlsdktestpypi.azureedge.net"
+    },
+    "internal-index-test": {
+      "storage_account": "azuremlsdktestpypi",
+      "packages_container": "repo",
+      "index_container": "wheels",
+      "blob_prefix": "test-promptflow",
+      "endpoint": "azuremlsdktestpypi.azureedge.net"
+    }
+  }
+}
