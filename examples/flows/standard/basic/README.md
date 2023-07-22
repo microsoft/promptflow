@@ -16,7 +16,7 @@ pip install -r requirements.txt
 ```
 
 ## Setup environment variables
-Ensure you have put your azure open ai endpoint key in .env file.
+Ensure you have put your azure open ai endpoint key in .env file. You can create one refer to this [example file](.env.example).
 ```bash
 cat .env
 ```
@@ -52,3 +52,23 @@ pf run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
 pf run visualize -n "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
 ```
 
+## Run flow in cloud
+- create run
+```bash
+pfazure run create --flow . --data ./data.jsonl --stream
+```
+
+- list and show run meta
+```bash
+# list created run
+pfazure run list -r 3
+
+# show specific run detail
+pfazure run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+
+# show output
+pfazure run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+
+# visualize run in browser
+pfazure run visualize -n "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
+```
