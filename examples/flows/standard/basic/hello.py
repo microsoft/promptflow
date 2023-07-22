@@ -34,11 +34,15 @@ def my_python_tool(
     if not "AZURE_OPENAI_API_KEY" in os.environ:
         # load environment variables from .env file
         load_dotenv()
+    
+    if not "AZURE_OPENAI_API_KEY" in os.environ:
+        raise Exception("Please sepecify environment variables: AZURE_OPENAI_API_KEY")
+
     conn = dict(
         api_key = os.environ["AZURE_OPENAI_API_KEY"],
         api_base = os.environ["AZURE_OPENAI_API_BASE"],
-        api_type = os.environ["AZURE_OPENAI_API_TYPE"],
-        api_version = os.environ["AZURE_OPENAI_API_VERSION"],
+        api_type = os.environ.get("AZURE_OPENAI_API_TYPE", "azure"),
+        api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2023-03-15-preview"),
     )
 
     # TODO: remove below type conversion after client can pass json rather than string.
