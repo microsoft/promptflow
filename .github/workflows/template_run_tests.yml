@@ -34,7 +34,6 @@ jobs:
   run_feature_tests:
     name: Run Coverage Tests
     runs-on: ubuntu-latest
-    timeout-minutes: ${{ parameters.timeoutInMinutes }}
     steps:
     - name: checkout
       uses: actions/checkout@v3.5.0

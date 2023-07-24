@@ -3,6 +3,7 @@ on:
   push:
     branches:
     - main
+    - user/yigao/sdk_move
 env:
   PYTHONPATH: "${{ github.workspace }}/src/promptflow"
   RUNTIME-CI-RESOURCE-GROUP: test-rg
