@@ -1,0 +1,336 @@
+{
+  "flow": {
+    "name": "qa_with_bing",
+    "nodes": [
+      {
+        "name": "infer_intent",
+        "tool": "intent",
+        "inputs": {
+          "logprobs": "",
+          "suffix": "",
+          "top_p": "",
+          "question": "${flow.question}",
+          "max_tokens": "256",
+          "deployment_name": "text-ada-001",
+          "temperature": "0.7"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "Bing_search_1",
+        "tool": "Bing.search",
+        "inputs": {
+          "query": "${infer_intent}",
+          "count": "10"
+        },
+        "connection": "bing_config"
+      },
+      {
+        "name": "combine_search_result_1",
+        "tool": "combine_search_result",
+        "inputs": {
+          "search_result": "${Bing_search_1}"
+        }
+      },
+      {
+        "name": "qa_with_sources",
+        "tool": "qa",
+        "inputs": {
+          "contexts": "${combine_search_result_1}",
+          "question": "${flow.question}",
+          "max_tokens": "256",
+          "deployment_name": "text-ada-001",
+          "temperature": "0.7"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "answer": {
+        "type": "object",
+        "reference": "${qa_with_sources}"
+      }
+    },
+    "tools": [
+      {
+        "name": "intent",
+        "description": "Infer user intent",
+        "type": "llm",
+        "inputs": {
+          "question": {
+            "name": "question",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "I want you to act as a web browser browsing an imaginary internet. Given an input question, infer user real intent.\nInput question: What is the name of US first president's wife?\nAnswer: US first president's wife\nInput question: I want to find the best restaurants nearby, could you recommend some?\nAnswer: best restaurants near me\nInput question: What are Elon Musk's wife doing?\nAnswer: Elon Musk's wife activities\nInput question: {{question}}\nAnswer: \n"
+      },
+      {
+        "name": "Bing.search",
+        "type": "python",
+        "inputs": {
+          "query": {
+            "type": [
+              "string"
+            ]
+          },
+          "answerCount": {
+            "type": [
+              "int"
+            ]
+          },
+          "cc": {
+            "type": [
+              "string"
+            ]
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          },
+          "freshness": {
+            "type": [
+              "string"
+            ]
+          },
+          "mkt": {
+            "type": [
+              "string"
+            ]
+          },
+          "offset": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "promote": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "responseFilter": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "safesearch": {
+            "type": [
+              "string"
+            ],
+            "default": "Moderate"
+          },
+          "setLang": {
+            "type": [
+              "string"
+            ],
+            "default": "en"
+          },
+          "textDecorations": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "textFormat": {
+            "type": [
+              "string"
+            ],
+            "default": "Raw"
+          }
+        },
+        "module": "promptflow.tools.bing",
+        "class_name": "Bing",
+        "function": "search",
+        "connection_type": [
+          "Bing"
+        ]
+      },
+      {
+        "name": "combine_search_result",
+        "type": "python",
+        "inputs": {
+          "search_result": {
+            "name": "search_result",
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "class_name": "combine_search_result",
+        "code": "from promptflow import tool\n@tool\ndef combine_search_result(search_result):\n    def format(doc: dict):\n        return f\"Content: {doc['Content']}\\nSource: {doc['Source']}\"\n\n    try:\n        context = []\n        for data in search_result[\"webPages\"][\"value\"]:\n            context.append({\n                \"Content\": data.get(\"snippet\", \"\"),\n                \"Source\": data.get(\"url\", \"\")\n            })\n        context_str = \"\\n\\n\".join([format(c) for c in context])\n        return context_str\n    except Exception as e:\n        print(\"search result is not valid, error: {}\".format(e))\n        return \"\"\n",
+        "function": "combine_search_result"
+      },
+      {
+        "name": "qa",
+        "description": "QA with sources",
+        "type": "llm",
+        "inputs": {
+          "question": {
+            "name": "question",
+            "type": [
+              "string"
+            ]
+          },
+          "contexts": {
+            "name": "contexts",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "You are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n{{contexts}}\nHuman: {{question}}\nChatbot:"
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "question": "When did OpenAI announced their chatgpt api?"
+    },
+    {
+      "question": "What was the name of the first astronaut to land on the moon?"
+    }
+  ],
+  "name": "QA with Bing variants",
+  "description": "This is a QA bot with Bing search variants",
+  "bulk_test_id": "scores_bulk_test0",
+  "eval_flow_run_id": "scores_bulk_test_run_id",
+  "baseline_variant_id": "variant0",
+  "eval_flow": {
+    "id": "QnA_relevance_scores",
+    "name": "QnA_relevance_scores",
+    "nodes": [
+      {
+        "name": "scores",
+        "tool": "compute_relevance_scores",
+        "inputs": {
+          "question": "${flow.question}",
+          "answers": "${flow.answer}",
+          "max_tokens": "256",
+          "deployment_name": "text-davinci-003",
+          "temperature": "0.7"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "results",
+        "tool": "compare_with_baseline",
+        "inputs": {
+          "scores": "${scores.output}",
+          "variant_ids": "${flow.variant_ids}"
+        }
+      },
+      {
+        "name": "aggregate_variants_results",
+        "tool": "aggregate_variants_results",
+        "inputs": {
+          "results": "${results.output}",
+          "line_number": "${flow.line_number}",
+          "variant_ids": "${flow.variant_ids}"
+        },
+        "reduce": true
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      },
+      "answer": {
+        "type": "list"
+      },
+      "line_number": {
+        "type": "int"
+      },
+      "variant_ids": {
+        "type": "list"
+      }
+    },
+    "outputs": {
+      "score": {
+        "type": "list",
+        "reference": "${aggregate_variants_results.output.score}"
+      },
+      "win_rate": {
+        "type": "list",
+        "reference": "${aggregate_variants_results.output.win_rate}"
+      }
+    },
+    "tools": [
+      {
+        "name": "compute_relevance_scores",
+        "type": "llm",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          },
+          "answers": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "description": "This is a llm tool",
+        "code": "I want you to act as a ranking system.\nYour task is to evaluate how well each answer in the given answer candidates matches a given question,\nand give relevance scores of all answers.\nScores range from 0 to 100, where higher scores indicate higher confidence in the answer.\n\nQuestion: Who is the actor of Iron Man?\nAnswers: [\"Matt Salinger\", \"Downey\", \"Iron\", \"Robert Downey\"]\nScores: [20, 50, 0, 100]\n\nQuestion: How does AutoGPT compare to ChatGPT?\nAnswers: [\"AutoGPT is designed to be fully autonomous\",\n\"AutoGPT and ChatGPT are both AI applications that use large language models to generate text.\",\n\"AutoGPT and ChatGPT are both AI applications that use large language models to generate text,\nbut they have some key differences.]\nScores: [80, 50, 90]\n\nQuestion: {{question}}\nAnswers: {{answers}}\nScores:\n"
+      },
+      {
+        "name": "compare_with_baseline",
+        "type": "python",
+        "inputs": {
+          "scores": {
+            "type": [
+              "string"
+            ]
+          },
+          "variant_ids": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef compare_with_baseline(scores: str, variant_ids: List[str]):\n    # need json load first because \"scores\" are generated by llm node.\n    import json\n    scores_list = json.loads(scores)\n    # we use variant0 as baseline.\n    baseline_score = scores_list[0]\n    results = {\n        variant_ids[0]: {\n            \"score\": baseline_score,\n            \"win_rate\": \"\"\n        }\n    }\n\n    for index in range(1, len(variant_ids)):\n        name = variant_ids[index]\n        if name not in results.keys():\n            results[name] = {}\n        score = scores_list[index]\n        results[name][\"score\"] = score\n        results[name][\"win_rate\"] = 1 if score >= baseline_score else 0\n\n    return results\n",
+        "function": "compare_with_baseline"
+      },
+      {
+        "name": "aggregate_variants_results",
+        "type": "python",
+        "inputs": {
+          "line_number": {
+            "type": [
+              "object"
+            ]
+          },
+          "variant_ids": {
+            "type": [
+              "object"
+            ]
+          },
+          "results": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_metric\n\n@tool\ndef aggregate_variants_results(line_number: List[int], variant_ids: List[List[str]], results: List[dict]):\n    aggregate_results = {}\n    for index in range(len(line_number)):\n        result = results[index]\n        for name, value in result.items():\n            if name not in aggregate_results.keys():\n                aggregate_results[name] = []\n\n            aggregate_results[name].append(value[\"score\"])\n\n    # average scores for each result and log score metrics\n    baseline_name = variant_ids[0][0]\n    for name, value in aggregate_results.items():\n        average_score = round(sum(value) / len(value), 1)\n        aggregate_results[name] = average_score\n        log_metric(\"score\", average_score, variant_id=name)\n\n    log_metric(\"average_score\", sum(aggregate_results.values()) / len(aggregate_results))\n\n    # log win rate metrics\n    baseline_average_score = aggregate_results[baseline_name]\n    for index in range(1, len(variant_ids[0])):\n        name = variant_ids[0][index]\n        if aggregate_results[name] >= baseline_average_score:\n            log_metric(\"win_rate\", 1, variant_id=name)\n        else:\n            log_metric(\"win_rate\", 0, variant_id=name)\n\n    # collect scores and win rates\n    scores, win_rates = [], []\n    for i in range(len(variant_ids)):\n        scores_i, win_rates_i = [], []\n        for j in range(len(variant_ids[i])):\n            variant_name = variant_ids[i][j]\n            scores_i.append(results[i][variant_name][\"score\"])\n            win_rates_i.append(results[i][variant_name][\"win_rate\"])\n        scores.append(scores_i)\n        win_rates.append(win_rates_i)\n\n    return {\"score\": scores, \"win_rate\": win_rates}\n",
+        "function": "aggregate_variants_results"
+      }
+    ]
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "flow": {
+    "name": "search_title_from_web",
+    "nodes": [
+      {
+        "name": "title_generation",
+        "tool": "title_generation_tool_1",
+        "inputs": {
+          "text": "${flow.text}",
+          "deployment_name": "text-ada-001"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "search_from_bing",
+        "tool": "promptflow.tools.bing.Bing.search",
+        "inputs": {
+          "query": "${title_generation}",
+          "count": 1
+        },
+        "connection": "bing_config"
+      },
+      {
+        "name": "extract_from_bing_result",
+        "tool": "extract_from_bing_result",
+        "inputs": {
+          "result_str": "${search_from_bing}"
+        }
+      }
+    ],
+    "inputs": {
+      "text": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "title": {
+        "type": "string",
+        "reference": "${extract_from_bing_result.name}"
+      },
+      "snippet": {
+        "type": "string",
+        "reference": "${extract_from_bing_result.snippet}"
+      },
+      "url": {
+        "type": "string",
+        "reference": "${extract_from_bing_result.url}"
+      }
+    },
+    "tools": [
+      {
+        "name": "title_generation_tool_1",
+        "type": "llm",
+        "description": "Generates a short title for the given Text",
+        "prompt_type": "completion",
+        "inputs": {
+          "text": {
+            "type": "string",
+            "name": "text"
+          }
+        },
+        "module": null,
+        "code": "Create a 10-word Title for the text below:\\n{{Text}}"
+      },
+      {
+        "name": "extract_from_bing_result",
+        "type": "python",
+        "description": "",
+        "inputs": {
+          "result_str": {
+            "type": "string",
+            "name": "result_str"
+          }
+        },
+        "module": null,
+        "code": "from promptflow import tool\nimport json\n@tool\ndef extract_from_bing_result(result_str: str) -> dict:\n    return {'name': 'zzz', 'snippet': 'snippet', 'url': 'url'}\n"
+      },
+      {
+        "name": "promptflow.tools.bing.Bing.search",
+        "type": "python",
+        "inputs": {
+          "query": {
+            "type": [
+              "string"
+            ]
+          },
+          "answerCount": {
+            "type": [
+              "int"
+            ]
+          },
+          "cc": {
+            "type": [
+              "string"
+            ]
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          },
+          "freshness": {
+            "type": [
+              "string"
+            ]
+          },
+          "mkt": {
+            "type": [
+              "string"
+            ]
+          },
+          "offset": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "promote": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "responseFilter": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "safesearch": {
+            "type": [
+              "string"
+            ],
+            "default": "Moderate"
+          },
+          "setLang": {
+            "type": [
+              "string"
+            ],
+            "default": "en"
+          },
+          "textDecorations": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "textFormat": {
+            "type": [
+              "string"
+            ],
+            "default": "Raw"
+          }
+        },
+        "module": "promptflow.tools.bing",
+        "class_name": "Bing",
+        "function": "search",
+        "connection_type": [
+          "Bing"
+        ]
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "text": "Jupiter is primarily composed of hydrogen, but helium constitutes one-quarter of its mass and one-tenth of its volume. It probably has a rocky core of heavier elements, but, like the other giant planets in the Solar System, it lacks a well-defined solid surface. The ongoing contraction of Jupiter's interior generates more heat than it receives from the Sun. Because of its rapid rotation, the planet's shape is an oblate spheroid: it has a slight but noticeable bulge around the equator. The outer atmosphere is divided into a series of latitudinal bands, with turbulence and storms along their interacting boundaries. A prominent result of this is the Great Red Spot, a giant storm which has been observed since at least 1831."
+    },
+    {
+      "text": "An Azure Machine Learning component is a self-contained piece of code that does one step in a machine learning pipeline. A component is analogous to a function - it has a name, Inputs Outputs, and a body. Components are the building blocks of the Azure Machine Learning pipelines."
+    },
+    {
+      "text": "Jupiter is primarily composed of hydrogen, but helium constitutes one-quarter of its mass and one-tenth of its volume. It probably has a rocky core of heavier elements, but, like the other giant planets in the Solar System, it lacks a well-defined solid surface. The ongoing contraction of Jupiter's interior generates more heat than it receives from the Sun. Because of its rapid rotation, the planet's shape is an oblate spheroid: it has a slight but noticeable bulge around the equator. The outer atmosphere is divided into a series of latitudinal bands, with turbulence and storms along their interacting boundaries. A prominent result of this is the Great Red Spot, a giant storm which has been observed since at least 1831."
+    },
+    {
+      "text": "An Azure Machine Learning component is a self-contained piece of code that does one step in a machine learning pipeline. A component is analogous to a function - it has a name, Inputs Outputs, and a body. Components are the building blocks of the Azure Machine Learning pipelines."
+    }
+  ],
+  "node_name": "title_generation"
+}

@@ -1,0 +1,232 @@
+{
+  "flowName": "clone - langchain_math",
+  "flowType": "Default",
+  "description": "",
+  "tags": {},
+  "flow": {
+    "flowGraph": {
+      "nodes": [
+        {
+          "name": "call_llm_math",
+          "tool": "Python_ahqx",
+          "inputs": {
+            "question": "${inputs.question}",
+            "conn": "advanced_aoai_eastus"
+          },
+          "reduce": false
+        },
+        {
+          "name": "generate_examples",
+          "tool": "Python_a1xy",
+          "inputs": {},
+          "reduce": false
+        },
+        {
+          "name": "generate_code",
+          "tool": "LLM_gwk0",
+          "inputs": {
+            "deployment_name": "text-davinci-003",
+            "suffix": "",
+            "max_tokens": "1024",
+            "temperature": "1",
+            "top_p": "1.0",
+            "logprobs": "",
+            "echo": "False",
+            "stop": "",
+            "presence_penalty": "0",
+            "frequency_penalty": "0",
+            "best_of": "1",
+            "logit_bias": "",
+            "examples": "${generate_examples.output}",
+            "question": "${inputs.question}"
+          },
+          "provider": "AzureOpenAI",
+          "connection": "advanced_aoai_eastus",
+          "api": "completion",
+          "module": "promptflow.tools.aoai",
+          "reduce": false
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string",
+          "is_chat_input": false
+        }
+      },
+      "outputs": {
+        "code": {
+          "type": "string",
+          "reference": "${generate_code.output}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        },
+        "answer": {
+          "type": "string",
+          "reference": "${call_llm_math.output.answer}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        }
+      },
+      "tools": [
+        {
+          "name": "Python_ahqx",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            },
+            "conn": {
+              "name": "conn",
+              "type": [
+                "AzureOpenAIConnection"
+              ]
+            }
+          },
+          "lkgCode": "from promptflow import tool\nfrom langchain import LLMMathChain\nimport openai\nfrom langchain.llms import AzureOpenAI\nfrom promptflow.connections import AzureOpenAIConnection\nfrom promptflow.core.langchain_handler import get_langchain_callback_manager\n\n@tool\ndef call_llm_math(question: str, conn: AzureOpenAIConnection) -> str:\n  openai.api_type = \"azure\"\n  openai.api_version = conn.api_version\n  openai.api_key = conn.api_key\n  openai.api_base = conn.api_base\n\n  llm = AzureOpenAI(temperature=0, deployment_name=\"text-davinci-003\",openai_api_key=conn.api_key)\n  callback = get_langchain_callback_manager()\n  llm_math = LLMMathChain(llm=llm, verbose=True, callback_manager=callback)\n\n  return llm_math(question)",
+          "code": "from promptflow import tool\nfrom langchain import LLMMathChain\nimport openai\nfrom langchain.llms import AzureOpenAI\nfrom promptflow.connections import AzureOpenAIConnection\nfrom promptflow.core.langchain_handler import get_langchain_callback_manager\n\n@tool\ndef call_llm_math(question: str, conn: AzureOpenAIConnection) -> str:\n  openai.api_type = \"azure\"\n  openai.api_version = conn.api_version\n  openai.api_key = conn.api_key\n  openai.api_base = conn.api_base\n\n  llm = AzureOpenAI(temperature=0, deployment_name=\"text-davinci-003\",openai_api_key=conn.api_key)\n  callback = get_langchain_callback_manager()\n  llm_math = LLMMathChain(llm=llm, verbose=True, callback_manager=callback)\n\n  return llm_math(question)",
+          "function": "call_llm_math",
+          "is_builtin": false
+        },
+        {
+          "name": "Python_a1xy",
+          "type": "python",
+          "lkgCode": "from promptflow import tool\n\nclass attrdict(dict):\n    def __init__(self, *args, **kwargs):\n        dict.__init__(self, *args, **kwargs)\n        self.__dict__ = self\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef gen_examples() -> str:\n  return [\n    attrdict(question=\"What is 37593 * 67?\", code=\"print(37593 * 67)\"), \n    attrdict(question=\"anet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?\", code=\"print((16-3-4)*2)\"),\n    attrdict(question=\"How many of the integers between 0 and 99 inclusive are divisible by 8?\", code=\"print(len([i for i in range(100) if i % 8 == 0]))\"),\n    attrdict(question=\"A robe takes 2 bolts of blue fiber and half that much white fiber. How many bolts in total does it take?\", code=\"print(2 + 2/2)\")\n  ]",
+          "code": "from promptflow import tool\n\nclass attrdict(dict):\n    def __init__(self, *args, **kwargs):\n        dict.__init__(self, *args, **kwargs)\n        self.__dict__ = self\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef gen_examples() -> str:\n  return [\n    attrdict(question=\"What is 37593 * 67?\", code=\"print(37593 * 67)\"), \n    attrdict(question=\"anet's ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?\", code=\"print((16-3-4)*2)\"),\n    attrdict(question=\"How many of the integers between 0 and 99 inclusive are divisible by 8?\", code=\"print(len([i for i in range(100) if i % 8 == 0]))\"),\n    attrdict(question=\"A robe takes 2 bolts of blue fiber and half that much white fiber. How many bolts in total does it take?\", code=\"print(2 + 2/2)\")\n  ]",
+          "function": "gen_examples",
+          "is_builtin": false
+        },
+        {
+          "name": "LLM_gwk0",
+          "type": "llm",
+          "inputs": {
+            "examples": {
+              "name": "examples",
+              "type": [
+                "string"
+              ]
+            },
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "lkgCode": "I'd like you to generate Python code to answer question. At the end of the code you will print out the answer directly.\n\n{% for ex in examples %}\nQUESTION: {{ex.question}}\nCODE: {{ex.code}}\n\n{% endfor %}\n\nQUESTION: {{ question }}\nCODE: ",
+          "code": "I'd like you to generate Python code to answer question. At the end of the code you will print out the answer directly.\n\n{% for ex in examples %}\nQUESTION: {{ex.question}}\nCODE: {{ex.code}}\n\n{% endfor %}\n\nQUESTION: {{ question }}\nCODE: ",
+          "is_builtin": false
+        }
+      ]
+    },
+    "nodeVariants": {
+      "call_llm_math": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "call_llm_math",
+              "tool": "Python_ahqx",
+              "inputs": {
+                "question": "${inputs.question}",
+                "conn": "advanced_aoai_eastus"
+              },
+              "reduce": false
+            }
+          }
+        }
+      },
+      "generate_examples": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "generate_examples",
+              "tool": "Python_a1xy",
+              "inputs": {},
+              "reduce": false
+            }
+          }
+        }
+      },
+      "generate_code": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "generate_code",
+              "tool": "LLM_gwk0",
+              "inputs": {
+                "deployment_name": "text-davinci-003",
+                "suffix": "",
+                "max_tokens": "1024",
+                "temperature": "1",
+                "top_p": "1.0",
+                "logprobs": "",
+                "echo": "False",
+                "stop": "",
+                "presence_penalty": "0",
+                "frequency_penalty": "0",
+                "best_of": "1",
+                "logit_bias": "",
+                "examples": "${generate_examples.output}",
+                "question": "${inputs.question}"
+              },
+              "provider": "AzureOpenAI",
+              "connection": "advanced_aoai_eastus",
+              "api": "completion",
+              "module": "promptflow.tools.aoai",
+              "reduce": false
+            }
+          }
+        }
+      }
+    },
+    "flowGraphLayout": {
+      "nodeLayouts": {
+        "inputs": {
+          "x": 322,
+          "y": 62,
+          "index": -1
+        },
+        "outputs": {
+          "x": 332,
+          "y": 262,
+          "index": -1
+        },
+        "call_llm_math": {
+          "x": 332,
+          "y": 162,
+          "height": 50,
+          "index": 0
+        },
+        "generate_examples": {
+          "x": 27,
+          "y": 62,
+          "height": 50,
+          "index": 2
+        },
+        "generate_code": {
+          "x": 27,
+          "y": 162,
+          "height": 50,
+          "index": 1
+        }
+      }
+    }
+  },
+  "flowRunSettings": {
+    "runtimeName": "default-mir",
+    "batch_inputs": [
+      {
+        "question": "What is 13 raised to the .3432 power?"
+      }
+    ]
+  },
+  "flowRunResult": {
+    "flow_runs": [],
+    "node_runs": []
+  }
+}

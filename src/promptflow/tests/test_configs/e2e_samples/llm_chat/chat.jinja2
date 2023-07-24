@@ -1,0 +1,12 @@
+system:
+You are a helpful assistant.
+
+{% for item in chat_history %}
+user:
+{{item.inputs.message}}
+assistant:
+{{item.outputs.response}}
+{% endfor %}
+
+user:
+{{message}}

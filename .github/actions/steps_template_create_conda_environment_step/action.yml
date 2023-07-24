@@ -1,0 +1,52 @@
+name: pipelines_templates_steps_template_create_conda_environment_step
+inputs:
+  condaEnvironmentFilePath:
+    required: false
+    default: "./pipelines/configs/release-env.yaml"
+    type: string
+  condaEnvironmentName:
+    required: false
+    default: "$(Build.BuildId)"
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Add conda to PATH
+    run: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+    shell: powershell
+  - name: Initialize conda for powershell and sub-shell
+    run: |-
+      # Initialize conda: it creates the powershell profile script
+      conda init powershell
+      conda shell.bash hook
+      # Load the profile for current session: it activates (base) environment
+      # Invoke-Expression -Command "$env:userprofile\Documents\WindowsPowerShell\profile.ps1"
+    shell: powershell
+  - name: Create Conda environment
+    run: |-
+      echo Remove an existing conda environment: ${{ inputs.condaEnvironmentName }}
+      conda remove --name ${{ inputs.condaEnvironmentName }} --all --yes || echo 'conda environment ${{ inputs.condaEnvironmentName }} removed'
+      echo Creating a specified conda environment: ${{ inputs.condaEnvironmentName }}
+      conda env create --file "${{ inputs.condaEnvironmentFilePath }}" -v -n ${{ inputs.condaEnvironmentName }}
+    shell: bash
+  - name: Install extra packages
+    if: success()
+    run: |-
+      eval "$(conda shell.bash hook)"
+      conda activate ${{ inputs.condaEnvironmentName }}
+      if [[ "${{ runner.os }}" = "Windows_NT" ]]; then
+        LIST=$(echo "3.6 3.7 3.8" | tr '\n' ' ')
+        PYTHON_VERSION=$(python -c "import platform; major, minor, patch = platform.python_version_tuple(); print('{}.{}'.format(major,minor))")
+        echo '##############################'
+        echo "Python version : $PYTHON_VERSION found"
+        echo '##############################'
+        VALUE="$PYTHON_VERSION"
+        SEARCH=$(echo "$LIST" | xargs -n1 echo | grep -E "^$VALUE\$")
+        echo "Outcome of SEARCH: $SEARCH"
+        if [[ ! -z "$SEARCH" ]]; then
+          pip install pywin32==227
+        else
+          pip install --upgrade pywin32==302
+        fi;
+      fi;
+    shell: bash

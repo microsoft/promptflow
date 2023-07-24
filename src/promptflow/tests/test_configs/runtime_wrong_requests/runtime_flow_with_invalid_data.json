@@ -1,0 +1,251 @@
+{
+    "flow": {
+        "id": "qa_with_bing",
+        "name": "qa_with_bing",
+        "nodes": [
+            {
+                "name": "infer_intent",
+                "tool": "intent",
+                "inputs": {
+                    "logprobs": {
+                        "value_type": "Literal"
+                    },
+                    "suffix": {
+                        "value_type": "Literal"
+                    },
+                    "top_p": {
+                        "value_type": "Literal"
+                    },
+                    "question": {
+                        "value": "question",
+                        "value_type": "FlowInput",
+                        "prefix": "flow."
+                    },
+                    "max_tokens": {
+                        "value": "256",
+                        "value_type": "Literal"
+                    },
+                    "deployment_name": {
+                        "value": "text-ada-001",
+                        "value_type": "Literal"
+                    },
+                    "temperature": {
+                        "value": "0.7",
+                        "value_type": "Literal"
+                    }
+                },
+                "api": "completion",
+                "provider": "AzureOpenAI",
+                "connection": "azure_open_ai_connection"
+            },
+            {
+                "name": "Bing_search_1",
+                "tool": "Bing.search",
+                "inputs": {
+                    "query": {
+                        "value": "infer_intent",
+                        "value_type": "NodeReference",
+                        "section": "output"
+                    },
+                    "count": {
+                        "value": "10",
+                        "value_type": "Literal"
+                    }
+                },
+                "connection": "bing_config"
+            },
+            {
+                "name": "combine_search_result_1",
+                "tool": "combine_search_result",
+                "inputs": {
+                    "search_result": {
+                        "value": "Bing_search_1",
+                        "value_type": "NodeReference",
+                        "section": "output"
+                    }
+                }
+            },
+            {
+                "name": "qa_with_sources",
+                "tool": "qa",
+                "inputs": {
+                    "contexts": {
+                        "value": "combine_search_result_1",
+                        "value_type": "NodeReference",
+                        "section": "output"
+                    },
+                    "question": {
+                        "value": "question",
+                        "value_type": "FlowInput",
+                        "prefix": "flow."
+                    },
+                    "max_tokens": {
+                        "value": "256",
+                        "value_type": "Literal"
+                    },
+                    "deployment_name": {
+                        "value": "text-ada-001",
+                        "value_type": "Literal"
+                    },
+                    "temperature": {
+                        "value": "0.5",
+                        "value_type": "Literal"
+                    }
+                },
+                "api": "completion",
+                "provider": "AzureOpenAI",
+                "connection": "azure_open_ai_connection"
+            }
+        ],
+        "inputs": {
+            "question": {
+                "type": "string"
+            }
+        },
+        "outputs": {
+            "answer": {
+                "type": "object",
+                "reference": {
+                    "value": "qa_with_sources",
+                    "value_type": "NodeReference",
+                    "section": "output"
+                }
+            }
+        },
+        "tools": [
+            {
+                "name": "intent",
+                "type": "llm",
+                "inputs": {
+                    "question": {
+                        "type": [
+                            "string"
+                        ]
+                    }
+                },
+                "description": "Infer user intent",
+                "code": ""
+            },
+            {
+                "name": "Bing.search",
+                "type": "python",
+                "inputs": {
+                    "query": {
+                        "type": [
+                            "string"
+                        ]
+                    },
+                    "answerCount": {
+                        "type": [
+                            "int"
+                        ]
+                    },
+                    "cc": {
+                        "type": [
+                            "string"
+                        ]
+                    },
+                    "count": {
+                        "type": [
+                            "int"
+                        ],
+                        "default": "10"
+                    },
+                    "freshness": {
+                        "type": [
+                            "string"
+                        ]
+                    },
+                    "mkt": {
+                        "type": [
+                            "string"
+                        ]
+                    },
+                    "offset": {
+                        "type": [
+                            "int"
+                        ],
+                        "default": "0"
+                    },
+                    "promote": {
+                        "type": [
+                            "list"
+                        ],
+                        "default": "[]"
+                    },
+                    "responseFilter": {
+                        "type": [
+                            "list"
+                        ],
+                        "default": "[]"
+                    },
+                    "safesearch": {
+                        "type": [
+                            "string"
+                        ],
+                        "default": "Moderate"
+                    },
+                    "setLang": {
+                        "type": [
+                            "string"
+                        ],
+                        "default": "en"
+                    },
+                    "textDecorations": {
+                        "type": [
+                            "bool"
+                        ],
+                        "default": "False"
+                    },
+                    "textFormat": {
+                        "type": [
+                            "string"
+                        ],
+                        "default": "Raw"
+                    }
+                },
+                "module": "promptflow.tools.bing",
+                "class_name": "Bing",
+                "function": "search",
+                "connection_type": [
+                    "Bing"
+                ]
+            },
+            {
+                "name": "combine_search_result",
+                "type": "python",
+                "inputs": {
+                    "search_result": {
+                        "type": [
+                            "object"
+                        ]
+                    }
+                },
+                "class_name": "combine_search_result",
+                "code": "n",
+                "function": "combine_search_result"
+            },
+            {
+                "name": "qa",
+                "type": "llm",
+                "inputs": {
+                    "question": {
+                        "type": [
+                            "string"
+                        ]
+                    },
+                    "contexts": {
+                        "type": [
+                            "string"
+                        ]
+                    }
+                },
+                "description": "QA with sources",
+                "code": ""
+            }
+        ]
+    },
+    "batch_data_input": {
+
+    }
+}

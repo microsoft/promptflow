@@ -1,0 +1,6 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: web_classificiation_flow_3
+display_name: Web Classification
+type: standard
+description: Create flows that use large language models to classify URLs into multiple categories.
+path: ./flow.dag.yaml

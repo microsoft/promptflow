@@ -1,0 +1,43 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "class_globals_node",
+          "tool": "class_globals_tool",
+          "inputs": {
+            "v": "some_val"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {},
+      "tools": [
+        {
+          "name": "class_globals_tool",
+          "type": "python",
+          "inputs": {
+            "v": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "source": "common_tools/class_globals.py",
+          "function": "class_globals_tool"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "Who is elon mask"
+      }
+    ],
+    "name": "flow_corner_case_tools",
+    "description": "This is a flow for testing dummy corner cases."
+  }

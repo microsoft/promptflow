@@ -1,0 +1,257 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${flow.question}"
+          }
+        },
+        {
+          "name": "dummy_extract_1",
+          "tool": "dummy_extract",
+          "inputs": {
+            "item": "${dummy_search_1}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${dummy_extract_1}"
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "code": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\",\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "function": "dummy_search"
+        },
+        {
+          "name": "dummy_extract",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "class_name": "dummy_extract",
+          "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return item['answer']\n",
+          "function": "dummy_extract"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "chatgpt",
+        "groundtruth": "Answer to chatgpt!"
+      },
+      {
+        "question": "GPT4",
+        "groundtruth": "Answer to GPT4!"
+      },
+      {
+        "question": "GPT3",
+        "groundtruth": "Answer to GPT3!"
+      }
+    ],
+    "baseline_variant_id": "variant0",
+    "bulk_test_id": "dummy_bulk_test_id",
+    "eval_flow_run_id": "dummy_eval_flow_run_id2",
+    "eval_flow_inputs_mapping": {
+      "groundtruth": "data.question",
+      "question": "data.question",
+      "answer": "output.answer"
+    },
+    "eval_flow": {
+        "id": "basic_eval_flow_id",
+        "name": "basic_eval_flow",
+        "nodes": [
+            {
+                "name": "calculate_similarity",
+                "tool": "calculate_similarity",
+                "inputs": {
+                    "conn": "bing_connection",
+                    "val1": "${flow.groundtruth}",
+                    "val2": "${flow.answer}"
+                }
+            },
+            {
+                "name": "calculate_accuracy",
+                "tool": "calculate_accuracy",
+                "reduce": true,
+                "inputs": {
+                    "variant_ids": "${flow.variant_id}",
+                    "similarities": "${calculate_similarity.output}"
+                }
+            }
+        ],
+        "inputs": {
+            "question": {
+                "type": "string"
+            },
+            "groundtruth": {
+                "type": "string"
+            },
+            "variant_id": {
+                "type": "string"
+            },
+            "answer": {
+                "type": "string"
+            }
+        },
+        "outputs": {
+            "similarity": {
+                "type": "double",
+                "reference": "${calculate_similarity.output}"
+            }
+        },
+        "tools": [
+          {
+            "name": "Bing.search",
+            "type": "python",
+            "inputs": {
+              "query": {
+                "type": [
+                  "string"
+                ]
+              },
+              "answerCount": {
+                "type": [
+                  "int"
+                ]
+              },
+              "cc": {
+                "type": [
+                  "string"
+                ]
+              },
+              "count": {
+                "type": [
+                  "int"
+                ],
+                "default": "10"
+              },
+              "freshness": {
+                "type": [
+                  "string"
+                ]
+              },
+              "mkt": {
+                "type": [
+                  "string"
+                ]
+              },
+              "offset": {
+                "type": [
+                  "int"
+                ],
+                "default": "0"
+              },
+              "promote": {
+                "type": [
+                  "list"
+                ],
+                "default": "[]"
+              },
+              "responseFilter": {
+                "type": [
+                  "list"
+                ],
+                "default": "[]"
+              },
+              "safesearch": {
+                "type": [
+                  "string"
+                ],
+                "default": "Moderate"
+              },
+              "setLang": {
+                "type": [
+                  "string"
+                ],
+                "default": "en"
+              },
+              "textDecorations": {
+                "type": [
+                  "bool"
+                ],
+                "default": "False"
+              },
+              "textFormat": {
+                "type": [
+                  "string"
+                ],
+                "default": "Raw"
+              }
+            },
+            "module": "promptflow.tools.bing",
+            "class_name": "Bing",
+            "function": "search",
+            "connection_type": [
+              "Bing"
+            ]
+          },
+          {
+            "name": "calculate_similarity",
+            "type": "python",
+            "inputs": {
+              "conn": {
+                "type": [
+                  "BingConnection"
+                ]
+              },
+              "val1": {
+                "type": [
+                  "string"
+                ]
+              },
+              "val2": {
+                "type": [
+                  "string"
+                ]
+              }
+            },
+            "code": "from typing import List, Mapping, Dict\nfrom promptflow.connections import BingConnection\nfrom promptflow import tool, log_metric\n\n@tool\ndef calculate_similarity(\n    conn,\n    val1: str,\n    val2: str,\n) -> float:\n    assert isinstance(conn, BingConnection)\n    return 1.0 if val1 == val2 else 0.0\n",
+            "function": "calculate_similarity"
+          },
+          {
+            "name": "calculate_accuracy",
+            "type": "python",
+            "inputs": {
+              "variant_ids": {
+                "type": [
+                  "list"
+                ]
+              },
+              "similarities": {
+                "type": [
+                  "list"
+                ]
+              }
+            },
+            "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_metric\n\n@tool\ndef calculate_accuracy(variant_ids: list, similarities: list):\n    variants = set(variant_ids)\n    total = {v: 0 for v in variants}\n    success = {v: 0 for v in variants}\n    for v, s in zip(variant_ids, similarities):\n        total[v] += 1\n        success[v] += s\n    accuracies = {v: success[v] / total[v] for v in variants}\n    for v in variants:\n        log_metric(f\"accuracy\", success[v] / total[v], variant_id=v)\n    return accuracies\n",
+            "function": "calculate_accuracy"
+          }
+        ]
+    }
+  }

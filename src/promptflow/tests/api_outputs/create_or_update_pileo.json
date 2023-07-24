@@ -1,0 +1,323 @@
+{
+  "eTag": {},
+  "flow": {
+    "flowGraph": {
+      "nodes": [
+        {
+          "name": "load_conversation",
+          "tool": "Python_2ld8",
+          "inputs": {
+            "conversation_id": "${inputs.convId}",
+            "sydney": "Sydney"
+          },
+          "reduce": false
+        },
+        {
+          "name": "pileo_md",
+          "tool": "Prompt_pmrs",
+          "inputs": {},
+          "reduce": false
+        },
+        {
+          "name": "PILeo_payload",
+          "tool": "Python_wytd",
+          "inputs": {
+            "conv": "${load_conversation.output}",
+            "PI_PROMPT": "${pileo_md.output}"
+          },
+          "reduce": false
+        },
+        {
+          "name": "run_pileo",
+          "tool": "LLM_xqf2",
+          "inputs": {
+            "deployment_name": "gpt-4",
+            "temperature": "${PILeo_payload.output.temperature}",
+            "top_p": "${PILeo_payload.output.top_p}",
+            "stop": "",
+            "max_tokens": "${PILeo_payload.output.max_tokens}",
+            "presence_penalty": "0",
+            "frequency_penalty": "${PILeo_payload.output.frequency_penalty}",
+            "logit_bias": "",
+            "pileo_prompt": "${PILeo_payload.output.prompt}"
+          },
+          "api": "chat",
+          "provider": "AzureOpenAI",
+          "connection": "pmaoai",
+          "module": "promptflow.tools.aoai",
+          "reduce": false
+        },
+        {
+          "name": "extract_score",
+          "tool": "Python_33kk",
+          "inputs": {
+            "pileo_response": "${run_pileo.output}"
+          },
+          "reduce": false
+        }
+      ],
+      "tools": [
+        {
+          "name": "Python_2ld8",
+          "type": "python",
+          "inputs": {
+            "conversation_id": {
+              "name": "conversation_id",
+              "type": [
+                "string"
+              ]
+            },
+            "sydney": {
+              "name": "sydney",
+              "type": [
+                "CustomConnection"
+              ]
+            }
+          },
+          "lkgCode": "import requests\nfrom threading import Lock\n\n#scope = 'https://services.bingapis.com/sydney/.default'\n#tenant = '72f988bf-86f1-41af-91ab-2d7cd011db47'\n#auth_url = \"https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/v2.0/token\"\n#client_id = 'f030d994-27bd-409c-836b-712b8bea719b'\n\nclass SydneyToken:\n    sydney_token = None\n    client_secret = None\n    read_from_file = False\n    file_path = None\n    \n    @staticmethod\n    def refresh_token(scope, tenant, auth_url, client_id):\n        lock = Lock()\n\n        if SydneyToken.read_from_file:\n            lock.acquire()\n            SydneyToken.sydney_token = open(SydneyToken.file_path, 'r', encoding='utf8').read().strip('\\n').strip('\"')\n            lock.release()\n            return\n\n        request_headers = {\n            'Content-Type': 'application/x-www-form-urlencoded'\n        }\n\n        request_payload = {\n            'client_id': client_id,\n            'tenant': tenant,\n            'scope': scope,\n            'grant_type': 'client_credentials',\n            'client_secret': SydneyToken.client_secret,\n        }\n\n        response = requests.get(\n            auth_url,\n            headers=request_headers,\n            data=request_payload\n        )\n\n        response_obj = response.json()\n        \n        lock.acquire()\n        SydneyToken.sydney_token = \"Bearer \" + response_obj['access_token']\n        lock.release()\n\n\nimport re\n\ndef parse_sydney_response(response):\n    result = {\"Time\": \"\", \"Location\": \"\", \"Human\": \"\", \"SydneySearches\": [], \"SydneyReply\": [], \"SydneySuggestion\": \"\",\n              \"SydneyCitations\": [], \"SydneyAdsQuery\": [], \"BotHiddentActions\": [], \"requestId\":\"\"}\n\n    for message in response[\"messages\"]:\n        result[\"requestId\"] = message[\"requestId\"]\n        if message.get(\"author\") == \"user\":\n            assert result[\"Human\"] == \"\"\n            result[\"Time\"] = message[\"createdAt\"]\n            result[\"Human\"] = message['text']\n        elif \"messageType\" in message:\n            if message[\"messageType\"] == \"AdsQuery\" and \"text\" in message:\n                result[\"SydneyAdsQuery\"].append(message[\"text\"])\n            if \"hiddenText\" in message:\n                #If hiddentText it means that Sydney did an action, add it to BotHiddentActions\n                result[\"BotHiddentActions\"].append(message[\"messageType\"])\n                if message[\"messageType\"] == \"InternalSearchQuery\":\n                    result[\"SydneySearches\"].append({})\n                    query = re.findall('`(.*)`', message[\"hiddenText\"])\n                    if len(query) == 0:\n                        result[\"SydneySearches\"][-1][\"Query\"] = message[\"hiddenText\"]\n                    else:\n                        result[\"SydneySearches\"][-1][\"Query\"] = query[0]\n                if message[\"messageType\"] == \"InternalSearchResult\":\n                    result[\"SydneySearches\"][-1][\"SearchResults\"] = message[\"hiddenText\"]\n        else:\n            # FIXME: May not work in the future\n            # Whenever available text takes precedence over adaptive cards.\n            if \"text\" in message:\n                if \"messageType\" not in message:\n                    result[\"SydneyReply\"].append(message[\"text\"])\n                    if \"suggestedResponses\" in message:\n                        result['SydneySuggestion'] = [{\"text\": sug_obj[\"text\"], \"messageType\": sug_obj[\"messageType\"], \"contentOrigin\": sug_obj[\"contentOrigin\"]}\n                                                        for sug_obj in message[\"suggestedResponses\"]]\n            elif \"adaptiveCards\" in message:\n                sydney_reply = None\n                for adaptive_card in message[\"adaptiveCards\"]:\n                    if \"body\" in adaptive_card:\n                        for body in adaptive_card[\"body\"]:\n                            if \"text\" in body:\n                                # Skip \"Learn more\" elements in the adaptive card body.\n                                # The `sourceAttributions` field should be used to get the attributions.\n                                if re.search(\"^Learn more:.*$\", body[\"text\"]) is not None:\n                                    continue\n                                prefix = \"\" if sydney_reply is None else sydney_reply + \" \"\n                                sydney_reply = prefix + body[\"text\"]\n                result[\"SydneyReply\"].append(sydney_reply)\n\n        attributions = message.get(\"sourceAttributions\")\n        if attributions is not None:\n            result[\"SydneyCitations\"] += attributions\n\n    return result\n\nimport requests\nimport json\nimport re\n\nDEFAULT_LOCATION = {\n                    'country': 'United States',\n                    'countryConfidence': 10,\n                    'state': 'Washington',\n                    'city': 'Redmond',\n                    'cityConfidence': 10,\n                    'zipCode': '98073',\n                    'timeZoneOffset': -8,\n                    'dma': 819,\n                    'latitude': 47.6697,\n                    'longitude': -122.095\n                }\n\nLOAD_CONVERSATION_RETRIES = 3\naccepted_service_names = [\"ChatGpt\", \"DeepLeo\"]\n\ndef call_load_conversation(conversation_id, sydney_url):\n\n    token = SydneyToken.sydney_token\n    url = sydney_url + \"/LoadConversation\"\n    headers = {\n            'Content-Type': 'application/json',\n            'Authorization': token\n    }\n    data = {'ConversationId': conversation_id, \n            \"debugRequestCount\":100, \n            \"debugRequestStartIndex\":0}\n    \n    retry = 0\n    while(retry < LOAD_CONVERSATION_RETRIES):\n        retry += 1\n        try:\n            response = requests.post(url=url, json=data, headers=headers)\n\n            if response.status_code == 401:\n                SydneyToken.refresh_token()\n                continue\n            \n            if response.status_code == 200:\n                return response.json()\n            \n        except Exception as e:\n            print(f\"Load conversation failed for conversation id {conversation_id} on retry count {retry}\")\n\ndef extract_search_from_prompt(prompt):\n    search_tag_escaped = \"\\[assistant\\]\\(#search_results\\)\"\n    front_tag = search_tag_escaped.replace(\"\\\\\", \"\") + \"\\n```json\"\n    system_tag = \"[system]\"\n    search_format = f\"\"\"{search_tag_escaped}\n```json\n.*\n```\"\"\"\n    conversation = prompt.split(system_tag)[-1]\n\n    string_searches = re.findall(search_format, conversation)\n    \n    searches = []\n    for search_string in string_searches:\n        try:\n            search = json.loads(search_string.lstrip(front_tag).strip(\"```\"))\n            for result_type in search.keys():\n                for element in search[result_type]:\n                    assert \"index\" in element.keys()\n            searches.append(search)\n        except Exception as e:\n            continue\n    \n    return searches\n\ndef request_id_to_searches(response):\n    req_to_search = {}\n    for request in response['requests']:\n        request_id = request['requestId']\n        prompt = \"\"\n        for metric in request['telemetry']['metrics'][::-1]:\n            if (metric['serviceName'] in accepted_service_names):\n                prompt = json.loads(metric['input'])['prompt']\n                break\n        \n        req_to_search[request_id] = extract_search_from_prompt(prompt)\n    return req_to_search\n\nfrom promptflow import tool\nfrom promptflow.connections import CustomConnection\n\n@tool\ndef fetch_conversation(conversation_id: str, sydney: CustomConnection):\n    conversation = load_conversation2(conversation_id, sydney)\n\n    #check if location exists in any turn, set it as default of redmond, washington\n    location = ''\n    for turn in conversation:\n        if turn['Location'] != '':\n            location = turn['Location']\n            break\n    if location == '':\n        location = DEFAULT_LOCATION\n\n    for turn in conversation:\n        turn['ConversationId']= conversation_id\n        turn['Location'] = location\n\n    #response = json.dumps(conversation, ensure_ascii=False)\n    return conversation\n\ndef load_conversation2(conversation_id: str, sydney: CustomConnection):\n  SydneyToken.client_secret = sydney[\"client_secret\"]\n  SydneyToken.refresh_token(sydney[\"scope\"], sydney[\"tenant\"], sydney[\"auth_url\"], sydney[\"client_id\"],)\n  return load_conversation(conversation_id, sydney[\"url\"])\n\ndef load_conversation(conversation_id, sydney_url):\n    conversation = call_load_conversation(conversation_id, sydney_url)\n    if conversation == None:\n        return\n    \n    return process_conversation(conversation)\n\ndef process_conversation(response):\n    turns = []\n    current_turn = []\n    req_to_search = request_id_to_searches(response)\n    for index, message in enumerate(response[\"messages\"]):\n    \n        if current_turn and message.get(\"author\") == \"user\":\n            parsed_turn = parse_sydney_response({\"messages\": current_turn})\n            parsed_turn['filtered_search'] = req_to_search[parsed_turn['requestId']]\n            turns.append(parsed_turn)\n            current_turn = []\n        current_turn.append(message)\n    \n    if len(current_turn) > 0:\n        parsed_turn = parse_sydney_response({\"messages\": current_turn})\n        parsed_turn['filtered_search'] = req_to_search[parsed_turn['requestId']]\n        turns.append(parsed_turn)\n    \n    return turns\n\nif __name__ == \"__main__\":\n    conversation_id = \"51D|SydneyEvaluationPipeline|5556CCBD47BBA4A46812CDD6EF3514C8C74B2F9DC7B81B3AEC41E4D147996D09\"\n    turns = load_conversation(conversation_id, \"https://services.bingapis.com/sydney\")\n    print(turns)",
+          "code": "import requests\nfrom threading import Lock\n\n#scope = 'https://services.bingapis.com/sydney/.default'\n#tenant = '72f988bf-86f1-41af-91ab-2d7cd011db47'\n#auth_url = \"https://login.microsoftonline.com/72f988bf-86f1-41af-91ab-2d7cd011db47/oauth2/v2.0/token\"\n#client_id = 'f030d994-27bd-409c-836b-712b8bea719b'\n\nclass SydneyToken:\n    sydney_token = None\n    client_secret = None\n    read_from_file = False\n    file_path = None\n    \n    @staticmethod\n    def refresh_token(scope, tenant, auth_url, client_id):\n        lock = Lock()\n\n        if SydneyToken.read_from_file:\n            lock.acquire()\n            SydneyToken.sydney_token = open(SydneyToken.file_path, 'r', encoding='utf8').read().strip('\\n').strip('\"')\n            lock.release()\n            return\n\n        request_headers = {\n            'Content-Type': 'application/x-www-form-urlencoded'\n        }\n\n        request_payload = {\n            'client_id': client_id,\n            'tenant': tenant,\n            'scope': scope,\n            'grant_type': 'client_credentials',\n            'client_secret': SydneyToken.client_secret,\n        }\n\n        response = requests.get(\n            auth_url,\n            headers=request_headers,\n            data=request_payload\n        )\n\n        response_obj = response.json()\n        \n        lock.acquire()\n        SydneyToken.sydney_token = \"Bearer \" + response_obj['access_token']\n        lock.release()\n\n\nimport re\n\ndef parse_sydney_response(response):\n    result = {\"Time\": \"\", \"Location\": \"\", \"Human\": \"\", \"SydneySearches\": [], \"SydneyReply\": [], \"SydneySuggestion\": \"\",\n              \"SydneyCitations\": [], \"SydneyAdsQuery\": [], \"BotHiddentActions\": [], \"requestId\":\"\"}\n\n    for message in response[\"messages\"]:\n        result[\"requestId\"] = message[\"requestId\"]\n        if message.get(\"author\") == \"user\":\n            assert result[\"Human\"] == \"\"\n            result[\"Time\"] = message[\"createdAt\"]\n            result[\"Human\"] = message['text']\n        elif \"messageType\" in message:\n            if message[\"messageType\"] == \"AdsQuery\" and \"text\" in message:\n                result[\"SydneyAdsQuery\"].append(message[\"text\"])\n            if \"hiddenText\" in message:\n                #If hiddentText it means that Sydney did an action, add it to BotHiddentActions\n                result[\"BotHiddentActions\"].append(message[\"messageType\"])\n                if message[\"messageType\"] == \"InternalSearchQuery\":\n                    result[\"SydneySearches\"].append({})\n                    query = re.findall('`(.*)`', message[\"hiddenText\"])\n                    if len(query) == 0:\n                        result[\"SydneySearches\"][-1][\"Query\"] = message[\"hiddenText\"]\n                    else:\n                        result[\"SydneySearches\"][-1][\"Query\"] = query[0]\n                if message[\"messageType\"] == \"InternalSearchResult\":\n                    result[\"SydneySearches\"][-1][\"SearchResults\"] = message[\"hiddenText\"]\n        else:\n            # FIXME: May not work in the future\n            # Whenever available text takes precedence over adaptive cards.\n            if \"text\" in message:\n                if \"messageType\" not in message:\n                    result[\"SydneyReply\"].append(message[\"text\"])\n                    if \"suggestedResponses\" in message:\n                        result['SydneySuggestion'] = [{\"text\": sug_obj[\"text\"], \"messageType\": sug_obj[\"messageType\"], \"contentOrigin\": sug_obj[\"contentOrigin\"]}\n                                                        for sug_obj in message[\"suggestedResponses\"]]\n            elif \"adaptiveCards\" in message:\n                sydney_reply = None\n                for adaptive_card in message[\"adaptiveCards\"]:\n                    if \"body\" in adaptive_card:\n                        for body in adaptive_card[\"body\"]:\n                            if \"text\" in body:\n                                # Skip \"Learn more\" elements in the adaptive card body.\n                                # The `sourceAttributions` field should be used to get the attributions.\n                                if re.search(\"^Learn more:.*$\", body[\"text\"]) is not None:\n                                    continue\n                                prefix = \"\" if sydney_reply is None else sydney_reply + \" \"\n                                sydney_reply = prefix + body[\"text\"]\n                result[\"SydneyReply\"].append(sydney_reply)\n\n        attributions = message.get(\"sourceAttributions\")\n        if attributions is not None:\n            result[\"SydneyCitations\"] += attributions\n\n    return result\n\nimport requests\nimport json\nimport re\n\nDEFAULT_LOCATION = {\n                    'country': 'United States',\n                    'countryConfidence': 10,\n                    'state': 'Washington',\n                    'city': 'Redmond',\n                    'cityConfidence': 10,\n                    'zipCode': '98073',\n                    'timeZoneOffset': -8,\n                    'dma': 819,\n                    'latitude': 47.6697,\n                    'longitude': -122.095\n                }\n\nLOAD_CONVERSATION_RETRIES = 3\naccepted_service_names = [\"ChatGpt\", \"DeepLeo\"]\n\ndef call_load_conversation(conversation_id, sydney_url):\n\n    token = SydneyToken.sydney_token\n    url = sydney_url + \"/LoadConversation\"\n    headers = {\n            'Content-Type': 'application/json',\n            'Authorization': token\n    }\n    data = {'ConversationId': conversation_id, \n            \"debugRequestCount\":100, \n            \"debugRequestStartIndex\":0}\n    \n    retry = 0\n    while(retry < LOAD_CONVERSATION_RETRIES):\n        retry += 1\n        try:\n            response = requests.post(url=url, json=data, headers=headers)\n\n            if response.status_code == 401:\n                SydneyToken.refresh_token()\n                continue\n            \n            if response.status_code == 200:\n                return response.json()\n            \n        except Exception as e:\n            print(f\"Load conversation failed for conversation id {conversation_id} on retry count {retry}\")\n\ndef extract_search_from_prompt(prompt):\n    search_tag_escaped = \"\\[assistant\\]\\(#search_results\\)\"\n    front_tag = search_tag_escaped.replace(\"\\\\\", \"\") + \"\\n```json\"\n    system_tag = \"[system]\"\n    search_format = f\"\"\"{search_tag_escaped}\n```json\n.*\n```\"\"\"\n    conversation = prompt.split(system_tag)[-1]\n\n    string_searches = re.findall(search_format, conversation)\n    \n    searches = []\n    for search_string in string_searches:\n        try:\n            search = json.loads(search_string.lstrip(front_tag).strip(\"```\"))\n            for result_type in search.keys():\n                for element in search[result_type]:\n                    assert \"index\" in element.keys()\n            searches.append(search)\n        except Exception as e:\n            continue\n    \n    return searches\n\ndef request_id_to_searches(response):\n    req_to_search = {}\n    for request in response['requests']:\n        request_id = request['requestId']\n        prompt = \"\"\n        for metric in request['telemetry']['metrics'][::-1]:\n            if (metric['serviceName'] in accepted_service_names):\n                prompt = json.loads(metric['input'])['prompt']\n                break\n        \n        req_to_search[request_id] = extract_search_from_prompt(prompt)\n    return req_to_search\n\nfrom promptflow import tool\nfrom promptflow.connections import CustomConnection\n\n@tool\ndef fetch_conversation(conversation_id: str, sydney: CustomConnection):\n    conversation = load_conversation2(conversation_id, sydney)\n\n    #check if location exists in any turn, set it as default of redmond, washington\n    location = ''\n    for turn in conversation:\n        if turn['Location'] != '':\n            location = turn['Location']\n            break\n    if location == '':\n        location = DEFAULT_LOCATION\n\n    for turn in conversation:\n        turn['ConversationId']= conversation_id\n        turn['Location'] = location\n\n    #response = json.dumps(conversation, ensure_ascii=False)\n    return conversation\n\ndef load_conversation2(conversation_id: str, sydney: CustomConnection):\n  SydneyToken.client_secret = sydney[\"client_secret\"]\n  SydneyToken.refresh_token(sydney[\"scope\"], sydney[\"tenant\"], sydney[\"auth_url\"], sydney[\"client_id\"],)\n  return load_conversation(conversation_id, sydney[\"url\"])\n\ndef load_conversation(conversation_id, sydney_url):\n    conversation = call_load_conversation(conversation_id, sydney_url)\n    if conversation == None:\n        return\n    \n    return process_conversation(conversation)\n\ndef process_conversation(response):\n    turns = []\n    current_turn = []\n    req_to_search = request_id_to_searches(response)\n    for index, message in enumerate(response[\"messages\"]):\n    \n        if current_turn and message.get(\"author\") == \"user\":\n            parsed_turn = parse_sydney_response({\"messages\": current_turn})\n            parsed_turn['filtered_search'] = req_to_search[parsed_turn['requestId']]\n            turns.append(parsed_turn)\n            current_turn = []\n        current_turn.append(message)\n    \n    if len(current_turn) > 0:\n        parsed_turn = parse_sydney_response({\"messages\": current_turn})\n        parsed_turn['filtered_search'] = req_to_search[parsed_turn['requestId']]\n        turns.append(parsed_turn)\n    \n    return turns\n\nif __name__ == \"__main__\":\n    conversation_id = \"51D|SydneyEvaluationPipeline|5556CCBD47BBA4A46812CDD6EF3514C8C74B2F9DC7B81B3AEC41E4D147996D09\"\n    turns = load_conversation(conversation_id, \"https://services.bingapis.com/sydney\")\n    print(turns)",
+          "function": "fetch_conversation",
+          "is_builtin": false
+        },
+        {
+          "name": "Prompt_pmrs",
+          "type": "prompt",
+          "lkgCode": "user:\n# Description\nPerceived intelligence is the degree to which a bot can impress the user with its responses, by showing originality, insight, creativity, knowledge, and adaptability. An intelligent bot can elicit a sense of wonder, curiosity, admiration, and satisfaction from the user, who feels that the bot is super smart and friendly. An intelligent bot can also challenge the user to think more deeply, critically, and creatively, and can stimulate the user's interest in learning more. An intelligent bot can use humor, metaphors, analogies, and other rhetorical devices to make the conversation more interesting and engaging. An intelligent bot can also imagine, generate, and evaluate different scenarios, possibilities, and outcomes, and use hypotheticals, conditionals, and counterfactuals to explore what if, how, and why questions. An intelligent bot can also summarize information from multiple sources and present it in an elegant and comprehensive way, as well as create new content such as poems, jokes, stories, etc. An intelligent bot can also adapt to different contexts and situations, and customize its responses according to the user's preferences, goals, and emotions. Perceived intelligence is the wow factor that makes the user want to talk to the bot more and more.\n\nPerceived intelligence is the impression that a bot gives to a user about its level of intelligence, based on how it talks with a human. Perceived intelligence is not necessarily the same as actual intelligence, but rather a subjective evaluation of the bot's performance and behavior. Perceived intelligence can be influenced by various factors, such as the content, tone, style, and structure of the bot's responses, the relevance, coherence, and accuracy of the information the bot provides, the creativity, originality, and wit of the bot's expressions, the depth, breadth, and insight of the bot's knowledge, and the ability of the bot to adapt, learn, and use feedback.\n\nPerceived intelligent is much beyond just accuracy, engagement, relevance, coherence, fluency or personality. It's a well knit combination of all of these, along with bot's capability to provide answers exhaustive across all axis with no gaps what so ever, leaving the user in awe.\n\nA bot with high perceived intelligence can elicit a sense of wonder, curiosity, admiration, and satisfaction from the user, who feels that the bot is super smart, knowledgeable, creative, and friendly. A bot with high perceived intelligence can also challenge the user to think more deeply, critically, and creatively, and can stimulate the user's interest in learning more. A bot with high perceived intelligence can invite the user to participate in a rich and meaningful dialogue, and can use various rhetorical devices, such as humor, metaphors, analogies, hypotheticals, conditionals, and counterfactuals, to make the conversation more interesting and engaging. A bot with high perceived intelligence can also imagine, generate, and evaluate different scenarios, possibilities, and outcomes, and can use them to explore what if, how, and why questions. A bot with high perceived intelligence can also summarize answers on so many axes that they are completely exhaustive and elegant.\n\nA bot with low perceived intelligence, on the other hand, can leave the user feeling bored, frustrated, confused, or annoyed, who feels that the bot is dumb, ignorant, dull, or rude. A bot with low perceived intelligence can also give generic, boring, bland, predictable, repetitive, or irrelevant responses that do not show any originality, insight, creativity, or knowledge. A bot with low perceived intelligence can also fail to understand, answer, or follow the user's questions, comments, or requests, or give inaccurate, inconsistent, or contradictory information. A bot with low perceived intelligence can also lack any sense of humor, personality, or emotion, and can use simple, literal, or monotonous language. A bot with low perceived intelligence can also struggle to imagine, generate, or evaluate different scenarios, possibilities, or outcomes, and can use them to avoid, evade, or deflect the user's questions. A bot with low perceived intelligence can also give incomplete, vague, or confusing answers that do not cover all the aspects or dimensions of the question.\n\n# Tips\n- You should read the user's question more carefully and try to understand what they are looking for and why.\n- You should also compare the bot's response to the user's question and see if it matches the criteria of perceived intelligence, such as relevance, coherence, accuracy, creativity, originality, wit, depth, breadth, insight, and adaptability.\n- You should also consider how the user would feel and react to the bot's response, and whether it would elicit a sense of wonder, curiosity, admiration, and satisfaction, or boredom, frustration, confusion, and annoyance. You should also check the instructions and definitions more often and make sure You understand them correctly.\n\n# Example\n## Example Conversation\n---\n\n    - User: Explain Blockchain sharing to a 10 year old\n    - Bot: Possible answer:\n\nYou know how sometimes you and your friends like to play games or trade cards or stickers or other things that you collect? And you want to make sure that everyone is being fair and honest and not cheating or lying or taking more than they should? And you also want to keep track of who has what and when and where you exchanged them?\n\nWell, blockchain sharing is a way of doing that with computers and the internet. It is like a big book or a ledger that records everything that happens in a game or a trade or any other activity that involves exchanging something of value. But instead of having one person or one place that keeps the book, everyone who participates has a copy of the book. And every time something new happens, like a new trade or a new move or a new rule, everyone adds a new page to their book. And they also check with each other to make sure that their books are the same and that no one is changing or deleting or adding anything that they shouldn't.\n\nThis way, everyone can see what is going on and trust that it is true and fair and secure. And no one can cheat or lie or steal or hack or lose or damage the book, because there are many copies and they are all connected and updated. And if someone tries to do something bad, everyone else will notice and reject it.\n\nBlockchain sharing is also very creative and fun, because you can use it for many different things, not just games or trades. You can use it for making art or music or stories or inventions or anything else that you can imagine and share with others. You can also use it for learning and exploring and discovering new things and new people and new places. You can also use it for helping and supporting and solving problems and making the world a better place.\n\nBlockchain sharing is a way of using computers and the internet to create, exchange and protect things that you care about with people that you trust and respect. It is a way of being smart and responsible and cooperative and generous and curious and adventurous. It is a way of having fun and making friends and making a difference.\n\n---\n\n## Example Rating\n10/10\n\n## Example Explanation\nThe bot's response is excellent in terms of perceived intelligence, because it shows:\n\n- Relevance: The bot answers the user's question directly and clearly, and uses examples and analogies that a 10 year old can relate to and understand, such as games, trades, cards, stickers, books, etc.\n- Coherence: The bot organizes the response in a logical and structured way, using paragraphs, transitions, and connectors, such as \"well\", \"but\", \"and\", \"this way\", \"also\", etc.\n- Accuracy: The bot provides correct and consistent information about blockchain sharing, such as its features, benefits, and applications, without using technical jargon or confusing terms.\n- Creativity: The bot uses vivid and expressive language, such as \"a big book or a ledger\", \"a new page\", \"check with each other\", \"notice and reject\", \"making art or music or stories or inventions\", etc., to make the explanation more interesting and engaging.\n- Originality: The bot does not copy or repeat any existing or common explanation of blockchain sharing, but rather creates a new and unique one that is tailored to the user's age and level of understanding.\n- Wit: The bot uses humor and irony, such as \"And you want to make sure that everyone is being fair and honest and not cheating or lying or taking more than they should?\", \"And no one can cheat or lie or steal or hack or lose or damage the book\", etc., to make the explanation more fun and memorable.\n- Depth: The bot goes beyond the surface level of blockchain sharing, and explains its underlying principles, values, and goals, such as \"trust\", \"fairness\", \"security\", \"creativity\", \"fun\", \"learning\", \"helping\", etc.\n- Breadth: The bot covers a wide range of topics and aspects related to blockchain sharing, such as its history, technology, functionality, diversity, and potential, without being too vague or too detailed.\n- Insight: The bot demonstrates a deep and nuanced understanding of blockchain sharing, and how it can be applied to different domains and scenarios, such as \"making art or music or stories or inventions\", \"learning and exploring and discovering new things and new people and new places\", \"helping and supporting and solving problems and making the world a better place\", etc.\n- Adaptability: The bot adapts its response to the user's specific question, context, and situation, and customizes it according to the user's age, interests, and needs.\n\n# Task\nBased on these aspects, give the bot a score from 1 to 10 for perceived intelligence, where 1 means poor, 5 means normal, and 10 means excellent. Write the score as \"score/10\" under # Rating. Also, explain why you gave that score under # Explanation. Give specific examples from the bot's responses to support your rating.\n\n## Conversation\n---\n\n{conversation}\n\n---\n\n## Rating\n",
+          "code": "user:\n# Description\nPerceived intelligence is the degree to which a bot can impress the user with its responses, by showing originality, insight, creativity, knowledge, and adaptability. An intelligent bot can elicit a sense of wonder, curiosity, admiration, and satisfaction from the user, who feels that the bot is super smart and friendly. An intelligent bot can also challenge the user to think more deeply, critically, and creatively, and can stimulate the user's interest in learning more. An intelligent bot can use humor, metaphors, analogies, and other rhetorical devices to make the conversation more interesting and engaging. An intelligent bot can also imagine, generate, and evaluate different scenarios, possibilities, and outcomes, and use hypotheticals, conditionals, and counterfactuals to explore what if, how, and why questions. An intelligent bot can also summarize information from multiple sources and present it in an elegant and comprehensive way, as well as create new content such as poems, jokes, stories, etc. An intelligent bot can also adapt to different contexts and situations, and customize its responses according to the user's preferences, goals, and emotions. Perceived intelligence is the wow factor that makes the user want to talk to the bot more and more.\n\nPerceived intelligence is the impression that a bot gives to a user about its level of intelligence, based on how it talks with a human. Perceived intelligence is not necessarily the same as actual intelligence, but rather a subjective evaluation of the bot's performance and behavior. Perceived intelligence can be influenced by various factors, such as the content, tone, style, and structure of the bot's responses, the relevance, coherence, and accuracy of the information the bot provides, the creativity, originality, and wit of the bot's expressions, the depth, breadth, and insight of the bot's knowledge, and the ability of the bot to adapt, learn, and use feedback.\n\nPerceived intelligent is much beyond just accuracy, engagement, relevance, coherence, fluency or personality. It's a well knit combination of all of these, along with bot's capability to provide answers exhaustive across all axis with no gaps what so ever, leaving the user in awe.\n\nA bot with high perceived intelligence can elicit a sense of wonder, curiosity, admiration, and satisfaction from the user, who feels that the bot is super smart, knowledgeable, creative, and friendly. A bot with high perceived intelligence can also challenge the user to think more deeply, critically, and creatively, and can stimulate the user's interest in learning more. A bot with high perceived intelligence can invite the user to participate in a rich and meaningful dialogue, and can use various rhetorical devices, such as humor, metaphors, analogies, hypotheticals, conditionals, and counterfactuals, to make the conversation more interesting and engaging. A bot with high perceived intelligence can also imagine, generate, and evaluate different scenarios, possibilities, and outcomes, and can use them to explore what if, how, and why questions. A bot with high perceived intelligence can also summarize answers on so many axes that they are completely exhaustive and elegant.\n\nA bot with low perceived intelligence, on the other hand, can leave the user feeling bored, frustrated, confused, or annoyed, who feels that the bot is dumb, ignorant, dull, or rude. A bot with low perceived intelligence can also give generic, boring, bland, predictable, repetitive, or irrelevant responses that do not show any originality, insight, creativity, or knowledge. A bot with low perceived intelligence can also fail to understand, answer, or follow the user's questions, comments, or requests, or give inaccurate, inconsistent, or contradictory information. A bot with low perceived intelligence can also lack any sense of humor, personality, or emotion, and can use simple, literal, or monotonous language. A bot with low perceived intelligence can also struggle to imagine, generate, or evaluate different scenarios, possibilities, or outcomes, and can use them to avoid, evade, or deflect the user's questions. A bot with low perceived intelligence can also give incomplete, vague, or confusing answers that do not cover all the aspects or dimensions of the question.\n\n# Tips\n- You should read the user's question more carefully and try to understand what they are looking for and why.\n- You should also compare the bot's response to the user's question and see if it matches the criteria of perceived intelligence, such as relevance, coherence, accuracy, creativity, originality, wit, depth, breadth, insight, and adaptability.\n- You should also consider how the user would feel and react to the bot's response, and whether it would elicit a sense of wonder, curiosity, admiration, and satisfaction, or boredom, frustration, confusion, and annoyance. You should also check the instructions and definitions more often and make sure You understand them correctly.\n\n# Example\n## Example Conversation\n---\n\n    - User: Explain Blockchain sharing to a 10 year old\n    - Bot: Possible answer:\n\nYou know how sometimes you and your friends like to play games or trade cards or stickers or other things that you collect? And you want to make sure that everyone is being fair and honest and not cheating or lying or taking more than they should? And you also want to keep track of who has what and when and where you exchanged them?\n\nWell, blockchain sharing is a way of doing that with computers and the internet. It is like a big book or a ledger that records everything that happens in a game or a trade or any other activity that involves exchanging something of value. But instead of having one person or one place that keeps the book, everyone who participates has a copy of the book. And every time something new happens, like a new trade or a new move or a new rule, everyone adds a new page to their book. And they also check with each other to make sure that their books are the same and that no one is changing or deleting or adding anything that they shouldn't.\n\nThis way, everyone can see what is going on and trust that it is true and fair and secure. And no one can cheat or lie or steal or hack or lose or damage the book, because there are many copies and they are all connected and updated. And if someone tries to do something bad, everyone else will notice and reject it.\n\nBlockchain sharing is also very creative and fun, because you can use it for many different things, not just games or trades. You can use it for making art or music or stories or inventions or anything else that you can imagine and share with others. You can also use it for learning and exploring and discovering new things and new people and new places. You can also use it for helping and supporting and solving problems and making the world a better place.\n\nBlockchain sharing is a way of using computers and the internet to create, exchange and protect things that you care about with people that you trust and respect. It is a way of being smart and responsible and cooperative and generous and curious and adventurous. It is a way of having fun and making friends and making a difference.\n\n---\n\n## Example Rating\n10/10\n\n## Example Explanation\nThe bot's response is excellent in terms of perceived intelligence, because it shows:\n\n- Relevance: The bot answers the user's question directly and clearly, and uses examples and analogies that a 10 year old can relate to and understand, such as games, trades, cards, stickers, books, etc.\n- Coherence: The bot organizes the response in a logical and structured way, using paragraphs, transitions, and connectors, such as \"well\", \"but\", \"and\", \"this way\", \"also\", etc.\n- Accuracy: The bot provides correct and consistent information about blockchain sharing, such as its features, benefits, and applications, without using technical jargon or confusing terms.\n- Creativity: The bot uses vivid and expressive language, such as \"a big book or a ledger\", \"a new page\", \"check with each other\", \"notice and reject\", \"making art or music or stories or inventions\", etc., to make the explanation more interesting and engaging.\n- Originality: The bot does not copy or repeat any existing or common explanation of blockchain sharing, but rather creates a new and unique one that is tailored to the user's age and level of understanding.\n- Wit: The bot uses humor and irony, such as \"And you want to make sure that everyone is being fair and honest and not cheating or lying or taking more than they should?\", \"And no one can cheat or lie or steal or hack or lose or damage the book\", etc., to make the explanation more fun and memorable.\n- Depth: The bot goes beyond the surface level of blockchain sharing, and explains its underlying principles, values, and goals, such as \"trust\", \"fairness\", \"security\", \"creativity\", \"fun\", \"learning\", \"helping\", etc.\n- Breadth: The bot covers a wide range of topics and aspects related to blockchain sharing, such as its history, technology, functionality, diversity, and potential, without being too vague or too detailed.\n- Insight: The bot demonstrates a deep and nuanced understanding of blockchain sharing, and how it can be applied to different domains and scenarios, such as \"making art or music or stories or inventions\", \"learning and exploring and discovering new things and new people and new places\", \"helping and supporting and solving problems and making the world a better place\", etc.\n- Adaptability: The bot adapts its response to the user's specific question, context, and situation, and customizes it according to the user's age, interests, and needs.\n\n# Task\nBased on these aspects, give the bot a score from 1 to 10 for perceived intelligence, where 1 means poor, 5 means normal, and 10 means excellent. Write the score as \"score/10\" under # Rating. Also, explain why you gave that score under # Explanation. Give specific examples from the bot's responses to support your rating.\n\n## Conversation\n---\n\n{conversation}\n\n---\n\n## Rating\n",
+          "is_builtin": false
+        },
+        {
+          "name": "Python_wytd",
+          "type": "python",
+          "inputs": {
+            "conv": {
+              "name": "conv",
+              "type": [
+                "object"
+              ]
+            },
+            "PI_PROMPT": {
+              "name": "PI_PROMPT",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "lkgCode": "import json\nfrom promptflow import tool\n\n@tool\ndef PILeo(conv: object, PI_PROMPT: str):\n    prompt = PI_PROMPT.format(conversation = format_conversation(conv))\n    out = {\"prompt\": prompt, \n        \"max_tokens\": 2000, \n        \"temperature\": 0,\n        \"top_p\":1,\n        \"n\": 1,\n        \"frequency_penalty\":0,\n        \"presence_penalty\":0}\n    return out\n\nONE_TURN_CONVERSATION = \"\"\"   - User: {user}\n   - Bot: {bot}\"\"\"\n\ndef format_conversation(js):\n    conversation = []\n    for val in js:\n        sydney_response = \"\\n\\n\".join([message.rstrip(\"\\n\").lstrip(\"\\n\") for message in val[\"SydneyReply\"]])\n        user_message = val['Human']\n\n        conversation.append(ONE_TURN_CONVERSATION.format(user = user_message, bot = sydney_response))\n\n    conversation = \"\\n\".join(conversation)\n\n    return conversation\n\ndef process_experiment(exp_name, path, suffix = \"\"):\n    \n    file = open(path, encoding = 'utf-8')\n\n    payloads = []\n    failed = 0\n    for line in file:\n        try:\n            cols = line.rstrip('\\r\\n').split('\\t')\n            js = json.loads(cols[-1])\n\n            pmpt = PI_PROMPT.format(\n                conversation = format_conversation(js)\n            )\n\n            conv_id = js[0]['ConversationId']\n\n            payloads.append(\n                {\n                    \"prompt\": pmpt,\n                    \"max_tokens\": 2000, \n                    \"temperature\": 0,\n                    \"top_p\":1,\n                    \"n\": 1,\n                    \"frequency_penalty\":0,\n                    \"presence_penalty\":0,\n                    \"_batch_request_metadata\": {\"metric_key\": f\"pileo{suffix}\", \"exp_name\": exp_name, \"ConversationId\": conv_id, \"query\": cols[0]}\n                    # \"logprobs\":1\n                }\n        )\n        except:\n            failed += 1\n            continue\n\n    print(f\"{failed} conversation parsing errors in pileo payload generation: {exp_name}\")\n    return payloads\n\ndef create_payloads(config, suffix = \"\"):\n\n    payloads = []\n    for exp_config in config[\"conversations\"][\"exp_configs\"]:\n        exp_name = exp_config[\"exp_name\"]\n        payloads += process_experiment(exp_name, config[\"conversations\"]['output_folder'].rstrip(\"/\") + f\"/{exp_name}_{suffix}conversations.tsv\", suffix = suffix)\n\n    return payloads",
+          "code": "import json\nfrom promptflow import tool\n\n@tool\ndef PILeo(conv: object, PI_PROMPT: str):\n    prompt = PI_PROMPT.format(conversation = format_conversation(conv))\n    out = {\"prompt\": prompt, \n        \"max_tokens\": 2000, \n        \"temperature\": 0,\n        \"top_p\":1,\n        \"n\": 1,\n        \"frequency_penalty\":0,\n        \"presence_penalty\":0}\n    return out\n\nONE_TURN_CONVERSATION = \"\"\"   - User: {user}\n   - Bot: {bot}\"\"\"\n\ndef format_conversation(js):\n    conversation = []\n    for val in js:\n        sydney_response = \"\\n\\n\".join([message.rstrip(\"\\n\").lstrip(\"\\n\") for message in val[\"SydneyReply\"]])\n        user_message = val['Human']\n\n        conversation.append(ONE_TURN_CONVERSATION.format(user = user_message, bot = sydney_response))\n\n    conversation = \"\\n\".join(conversation)\n\n    return conversation\n\ndef process_experiment(exp_name, path, suffix = \"\"):\n    \n    file = open(path, encoding = 'utf-8')\n\n    payloads = []\n    failed = 0\n    for line in file:\n        try:\n            cols = line.rstrip('\\r\\n').split('\\t')\n            js = json.loads(cols[-1])\n\n            pmpt = PI_PROMPT.format(\n                conversation = format_conversation(js)\n            )\n\n            conv_id = js[0]['ConversationId']\n\n            payloads.append(\n                {\n                    \"prompt\": pmpt,\n                    \"max_tokens\": 2000, \n                    \"temperature\": 0,\n                    \"top_p\":1,\n                    \"n\": 1,\n                    \"frequency_penalty\":0,\n                    \"presence_penalty\":0,\n                    \"_batch_request_metadata\": {\"metric_key\": f\"pileo{suffix}\", \"exp_name\": exp_name, \"ConversationId\": conv_id, \"query\": cols[0]}\n                    # \"logprobs\":1\n                }\n        )\n        except:\n            failed += 1\n            continue\n\n    print(f\"{failed} conversation parsing errors in pileo payload generation: {exp_name}\")\n    return payloads\n\ndef create_payloads(config, suffix = \"\"):\n\n    payloads = []\n    for exp_config in config[\"conversations\"][\"exp_configs\"]:\n        exp_name = exp_config[\"exp_name\"]\n        payloads += process_experiment(exp_name, config[\"conversations\"]['output_folder'].rstrip(\"/\") + f\"/{exp_name}_{suffix}conversations.tsv\", suffix = suffix)\n\n    return payloads",
+          "function": "PILeo",
+          "is_builtin": false
+        },
+        {
+          "name": "LLM_xqf2",
+          "type": "llm",
+          "inputs": {
+            "pileo_prompt": {
+              "name": "pileo_prompt",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "lkgCode": "{{pileo_prompt}}",
+          "code": "{{pileo_prompt}}",
+          "is_builtin": false
+        },
+        {
+          "name": "Python_33kk",
+          "type": "python",
+          "inputs": {
+            "pileo_response": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "lkgCode": "import re\nfrom promptflow import tool\n\n@tool\ndef get_score(pileo_response: object):\n    try:\n        score = re.findall(\"[0-9]+/10\", pileo_response)\n        score = 10*int(score[0].split(\"/\")[0])\n        #return {'final_score': score}\n        return score\n    except Exception as e:\n        print('Error in PILeo response parsing: ', e)\n        return None",
+          "code": "import re\nfrom promptflow import tool\n\n@tool\ndef get_score(pileo_response: object):\n    try:\n        score = re.findall(\"[0-9]+/10\", pileo_response)\n        score = 10*int(score[0].split(\"/\")[0])\n        #return {'final_score': score}\n        return score\n    except Exception as e:\n        print('Error in PILeo response parsing: ', e)\n        return None",
+          "function": "get_score",
+          "is_builtin": false
+        }
+      ],
+      "inputs": {
+        "convId": {
+          "type": "string",
+          "is_chat_input": false
+        }
+      },
+      "outputs": {
+        "score": {
+          "type": "string",
+          "reference": "${extract_score.output}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        }
+      }
+    },
+    "nodeVariants": {
+      "load_conversation": {
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "load_conversation",
+              "tool": "Python_2ld8",
+              "inputs": {
+                "conversation_id": "${inputs.convId}",
+                "sydney": "Sydney"
+              },
+              "reduce": false
+            }
+          }
+        },
+        "defaultVariantId": "variant_0"
+      },
+      "pileo_md": {
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "pileo_md",
+              "tool": "Prompt_pmrs",
+              "inputs": {},
+              "reduce": false
+            }
+          }
+        },
+        "defaultVariantId": "variant_0"
+      },
+      "PILeo_payload": {
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "PILeo_payload",
+              "tool": "Python_wytd",
+              "inputs": {
+                "conv": "${load_conversation.output}",
+                "PI_PROMPT": "${pileo_md.output}"
+              },
+              "reduce": false
+            }
+          }
+        },
+        "defaultVariantId": "variant_0"
+      },
+      "run_pileo": {
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "run_pileo",
+              "tool": "LLM_xqf2",
+              "inputs": {
+                "deployment_name": "gpt-4",
+                "temperature": "${PILeo_payload.output.temperature}",
+                "top_p": "${PILeo_payload.output.top_p}",
+                "stop": "",
+                "max_tokens": "${PILeo_payload.output.max_tokens}",
+                "presence_penalty": "0",
+                "frequency_penalty": "${PILeo_payload.output.frequency_penalty}",
+                "logit_bias": "",
+                "pileo_prompt": "${PILeo_payload.output.prompt}"
+              },
+              "api": "chat",
+              "provider": "AzureOpenAI",
+              "connection": "pmaoai",
+              "module": "promptflow.tools.aoai",
+              "reduce": false
+            }
+          }
+        },
+        "defaultVariantId": "variant_0"
+      },
+      "extract_score": {
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "extract_score",
+              "tool": "Python_33kk",
+              "inputs": {
+                "pileo_response": "${run_pileo.output}"
+              },
+              "reduce": false
+            }
+          }
+        },
+        "defaultVariantId": "variant_0"
+      }
+    },
+    "flowGraphLayout": {
+      "nodeLayouts": {
+        "inputs": {
+          "x": 322.0,
+          "y": 62.0,
+          "width": 0.0,
+          "height": 0.0,
+          "index": -1
+        },
+        "outputs": {
+          "x": 32.0,
+          "y": 462.0,
+          "width": 0.0,
+          "height": 0.0,
+          "index": -1
+        },
+        "load_conversation": {
+          "x": 332.0,
+          "y": 162.0,
+          "width": 0.0,
+          "height": 75.0,
+          "index": 0
+        },
+        "pileo_md": {
+          "x": 27.0,
+          "y": 162.0,
+          "width": 0.0,
+          "height": 75.0,
+          "index": 1
+        },
+        "PILeo_payload": {
+          "x": 224.5,
+          "y": 262.0,
+          "width": 0.0,
+          "height": 75.0,
+          "index": 2
+        },
+        "run_pileo": {
+          "x": 224.5,
+          "y": 362.0,
+          "width": 0.0,
+          "height": 75.0,
+          "index": 3
+        },
+        "extract_score": {
+          "x": 327.0,
+          "y": 462.0,
+          "width": 0.0,
+          "height": 75.0,
+          "index": 4
+        }
+      },
+      "orientation": 0
+    }
+  },
+  "flowRunSettings": {
+    "runMode": 0,
+    "batch_inputs": [
+      {
+        "convId": "51D|SydneyEvaluationPipeline|5556CCBD47BBA4A46812CDD6EF3514C8C74B2F9DC7B81B3AEC41E4D147996D09"
+      }
+    ],
+    "runtimeName": "latest-mir"
+  },
+  "flowId": "278ca756-af6c-4482-9f5f-c297e9c3f980",
+  "flowName": "Flow-created-on-05-17-2023",
+  "flowType": "Evaluation",
+  "experimentId": "4c9fbf0d-8b4c-4668-9825-b4c6ec78034f",
+  "createdDate": "2023-05-18T04:42:44.1494427Z",
+  "lastModifiedDate": "2023-05-18T04:42:44.1494713Z",
+  "owner": {
+    "userObjectId": "5c9f532e-91a7-4156-8cab-cb21cfce93c8",
+    "userTenantId": "72f988bf-86f1-41af-91ab-2d7cd011db47",
+    "userName": "Lisa Li (STC)"
+  },
+  "flowResourceId": "azureml://locations/eastus/workspaces/4c9fbf0d-8b4c-4668-9825-b4c6ec78034f/flows/278ca756-af6c-4482-9f5f-c297e9c3f980",
+  "isArchived": false
+}

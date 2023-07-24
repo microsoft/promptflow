@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidFlowRequest",
+                    "innerError": {
+                        "code": "OutputReferenceNotFound",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Output 'str_val' references node 'ensure_type' which is not in the flow 'ensure_type_conversion'.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

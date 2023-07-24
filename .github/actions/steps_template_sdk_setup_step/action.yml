@@ -1,0 +1,33 @@
+name: pipelines_templates_steps_template_sdk_setup_step
+inputs:
+  scriptPath:
+    required: false
+    default: "$(scriptPath)"
+    type: string
+  setupType:
+    required: false
+    default: promptflow_dev
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: 'Dev Setup: promptflow'
+    if: inputs.setupType == 'promptflow_dev'
+    #run: |-
+    #  pip install -r ./src/promptflow/dev_requirements.txt
+    #  python "${{ inputs.scriptPath }}/dev_setup.py" -pv
+    #  echo "########### pip freeze ###########"
+    #  pip freeze
+    run: |-
+      pip install -r ./examples/requirements.txt
+    shell: bash
+  - name: 'Dev Setup: promptflow with extra deps'
+    if: inputs.setupType == 'promptflow_dev_extra'
+    #run: |-
+    #  pip install -r ./src/promptflow/dev_requirements.txt
+    #  python "${{ inputs.scriptPath }}/dev_setup.py" -pv --promptflow-extra-deps azure
+    #  echo "########### pip freeze ###########"
+    #  pip freeze
+    run: |-
+      pip install -r ./examples/requirements.txt
+    shell: bash

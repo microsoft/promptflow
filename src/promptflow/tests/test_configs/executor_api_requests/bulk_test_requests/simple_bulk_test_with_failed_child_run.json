@@ -1,0 +1,99 @@
+{
+  "flow": {
+    "id": "Simple_mock_answer",
+    "name": "Simple_mock_answer",
+    "nodes": [
+      {
+        "name": "simple_prompt",
+        "tool": "Prompt_dxe3",
+        "inputs": {
+          "question": "${flow.question}"
+        }
+      },
+      {
+        "name": "python_mock_answer",
+        "tool": "Python_b4xz",
+        "inputs": {
+          "input1": "${simple_prompt.output}"
+        }
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "string",
+        "reference": "${python_mock_answer.output}"
+      }
+    },
+    "tools": [
+      {
+        "name": "Prompt_dxe3",
+        "type": "prompt",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "{{question}}"
+      },
+      {
+        "name": "Prompt_dxe3__variant_1",
+        "type": "prompt",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "{{question}}"
+      },
+      {
+        "name": "Prompt_dxe3__variant_2",
+        "type": "prompt",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "{{question}}"
+      },
+      {
+        "name": "Python_b4xz",
+        "type": "python",
+        "inputs": {
+          "input1": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "from promptflow import tool\nfrom promptflow.exceptions import ValidationException, AzureStorageOperationError, ErrorTarget\n\n@tool\ndef my_python_tool(input1: str) -> str:\n    # raise a user error\n    if \"apple\" in input1:\n        raise ValidationException(\"I don't like apple!\", target=ErrorTarget.TOOL)\n    # raise a system error\n    elif \"banana\" in input1:\n        raise AzureStorageOperationError(\"I don't like banana!\", target=ErrorTarget.AZURE_RUN_STORAGE)\n    return \"A fruit.\"",
+        "function": "my_python_tool"
+      }
+    ]
+  },
+  "connections": {},
+  "name": "Simple_mock_answer-bulktest",
+  "baseline_variant_id": "variant_0",
+  "bulk_test_id": "BulkTestId",
+  "batch_inputs": [
+    {
+      "question": "what is apple?"
+    },
+    {
+      "question": "what is banana?"
+    },
+    {
+      "question": "what is orange?"
+    }
+  ]
+}

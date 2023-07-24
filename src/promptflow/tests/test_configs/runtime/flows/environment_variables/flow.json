@@ -1,0 +1,40 @@
+{
+  "id": "environment_variables_flow",
+  "name": "environment_variables_flow",
+  "nodes": [
+    {
+      "name": "get_environment_variables_1",
+      "tool": "get_environment_variables",
+      "inputs": {
+        "env_key": "${flow.env_key}"
+      }
+    }
+  ],
+  "inputs": {
+    "env_key": {
+      "type": "string"
+    }
+  },
+  "outputs": {
+    "env_value": {
+      "type": "string",
+      "reference": "${get_environment_variables_1.env_value}"
+    }
+  },
+  "tools": [
+    {
+      "name": "get_environment_variables",
+      "type": "python",
+      "inputs": {
+        "env_key": {
+          "type": [
+            "string"
+          ],
+          "default": "HOME"
+        }
+      },
+      "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\nimport os\n\n@tool\ndef get_environment_variables(env_key: str = \"HOME\"):\n    if not env_key:\n        raise ValueError(\"env_key is empty\")\n    \n    env_value = os.environ.get(env_key)\n    if not env_value:\n        raise ValueError(\"env_key is not set in environment\")\n    return {\n        \"env_value\": env_value\n    }\n",
+      "function": "get_environment_variables"
+    }
+  ]
+}

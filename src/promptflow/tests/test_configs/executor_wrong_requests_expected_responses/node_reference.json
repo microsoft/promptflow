@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidFlowRequest",
+                    "innerError": {
+                        "code": "NodeReferenceNotFound",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Node 'convert_to_label' references node 'other_node' which is not in the flow 'basic_eval_flow'.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

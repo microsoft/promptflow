@@ -1,0 +1,22 @@
+{
+    "evaluation_flows": {
+        "is_reference_flow": false,
+        "evaluation": "qna_relevance_scores_eval.json"
+    },
+    "flow_run_settings": {
+        "runMode": "Eval",
+        "evaluationFlowRunSettings": {
+            "evaluation": {
+                "inputsMapping": {
+                    "question": "data.question",
+                    "answers": "output.output"
+                },
+                "flowRunDispalyName": "Separate eval flow"
+            }
+        },
+        "inputsMapping": {
+            "question": "data.question",
+            "answers": "output.output"
+        }
+    }
+}

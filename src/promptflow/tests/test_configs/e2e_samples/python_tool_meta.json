@@ -1,0 +1,8 @@
+{
+    "tool_type": "python",
+    "tool_name": "python_meta",
+    "tool_code_file": "python_meta.py",
+    "expected_response": {
+      "status_code": 200
+    }
+}

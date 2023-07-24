@@ -1,0 +1,141 @@
+{
+  "flow": {
+    "id": "dummy_qna_eval",
+    "name": "Dummy - QnA Relevance Scores Evaluation",
+    "nodes": [
+      {
+        "name": "compute_relevance_scores",
+        "tool": "compute_relevance_scores",
+        "inputs": {
+          "question": "${flow.question}",
+          "answers": "${flow.answers}"
+        }
+      },
+      {
+        "name": "compare_with_baseline",
+        "tool": "compare_with_baseline",
+        "inputs": {
+          "scores": "${compute_relevance_scores.output}",
+          "variant_ids": "${flow.variant_ids}"
+        }
+      },
+      {
+        "name": "aggregate_variants_results",
+        "tool": "aggregate_variants_results",
+        "inputs": {
+          "line_number": "${flow.line_number}",
+          "variant_ids": "${flow.variant_ids}",
+          "scores": "${compare_with_baseline.output.score}"
+        },
+        "reduce": true
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      },
+      "answers": {
+        "type": "list"
+      },
+      "line_number": {
+        "type": "int"
+      },
+      "variant_ids": {
+        "type": "list"
+      }
+    },
+    "outputs": {
+      "score": {
+        "type": "list",
+        "reference": "${compare_with_baseline.output.score}"
+      },
+      "win_rate": {
+        "type": "list",
+        "reference": "${compare_with_baseline.output.win_rate}"
+      }
+    },
+    "tools": [
+      {
+        "name": "compute_relevance_scores",
+        "type": "python",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          },
+          "answers": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List\n\nfrom promptflow import tool\n\n\n@tool\ndef compute_relevance_scores(question: str, answers: List):\n    \n    compute_relevance_scores_template = \"\"\"Your task is to evaluate how well the given answer candidates matches a given question,\n    and give a score for this answer.\n    Scores range from 0 to 100, where higher score indicate higher confidence in the answer.\n\n    Question: Who is the actor of Iron Man?\n    Answer: \"Matt Salinger\"\n    Score: 20\n\n    Question: Who is the actor of Iron Man?\n    Answer: \"Robert Downey\"\n    Score: 100\n\n    Question: How does AutoGPT compare to ChatGPT?\n    Answer: AutoGPT is designed to be fully autonomous\"\n    Score: 80\n\n    Question: How does AutoGPT compare to ChatGPT?\n    Answer: \"AutoGPT and ChatGPT are both AI applications that use large language models to generate text.\"\n    Score: 50\n\n    Question: {{question}}\n    Answer: {{answer}}\n    Score:\n    \"\"\"\n\n    # for relevance score evaluation must have at least two answers\n    assert len(answers) > 1\n\n    scores = []\n    current_score = 90\n    for answer in answers:\n        scores.append(current_score)\n        current_score -= 10\n\n    return scores\n",
+        "function": "compute_relevance_scores"
+      },
+      {
+        "name": "compare_with_baseline",
+        "type": "python",
+        "inputs": {
+          "scores": {
+            "type": [
+              "list"
+            ]
+          },
+          "variant_ids": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "source": "compare_with_baseline.py",
+        "code": "from typing import List\n\nfrom promptflow import tool\n\n\n@tool\ndef compare_with_baseline(scores: List, variant_ids: List[str]):\n    # we use variant0 as baseline.\n    baseline_score = scores[0]\n    score_map = {\n        variant_ids[0]: baseline_score\n    }\n    win_rate_map = {}\n\n    for index in range(1, len(variant_ids)):\n        name = variant_ids[index]\n        if name not in score_map.keys():\n            score_map[name] = {}\n\n        if name not in win_rate_map.keys():\n            win_rate_map[name] = {}\n\n        score = scores[index]\n        score_map[name] = score\n        win_rate_map[name] = 1 if score >= baseline_score else 0\n\n    return {\"score\": score_map, \"win_rate\": win_rate_map}",
+        "function": "compare_with_baseline"
+      },
+      {
+        "name": "aggregate_variants_results",
+        "type": "python",
+        "inputs": {
+          "line_number": {
+            "type": [
+              "list"
+            ]
+          },
+          "variant_ids": {
+            "type": [
+              "list"
+            ]
+          },
+          "scores": {
+            "type": [
+              "list"
+            ]
+          }
+        },
+        "source": "aggregate_variants_results.py",
+        "code": "from typing import List\n\nfrom promptflow import tool, log_metric\n\n\n@tool\ndef aggregate_variants_results(line_number: List[int], variant_ids: List[List[str]], scores: List[dict]):\n    aggregate_results = {}\n    for index in range(len(line_number)):\n        score = scores[index]\n        for name, value in score.items():\n            if name not in aggregate_results.keys():\n                aggregate_results[name] = []\n\n            aggregate_results[name].append(value)\n\n    # average scores for each result and log score metrics\n    baseline_name = variant_ids[0][0]\n    for name, value in aggregate_results.items():\n        average_score = round(sum(value) / len(value), 1)\n        aggregate_results[name] = average_score\n        log_metric(\"score\", average_score, variant_id=name)\n\n    # log win rate metrics\n    baseline_average_score = aggregate_results[baseline_name]\n    for index in range(1, len(variant_ids[0])):\n        name = variant_ids[0][index]\n        if aggregate_results[name] >= baseline_average_score:\n            log_metric(\"win_rate\", 1, variant_id=name)\n        else:\n            log_metric(\"win_rate\", 0, variant_id=name)\n\n    return aggregate_results\n",
+        "function": "aggregate_variants_results"
+      }
+    ]
+  },
+  "connections": {},
+  "bulk_test_inputs": [
+    {
+      "question": "what is apple?"
+    },
+    {
+      "question": "what is banana?"
+    }
+  ],
+  "inputs_mapping": {
+    "question": "data.question",
+    "answers": "output.output"
+  },
+  "bulk_test_flow_id": "simple_bulktest_with_variants",
+  "bulk_test_id": "BulkTestId",
+  "bulk_test_flow_run_ids": [
+    "BulkTestFlowRunId_variant0",
+    "BulkTestFlowRunId_variant1",
+    "BulkTestFlowRunId_variant2"
+  ]
+}

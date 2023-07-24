@@ -1,0 +1,34 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "prompt_01",
+          "tool": "simple_prompt",
+          "inputs": {
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "output": {
+          "type": "string",
+          "reference": "${}"
+        }
+      },
+      "tools": [
+        {
+          "name": "simple_prompt",
+          "type": "prompt"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+        {"question": "aaa"}
+    ]
+  }

@@ -1,0 +1,12 @@
+[
+    {
+        "variant_id": "baseline",
+        "prediction": "hello",
+        "groundtruth": "hello"
+    },
+    {
+        "variant_id": "baseline",
+        "prediction": "hello",
+        "groundtruth": "world"
+    }
+]

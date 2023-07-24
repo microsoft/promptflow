@@ -1,0 +1,7 @@
+{
+    "flow_graph": "echo_prompt.json",
+    "flow_run_settings": {
+      "runMode": "BulkTest"
+    },
+    "flow_run_inputs": "echo_prompt_input.csv"
+}

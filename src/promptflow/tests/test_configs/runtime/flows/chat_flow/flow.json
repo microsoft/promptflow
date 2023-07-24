@@ -1,0 +1,81 @@
+{
+    "flow": {
+      "name": "my flow",
+      "nodes": [
+        {
+          "name": "augmented_chat",
+          "tool": "augmented_chat",
+          "inputs": {
+            "chat_history": "${inputs.chat_history}",
+            "deployment_name": "gpt-35-turbo",
+            "question": "${inputs.sentence}",
+            "temperature": "0.2"
+          },
+          "provider": "AzureOpenAI",
+          "reduce": false,
+          "api": "chat",
+          "connection": "azure_open_ai_connection"
+        }
+      ],
+      "inputs": {
+        "chat_history": {
+          "type": "list"
+        },
+        "sentence": {
+          "type": "string",
+          "is_chat_input": true
+        }
+      },
+      "outputs": {
+      },
+      "tools": [
+        {
+          "name": "augmented_chat",
+          "type": "llm",
+          "inputs": {
+            "chat_history": {
+              "name": "chat_history",
+              "type": [
+                "string"
+              ]
+            },
+            "contexts": {
+              "name": "contexts",
+              "type": [
+                "string"
+              ]
+            },
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "system:\nYou are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n\n{{contexts}}\n\n{% for item in chat_history %}\nuser:\n{{item.inputs.sentence}}\nassistant:\n{{item.outputs.response}}\n{% endfor %}\n\nuser:\n{{question}}\n",
+          "function": "val_to_label",
+          "is_builtin": false
+        }
+      ]
+    },
+    "batch_inputs": [
+      {
+        "sentence": "Please write codes for primes.",
+        "chat_history": []
+      },
+      {
+        "sentence":"Please write codes for fetching urls.",
+        "chat_history": [
+          {
+            "inputs": {
+              "sentence": "Hi, can you help me writing code?"
+            },
+            "outputs": {
+              "response": "Sure, what do you want to write code for?"
+            }
+          }
+        ]
+      }
+    ],
+    "connections": {}
+  }

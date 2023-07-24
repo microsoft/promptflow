@@ -1,0 +1,142 @@
+{
+  "flow": {
+    "id": "QnA_relevance_ranking",
+    "name": "QnA_relevance_ranking",
+    "nodes": [
+      {
+        "name": "calculate_evaluation_scores_1",
+        "tool": "calculate_evaluation_scores",
+        "inputs": {
+          "variant_outputs": "${flow.variant_outputs}",
+          "output": "${flow.output}"
+        }
+      },
+      {
+        "name": "compare_with_baseline_1",
+        "tool": "compare_with_baseline",
+        "inputs": {
+          "scores": "${calculate_evaluation_scores_1}"
+        }
+      },
+      {
+        "name": "aggregate_variants_win_rates_1",
+        "tool": "aggregate_variants_win_rates",
+        "inputs": {
+          "questions": "${flow.question}",
+          "outputs": "${flow.output}",
+          "grades_outputs": "${compare_with_baseline_1}"
+        },
+        "reduce": true
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      },
+      "groundtruth": {
+        "type": "string"
+      },
+      "output": {
+        "type": "object"
+      },
+      "variant_outputs": {
+        "type": "object"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "object",
+        "reference": "${aggregate_variants_win_rates_1}"
+      }
+    },
+    "tools": [
+      {
+        "name": "calculate_evaluation_scores",
+        "type": "python",
+        "inputs": {
+          "variant_outputs": {
+            "type": [
+              "object"
+            ]
+          },
+          "output": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from promptflow import tool\n@tool\ndef calculate_evaluation_scores(variant_outputs: dict, output: dict):\n    import random\n    scores = {}\n    for v, o in variant_outputs.items():\n        scores[v] = {\n            \"score\": random.random() * 100\n        }\n\n        for k, a in o.items():\n            scores[v][k] = a\n\n    scores[\"baseline\"] = {\"score\": random.random() * 100}\n    for k, a in output.items():\n        scores[\"baseline\"][k] = a\n\n    return scores\n",
+        "function": "calculate_evaluation_scores"
+      },
+      {
+        "name": "compare_with_baseline",
+        "type": "python",
+        "inputs": {
+          "scores": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from promptflow import tool\n@tool\ndef compare_with_baseline(scores: dict):\n    baseline_rate = scores[\"baseline\"][\"score\"]\n    grades_outputs = {}\n    for name, output in scores.items():\n        if name not in grades_outputs.keys():\n            grades_outputs[name] = {}\n        if output[\"score\"] >= baseline_rate:\n            grades_outputs[name][\"win_rate\"] = 1\n        else:\n            grades_outputs[name][\"win_rate\"] = 0\n\n        for k, a in output.items():\n            grades_outputs[name][k] = a\n\n    return grades_outputs\n",
+        "function": "compare_with_baseline"
+      },
+      {
+        "name": "aggregate_variants_win_rates",
+        "type": "python",
+        "inputs": {
+          "questions": {
+            "type": [
+              "list"
+            ]
+          },
+          "outputs": {
+            "type": [
+              "list"
+            ]
+          },
+          "grades_outputs": {
+            "type": [
+              "list"
+            ]
+          }
+        },
+        "code": "from promptflow import tool\n@tool\ndef aggregate_variants_win_rates(questions: list, outputs: list, grades_outputs: list):\n    import random\n    variants_grade_map = {}\n    for output in grades_outputs:\n        for name, value in output.items():\n            if name not in variants_grade_map.keys():\n                variants_grade_map[name] = []\n            variants_grade_map[name].append(value[\"score\"])\n\n    win_rates = {}\n    variants_grade_map.pop(\"baseline\")\n    for key, value in variants_grade_map.items():\n        acc = random.random()\n        win_rates[key] = {\n            \"score\": str(round(acc * 100, 1)) + \"%\",\n            \"win_rate\": str(round(acc * 100, 1)) + \"%\"\n        }\n\n    new_outputs = outputs.copy()\n    for i in range(len(new_outputs)):\n        grades_output = grades_outputs[i]\n        new_outputs[i][\"score\"] = grades_output[\"baseline\"][\"score\"]\n        grades_output.pop(\"baseline\")\n\n    details = [{\n        \"question\": questions[index],\n        \"output\": new_outputs[index],\n        \"variants\": grades_outputs[index],\n    } for index in range(len(grades_outputs))]\n\n    from promptflow import log_flow_metric\n    log_flow_metric(\"win_rates\", win_rates)\n    log_flow_metric(\"details\", details)\n\n    merged_results = {\n        \"win_rates\": win_rates,\n        \"details\": details\n    }\n\n    return merged_results\n",
+        "function": "aggregate_variants_win_rates"
+      }
+    ]
+  },
+  "connections": {},
+  "batch_inputs": [
+    {
+      "question": "When did OpenAI announced their chatgpt api?",
+      "groundtruth": "",
+      "output": {
+        "answer": "OpenAI announced their ChatGPT API on March 14, 2023."
+      },
+      "variant_outputs": {
+        "variant1": {
+          "answer": "\" OpenAI announced their ChatGPT API on March 23, 2023. SOURCES: https://techcrunch.com/2023/03/23/openai-connects-chatgpt-to-the-internet/, https://openai.com/blog/introducing-chatgpt-and-whisper-apis/, https://azure.microsoft.com/en-us/blog/chatgpt-is-now-available-in-azure-openai-service/, https://www.theregister.com/2023/03/26/openai_chatgpt_plugins/, https://platform.openai.com/docs/models/chatgpt/, https://bgr.com/tech/openai-announces-plugins-for-chatgpt-connecting-the-chatbot-to-other-services/, https://platform.openai.com/docs/guides/chat/, https://openai.com/blog/chatgpt/, https://dev.classmethod.jp/articles/openai-api-chat-python-first-step/.\",\n"
+        },
+        "variant2": {
+          "answer": "\" OpenAI announced their ChatGPT API on March 23, 2023.\",\n"
+        }
+      }
+    },
+    {
+      "question": "When did OpenAI announced their chatgpt api?",
+      "groundtruth": "",
+      "output": {
+        "answer": "OpenAI announced their ChatGPT API on March 14, 2023."
+      },
+      "variant_outputs": {
+        "variant1": {
+          "answer": "\" OpenAI announced their ChatGPT API on March 23, 2023. SOURCES: https://techcrunch.com/2023/03/23/openai-connects-chatgpt-to-the-internet/, https://openai.com/blog/chatgpt/, https://dev.classmethod.jp/articles/openai-api-chat-python-first-step/.\",\n"
+        },
+        "variant2": {
+          "answer": "\" OpenAI announced their ChatGPT API on March 23, 2023.\",\n"
+        }
+      }
+    }
+  ]
+}

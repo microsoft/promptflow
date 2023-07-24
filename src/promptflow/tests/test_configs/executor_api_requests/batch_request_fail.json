@@ -1,0 +1,85 @@
+{
+  "flow": {
+    "name": "expression_evaluation_fail",
+    "nodes": [
+      {
+        "name": "construct_expression_1",
+        "tool": "construct_expression",
+        "inputs": {
+          "val1": "${flow.val2}",
+          "val2": "${flow.val2}",
+          "op": "${flow.op}"
+        }
+      }
+    ],
+    "inputs": {
+      "val1": {
+        "type": "string"
+      },
+      "val2": {
+        "type": "string"
+      },
+      "op": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "string",
+        "reference": "${construct_expression_1}"
+      }
+    },
+    "tools": [
+      {
+        "name": "construct_expression",
+        "type": "python",
+        "description": "",
+        "inputs": {
+          "val1": {
+            "type": "int",
+            "name": "val1"
+          },
+          "val2": {
+            "type": "int",
+            "name": "val2"
+          },
+          "op": {
+            "type": "string",
+            "name": "op"
+          }
+        },
+        "outputs": {
+          "output": {
+            "name": "output",
+            "type": "object",
+            "isProperty": true
+          }
+        },
+        "module": null,
+        "code": "from promptflow import tool\n@tool\ndef construct_expression(val1: int, val2: int, op: str) -> str:\n    return f\"{val1} {op} {val2}\" / 0\n"
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "val1": "100",
+      "val2": "100",
+      "op": "*"
+    },
+    {
+      "val1": "200",
+      "val2": "200",
+      "op": "*"
+    },
+    {
+      "val1": "10",
+      "val2": "30",
+      "op": "*"
+    },
+    {
+      "val1": "0.01",
+      "val2": "0.04",
+      "op": "*"
+    }
+  ]
+}

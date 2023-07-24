@@ -1,0 +1,20 @@
+{
+    "status_code": 400,
+    "body": {
+        "componentName": "promptflow/Unknown",
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": null
+            },
+            "message": "Failed to deserialize BatchFlowRequest due to 'nodes'.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Runtime"
+        },
+        "location": null
+    }
+}

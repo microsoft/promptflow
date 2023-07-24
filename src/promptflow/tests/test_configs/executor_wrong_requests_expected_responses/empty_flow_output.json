@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidFlowRequest",
+                    "innerError": {
+                        "code": "OutputReferenceNotFound",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Output 'output' references node '' which is not in the flow 'dummy_qna'.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

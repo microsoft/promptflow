@@ -1,0 +1,22 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ToolValidationError",
+                "innerError": {
+                    "code": "JinjaParsingError",
+                    "innerError": null
+                }
+            },
+            "message": "Parsing jinja got exception: Encountered unknown tag 'zzz'.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Tool"
+        },
+        "location": null
+    }
+}

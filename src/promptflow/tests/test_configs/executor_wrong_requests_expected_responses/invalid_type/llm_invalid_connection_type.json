@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidFlowRequest",
+                    "innerError": {
+                        "code": "InvalidConnectionType",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Invalid connection 'bing_connection' type 'BingConnection' for node 'infer_intent', valid types ['AzureOpenAIConnection'].",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

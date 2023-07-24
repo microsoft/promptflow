@@ -1,0 +1,58 @@
+creation_context:
+  created_at: xxx
+  created_by: xxx
+  created_by_type: xxx
+  last_modified_at: xxx
+  last_modified_by: xxx
+  last_modified_by_type: xxx
+description: Create flows that use large language models to classify URLs into multiple
+  categories.
+display_name: web_classification_0
+error_threshold: -1
+id: azureml:/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.MachineLearningServices/workspaces/xxx/components/xxx/versions/xxx
+input_data: ${{inputs.data}}
+inputs:
+  connections.classify_with_llm.connection:
+    default: azure_open_ai_connection
+    optional: true
+    type: string
+  connections.summarize_text_content.connection:
+    default: azure_open_ai_connection
+    optional: true
+    type: string
+  data:
+    description: Flow data input
+    optional: false
+    type: uri_folder
+  groundtruth:
+    default: '1'
+    optional: false
+    type: string
+  prediction:
+    default: ${{batch_run.outputs.category}}
+    optional: false
+    type: string
+is_deterministic: true
+logging_level: INFO
+max_concurrency_per_instance: 1
+mini_batch_error_threshold: 0
+mini_batch_size: '1'
+name: web_classification_0
+outputs:
+  flow_outputs:
+    type: uri_folder
+retry_settings:
+  max_retries: 2
+  timeout: 3600
+task:
+  append_row_to: ${{outputs.flow_outputs}}
+  code: azureml:/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.MachineLearningServices/workspaces/xxx/codes/xxx/versions/xxx
+  entry_script: driver/azureml_user/parallel_run/prompt_flow_entry.py
+  environment: azureml:/subscriptions/xxx/resourceGroups/xxx/providers/Microsoft.MachineLearningServices/workspaces/xxx/environments/xxx/versions/xxx
+  program_arguments: --amlbi_pf_enabled True --amlbi_pf_run_mode component --amlbi_mini_batch_rows
+    1 --amlbi_file_format jsonl --amlbi_pf_connections --amlbi_pf_connections"$[[classify_with_llm.connection=${{inputs.connections.classify_with_llm.connection}},]]$[[classify_with_llm.deployment_name=${{inputs.connections.classify_with_llm.deployment_name}},]]$[[summarize_text_content.connection=${{inputs.connections.summarize_text_content.connection}},]]$[[summarize_text_content.deployment_name=${{inputs.connections.summarize_text_content.deployment_name}},]]"
+    --amlbi_pf_input_groundtruth ${{inputs.groundtruth}} --amlbi_pf_input_prediction
+    ${{inputs.prediction}}
+  type: run_function
+type: parallel
+version: 1.0.0

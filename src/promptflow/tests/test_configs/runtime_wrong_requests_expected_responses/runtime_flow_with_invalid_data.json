@@ -1,0 +1,19 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "InvalidUserData",
+                "innerError": null
+            },
+            "message": "Fail to load invalid data. We support file formats: csv, tsv, json, jsonl, parquet. Please check input data.",
+            "messageFormat": "Fail to load invalid data. We support file formats: csv, tsv, json, jsonl, parquet. Please check input data.",
+            "messageParameters": {},
+            "referenceCode": "Runtime"
+        },
+        "location": null
+    }
+}

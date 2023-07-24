@@ -1,0 +1,70 @@
+{
+    "flow": {
+      "name": "basic_eval_flow",
+      "nodes": [
+        {
+            "name": "title_generation",
+            "tool": "title_generation_tool",
+            "inputs": {
+              "text": "${flow.query}"
+            },
+            "api": "completionx",
+            "provider": "AzureOpenAI",
+            "connection": "azure_open_ai_connection"
+          },
+        {
+          "name": "convert_to_label",
+          "tool": "val_to_label",
+          "inputs": {
+            "value": "${flow.query}"
+          }
+        }
+      ],
+      "inputs": {
+        "query": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+      },
+      "tools": [
+        {
+            "name": "title_generation_tool",
+            "type": "llm",
+            "description": "Generates a short title for the given Text",
+            "prompt_type": "completion",
+            "inputs": {
+              "text": {
+                "type": "string",
+                "name": "text"
+              }
+            },
+            "module": null,
+            "code": "Create a 10-word Title for the text below:\\n{{Text}}"
+        },
+        {
+          "name": "val_to_label",
+          "type": "python",
+          "inputs": {
+            "value": {
+              "name": "value",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "from promptflow import tool\n@tool\ndef val_to_label(value):\n    return '1' if value.startswith('P') else '0'\n",
+          "function": "val_to_label"
+        }
+      ]
+    },
+    "batch_inputs": [
+      {
+        "query": "Park City Utah",
+        "label": "1"
+      }
+    ]
+  }

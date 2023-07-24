@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidFlowRequest",
+                    "innerError": {
+                        "code": "InputTypeError",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Input 'int' in line 0 for flow 'ensure_type_conversion' of value 0.1 is not type int.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

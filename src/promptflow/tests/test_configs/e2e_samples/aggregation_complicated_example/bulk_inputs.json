@@ -1,0 +1,10 @@
+[
+    {
+        "answer": "hello",
+        "groundtruth": "hello"
+    },
+    {
+        "answer": "hello",
+        "groundtruth": "world"
+    }
+]

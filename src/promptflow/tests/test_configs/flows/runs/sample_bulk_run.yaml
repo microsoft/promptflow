@@ -1,0 +1,14 @@
+name: flow_run_20230629_101205
+flow: ../web_classification
+data: ../webClassification1.jsonl
+column_mapping:
+   url: "${data.url}"
+variant: ${summarize_text_content.variant_0}
+
+# run config: env related
+environment_variables: env_file
+
+connections:
+   node_1:
+      connection: test_llm_connection
+      deployment_name: gpt-35-turbo

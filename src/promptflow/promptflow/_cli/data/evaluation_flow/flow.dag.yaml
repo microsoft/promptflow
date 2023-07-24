@@ -1,0 +1,36 @@
+inputs:
+  groundtruth:
+    type: string
+  prediction:
+    type: string
+  variant_id:
+    type: string
+  line_number:
+    type: int
+outputs:
+  results:
+    type: string
+    reference: ${line_process.output}
+nodes:
+- name: line_process
+  type: python
+  source:
+    type: code
+    path: line_process.py
+  inputs:
+    groundtruth: ${inputs.groundtruth}
+    prediction: ${inputs.prediction}
+- name: aggregate
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    processed_results: ${line_process.output}
+    variant_ids: ${inputs.variant_id}
+    line_numbers: ${inputs.line_number}
+  aggregation: true
+id: template_eval_flow
+name: Template Evaluation Flow
+environment:
+  python_requirements_txt: requirements.txt

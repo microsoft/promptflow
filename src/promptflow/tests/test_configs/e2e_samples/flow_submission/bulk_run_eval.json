@@ -1,0 +1,21 @@
+{
+  "flow_graph": "web_classification.json",
+  "evaluation_flows": {
+    "evaluation": {
+      "referenceResourceId": "azureml://flows/ClassificationAccuracyEvaluation"
+    }
+  },
+  "flow_run_settings": {
+    "runMode": "BulkTest",
+    "evaluationFlowRunSettings": {
+      "evaluation": {
+        "inputsMapping": {
+          "groundtruth": "data.category",
+          "prediction": "output.category"
+        },
+        "flowRunDisplayName": "Web Classification-bulktest - Classification Accuracy Evaluation"
+      }
+    }
+  },
+  "flow_run_inputs": "web_classification_input.csv"
+}

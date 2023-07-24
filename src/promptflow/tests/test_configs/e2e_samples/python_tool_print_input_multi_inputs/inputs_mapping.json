@@ -1,0 +1,5 @@
+{
+    "base_line": "${baseline.text}",
+    "variant0_output": "${variant0.output.output.answer}",
+    "variant1_output": "${variant1.output.output}"
+}

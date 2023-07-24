@@ -1,0 +1,10 @@
+{
+    "flow_graph": "simple_mock_answer.json",
+    "flow_run_settings": {
+      "runMode": "BulkTest",
+      "tuningNodeNames": [
+        "simple_prompt"
+      ]
+    },
+    "flow_run_inputs": "simple_mock_answer.csv"
+}

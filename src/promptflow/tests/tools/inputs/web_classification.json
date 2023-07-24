@@ -1,0 +1,401 @@
+{
+	"flowId": "f92516f9-1d3b-4f44-b195-b574f2ba040b",
+	"flow": {
+		"flowGraph": {
+			"nodes": [
+				{
+					"name": "fetch_text_content_from_url",
+					"tool": "fetch_text_content_from_url",
+					"inputs": {
+						"url": "${inputs.url}"
+					},
+					"reduce": false
+				},
+				{
+					"name": "summarize_text_content",
+					"tool": "summarize_text_content__variant_1",
+					"inputs": {
+						"deployment_name": "text-davinci-003",
+						"suffix": "",
+						"max_tokens": "256",
+						"temperature": "0.2",
+						"top_p": "1.0",
+						"logprobs": "",
+						"echo": "False",
+						"stop": "",
+						"presence_penalty": "0",
+						"frequency_penalty": "0",
+						"best_of": "1",
+						"logit_bias": "",
+						"text": "${fetch_text_content_from_url.output}"
+					},
+					"provider": "AzureOpenAI",
+					"connection": "open-ai-gogogog",
+					"api": "completion",
+					"module": "promptflow.tools.aoai",
+					"reduce": false
+				},
+				{
+					"name": "prepare_examples",
+					"tool": "prepare_examples",
+					"inputs": {},
+					"reduce": false
+				},
+				{
+					"name": "classify_with_llm",
+					"tool": "classify_with_llm",
+					"inputs": {
+						"deployment_name": "text-davinci-003",
+						"suffix": "",
+						"max_tokens": "128",
+						"temperature": "0.2",
+						"top_p": "1.0",
+						"logprobs": "",
+						"echo": "False",
+						"stop": "",
+						"presence_penalty": "0",
+						"frequency_penalty": "0",
+						"best_of": "1",
+						"logit_bias": "",
+						"url": "${inputs.url}",
+						"examples": "${prepare_examples.output}",
+						"text_content": "${summarize_text_content.output}"
+					},
+					"provider": "AzureOpenAI",
+					"connection": "open-ai-gogogog",
+					"api": "completion",
+					"module": "promptflow.tools.aoai",
+					"reduce": false
+				},
+				{
+					"name": "convert_to_dict",
+					"tool": "convert_to_dict",
+					"inputs": {
+						"input_str": "${classify_with_llm.output}"
+					},
+					"reduce": false
+				}
+			],
+			"inputs": {
+				"url": {
+					"type": "string",
+					"default": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+					"is_chat_input": false
+				}
+			},
+			"outputs": {
+				"category": {
+					"type": "string",
+					"reference": "${convert_to_dict.output.category}",
+					"evaluation_only": false,
+					"is_chat_output": false
+				},
+				"evidence": {
+					"type": "string",
+					"reference": "${convert_to_dict.output.evidence}",
+					"evaluation_only": false,
+					"is_chat_output": false
+				}
+			},
+			"tools": [
+				{
+					"name": "fetch_text_content_from_url",
+					"type": "python",
+					"inputs": {
+						"url": {
+							"name": "url",
+							"type": [
+								"string"
+							]
+						}
+					},
+					"source": "fetch_text_content_from_url.py",
+					"lkgCode": "from promptflow import tool\nimport requests\nimport bs4\n\n@tool\ndef fetch_text_content_from_url(url: str):\n    # Send a request to the URL\n    try:\n        headers = {\"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"}\n        response = requests.get(url, headers=headers)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            soup.prettify()\n            return soup.get_text()[:2000]\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: {response.text[:100]}\"\n            print(msg)\n            return \"No available content\"\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return \"No available content\"\n",
+					"code": "from promptflow import tool\nimport requests\nimport bs4\n\n@tool\ndef fetch_text_content_from_url(url: str):\n    # Send a request to the URL\n    try:\n        headers = {\"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"}\n        response = requests.get(url, headers=headers)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            soup.prettify()\n            return soup.get_text()[:2000]\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: {response.text[:100]}\"\n            print(msg)\n            return \"No available content\"\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return \"No available content\"\n",
+					"function": "fetch_text_content_from_url",
+					"is_builtin": false
+				},
+				{
+					"name": "summarize_text_content",
+					"type": "llm",
+					"inputs": {
+						"text": {
+							"name": "text",
+							"type": [
+								"string"
+							]
+						}
+					},
+					"description": "Summarize webpage content into a short paragraph.",
+					"source": "summarize_text_content.jinja2",
+					"lkgCode": "Please summarize the following text in one paragraph. 100 words.\nDo not add any information that is not in the text.\nText: {{text}}\nSummary: ",
+					"code": "Please summarize the following text in one paragraph. 100 words.\nDo not add any information that is not in the text.\nText: {{text}}\nSummary: ",
+					"is_builtin": false
+				},
+				{
+					"name": "summarize_text_content__variant_1",
+					"type": "llm",
+					"inputs": {
+						"text": {
+							"type": [
+								"string"
+							],
+							"value": "${fetch_text_content_from_url.output}"
+						}
+					},
+					"code": "Please summarize some keywords of this paragraph and have some details of each keywords.\nDo not add any information that is not in the text.\nText: {{text}}\nSummary: ",
+					"is_builtin": false,
+					"lkgCode": "Please summarize some keywords of this paragraph and have some details of each keywords.\nDo not add any information that is not in the text.\nText: {{text}}\nSummary: "
+				},
+				{
+					"name": "prepare_examples",
+					"type": "python",
+					"source": "prepare_examples.py",
+					"lkgCode": "from promptflow import tool\n\n@tool\ndef prepare_examples():\n    return [\n        {\n            \"url\": \"https://play.google.com/store/apps/details?id=com.spotify.music\",\n            \"text_content\": \"Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.\",\n            \"category\": \"App\",\n            \"evidence\": \"Both\"\n        },\n        {\n            \"url\": \"https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\",\n            \"text_content\": \"NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.\",\n            \"category\": \"Channel\",\n            \"evidence\": \"URL\"\n        },\n        {\n            \"url\": \"https://arxiv.org/abs/2303.04671\",\n            \"text_content\": \"Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.\",\n            \"category\": \"Academic\",\n            \"evidence\": \"Text content\"\n        },\n        {\n            \"url\": \"https://ab.politiaromana.ro/\",\n            \"text_content\": \"There is no content available for this text.\",\n            \"category\": \"None\",\n            \"evidence\": \"None\"\n        }\n    ]\n",
+					"code": "from promptflow import tool\n\n@tool\ndef prepare_examples():\n    return [\n        {\n            \"url\": \"https://play.google.com/store/apps/details?id=com.spotify.music\",\n            \"text_content\": \"Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.\",\n            \"category\": \"App\",\n            \"evidence\": \"Both\"\n        },\n        {\n            \"url\": \"https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\",\n            \"text_content\": \"NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.\",\n            \"category\": \"Channel\",\n            \"evidence\": \"URL\"\n        },\n        {\n            \"url\": \"https://arxiv.org/abs/2303.04671\",\n            \"text_content\": \"Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.\",\n            \"category\": \"Academic\",\n            \"evidence\": \"Text content\"\n        },\n        {\n            \"url\": \"https://ab.politiaromana.ro/\",\n            \"text_content\": \"There is no content available for this text.\",\n            \"category\": \"None\",\n            \"evidence\": \"None\"\n        }\n    ]\n",
+					"function": "prepare_examples",
+					"is_builtin": false
+				},
+				{
+					"name": "classify_with_llm",
+					"type": "llm",
+					"inputs": {
+						"url": {
+							"name": "url",
+							"type": [
+								"string"
+							]
+						},
+						"examples": {
+							"name": "examples",
+							"type": [
+								"string"
+							]
+						},
+						"text_content": {
+							"name": "text_content",
+							"type": [
+								"string"
+							]
+						}
+					},
+					"description": "Multi-class classification of a given url and text content.",
+					"source": "classify_with_llm.jinja2",
+					"lkgCode": "Your task is to classify a given url into one of the following types:\nMovie, App, Academic, Channel, Profile, PDF or None based on the text content information.\nThe classification will be based on the url, the webpage text content summary, or both.\n\nHere are a few examples:\n{% for ex in examples %}\nURL: {{ex.url}}\nText content: {{ex.text_content}}\nOUTPUT:\n{\"category\": \"{{ex.category}}\", \"evidence\": \"{{ex.evidence}}\"}\n\n{% endfor %}\n\nFor a given URL : {{url}}, and text content: {{text_content}}.\nClassify above url to complete the category and indicate evidence.\nOUTPUT:",
+					"code": "Your task is to classify a given url into one of the following types:\nMovie, App, Academic, Channel, Profile, PDF or None based on the text content information.\nThe classification will be based on the url, the webpage text content summary, or both.\n\nHere are a few examples:\n{% for ex in examples %}\nURL: {{ex.url}}\nText content: {{ex.text_content}}\nOUTPUT:\n{\"category\": \"{{ex.category}}\", \"evidence\": \"{{ex.evidence}}\"}\n\n{% endfor %}\n\nFor a given URL : {{url}}, and text content: {{text_content}}.\nClassify above url to complete the category and indicate evidence.\nOUTPUT:",
+					"is_builtin": false
+				},
+				{
+					"name": "convert_to_dict",
+					"type": "python",
+					"inputs": {
+						"input_str": {
+							"name": "input_str",
+							"type": [
+								"string"
+							]
+						}
+					},
+					"source": "convert_to_dict.py",
+					"lkgCode": "from promptflow import tool\nimport json\n\n@tool\ndef convert_to_dict(input_str: str):\n    try:\n        return json.loads(input_str)\n    except Exception as e:\n        print(\"input is not valid, error: {}\".format(e))\n        return {\n            \"category\": \"None\",\n            \"evidence\": \"None\"\n        }\n",
+					"code": "from promptflow import tool\nimport json\n\n@tool\ndef convert_to_dict(input_str: str):\n    try:\n        return json.loads(input_str)\n    except Exception as e:\n        print(\"input is not valid, error: {}\".format(e))\n        return {\n            \"category\": \"None\",\n            \"evidence\": \"None\"\n        }\n",
+					"function": "convert_to_dict",
+					"is_builtin": false
+				}
+			]
+		},
+		"nodeVariants": {
+			"fetch_text_content_from_url": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "fetch_text_content_from_url",
+							"tool": "fetch_text_content_from_url",
+							"inputs": {
+								"url": "${inputs.url}"
+							},
+							"reduce": false
+						}
+					}
+				}
+			},
+			"summarize_text_content": {
+				"defaultVariantId": "variant_1",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "summarize_text_content",
+							"tool": "summarize_text_content",
+							"inputs": {
+								"deployment_name": "text-davinci-003",
+								"suffix": "",
+								"max_tokens": "128",
+								"temperature": "0.2",
+								"top_p": "1.0",
+								"logprobs": "",
+								"echo": "False",
+								"stop": "",
+								"presence_penalty": "0",
+								"frequency_penalty": "0",
+								"best_of": "1",
+								"logit_bias": "",
+								"text": "${fetch_text_content_from_url.output}"
+							},
+							"provider": "AzureOpenAI",
+							"connection": "open-ai-gogogog",
+							"api": "completion",
+							"module": "promptflow.tools.aoai",
+							"reduce": false
+						}
+					},
+					"variant_1": {
+						"node": {
+							"name": "summarize_text_content",
+							"tool": "summarize_text_content__variant_1",
+							"inputs": {
+								"deployment_name": "text-davinci-003",
+								"suffix": "",
+								"max_tokens": "256",
+								"temperature": "0.2",
+								"top_p": "1.0",
+								"logprobs": "",
+								"echo": "False",
+								"stop": "",
+								"presence_penalty": "0",
+								"frequency_penalty": "0",
+								"best_of": "1",
+								"logit_bias": "",
+								"text": "${fetch_text_content_from_url.output}"
+							},
+							"provider": "AzureOpenAI",
+							"connection": "open-ai-gogogog",
+							"api": "completion",
+							"module": "promptflow.tools.aoai",
+							"reduce": false
+						}
+					}
+				}
+			},
+			"prepare_examples": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "prepare_examples",
+							"tool": "prepare_examples",
+							"inputs": {},
+							"reduce": false
+						}
+					}
+				}
+			},
+			"classify_with_llm": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "classify_with_llm",
+							"tool": "classify_with_llm",
+							"inputs": {
+								"deployment_name": "text-davinci-003",
+								"suffix": "",
+								"max_tokens": "128",
+								"temperature": "0.2",
+								"top_p": "1.0",
+								"logprobs": "",
+								"echo": "False",
+								"stop": "",
+								"presence_penalty": "0",
+								"frequency_penalty": "0",
+								"best_of": "1",
+								"logit_bias": "",
+								"url": "${inputs.url}",
+								"examples": "${prepare_examples.output}",
+								"text_content": "${summarize_text_content.output}"
+							},
+							"provider": "AzureOpenAI",
+							"connection": "open-ai-gogogog",
+							"api": "completion",
+							"module": "promptflow.tools.aoai",
+							"reduce": false
+						}
+					}
+				}
+			},
+			"convert_to_dict": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "convert_to_dict",
+							"tool": "convert_to_dict",
+							"inputs": {
+								"input_str": "${classify_with_llm.output}"
+							},
+							"reduce": false
+						}
+					}
+				}
+			}
+		},
+		"flowGraphLayout": {
+			"nodeLayouts": {
+				"inputs": {
+					"x": 231.5,
+					"y": 62,
+					"index": -1
+				},
+				"outputs": {
+					"x": 237,
+					"y": 562,
+					"index": -1
+				},
+				"fetch_text_content_from_url": {
+					"x": 413,
+					"y": 162,
+					"height": 75,
+					"index": 0
+				},
+				"summarize_text_content": {
+					"x": 413,
+					"y": 262,
+					"height": 50,
+					"index": 1
+				},
+				"prepare_examples": {
+					"x": 108,
+					"y": 262,
+					"height": 75,
+					"index": 2
+				},
+				"classify_with_llm": {
+					"x": 295,
+					"y": 362,
+					"height": 75,
+					"index": 3
+				},
+				"convert_to_dict": {
+					"x": 317,
+					"y": 462,
+					"height": 75,
+					"index": 4
+				}
+			}
+		}
+	},
+	"flowRunId": "8ffd2b5b-e207-4a05-bfa1-c61332d20391",
+	"flowSubmitRunSettings": {
+		"runtimeName": "qixia-ci-1",
+		"runMode": "Flow",
+		"batch_inputs": [
+			{
+				"url": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h"
+			}
+		],
+		"tuningNodeNames": [
+			"summarize_text_content"
+		]
+	},
+	"useWorkspaceConnection": true
+}

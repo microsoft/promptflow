@@ -1,0 +1,104 @@
+{
+    "flowGraph": {
+      "nodes": [
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${flow.question}"
+          },
+          "reduce": false
+        },
+        {
+          "name": "dummy_extract_1",
+          "tool": "dummy_extract",
+          "inputs": {
+            "item": "${dummy_search_1}"
+          },
+          "reduce": false
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string",
+          "is_chat_input": false
+        }
+      },
+      "outputs": {
+        "output": {
+          "type": "object",
+          "reference": "${dummy_extract_1}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "lkgCode": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\",\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "code": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\",\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "function": "dummy_search",
+          "is_builtin": false
+        },
+        {
+          "name": "dummy_extract",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "name": "item",
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "class_name": "dummy_extract",
+          "lkgCode": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return item['answer']\n",
+          "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return item['answer']\n",
+          "function": "dummy_extract",
+          "is_builtin": false
+        }
+      ]
+    },
+    "nodeVariants": {
+      "dummy_search_1": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "dummy_search_1",
+              "tool": "dummy_search",
+              "inputs": {
+                "question": "${flow.question}"
+              },
+              "reduce": false
+            }
+          }
+        }
+      },
+      "dummy_extract_1": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "dummy_extract_1",
+              "tool": "dummy_extract",
+              "inputs": {
+                "item": "${dummy_search_1}"
+              },
+              "reduce": false
+            }
+          }
+        }
+      }
+    }
+  }

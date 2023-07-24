@@ -1,0 +1,40 @@
+{
+    "flow": {
+      "id": "test_no_output",
+      "name": "test_no_output",
+      "nodes": [
+        {
+            "name": "no_output",
+            "tool": "no_output",
+            "inputs": {
+              "question": "${inputs.question}"
+            }
+          }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {},
+      "tools": [
+        {
+          "name": "no_output",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": "string"
+            }
+          },
+          "description": "This is a llm tool",
+          "code": "from promptflow import tool\n@tool\ndef no_output(question):\n    pass"
+        }
+      ]
+    },
+    "batch_inputs": [
+      {
+        "question": "DummyQuestion"
+      }
+    ],
+    "name": "Test No Output"
+  }

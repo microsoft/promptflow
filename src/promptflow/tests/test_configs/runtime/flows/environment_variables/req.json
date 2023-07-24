@@ -1,0 +1,46 @@
+{
+  "flow": {
+    "id": "environment_variables_flow",
+    "name": "environment_variables_flow",
+    "nodes": [
+      {
+        "name": "get_environment_variables_1",
+        "tool": "get_environment_variables",
+        "inputs": {
+          "env_key": "${flow.env_key}"
+        }
+      }
+    ],
+    "inputs": {
+      "env_key": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "object",
+        "reference": "${get_environment_variables_1.env_key}"
+      }
+    },
+    "tools": [
+      {
+        "name": "get_environment_variables",
+        "type": "python",
+        "inputs": {
+          "env_key": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\nimport os\n\n@tool\ndef get_environment_variables(env_key):\n    if not env_key:\n        raise ValueError(\"env_key is not set\")\n    \n    return {\n        \"env_key\": os.environ.get(env_key)\n    }\n",
+        "function": "get_environment_variables"
+      }
+    ]
+  },
+  "connections":{},
+  "batch_inputs":[
+    {"env_key": "abc"},
+    {"env_key": "HOME"}
+  ]
+}

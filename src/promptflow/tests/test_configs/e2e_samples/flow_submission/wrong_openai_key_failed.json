@@ -1,0 +1,11 @@
+{
+    "flow_graph": "wrong_openai_key.json",
+    "flow_run_settings": {
+        "runMode": "Flow",
+        "batch_inputs": [
+            {
+              "question": "When did OpenAI announced their chatgpt api?"
+            }
+        ]
+    }
+}

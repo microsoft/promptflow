@@ -1,0 +1,10 @@
+{
+    "flow_graph": "ask_wikipedia.json",
+    "flow_run_settings": {
+      "runMode": "SingleNode",
+      "nodeName": "get_wiki_url",
+      "nodeInputs": {
+        "inputs.question": "Who is Obama?"
+      }
+    }
+}

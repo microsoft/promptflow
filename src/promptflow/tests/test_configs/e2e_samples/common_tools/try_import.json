@@ -1,0 +1,14 @@
+{
+    "name": "try_import",
+    "type": "python",
+    "inputs": {
+      "v": {
+        "type": [
+          "string"
+        ]
+      }
+    },
+    "outputs": {},
+    "source": "common_tools/try_import.py",
+    "function": "try_import_tool"
+}

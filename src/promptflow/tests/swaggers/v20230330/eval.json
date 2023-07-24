@@ -1,0 +1,78 @@
+{
+    "flow": {
+      "id": "basic_eval_flow",
+      "name": "basic_eval_flow",
+      "nodes": [
+        {
+          "name": "get_variant_winner",
+          "tool": "get_variant_winner",
+          "inputs": {
+            "groundtruth": "${flow.groundtruth}",
+            "variants": "${flow.variants_outputs}",
+            "baseline": "${flow.output}"
+          }
+        },
+        {
+          "name": "calculate_win_rate",
+          "tool": "calculate_win_rate",
+          "reduce": true,
+          "inputs": {
+            "winners": "${get_variant_winner}"
+          }
+        }
+      ],
+      "inputs": {
+        "groundtruth": {
+          "type": "string"
+        },
+        "output": {
+          "type": "object"
+        },
+        "variants_outputs": {
+          "type": "object"
+        }
+      },
+      "outputs": {},
+      "tools": [
+        {
+          "name": "get_variant_winner",
+          "type": "python",
+          "inputs": {
+            "groundtruth": {
+              "type": [
+                "string"
+              ]
+            },
+            "variants": {
+                "type": [
+                    "object"
+                ]
+            },
+            "baseline": {
+                "type": [
+                    "string"
+                ]
+            }
+          },
+          "code": "from promptflow import tool\n@tool\ndef get_variant_winner(groundtruth, baseline, variants):\n    import random\n    return random.choice(variants)\n",
+          "function": "val_to_label"
+        },
+        {
+            "name": "calculate_win_rate",
+            "type": "python",
+            "inputs": {
+              "winners": {
+                "type": [
+                  "object"
+                ]
+              }
+            },
+            "code": "from promptflow import tool, log_flow_metric\n@tool\ndef calculate_win_rate(winners: list):\n    return len(winners)\n",
+            "function": "calculate_win_rate"
+          }
+      ]
+    },
+    "bulk_test_flow_id": "dummy_flow_id",
+    "bulk_test_flow_run_id": "dummy_run_id",
+    "connections": {}
+}

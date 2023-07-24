@@ -1,0 +1,119 @@
+{
+  "flow": {
+    "id": "simple_bulktest_with_variants",
+    "name": "Simple_mock_answer",
+    "nodes": [
+      {
+        "name": "simple_prompt",
+        "tool": "Prompt_dxe3",
+        "inputs": {
+          "question": "${flow.question}"
+        }
+      },
+      {
+        "name": "python_mock_answer",
+        "tool": "Python_b4xz",
+        "inputs": {
+          "input1": "${simple_prompt.output}"
+        }
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "string",
+        "reference": "${python_mock_answer.output}"
+      }
+    },
+    "tools": [
+      {
+        "name": "Prompt_dxe3",
+        "type": "prompt",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "{{question}}"
+      },
+      {
+        "name": "Prompt_dxe3__variant_1",
+        "type": "prompt",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "{{question}}"
+      },
+      {
+        "name": "Prompt_dxe3__variant_2",
+        "type": "prompt",
+        "inputs": {
+          "question": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "{{question}}"
+      },
+      {
+        "name": "Python_b4xz",
+        "type": "python",
+        "inputs": {
+          "input1": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "from promptflow import tool\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef my_python_tool(input1: str) -> str:\n  return \"A fruit.\"",
+        "function": "my_python_tool"
+      }
+    ]
+  },
+  "name": "Simple_mock_answer-bulktest",
+  "baseline_variant_id": "variant_0",
+  "variants": {
+    "variant_1": [
+      {
+        "name": "simple_prompt",
+        "tool": "Prompt_dxe3__variant_1",
+        "inputs": {
+          "question": "${flow.question}"
+        }
+      }
+    ],
+    "variant_2": [
+      {
+        "name": "simple_prompt",
+        "tool": "Prompt_dxe3__variant_2",
+        "inputs": {
+          "question": "${flow.question}"
+        }
+      }
+    ]
+  },
+  "variants_runs": {
+    "variant_1": "BaseFlowRunId_BulkTestId_variant_1",
+    "variant_2": "BaseFlowRunId_BulkTestId_variant_2"
+  },
+  "bulk_test_id": "BulkTestId",
+  "batch_inputs": [
+    {
+      "question": "what is apple?"
+    },
+    {
+      "question": "what is banana?"
+    }
+  ]
+}

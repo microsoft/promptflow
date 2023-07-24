@@ -1,0 +1,227 @@
+{
+  "flow": {
+    "id": "qa_with_bing",
+    "name": "qa_with_bing",
+    "nodes": [
+      {
+        "name": "infer_intent",
+        "tool": "intent",
+        "inputs": {
+          "logprobs": "",
+          "suffix": "",
+          "top_p": "",
+          "question": "${flow.question}",
+          "max_tokens": "256",
+          "deployment_name": "text-ada-001",
+          "temperature": "0.7"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "bing_connection"
+      },
+      {
+        "name": "Bing_search_1",
+        "tool": "Bing.search",
+        "inputs": {
+          "query": "${infer_intent}",
+          "count": "10"
+        },
+        "connection": "bing_connection"
+      },
+      {
+        "name": "combine_search_result_1",
+        "tool": "combine_search_result",
+        "inputs": {
+          "search_result": "${Bing_search_1}"
+        }
+      },
+      {
+        "name": "qa_with_sources",
+        "tool": "qa",
+        "inputs": {
+          "contexts": "${combine_search_result_1}",
+          "question": "${flow.question}",
+          "max_tokens": "256",
+          "deployment_name": "text-ada-001",
+          "temperature": "0.5"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "answer": {
+        "type": "object",
+        "reference": "${qa_with_sources}"
+      }
+    },
+    "tools": [
+      {
+        "name": "intent",
+        "description": "Infer user intent",
+        "type": "llm",
+        "inputs": {
+          "question": {
+            "name": "question",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "I want you to act as a web browser browsing an imaginary internet. Given an input question, infer user real intent.\nInput question: What is the name of US first president's wife?\nAnswer: US first president's wife\nInput question: I want to find the best restaurants nearby, could you recommend some?\nAnswer: best restaurants near me\nInput question: What are Elon Musk's wife doing?\nAnswer: Elon Musk's wife activities\nInput question: {{question}}\nAnswer: \n"
+      },
+      {
+        "name": "Bing.search",
+        "type": "python",
+        "inputs": {
+          "query": {
+            "type": [
+              "string"
+            ]
+          },
+          "answerCount": {
+            "type": [
+              "int"
+            ]
+          },
+          "cc": {
+            "type": [
+              "string"
+            ]
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          },
+          "freshness": {
+            "type": [
+              "string"
+            ]
+          },
+          "mkt": {
+            "type": [
+              "string"
+            ]
+          },
+          "offset": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "promote": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "responseFilter": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "safesearch": {
+            "type": [
+              "string"
+            ],
+            "default": "Moderate"
+          },
+          "setLang": {
+            "type": [
+              "string"
+            ],
+            "default": "en"
+          },
+          "textDecorations": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "textFormat": {
+            "type": [
+              "string"
+            ],
+            "default": "Raw"
+          }
+        },
+        "module": "promptflow.tools.bing",
+        "class_name": "Bing",
+        "function": "search",
+        "connection_type": [
+          "Bing"
+        ]
+      },
+      {
+        "name": "combine_search_result",
+        "type": "python",
+        "inputs": {
+          "search_result": {
+            "name": "search_result",
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "class_name": "combine_search_result",
+        "code": "from promptflow import tool\n@tool\ndef combine_search_result(search_result):\n    def format(doc: dict):\n        return f\"Content: {doc['Content']}\\nSource: {doc['Source']}\"\n\n    try:\n        context = []\n        for data in search_result[\"webPages\"][\"value\"]:\n            context.append({\n                \"Content\": data.get(\"snippet\", \"\"),\n                \"Source\": data.get(\"url\", \"\")\n            })\n        context_str = \"\\n\\n\".join([format(c) for c in context])\n        return context_str[:512]\n    except Exception as e:\n        print(\"search result is not valid, error: {}\".format(e))\n        return \"\"\n",
+        "function": "combine_search_result"
+      },
+      {
+        "name": "qa",
+        "description": "QA with sources",
+        "type": "llm",
+        "inputs": {
+          "question": {
+            "name": "question",
+            "type": [
+              "string"
+            ]
+          },
+          "contexts": {
+            "name": "contexts",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "You are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n{{contexts}}\nHuman: {{question}}\nChatbot:"
+      }
+    ]
+  },
+  "connections": {
+    "azure_open_ai_connection": {
+      "type": "AzureOpenAIConnection",
+      "value": {
+        "api_key": "aoai-api-key",
+        "api_base": "aoai-api-endpoint",
+        "api_type": "azure",
+        "api_version": "2023-03-15-preview"
+      },
+      "module": "promptflow.connections"
+    },
+    "bing_connection": {
+      "type": "BingConnection",
+      "value": {
+        "api_key": "bing-api-key"
+      },
+      "module": "promptflow.connections"
+    }
+  },
+  "batch_inputs": [
+    {
+      "question": "When did OpenAI announced their chatgpt api?"
+    }
+  ],
+  "name": "QA with Bing",
+  "description": "This is a QA bot with Bing search"
+}

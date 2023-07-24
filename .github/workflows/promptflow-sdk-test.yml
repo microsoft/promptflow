@@ -1,0 +1,56 @@
+name: Vienna/PromptFlow/promptflow-test
+on:
+  push:
+    branches:
+    - main
+env:
+  PYTHONPATH: "${{ github.workspace }}/src/promptflow"
+  RUNTIME-CI-RESOURCE-GROUP: test-rg
+  RUNTIME-CI-SUBSCRIPTION: 00000000-0000-0000-0000-000000000000
+  RUNTIME-CI-WORKSPACE: test-ws
+  aoai-api-endpoint: https://promptflow-ci-eus.openai.azure.com/
+  coverageThreshold: 75
+  deployPath: "${{ env.promptflowRepoLocation }}/deploy"
+  linuxImage: Ubuntu-latest
+  promptflowRepoLocation: "${{ github.workspace }}"
+  pythonVersion: 3.8
+  scriptPath: "${{ env.promptflowRepoLocation }}/scripts"
+  srcPath: "${{ env.promptflowRepoLocation }}/src"
+  subscriptionId: 00000000-0000-0000-0000-000000000000
+  testPath: "${{ env.promptflowRepoLocation }}/src/promptflow/tests/promptflow_test"
+jobs:
+  template_run_tests:
+    name: template_run_tests
+    uses: "./.github/workflows/template_run_tests.yml"
+    with:
+      pytestMarker: unittest or e2etest
+      packageSetupType: promptflow_dev_extra
+      testWorkingDirectory: "${{ env.promptflowRepoLocation }}/src/promptflow"
+      location: "${{ env.location }}"
+      coveragePath: promptflow
+      coverage: false
+      testPath: "${{ env.promptflowRepoLocation }}/src/promptflow/tests"
+  # template_run_tests_2:
+  #   name: template_run_tests_2
+  #   needs: template_run_tests_2
+  #   uses: "./.github/workflows/template_run_tests.yml"
+  #   with:
+  #     pytestMarker: community_runtime_test
+  #     packageSetupType: promptflow_dev
+  #     testWorkingDirectory: "${{ env.promptflowRepoLocation }}/src/promptflow"
+  #     location: "${{ env.location }}"
+  #     coveragePath: promptflow
+  #     coverage: false
+  #     testPath: "${{ env.promptflowRepoLocation }}/src/promptflow/tests/runtime_community_test"
+  # template_run_tests_3:
+  #   name: template_run_tests_3
+  #   needs: template_run_tests_3
+  #   uses: "./.github/workflows/template_run_tests.yml"
+  #   with:
+  #     pytestMarker: community_control_plane_sdk_test or community_control_plane_cli_test
+  #     packageSetupType: promptflow_dev
+  #     testWorkingDirectory: "${{ env.promptflowRepoLocation }}/src/promptflow"
+  #     location: "${{ env.location }}"
+  #     coveragePath: promptflow
+  #     coverage: false
+  #     testPath: "${{ env.promptflowRepoLocation }}/src/promptflow/tests/mgmt_test/"

@@ -166,3 +166,6 @@ cython_debug/
 connection.json
 .env
 .azureml
+
+# secrets
+**/connections.json

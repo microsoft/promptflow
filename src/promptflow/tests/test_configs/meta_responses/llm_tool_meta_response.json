@@ -1,0 +1,18 @@
+{
+    "name": "llm_meta",
+    "type": "llm",
+    "inputs": {
+        "question": {
+            "type": [
+                "string"
+            ]
+        },
+        "contexts": {
+            "type": [
+                "string"
+            ]
+        }
+    },
+    "code": "system:\nYou are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n\n{{contexts}}\n\nuser:\n{{question}}",
+    "is_builtin": false
+}

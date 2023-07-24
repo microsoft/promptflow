@@ -1,0 +1,211 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${flow.question}"
+          }
+        },
+        {
+          "name": "dummy_extract_1",
+          "tool": "dummy_extract",
+          "inputs": {
+            "item": "${dummy_search_1}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${dummy_extract_1}"
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "code": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\",\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "function": "dummy_search"
+        },
+        {
+          "name": "dummy_extract",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "class_name": "dummy_extract",
+          "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return item['answer']\n",
+          "function": "dummy_extract"
+        }
+      ]
+    },
+    "connections": {},
+    "baseline_variant_id": "variant0",
+    "batch_inputs": [
+      {
+        "question": "chatgpt",
+        "groundtruth": "Answer to chatgpt!"
+      },
+      {
+        "question": "GPT4",
+        "groundtruth": "Answer to GPT4!"
+      },
+      {
+        "question": "GPT3",
+        "groundtruth": "Answer to GPT3!"
+      }
+    ],
+    "variants": {
+        "variant1": [{
+                "name": "dummy_extract_1",
+                "tool": "dummy_extract1",
+                "inputs": {
+                  "item": "${dummy_search_1}"
+                }
+            }],
+        "variant2":[{
+                "name": "dummy_extract_1",
+                "tool": "dummy_extract2",
+                "inputs": {
+                  "item": "${dummy_search_1}"
+                }
+            }]
+    },
+    "variants_tools": [
+        {
+            "name": "dummy_extract2",
+            "type": "python",
+            "inputs": {
+                "item": {
+                "type": [
+                    "object"
+                ]
+                }
+            },
+            "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant2 ' + item['answer']\n",
+            "function": "dummy_extract"
+        },
+        {
+            "name": "dummy_extract1",
+            "type": "python",
+            "inputs": {
+                "item": {
+                "type": [
+                    "object"
+                ]
+                }
+            },
+            "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant1 ' + item['answer']\n",
+            "function": "dummy_extract"
+        }
+    ],
+    "variants_runs": {
+      "variant1": "dummy_variant1_run_id",
+      "variant2": "dummy_variant2_run_id"
+    },
+    "bulk_test_id": "dummy_bulk_test0",
+    "eval_flow_run_id": "dummy_eval_flow_run_id",
+    "eval_flow_inputs_mapping": {
+      "groundtruth": "data.question",
+      "question": "data.question",
+      "answer": "output.answer"
+    },
+    "eval_flow": {
+      "id": "collection_eval_flow_id",
+      "name": "collection_eval_flow",
+      "nodes": [
+          {
+              "name": "calc_winner",
+              "tool": "calc_winner",
+              "inputs": {
+                "variant_ids": "${flow.variant_ids}",
+                "answers": "${flow.answer}",
+                "groundtruth": "${flow.groundtruth}"
+              }
+          },
+          {
+              "name": "calc_win_rate",
+              "tool": "calc_win_rate",
+              "reduce": true,
+              "inputs": {
+                  "winners": "${calc_winner.output}"
+              }
+          }
+      ],
+      "inputs": {
+          "groundtruth": {
+              "type": "string"
+          },
+          "variant_ids": {
+              "type": "list"
+          },
+          "answer": {
+              "type": "list"
+          }
+      },
+      "outputs": {
+          "winners": {
+              "type": "string",
+              "reference": "${calc_winner.output}"
+          }
+      },
+      "tools": [
+        {
+            "name": "calc_winner",
+            "type": "python",
+            "inputs": {
+              "groundtruth": {
+                "type": [
+                  "string"
+                ]
+              },
+              "answers": {
+                "type": [
+                  "list"
+                ]
+              },
+              "variant_ids": {
+                "type": [
+                  "list"
+                ]
+              }
+            },
+            "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\nimport random\n\n@tool\ndef calc_winner(groundtruth: str, answers: list, variant_ids: list) -> str:\n    return random.choice(variant_ids)\n",
+            "function": "calc_winner"
+          },
+          {
+            "name": "calc_win_rate",
+            "type": "python",
+            "inputs": {
+              "winners": {
+                "type": [
+                  "list"
+                ]
+              }
+            },
+            "code": "from collections import defaultdict\nfrom typing import List, Mapping, Dict\nfrom promptflow import tool, log_metric\n\n@tool\ndef calc_win_rate(winners: list):\n    N = len(winners)\n    win_rates = defaultdict(float)\n    for winner in winners:\n        win_rates[winner] += 1\n    for winner in win_rates:\n        win_rates[winner] /= N\n        log_metric(\"win_rates\", win_rates[winner], winner)\n    return win_rates\n",
+            "function": "calc_win_rate"
+          }
+      ]
+    }
+  }

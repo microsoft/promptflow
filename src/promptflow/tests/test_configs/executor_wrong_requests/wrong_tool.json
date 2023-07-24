@@ -1,0 +1,32 @@
+{
+    "flow": {
+      "name": "basic_eval_flow",
+      "nodes": [
+        {
+          "name": "convert_to_label",
+          "tool": "val_to_label",
+          "inputs": {
+            "value": "${flow.query}"
+          }
+        }
+      ],
+      "inputs": {
+        "query": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+      },
+      "tools": []
+    },
+    "batch_inputs": [
+      {
+        "query": "Park City Utah",
+        "label": "1"
+      }
+    ],
+    "connections": {}
+  }

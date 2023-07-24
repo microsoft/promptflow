@@ -1,0 +1,21 @@
+{
+    "FlowId": "test_flow_source",
+    "FlowRunId": "568d2217-6e93-4684-b2f8-a0d5a4c7b470",
+    "SourceFlowRunId": "test_flow_source",
+    "SubmissionData": {
+        "batch_inputs": [
+            {
+                "url": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h"
+            }
+        ],
+        "connections": {}
+    },
+    "FlowSource": {
+        "flow_source_type": 1,
+        "flow_source_info": {
+            "snapshot_id": "610822cc-9432-4703-b5d5-3588aaf9a202"
+        },
+        "flow_dag_file": "flow.dag.yaml"
+    },
+    "RunMode": 0
+}

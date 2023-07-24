@@ -1,0 +1,108 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "dummy_extract_1",
+          "tool": "dummy_extract",
+          "inputs": {
+            "item": "${dummy_search_1.output}"
+          }
+        },
+        {
+          "name": "passthrough_0",
+          "tool": "passthrough",
+          "inputs": {
+            "v": "${dummy_search_1.output.answer}"
+          }
+        },
+        {
+          "name": "passthrough_1",
+          "tool": "passthrough",
+          "inputs": {
+            "v": "${dummy_extract_1.output}"
+          }
+        },
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${inputs.question}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "new_question": {
+          "type": "string",
+          "reference": "${flow.question}"
+        },
+        "answer": {
+          "type": "string",
+          "reference": "${dummy_search_1.output.answer}"
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "code": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\"*20,\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "function": "dummy_search"
+        },
+        {
+          "name": "passthrough",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "from promptflow import tool\n@tool\ndef passthrough(v) -> str:\n    return v\n",
+          "function": "passthrough"
+        },
+        {
+          "name": "dummy_extract",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "class_name": "dummy_extract",
+          "code": "from promptflow import tool\nclass A:\n    pass\n@tool\ndef dummy_extract(item) -> str:\n    return A()\n",
+          "function": "dummy_extract"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "chatgpt"
+      },
+      {
+        "question": "GPT4"
+      },
+      {
+        "question": "GPT3"
+      }
+    ],
+    "tags": {"tag1": "val1", "tag2": "val2"},
+    "name": "Dummy variants request",
+    "description": "This is a dummy variants request"
+  }

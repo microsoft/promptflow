@@ -1,0 +1,21 @@
+inputs:
+  base_line:
+    type: string
+  variant0_output:
+    type: string
+  variant1_output:
+    type: string
+outputs:
+  output_python:
+    type: string
+    reference: ${print_input_tool.output}
+nodes:
+- name: print_input_tool
+  type: python
+  source:
+    type: code
+    path: print_input_tool.py
+  inputs:
+    text_1: ${inputs.base_line}
+    text_2: ${inputs.variant0_output}
+    text_3: ${inputs.variant1_output}

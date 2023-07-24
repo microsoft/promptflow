@@ -1,0 +1,8 @@
+{
+    "tool_type": "llm",
+    "tool_name": "llm_meta",
+    "tool_code_file": "llm_meta.jinja",
+    "expected_response": {
+      "status_code": 200
+    }
+}

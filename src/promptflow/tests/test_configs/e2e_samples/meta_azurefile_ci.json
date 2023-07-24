@@ -1,0 +1,16 @@
+{
+    "tools": {
+        "tools/toola.py": {
+            "tool_type": "python"
+        },
+        "toolb.py": {
+            "tool_type": "python"
+        },
+        "toolc.jinja2": {
+            "tool_type": "llm"
+        }
+    },
+    "flow_source_info":{
+        "working_dir": "/aaa/bbb"
+    }
+}

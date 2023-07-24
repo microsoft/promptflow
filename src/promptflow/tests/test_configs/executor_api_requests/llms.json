@@ -1,0 +1,69 @@
+{
+    "flow": {
+      "id": "test_stop",
+      "name": "test_stop",
+      "nodes": [
+        {
+          "name": "qaoai",
+          "tool": "question",
+          "inputs": {
+            "question": "${inputs.question}",
+            "deployment_name": "text-ada-001",
+            "max_tokens": "128",
+            "temperature": "0.2"
+          },
+          "api": "completion",
+          "provider": "AzureOpenAI",
+          "connection": "azure_open_ai_connection"
+        },
+        {
+            "name": "qopenai",
+            "tool": "question",
+            "inputs": {
+              "question": "${inputs.question}",
+              "model": "text-ada-001",
+              "max_tokens": "128",
+              "temperature": "0.2"
+            },
+            "api": "completion",
+            "provider": "OpenAI",
+            "connection": "open_ai_connection"
+          }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "qaoai": {
+          "type": "string",
+          "reference": "${qaoai.output}"
+        },
+        "qopenai": {
+            "type": "string",
+            "reference": "${qopenai.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "question",
+          "type": "llm",
+          "inputs": {
+            "question": {
+              "type": "string"
+            }
+          },
+          "description": "This is a llm tool",
+          "code": "Please answer the question:{{question}}"
+        }
+      ]
+    },
+    "batch_inputs": [
+      {
+        "question": "DummyQuestion"
+      }
+    ],
+    "name": "Test with AOAI",
+    "description": "AOAI test with stop applied"
+  }

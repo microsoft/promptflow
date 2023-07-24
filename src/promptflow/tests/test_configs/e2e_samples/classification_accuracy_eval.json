@@ -1,0 +1,107 @@
+{
+  "flow": {
+    "id": "classification_accuracy_eval",
+    "name": "classification_accuracy_eval",
+    "nodes": [
+      {
+        "name": "grades",
+        "tool": "grade",
+        "inputs": {
+          "groundtruth": "${flow.groundtruth}",
+          "prediction": "${flow.prediction}",
+          "variant_id": "${flow.variant_id}"
+        }
+      },
+      {
+        "name": "calculate_accuracy",
+        "tool": "calculate_accuracy",
+        "inputs": {
+          "predictions": "${flow.prediction}",
+          "grades": "${grades.output}"
+        },
+        "reduce": true
+      }
+    ],
+    "inputs": {
+      "line_number": {
+        "type": "int"
+      },
+      "variant_id": {
+        "type": "string"
+      },
+      "groundtruth": {
+        "type": "string"
+      },
+      "prediction": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "prediction": {
+        "type": "string",
+        "reference": "${calculate_accuracy.output.prediction}"
+      },
+      "grade": {
+        "type": "string",
+        "reference": "${calculate_accuracy.output.grade}"
+      }
+    },
+    "tools": [
+      {
+        "name": "grade",
+        "type": "python",
+        "inputs": {
+          "groundtruth": {
+            "type": [
+              "string"
+            ]
+          },
+          "prediction": {
+            "type": [
+              "string"
+            ]
+          },
+          "variant_id": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef grade(groundtruth: str, prediction: str, variant_id: str):\n    return {\n        \"variant_id\": variant_id,\n        \"grade\": \"Correct\" if groundtruth.lower() == prediction.lower() else \"Incorrect\"\n    }\n",
+        "function": "grade"
+      },
+      {
+        "name": "calculate_accuracy",
+        "type": "python",
+        "inputs": {
+          "grades": {
+            "type": [
+              "object"
+            ]
+          },
+          "predictions": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_metric\n\n@tool\ndef calculate_accuracy(grades: List[dict], predictions: List[str]):\n    aggregate_grades = {}\n    for grade in grades:\n        if grade[\"variant_id\"] not in aggregate_grades:\n            aggregate_grades[grade[\"variant_id\"]] = []\n        aggregate_grades[grade[\"variant_id\"]].append(grade[\"grade\"])\n\n    # calculate accuracy for each variant\n    for name, rate in aggregate_grades.items():\n        log_metric(\"accuracy\", round((rate.count(\"Correct\") / len(rate)), 2), variant_id=name)\n\n    grades_extract = [value[\"grade\"] for value in grades]\n    return {\"prediction\": predictions, \"grade\": grades_extract}\n",
+        "function": "calculate_accuracy"
+      }
+    ]
+  },
+  "connections": {},
+  "batch_inputs": [
+    {
+      "line_number": 0,
+      "variant_id": "variant0",
+      "groundtruth": "A",
+      "prediction": "A"
+    }
+  ],
+  "name": "",
+  "description": "",
+  "baseline_variant_id": "",
+  "variants": {},
+  "variants_tools": []
+}

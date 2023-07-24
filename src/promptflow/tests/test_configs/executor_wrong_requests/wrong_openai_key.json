@@ -1,0 +1,69 @@
+{
+    "flow": {
+      "id": "qa_with_bing",
+      "name": "qa_with_bing",
+      "nodes": [
+        {
+          "name": "qa",
+          "tool": "qa",
+          "inputs": {
+            "question": "${inputs.question}",
+            "max_tokens": "256",
+            "model": "text-ada-001",
+            "temperature": "0.5"
+          },
+          "api": "completion",
+          "provider": "OpenAI",
+          "connection": "openai_conn"
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${qa.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "qa",
+          "description": "QA",
+          "type": "llm",
+          "inputs": {
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            },
+            "contexts": {
+              "name": "contexts",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "Human: {{question}}\nChatbot:"
+        }]
+    },
+    "batch_inputs": [
+      {
+        "question": "When did OpenAI announced their chatgpt api?"
+      }
+    ],
+    "name": "Dummy LLM",
+    "connections": {
+        "openai_conn": {
+            "type": "OpenAIConnection",
+            "module": "promptflow.connections",
+            "value": {
+              "api_key": "xxxxxxx",
+              "organization": "zzzzz"
+            }
+        }
+    }
+  }

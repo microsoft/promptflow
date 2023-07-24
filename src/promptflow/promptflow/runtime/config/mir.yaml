@@ -1,0 +1,9 @@
+base_dir: service/app/8080
+storage:
+  storage_path: ../../data
+  secret_storage: ""
+app:
+  type: command
+  args: gunicorn -b "localhost:8080" -t 0 -u root --pid pid "promptflow.runtime.app:create_app()"
+deployment:
+  edition: enterprise

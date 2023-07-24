@@ -1,0 +1,7 @@
+{
+  "flow_directory": "llm_tools",
+  "flow_run_inputs": "code_first_input.csv",
+  "flow_run_settings": {
+    "runMode": "BulkTest"
+  }
+}

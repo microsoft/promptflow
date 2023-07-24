@@ -1,0 +1,21 @@
+{
+    "tools": {
+        "valid_tool.py": {
+            "tool_type": "python"
+        },
+        "wrong_tool.py": {
+            "tool_type": "python"
+        },
+        "InnerFolder/valid_tool.txt": {
+            "tool_type": "python"
+        },
+        "not_exist_file": {
+            "tool_type": "python"
+        }
+    },
+    "flow_source_info": {
+        "working_dir": "test_working_dir",
+        "sas_url": "test_sas_url",
+        "snapshot_id": "test_snapshot_id"
+    }
+}

@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidRequest",
+                    "innerError": {
+                        "code": "ConnectionNotFound",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Connection 'bing_wrong_config' is not found, available connection keys [].",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

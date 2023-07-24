@@ -1,0 +1,23 @@
+{
+    "flow_graph": "simple_mock_answer.json",
+    "evaluation_flows": {
+      "is_reference_flow": false,
+      "evaluation": "qna_relevance_scores_eval.json"
+    },
+    "flow_run_settings": {
+      "runMode": "BulkTest",
+      "tuningNodeNames": [
+        "simple_prompt"
+      ],
+      "evaluationFlowRunSettings": {
+        "evaluation": {
+          "inputsMapping": {
+            "question": "data.question",
+            "answers": "output.output"
+          },
+          "flowRunDisplayName": "simple_mock_answer-bulktest - QnA Relevance Scores Pairwise Evaluation"
+        }
+      }
+    },
+    "flow_run_inputs": "simple_mock_answer.csv"
+}

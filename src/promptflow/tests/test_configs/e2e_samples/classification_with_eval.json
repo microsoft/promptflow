@@ -1,0 +1,228 @@
+{
+  "flow": {
+    "id": "web_classification",
+    "name": "web_classification",
+    "nodes": [
+      {
+        "name": "fetch_text_content_from_url_1",
+        "tool": "fetch_text_content_from_url",
+        "inputs": {
+          "url": "${flow.url}"
+        }
+      },
+      {
+        "name": "prepare_examples_1",
+        "tool": "prepare_examples",
+        "inputs": {
+        }
+      },
+      {
+        "name": "classifier_1",
+        "tool": "classifier",
+        "inputs": {
+          "deployment_name": "text-ada-001",
+          "max_tokens": "128",
+          "temperature": "0.2",
+          "url": "${flow.url}",
+          "semantic_document": "${fetch_text_content_from_url_1.output}",
+          "examples": "${prepare_examples_1.output}"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "convert_to_dict_1",
+        "tool": "convert_to_dict",
+        "inputs": {
+          "input_str": "${classifier_1.output}"
+        }
+      }
+    ],
+    "inputs": {
+      "url": {
+        "type": "string"
+      },
+      "groundtruth": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "prediction": {
+        "type": "string",
+        "reference": "${convert_to_dict_1.output.answer}"
+      },
+      "evidence": {
+        "type": "string",
+        "reference": "${convert_to_dict_1.output.evidence}"
+      }
+    },
+    "tools": [
+      {
+        "name": "fetch_text_content_from_url",
+        "type": "python",
+        "inputs": {
+          "url": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "function": "fetch_text_content_from_url",
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\nimport requests\nimport bs4\n\n@tool\ndef fetch_text_content_from_url(url):\n    # Send a request to the URL\n    try:\n        response = requests.get(url)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            soup.prettify()\n            return soup.get_text()[:4000]\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: {response.text[:100]}\"\n            print(msg)\n            return \"No available content\"\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return \"No available content\"\n"
+      },
+      {
+        "name": "prepare_examples",
+        "type": "python",
+        "function": "prepare_examples",
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\n\n@tool\ndef prepare_examples():\n    return [\n        {\n            \"url\": \"https://play.google.com/store/apps/details?id=com.spotify.music\",\n            \"semantic_document\": \"Spotify is a free music and podcast streaming app with millions of songs, albums, and original podcasts. It also offers audiobooks, so users can enjoy thousands of stories. It has a variety of features such as creating and sharing music playlists, discovering new music, and listening to popular and exclusive podcasts. It also has a Premium subscription option which allows users to download and listen offline, and access ad-free music. It is available on all devices and has a variety of genres and artists to choose from.\",\n            \"answer\": \"App\",\n            \"evidence\": \"Both\"\n        },\n        {\n            \"url\": \"https://www.youtube.com/channel/UC_x5XG1OV2P6uZZ5FSM9Ttw\",\n            \"semantic_document\": \"NFL Sunday Ticket is a service offered by Google LLC that allows users to watch NFL games on YouTube. It is available in 2023 and is subject to the terms and privacy policy of Google LLC. It is also subject to YouTube's terms of use and any applicable laws.\",\n            \"answer\": \"Channel\",\n            \"evidence\": \"URL\"\n        },\n        {\n            \"url\": \"https://arxiv.org/abs/2303.04671\",\n            \"semantic_document\": \"Visual ChatGPT is a system that enables users to interact with ChatGPT by sending and receiving not only languages but also images, providing complex visual questions or visual editing instructions, and providing feedback and asking for corrected results. It incorporates different Visual Foundation Models and is publicly available. Experiments show that Visual ChatGPT opens the door to investigating the visual roles of ChatGPT with the help of Visual Foundation Models.\",\n            \"answer\": \"Academic\",\n            \"evidence\": \"Semantic document\"\n        },\n        {\n            \"url\": \"https://ab.politiaromana.ro/\",\n            \"semantic_document\": \"There is no content available for this text.\",\n            \"answer\": \"None\",\n            \"evidence\": \"None\"\n        }\n    ]\n"
+      },
+      {
+        "name": "classifier",
+        "type": "llm",
+        "inputs": {
+          "url": {
+            "type": [
+              "string"
+            ]
+          },
+          "examples": {
+            "type": [
+              "string"
+            ]
+          },
+          "semantic_document": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "description": "This is a llm tool",
+        "code": "Your task is to classify a given url into one of the following types:\nMovie, App, Academic, Channel, Profile, PDF or None based on the semantic document information.\nThe classification will be based on the url, the semantic document of the webpage, or both.\n\nHere are a few examples:\n{% for ex in examples %}\nURL: {{ex.url}}\nSemantic document: {{ex.semantic_document}}\nOUTPUT:\n{\"answer\": \"{{ex.answer}}\", \"evidence\": \"{{ex.evidence}}\"}\n\n{% endfor %}\n\nFor a given URL : {{url}}, and Semantic Document Information: {{semantic_document}}.\nClassify above url to complete the answer and indicate evidence.\nOUTPUT:"
+      },
+      {
+        "name": "convert_to_dict",
+        "type": "python",
+        "inputs": {
+          "input_str": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "function": "convert_to_dict",
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\nimport json\n\n@tool\ndef convert_to_dict(input_str):\n    try:\n        return json.loads(input_str)\n    except Exception as e:\n        print(\"input is not valid, error: {}\".format(e))\n        return {\n            \"answer\": \"None\",\n            \"evidence\": \"None\"\n        }\n"
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+      "groundtruth": "Channel"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+      "groundtruth": "Channel"
+    }
+  ],
+  "name": "Web Classification",
+  "description": "This is a web classification",
+  "bulk_test_id": "classification_bulk_test0",
+  "eval_flow_run_id": "classification_eval_flow_run_id",
+  "baseline_variant_id": "variant0",
+	"eval_flow_inputs_mapping": {
+		"groundtruth": "data.groundtruth",
+		"prediction": "output.prediction"
+	},
+  "eval_flow": {
+    "id": "classification_accuracy_eval",
+    "name": "classification_accuracy_eval",
+    "nodes": [
+      {
+        "name": "grades",
+        "tool": "grade",
+        "inputs": {
+          "groundtruth": "${flow.groundtruth}",
+          "prediction": "${flow.prediction}",
+          "variant_id": "${flow.variant_id}"
+        }
+      },
+      {
+        "name": "calculate_accuracy",
+        "tool": "calculate_accuracy",
+        "inputs": {
+          "predictions": "${flow.prediction}",
+          "grades": "${grades.output}"
+        },
+        "reduce": true
+      }
+    ],
+    "inputs": {
+      "line_number": {
+        "type": "int"
+      },
+      "variant_id": {
+        "type": "string"
+      },
+      "groundtruth": {
+        "type": "string"
+      },
+      "prediction": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "prediction": {
+        "type": "string",
+        "reference": "${calculate_accuracy.output.prediction}"
+      },
+      "grade": {
+        "type": "string",
+        "reference": "${calculate_accuracy.output.grade}"
+      }
+    },
+    "tools": [
+      {
+        "name": "grade",
+        "type": "python",
+        "inputs": {
+          "groundtruth": {
+            "type": [
+              "string"
+            ]
+          },
+          "prediction": {
+            "type": [
+              "string"
+            ]
+          },
+          "variant_id": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef grade(groundtruth: str, prediction: str, variant_id: str):\n    return {\n        \"variant_id\": variant_id,\n        \"grade\": \"Correct\" if groundtruth.lower() == prediction.lower() else \"Incorrect\"\n    }\n",
+        "function": "grade"
+      },
+      {
+        "name": "calculate_accuracy",
+        "type": "python",
+        "inputs": {
+          "grades": {
+            "type": [
+              "object"
+            ]
+          },
+          "predictions": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_metric\n\n@tool\ndef calculate_accuracy(grades: List[dict], predictions: List[str]):\n    aggregate_grades = {}\n    for grade in grades:\n        if grade[\"variant_id\"] not in aggregate_grades:\n            aggregate_grades[grade[\"variant_id\"]] = []\n        aggregate_grades[grade[\"variant_id\"]].append(grade[\"grade\"])\n\n    # calculate accuracy for each variant\n    for name, rate in aggregate_grades.items():\n        log_metric(\"accuracy\", round((rate.count(\"Correct\") / len(rate)), 2), variant_id=name)\n\n    grades_extract = [value[\"grade\"] for value in grades]\n    return {\"prediction\": predictions, \"grade\": grades_extract}\n",
+        "function": "calculate_accuracy"
+      }
+    ]
+  }
+}

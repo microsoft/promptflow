@@ -1,0 +1,154 @@
+{
+  "flow": {
+    "id": "flow_1",
+    "name": "bing_google_compare",
+    "nodes": [
+      {
+        "name": "Bing_search_1",
+        "tool": "Bing.search",
+        "inputs": {
+          "query": "${flow.query}",
+          "limit": "1"
+        },
+        "connection": "bing_config"
+      },
+      {
+        "name": "extract_1",
+        "tool": "extract",
+        "inputs": {
+          "result": "${Bing_search_1}",
+          "search_engine": "Bing"
+        }
+      },
+      {
+        "name": "prompt_30d3e_1",
+        "tool": "prompt_30d3e",
+        "inputs": {
+          "profile": "a person 12 to 18 years old",
+          "title1": "${extract_1.title}",
+          "snippet1": "${extract_1.snippet}",
+          "title2": "${extract_1.title}",
+          "snippet2": "${extract_1.snippet}",
+          "max_tokens": "5",
+          "temperature": "0.8"
+        },
+        "api": "completion",
+        "provider": "OpenAIProvider",
+        "connection": "open_ai_config"
+      }
+    ],
+    "inputs": {
+      "query": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "string",
+        "reference": "${prompt_30d3e_1}"
+      }
+    },
+    "tools": [
+      {
+        "name": "Bing.search",
+        "type": "python",
+        "inputs": {
+          "query": {
+            "name": "query",
+            "type": [
+              "object"
+            ]
+          },
+          "limit": {
+            "name": "limit",
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          }
+        },
+        "module": "promptflow.tools.bing",
+        "class_name": "Bing",
+        "function": "search"
+      },
+      {
+        "name": "extract",
+        "type": "python",
+        "inputs": {
+          "result": {
+            "name": "result",
+            "type": [
+              "object"
+            ]
+          },
+          "search_engine": {
+            "name": "search_engine",
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "class_name": "extract",
+        "code": "from promptflow import tool\n@tool\ndef extract(result, search_engine):\n    if search_engine == \"Bing\":\n        return {\n            \"title\": result[\"webPages\"][\"value\"][0][\"name\"],\n            \"snippet\": result[\"webPages\"][\"value\"][0][\"snippet\"]}\n    else:\n        raise ValueError(\"search engine {} is not supported\".format(search_engine))\n",
+        "function": "extract"
+      },
+      {
+        "name": "prompt_30d3e",
+        "description": "This is a prompt tool",
+        "type": "llm",
+        "inputs": {
+          "title1": {
+            "name": "title1",
+            "type": [
+              "string"
+            ]
+          },
+          "snippet1": {
+            "name": "snippet1",
+            "type": [
+              "string"
+            ]
+          },
+          "profile": {
+            "name": "profile",
+            "type": [
+              "string"
+            ]
+          },
+          "snippet2": {
+            "name": "snippet2",
+            "type": [
+              "string"
+            ]
+          },
+          "title2": {
+            "name": "title2",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "You are {{profile}}, which search result looks more relevant for you?\nresult 1: title \"{{title1}}\", snippet \"{{snippet1}}\"\nresult 2: title \"{{title2}}\", snippet \"{{snippet2}}\"\n\nPlease specify 1 or 2 as the answer.\n"
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "query": "Park City Utah"
+    },
+    {
+      "query": "ChatGPT"
+    }
+  ],
+  "connections": {
+    "bing_config": {
+      "api_key": "bing-api-key"
+    },
+    "open_ai_config": {
+      "api_key": "openai-api-key",
+      "api_base": "https://gpt-test-eus.openai.azure.com/",
+      "api_type": "azure",
+      "api_version": "2022-12-01"
+    }
+  }
+}

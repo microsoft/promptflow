@@ -1,0 +1,27 @@
+{
+  "run_id": "13531690-3ec7-4129-a527-708f54909757_variant1",
+  "status": "Completed",
+  "error": null,
+  "inputs": null,
+  "result": {
+    "answer": [
+      "variant1 Answer to chatgpt!",
+      "variant1 Answer to GPT4!",
+      "variant1 Answer to GPT3!"
+    ]
+  },
+  "metrics": {},
+  "request": null,
+  "parent_run_id": "13531690-3ec7-4129-a527-708f54909757",
+  "root_run_id": "13531690-3ec7-4129-a527-708f54909757",
+  "source_run_id": null,
+  "flow_id": "dummy_qna",
+  "start_time": "2023-04-07T12:44:20.295763Z",
+  "end_time": "2023-04-07T12:44:20.347762Z",
+  "index": null,
+  "api_calls": null,
+  "variant_id": "variant1",
+  "name": "",
+  "description": "",
+  "tags": null
+}

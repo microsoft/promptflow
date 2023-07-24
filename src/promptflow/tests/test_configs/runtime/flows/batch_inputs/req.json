@@ -1,0 +1,65 @@
+{
+  "flow": {
+    "id": "data_input_flow",
+    "name": "data_input_flow",
+    "nodes": [
+      {
+        "name": "create_data_from_uri_file",
+        "tool": "create_data_from_uri_file",
+        "inputs": {
+          "uri": "${flow.uri}",
+          "data_asset_name": "${flow.data_asset_name}"
+        }
+      }
+    ],
+    "inputs": {
+      "uri": {
+        "type": "string"
+      },
+      "data_asset_name": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "data": {
+        "type": "object",
+        "reference": "${create_data_from_uri_file.output.data}"
+      },
+      "asset_id": {
+        "type": "object",
+        "reference": "${create_data_from_uri_file.output.asset_id}"
+      }
+    },
+    "tools": [
+      {
+        "name": "create_data_from_uri_file",
+        "type": "python",
+        "inputs": {
+          "uri": {
+            "type": [
+              "string"
+            ]
+          },
+          "data_asset_name": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\nimport os\n\n@tool\ndef create_data_from_uri_file(uri: str = \"\", data_asset_name: str = \"\"):\n    # read data from uri\n    data = None\n    \n    from promptflow.runtime.utils._token_utils import get_default_credential\n    credential = get_default_credential(diagnostic=True)\n\n    if uri:\n        mltable_dir = f\"{os.getcwd()}/{data_asset_name}\"\n        # avoid depend on mltable\n        # paths = [{\"file\": uri}]\n        # tbl = mltable.from_delimited_files(paths)\n        # tbl.save(mltable_dir)\n\n        # manual write mltable file\n        from pathlib import Path\n        mltable_file = Path(mltable_dir)/\"MLTable\"\n        mltable_file.parent.mkdir(parents=True, exist_ok=True)\n        mltable_file_pattern = \"\"\"paths:\n- file: FILE_PATH\ntransformations:\n- read_delimited:\n    delimiter: ','\n    empty_as_string: false\n    encoding: utf8\n    header: all_files_same_headers\n    include_path_column: false\n    infer_column_types: true\n    partition_size: 20971520\n    path_column: Path\n    support_multi_line: false\ntype: mltable\n\"\"\"\n        content = mltable_file_pattern.replace(\"FILE_PATH\", uri)\n        with open(mltable_file, \"w\", encoding=\"utf-8\") as f:\n            f.write(content)\n\n        # import here to avoid circular import\n        from promptflow.runtime.data import prepare_data\n        from promptflow.data import load_data\n        destination = 'data'\n        local_file = prepare_data(uri, destination=destination, credential=credential)\n        data = load_data(local_file)\n\n        # this call requires user identity, get strange 409 error now\n        # df = tbl.to_pandas_dataframe()\n        # data = df.to_json()\n\n    # create data asset\n    asset_id = None\n    if data_asset_name:\n        from azure.ai.ml import MLClient\n        from azure.ai.ml.entities import Data\n        from azure.ai.ml.constants import AssetTypes\n\n        sub_id = os.environ.get(\"SUBSCRIPTION_ID\")\n        resource_group = os.environ.get(\"RESOURCE_GROUP\")\n        workspace_name = os.environ.get(\"WORKSPACE_NAME\")\n        ml_client = MLClient(credential=credential, \n                             subscription_id=sub_id, \n                             resource_group_name=resource_group, \n                             workspace_name=workspace_name)\n\n        my_data = Data(\n            path=mltable_dir,\n            type=AssetTypes.MLTABLE,\n            description=\"test mltable data\",\n            name=data_asset_name,\n        )\n        my_data = ml_client.data.create_or_update(my_data)\n        asset_id = my_data.id\n    \n    return {\n        \"data\": data,\n        \"asset_id\": asset_id\n    }\n",
+        "function": "create_data_from_uri_file"
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "uri": "https://promptfloweast4063704120.blob.core.windows.net/testdata/batch_input1.csv",
+      "data_asset_name": "batch_input_flow_test_0"
+    },
+    {
+      "uri": "https://promptfloweast4063704120.blob.core.windows.net/testdata/batch_input2.csv",
+      "data_asset_name": "batch_input_flow_test_1"
+    }
+  ],
+  "connections":{}
+}

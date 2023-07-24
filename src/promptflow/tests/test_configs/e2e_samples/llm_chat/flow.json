@@ -1,0 +1,67 @@
+{
+    "nodes": [
+        {
+            "name": "chat",
+            "tool": "chat",
+            "inputs": {
+                "deployment_name": "gpt-35-turbo",
+                "temperature": "0.7",
+                "top_p": "1.0",
+                "stop": "",
+                "max_tokens": "256",
+                "presence_penalty": "0",
+                "frequency_penalty": "0",
+                "logit_bias": "",
+                "message": "${inputs.message}",
+                "chat_history": "${inputs.chat_history}"
+            },
+            "api": "chat",
+            "provider": "AzureOpenAI",
+            "connection": "azure_open_ai_connection",
+            "module": "promptflow.tools.aoai",
+            "reduce": false
+        }
+    ],
+    "tools": [
+        {
+            "name": "chat",
+            "type": "llm",
+            "inputs": {
+                "message": {
+                    "name": "message",
+                    "type": [
+                        "string"
+                    ]
+                },
+                "chat_history": {
+                    "name": "chat_history",
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "description": "Chat with Chatbot",
+            "source": "chat.jinja2",
+            "lkgCode": "system:\nYou are a helpful assistant.\n\n{% for item in chat_history %}\nuser:\n{{item.inputs.message}}\nassistant:\n{{item.outputs.response}}\n{% endfor %}\n\nuser:\n{{message}}",
+            "is_builtin": false
+        }
+    ],
+    "inputs": {
+        "chat_history": {
+            "type": "list",
+            "is_chat_input": false
+        },
+        "message": {
+            "type": "string",
+            "is_chat_input": true
+        }
+    },
+    "outputs": {
+        "response": {
+            "type": "string",
+            "reference": "${chat.output}",
+            "evaluation_only": false,
+            "is_chat_output": true
+        }
+    }
+}

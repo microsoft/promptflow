@@ -1,0 +1,193 @@
+{
+	"flowId": "9004e947-5817-40f1-b7d8-a579a7d9fe7c",
+	"flow": {
+		"flowGraph": {
+			"nodes": [
+				{
+					"name": "content_safety_text_check",
+					"tool": "Content Safety (Text)",
+					"inputs": {
+						"connection": "chw-acs-test",
+						"text": "${inputs.text}",
+						"hate_category": "high_sensitivity",
+						"sexual_category": "high_sensitivity",
+						"self_harm_category": "high_sensitivity",
+						"violence_category": "high_sensitivity"
+					}
+				},
+				{
+					"name": "get_suggested_action",
+					"tool": "Python_68ox",
+					"inputs": {
+						"json_body": "${content_safety_text_check.output}"
+					}
+				}
+			],
+			"inputs": {
+				"text": {
+					"type": "string"
+				}
+			},
+			"outputs": {},
+			"tools": [
+				{
+					"name": "Content Safety (Text)",
+					"type": "python",
+					"inputs": {
+						"connection": {
+							"type": [
+								"AzureContentSafetyConnection"
+							]
+						},
+						"text": {
+							"type": [
+								"string"
+							]
+						},
+						"hate_category": {
+							"type": [
+								"string"
+							],
+							"default": "medium_sensitivity",
+							"enum": [
+								"disable",
+								"low_sensitivity",
+								"medium_sensitivity",
+								"high_sensitivity"
+							]
+						},
+						"sexual_category": {
+							"type": [
+								"string"
+							],
+							"default": "medium_sensitivity",
+							"enum": [
+								"disable",
+								"low_sensitivity",
+								"medium_sensitivity",
+								"high_sensitivity"
+							]
+						},
+						"self_harm_category": {
+							"type": [
+								"string"
+							],
+							"default": "medium_sensitivity",
+							"enum": [
+								"disable",
+								"low_sensitivity",
+								"medium_sensitivity",
+								"high_sensitivity"
+							]
+						},
+						"violence_category": {
+							"type": [
+								"string"
+							],
+							"default": "medium_sensitivity",
+							"enum": [
+								"disable",
+								"low_sensitivity",
+								"medium_sensitivity",
+								"high_sensitivity"
+							]
+						}
+					},
+					"description": "Use Azure Content Safety to detect harmful content.",
+					"module": "promptflow.tools.azure_content_safety",
+					"class_name": "AzureContentSafety",
+					"function": "analyze_text",
+					"is_builtin": true
+				},
+				{
+					"name": "Python_68ox",
+					"type": "python",
+					"inputs": {
+						"json_body": {
+							"type": [
+								"object"
+							],
+							"value": "${content_safety_text_check.output}"
+						}
+					},
+					"code": "from promptflow import tool\nimport json\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef my_python_tool(json_body: object) -> str:\n  suggested_action = json_body[\"suggested_action\"]\n  return suggested_action",
+					"function": "my_python_tool",
+					"is_builtin": false,
+					"lkgCode": "from promptflow import tool\nimport json\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef my_python_tool(json_body: object) -> str:\n  suggested_action = json_body[\"suggested_action\"]\n  return suggested_action"
+				}
+			]
+		},
+		"nodeVariants": {
+			"Content_Safety_Text__wwlc": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "Content_Safety_Text__wwlc",
+							"tool": "Content Safety (Text)",
+							"inputs": {
+								"connection": "chw-acs-test",
+								"text": "${inputs.text}",
+								"hate_category": "high_sensitivity",
+								"sexual_category": "high_sensitivity",
+								"self_harm_category": "high_sensitivity",
+								"violence_category": "high_sensitivity"
+							}
+						}
+					}
+				}
+			},
+			"get_suggested_action": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "get_suggested_action",
+							"tool": "Python_68ox",
+							"inputs": {
+								"json_body": "${Content_Safety_Text__wwlc.output}"
+							}
+						}
+					}
+				}
+			}
+		},
+		"flowGraphLayout": {
+			"nodeLayouts": {
+				"inputs": {
+					"x": 97,
+					"y": 62,
+					"index": -1
+				},
+				"outputs": {
+					"x": 117,
+					"y": 362,
+					"index": -1
+				},
+				"Content_Safety_Text__wwlc": {
+					"x": 107,
+					"y": 162,
+					"height": 75,
+					"index": 0
+				},
+				"get_suggested_action": {
+					"x": 117,
+					"y": 262,
+					"height": 75,
+					"index": 1
+				}
+			}
+		}
+	},
+	"flowRunId": "f5b3b741-8c1b-42c7-999d-460fedf6e9f3",
+	"flowSubmitRunSettings": {
+		"runtimeName": "transient-mir",
+		"runMode": "Flow",
+		"batch_inputs": [
+			{
+				"text": "Ming's code is a boom to our team"
+			}
+		]
+	},
+	"useWorkspaceConnection": true
+}

@@ -1,0 +1,18 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_python:
+    type: string
+    reference: ${print_input_tool.output}
+nodes:
+- name: print_input_tool
+  type: python
+  source:
+    type: code
+    path: print_input_tool.py
+  inputs:
+    text_1: ${inputs.text}
+
+
+

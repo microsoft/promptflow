@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidRequest",
+                    "innerError": {
+                        "code": "EmptyInputError",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Inputs in the request of flow 'how_do_you_like_bing' is empty.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

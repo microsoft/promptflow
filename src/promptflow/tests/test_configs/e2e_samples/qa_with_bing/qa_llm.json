@@ -1,0 +1,18 @@
+{
+    "name": "qa",
+    "type": "llm",
+    "inputs": {
+      "question": {
+        "type": [
+          "string"
+        ]
+      },
+      "contexts": {
+        "type": [
+          "string"
+        ]
+      }
+    },
+    "outputs": {},
+    "source": "qa_with_bing/qa.jinja2"
+  }

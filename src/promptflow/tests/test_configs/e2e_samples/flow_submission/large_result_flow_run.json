@@ -1,0 +1,11 @@
+{
+    "flow_graph": "large_result_flow.json",
+    "flow_run_settings": {
+        "runMode": "Flow",
+        "batch_inputs": [
+          {
+            "input": "chatgpt"
+          }
+        ]
+      }
+}

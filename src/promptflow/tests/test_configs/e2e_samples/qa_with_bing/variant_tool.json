@@ -1,0 +1,13 @@
+{
+    "name": "dummy_extract1",
+    "type": "python",
+    "inputs": {
+        "item": {
+            "type": [
+                "object"
+            ]
+        }
+    },
+    "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant2 ' + item['answer']\n",
+    "function": "dummy_extract"
+}

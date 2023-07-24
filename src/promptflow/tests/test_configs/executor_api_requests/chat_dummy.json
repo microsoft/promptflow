@@ -1,0 +1,91 @@
+{
+    "flow": {
+      "name": "conversation_as_an_assistant",
+      "nodes": [
+        {
+          "name": "build_conversation",
+          "tool": "build_conversation",
+          "inputs": {
+            "history": "${flow.chat_history}",
+            "sentence": "${flow.sentence}"
+          }
+        },
+        {
+          "name": "assistant_response",
+          "tool": "assistant_response",
+          "inputs": {
+            "conversation": "${build_conversation}"
+          }
+        }
+      ],
+      "inputs": {
+        "chat_history": {
+          "type": "list"
+        },
+        "sentence": {
+            "type": "string",
+            "is_chat_input": true
+        }
+      },
+      "outputs": {
+        "response": {
+          "type": "string",
+          "is_chat_output": true,
+          "reference": "${assistant_response}"
+        }
+      },
+      "tools": [
+        {
+          "name": "assistant_response",
+          "type": "python",
+          "inputs": {
+            "conversation": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "code": "from promptflow import tool\n@tool\ndef assistant_response(conversation) -> str:\n    return \"\\n\".join(f\"{round['role']}: {round['content']}\" for round in conversation)\n",
+          "function": "assistant_response"
+        },
+        {
+          "name": "build_conversation",
+          "type": "python",
+          "inputs": {
+            "sentence": {
+              "type": [
+                "string"
+              ]
+            },
+            "history": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "code": "from promptflow import tool\n@tool\ndef build_conversation(\n    sentence: str,\n    history=None\n):\n    if history is None:\n        history = []\n    conversation = []\n    for item in history:\n        conversation.append({'role': 'user', 'content': item['inputs']['sentence']})\n        conversation.append({'role': 'assistant', 'content': item['outputs']['response']})\n    conversation.append({'role': 'user', 'content': sentence})\n    return conversation\n",
+          "function": "build_conversation"
+        }
+      ]
+    },
+    "batch_inputs": [
+      {
+        "sentence": "Please write codes for primes.",
+        "chat_history": []
+      },
+      {
+        "sentence":"Please write codes for fetching urls.",
+        "chat_history": [
+          {
+            "inputs": {
+              "sentence": "Hi, can you help me writing code?"
+            },
+            "outputs": {
+              "response": "Sure, what do you want to write code for?"
+            }
+          }
+        ]
+      }
+    ],
+    "connections": {}
+  }

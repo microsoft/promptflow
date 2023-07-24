@@ -1,0 +1,174 @@
+{
+  "flow": {
+    "id": "serpapi_e2e",
+    "name": "serpapi_e2e",
+    "nodes": [
+      {
+        "name": "SerpAPI_search_1",
+        "tool": "SerpAPI.search",
+        "inputs": {
+          "query": "${flow.query}",
+          "num": "3",
+          "engine": "google"
+        },
+        "connection": "serp_connection"
+      }
+    ],
+    "inputs": {
+      "query": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "object",
+        "reference": "${SerpAPI_search_1.output}"
+      }
+    },
+    "tools": [
+      {
+        "name": "SerpAPI.search",
+        "type": "python",
+        "inputs": {
+          "query": {
+            "type": [
+              "string"
+            ]
+          },
+          "location": {
+            "type": [
+              "string"
+            ]
+          },
+          "google_domain": {
+            "type": [
+              "string"
+            ],
+            "default": "google.com"
+          },
+          "gl": {
+            "type": [
+              "string"
+            ]
+          },
+          "hl": {
+            "type": [
+              "string"
+            ]
+          },
+          "lr": {
+            "type": [
+              "string"
+            ]
+          },
+          "tbs": {
+            "type": [
+              "string"
+            ]
+          },
+          "safe": {
+            "type": [
+              "string"
+            ],
+            "default": "off",
+            "enum": [
+              "active",
+              "off"
+            ]
+          },
+          "nfpr": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "filter": {
+            "type": [
+              "string"
+            ]
+          },
+          "tbm": {
+            "type": [
+              "string"
+            ]
+          },
+          "start": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "num": {
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          },
+          "ijn": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "engine": {
+            "type": [
+              "string"
+            ],
+            "default": "google",
+            "enum": [
+              "google",
+              "bing"
+            ]
+          },
+          "device": {
+            "type": [
+              "string"
+            ],
+            "default": "desktop"
+          },
+          "no_cache": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "asynch": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "output": {
+            "type": [
+              "string"
+            ],
+            "default": "JSON"
+          }
+        },
+        "module": "promptflow.tools.serpapi",
+        "class_name": "SerpAPI",
+        "function": "search",
+        "connection_type": [
+          "Serp"
+        ],
+        "is_builtin": true,
+        "stage": "test"
+      }
+    ]
+  },
+  "connections": {
+    "serp_connection": {
+      "api_key": "serpapi-api-key"
+    }
+  },
+  "batch_inputs": [
+    {
+      "query": "best restaurants near east village in NYC"
+    }
+  ],
+  "name": "",
+  "description": "",
+  "baseline_variant_id": "",
+  "variants": {},
+  "variants_tools": []
+}

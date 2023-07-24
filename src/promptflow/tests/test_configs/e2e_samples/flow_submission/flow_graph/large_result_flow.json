@@ -1,0 +1,64 @@
+{
+    "flowGraph": {
+      "nodes": [
+        {
+          "name": "hello_world",
+          "tool": "hello_world",
+          "inputs": {
+            "input": "${flow.input}"
+          },
+          "reduce": false
+        }
+      ],
+      "inputs": {
+        "input": {
+          "type": "string",
+          "default": "Test",
+          "is_chat_input": false
+        }
+      },
+      "outputs": {
+        "output": {
+          "type": "string",
+          "reference": "${hello_world.output}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        }
+      },
+      "tools": [
+        {
+          "name": "hello_world",
+          "type": "python",
+          "inputs": {
+            "input": {
+              "name": "input",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "lkgCode": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef hello_world(input: str):\n    return f\"Hello world: {input}\" * 4000\n",
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef hello_world(input: str):\n    return f\"Hello world: {input}\" * 4000\n",
+          "function": "hello_world",
+          "is_builtin": false
+        }
+      ]
+    },
+    "nodeVariants": {
+      "hello_world": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "hello_world",
+              "tool": "hello_world",
+              "inputs": {
+                "input": "${flow.input}"
+              },
+              "reduce": false
+            }
+          }
+        }
+      }
+    }
+  }

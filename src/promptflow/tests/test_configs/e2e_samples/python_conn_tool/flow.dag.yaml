@@ -1,0 +1,18 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_text:
+    type: string
+    reference: ${python_conn_tool.output}
+nodes:
+- name: python_conn_tool
+  type: python
+  source:
+    type: code
+    path: python_conn_tool.py
+  inputs:
+    conn1: wrong_conn
+    conn2: wrong_conn
+    serp_conn: wrong_conn
+    text: ${inputs.text}

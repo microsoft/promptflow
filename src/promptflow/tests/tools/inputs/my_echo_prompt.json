@@ -1,0 +1,132 @@
+{
+	"flowId": "3a7c4f8c-59ab-4ee5-bac0-f733fc8e7627",
+	"flow": {
+		"flowGraph": {
+			"nodes": [
+				{
+					"name": "summarize_text_content_prompt",
+					"tool": "Prompt_5nrr",
+					"inputs": {
+						"text": "${inputs.text}"
+					}
+				},
+				{
+					"name": "echo_my_prompt",
+					"tool": "Python_rcim",
+					"inputs": {
+						"input1": "${summarize_text_content_prompt.output}"
+					}
+				}
+			],
+			"inputs": {
+				"text": {
+					"type": "string"
+				}
+			},
+			"outputs": {
+				"output_prompt": {
+					"type": "string",
+					"reference": "${echo_my_prompt.output}"
+				}
+			},
+			"tools": [
+				{
+					"name": "Prompt_5nrr",
+					"type": "prompt",
+					"inputs": {
+						"text": {
+							"type": [
+								"string"
+							],
+							"value": "${inputs.text}"
+						}
+					},
+					"code": "Please summarize the following text in one paragraph. 50 words.\r\nDo not add any information that is not in the text.\r\nText: {{text}}\r\nSummary: ",
+					"is_builtin": false,
+					"lkgCode": "Please summarize the following text in one paragraph. 50 words.\r\nDo not add any information that is not in the text.\r\nText: {{text}}\r\nSummary: "
+				},
+				{
+					"name": "Python_rcim",
+					"type": "python",
+					"inputs": {
+						"input1": {
+							"type": [
+								"string"
+							],
+							"value": "${summarize_text_content_prompt.output}"
+						}
+					},
+					"code": "from promptflow import tool\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef my_python_tool(input1: str) -> str:\n  return 'Prompt: ' + input1",
+					"function": "my_python_tool",
+					"is_builtin": false,
+					"lkgCode": "from promptflow import tool\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef my_python_tool(input1: str) -> str:\n  return 'Prompt: ' + input1"
+				}
+			]
+		},
+		"nodeVariants": {
+			"summarize_text_content_prompt": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "summarize_text_content_prompt",
+							"tool": "Prompt_5nrr",
+							"inputs": {
+								"text": "${inputs.text}"
+							}
+						}
+					}
+				}
+			},
+			"echo_my_prompt": {
+				"defaultVariantId": "variant_0",
+				"variants": {
+					"variant_0": {
+						"node": {
+							"name": "echo_my_prompt",
+							"tool": "Python_rcim",
+							"inputs": {
+								"input1": "${summarize_text_content_prompt.output}"
+							}
+						}
+					}
+				}
+			}
+		},
+		"flowGraphLayout": {
+			"nodeLayouts": {
+				"inputs": {
+					"x": 97,
+					"y": 62,
+					"index": -1
+				},
+				"outputs": {
+					"x": 117,
+					"y": 362,
+					"index": -1
+				},
+				"summarize_text_content_prompt": {
+					"x": 107,
+					"y": 162,
+					"index": 0
+				},
+				"echo_my_prompt": {
+					"x": 117,
+					"y": 262,
+					"index": 1
+				}
+			}
+		}
+	},
+	"flowRunId": "9b91927d-2946-47bb-98df-0260dfc624c9",
+	"flowSubmitRunSettings": {
+		"runtimeName": "qixia-ci-1",
+		"runMode": "Flow",
+		"batch_inputs": [
+			{
+				"text": "Prompt flow is a powerful feature that simplifies and streamlines the Prompt Engineering process for LLM-infused applications. It enables users to create, evaluate, and deploy high-quality flows with ease and efficiency."
+			}
+		]
+	},
+	"useWorkspaceConnection": true
+}

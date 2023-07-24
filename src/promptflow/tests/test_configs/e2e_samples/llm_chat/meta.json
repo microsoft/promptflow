@@ -1,0 +1,10 @@
+{
+    "flow": "flow.json",
+    "batch_inputs": "samples.json",
+    "codes": {
+        "chat": {
+            "type": "llm",
+            "source": "chat.jinja2"
+        }
+    }
+}

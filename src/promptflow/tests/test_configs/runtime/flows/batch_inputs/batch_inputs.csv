@@ -1,0 +1,3 @@
+uri,data_asset_name
+wasbs://testdata@promptflowcana4560041206.blob.core.windows.net/batch_input1.csv,test_batch_input_flow_0
+wasbs://testdata@promptflowcana4560041206.blob.core.windows.net/batch_input2.csv,test_batch_input_flow_1

@@ -1,0 +1,25 @@
+{
+    "name": "python_meta",
+    "type": "python",
+    "inputs": {
+        "result": {
+            "type": [
+                "object"
+            ]
+        },
+        "search_engine": {
+            "type": [
+                "string"
+            ]
+        },
+        "bing_conn": {
+            "type": [
+                "BingConnection",
+                "CustomConnection"
+            ]
+        }
+    },
+    "code": "from typing import Union\n\nfrom promptflow import tool\nfrom promptflow.connections import BingConnection, CustomConnection\n\n#  Add the following line to make sure we could import builtin tools\nfrom promptflow.tools.bing import search\n\n\n@tool\ndef extract(result, search_engine: str, bing_conn: Union[BingConnection, CustomConnection]):\n    search(bing_conn, \"query\")\n    if search_engine == \"Bing\":\n        return {\"title\": result[\"webPages\"][\"value\"][0][\"name\"], \"snippet\": result[\"webPages\"][\"value\"][0][\"snippet\"]}\n    else:\n        raise ValueError(\"search engine {} is not supported\".format(search_engine))\n",
+    "function": "extract",
+    "is_builtin": false
+}

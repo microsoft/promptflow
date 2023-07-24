@@ -1,0 +1,103 @@
+{
+  "flow": {
+    "id": "collection_eval_flow_id",
+    "name": "collection_eval_flow",
+    "nodes": [
+        {
+            "name": "calc_winner",
+            "tool": "calc_winner",
+            "inputs": {
+              "variant_ids": "${flow.variant_ids}",
+              "answers": "${flow.answer}",
+              "groundtruth": "${flow.groundtruth}"
+            }
+        },
+        {
+            "name": "calc_win_rate",
+            "tool": "calc_win_rate",
+            "reduce": true,
+            "inputs": {
+                "winners": "${calc_winner.output}"
+            }
+        }
+    ],
+    "inputs": {
+        "groundtruth": {
+            "type": "string"
+        },
+        "variant_ids": {
+            "type": "list"
+        },
+        "answer": {
+            "type": "list"
+        }
+    },
+    "outputs": {
+        "winners": {
+            "type": "string",
+            "reference": "${calc_winner.output}"
+        }
+    },
+    "tools": [
+      {
+          "name": "calc_winner",
+          "type": "python",
+          "inputs": {
+            "groundtruth": {
+              "type": [
+                "string"
+              ]
+            },
+            "answers": {
+              "type": [
+                "list"
+              ]
+            },
+            "variant_ids": {
+              "type": [
+                "list"
+              ]
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\nimport random\n\n@tool\ndef calc_winner(groundtruth: str, answers: list, variant_ids: list) -> str:\n    return random.choice(variant_ids)\n",
+          "function": "calc_winner"
+        },
+        {
+          "name": "calc_win_rate",
+          "type": "python",
+          "inputs": {
+            "winners": {
+              "type": [
+                "list"
+              ]
+            }
+          },
+          "code": "from collections import defaultdict\nfrom typing import List, Mapping, Dict\nfrom promptflow import tool, log_metric\n\n@tool\ndef calc_win_rate(winners: list):\n    N = len(winners)\n    win_rates = defaultdict(float)\n    for winner in winners:\n        win_rates[winner] += 1\n    for winner in win_rates:\n        win_rates[winner] /= N\n        log_metric(\"win_rates\", win_rates[winner], winner)\n    return win_rates\n",
+          "function": "calc_win_rate"
+        }
+    ]
+  },
+    "connections": {},
+    "bulk_test_inputs": [
+      {
+        "question": "chatgpt"
+      },
+      {
+        "question": "GPT4"
+      },
+      {
+        "question": "GPT3"
+      }
+    ],
+    "inputs_mapping": {
+      "groundtruth": "data.question",
+      "answer": "output.answer"
+    },
+    "bulk_test_flow_id": "dummy_qna",
+    "bulk_test_id": "dummy_bulktest0",
+    "bulk_test_flow_run_ids": [
+      "13531690-3ec7-4129-a527-708f54909757_variant0",
+      "13531690-3ec7-4129-a527-708f54909757_variant1",
+      "13531690-3ec7-4129-a527-708f54909757_variant2"
+    ]
+}

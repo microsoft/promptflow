@@ -1,0 +1,253 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "infer_intent",
+          "tool": "intent",
+          "inputs": {
+            "question": "${flow.question}",
+            "max_tokens": "16",
+            "deployment_name": "text-ada-001",
+            "temperature": "0.7"
+          },
+          "api": "completion",
+          "provider": "AzureOpenAI",
+          "connection": "azure_open_ai_connection"
+        },
+        {
+          "name": "Bing_search_1",
+          "tool": "Bing.search",
+          "inputs": {
+            "query": "${infer_intent}",
+            "count": "10"
+          },
+          "connection": "bing_config"
+        },
+        {
+          "name": "dummy_extract_1",
+          "tool": "dummy_extract",
+          "inputs": {
+            "item": "${dummy_search_1}"
+          }
+        },
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${flow.question}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${dummy_extract_1}"
+        }
+      },
+      "tools": [
+        {
+          "name": "intent",
+          "description": "Infer user intent",
+          "type": "llm",
+          "inputs": {
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "I want you to act as a web browser browsing an imaginary internet. Given an input question, infer user real intent.\nInput question: What is the name of US first president's wife?\nAnswer: US first president's wife\nInput question: I want to find the best restaurants nearby, could you recommend some?\nAnswer: best restaurants near me\nInput question: What are Elon Musk's wife doing?\nAnswer: Elon Musk's wife activities\nInput question: {{question}}\nAnswer: \n"
+        },
+        {
+          "name": "Bing.search",
+          "type": "python",
+          "inputs": {
+            "query": {
+              "type": [
+                "string"
+              ]
+            },
+            "answerCount": {
+              "type": [
+                "int"
+              ]
+            },
+            "cc": {
+              "type": [
+                "string"
+              ]
+            },
+            "count": {
+              "type": [
+                "int"
+              ],
+              "default": "10"
+            },
+            "freshness": {
+              "type": [
+                "string"
+              ]
+            },
+            "mkt": {
+              "type": [
+                "string"
+              ]
+            },
+            "offset": {
+              "type": [
+                "int"
+              ],
+              "default": "0"
+            },
+            "promote": {
+              "type": [
+                "list"
+              ],
+              "default": "[]"
+            },
+            "responseFilter": {
+              "type": [
+                "list"
+              ],
+              "default": "[]"
+            },
+            "safesearch": {
+              "type": [
+                "string"
+              ],
+              "default": "Moderate"
+            },
+            "setLang": {
+              "type": [
+                "string"
+              ],
+              "default": "en"
+            },
+            "textDecorations": {
+              "type": [
+                "bool"
+              ],
+              "default": "False"
+            },
+            "textFormat": {
+              "type": [
+                "string"
+              ],
+              "default": "Raw"
+            }
+          },
+          "module": "promptflow.tools.bing",
+          "class_name": "Bing",
+          "function": "search",
+          "connection_type": [
+            "Bing"
+          ]
+        },
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "code": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\",\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "function": "dummy_search"
+        },
+        {
+          "name": "dummy_extract",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "class_name": "dummy_extract",
+          "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return item['answer']\n",
+          "function": "dummy_extract"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "chatgpt"
+      },
+      {
+        "question": "GPT4"
+      },
+      {
+        "question": "GPT3"
+      }
+    ],
+    "name": "Dummy variants request",
+    "description": "This is a dummy variants request",
+    "variants": {
+      "variant1": [{
+        "name": "infer_intent",
+        "tool": "intent",
+        "inputs": {
+          "question": "${flow.question}",
+          "max_tokens": "32",
+          "deployment_name": "text-ada-001",
+          "temperature": "0.7"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      }],
+      "variant2":[{
+              "name": "dummy_extract_1",
+              "tool": "dummy_extract2",
+              "inputs": {
+                "item": "${dummy_search_1}"
+              }
+          }]
+    },
+    "variants_runs": {
+      "variant1": "dummy_variant1_run_id",
+      "variant2": "dummy_variant2_run_id"
+    },
+    "variants_tools": [
+        {
+            "name": "dummy_extract2",
+            "type": "python",
+            "inputs": {
+                "item": {
+                "type": [
+                    "object"
+                ]
+                }
+            },
+            "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant2 ' + item['answer']\n",
+            "function": "dummy_extract"
+        },
+        {
+            "name": "dummy_extract1",
+            "type": "python",
+            "inputs": {
+                "item": {
+                "type": [
+                    "object"
+                ]
+                }
+            },
+            "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant1 ' + item['answer']\n",
+            "function": "dummy_extract"
+        }
+    ],
+    "eval_flow": null,
+    "node_name": null
+  }

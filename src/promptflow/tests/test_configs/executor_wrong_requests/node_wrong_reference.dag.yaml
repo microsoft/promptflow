@@ -1,0 +1,25 @@
+name: node_wrong_reference
+inputs:
+  text:
+    type: string
+outputs:
+  result:
+    type: string
+    reference: ${second_node}
+nodes:
+- name: first_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${inputs.text}
+  aggregation: true
+- name: second_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${third_node}
+  aggregation: true

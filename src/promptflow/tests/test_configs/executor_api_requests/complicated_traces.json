@@ -1,0 +1,63 @@
+{
+    "flow": {
+      "id": "dummy_agent_flow",
+      "name": "dummy_agent_flow",
+      "nodes": [
+        {
+          "name": "dummy_agent",
+          "tool": "dummy_agent",
+          "inputs": {
+            "q": "${flow.q}",
+            "aoai": "azure_open_ai_connection",
+            "bing_conn": "bing_connection"
+          }
+        }
+      ],
+      "inputs": {
+        "q": {
+          "type": "string",
+          "default": "Who is elon mask?"
+        }
+      },
+      "outputs": {
+        "output": {
+          "type": "string",
+          "reference": "${dummy_agent.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_agent",
+          "type": "python",
+          "inputs": {
+            "q": {
+              "type": [
+                "string"
+              ]
+            },
+            "aoai": {
+              "type": [
+                "AzureOpenAIConnection"
+              ]
+            },
+            "bing_conn": {
+              "type": [
+                "BingConnection"
+              ]
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\nfrom promptflow.connections import AzureOpenAIConnection\nfrom promptflow.connections import BingConnection\nfrom promptflow.tools.aoai import AzureOpenAI\nfrom promptflow.tools.bing import Bing\nfrom promptflow.tools.template_rendering import render_template_jinja2\nkeyword_tpl = \"\"\"Please extract the keyword from the question:{{q}}\"\"\"\nanswer_tpl = \"\"\"Please answer the question:{{q}}\"\"\"\n\n@tool\ndef my_llm(prompt: str, conn: AzureOpenAIConnection) -> str:\n    aoai = AzureOpenAI(conn)\n    aoai.completion('hello', deployment_name='text-ada-001')\n    return aoai.completion(prompt, deployment_name='text-ada-001', max_tokens=16)\n\n\n@tool\ndef my_search(q: str, conn: BingConnection):\n    return Bing(conn).search(q, answerCount=1)\n\n\n@tool\ndef dummy_agent(q: str, aoai: AzureOpenAIConnection, bing_conn: BingConnection):\n    assert isinstance(aoai, AzureOpenAIConnection)\n    assert isinstance(bing_conn, BingConnection)\n    AzureOpenAI\n    Bing\n    prompt = render_template_jinja2(keyword_tpl, q=q)\n    keyword = my_llm(prompt, aoai)\n    my_search(keyword, bing_conn)\n    prompt = render_template_jinja2(answer_tpl, q=q)\n    return my_llm(prompt, aoai)\n",
+          "function": "dummy_agent"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "q": "Who is elon mask?"
+      }
+    ],
+    "name": "",
+    "variants": {},
+    "variants_tools": []
+  }

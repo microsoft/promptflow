@@ -1,0 +1,24 @@
+[tool.black]
+line-length = 120
+
+[tool.pytest.ini_options]
+markers = [
+    "community_runtime_test",
+    "community_control_plane_sdk_test",
+    "community_control_plane_cli_test",
+    "unittest",
+    "e2etest",
+    "flaky",
+    "endpointtest",
+    "mt_endpointtest",
+]
+
+[tool.coverage.run]
+omit = [
+    # omit anything in a _restclient directory anywhere
+    "*/_restclient/*",
+    # omit anything in promptflow.azure temporarily
+    "*/promptflow/azure/*",
+    "*/promptflow/_cli/*",
+    "*/promptflow/sdk/_orm/*",
+]

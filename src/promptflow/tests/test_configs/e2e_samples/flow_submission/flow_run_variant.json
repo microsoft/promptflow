@@ -1,0 +1,14 @@
+{
+    "flow_graph": "ask_wikipedia_variant.json",
+    "flow_run_settings": {
+      "runMode": "Flow",
+      "batch_inputs": [
+        {
+          "question": "When did OpenAI announce GPT-4?"
+        }
+      ],
+      "tuningNodeNames": [
+        "augmented_qna"
+      ]
+    }
+}

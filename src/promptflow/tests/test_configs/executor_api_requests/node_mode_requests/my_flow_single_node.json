@@ -1,0 +1,89 @@
+{
+    "flow": {
+      "name": "my flow",
+      "nodes": [
+        {
+            "name": "process_search_result",
+            "tool": "process_search_result",
+            "inputs": {
+              "search_result": ""
+            },
+            "reduce": false
+        },
+        {
+          "name": "augmented_chat",
+          "tool": "augmented_chat",
+          "inputs": {
+            "chat_history": "${inputs.chat_history}",
+            "deployment_name": "gpt-35-turbo",
+            "question": "${flow.question}",
+            "temperature": "0.2"
+          },
+          "provider": "AzureOpenAI",
+          "reduce": false,
+          "api": "chat",
+          "connection": "azure_open_ai_connection"
+        }
+      ],
+      "inputs": {
+        "chat_history": {
+          "type": "list"
+        },
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+      },
+      "tools": [
+        {
+          "name": "augmented_chat",
+          "type": "llm",
+          "inputs": {
+            "chat_history": {
+              "name": "chat_history",
+              "type": [
+                "string"
+              ]
+            },
+            "contexts": {
+              "name": "contexts",
+              "type": [
+                "string"
+              ]
+            },
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "system:\nYou are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n\n{{contexts}}\n\n{% for item in chat_history %}\nuser:\n{{item.inputs.question}}\nassistant:\n{{item.outputs.answer}}\n{% endfor %}\n\nuser:\n{{question}}\n",
+          "function": "val_to_label",
+          "is_builtin": false
+        },
+        {
+            "name": "process_search_result",
+            "type": "python",
+            "inputs": {
+              "search_result": {
+                "name": "search_result",
+                "type": [
+                  "object"
+                ]
+              }
+            },
+            "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef process_search_result(search_result):\n    def format(doc: dict):\n        return f\"Content: {doc['Content']}\\nSource: {doc['Source']}\"\n\n    try:\n        context = []\n        for data in search_result[\"webPages\"][\"value\"]:\n            context.append({\n                \"Content\": data.get(\"snippet\", \"\"),\n                \"Source\": data.get(\"url\", \"\")\n            })\n        context_str = \"\\n\\n\".join([format(c) for c in context])\n        return context_str\n    except Exception as e:\n        print(\"search result is not valid, error: {}\".format(e))\n        return \"\"\n",
+            "function": "process_search_result",
+            "is_builtin": false
+          }
+      ]
+    },
+    "node_inputs": {
+      "inputs.chat_history": "[{\"inputs\":{\"question\":\"When did OpenAI announced their chatgpt api?\"},\"outputs\":{\"answer\":\"OpenAI announced their ChatGPT API on March 1, 2023.\"}}]",
+      "flow.question": "Are there any other similar things that are better than it?"
+    },
+    "connections": {},
+    "node_name": "augmented_chat"
+  }

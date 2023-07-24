@@ -1,0 +1,192 @@
+{
+    "flow": {
+      "id": "line_flow",
+      "name": "line_flow",
+      "nodes": [
+        {
+          "name": "calculate_score",
+          "tool": "calculate_score",
+          "inputs": {
+            "idx": "${flow.idx}"
+          }
+        }
+      ],
+      "inputs": {
+        "idx": {
+          "type": "int"
+        }
+      },
+      "outputs": {
+        "score": {
+          "type": "int",
+          "reference": "${calculate_score.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "calculate_score",
+          "type": "python",
+          "inputs": {
+            "idx": {
+              "type": [
+                "int"
+              ]
+            },
+            "mod": {
+              "type": [
+                "int"
+              ],
+              "default": "5"
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\nimport random\n\n@tool\ndef calculate_score(idx: int, mod=5) -> int:\n    if idx % mod == 0:\n        raise Exception(\"Failed\")\n    return random.randint(0, 100)\n",
+          "function": "calculate_score"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "val2": 0,
+        "idx": 5
+      },
+      {
+        "val2": 0,
+        "idx": 6
+      },
+      {
+        "val2": 4,
+        "idx": 7
+      },
+      {
+        "val2": 5,
+        "idx": 2
+      },
+      {
+        "val2": 2,
+        "idx": 9
+      }
+    ],
+    "bulk_test_id": "bulk_test_id",
+    "baseline_variant_id": "variant0",
+    "variants_runs": {
+      "variant1": "variant1"
+    },
+    "variants": {
+      "variant1": [
+        {
+          "name": "calculate_score",
+          "tool": "calculate_score",
+          "inputs": {
+            "mod": 6,
+            "idx": "${flow.idx}"
+          }
+        }
+      ]
+    },
+    "variants_tools": [],
+    "eval_flow_inputs_mapping": {
+        "val1": "data.idx",
+        "val2": "data.val2"
+    },
+    "eval_flow_run_id": "eval_flow",
+    "eval_flow": {
+        "id": "accuracy_flow",
+        "name": "accuracy_flow",
+        "nodes": [
+          {
+            "name": "calculated_score",
+            "tool": "calculate_score",
+            "inputs": {
+              "line_num": "${flow.line_number}",
+              "variant_id": "${flow.variant_id}",
+              "val1": "${flow.val1}",
+              "val2": "${flow.val2}"
+            }
+          },
+          {
+            "name": "reduce_f",
+            "tool": "reduce_f",
+            "inputs": {
+              "linenos": "${flow.line_number}",
+              "variant_ids": "${flow.variant_id}",
+              "scores": "${calculated_score.output}"
+            },
+            "reduce": true
+          }
+        ],
+        "inputs": {
+          "line_number": {
+            "type": "int"
+          },
+          "variant_id": {
+            "type": "string"
+          },
+          "val1": {
+            "type": "int"
+          },
+          "val2": {
+            "type": "int"
+          }
+        },
+        "outputs": {
+          "score": {
+            "type": "int",
+            "reference": "${calculated_score.output}"
+          }
+        },
+        "tools": [
+          {
+            "name": "calculate_score",
+            "type": "python",
+            "inputs": {
+              "line_num": {
+                "type": [
+                  "int"
+                ]
+              },
+              "variant_id": {
+                "type": [
+                  "string"
+                ]
+              },
+              "val1": {
+                "type": [
+                  "int"
+                ]
+              },
+              "val2": {
+                "type": [
+                  "int"
+                ]
+              }
+            },
+            "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\nimport random\n\n@tool\ndef calculate_score(line_num: int, variant_id: str, val1: int, val2: int) -> int:\n    if '0' in variant_id:\n        if val1 > line_num:\n            raise Exception(\"Failed0\")\n    else:\n        if val2 > line_num:\n            raise Exception(\"Failed1\")\n    return random.randint(0, 100)\n",
+            "function": "calculate_score"
+          },
+          {
+            "name": "reduce_f",
+            "type": "python",
+            "inputs": {
+              "linenos": {
+                "type": [
+                  "object"
+                ]
+              },
+              "variant_ids": {
+                "type": [
+                  "object"
+                ]
+              },
+              "scores": {
+                "type": [
+                  "object"
+                ]
+              }
+            },
+            "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef reduce_f(\n    linenos: List[int],\n    variant_ids: List[str],\n    scores: List[int]\n):\n    for lineno, variant_id, score in zip(linenos, variant_ids, scores):\n        assert isinstance(lineno, int), f\"lineno should be int, got {lineno}\"\n        assert isinstance(variant_id, str), f\"variant_id should be str, got {variant_id}\"\n        assert isinstance(score, int), f\"score should be int, got {score}\"\n    return 0\n",
+            "function": "reduce_f"
+          }
+        ]
+      }
+  }

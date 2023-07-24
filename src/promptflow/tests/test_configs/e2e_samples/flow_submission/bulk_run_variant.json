@@ -1,0 +1,10 @@
+{
+    "flow_graph": "echo_prompt_variant.json",
+    "flow_run_settings": {
+      "runMode": "BulkTest",
+      "tuningNodeNames": [
+        "hello_prompt"
+      ]
+    },
+    "flow_run_inputs": "echo_prompt_input.csv"
+}

@@ -1,0 +1,65 @@
+inputs:
+  prediction:
+    type: string
+  groundtruth:
+    type: string
+  variant_id:
+    type: string
+outputs:
+  grade:
+    type: string
+    reference: ${grade_dict2.output.grade.value}
+  grade_from_aggr:
+    type: string
+    reference: ${accuracy3.output}
+nodes:
+- name: grade_dict1
+  type: python
+  source:
+    type: code
+    path: grade_dict.py
+  inputs:
+    prediction: ${inputs.prediction}
+    groundtruth: ${inputs.groundtruth}
+- name: grade_dict2
+  type: python
+  source:
+    type: code
+    path: grade_dict.py
+  inputs:
+    prediction: ${grade_dict1.output.grade.value}
+    groundtruth: "Correct"
+- name: passthrough
+  type: python
+  source:
+    type: code
+    path: passthrough.py
+  inputs:
+    val: ${grade_dict2.output.grade.value}
+- name: accuracy1
+  type: python
+  source:
+    type: code
+    path: accuracy.py
+  inputs:
+    grades: ${grade_dict1.output.grade.value}
+    variant_ids: ${inputs.variant_id}
+  aggregation: True
+- name: accuracy2
+  type: python
+  source:
+    type: code
+    path: accuracy.py
+  inputs:
+    grades: ${passthrough.output}
+    variant_ids: ${inputs.variant_id}
+  aggregation: True
+- name: accuracy3
+  type: python
+  source:
+    type: code
+    path: accuracy.py
+  inputs:
+    grades: ${accuracy1.output}
+    variant_ids: ${inputs.variant_id}
+  aggregation: True

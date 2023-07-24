@@ -1,0 +1,18 @@
+inputs:
+  text:
+    type: string
+outputs:
+  response:
+    type: string
+    reference: ${openai_stream.output}
+nodes:
+- name: openai_stream
+  type: python
+  connection: 
+  source:
+    type: code
+    path: openai_stream.py
+  inputs:
+    deployment_name: text-ada-001
+    conn: azure_open_ai_connection
+    prompt: ${inputs.text}

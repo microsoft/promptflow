@@ -1,0 +1,141 @@
+{
+  "flow": {
+    "name": "how_do_you_like_bing",
+    "nodes": [
+      {
+        "name": "Bing_search_1",
+        "tool": "Bing.search",
+        "inputs": {
+          "query": "${flow.query}",
+          "limit": "1"
+        },
+        "connection": "bing_config"
+      },
+      {
+        "name": "extract_1",
+        "tool": "extract",
+        "inputs": {
+          "result": "${Bing_search_1}",
+          "search_engine": "Bing"
+        }
+      },
+      {
+        "name": "teenager_vote",
+        "tool": "voter",
+        "inputs": {
+          "profile": "${Bing_search_1}",
+          "title": "${flow.profile}",
+          "snippet": "${extract_1.output.snippet}",
+          "deployment_name": "text-dv2",
+          "max_tokens": "5",
+          "temperature": "0.8",
+          "logprobs": "",
+          "suffix": "",
+          "echo": "False"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "housewife_vote",
+        "tool": "voter",
+        "inputs": {
+          "profile": "a housewife",
+          "title": "${extract_1.output.title}",
+          "snippet": "${extract_1.output.snippet}",
+          "deployment_name": "text-ada-001",
+          "max_tokens": "5",
+          "temperature": "0.8"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "middle_aged_man_vote",
+        "tool": "voter",
+        "inputs": {
+          "profile": "a middle aged man",
+          "title": "${extract_1.output.title}",
+          "snippet": "${extract_1.output.snippet}",
+          "deployment_name": "text-ada-001",
+          "max_tokens": "5",
+          "temperature": "0.8"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "LLM_a6sn",
+        "inputs": {},
+        "tool": "LLM_a6sn"
+      }
+    ],
+    "inputs": {
+      "profile": {
+        "type": "string"
+      }
+    },
+    "outputs": {},
+    "tools": [
+      {
+        "name": "extract",
+        "type": "python",
+        "inputs": {
+          "result": {
+            "name": "result",
+            "type": [
+              "object"
+            ]
+          },
+          "search_engine": {
+            "name": "search_engine",
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "class_name": "extract",
+        "code": "from promptflow import tool\n@tool\ndef extract(result, search_engine):\n    try:\n        if search_engine == \"Bing\":\n            return {\n                \"title\": result[\"webPages\"][\"value\"][0][\"name\"],\n                \"snippet\": result[\"webPages\"][\"value\"][0][\"snippet\"]}\n        else:\n            raise ValueError(\"search engine {} is not supported\".format(search_engine))\n    except Exception as e:\n        print(\"search result is not valid, error: {}\".format(e))\n        return {\"title\": \"\", \"snippet\": \"\"}\n",
+        "function": "extract"
+      },
+      {
+        "name": "voter",
+        "description": "Vote for Bing",
+        "type": "llm",
+        "inputs": {
+          "profile": {
+            "name": "profile",
+            "type": [
+              "string"
+            ]
+          },
+          "title": {
+            "name": "title",
+            "type": [
+              "string"
+            ]
+          },
+          "snippet": {
+            "name": "snippet",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "You are {{profile}}, how do you like below search result?\nresult: title \"{{title}}\", snippet \"{{snippet}}\"\n\nPlease answer precisely \"Like\" or \"Dislike\" to indicate which search result is more relevant.\nPlease do not mock any other answers.\nYour answer:\n\n\n"
+      }
+    ]
+  },
+  "node_inputs": {
+    "extract_1.output": {
+      "title": "Introducing ChatGPT",
+      "snippet": "<b>ChatGPT</b> is a sibling model to InstructGPT, which is trained to follow an instruction in a prompt and provide a detailed response. We are excited to introduce <b>ChatGPT</b> to get users\u2019 feedback and learn about its strengths and weaknesses. During the research preview, usage of <b>ChatGPT</b> is free. Try it now at chat.openai.com."
+    },
+    "flow.profile": "a person 12 to 18 years old",
+    "Bing_search_1": "Bing search 1 result"
+  },
+  "node_name": "teenager_vote"
+}

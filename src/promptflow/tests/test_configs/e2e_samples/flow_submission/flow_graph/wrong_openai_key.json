@@ -1,0 +1,81 @@
+{
+    "flowGraph": {
+      "nodes": [
+        {
+          "name": "qa",
+          "tool": "qa",
+          "inputs": {
+            "model": "text-ada-001",
+            "max_tokens": "256",
+            "temperature": "0.5",
+            "question": "${inputs.question}"
+          },
+          "provider": "OpenAI",
+          "connection": "openai_conn",
+          "api": "completion",
+          "reduce": false
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string",
+          "is_chat_input": false
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${qa.output}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        }
+      },
+      "tools": [
+        {
+          "name": "qa",
+          "type": "llm",
+          "inputs": {
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            },
+            "contexts": {
+              "name": "contexts",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "description": "QA",
+          "lkgCode": "Human: {{question}}\nChatbot:",
+          "code": "Human: {{question}}\nChatbot:",
+          "is_builtin": false
+        }
+      ]
+    },
+    "nodeVariants": {
+      "qa": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "qa",
+              "tool": "qa",
+              "inputs": {
+                "model": "text-ada-001",
+                "max_tokens": "256",
+                "temperature": "0.5",
+                "question": "${inputs.question}"
+              },
+              "provider": "OpenAI",
+              "connection": "openai_conn",
+              "api": "completion",
+              "reduce": false
+            }
+          }
+        }
+      }
+    }
+  }

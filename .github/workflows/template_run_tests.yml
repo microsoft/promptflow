@@ -1,0 +1,102 @@
+# Environment variables defined in a calling workflow are not accessible to this reusable workflow. Refer to the documentation for further details on this limitation.
+name: template_run_tests
+on:
+  workflow_call:
+    inputs:
+      pytestMarker:
+        required: false
+        type: string
+      timeoutInMinutes:
+        required: false
+        default: 120
+        type: number
+      packageSetupType:
+        required: false
+        type: string
+      testWorkingDirectory:
+        required: false
+        type: string
+      location:
+        required: false
+        type: string
+      coveragePath:
+        required: false
+        type: string
+      coverage:
+        required: false
+        default: true
+        type: boolean
+      testPath:
+        required: false
+        type: string
+      numPytestProcesses:
+        required: false
+        default: 5
+        type: number
+      condaEnvironmentFilePath:
+        required: false
+        default: "./pipelines/configs/release-env.yaml"
+        type: string
+      generateEndpointConfig:
+        required: false
+        default: false
+        type: boolean
+      modelFileName:
+        required: false
+        default: ''
+        type: string
+      deploymentName:
+        required: false
+        default: ''
+        type: string
+      generateModelFile:
+        required: false
+        default: false
+        type: boolean
+      patternModelFile:
+        required: false
+        default: ''
+        type: string
+jobs:
+  run_feature_tests:
+    name: Run Coverage Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ parameters.timeoutInMinutes }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3.5.0
+    - uses: "./.github/actions/steps_template_initialize_build_step"
+      with:
+        shouldEnableAutoCRLF: true
+        shouldRunCheckout: true
+        shouldCreateCondaEnvironment: false
+        condaEnvironmentFilePath: "${{ inputs.condaEnvironmentFilePath }}"
+    - uses: "./.github/actions/steps_template_generate_configs"
+      with:
+        generateEndpointConfig: "${{ inputs.generateEndpointConfig}}"
+        aoaiApiKey: "${{ secrets.AOAI-API-KEY }}"
+        aoaiApiEndpoint: "$(AOAI-API-ENDPOINT)"
+        bingApiKey: "${{ secrets.BING-API-KEY }}"
+        openaiApiKey: "${{ secrets.OPENAI-API-KEY }}"
+        serpApiKey: "${{ secrets.SERPAPI-API-KEY }}"
+        contentSafetyApiKey: "${{ secrets.CONTENT-SAFETY-API-KEY }}"
+        targetFolder: "${{ env.srcPath }}/promptflow"
+    - uses: "./.github/actions/steps_template_sdk_setup_step"
+      with:
+        setupType: "${{ inputs.packageSetupType }}"
+    - uses: "./.github/actions/steps_template_generate_model"
+      if: parameters['generateModelFile'] == true
+      with:
+        targetFolder: "${{ env.deployPath }}/model"
+        patternModelFile: "${{ inputs.patternModelFile }}"
+        deploymentName: "${{ inputs.deploymentName }}"
+    - uses: "./.github/actions/steps_template_test_coverage_step"
+      with:
+        workingDir: "${{ inputs.testWorkingDirectory }}"
+        coveragePath: "${{ inputs.coveragePath }}"
+        testPath: "${{ inputs.testPath }}"
+        numPytestProcesses: "${{ inputs.numPytestProcesses }}"
+        coverage: "${{ inputs.coverage }}"
+        location: "${{ inputs.location }}"
+        pytestMarker: "${{ inputs.pytestMarker }}"
+        modelFileName: "${{ inputs.modelFileName }}"

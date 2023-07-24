@@ -1,0 +1,7 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+# will be changed to flow to support parallelism
+type: command
+outputs:
+  output:
+    # PRS team will always aggregate all the outputs into a single file under this folder for now
+    type: uri_folder

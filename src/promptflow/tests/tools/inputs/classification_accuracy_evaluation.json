@@ -1,0 +1,348 @@
+{
+  "flowName": "Classification Accuracy Evaluation",
+  "flowType": "Evaluation",
+  "description": "Measuring the performance of a classification system by comparing its outputs to groundtruth.",
+  "tags": {},
+  "flow": {
+    "flowGraph": {
+      "nodes": [
+        {
+          "name": "grade",
+          "tool": "grade",
+          "inputs": {
+            "groundtruth": "${inputs.groundtruth}",
+            "prediction": "${inputs.prediction}"
+          },
+          "reduce": false
+        },
+        {
+          "name": "calculate_accuracy",
+          "tool": "calculate_accuracy",
+          "inputs": {
+            "grades": "${grade.output}",
+            "variant_ids": "${inputs.variant_id}"
+          },
+          "reduce": true
+        }
+      ],
+      "inputs": {
+        "line_number": {
+          "type": "int",
+          "is_chat_input": false
+        },
+        "variant_id": {
+          "type": "string",
+          "is_chat_input": false
+        },
+        "groundtruth": {
+          "type": "string",
+          "description": "Please specify the groundtruth column, which contains the true label to the outputs that your flow produces.",
+          "is_chat_input": false
+        },
+        "prediction": {
+          "type": "string",
+          "description": "Please specify the prediction column, which contains the predicted outputs that your flow produces.",
+          "is_chat_input": false
+        }
+      },
+      "outputs": {
+        "grade": {
+          "type": "string",
+          "reference": "${grade.output}",
+          "evaluation_only": false,
+          "is_chat_output": false
+        }
+      },
+      "tools": [
+        {
+          "name": "grade",
+          "type": "python",
+          "inputs": {
+            "groundtruth": {
+              "type": [
+                "string"
+              ],
+              "name": "groundtruth"
+            },
+            "prediction": {
+              "type": [
+                "string"
+              ],
+              "name": "prediction"
+            }
+          },
+          "source": "grade.py",
+          "code": "from promptflow import tool\n\n\n@tool\ndef grade(groundtruth: str, prediction: str):\n    return \"Correct\" if groundtruth.lower() == prediction.lower() else \"Incorrect\"\n",
+          "function": "grade",
+          "is_builtin": false,
+          "lkgCode": "from promptflow import tool\n\n\n@tool\ndef grade(groundtruth: str, prediction: str):\n    return \"Correct\" if groundtruth.lower() == prediction.lower() else \"Incorrect\"\n"
+        },
+        {
+          "name": "calculate_accuracy",
+          "type": "python",
+          "inputs": {
+            "grades": {
+              "type": [
+                "list"
+              ],
+              "name": "grades"
+            },
+            "variant_ids": {
+              "type": [
+                "list"
+              ],
+              "name": "variant_ids"
+            }
+          },
+          "source": "calculate_accuracy.py",
+          "code": "from typing import List\n\nfrom promptflow import tool, log_metric\n\n\n@tool\ndef calculate_accuracy(grades: List[str], variant_ids: List[str]):\n    aggregate_grades = {}\n    for index in range(len(grades)):\n        grade = grades[index]\n        variant_id = variant_ids[index]\n        if variant_id not in aggregate_grades.keys():\n            aggregate_grades[variant_id] = []\n        aggregate_grades[variant_id].append(grade)\n\n    # calculate accuracy for each variant\n    for name, values in aggregate_grades.items():\n        accuracy = round((values.count(\"Correct\") / len(values)), 2)\n        log_metric(\"accuracy\", accuracy, variant_id=name)\n\n    return aggregate_grades",
+          "function": "calculate_accuracy",
+          "is_builtin": false,
+          "lkgCode": "from typing import List\n\nfrom promptflow import tool, log_metric\n\n\n@tool\ndef calculate_accuracy(grades: List[str], variant_ids: List[str]):\n    aggregate_grades = {}\n    for index in range(len(grades)):\n        grade = grades[index]\n        variant_id = variant_ids[index]\n        if variant_id not in aggregate_grades.keys():\n            aggregate_grades[variant_id] = []\n        aggregate_grades[variant_id].append(grade)\n\n    # calculate accuracy for each variant\n    for name, values in aggregate_grades.items():\n        accuracy = round((values.count(\"Correct\") / len(values)), 2)\n        log_metric(\"accuracy\", accuracy, variant_id=name)\n\n    return aggregate_grades"
+        }
+      ]
+    },
+    "nodeVariants": {
+      "grade": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "grade",
+              "tool": "grade",
+              "inputs": {
+                "groundtruth": "${inputs.groundtruth}",
+                "prediction": "${inputs.prediction}"
+              },
+              "reduce": false
+            }
+          }
+        }
+      },
+      "calculate_accuracy": {
+        "defaultVariantId": "variant_0",
+        "variants": {
+          "variant_0": {
+            "node": {
+              "name": "calculate_accuracy",
+              "tool": "calculate_accuracy",
+              "inputs": {
+                "grades": "${grade.output}",
+                "variant_ids": "${inputs.variant_id}"
+              },
+              "reduce": true
+            }
+          }
+        }
+      }
+    },
+    "evaluationFlows": {},
+    "bulkTestData": {},
+    "flowGraphLayout": {
+      "nodeLayouts": {
+        "inputs": {
+          "x": 149.5,
+          "y": 62,
+          "index": -1
+        },
+        "outputs": {
+          "x": 32,
+          "y": 262,
+          "index": -1
+        },
+        "grade": {
+          "x": 37,
+          "y": 162,
+          "height": 75,
+          "index": 0
+        },
+        "calculate_accuracy": {
+          "x": 332,
+          "y": 262,
+          "height": 95,
+          "index": 1
+        }
+      }
+    }
+  },
+  "flowRunSettings": {
+    "runtimeName": "qixia-ci-1",
+    "batch_inputs": [
+      {
+        "line_number": 0,
+        "variant_id": "variant_0",
+        "groundtruth": "App",
+        "prediction": "App"
+      }
+    ]
+  },
+  "flowRunResult": {
+    "flow_runs": [
+      {
+        "api_calls": null,
+        "description": "",
+        "end_time": "2023-06-05T03:32:12.205643Z",
+        "error": null,
+        "flow_id": "53ef1fa6-7e13-452e-b5a2-c9ab03067e33",
+        "index": null,
+        "inputs": null,
+        "metrics": {
+          "accuracy": [
+            {
+              "value": 1,
+              "variant_id": "variant_0"
+            }
+          ]
+        },
+        "name": "",
+        "output": {
+          "grade": [
+            "Correct"
+          ]
+        },
+        "parent_run_id": "",
+        "request": null,
+        "result": {
+          "grade": [
+            "Correct"
+          ]
+        },
+        "root_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "source_run_id": null,
+        "start_time": "2023-06-05T03:32:11.967376Z",
+        "status": "Completed",
+        "system_metrics": {
+          "duration": 0.238267,
+          "total_tokens": 0
+        },
+        "tags": {},
+        "upload_metrics": null,
+        "variant_id": "variant_0"
+      },
+      {
+        "api_calls": [
+          {
+            "children": [],
+            "end_time": 1685935932.102506,
+            "error": null,
+            "inputs": {
+              "groundtruth": "App",
+              "prediction": "App"
+            },
+            "name": "grade",
+            "node_name": "grade",
+            "output": "Correct",
+            "start_time": 1685935932.102356,
+            "type": "Tool"
+          }
+        ],
+        "description": "",
+        "end_time": "2023-06-05T03:32:12.134361Z",
+        "error": null,
+        "flow_id": "53ef1fa6-7e13-452e-b5a2-c9ab03067e33",
+        "index": 0,
+        "inputs": {
+          "groundtruth": "App",
+          "line_number": 0,
+          "prediction": "App",
+          "variant_id": "variant_0"
+        },
+        "metrics": null,
+        "name": "",
+        "output": {
+          "grade": "Correct"
+        },
+        "parent_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "request": null,
+        "result": {
+          "grade": "Correct"
+        },
+        "root_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62_0",
+        "source_run_id": null,
+        "start_time": "2023-06-05T03:32:11.995235Z",
+        "status": "Completed",
+        "system_metrics": {
+          "duration": 0.139126,
+          "total_tokens": 0
+        },
+        "tags": null,
+        "upload_metrics": false,
+        "variant_id": "variant_0"
+      }
+    ],
+    "node_runs": [
+      {
+        "api_calls": [],
+        "cached_flow_run_id": null,
+        "cached_run_id": null,
+        "end_time": "2023-06-05T03:32:12.102506Z",
+        "error": null,
+        "flow_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "index": 0,
+        "inputs": {
+          "groundtruth": "App",
+          "prediction": "App"
+        },
+        "logs": {
+          "stderr": "",
+          "stdout": ""
+        },
+        "metrics": null,
+        "node": "grade",
+        "output": "Correct",
+        "parent_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62_0",
+        "result": "Correct",
+        "run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62_grade_0",
+        "start_time": "2023-06-05T03:32:12.102356Z",
+        "status": "Completed",
+        "system_metrics": {
+          "duration": 0.00015
+        },
+        "variant_id": "variant_0"
+      },
+      {
+        "api_calls": [],
+        "cached_flow_run_id": null,
+        "cached_run_id": null,
+        "end_time": "2023-06-05T03:32:12.178302Z",
+        "error": null,
+        "flow_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "index": null,
+        "inputs": {
+          "grades": [
+            "Correct"
+          ],
+          "variant_ids": [
+            "variant_0"
+          ]
+        },
+        "logs": {
+          "stderr": "",
+          "stdout": ""
+        },
+        "metrics": null,
+        "node": "calculate_accuracy",
+        "output": {
+          "variant_0": [
+            "Correct"
+          ]
+        },
+        "parent_run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62",
+        "result": {
+          "variant_0": [
+            "Correct"
+          ]
+        },
+        "run_id": "a3782e2e-dcb8-479c-a17b-898c5de41d62_calculate_accuracy_reduce",
+        "start_time": "2023-06-05T03:32:12.178158Z",
+        "status": "Completed",
+        "system_metrics": {
+          "duration": 0.000144
+        },
+        "variant_id": "variant_0"
+      }
+    ]
+  }
+}

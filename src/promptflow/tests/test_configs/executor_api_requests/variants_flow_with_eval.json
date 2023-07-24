@@ -1,0 +1,209 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${flow.question}"
+          }
+        },
+        {
+          "name": "dummy_extract_1",
+          "tool": "dummy_extract",
+          "inputs": {
+            "item": "${dummy_search_1}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${dummy_extract_1}"
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "code": "from promptflow import tool\n@tool\ndef dummy_search(question: str):\n    return {\n        \"question\": question + \"!\",\n        \"answer\": \"Answer to \" + question + \"!\"\n    }\n",
+          "function": "dummy_search"
+        },
+        {
+          "name": "dummy_extract",
+          "type": "python",
+          "inputs": {
+            "item": {
+              "type": [
+                "object"
+              ]
+            }
+          },
+          "class_name": "dummy_extract",
+          "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return item['answer']\n",
+          "function": "dummy_extract"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "chatgpt",
+        "groundtruth": "Answer to chatgpt!"
+      },
+      {
+        "question": "GPT4",
+        "groundtruth": "Answer to GPT4!"
+      },
+      {
+        "question": "GPT3",
+        "groundtruth": "Answer to GPT3!"
+      }
+    ],
+    "variants": {
+      "variant1": [{
+              "name": "dummy_extract_1",
+              "tool": "dummy_extract1",
+              "inputs": {
+                "item": "${dummy_search_1}"
+              }
+          }],
+      "variant2":[{
+              "name": "dummy_extract_1",
+              "tool": "dummy_extract2",
+              "inputs": {
+                "item": "${dummy_search_1}"
+              }
+          }]
+    },
+    "variants_runs": {
+      "variant1": "dummy_variant1_run_id",
+      "variant2": "dummy_variant2_run_id"
+    },
+    "bulk_test_id": "dummy_bulk_test0",
+    "eval_flow_run_id": "dummy_eval_flow_run_id",
+    "baseline_variant_id": "variant0",
+    "variants_tools": [
+        {
+            "name": "dummy_extract2",
+            "type": "python",
+            "inputs": {
+                "item": {
+                "type": [
+                    "object"
+                ]
+                }
+            },
+            "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant2 ' + item['answer']\n",
+            "function": "dummy_extract"
+        },
+        {
+            "name": "dummy_extract1",
+            "type": "python",
+            "inputs": {
+                "item": {
+                "type": [
+                    "object"
+                ]
+                }
+            },
+            "code": "from promptflow import tool\n@tool\ndef dummy_extract(item) -> str:\n    return 'variant1 ' + item['answer']\n",
+            "function": "dummy_extract"
+        }
+    ],
+    "eval_flow": {
+      "id": "basic_eval_flow_id",
+      "name": "basic_eval_flow",
+      "nodes": [
+          {
+              "name": "calculate_similarity",
+              "tool": "calculate_similarity",
+              "inputs": {
+                  "val1": "${flow.groundtruth}",
+                  "val2": "${flow.answer}"
+              }
+          },
+          {
+              "name": "calculate_accuracy",
+              "tool": "calculate_accuracy",
+              "reduce": true,
+              "inputs": {
+                  "variant_ids": "${flow.variant_id}",
+                  "similarities": "${calculate_similarity.output}"
+              }
+          }
+      ],
+      "inputs": {
+          "question": {
+              "type": "string"
+          },
+          "groundtruth": {
+              "type": "string"
+          },
+          "variant_id": {
+              "type": "string"
+          },
+          "answer": {
+              "type": "string"
+          }
+      },
+      "outputs": {
+          "similarity": {
+              "type": "double",
+              "reference": "${calculate_similarity.output}"
+          }
+      },
+      "tools": [
+        {
+          "name": "calculate_similarity",
+          "type": "python",
+          "inputs": {
+            "val1": {
+              "type": [
+                "string"
+              ]
+            },
+            "val2": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\n\n@tool\ndef calculate_similarity(\n    val1: str,\n    val2: str,\n) -> float:\n    return 1.0 if val1 == val2 else 0.0\n",
+          "function": "calculate_similarity"
+        },
+        {
+          "name": "calculate_accuracy",
+          "type": "python",
+          "inputs": {
+            "variant_ids": {
+              "type": [
+                "list"
+              ]
+            },
+            "similarities": {
+              "type": [
+                "list"
+              ]
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\n\n@tool\ndef calculate_accuracy(variant_ids: list, similarities: list):\n    variants = set(variant_ids)\n    total = {v: 0 for v in variants}\n    success = {v: 0 for v in variants}\n    for v, s in zip(variant_ids, similarities):\n        total[v] += 1\n        success[v] += s\n    accuracies = {v: success[v] / total[v] for v in variants}\n    for v in variants:\n        log_metric(f\"accuracy\", success[v] / total[v], v)\n    return accuracies\n",
+          "function": "calculate_accuracy"
+        }
+      ]
+    }
+  }

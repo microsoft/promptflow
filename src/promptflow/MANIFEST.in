@@ -1,0 +1,12 @@
+include promptflow/runtime/config/*.yaml
+include promptflow/_cli/data/example_flow/flow.dag.yaml
+include promptflow/_cli/data/example_flow/hello.jinja2
+include promptflow/_cli/data/example_flow/hello.py
+include promptflow/_cli/data/example_flow/flow.meta.yaml
+include promptflow/_cli/data/example_flow/.promptflow/*
+include promptflow/_cli/data/entry_flow/*
+include promptflow/_cli/data/chat_flow/*
+include promptflow/_cli/data/evaluation_flow/*
+include promptflow/_cli/data/standard_flow/*
+include promptflow/azure/resources/*
+include promptflow/sdk/data/*

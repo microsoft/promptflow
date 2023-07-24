@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidRequest",
+                    "innerError": {
+                        "code": "EmptyInputError",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Inputs in the request of flow 'dummy_qna' is empty.",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

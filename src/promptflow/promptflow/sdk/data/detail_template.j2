@@ -1,0 +1,120 @@
+{% macro build_spec(spec, type) %}
+{% for key, value in spec.items() %}
+{{ key }}:
+  type: {{ value.type }}
+{% if type == "input_spec" %}
+  default: null
+  is_chat_input: false
+{% elif type == "output_spec" %}
+  reference: null
+  evaluation_only: false
+  is_chat_output: false
+{% elif type == "eval_input_spec" %}
+  is_chat_input: false
+{% elif type == "eval_output_spec" %}
+  reference: null
+  evaluation_only: false
+  is_chat_output: false
+{% endif %}
+{% endfor %}
+{% endmacro %}
+
+{% macro build_data(data) %}
+{% for key, value in data.items() %}
+{{ key }}: {{ value|tojson }}
+{% endfor %}
+{% endmacro %}
+
+{% macro add_null_fields() %}
+error: null
+metrics: null
+request: null
+parent_run_id: null
+root_run_id: null
+source_run_id: null
+flow_id: null
+start_time: null
+end_time: null
+api_calls: null
+name: null
+description: null
+tags: null
+system_metrics: null
+upload_metrics: null
+{% endmacro %}
+
+spec:
+  inputSpec:
+    {{ build_spec(input_spec, type="input_spec")|indent(4) }}
+  outputSpec:
+    {{ build_spec(output_spec, type="output_spec")|indent(4) }}
+
+{% if (eval_runs is defined) and eval_runs %}
+  inputSpecEval:
+{% for eval_run in eval_runs %}
+    {{ eval_run.name }}:
+      {{ build_spec(eval_run.input_spec, type="eval_input_spec")|indent(6) }}
+{% endfor %}
+  outputSpecEval:
+{% for eval_run in eval_runs %}
+    {{ eval_run.name }}:
+      {{ build_spec(eval_run.output_spec, type="eval_output_spec")|indent(6) }}
+{% endfor %}
+
+{% else %}
+  inputSpecEval: {}
+  outputSpecEval: {}
+
+{% endif %}
+
+data:
+  run:
+{% for run_data in runs_data %}
+  - run_id: {{ run_data.run_id }}
+    status: {{ run_data.status }}
+    index: {{ run_data.index }}
+    variant_id: {{ run_data.variant_id }}
+    inputs:
+      {{ build_data(run_data.inputs)|indent(6) }}
+    output:
+      {{ build_data(run_data.outputs)|indent(6) }}
+    result:
+      {{ build_data(run_data.outputs)|indent(6) }}
+    {{ add_null_fields()|indent(4) }}
+{% endfor %}
+
+{% if (eval_runs is defined) and eval_runs %}
+  eval:
+{% for eval_run in eval_runs %}
+    {{ eval_run.name }}:
+{% for eval_run_data in eval_run.runs_data %}
+    - run_id: {{ eval_run_data.run_id }}
+      status: {{ eval_run_data.status }}
+      index: {{ eval_run_data.index }}
+      variant_id: {{ eval_run_data.variant_id }}
+      inputs:
+        {{ build_data(eval_run_data.inputs)|indent(8) }}
+      output:
+        {{ build_data(eval_run_data.outputs)|indent(8) }}
+      result:
+        {{ build_data(eval_run_data.outputs)|indent(8) }}
+      {{ add_null_fields()|indent(6) }}
+{% endfor %}
+{% endfor %}
+
+{% else %}
+  eval: {}
+{% endif %}
+
+{% if (eval_runs is defined) and eval_runs %}
+eval:
+{% for eval_run in eval_runs %}
+  - name: "{{ eval_run.name }}"
+    display_name: "{{ eval_run.display_name }}"
+{% endfor %}
+
+{% else %}
+eval: []
+
+{% endif %}
+error_message: null

@@ -1,0 +1,23 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_prompt:
+    type: string
+    reference: ${echo_my_prompt.output}
+nodes:
+- name: echo_my_prompt
+  type: python
+  source:
+    type: code
+    path: echo_my_prompt.py
+  inputs:
+    input1: ${inputs.text}
+- name: aggregate_prompts
+  type: python
+  source:
+    type: code
+    path: aggr_sample.py
+  inputs:
+    prompts: ${echo_my_prompt.output}
+  aggregation: True

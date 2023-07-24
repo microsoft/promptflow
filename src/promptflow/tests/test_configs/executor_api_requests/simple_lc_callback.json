@@ -1,0 +1,65 @@
+{
+    "flow": {
+      "id": "langchain_chat",
+      "name": "langchain_chat",
+      "nodes": [
+        {
+          "name": "langchain_math",
+          "tool": "langchain_math",
+          "inputs": {
+            "deployment_name": "text-ada-001",
+            "aoai": "azure_open_ai_connection",
+            "question": "${flow.question}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "output": {
+          "type": "string",
+          "reference": "${langchain_math.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "langchain_math",
+          "type": "python",
+          "inputs": {
+            "aoai": {
+              "type": [
+                "AzureOpenAIConnection"
+              ]
+            },
+            "question": {
+              "type": [
+                "string"
+              ]
+            },
+            "deployment_name": {
+              "type": [
+                "string"
+              ],
+              "default": "text-ada-001"
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\nimport os\nimport openai\nfrom langchain.llms.openai import AzureOpenAI\nfrom promptflow.core.langchain_handler import get_langchain_callback_manager\nfrom langchain.agents.load_tools import load_tools\nfrom langchain.agents.initialize import initialize_agent\nfrom langchain.agents.agent_types import AgentType\nfrom promptflow.connections import AzureOpenAIConnection\n\n@tool\ndef langchain_math(aoai: AzureOpenAIConnection, question: str, deployment_name=\"text-ada-001\"):\n    os.environ[\"OPENAI_API_KEY\"] = aoai.api_key\n    openai.api_base = aoai.api_base\n    openai.api_version = aoai.api_version\n    openai.api_type = aoai.api_type\n    llm = AzureOpenAI(\n        temperature=0.7,\n        deployment_name=deployment_name,\n    )\n    manager = get_langchain_callback_manager()\n    tools = load_tools([\"llm-math\"], llm=llm)\n    agent = initialize_agent(\n            tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=False,\n            callback_manager=manager\n        )\n    return agent.run(question)\n",
+          "function": "langchain_math"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "What is the value of 123 * 321?"
+      }
+    ],
+    "name": "",
+    "description": "",
+    "baseline_variant_id": "",
+    "variants": {},
+    "variants_tools": []
+  }

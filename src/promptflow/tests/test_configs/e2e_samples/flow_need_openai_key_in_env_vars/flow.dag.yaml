@@ -1,0 +1,13 @@
+inputs:
+  prompt:
+    type: string
+outputs: {}
+nodes:
+- inputs:
+    prompt: ${inputs.prompt}
+  type: python
+  name: my_python_tool
+  source:
+    type: code
+    path: my_python_tool.py
+node_variants: {}

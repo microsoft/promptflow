@@ -1,0 +1,480 @@
+{
+  "title": "RootObject",
+  "description": "RootObject(*, batch_flow_request: promptflow.contracts.flow.BatchFlowRequest, eval_request: promptflow.contracts.flow.EvalRequest, nodes_request: promptflow.contracts.flow.NodesRequest)",
+  "type": "object",
+  "properties": {
+    "batch_flow_request": {
+      "$ref": "#/definitions/BatchFlowRequest"
+    },
+    "eval_request": {
+      "$ref": "#/definitions/EvalRequest"
+    },
+    "nodes_request": {
+      "$ref": "#/definitions/NodesRequest"
+    }
+  },
+  "required": [
+    "batch_flow_request",
+    "eval_request",
+    "nodes_request"
+  ],
+  "definitions": {
+    "InputValueType": {
+      "title": "InputValueType",
+      "description": "An enumeration.",
+      "enum": [
+        "Literal",
+        "FlowInput",
+        "SourceOutput",
+        "Secret"
+      ]
+    },
+    "InputAssignment": {
+      "title": "InputAssignment",
+      "type": "object",
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "property": {
+          "title": "Property",
+          "default": "",
+          "type": "string"
+        },
+        "value_type": {
+          "default": "Literal",
+          "allOf": [
+            {
+              "$ref": "#/definitions/InputValueType"
+            }
+          ]
+        }
+      },
+      "required": [
+        "value"
+      ]
+    },
+    "Node": {
+      "title": "Node",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "comment": {
+          "title": "Comment",
+          "default": "",
+          "type": "string"
+        },
+        "inputs": {
+          "title": "Inputs",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "api": {
+          "title": "Api",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "connection": {
+          "title": "Connection",
+          "type": "string"
+        },
+        "reduce": {
+          "title": "Reduce",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "tool"
+      ]
+    },
+    "ValueType": {
+      "title": "ValueType",
+      "description": "An enumeration.",
+      "enum": [
+        "int",
+        "double",
+        "bool",
+        "string",
+        "secret",
+        "prompt_template",
+        "object"
+      ],
+      "type": "string"
+    },
+    "FlowInputDefinition": {
+      "title": "FlowInputDefinition",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/ValueType"
+        },
+        "default": {
+          "title": "Default",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "enum": {
+          "title": "Enum",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "NodeReference": {
+      "title": "NodeReference",
+      "type": "object",
+      "properties": {
+        "node": {
+          "title": "Node",
+          "type": "string"
+        },
+        "property": {
+          "title": "Property",
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "node"
+      ]
+    },
+    "FlowOutputDefinition": {
+      "title": "FlowOutputDefinition",
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/ValueType"
+        },
+        "reference": {
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "reference"
+      ]
+    },
+    "ToolType": {
+      "title": "ToolType",
+      "description": "An enumeration.",
+      "enum": [
+        "llm",
+        "python",
+        "action"
+      ],
+      "type": "string"
+    },
+    "InputDefinition": {
+      "title": "InputDefinition",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValueType"
+          }
+        },
+        "default": {
+          "title": "Default",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "enum": {
+          "title": "Enum",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "OutputDefinition": {
+      "title": "OutputDefinition",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ValueType"
+          }
+        },
+        "description": {
+          "title": "Description",
+          "default": "",
+          "type": "string"
+        },
+        "is_property": {
+          "title": "Is Property",
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type"
+      ]
+    },
+    "Tool": {
+      "title": "Tool",
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/ToolType"
+        },
+        "inputs": {
+          "title": "Inputs",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/InputDefinition"
+          }
+        },
+        "outputs": {
+          "title": "Outputs",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/OutputDefinition"
+          }
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "module": {
+          "title": "Module",
+          "type": "string"
+        },
+        "class_name": {
+          "title": "Class Name",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "function": {
+          "title": "Function",
+          "type": "string"
+        },
+        "connection_type": {
+          "title": "Connection Type",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "inputs"
+      ]
+    },
+    "Flow": {
+      "title": "Flow",
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "nodes": {
+          "title": "Nodes",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Node"
+          }
+        },
+        "inputs": {
+          "title": "Inputs",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/FlowInputDefinition"
+          }
+        },
+        "outputs": {
+          "title": "Outputs",
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/FlowOutputDefinition"
+          }
+        },
+        "tools": {
+          "title": "Tools",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Tool"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "nodes",
+        "inputs",
+        "outputs",
+        "tools"
+      ]
+    },
+    "BatchFlowRequest": {
+      "title": "BatchFlowRequest",
+      "type": "object",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "connections": {
+          "title": "Connections",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "batch_inputs": {
+          "title": "Batch Inputs",
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "variants": {
+          "title": "Variants",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/Node"
+            }
+          }
+        },
+        "variants_tools": {
+          "title": "Variants Tools",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Tool"
+          }
+        },
+        "eval_flow": {
+          "$ref": "#/definitions/Flow"
+        }
+      },
+      "required": [
+        "flow",
+        "connections",
+        "batch_inputs"
+      ]
+    },
+    "EvalRequest": {
+      "title": "EvalRequest",
+      "type": "object",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "connections": {
+          "title": "Connections",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "bulk_test_flow_run_id": {
+          "title": "Bulk Test Flow Run Id",
+          "type": "string"
+        },
+        "bulk_test_flow_id": {
+          "title": "Bulk Test Flow Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "flow",
+        "connections",
+        "bulk_test_flow_run_id",
+        "bulk_test_flow_id"
+      ]
+    },
+    "NodesRequest": {
+      "title": "NodesRequest",
+      "type": "object",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "connections": {
+          "title": "Connections",
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "node_name": {
+          "title": "Node Name",
+          "type": "string"
+        },
+        "node_inputs": {
+          "title": "Node Inputs",
+          "type": "string"
+        }
+      },
+      "required": [
+        "flow",
+        "connections"
+      ]
+    }
+  },
+  "swagger": "2.0"
+}

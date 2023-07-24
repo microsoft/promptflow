@@ -1,0 +1,40 @@
+name: pipelines_templates_steps_template_generate_model
+inputs:
+  targetFolder:
+    required: false
+    type: string
+  patternModelFile:
+    required: false
+    type: string
+  deploymentName:
+    required: false
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Generate the deploy model file
+    run: |-
+      set -e
+      exit_code=0
+
+      if [ -z "${{ inputs.deploymentName }}" ]
+      then
+          echo "Skip generating model file."
+          exit 0
+      fi
+
+      echo "Generating deploy model file..."
+      python3 ./scripts/generate_model_file.py \
+          --pattern-model-file ${{ inputs.patternModelFile }} \
+          --deployment ${{ inputs.deploymentName }} \
+          --target-folder ${{ inputs.targetFolder }} \
+          --requested-for "${{ github.actor }}"
+      if [ -f "${{ inputs.targetFolder }}/promptflow-${{ inputs.deploymentName }}.yaml" ]
+      then
+          echo "Model file generated."
+          exit 0
+      else
+          echo "Failed to generate the deploy model file, please check your script and parameters."
+          exit 1
+      fi
+    shell: bash

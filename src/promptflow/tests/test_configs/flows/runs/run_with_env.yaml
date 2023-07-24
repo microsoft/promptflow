@@ -1,0 +1,11 @@
+flow: ../print_env_var
+data: ../env_var_names.jsonl
+
+# run config: env related
+environment_variables:
+   API_BASE: ${azure_open_ai_connection.api_base}
+
+connections:
+   node_1:
+      connection: test_llm_connection
+      deployment_name: gpt-35-turbo

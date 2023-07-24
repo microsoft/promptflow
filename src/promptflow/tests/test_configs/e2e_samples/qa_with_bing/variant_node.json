@@ -1,0 +1,13 @@
+{
+    "name": "infer_intent",
+    "tool": "intent",
+    "inputs": {
+        "question": "${flow.question}",
+        "max_tokens": "128",
+        "deployment_name": "text-ada-001",
+        "temperature": "0.7"
+    },
+    "api": "completion",
+    "provider": "AzureOpenAI",
+    "connection": "azure_open_ai_connection"
+}

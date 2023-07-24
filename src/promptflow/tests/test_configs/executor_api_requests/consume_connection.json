@@ -1,0 +1,67 @@
+{
+    "flow": {
+      "name": "dummy_consume",
+      "nodes": [
+        {
+            "name": "consume",
+            "tool": "consume_connection",
+            "inputs": {
+                "conn": "custom_connection",
+                "question": "${flow.question}",
+                "aoai": "azure_open_ai_connection",
+                "bing": "bing_config"
+            }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "answer": {
+          "type": "string",
+          "reference": "${consume.output}"
+        }
+      },
+      "tools": [
+        {
+            "name": "consume_connection",
+            "type": "python",
+            "inputs": {
+                "question": {
+                  "type": [
+                    "string"
+                  ]
+                },
+                "conn": {
+                  "type": [
+                    "CustomConnection"
+                  ]
+                },
+                "aoai": {
+                  "type": [
+                    "AzureOpenAIConnection"
+                  ]
+                },
+                "bing": {
+                  "type": [
+                    "BingConnection"
+                  ]
+                }
+              },
+            "code": "from promptflow.tools.aoai import AzureOpenAI\nfrom promptflow.connections import AzureOpenAIConnection, BingConnection, CustomConnection\nfrom typing import List, Mapping, Dict\nfrom promptflow import tool\n@tool\ndef consume_connection(\n    conn: CustomConnection,\n    question: str,\n    aoai: AzureOpenAIConnection,\n    bing: BingConnection,\n):\n    assert isinstance(conn, CustomConnection)\n    assert isinstance(aoai, AzureOpenAIConnection)\n    assert isinstance(bing, BingConnection)\n    return AzureOpenAI(aoai).completion(question, \"text-ada-001\")\n",
+            "function": "consume_connection"
+          }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "Who is chatgpt"
+      }
+    ],
+    "tags": {"tag1": "val1", "tag2": "val2"},
+    "name": "Dummy variants request",
+    "description": "This is a dummy variants request"
+  }

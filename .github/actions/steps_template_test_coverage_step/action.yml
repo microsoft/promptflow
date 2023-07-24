@@ -1,0 +1,92 @@
+name: pipelines_templates_steps_template_test_coverage_step
+inputs:
+  azureSubscription:
+    required: false
+    default: "$(azureSubscription)"
+    type: string
+  scriptPath:
+    required: false
+    default: "$(scriptPath)"
+    type: string
+  workingDir:
+    required: false
+    default: "$(promptflowRepoLocation)"
+    type: string
+  coveragePath:
+    required: false
+    default: "$(coveragePath)"
+    type: string
+  testPath:
+    required: false
+    default: "$(testPath)"
+    type: string
+  numPytestProcesses:
+    required: false
+    default: 5
+    type: number
+  coverage:
+    required: false
+    default: true
+    type: boolean
+  location:
+    required: false
+    default: centraluseuap
+    type: string
+  pytestMarker:
+    required: false
+    default: all
+    type: string
+  liveMode:
+    required: false
+    default: true
+    type: boolean
+  modelFileName:
+    required: false
+    default: ''
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Run Coverage Test
+    env:
+      PYTHONPATH: "${{ env.promptflowRepoLocation }}/src/promptflow"
+    uses: azure/login@v1.4.6
+    with:
+      creds: "${{ secrets.AZURE_CREDENTIALS }}"
+  - name: Run Coverage Test
+    env:
+      PYTHONPATH: "${{ env.promptflowRepoLocation }}/src/promptflow"
+    run: |-
+      export IS_IN_CI_PIPELINE="true"
+      az account show
+      python "${{ inputs.scriptPath }}/run_coverage_tests.py" \
+        -p ${{ inputs.coveragePath }} \
+        -t ${{ inputs.testPath }} \
+        -l ${{inputs.location}} \
+        -m "${{ inputs.pytestMarker }}" \
+        -n ${{ inputs.numPytestProcesses }} \
+        --model-name "${{ inputs.modelFileName }}"
+    shell: bash
+    working-directory: "${{ inputs.workingDir }}"
+  # - name: Publish NUnit test results
+  #   if: always()
+  #   uses: dorny/test-reporter@v1.6.0
+  #   with:
+  #     name: Tests - ${{ inputs.pytestMarker }}
+  #     path: "**/test-results.xml"
+  #     reporter: dotnet-trx
+  #     working-directory: "${{ inputs.workingDir }}"
+  # - name: Generate Coverage Report
+  #   if: inputs.coverage == true && (success() || failure())
+  #   uses: danielpalme/ReportGenerator-GitHub-Action@5.1.19
+  #   continue-on-error: false
+  #   with:
+  #     reports: "${{ inputs.workingDir }}/coverage.xml"
+  #     targetdir: coveragereport_${{ github.run_number }}
+  #     reporttypes: HtmlInline
+  # - name: Upload CoverageReport
+  #   if: inputs.coverage == true && (success() || failure())
+  #   uses: actions/upload-artifact@v3.1.1
+  #   with:
+  #     name: CoverageReport
+  #     path: coveragereport_${{ github.run_number }}

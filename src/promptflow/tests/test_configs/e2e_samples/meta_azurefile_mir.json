@@ -1,0 +1,17 @@
+{
+    "tools": {
+        "tools/toola.py": {
+            "tool_type": "python"
+        },
+        "toolb.py": {
+            "tool_type": "python"
+        },
+        "toolc.jinja2": {
+            "tool_type": "llm"
+        }
+    },
+    "flow_source_info":{
+        "sas_url": "https://<account_name>.file.core.windows.net/code-391ff5ac-6576-460f-ba4d-7e03433c68b6/Users/XXX/webclassification/*<sas_token>",
+        "working_dir": "/aaa/bbb"
+    }
+}

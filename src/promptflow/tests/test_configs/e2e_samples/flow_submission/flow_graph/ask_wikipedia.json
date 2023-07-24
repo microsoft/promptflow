@@ -1,0 +1,234 @@
+{
+  "flowGraph": {
+    "nodes": [
+      {
+        "name": "get_wiki_url",
+        "tool": "get_wiki_url",
+        "inputs": {
+          "entity": "${inputs.question}",
+          "count": "2"
+        },
+        "reduce": false
+      },
+      {
+        "name": "search_result_from_url",
+        "tool": "search_result_from_url",
+        "inputs": {
+          "url_list": "${get_wiki_url.output}",
+          "count": "10"
+        },
+        "reduce": false
+      },
+      {
+        "name": "process_search_result",
+        "tool": "process_search_result",
+        "inputs": {
+          "search_result": "${search_result_from_url.output}"
+        },
+        "reduce": false
+      },
+      {
+        "name": "augmented_qna",
+        "tool": "augmented_qna",
+        "inputs": {
+          "deployment_name": "gpt-35-turbo",
+          "temperature": "0.5",
+          "top_p": "1.0",
+          "stop": "",
+          "max_tokens": "256",
+          "presence_penalty": "0",
+          "frequency_penalty": "0",
+          "logit_bias": "",
+          "question": "${inputs.question}",
+          "contexts": "${process_search_result.output}"
+        },
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection",
+        "api": "chat",
+        "module": "promptflow.tools.aoai",
+        "reduce": false
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string",
+        "is_chat_input": false
+      }
+    },
+    "outputs": {
+      "answer": {
+        "type": "string",
+        "reference": "${augmented_qna.output}",
+        "evaluation_only": false,
+        "is_chat_output": false
+      }
+    },
+    "tools": [
+      {
+        "name": "get_wiki_url",
+        "type": "python",
+        "inputs": {
+          "entity": {
+            "type": [
+              "string"
+            ],
+            "name": "entity"
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "2",
+            "name": "count"
+          }
+        },
+        "source": "get_wiki_url.py",
+        "code": "from promptflow import tool\nimport requests\nimport bs4\nimport re\n\n\ndef decode_str(string):\n    return string.encode().decode(\"unicode-escape\").encode(\"latin1\").decode(\"utf-8\")\n\n\ndef remove_nested_parentheses(string):\n    pattern = r'\\([^()]+\\)'\n    while re.search(pattern, string):\n        string = re.sub(pattern, '', string)\n    return string\n\n\n@tool\ndef get_wiki_url(entity: str, count=2):\n    # Send a request to the URL\n    url = f\"https://en.wikipedia.org/w/index.php?search={entity}\"\n    url_list = []\n    try:\n        headers = {\n            \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \"\n                          \"Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"}\n        response = requests.get(url, headers=headers)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            mw_divs = soup.find_all(\"div\", {\"class\": \"mw-search-result-heading\"})\n            if mw_divs:  # mismatch\n                result_titles = [decode_str(div.get_text().strip()) for div in mw_divs]\n                result_titles = [remove_nested_parentheses(result_title) for result_title in result_titles]\n                print(f\"Could not find {entity}. Similar ententity: {result_titles[:count]}.\")\n                url_list.extend([f\"https://en.wikipedia.org/w/index.php?search={result_title}\" for result_title in\n                                 result_titles])\n            else:\n                page_content = [p_ul.get_text().strip() for p_ul in soup.find_all(\"p\") + soup.find_all(\"ul\")]\n                if any(\"may refer to:\" in p for p in page_content):\n                    url_list.extend(get_wiki_url(\"[\" + entity + \"]\"))\n                else:\n                    url_list.append(url)\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: \" \\\n                  f\"{response.text[:100]}\"\n            print(msg)\n        return url_list[:count]\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return url_list\n",
+        "function": "get_wiki_url",
+        "is_builtin": false,
+        "lkgCode": "from promptflow import tool\nimport requests\nimport bs4\nimport re\n\n\ndef decode_str(string):\n    return string.encode().decode(\"unicode-escape\").encode(\"latin1\").decode(\"utf-8\")\n\n\ndef remove_nested_parentheses(string):\n    pattern = r'\\([^()]+\\)'\n    while re.search(pattern, string):\n        string = re.sub(pattern, '', string)\n    return string\n\n\n@tool\ndef get_wiki_url(entity: str, count=2):\n    # Send a request to the URL\n    url = f\"https://en.wikipedia.org/w/index.php?search={entity}\"\n    url_list = []\n    try:\n        headers = {\n            \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \"\n                          \"Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"}\n        response = requests.get(url, headers=headers)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            mw_divs = soup.find_all(\"div\", {\"class\": \"mw-search-result-heading\"})\n            if mw_divs:  # mismatch\n                result_titles = [decode_str(div.get_text().strip()) for div in mw_divs]\n                result_titles = [remove_nested_parentheses(result_title) for result_title in result_titles]\n                print(f\"Could not find {entity}. Similar ententity: {result_titles[:count]}.\")\n                url_list.extend([f\"https://en.wikipedia.org/w/index.php?search={result_title}\" for result_title in\n                                 result_titles])\n            else:\n                page_content = [p_ul.get_text().strip() for p_ul in soup.find_all(\"p\") + soup.find_all(\"ul\")]\n                if any(\"may refer to:\" in p for p in page_content):\n                    url_list.extend(get_wiki_url(\"[\" + entity + \"]\"))\n                else:\n                    url_list.append(url)\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: \" \\\n                  f\"{response.text[:100]}\"\n            print(msg)\n        return url_list[:count]\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return url_list\n"
+      },
+      {
+        "name": "search_result_from_url",
+        "type": "python",
+        "inputs": {
+          "url_list": {
+            "type": [
+              "list"
+            ],
+            "name": "url_list"
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "10",
+            "name": "count"
+          }
+        },
+        "source": "search_result_from_url.py",
+        "code": "from promptflow import tool\nimport requests\nimport bs4\nimport time\nimport random\nfrom concurrent.futures import ThreadPoolExecutor\nfrom functools import partial\n\nsession = requests.Session()\n\n\ndef decode_str(string):\n    return string.encode().decode(\"unicode-escape\").encode(\"latin1\").decode(\"utf-8\")\n\n\ndef get_page_sentence(page, count: int = 10):\n    # find all paragraphs\n    paragraphs = page.split(\"\\n\")\n    paragraphs = [p.strip() for p in paragraphs if p.strip()]\n\n    # find all sentence\n    sentences = []\n    for p in paragraphs:\n        sentences += p.split('. ')\n    sentences = [s.strip() + '.' for s in sentences if s.strip()]\n    # get first `count` number of sentences\n    return ' '.join(sentences[:count])\n\n\ndef fetch_text_content_from_url(url: str, count: int = 10):\n    # Send a request to the URL\n    try:\n        headers = {\n            \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \"\n                          \"Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"\n        }\n        delay = random.uniform(0, 0.5)\n        time.sleep(delay)\n        response = session.get(url, headers=headers)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            page_content = [p_ul.get_text().strip() for p_ul in soup.find_all(\"p\") + soup.find_all(\"ul\")]\n            page = \"\"\n            for content in page_content:\n                if len(content.split(\" \")) > 2:\n                    page += decode_str(content)\n                if not content.endswith(\"\\n\"):\n                    page += \"\\n\"\n            text = get_page_sentence(page, count=count)\n            return (url, text)\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: \" \\\n                  f\"{response.text[:100]}\"\n            print(msg)\n            return (url, \"No available content\")\n\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return (url, \"No available content\")\n\n\n@tool\ndef search_result_from_url(url_list: list, count: int = 10):\n    results = []\n    partial_func_of_fetch_text_content_from_url = partial(fetch_text_content_from_url, count=count)\n    with ThreadPoolExecutor(max_workers=5) as executor:\n        futures = executor.map(partial_func_of_fetch_text_content_from_url, url_list)\n        for feature in futures:\n            results.append(feature)\n    return results\n",
+        "function": "search_result_from_url",
+        "is_builtin": false,
+        "lkgCode": "from promptflow import tool\nimport requests\nimport bs4\nimport time\nimport random\nfrom concurrent.futures import ThreadPoolExecutor\nfrom functools import partial\n\nsession = requests.Session()\n\n\ndef decode_str(string):\n    return string.encode().decode(\"unicode-escape\").encode(\"latin1\").decode(\"utf-8\")\n\n\ndef get_page_sentence(page, count: int = 10):\n    # find all paragraphs\n    paragraphs = page.split(\"\\n\")\n    paragraphs = [p.strip() for p in paragraphs if p.strip()]\n\n    # find all sentence\n    sentences = []\n    for p in paragraphs:\n        sentences += p.split('. ')\n    sentences = [s.strip() + '.' for s in sentences if s.strip()]\n    # get first `count` number of sentences\n    return ' '.join(sentences[:count])\n\n\ndef fetch_text_content_from_url(url: str, count: int = 10):\n    # Send a request to the URL\n    try:\n        headers = {\n            \"User-Agent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \"\n                          \"Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35\"\n        }\n        delay = random.uniform(0, 0.5)\n        time.sleep(delay)\n        response = session.get(url, headers=headers)\n        if response.status_code == 200:\n            # Parse the HTML content using BeautifulSoup\n            soup = bs4.BeautifulSoup(response.text, 'html.parser')\n            page_content = [p_ul.get_text().strip() for p_ul in soup.find_all(\"p\") + soup.find_all(\"ul\")]\n            page = \"\"\n            for content in page_content:\n                if len(content.split(\" \")) > 2:\n                    page += decode_str(content)\n                if not content.endswith(\"\\n\"):\n                    page += \"\\n\"\n            text = get_page_sentence(page, count=count)\n            return (url, text)\n        else:\n            msg = f\"Get url failed with status code {response.status_code}.\\nURL: {url}\\nResponse: \" \\\n                  f\"{response.text[:100]}\"\n            print(msg)\n            return (url, \"No available content\")\n\n    except Exception as e:\n        print(\"Get url failed with error: {}\".format(e))\n        return (url, \"No available content\")\n\n\n@tool\ndef search_result_from_url(url_list: list, count: int = 10):\n    results = []\n    partial_func_of_fetch_text_content_from_url = partial(fetch_text_content_from_url, count=count)\n    with ThreadPoolExecutor(max_workers=5) as executor:\n        futures = executor.map(partial_func_of_fetch_text_content_from_url, url_list)\n        for feature in futures:\n            results.append(feature)\n    return results\n"
+      },
+      {
+        "name": "process_search_result",
+        "type": "python",
+        "inputs": {
+          "search_result": {
+            "type": [
+              "object"
+            ],
+            "name": "search_result"
+          }
+        },
+        "source": "process_search_result.py",
+        "code": "from promptflow import tool\n\n\n@tool\ndef process_search_result(search_result):\n    def format(doc: dict):\n        return f\"Content: {doc['Content']}\\nSource: {doc['Source']}\"\n\n    try:\n        context = []\n        for url, content in search_result:\n            context.append({\n                \"Content\": content,\n                \"Source\": url\n            })\n        context_str = \"\\n\\n\".join([format(c) for c in context])\n        return context_str\n    except Exception as e:\n        print(f\"Error: {e}\")\n        return \"\"\n",
+        "function": "process_search_result",
+        "is_builtin": false,
+        "lkgCode": "from promptflow import tool\n\n\n@tool\ndef process_search_result(search_result):\n    def format(doc: dict):\n        return f\"Content: {doc['Content']}\\nSource: {doc['Source']}\"\n\n    try:\n        context = []\n        for url, content in search_result:\n            context.append({\n                \"Content\": content,\n                \"Source\": url\n            })\n        context_str = \"\\n\\n\".join([format(c) for c in context])\n        return context_str\n    except Exception as e:\n        print(f\"Error: {e}\")\n        return \"\"\n"
+      },
+      {
+        "name": "augmented_qna",
+        "type": "llm",
+        "inputs": {
+          "question": {
+            "name": "question",
+            "type": [
+              "string"
+            ]
+          },
+          "contexts": {
+            "name": "contexts",
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "description": "QA with sources given search results",
+        "source": "augmented_qna.jinja2",
+        "code": "system:\nYou are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n\n{{contexts}}\n\nuser:\n{{question}}",
+        "is_builtin": false,
+        "lkgCode": "system:\nYou are a chatbot having a conversation with a human.\nGiven the following extracted parts of a long document and a question, create a final answer with references (\"SOURCES\").\nIf you don't know the answer, just say that you don't know. Don't try to make up an answer.\nALWAYS return a \"SOURCES\" part in your answer.\n\n{{contexts}}\n\nuser:\n{{question}}"
+      }
+    ]
+  },
+  "nodeVariants": {
+    "get_wiki_url": {
+      "defaultVariantId": "variant_0",
+      "variants": {
+        "variant_0": {
+          "node": {
+            "name": "get_wiki_url",
+            "tool": "get_wiki_url",
+            "inputs": {
+              "entity": "${inputs.question}",
+              "count": "2"
+            },
+            "reduce": false
+          }
+        }
+      }
+    },
+    "search_result_from_url": {
+      "defaultVariantId": "variant_0",
+      "variants": {
+        "variant_0": {
+          "node": {
+            "name": "search_result_from_url",
+            "tool": "search_result_from_url",
+            "inputs": {
+              "url_list": "${get_wiki_url.output}",
+              "count": "10"
+            },
+            "reduce": false
+          }
+        }
+      }
+    },
+    "process_search_result": {
+      "defaultVariantId": "variant_0",
+      "variants": {
+        "variant_0": {
+          "node": {
+            "name": "process_search_result",
+            "tool": "process_search_result",
+            "inputs": {
+              "search_result": "${search_result_from_url.output}"
+            },
+            "reduce": false
+          }
+        }
+      }
+    },
+    "augmented_qna": {
+      "defaultVariantId": "variant_0",
+      "variants": {
+        "variant_0": {
+          "node": {
+            "name": "augmented_qna",
+            "tool": "augmented_qna",
+            "inputs": {
+              "deployment_name": "gpt-35-turbo",
+              "temperature": "0.5",
+              "top_p": "1.0",
+              "stop": "",
+              "max_tokens": "256",
+              "presence_penalty": "0",
+              "frequency_penalty": "0",
+              "logit_bias": "",
+              "question": "${inputs.question}",
+              "contexts": "${process_search_result.output}"
+            },
+            "provider": "AzureOpenAI",
+            "connection": "azure_open_ai_connection",
+            "api": "chat",
+            "module": "promptflow.tools.aoai",
+            "reduce": false
+          }
+        }
+      }
+    }
+  }
+}

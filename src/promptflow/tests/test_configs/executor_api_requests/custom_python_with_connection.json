@@ -1,0 +1,76 @@
+{
+    "flow": {
+  "nodes": [
+    {
+      "name": "Python_htr0",
+      "tool": "Python_htr0",
+      "inputs": {
+        "input1": "${inputs.question}",
+        "conn": "azure_open_ai_connection",
+        "deployment_name": "text-ada-001"
+      },
+      "reduce": false
+    }
+  ],
+  "tools": [
+    {
+      "name": "Python_htr0",
+      "type": "python",
+      "inputs": {
+        "input1": {
+          "name": "input1",
+          "type": [
+            "string"
+          ]
+        },
+        "conn": {
+          "name": "conn",
+          "type": [
+            "AzureOpenAIConnection"
+          ]
+        },
+        "deployment_name": {
+          "name": "deployment_name",
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "code": "from promptflow import tool\nfrom promptflow.connections import AzureOpenAIConnection\nimport openai\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n@tool\ndef my_python_tool(input1: str, conn: AzureOpenAIConnection, deployment_name: str) -> str:\n  return openai.Completion.create(\n    prompt=input1, engine=deployment_name,\n    api_base=conn.api_base,\n    api_key=conn.api_key,\n    api_type=\"azure\",\n    api_version=conn.api_version,\n  )\n",
+      "function": "my_python_tool",
+      "is_builtin": false
+    }
+  ],
+  "inputs": {
+    "question": {
+      "type": "string",
+      "is_chat_input": false
+    }
+  },
+  "outputs": {
+    "answer": {
+      "type": "string",
+      "reference": "${Python_htr0.output}",
+      "evaluation_only": false,
+      "is_chat_output": false
+    }
+  }
+},
+    "connections": {},
+    "batch_inputs": [
+      {
+        "question": "What is your favorite meat?",
+        "answers": [
+          "answer1",
+          "answer2",
+          "answer3"
+        ],
+        "line_number": 0,
+        "variant_ids": [
+          "variant_0",
+          "variant_1",
+          "variant_2"
+        ]
+      }
+    ]
+  }

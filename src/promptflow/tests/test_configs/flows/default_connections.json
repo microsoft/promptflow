@@ -1,0 +1,18 @@
+{
+  "azureml://flows/QnAFluencyEvaluation": [
+    {
+      "connection_source_type": "Node",
+      "node_name": "fluency_score",
+      "connection_name": "azure_open_ai",
+      "deployment_name": "gpt-35-turbo"
+    }
+  ],
+  "azureml://flows/QnARelevanceEvaluation": [
+    {
+      "connection_source_type": "Node",
+      "node_name": "relevance_score",
+      "connection_name": "azure_open_ai",
+      "deployment_name": "gpt-35-turbo"
+    }
+  ]
+}

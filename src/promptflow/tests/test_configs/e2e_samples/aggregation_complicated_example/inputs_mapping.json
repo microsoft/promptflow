@@ -1,0 +1,5 @@
+{
+    "groundtruth": "data.groundtruth",
+    "prediction": "data.answer",
+    "variant_id": "baseline"
+}

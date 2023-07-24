@@ -1,0 +1,81 @@
+{
+  "flow": {
+    "id": "simple_flow",
+    "name": "simple_flow",
+    "nodes": [
+      {
+        "name": "MyBuiltin_show",
+        "tool": "MyBuiltin.show",
+        "inputs": {
+          "my_connection": "custom_connection"
+        }
+      },
+      {
+        "name": "custom_tool",
+        "tool": "custom_tool",
+        "inputs": {
+          "conn": "${MyBuiltin_show.output}"
+        }
+      }
+    ],
+    "inputs": {
+      "key1": {
+        "type": "string",
+        "default": "hey"
+      }
+    },
+    "outputs": {
+      "key1": {
+        "type": "string",
+        "reference": "${custom_tool.output.key1}"
+      },
+      "key2": {
+        "type": "string",
+        "reference": "${custom_tool.output.key2}"
+      }
+    },
+    "tools": [
+      {
+        "name": "MyBuiltin.show",
+        "type": "python",
+        "inputs": {
+          "my_connection": {
+            "type": [
+              "CustomConnection",
+              "AzureOpenAIConnection"
+            ]
+          }
+        },
+        "module": "test_configs.tools.custom_connection_builtin_tool",
+        "class_name": "MyBuiltin",
+        "function": "show",
+        "is_builtin": true,
+        "stage": "test"
+      },
+      {
+        "name": "custom_tool",
+        "type": "python",
+        "inputs": {
+          "conn": {
+            "type": [
+              "CustomConnection"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\nfrom promptflow.connections import CustomConnection\n\n@tool\ndef custom_tool(conn: CustomConnection):\n    assert isinstance(conn, CustomConnection)\n    return conn\n",
+        "function": "custom_tool"
+      }
+    ]
+  },
+  "connections": {},
+  "batch_inputs": [
+    {
+      "key1": "hey"
+    }
+  ],
+  "name": "",
+  "description": "",
+  "baseline_variant_id": "",
+  "variants": {},
+  "variants_tools": []
+}

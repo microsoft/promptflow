@@ -1,0 +1,20 @@
+
+base_dir: service/app/{port}
+storage:
+  storage_path: ../../data
+  db_file: promptflow.db
+  secret_storage: ""
+  additional_storage_config: "additionalConfig"
+app:
+  host: localhost
+  port: 8080
+  additional_app_config: "additionalConfig"
+deployment:
+  edition: enterprise
+  additional_deployment_config: "additionalConfig"
+execution:
+  execute_in_process: False
+  debug: True
+  additional_execution_config: "additionalConfig"
+additional_runtime_config:
+  addition_config: "additionalConfig"

@@ -1,0 +1,22 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ToolValidationError",
+                "innerError": {
+                    "code": "PythonParsingError",
+                    "innerError": null
+                }
+            },
+            "message": "Parsing python got exception: invalid syntax (<string>, line 1)",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Tool"
+        },
+        "location": null
+    }
+}

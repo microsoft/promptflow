@@ -1,0 +1,10 @@
+{
+  "environment_variables": {
+    "SUBSCRIPTION_ID": "96aede12-2f73-41cb-b983-6d11a904839b",
+    "RESOURCE_GROUP": "promptflow",
+    "WORKSPACE_NAME": "promptflow-eastus"
+  },
+  "batch_data_input": {
+    "data_uri": "azureml:bach_input_test_data@latest"
+  }
+}

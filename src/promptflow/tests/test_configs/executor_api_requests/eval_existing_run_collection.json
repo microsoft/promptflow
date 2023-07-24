@@ -1,0 +1,103 @@
+{
+    "flow": {
+      "id": "basic_eval_flow_id",
+      "name": "basic_eval_flow",
+      "nodes": [
+          {
+              "name": "calculate_similarity",
+              "tool": "calculate_similarity",
+              "inputs": {
+                  "val1": "${flow.groundtruth}",
+                  "val2": "${flow.answer}"
+              }
+          },
+          {
+              "name": "calculate_accuracy",
+              "tool": "calculate_accuracy",
+              "reduce": true,
+              "inputs": {
+                  "variant_ids": "${flow.variant_id}",
+                  "similarities": "${calculate_similarity.output}"
+              }
+          }
+      ],
+      "inputs": {
+          "groundtruth": {
+              "type": "string"
+          },
+          "variant_id": {
+              "type": "string"
+          },
+          "answer": {
+              "type": "string"
+          }
+      },
+      "outputs": {
+          "similarity": {
+              "type": "double",
+              "reference": "${calculate_similarity.output}"
+          }
+      },
+      "tools": [
+        {
+          "name": "calculate_similarity",
+          "type": "python",
+          "inputs": {
+            "val1": {
+              "type": [
+                "string"
+              ]
+            },
+            "val2": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\n\n@tool\ndef calculate_similarity(\n    val1: str,\n    val2: str,\n) -> float:\n    return 1.0 if val1 == val2 else 0.0\n",
+          "function": "calculate_similarity"
+        },
+        {
+          "name": "calculate_accuracy",
+          "type": "python",
+          "inputs": {
+            "variant_ids": {
+              "type": [
+                "list"
+              ]
+            },
+            "similarities": {
+              "type": [
+                "list"
+              ]
+            }
+          },
+          "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool, log_flow_metric, log_metric\n\n@tool\ndef calculate_accuracy(variant_ids: list, similarities: list):\n    variants = set(variant_ids)\n    total = {v: 0 for v in variants}\n    success = {v: 0 for v in variants}\n    for v, s in zip(variant_ids, similarities):\n        total[v] += 1\n        success[v] += s\n    accuracies = {v: success[v] / total[v] for v in variants}\n    for v in variants:\n        log_flow_metric(f\"accuracy_{v}\", success[v] / total[v])\n    return accuracies\n",
+          "function": "calculate_accuracy"
+        }
+      ]
+  },
+      "connections": {},
+      "bulk_test_inputs": [
+        {
+          "question": "chatgpt"
+        },
+        {
+          "question": "GPT4"
+        },
+        {
+          "question": "GPT3"
+        }
+      ],
+      "inputs_mapping": {
+        "groundtruth": "data.question",
+        "answer": "output.answer"
+      },
+      "bulk_test_flow_id": "dummy_qna",
+      "bulk_test_id": "dummy_bulk_test0",
+      "bulk_test_flow_run_ids": [
+        "13531690-3ec7-4129-a527-708f54909757_variant0",
+        "13531690-3ec7-4129-a527-708f54909757_variant1",
+        "13531690-3ec7-4129-a527-708f54909757_variant2"
+      ]
+  }

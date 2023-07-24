@@ -1,0 +1,25 @@
+{
+    "status_code": 400,
+    "body": {
+        "correlation": null,
+        "environment": null,
+        "error": {
+            "code": "UserError",
+            "innerError": {
+                "code": "ValidationError",
+                "innerError": {
+                    "code": "InvalidFlowRequest",
+                    "innerError": {
+                        "code": "NodeInputValidationError",
+                        "innerError": null
+                    }
+                }
+            },
+            "message": "Input 'connection' for node 'Bing_search' of type 'AzureOpenAIConnection' is not supported, valid types ['BingConnection', 'OpenAIConnection'].",
+            "messageFormat": "",
+            "messageParameters": {},
+            "referenceCode": "Executor"
+        },
+        "location": null
+    }
+}

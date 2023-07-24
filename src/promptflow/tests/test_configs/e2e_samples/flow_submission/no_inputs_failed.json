@@ -1,0 +1,7 @@
+{
+    "flow_graph": "no_inputs.json",
+    "flow_run_settings": {
+        "runMode": "Flow",
+        "batch_inputs": []
+      }
+}

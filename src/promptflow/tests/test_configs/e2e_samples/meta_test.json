@@ -1,0 +1,21 @@
+{
+    "test_cases": [
+        {
+            "tool_type": "python",
+            "tool_name": "dummy",
+            "tool_code": "import os",
+            "expected_response": {
+              "status_code": 400
+            }
+        },
+        {
+            "tool_type": "python",
+            "tool_name": "dummy",
+            "tool_code": "from promptflow import tool\r\n\r\n@tool\r\ndef helloworld():\r\n    print(\"Hello\")",
+            "expected_response": {
+              "status_code": 200
+            }
+        }
+    ]
+
+}

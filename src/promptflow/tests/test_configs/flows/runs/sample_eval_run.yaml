@@ -1,0 +1,14 @@
+flow: ../classification_accuracy_evaluation
+data: ../webClassification1.jsonl
+column_mapping:
+   groundtruth: "${data.answer}"
+   prediction: "${run.outputs.category}"
+run: flow_run_20230629_101205 # ./sample_bulk_run.yaml
+
+# run config: env related
+environment_variables: env_file
+# optional
+connections:
+   node_1:
+      connection: test_llm_connection
+      deployment_name: gpt-35-turbo

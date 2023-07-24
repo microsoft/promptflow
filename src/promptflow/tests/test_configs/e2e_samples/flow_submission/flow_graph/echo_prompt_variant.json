@@ -1,0 +1,129 @@
+{
+  "flowGraph": {
+    "nodes": [
+      {
+        "name": "hello_prompt",
+        "tool": "hello_prompt",
+        "inputs": {
+          "text": "${inputs.text}"
+        },
+        "reduce": false
+      },
+      {
+        "name": "echo_my_prompt",
+        "tool": "echo_my_prompt",
+        "inputs": {
+          "input1": "${hello_prompt.output}"
+        },
+        "reduce": false
+      }
+    ],
+    "inputs": {
+      "text": {
+        "type": "string",
+        "is_chat_input": false
+      }
+    },
+    "outputs": {
+      "output_prompt": {
+        "type": "string",
+        "reference": "${echo_my_prompt.output}",
+        "evaluation_only": false,
+        "is_chat_output": false
+      }
+    },
+    "tools": [
+      {
+        "name": "hello_prompt",
+        "type": "prompt",
+        "inputs": {
+          "text": {
+            "type": [
+              "string"
+            ],
+            "name": "text"
+          }
+        },
+        "source": "hello.jinja2",
+        "code": "{# Please replace the template with your own prompt. #}\nWrite a simple {{text}} program that displays the greeting message when executed.",
+        "is_builtin": false,
+        "lkgCode": "{# Please replace the template with your own prompt. #}\nWrite a simple {{text}} program that displays the greeting message when executed."
+      },
+      {
+        "name": "hello_prompt__variant_1.jinja2",
+        "type": "prompt",
+        "inputs": {
+          "text": {
+            "type": [
+              "string"
+            ],
+            "value": "${inputs.text}"
+          }
+        },
+        "description": "Please replace the template with your own prompt.",
+        "code": "{# Please replace the template with your own prompt. #}\nGenerate prompt based on your input {{text}} ",
+        "is_builtin": false,
+        "lkgCode": "{# Please replace the template with your own prompt. #}\nGenerate prompt based on your input {{text}} "
+      },
+      {
+        "name": "echo_my_prompt",
+        "type": "python",
+        "inputs": {
+          "input1": {
+            "type": [
+              "string"
+            ],
+            "name": "input1"
+          }
+        },
+        "source": "hello.py",
+        "code": "from promptflow import tool\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n\n\n@tool\ndef my_python_tool(input1: str) -> str:\n    return \"Prompt: \" + input1\n",
+        "function": "my_python_tool",
+        "is_builtin": false,
+        "lkgCode": "from promptflow import tool\n\n# The inputs section will change based on the arguments of the tool function, after you save the code\n# Adding type to arguments and return value will help the system show the types properly\n# Please update the function name/signature per need\n\n\n@tool\ndef my_python_tool(input1: str) -> str:\n    return \"Prompt: \" + input1\n"
+      }
+    ]
+  },
+  "nodeVariants": {
+    "hello_prompt": {
+      "defaultVariantId": "variant_0",
+      "variants": {
+        "variant_0": {
+          "node": {
+            "name": "hello_prompt",
+            "tool": "hello_prompt",
+            "inputs": {
+              "text": "${inputs.text}"
+            },
+            "reduce": false
+          }
+        },
+        "variant_1": {
+          "node": {
+            "name": "hello_prompt",
+            "tool": "hello_prompt__variant_1.jinja2",
+            "inputs": {
+              "text": "${inputs.text}"
+            },
+            "reduce": false
+          }
+        }
+      }
+    },
+    "echo_my_prompt": {
+      "defaultVariantId": "variant_0",
+      "variants": {
+        "variant_0": {
+          "node": {
+            "name": "echo_my_prompt",
+            "tool": "echo_my_prompt",
+            "inputs": {
+              "input1": "${hello_prompt.output}"
+            },
+            "reduce": false
+          }
+        }
+      }
+    }
+  }
+}

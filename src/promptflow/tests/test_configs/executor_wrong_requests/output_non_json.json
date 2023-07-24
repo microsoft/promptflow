@@ -1,0 +1,45 @@
+{
+    "flow": {
+      "name": "dummy_qna",
+      "nodes": [
+        {
+          "name": "dummy_search_1",
+          "tool": "dummy_search",
+          "inputs": {
+            "question": "${flow.question}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "output": {
+          "type": "object",
+          "reference": "${dummy_search_1.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "dummy_search",
+          "type": "python",
+          "inputs": {
+            "question": {
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "class_name": "dummy_search",
+          "code": "from promptflow import tool\nclass A():\n    pass\n@tool\ndef dummy_search(question: str):\n    return A()\n",
+          "function": "dummy_search"
+        }
+      ]
+    },
+    "connections": {},
+    "batch_inputs": [
+        {"question": "aaa"}
+    ]
+  }

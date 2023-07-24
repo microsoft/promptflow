@@ -1,0 +1,15 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_echo:
+    type: string
+    reference: ${echo_my_input.output}
+nodes:
+- name: echo_my_input
+  type: python
+  source:
+    type: code
+    path: echo_input.py
+  inputs:
+    input: ${inputs.text}

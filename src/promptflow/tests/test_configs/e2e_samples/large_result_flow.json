@@ -1,0 +1,52 @@
+
+{
+  "flow": {
+    "id": "large_result_flow",
+    "name": "large_result_flow",
+    "nodes": [
+      {
+        "name": "hello_world",
+        "tool": "hello_world",
+        "inputs": {
+          "input": "${flow.input}"
+        }
+      }
+    ],
+    "inputs": {
+      "input": {
+        "type": "string",
+        "default": "Test"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "string",
+        "reference": "${hello_world.output}"
+      }
+    },
+    "tools": [
+      {
+        "name": "hello_world",
+        "type": "python",
+        "inputs": {
+          "input": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef hello_world(input: str):\n    return f\"Hello world: {input}\" * 4000\n",
+        "function": "hello_world"
+      }
+    ]
+  },
+  "connections": {},
+  "batch_inputs": [
+    {
+      "input": "chatgpt"
+    }
+  ],
+  "tags": {"tag1": "val1", "tag2": "val2"},
+  "name": "Hello world flow",
+  "description": "This is a hello world flow"
+}

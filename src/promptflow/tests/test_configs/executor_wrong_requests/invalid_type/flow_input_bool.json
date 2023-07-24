@@ -1,0 +1,100 @@
+{
+    "flow": {
+      "name": "ensure_type_conversion",
+      "nodes": [
+        {
+          "name": "ensure_type_flow",
+          "tool": "ensure_type",
+          "inputs": {
+            "i": "${flow.int}",
+            "d": "${flow.double}",
+            "b": "${flow.bool}",
+            "s": "${flow.str}"
+          }
+        },
+        {
+            "name": "ensure_type_node",
+            "tool": "ensure_type",
+            "inputs": {
+              "i": "123",
+              "d": "2.3",
+              "b": "false",
+              "s": 9999
+            }
+        }
+      ],
+      "inputs": {
+        "int": {
+          "type": "int"
+        },
+        "double": {
+          "type": "double"
+        },
+        "bool": {
+          "type": "bool"
+        },
+        "str": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "str_val": {
+          "type": "string",
+          "reference": "${ensure_type_node.str}"
+        },
+        "int_val": {
+          "type": "int",
+          "reference": "${ensure_type_flow.int}"
+        }
+      },
+      "tools": [
+        {
+            "name": "ensure_type",
+            "type": "python",
+            "inputs": {
+              "i": {
+                "type": [
+                  "int"
+                ],
+                "default": "1"
+              },
+              "d": {
+                "type": [
+                  "double"
+                ],
+                "default": "0.1"
+              },
+              "b": {
+                "type": [
+                  "bool"
+                ],
+                "default": "True"
+              },
+              "s": {
+                "type": [
+                  "string"
+                ],
+                "default": "z"
+              }
+            },
+            "code": "from promptflow import tool\n\n@tool\ndef ensure_type(i: int = 1, d: float = 0.1, b: bool = True, s: str = \"z\"):\n    if not isinstance(i, int):\n        raise TypeError(f\"Expected int, got {type(i)}\")\n    if not isinstance(d, float):\n        raise TypeError(f\"Expected float, got {type(d)}\")\n    if not isinstance(b, bool):\n        raise TypeError(f\"Expected bool, got {type(b)}\")\n    if not isinstance(s, str):\n        raise TypeError(f\"Expected str, got {type(s)}\")\n    return {\"int\": i, \"double\": d, \"bool\": b, \"str\": s}\n",
+            "function": "ensure_type"
+          }
+      ]
+    },
+    "batch_inputs": [
+      {
+        "int": "1",
+        "double": "0.1",
+        "bool": true,
+        "str": 1
+      },
+      {
+        "int": "1",
+        "double": "0.1",
+        "bool": "truez",
+        "str": 1
+      }
+    ],
+    "connections": {}
+  }

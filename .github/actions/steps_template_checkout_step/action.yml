@@ -1,0 +1,22 @@
+name: pipelines_templates_steps_template_checkout_step
+inputs:
+  shouldEnableAutoCRLF:
+    required: false
+    default: true
+    type: boolean
+  shouldRunCheckout:
+    required: false
+    default: true
+    type: boolean
+runs:
+  using: composite
+  steps:
+  - name: Enable git autoCRLF
+    if: inputs.shouldEnableAutoCRLF == true
+    run: git config --global core.autocrlf true || exit /b 1
+    shell: bash
+  - if: inputs.shouldRunCheckout == true
+    uses: actions/checkout@v3.5.0
+    with:
+      submodules: recursive
+      token: "${{ secrets.CHECKOUT_TOKEN }}"

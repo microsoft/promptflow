@@ -1,0 +1,244 @@
+{
+  "flow": {
+    "id": "how_do_you_like_bing",
+    "name": "how_do_you_like_bing",
+    "nodes": [
+      {
+        "name": "Bing_search",
+        "tool": "Bing.search",
+        "inputs": {
+          "connection": "azure_open_ai_connection",
+          "query": "${flow.query}",
+          "count": "1"
+        }
+      },
+      {
+        "name": "extract",
+        "tool": "extract",
+        "inputs": {
+          "result": "${Bing_search.output}",
+          "search_engine": "Bing"
+        }
+      },
+      {
+        "name": "voter_prompt_template",
+        "tool": "voter_prompt_template",
+        "inputs": {
+          "profile": "a person 12 to 18 years old",
+          "title": "${extract.output.title}",
+          "snippet": "${extract.output.snippet}",
+          "deployment_name": "text-ada-001",
+          "max_tokens": "5",
+          "temperature": "0.8"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "voter_prompt_template_1",
+        "tool": "voter_prompt_template",
+        "inputs": {
+          "profile": "a housewife",
+          "title": "${extract.output.title}",
+          "snippet": "${extract.output.snippet}",
+          "deployment_name": "text-ada-001",
+          "max_tokens": "5",
+          "temperature": "0.8"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      },
+      {
+        "name": "voter_prompt_template_2",
+        "tool": "voter_prompt_template",
+        "inputs": {
+          "profile": "a middle aged man",
+          "title": "${extract.output.title}",
+          "snippet": "${extract.output.snippet}",
+          "deployment_name": "text-ada-001",
+          "max_tokens": "5",
+          "temperature": "0.8"
+        },
+        "api": "completion",
+        "provider": "AzureOpenAI",
+        "connection": "azure_open_ai_connection"
+      }
+    ],
+    "inputs": {
+      "query": {
+        "type": "string",
+        "default": "Park City Utah"
+      }
+    },
+    "outputs": {
+      "output": {
+        "type": "string",
+        "reference": "${voter_prompt_template_2.output}"
+      }
+    },
+    "tools": [
+      {
+        "name": "Bing.search",
+        "type": "python",
+        "inputs": {
+          "connection": {
+            "type": [
+              "BingConnection",
+              "OpenAIConnection"
+            ]
+          },
+          "query": {
+            "type": [
+              "string"
+            ]
+          },
+          "answerCount": {
+            "type": [
+              "int"
+            ]
+          },
+          "cc": {
+            "type": [
+              "string"
+            ]
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          },
+          "freshness": {
+            "type": [
+              "string"
+            ]
+          },
+          "mkt": {
+            "type": [
+              "string"
+            ]
+          },
+          "offset": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "promote": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "responseFilter": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "safesearch": {
+            "type": [
+              "string"
+            ],
+            "default": "Moderate"
+          },
+          "setLang": {
+            "type": [
+              "string"
+            ],
+            "default": "en"
+          },
+          "textDecorations": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "textFormat": {
+            "type": [
+              "string"
+            ],
+            "default": "Raw"
+          }
+        },
+        "module": "promptflow.tools.bing",
+        "class_name": "Bing",
+        "function": "search",
+        "is_builtin": true,
+        "stage": "test"
+      },
+      {
+        "name": "extract",
+        "type": "python",
+        "inputs": {
+          "result": {
+            "type": [
+              "object"
+            ]
+          },
+          "search_engine": {
+            "type": [
+              "object"
+            ]
+          }
+        },
+        "code": "from typing import List, Mapping, Dict\nfrom promptflow import tool\n\n@tool\ndef extract(result, search_engine):\n    try:\n        if search_engine == \"Bing\":\n            return {\n                \"title\": result[\"webPages\"][\"value\"][0][\"name\"],\n                \"snippet\": result[\"webPages\"][\"value\"][0][\"snippet\"],\n            }\n        else:\n            raise ValueError(\"search engine {} is not supported\".format(search_engine))\n    except Exception as e:\n        print(\"search result is not valid, error: {}\".format(e))\n        return {\"title\": \"\", \"snippet\": \"\"}\n",
+        "function": "extract"
+      },
+      {
+        "name": "voter_prompt_template",
+        "type": "llm",
+        "inputs": {
+          "profile": {
+            "type": [
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "string"
+            ]
+          },
+          "snippet": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "description": "This is a llm tool",
+        "code": "You are {{profile}}, how do you like below search result?\nresult: title \"{{title}}\", snippet \"{{snippet}}\"\n\nPlease answer precisely \"Like\" or \"Dislike\" to indicate which search result is more relevant.\nPlease do not mock any other answers.\nYour answer:\n\n\n"
+      }
+    ]
+  },
+  "connections": {
+    "azure_open_ai_connection": {
+      "type": "AzureOpenAIConnection",
+      "value": {
+        "api_key": "aoai-api-key",
+        "api_base": "aoai-api-endpoint",
+        "api_type": "azure",
+        "api_version": "2023-03-15-preview"
+      },
+      "module": "promptflow.connections"
+    },
+    "bing_connection": {
+      "type": "BingConnection",
+      "value": {
+        "api_key": "bing-api-key"
+      },
+      "module": "promptflow.connections"
+    }
+  },
+  "batch_inputs": [
+    {
+      "query": "Park City Utah"
+    }
+  ],
+  "name": "",
+  "description": "",
+  "baseline_variant_id": "",
+  "variants": {},
+  "variants_tools": []
+}

@@ -1,0 +1,8 @@
+{
+    "tool_type": "prompt",
+    "tool_name": "prompt_meta",
+    "tool_code_file": "prompt_meta.jinja",
+    "expected_response": {
+      "status_code": 200
+    }
+}

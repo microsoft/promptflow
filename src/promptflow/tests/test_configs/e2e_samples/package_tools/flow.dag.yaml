@@ -1,0 +1,17 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${search_by_text.output.search_metadata}
+nodes:
+- name: search_by_text
+  type: python
+  source:
+    type: package
+    tool: promptflow.tools.serpapi.search
+  inputs:
+    connection: serp_connection
+    query: ${inputs.text}
+    num: 1

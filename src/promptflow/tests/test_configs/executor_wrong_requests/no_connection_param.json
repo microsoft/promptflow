@@ -1,0 +1,124 @@
+{
+  "flow": {
+    "id": "qa_with_bing",
+    "name": "qa_with_bing",
+    "nodes": [
+      {
+        "name": "Bing_search_1",
+        "tool": "Bing.search",
+        "inputs": {
+          "query": "${flow.question}",
+          "count": "10",
+          "connection": "bing_wrong_config"
+        }
+      }
+    ],
+    "inputs": {
+      "question": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "answer": {
+        "type": "object",
+        "reference": "${Bing_search_1}"
+      }
+    },
+    "tools": [
+      {
+        "name": "Bing.search",
+        "type": "python",
+        "inputs": {
+          "connection": {
+            "type": [
+              "BingConnection"
+            ]
+          },
+          "query": {
+            "type": [
+              "string"
+            ]
+          },
+          "answerCount": {
+            "type": [
+              "int"
+            ]
+          },
+          "cc": {
+            "type": [
+              "string"
+            ]
+          },
+          "count": {
+            "type": [
+              "int"
+            ],
+            "default": "10"
+          },
+          "freshness": {
+            "type": [
+              "string"
+            ]
+          },
+          "mkt": {
+            "type": [
+              "string"
+            ]
+          },
+          "offset": {
+            "type": [
+              "int"
+            ],
+            "default": "0"
+          },
+          "promote": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "responseFilter": {
+            "type": [
+              "list"
+            ],
+            "default": "[]"
+          },
+          "safesearch": {
+            "type": [
+              "string"
+            ],
+            "default": "Moderate"
+          },
+          "setLang": {
+            "type": [
+              "string"
+            ],
+            "default": "en"
+          },
+          "textDecorations": {
+            "type": [
+              "bool"
+            ],
+            "default": "False"
+          },
+          "textFormat": {
+            "type": [
+              "string"
+            ],
+            "default": "Raw"
+          }
+        },
+        "module": "promptflow.tools.bing",
+        "class_name": "Bing",
+        "function": "search"
+      }
+    ]
+  },
+  "batch_inputs": [
+    {
+      "question": "When did OpenAI announced their chatgpt api?"
+    }
+  ],
+  "name": "QA with Bing",
+  "description": "This is a QA bot with Bing search"
+}

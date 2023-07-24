@@ -1,0 +1,7 @@
+{
+  "flow_directory": "prompt_tools",
+  "flow_run_inputs": "inputs.json",
+  "flow_run_settings": {
+    "runMode": "Flow"
+  }
+}

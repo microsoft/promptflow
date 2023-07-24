@@ -1,0 +1,11 @@
+base_dir: service/app/{port}
+storage:
+  storage_path: ../../data
+  db_file: promptflow.db
+  secret_storage: ""
+app:
+  host: localhost
+  port: 8080
+deployment:
+  edition: community
+  compute_type: local

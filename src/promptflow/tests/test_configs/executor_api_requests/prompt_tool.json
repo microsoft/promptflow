@@ -1,0 +1,64 @@
+{
+    "flow": {
+      "id": "qa_with_bing",
+      "name": "qa_with_bing",
+      "nodes": [
+        {
+          "name": "empty",
+          "tool": "empty_prompt",
+          "inputs": {}
+        },
+        {
+          "name": "qa",
+          "tool": "qa_prompt",
+          "inputs": {
+            "question": "${inputs.question}"
+          }
+        }
+      ],
+      "inputs": {
+        "question": {
+          "type": "string"
+        }
+      },
+      "outputs": {
+        "prompt": {
+          "type": "string",
+          "reference": "${qa.output}"
+        }
+      },
+      "tools": [
+        {
+          "name": "empty_prompt",
+          "type": "prompt",
+          "inputs": {}
+        },
+        {
+          "name": "qa_prompt",
+          "description": "QA",
+          "type": "prompt",
+          "inputs": {
+            "question": {
+              "name": "question",
+              "type": [
+                "string"
+              ]
+            },
+            "contexts": {
+              "name": "contexts",
+              "type": [
+                "string"
+              ]
+            }
+          },
+          "code": "Human: {{question}}\nChatbot:"
+        }]
+    },
+    "batch_inputs": [
+      {
+        "question": "When did OpenAI announced their chatgpt api?"
+      }
+    ],
+    "name": "Prompt Example",
+    "connections": {}
+  }

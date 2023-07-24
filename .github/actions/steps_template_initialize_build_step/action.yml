@@ -1,0 +1,34 @@
+name: pipelines_templates_steps_template_initialize_build_step
+inputs:
+  shouldEnableAutoCRLF:
+    required: false
+    default: true
+    type: boolean
+  shouldRunCheckout:
+    required: false
+    default: true
+    type: boolean
+  shouldCreateCondaEnvironment:
+    required: false
+    default: true
+    type: boolean
+  condaEnvironmentFilePath:
+    required: false
+    default: "./scripts/configs/release-env.yaml"
+    type: string
+runs:
+  using: composite
+  steps:
+  - uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
+  - uses: "./.github/actions/pipelines_templates_steps_template_checkout_step"
+    with:
+      shouldEnableAutoCRLF: "${{ inputs.shouldEnableAutoCRLF }}"
+      shouldRunCheckout: "${{ inputs.shouldRunCheckout }}"
+  - uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    if: inputs.shouldCreateCondaEnvironment == true
+    with:
+      condaEnvironmentFilePath: "${{ inputs.condaEnvironmentFilePath }}"
+  - if: inputs.shouldCreateCondaEnvironment != true
+    uses: actions/setup-python@v4.7.0
+    with:
+      python-version: '3.9'
