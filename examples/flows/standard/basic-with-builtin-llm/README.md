@@ -49,12 +49,12 @@ pf run create --flow . --data ./data.jsonl --stream
 pf run list
 
 # show specific run detail
-pf run show --name "18fb849b-7da4-4be8-b989-be22c4b03a13"
+pf run show --name "<flow_name>"
 
 # show output
-pf run show-details --name "18fb849b-7da4-4be8-b989-be22c4b03a13"
+pf run show-details --name "<flow_name>"
 
 # visualize run in browser
-pf run visualize -n "18fb849b-7da4-4be8-b989-be22c4b03a13"
+pf run visualize --name "<flow_name>"
 ```
 

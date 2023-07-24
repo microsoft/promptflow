@@ -42,9 +42,9 @@ pf run create --flow . --data ./data
 # list created run
 pf run list
 # show run
-pf run show --name "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5"
+pf run show --name "<flow_name>"
 # show specific run detail, top 3 lines
-pf run show-details -n "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" -r 3
+pf run show-details --name "<flow_name>" -r 3
 ```
 
 6. evaluation
@@ -56,15 +56,15 @@ pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data
 
 ```bash
 # show run
-pf run show -n 6b3810a5-9bd7-41c1-bb45-1b296602783e
+pf run show --name "<flow_name>"
 # show run output
-pf run show-details -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" -r 3
+pf run show-details --name "<flow_name>" -r 3
 ```
 
 6. visualize
 ```bash
 # visualize in browser
-pf run visualize -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" # your evaluation run name
+pf run visualize --name "<flow_name>" # your evaluation run name
 ```
 
 ## Tuning node variant

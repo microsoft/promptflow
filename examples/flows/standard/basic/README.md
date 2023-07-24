@@ -31,8 +31,8 @@ pf flow test --flow .
 
 - Create run with multiple lines data
 ```bash
-# using environment from .env file (loaded in user code: hello.py)
-pf run create --flow . --data ./data.jsonl --stream
+# using provided environment variables
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
 ```
 
 - List and show run meta
@@ -41,13 +41,13 @@ pf run create --flow . --data ./data.jsonl --stream
 pf run list
 
 # show specific run detail
-pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pf run show --name "<flow_name>"
 
 # show output
-pf run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pf run show-details --name "<flow_name>"
 
 # visualize run in browser
-pf run visualize -n "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
+pf run visualize --name "<flow_name>"
 ```
 
 ## Run flow locally with connection
@@ -66,7 +66,7 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 - Test using connection secret specifed in envrionment variables (TODO)
 ```bash
 # test with default input value in flow.dag.yaml 
-pf flow test --flow . --environment_variables AZURE_OPENAI_API_KEY="${azure_open_ai_connection.api_key}" AZURE_OPENAI_API_BASE="${azure_open_ai_connection.api_base}"
+pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
 ```
 
 - Create run using connection secret binding specifed in envrionment variables, see [run.yml](run.yml)
@@ -75,7 +75,7 @@ pf flow test --flow . --environment_variables AZURE_OPENAI_API_KEY="${azure_open
 pf run create --file run.yml --stream
 
 # show outputs
-pf run show-details -n 2db050f6-ffd7-4d8d-af0e-7de2bcef8efe
+pf run show-details --name "<flow_name>"
 ```
 
 ## Run flow in cloud with connection
@@ -98,11 +98,11 @@ pfazure run create --file run.yml --stream --runtime demo-mir
 pfazure run list -r 3
 
 # show specific run detail
-pfazure run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pfazure run show --name "<flow_name>"
 
 # show output
-pfazure run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pfazure run show-details --name "<flow_name>"
 
 # visualize run in browser
-pfazure run visualize -n d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pfazure run visualize --name "<flow_name>"
 ```
