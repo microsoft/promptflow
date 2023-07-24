@@ -7,10 +7,6 @@ on:
       pytestMarker:
         required: false
         type: string
-      timeoutInMinutes:
-        required: false
-        default: 120
-        type: number
       packageSetupType:
         required: false
         type: string
@@ -30,10 +26,6 @@ on:
       testPath:
         required: false
         type: string
-      numPytestProcesses:
-        required: false
-        default: 5
-        type: number
       modelFileName:
         required: false
         default: ''
