@@ -31,8 +31,8 @@ pf flow test --flow .
 
 - Create run with multiple lines data
 ```bash
-# using provided environment variables
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
+# using environment from .env file (loaded in user code: hello.py)
+pf run create --flow . --data ./data.jsonl --stream
 ```
 
 - List and show run meta
@@ -41,13 +41,13 @@ pf run create --flow . --data ./data.jsonl --stream --environment-variables AZUR
 pf run list
 
 # show specific run detail
-pf run show --name "<flow_name>"
+pf run show --name "basic_default_20230724_155834_331725"
 
 # show output
-pf run show-details --name "<flow_name>"
+pf run show-details --name "basic_default_20230724_155834_331725"
 
 # visualize run in browser
-pf run visualize --name "<flow_name>"
+pf run visualize --name "basic_default_20230724_155834_331725"
 ```
 
 ## Run flow locally with connection
@@ -72,10 +72,10 @@ pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open
 - Create run using connection secret binding specifed in envrionment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --file run.yml --stream
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
 
 # show outputs
-pf run show-details --name "<flow_name>"
+pf run show-details --name "basic_default_20230724_160138_517171"
 ```
 
 ## Run flow in cloud with connection
@@ -98,11 +98,11 @@ pfazure run create --file run.yml --stream --runtime demo-mir
 pfazure run list -r 3
 
 # show specific run detail
-pfazure run show --name "<flow_name>"
+pfazure run show --name "basic_default_20230724_160252_071554"
 
 # show output
-pfazure run show-details --name "<flow_name>"
+pfazure run show-details --name "basic_default_20230724_160252_071554"
 
 # visualize run in browser
-pfazure run visualize --name "<flow_name>"
+pfazure run visualize --name "basic_default_20230724_160252_071554"
 ```
