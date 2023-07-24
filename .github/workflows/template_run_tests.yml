@@ -1,4 +1,5 @@
-# Environment variables defined in a calling workflow are not accessible to this reusable workflow. Refer to the documentation for further details on this limitation.
+# Environment variables defined in a calling workflow are not accessible to this reusable workflow.
+# Inputs are limit to 10.
 name: template_run_tests
 on:
   workflow_dispatch:
@@ -33,27 +34,7 @@ on:
         required: false
         default: 5
         type: number
-      condaEnvironmentFilePath:
-        required: false
-        default: "./pipelines/configs/release-env.yaml"
-        type: string
-      generateEndpointConfig:
-        required: false
-        default: false
-        type: boolean
       modelFileName:
-        required: false
-        default: ''
-        type: string
-      deploymentName:
-        required: false
-        default: ''
-        type: string
-      generateModelFile:
-        required: false
-        default: false
-        type: boolean
-      patternModelFile:
         required: false
         default: ''
         type: string
@@ -70,10 +51,10 @@ jobs:
         shouldEnableAutoCRLF: true
         shouldRunCheckout: true
         shouldCreateCondaEnvironment: false
-        condaEnvironmentFilePath: "${{ inputs.condaEnvironmentFilePath }}"
+        condaEnvironmentFilePath: "./pipelines/configs/release-env.yaml"
     - uses: "./.github/actions/steps_template_generate_configs"
       with:
-        generateEndpointConfig: "${{ inputs.generateEndpointConfig}}"
+        generateEndpointConfig: "false"
         aoaiApiKey: "${{ secrets.AOAI-API-KEY }}"
         aoaiApiEndpoint: "$(AOAI-API-ENDPOINT)"
         bingApiKey: "${{ secrets.BING-API-KEY }}"
@@ -84,12 +65,6 @@ jobs:
     - uses: "./.github/actions/steps_template_sdk_setup_step"
       with:
         setupType: "${{ inputs.packageSetupType }}"
-    - uses: "./.github/actions/steps_template_generate_model"
-      if: parameters['generateModelFile'] == true
-      with:
-        targetFolder: "${{ env.deployPath }}/model"
-        patternModelFile: "${{ inputs.patternModelFile }}"
-        deploymentName: "${{ inputs.deploymentName }}"
     - uses: "./.github/actions/steps_template_test_coverage_step"
       with:
         workingDir: "${{ inputs.testWorkingDirectory }}"
