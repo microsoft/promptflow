@@ -50,12 +50,12 @@ pf run create --flow . --data ./data.jsonl --stream
 pf run list
 
 # show specific run detail
-pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pf run show --name "basic_with_connection_default_20230724_160757_016682"
 
 # show output
-pf run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
+pf run show-details --name "basic_with_connection_default_20230724_160757_016682"
 
 # visualize run in browser
-pf run visualize -n "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
+pf run visualize --name "basic_with_connection_default_20230724_160757_016682"
 ```
 

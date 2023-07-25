@@ -51,9 +51,10 @@ pf run create --file run.yml --stream
 # list run
 pf run list
 # show run
-pf run show -n "eff911b7-0a59-4002-8882-86c554c75716"
+pf run show --name "web_classification_variant_1_20230724_173442_973403"
 # show run outputs
-pf run show-details -n "eff911b7-0a59-4002-8882-86c554c75716"
+
+pf run show-details --name "web_classification_variant_1_20230724_173442_973403"
 ```
 
 ### 5. Run with classification evaluation flow
@@ -61,15 +62,15 @@ pf run show-details -n "eff911b7-0a59-4002-8882-86c554c75716"
 create `evaluation` run:
 ```bash
 # create run using command line args
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "8b35fd97-dac2-427e-99c7-3ac583f676db" --stream
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "web_classification_variant_1_20230724_173442_973403" --stream
 # create run using yaml flie
-pf run create --file run_evaluation.yml --run 8b35fd97-dac2-427e-99c7-3ac583f676db --stream
+pf run create --file run_evaluation.yml --run "web_classification_variant_1_20230724_173442_973403" --stream
 ```
 
 ```bash
-pf run show-details -n d83bd0d6-e5f8-4f47-81a9-c0f2f00d94e6
-pf run show-metrics -n d83bd0d6-e5f8-4f47-81a9-c0f2f00d94e6
-pf run visualize -n d83bd0d6-e5f8-4f47-81a9-c0f2f00d94e6
+pf run show-details --name "classification_accuracy_eval_default_20230724_173628_639497"
+pf run show-metrics --name "classification_accuracy_eval_default_20230724_173628_639497"
+pf run visualize --name "classification_accuracy_eval_default_20230724_173628_639497"
 ```
 
 
@@ -86,17 +87,17 @@ pfazure run create --file run.yml --runtime demo-mir
 pfazure run create --file run.yml --stream # serverless compute
 
 
-pfazure run stream --name d572ce0f-bd8b-48cb-960a-38dc662a63f0
-pfazure run show-details --name d572ce0f-bd8b-48cb-960a-38dc662a63f0
-pfazure run show-metrics --name d572ce0f-bd8b-48cb-960a-38dc662a63f0
+pfazure run stream --name "web_classification_default_20230724_173705_462735"
+pfazure run show-details --name "web_classification_default_20230724_173705_462735"
+pfazure run show-metrics --name "web_classification_default_20230724_173705_462735"
 
 # create evaluation run
-pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "d572ce0f-bd8b-48cb-960a-38dc662a63f0"  --runtime demo-mir
-pfazure run create --file run_evaluation.yml --run d572ce0f-bd8b-48cb-960a-38dc662a63f0 --stream # serverless compute
+pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "web_classification_default_20230724_173705_462735" --runtime demo-mir
+pfazure run create --file run_evaluation.yml --run "web_classification_default_20230724_173705_462735" --stream # serverless compute
 
-pfazure run stream -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74
-pfazure run show -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74
-pfazure run show-details -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74
-pfazure run show-metrics -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74
-pfazure run visualize -n 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 
+pfazure run stream --name "classification_accuracy_eval_default_20230724_173843_841080"
+pfazure run show --name "classification_accuracy_eval_default_20230724_173843_841080"
+pfazure run show-details --name "classification_accuracy_eval_default_20230724_173843_841080"
+pfazure run show-metrics --name "classification_accuracy_eval_default_20230724_173843_841080"
+pfazure run visualize --name "classification_accuracy_eval_default_20230724_173843_841080" 
 ```

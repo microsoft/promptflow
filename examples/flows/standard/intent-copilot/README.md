@@ -42,29 +42,29 @@ pf run create --flow . --data ./data
 # list created run
 pf run list
 # show run
-pf run show --name "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5"
+pf run show --name "intent_copilot_default_20230724_171809_745938"
 # show specific run detail, top 3 lines
-pf run show-details -n "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" -r 3
+pf run show-details --name "intent_copilot_default_20230724_171809_745938" -r 3
 ```
 
 6. evaluation
 
 ```bash
 # create evaluation run
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping "groundtruth=${data.intent},prediction=${run.outputs.output}" --run "3dbe8954-cfe6-41c5-aa5f-03e57e678cc5" 
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping "groundtruth=${data.intent},prediction=${run.outputs.output}" --run "intent_copilot_default_20230724_171809_745938" 
 ```
 
 ```bash
 # show run
-pf run show -n 6b3810a5-9bd7-41c1-bb45-1b296602783e
+pf run show --name "classification_accuracy_eval_default_20230724_172154_294669"
 # show run output
-pf run show-details -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" -r 3
+pf run show-details --name "classification_accuracy_eval_default_20230724_172154_294669" -r 3
 ```
 
 6. visualize
 ```bash
 # visualize in browser
-pf run visualize -n "6b3810a5-9bd7-41c1-bb45-1b296602783e" # your evaluation run name
+pf run visualize --name "classification_accuracy_eval_default_20230724_172154_294669" # your evaluation run name
 ```
 
 ## Tuning node variant
