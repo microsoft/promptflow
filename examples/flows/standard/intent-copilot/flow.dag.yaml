@@ -8,20 +8,21 @@ outputs:
     type: string
     reference: ${extract_intent.output}
 nodes:
-- inputs: {}
-  name: user_prompt_template
+- name: user_prompt_template
   type: prompt
   source:
     type: code
-    path: user_intent_zero_shot.md
-- inputs:
-    customer_info: ${inputs.customer_info}
-    history: ${inputs.history}
-    user_prompt_template: ${user_prompt_template.output}
-    connection: custom_connection
-  name: extract_intent
+    path: user_intent_zero_shot.jinja2
+  inputs: {}  # Please enter the inputs of this node
+- name: extract_intent
   type: python
   source:
     type: code
     path: extract_intent_tool.py
-node_variants: {}
+  inputs:
+    customer_info: ${inputs.customer_info}
+    history: ${inputs.history}
+    user_prompt_template: ${user_prompt_template.output}
+    connection: custom_connection
+environment:
+    python_requirements_txt: requirements.txt

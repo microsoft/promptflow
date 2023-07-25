@@ -17,7 +17,7 @@ cat .env
 
 1. init flow directory - create promptflow folder from existing python file
 ```bash
-pf flow init --flow . --entry intent.py --function extract_intent --prompt-template user_prompt_template=user_intent_zero_shot.md
+pf flow init --flow . --entry intent.py --function extract_intent --prompt-template user_prompt_template=user_intent_zero_shot.jinja2
 ```
 TODO introduce the generated files
 
