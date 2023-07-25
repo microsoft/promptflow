@@ -1,0 +1,35 @@
+# This is a basic workflow that is for execute examples
+
+name: Manual workflow
+on:
+  pull_request:
+    branches: [ main,preview/code-first ]
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      name:
+        description: 'Person to greet'
+        default: 'World'
+        required: true
+        type: string
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9 environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install azureml-core
+          pip install promptflow-sdk[azure,builtins] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+
+      - name: Azure login
+        run: |
+          az login --service-principal -u ${{ secrets.CLIENT_ID }} -p ${{ secrets.CLIENT_SECRET }} --tenant ${{ secrets.TENANT_ID }}
