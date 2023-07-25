@@ -20,6 +20,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout repository
         uses: actions/checkout@v3
+      - name: Generate config.json
+        run: |
+          echo "{\"subscription_id\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\"resource_group\": \"promptflow\",\"workspace_name\": \"promptflow-eastus\"}" > ${{ github.workspace }}/config.json
       - name: Azure login
         uses: azure/login@v1
         with:
@@ -31,6 +34,3 @@ jobs:
       - run: |
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
-      - name: Generate config.json
-        run: |
-          echo "{\"subscription_id\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\"resource_group\": \"promptflow\",\"workspace_name\": \"promptflow-eastus\"}" > ${{ github.workspace }}/config.json
