@@ -1,4 +1,5 @@
 import pytest
+import json
 
 from promptflow.connections import OpenAIConnection
 from promptflow.core.connection_manager import ConnectionManager
@@ -16,7 +17,7 @@ def openai_provider(open_ai_connection) -> OpenAI:
     return aoai_provider
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "azure_open_ai_connection",
+@pytest.mark.usefixtures("use_secrets_config_file",
                          "open_ai_connection")
 @pytest.mark.skip(reason="openai key not set yet")
 class TestOpenAI:
@@ -75,7 +76,7 @@ class TestOpenAI:
             model="gpt-3.5-turbo",
             max_tokens="inF",
             temperature=0,
-            user_input="Write a slogan for product X",
+            user_input="What is the weather in Boston?",
             chat_history=chat_history,
             function_call="auto",
             functions=functions
@@ -88,3 +89,27 @@ class TestOpenAI:
         result = openai_provider.embedding(input=input)
         embedding_vector = ", ".join(str(num) for num in result)
         print("openai.embedding() result=[" + embedding_vector + "]")
+
+    def test_openai_prompt_with_function(self, open_ai_connection, example_prompt_template_with_function):
+        functions = [
+            {
+                "name": "get_current_weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                },
+            }
+        ]
+        result = chat(
+            connection=open_ai_connection,
+            prompt=example_prompt_template_with_function,
+            model="gpt-3.5-turbo",
+            temperature=0,
+            functions=functions,
+            name="get_location",
+            result=json.dumps({"location": "Austin"}),
+            # assignments=assignments,
+            question="What is the weather in Boston?",
+            prev_question="Where is Boston?"
+        )
+        assert result["function_call"]["name"] == "get_current_weather"

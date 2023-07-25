@@ -19,7 +19,7 @@ from promptflow.tools.aoai import AzureOpenAI, chat, completion, embedding
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.embedding import embedding as Embedding
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, openai_error_code_ref_message, \
-    to_openai_error_message, JinjaTemplateError, LLMError, InvalidConnectionType, ChatAPIInvalidFunctions
+    to_openai_error_message, JinjaTemplateError, LLMError, InvalidConnectionType, ChatAPIFunctionRoleInvalidFormat
 from promptflow.tools.openai import chat as openai_chat
 
 
@@ -385,76 +385,6 @@ class TestHandleOpenAIError:
         assert "UserError/ToolValidationError/InvalidConnectionType" == ErrorResponse.from_exception(
             exc_info.value).error_code_hierarchy
 
-    @pytest.mark.parametrize(
-        "functions, error_message",
-        [
-            ([], "functions cannot be an empty list"),
-            (["str"],
-             "is not a dict. Here is a valid function example"),
-            ([{"name": "func1"}], "does not have 'parameters' property"),
-            ([{"name": "func1", "parameters": "param1"}],
-             "should be described as a JSON Schema object"),
-            ([{"name": "func1", "parameters": {"type": "int", "properties": {}}}],
-             "parameters 'type' should be 'object'"),
-            ([{"name": "func1", "parameters": {"type": "object", "properties": []}}],
-             "should be described as a JSON Schema object"),
-        ],
-    )
-    @pytest.mark.skip(reason="openai key not set yet")
-    def test_chat_api_invalid_functions(self, open_ai_connection, example_prompt_template, chat_history, functions,
-                                        error_message):
-        with pytest.raises(ChatAPIInvalidFunctions) as exc_info:
-            openai_chat(
-                connection=open_ai_connection,
-                prompt=example_prompt_template,
-                model="gpt-3.5-turbo",
-                max_tokens="inF",
-                temperature=0,
-                user_input="Write a slogan for product X",
-                chat_history=chat_history,
-                function_call="auto",
-                functions=functions
-            )
-        assert error_message in exc_info.value.message
-        assert "UserError/ToolValidationError/ChatAPIInvalidFunctions" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
-
-    @pytest.mark.parametrize(
-        "function_call, error_message",
-        [
-            ({"name": "get_current_weather"}, "must be str, bytes or bytearray"),
-            ("{'name': 'get_current_weather'}", "is an invaild json"),
-            ("get_current_weather", "is an invaild json"),
-        ],
-    )
-    @pytest.mark.skip(reason="openai key not set yet")
-    def test_chat_api_invalid_function_call(self, open_ai_connection, example_prompt_template, chat_history,
-                                            function_call, error_message):
-        functions = [
-            {
-                "name": "get_current_weather",
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                },
-            }
-        ]
-        with pytest.raises(ChatAPIInvalidFunctions) as exc_info:
-            openai_chat(
-                connection=open_ai_connection,
-                prompt=example_prompt_template,
-                model="gpt-3.5-turbo",
-                max_tokens="inF",
-                temperature=0,
-                user_input="Write a slogan for product X",
-                chat_history=chat_history,
-                function_call=function_call,
-                functions=functions
-            )
-        assert error_message in exc_info.value.message
-        assert "UserError/ToolValidationError/ChatAPIInvalidFunctions" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
-
     @pytest.mark.skip(reason="openai key not set yet")
     def test_model_not_accept_functions_as_param(self, open_ai_connection, example_prompt_template):
         with pytest.raises(WrappedOpenAIError) as exc_info:
@@ -474,3 +404,13 @@ class TestHandleOpenAIError:
                 ]
             )
         assert "Current model does not support the `functions` parameter" in exc_info.value.message
+
+    @pytest.mark.skip(reason="openai key not set yet")
+    def test_input_invalid_function_role_prompt(self, open_ai_connection):
+        with pytest.raises(ChatAPIFunctionRoleInvalidFormat) as exc_info:
+            openai_chat(
+                connection=open_ai_connection,
+                prompt="function:\n This is function role prompt",
+                model="gpt-3.5-turbo"
+            )
+        assert "'name' is required if role is function," in exc_info.value.message

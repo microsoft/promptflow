@@ -13,8 +13,13 @@ def to_openai_error_message(e: Exception) -> str:
         return f"OpenAI API hits {ex_type}: {msg}"
     # for models that do not support the `functions` parameter.
     elif "Unrecognized request argument supplied: functions" in str(e):
-        msg = "Current model does not support the `functions` parameter. " \
-              "Please use gpt-3.5-turbo, gpt-4, or gpt-4-32k."
+        msg = "Current model does not support the `functions` parameter. If you are using openai connection, then " \
+              "please use gpt-3.5-turbo, gpt-4, gpt-4-32k, gpt-3.5-turbo-0613 or gpt-4-0613. You can refer to " \
+              "https://platform.openai.com/docs/guides/gpt/function-calling. If you are using azure openai " \
+              "connection, then please first go to your Azure OpenAI resource, deploy model 'gpt-35-turbo' or " \
+              "'gpt-4' with version 0613, then go to prompt flow connection page, upgrade connection api version to " \
+              "'2023-07-01-preview'. You can refer to " \
+              "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
@@ -89,6 +94,11 @@ class JinjaTemplateError(ToolValidationError):
 
 class ChatAPIInvalidRole(ToolValidationError):
     """Base exception raised when failed to validate chat api role."""
+    pass
+
+
+class ChatAPIFunctionRoleInvalidFormat(ToolValidationError):
+    """Base exception raised when failed to validate chat api function role format."""
     pass
 
 

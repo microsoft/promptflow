@@ -13,17 +13,20 @@ from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailab
 
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
-    ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode
+    ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
+    ChatAPIFunctionRoleInvalidFormat
 
 
 def validate_role(role):
-    if role not in ["user", "assistant", "system"]:
+    valid_roles = {"system", "user", "assistant", "function"}
+    if role not in valid_roles:
+        valid_roles_str = ','.join([f'\'{role}:\\n\''for role in valid_roles])
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
-            f"lines as role delimiters: 'system:\\n', 'user:\\n', and 'assistant:\\n'. Current parsed role '{role}'"
+            f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
             f" does not meet the requirement. If you intend to use the Completion API, please select the appropriate"
             f" API type and deployment name. If you do intend to use the Chat API, please refer to the guideline at "
-            f"https://aka.ms/pfdoc/chat-prompt or review the samples in our gallery that contain 'Chat' in the name."
+            f"https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."
         )
         raise ChatAPIInvalidRole(message=error_message)
 
@@ -44,51 +47,69 @@ def validate_functions(functions):
     })
     common_tsg = f"Here is a valid function example: {function_example}. See more details at " \
                  "https://platform.openai.com/docs/api-reference/chat/create#chat/create-functions " \
-                 "or review sample 'How to call functions with chat models' in our gallery."
+                 "or view sample 'How to use functions with chat models' in our gallery."
     if len(functions) == 0:
         raise ChatAPIInvalidFunctions(message=f"functions cannot be an empty list. {common_tsg}")
     else:
-        for function in functions:
+        for i, function in enumerate(functions):
             # validate if the function is a dict
             if not isinstance(function, dict):
-                raise ChatAPIInvalidFunctions(message=f"function '{function}' is not a dict. {common_tsg}")
+                raise ChatAPIInvalidFunctions(message=f"function {i} '{function}' is not a dict. {common_tsg}")
             # validate if has required keys
             for key in ["name", "parameters"]:
                 if key not in function.keys():
                     raise ChatAPIInvalidFunctions(
-                        message=f"function '{function}' does not have '{key}' property. {common_tsg}")
+                        message=f"function {i} '{function}' does not have '{key}' property. {common_tsg}")
             # validate if the parameters is a dict
             if not isinstance(function["parameters"], dict):
                 raise ChatAPIInvalidFunctions(
-                    message=f"function '{function['name']}' parameters '{function['parameters']}' "
+                    message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
                             f"should be described as a JSON Schema object. {common_tsg}")
             # validate if the parameters has required keys
             for key in ["type", "properties"]:
                 if key not in function["parameters"].keys():
                     raise ChatAPIInvalidFunctions(
-                        message=f"function '{function['name']}' parameters '{function['parameters']}' "
+                        message=f"function {i} '{function['name']}' parameters '{function['parameters']}' "
                                 f"does not have '{key}' property. {common_tsg}")
             # validate if the parameters type is object
             if function["parameters"]["type"] != "object":
                 raise ChatAPIInvalidFunctions(
-                    message=f"function '{function['name']}' parameters 'type' "
+                    message=f"function {i} '{function['name']}' parameters 'type' "
                             f"should be 'object'. {common_tsg}")
             # validate if the parameters properties is a dict
             if not isinstance(function["parameters"]["properties"], dict):
                 raise ChatAPIInvalidFunctions(
-                    message=f"function '{function['name']}' parameters 'properties' "
+                    message=f"function {i} '{function['name']}' parameters 'properties' "
                             f"should be described as a JSON Schema object. {common_tsg}")
 
 
+def parse_function_role_prompt(function_str):
+    pattern = r"\n*name:\n\s*(\S+)\s*\n*content:\n(.*)"
+    match = re.search(pattern, function_str, re.DOTALL)
+    if match:
+        return match.group(1), match.group(2)
+    else:
+        raise ChatAPIFunctionRoleInvalidFormat(
+            message="Failed to parse function role prompt. Please make sure the prompt follows the "
+                    "format: 'name:\\nfunction_name\\ncontent:\\nfunction_content'. 'name' is required if role is "
+                    "function, and it should be the name of the function whose response is in the content. May "
+                    "contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters. See more details"
+                    " in https://platform.openai.com/docs/api-reference/chat/create#chat/create-name or view sample"
+                    " 'How to use functions with chat models' in our gallery.")
+
+
 def parse_chat(chat_str):
-    # openai chat api only supports below three roles.
-    separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
+    # openai chat api only supports below roles.
+    separator = r"(?i)\n*(system|user|assistant|function)\s*:\s*\n"
     chunks = re.split(separator, chat_str)
     chat_list = []
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
         if last_message and "role" in last_message and "content" not in last_message:
-            last_message["content"] = chunk
+            if last_message["role"] == "function":
+                last_message["name"], last_message["content"] = parse_function_role_prompt(chunk)
+            else:
+                last_message["content"] = chunk
         else:
             if chunk.strip() == "":
                 continue
@@ -207,7 +228,7 @@ def process_function_call(function_call):
         function_call_example = json.dumps({"name": "function_name"})
         common_tsg = f"Here is a valid example: {function_call_example}. See the guide at" \
                      "https://platform.openai.com/docs/api-reference/chat/create#chat/create-function_call " \
-                     "or review sample 'How to call functions with chat models' in our gallery."
+                     "or view sample 'How to call functions with chat models' in our gallery."
         try:
             param = json.loads(function_call)
         except json.JSONDecodeError:
@@ -217,6 +238,15 @@ def process_function_call(function_call):
             raise ChatAPIInvalidFunctions(
                 message=f"function_call parameter '{function_call}' must be str, bytes or bytearray"
                         f", but not {type(function_call)}. {common_tsg}"
+                )
+        if not isinstance(param, dict):
+            raise ChatAPIInvalidFunctions(
+                message=f"function_call parameter '{function_call}' must be a dict, but not {type(param)}. {common_tsg}"
+            )
+        else:
+            if "name" not in param:
+                raise ChatAPIInvalidFunctions(
+                    message=f'function_call parameter {function_call} must contain "name" field. {common_tsg}'
                 )
     return param
 

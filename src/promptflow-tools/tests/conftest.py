@@ -35,3 +35,10 @@ def chat_history() -> list:
     with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/marketing_writer/history.json") as f:
         history = json.load(f)
     return history
+
+
+@pytest.fixture
+def example_prompt_template_with_function() -> str:
+    with open(PROMOTFLOW_ROOT / "tests/test_configs/prompt_templates/prompt_with_function.jinja2") as f:
+        prompt_template = f.read()
+    return prompt_template

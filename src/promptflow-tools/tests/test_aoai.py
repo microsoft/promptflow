@@ -55,6 +55,30 @@ class TestAOAI:
         print(" chat() api result=[" + result + "]")
         assert "Product X".lower() in result.lower()
 
+        functions = [
+            {
+                "name": "get_current_weather",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                },
+            }
+        ]
+
+        result = chat(
+            connection=azure_open_ai_connection,
+            prompt=example_prompt_template,
+            deployment_name="gpt-35-turbo",
+            max_tokens="inF",
+            temperature=0,
+            user_input="What is the weather in Boston?",
+            chat_history=chat_history,
+            functions=functions,
+            function_call="auto"
+        )
+        result = str(result.to_dict())
+        print(" chat() api result=[" + result + "]")
+
     def test_aoai_chat_message_with_no_content(self, aoai_provider):
         # missing colon after role name. Sometimes following prompt may result in empty content.
         prompt = (

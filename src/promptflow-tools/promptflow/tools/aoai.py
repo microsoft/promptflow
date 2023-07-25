@@ -8,7 +8,8 @@ from promptflow.contracts.types import PromptTemplate
 from promptflow.core.cache_manager import enable_cache
 from promptflow.core.tool import ToolProvider, tool
 from promptflow.core.tools_manager import register_api_method, register_apis
-from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool
+from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
+    validate_functions, process_function_call, post_process_chat_api_response
 from promptflow.utils.utils import deprecated
 
 
@@ -119,6 +120,8 @@ class AzureOpenAI(ToolProvider):
         frequency_penalty: float = 0,
         logit_bias: dict = {},
         user: str = "",
+        function_call: str = None,
+        functions: list = None,
         **kwargs,
     ) -> str:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
@@ -126,34 +129,28 @@ class AzureOpenAI(ToolProvider):
         messages = parse_chat(chat_str)
         # TODO: remove below type conversion after client can pass json rather than string.
         stream = to_bool(stream)
-        completion = openai.ChatCompletion.create(
-            engine=deployment_name,
-            messages=messages,
-            temperature=float(temperature),
-            top_p=float(top_p),
-            n=int(n),
-            stream=stream,
-            stop=stop if stop else None,
-            max_tokens=int(max_tokens) if max_tokens and str(max_tokens).lower() != "inf" else None,
-            presence_penalty=float(presence_penalty),
-            frequency_penalty=float(frequency_penalty),
-            logit_bias=logit_bias,
-            user=user,
-            headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
-            **self._connection_dict,
-        )
+        params = {
+            "engine": deployment_name,
+            "messages": messages,
+            "temperature": float(temperature),
+            "top_p": float(top_p),
+            "n": int(n),
+            "stream": stream,
+            "stop": stop if stop else None,
+            "max_tokens": int(max_tokens) if max_tokens and str(max_tokens).lower() != "inf" else None,
+            "presence_penalty": float(presence_penalty),
+            "frequency_penalty": float(frequency_penalty),
+            "logit_bias": logit_bias,
+            "user": user,
+            "headers": {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
+        }
+        if functions is not None:
+            validate_functions(functions)
+            params["functions"] = functions
+            params["function_call"] = process_function_call(function_call)
 
-        if stream:
-            def generator():
-                for chunk in completion:
-                    yield getattr(chunk.choices[0]["delta"], "content", "")
-
-            # We must return the generator object, not using yield directly here.
-            # Otherwise, the function itself will become a generator, despite whether stream is True or False.
-            return generator()
-        else:
-            # chat api may return message with no content.
-            return getattr(completion.choices[0].message, "content", "")
+        completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+        return post_process_chat_api_response(completion, stream, functions)
 
     @tool
     @handle_openai_error()
@@ -228,6 +225,8 @@ def chat(
     frequency_penalty: float = 0,
     logit_bias: dict = {},
     user: str = "",
+    function_call: str = None,
+    functions: list = None,
     **kwargs,
 ) -> str:
     # chat model is not available in azure openai, so need to set the environment variable.
@@ -244,6 +243,8 @@ def chat(
         frequency_penalty=frequency_penalty,
         logit_bias=logit_bias,
         user=user,
+        function_call=function_call,
+        functions=functions,
         **kwargs,
     )
 
