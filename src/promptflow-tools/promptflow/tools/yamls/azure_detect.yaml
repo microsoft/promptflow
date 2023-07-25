@@ -1,0 +1,14 @@
+promptflow.tools.azure_detect.AzureDetect.get_language:
+  class_name: AzureDetect
+  function: get_language
+  inputs:
+    connection:
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+  module: promptflow.tools.azure_detect
+  name: Azure Language Detector
+  description: Detect the language of the input text.
+  type: python

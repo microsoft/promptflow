@@ -1,0 +1,133 @@
+name: Build and publish wheel distribution
+
+on:
+  workflow_call:
+    inputs:
+      ReleaseType:
+        type: string
+        default: "Test"
+        required: false
+        description: 'Official release or test'
+      UploadAsLatest:
+        type: string
+        default: "False"
+        required: false
+        description: 'Also publish the wheel distribution to internal pypi index as latest'
+      SourceFolderName:
+        type: string
+        required: true
+        description: 'The source folder name of the package to be built'
+      ConfigsFolderPath:
+        type: string
+        default: "scripts/distributing/configs"
+        required: false
+        description: 'Configs folder path'
+    outputs:
+      PackageVersion:
+        description: 'The version of the package'
+        value: ${{ jobs.sdk_release.outputs.PackageVersion }}
+
+jobs:
+  sdk_release:
+    runs-on: ubuntu-latest
+    name: Build and publish wheel distribution
+    outputs:
+      PackageVersion: ${{ steps.override_version.outputs.version }}
+
+    steps:
+      - name: Check input parameters
+        run: |
+          echo "ReleaseType: ${{ inputs.ReleaseType }}"
+          echo "UploadAsLatest: ${{ inputs.UploadAsLatest }}"
+          echo "SourceFolderName: ${{ inputs.SourceFolderName }}"
+          echo "ConfigsFolderPath: ${{ inputs.ConfigsFolderPath }}"
+
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+
+      - name: Override version with PR number
+        id: override_version
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "VERSION = \"0.0.${{ github.event.pull_request.number }}\"" > src/${{ inputs.SourceFolderName }}/promptflow/version.txt
+          echo "VERSION: 0.0.${{ github.event.pull_request.number }}"
+          echo "version=0.0.${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up conda environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          activate-environment: release-env
+          environment-file: ${{ inputs.ConfigsFolderPath }}/${{ inputs.SourceFolderName }}-release-env.yaml
+          auto-update-conda: true
+          auto-activate-base: false
+
+      - name: Show conda info
+        shell: bash -l {0}
+        run: |
+          conda activate release-env
+          conda info
+          conda list
+          conda config --show-sources
+          conda config --show
+          python --version
+
+      - name: Delete existing packages in the 'dist' folder
+        working-directory: src/${{ inputs.SourceFolderName }}/
+        shell: bash
+        run: |
+          echo "Delete existing packages in the 'dist' directory of '${{ inputs.SourceFolderName }}/'"
+          rm -f ./dist/*
+          if [ $? != 0 ]; then
+              echo "Failed to delete existing dist folder for '${{ inputs.SourceFolderName }}/'"
+              exit 1
+          fi
+
+      - name: Build wheel
+        working-directory: src/${{ inputs.SourceFolderName }}/
+        shell: bash -l {0}
+        run: |
+          conda activate release-env
+          echo "Build wheel for '${{ inputs.SourceFolderName }}/'"
+          python setup.py bdist_wheel -b bdist
+          echo "List files in 'dist'"
+          cd dist
+          pwd
+          ls
+
+        # Need to enbale the check after fixing `long_description` syntax errors
+      - name: Twine check for artifact
+        if: false
+        working-directory: src/${{ inputs.SourceFolderName }}/
+        shell: bash -l {0}
+        run: |
+          conda activate release-env
+          echo "Listing the wheels under '${{ inputs.SourceFolderName }}\dist\*.whl'"
+          ls dist/*.whl
+          echo "Twine check for artifact: ${{ inputs.SourceFolderName }}"
+          last_dist=$(ls -t dist/*.whl | head -n 1)
+          twine check "$last_dist" --strict
+
+      - name: Generate SBOM
+        working-directory: src/${{ inputs.SourceFolderName }}/
+        run: |
+          echo "Generate SBOM for '${{ inputs.SourceFolderName }}\dist\'"
+          curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+          chmod +x $RUNNER_TEMP/sbom-tool
+          $RUNNER_TEMP/sbom-tool generate -b ./dist -bc . -pn Test -pv 1.0.0 -ps MyCompany -nsb https://sbom.mycompany.com -V Verbose
+
+      - name: Official release
+        if: inputs.ReleaseType == 'Release'
+        shell: bash -l {0}
+        run: |
+          conda activate release-env
+          python scripts/distributing/publish_package.py --config ${{ inputs.ConfigsFolderPath }}/distribution_settings.json --src_folder_name ${{ inputs.SourceFolderName }} --package_dir_path src/${{ inputs.SourceFolderName }}/dist --storage_key ${{ secrets.PACKAGE_STORAGE_KEY }} --upload_as_latest ${{ inputs.UploadAsLatest }}
+
+      - name: Test release
+        if: inputs.ReleaseType == 'Test'
+        shell: bash -l {0}
+        run: |
+          conda activate release-env
+          python scripts/distributing/publish_package.py --config ${{ inputs.ConfigsFolderPath }}/distribution_settings.json --src_folder_name ${{ inputs.SourceFolderName }} --package_dir_path src/${{ inputs.SourceFolderName }}/dist --storage_key ${{ secrets.PACKAGE_STORAGE_KEY }} --upload_as_latest ${{ inputs.UploadAsLatest }} --release_type test

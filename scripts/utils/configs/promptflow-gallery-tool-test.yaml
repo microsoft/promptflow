@@ -1,0 +1,9 @@
+storage:
+  storage_account: promptflowgall5817910653
+deployment:
+  subscription_id: 96aede12-2f73-41cb-b983-6d11a904839b
+  resource_group: promptflow
+  workspace_name: promptflow-gallery
+  endpoint_name: tool-test638236049123389546
+  deployment_name: blue
+  mt_service_endpoint: https://eastus2euap.api.azureml.ms

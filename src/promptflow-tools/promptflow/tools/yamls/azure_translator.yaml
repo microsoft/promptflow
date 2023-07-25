@@ -1,0 +1,21 @@
+promptflow.tools.azure_translator.AzureTranslator.get_translation:
+  class_name: AzureTranslator
+  function: get_translation
+  inputs:
+    connection:
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+    source_language:
+      type:
+      - string
+    target_language:
+      default: en
+      type:
+      - string
+  module: promptflow.tools.azure_translator
+  name: Azure Translator
+  description: Use Azure Translator API for translating text between 130+ languages.
+  type: python
