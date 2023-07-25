@@ -1,0 +1,25 @@
+# This is a basic workflow that is for execute examples
+
+name: Manual workflow
+on:
+  workflow_dispatch:
+    # Inputs the workflow accepts.
+    inputs:
+      name:
+        description: 'Person to greet'
+        default: 'World'
+        required: true
+        type: string
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Send greeting
+      run: echo "Hello ${{ inputs.name }}"
+    - name: Azure Login
+      uses: Azure/login@v1.4.6
+      with:
+        creds: ${{secrets.AZUREML_CREDENTIALS}}
+        # ClientId of the Azure Service principal created.
+  
