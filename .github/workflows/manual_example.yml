@@ -33,4 +33,4 @@ jobs:
           pip install -r ${{ github.workspace }}/examples/requirements.txt
       - name: Generate config.json
         run: |
-          "{\"subscription_id\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\"resource_group\": \"promptflow\",\"workspace_name\": \"promptflow-eastus\"}" > ${{ github.workspace }}/config.json
+          echo "{\"subscription_id\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\"resource_group\": \"promptflow\",\"workspace_name\": \"promptflow-eastus\"}" > ${{ github.workspace }}/config.json
