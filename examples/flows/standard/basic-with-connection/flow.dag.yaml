@@ -1,6 +1,7 @@
 inputs:
   text:
     type: string
+    default: Hello World!
 outputs:
   output:
     type: string

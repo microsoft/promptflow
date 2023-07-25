@@ -3,5 +3,5 @@ name: custom_connection
 type: custom
 configs:
   key1: "test1"
-secrets:  # must-have
+secrets:  # required
   api-key: "<to-be-replaced>"

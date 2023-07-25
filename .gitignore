@@ -161,7 +161,7 @@ cython_debug/
 
 # ignore 
 # TODO: ignore when PFS supports submit without tools.json
-# .promptflow
+.promptflow
 .runs
 connection.json
 .env

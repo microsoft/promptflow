@@ -22,9 +22,10 @@ Ensure you have created `basic_custom_connection` connection before.
 pf connection show -n basic_custom_connection
 ```
 
-Create connection if you haven't done that. Ensure you have put your azure open ai api_key & api_base in [custom.yml](custom.yml) file. 
+Create connection if you haven't done that.
 ```bash
-pf connection create -f custom.yml
+# Override keys with --set to avoid yaml file changes
+pf connection create -f custom.yml --set secrets.api_key=<your_api_key> configs.api_base=<your_api_base>
 ```
 
 ## Run flow in local
@@ -32,14 +33,15 @@ pf connection create -f custom.yml
 ### Run locally with single line input
 
 ```bash
-pf flow test --flow . --input data.jsonl
+# test with default input value in flow.dag.yaml
+pf flow test --flow .
 ```
 
-### Batch run with multiple lines data
+### Run with multiple lines data
 
-- create batch run
+- create run
 ```bash
-pf run create --flow . --type batch --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --stream
 ```
 
 - list and show run meta
@@ -54,6 +56,6 @@ pf run show --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
 pf run show-details --name d5a35b24-e7e4-44b3-b6e9-0611a05da9bd
 
 # visualize run in browser
-pf run visualize "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
+pf run visualize -n "d5a35b24-e7e4-44b3-b6e9-0611a05da9bd"
 ```
 
