@@ -1,0 +1,8 @@
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+# we keep the recommended version (manual validated) only in this file
+# not sure if we should include azure here
+promptflow-sdk[azure,builtins]==0.0.100311032
+prompt-flow-tools==0.0.5
+python-dotenv
+langchain
+jinja2
