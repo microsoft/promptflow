@@ -1,8 +1,6 @@
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-# we keep the recommended version (manual validated) only in this file
-# not sure if we should include azure here
-promptflow-sdk[azure,builtins]==0.0.100311032
-prompt-flow-tools==0.0.5
-python-dotenv
-langchain
-jinja2
+# required for notebook testing in workflow actions
+# pinned to avoid surprises
+#adding ipython_genutils to fix a weird papermill error
+ipython_genutils
+ipykernel==5.5.5
+papermill==2.3.3
