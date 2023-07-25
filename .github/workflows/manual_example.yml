@@ -35,7 +35,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
-          pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
+          pip install -r ${{ github.workspace }}/examples/dev-requirements.txt
       - name: Test workbook
         run: |
           pf connection list
