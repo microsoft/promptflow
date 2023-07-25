@@ -2,6 +2,8 @@
 
 name: Manual workflow
 on:
+  pull_request:
+    branches: [ main,preview/code-first ]
   workflow_dispatch:
     # Inputs the workflow accepts.
     inputs:
