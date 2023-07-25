@@ -20,9 +20,8 @@ jobs:
     - name: Send greeting
       run: echo "Hello ${{ inputs.name }}"
     - name: Azure Login
-      uses: Azure/login@v1.4.6
+      uses: Azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
         client-id: "4cbd0e2e-aae4-4099-b4ba-94d3a4910587"
         tenant-id: "72f988bf-86f1-41af-91ab-2d7cd011db47"
-        enable-AzPSSession: true
