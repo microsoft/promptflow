@@ -1,0 +1,50 @@
+promptflow.tools.azure_content_safety.AzureContentSafety.analyze_text:
+  class_name: AzureContentSafety
+  function: analyze_text
+  inputs:
+    connection:
+      type:
+      - AzureContentSafetyConnection
+    hate_category:
+      default: medium_sensitivity
+      enum:
+      - disable
+      - low_sensitivity
+      - medium_sensitivity
+      - high_sensitivity
+      type:
+      - string
+    self_harm_category:
+      default: medium_sensitivity
+      enum:
+      - disable
+      - low_sensitivity
+      - medium_sensitivity
+      - high_sensitivity
+      type:
+      - string
+    sexual_category:
+      default: medium_sensitivity
+      enum:
+      - disable
+      - low_sensitivity
+      - medium_sensitivity
+      - high_sensitivity
+      type:
+      - string
+    text:
+      type:
+      - string
+    violence_category:
+      default: medium_sensitivity
+      enum:
+      - disable
+      - low_sensitivity
+      - medium_sensitivity
+      - high_sensitivity
+      type:
+      - string
+  module: promptflow.tools.azure_content_safety
+  name: Content Safety (Text)
+  description: Use Azure Content Safety to detect harmful content.
+  type: python

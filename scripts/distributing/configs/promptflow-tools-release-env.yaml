@@ -1,0 +1,11 @@
+name: release-env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    - setuptools
+    - twine==4.0.0
+    - azure-storage-blob==12.16.0
