@@ -40,7 +40,7 @@ jobs:
         run: |
           pf connection list
       - name: Generate Configs
-        uses: template_generate_configs
+        uses: "./.github/actions/template_generate_configs"
         with:
           generateConnections: true
           generateEndpointConfig: false
