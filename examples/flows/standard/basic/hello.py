@@ -8,8 +8,10 @@ from promptflow import tool
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
 
+
 def to_bool(value) -> bool:
     return str(value).lower() == "true"
+
 
 @tool
 def my_python_tool(
@@ -31,18 +33,18 @@ def my_python_tool(
     user: str = "",
     **kwargs,
 ) -> str:
-    if not "AZURE_OPENAI_API_KEY" in os.environ:
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         load_dotenv()
-    
-    if not "AZURE_OPENAI_API_KEY" in os.environ:
+
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
         raise Exception("Please sepecify environment variables: AZURE_OPENAI_API_KEY")
 
     conn = dict(
-        api_key = os.environ["AZURE_OPENAI_API_KEY"],
-        api_base = os.environ["AZURE_OPENAI_API_BASE"],
-        api_type = os.environ.get("AZURE_OPENAI_API_TYPE", "azure"),
-        api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "2023-03-15-preview"),
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_base=os.environ["AZURE_OPENAI_API_BASE"],
+        api_type=os.environ.get("AZURE_OPENAI_API_TYPE", "azure"),
+        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-03-15-preview"),
     )
 
     # TODO: remove below type conversion after client can pass json rather than string.

@@ -43,7 +43,7 @@ pf flow test --flow .
 ```bash
 # create run using command line args
 pf run create --flow . --data ./data.jsonl --stream
-# create run using yaml flie
+# create run using yaml file
 pf run create --file run.yml --stream
 ```
 
@@ -63,7 +63,7 @@ create `evaluation` run:
 ```bash
 # create run using command line args
 pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "web_classification_variant_1_20230724_173442_973403" --stream
-# create run using yaml flie
+# create run using yaml file
 pf run create --file run_evaluation.yml --run "web_classification_variant_1_20230724_173442_973403" --stream
 ```
 
