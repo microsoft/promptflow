@@ -42,7 +42,8 @@ runs:
   - name: Generating connection config file
     # if: inputs.generateConnections == true
     run: |-
-      echo "Generating connection config file..." >> $GITHUB_OUTPUT
+      message = "Generating connection config file..."
+      echo "text=$message" >> $GITHUB_OUTPUT
       python ./scripts/generate_ai_connection_config.py \
           --bing-key ${{ inputs.bingApiKey }} \
           --aoai-key ${{ inputs.aoaiApiKey }} \
@@ -57,10 +58,12 @@ runs:
     run: |-
       if [ -f "${{ inputs.targetFolder }}/connections.json" ]
       then
-          echo "Config file generated." >> $GITHUB_OUTPUT
+          message = "Config file generated."
+          echo "text=$message" >> $GITHUB_OUTPUT
           exit 0
       else
-          echo "Failed to generate the connection file, please check your script and parameters." >> $GITHUB_OUTPUT
+          message = "Failed to generate the connection file, please check your script and parameters."
+          echo "text=$message" >> $GITHUB_OUTPUT
           exit 1
       fi
     shell: bash
