@@ -48,8 +48,8 @@ runs:
           --aoai-key ${{ inputs.aoaiApiKey }} \
           --aoai-endpoint ${{ inputs.aoaiApiEndpoint }} \
           --openai-key ${{ inputs.openaiApiKey }} \
-          --serpapi-key ${{ inputs.serpApiKey }} \
-          --content-safety-key ${{ inputs.contentSafetyApiKey }} \
+          --serpapi-key "${{ inputs.serpApiKey }}" \
+          --content-safety-key "${{ inputs.contentSafetyApiKey }}" \
           --folder-path ${{ inputs.targetFolder }}
     shell: bash
   - name: Test config file
