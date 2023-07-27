@@ -36,6 +36,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev-requirements.txt
-      - name: Test workbook
+      - name: Test connection
         run: |
           pf connection list
+      - name: Generate Configs
+        uses: template_generate_configs
+        with:
+          generateConnections: true
+          generateEndpointConfig: false
+          aoaiApiKey: ${{ secrets.AOAI_API_KEY }}
+          aoaiApiEndpoint: ${{ secrets.AOAI_API_ENDPOINT }}
+          bingApiKey: ${{ secrets.BING_API_KEY }}
+          openaiApiKey: ${{ secrets.OPENAI_API_KEY }}
+          serpApiKey: ""
+          contentSafetyApiKey: ""
+          targetFolder: ${{ github.workspace }}/scripts
+

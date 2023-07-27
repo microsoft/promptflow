@@ -1,0 +1,78 @@
+name: template_generate_configs
+inputs:
+  generateConnections:
+    required: false
+    default: true
+    type: boolean
+  generateEndpointConfig:
+    required: false
+    default: false
+    type: boolean
+  aoaiApiKey:
+    required: true
+    type: string
+  aoaiApiEndpoint:
+    required: true
+    type: string
+  bingApiKey:
+    required: true
+    type: string
+  openaiApiKey:
+    required: true
+    type: string
+  serpApiKey:
+    required: true
+    type: string
+  contentSafetyApiKey:
+    required: true
+    type: string
+  targetFolder:
+    required: true
+    default: "."
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Generate the connections config file
+    if: parameters['generateConnections'] == true
+    run: |-
+      set -e
+      exit_code=0
+      echo "Generating connection config file..."
+      python ./scripts/generate_connection_config.py \
+          --bing-key ${{ inputs.bingApiKey }} \
+          --aoai-key ${{ inputs.aoaiApiKey }} \
+          --aoai-endpoint ${{ inputs.aoaiApiEndpoint }} \
+          --openai-key ${{ inputs.openaiApiKey }} \
+          --serpapi-key ${{ inputs.serpApiKey }} \
+          --content-safety-key ${{ inputs.contentSafetyApiKey }} \
+          --folder-path ${{ inputs.targetFolder }}
+      if [ -f "${{ inputs.targetFolder }}/connections.json" ]
+      then
+          echo "Config file generated."
+          exit 0
+      else
+          echo "Failed to generate the connection file, please check your script and parameters."
+          exit 1
+      fi
+    shell: bash
+  - name: Generate the endpoint config file
+    if: parameters['generateEndpointConfig'] == true
+    run: |-
+      set -e
+      exit_code=0
+      echo "Generating endpoint config file..."
+      target_folder="${{ env.promptflowRepoLocation }}/src/promptflow-sdk"
+      python3 ./scripts/generate_endpoint_config.py \
+          --url $(ENDPOINT-URL) \
+          --key $(ENDPOINT-KEY) \
+          --folder-path ${{ inputs.targetFolder }}
+      if [ -f "${{ inputs.targetFolder }}/endpoint_config.json" ]
+      then
+          echo "Config file generated."
+          exit 0
+      else
+          echo "Failed to generate the endpoint file, please check your script and parameters."
+          exit 1
+      fi
+    shell: bash

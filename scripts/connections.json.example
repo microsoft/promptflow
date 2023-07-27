@@ -1,0 +1,52 @@
+{
+  "azure_open_ai_connection": {
+    "type": "AzureOpenAIConnection",
+    "value": {
+      "api_key": "<your-key>",
+      "api_base": "https://gpt-test-eus.openai.azure.com/",
+      "api_type": "azure",
+      "api_version": "2023-03-15-preview"
+    },
+    "module": "promptflow.connections"
+  },
+  "bing_connection": {
+    "type": "BingConnection",
+    "value": {
+      "api_key": "<your-key>"
+    },
+    "module": "promptflow.connections"
+  },
+  "azure_content_safety_connection": {
+    "type": "AzureContentSafetyConnection",
+    "value": {
+      "api_key": "<your-key>",
+      "endpoint": "https://content-safety-canary-test.cognitiveservices.azure.com",
+      "api_version": "2023-04-30-preview"
+    },
+    "module": "promptflow.connections"
+  },
+  "serp_connection": {
+    "type": "SerpConnection",
+    "value": {
+      "api_key": "<your-key>"
+    },
+    "module": "promptflow.connections"
+  },
+  "translate_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "api_key": "<your-key>",
+      "api_endpoint": "https://api.cognitive.microsofttranslator.com/",
+      "api_region": "global"
+    },
+    "module": "promptflow.connections"
+  },
+  "open_ai_connection": {
+    "type": "OpenAIConnection",
+    "value": {
+      "api_key": "<your-key>",
+      "organization": "<your-organization>"
+    },
+    "module": "promptflow.connections"
+  }
+}
