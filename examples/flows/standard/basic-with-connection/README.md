@@ -79,7 +79,7 @@ Run flow with newly created connection.
 pf run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream
 ```
 
-### Submit run to cloud with connection overwrite
+### Run in cloud with connection overwrite
 
 Ensure you have created `azure_open_ai_connection` connection in cloud. Reference [this notebook](../../../tutorials/get-started/quickstart-azure.ipynb) on how to create connections in cloud with UI.
 
@@ -90,5 +90,5 @@ Run flow with connection `azure_open_ai_connection`.
 az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
 az configure --defaults group="promptflow" workspace="promptflow-eastus"
 
-pfazure run create --flow . --data ./data.jsonl --connection llm.connection=azure_open_ai_connection --stream --runtime demo-mir
+pfazure run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream --runtime demo-mir
 ```
