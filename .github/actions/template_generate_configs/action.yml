@@ -34,7 +34,7 @@ runs:
   using: composite
   steps:
   - name: Generate the connections config file
-    if: parameters['generateConnections'] == true
+    if: inputs.generateConnections == true
     run: |-
       set -e
       exit_code=0
@@ -57,7 +57,7 @@ runs:
       fi
     shell: bash
   - name: Generate the endpoint config file
-    if: parameters['generateEndpointConfig'] == true
+    if: inputs.generateEndpointConfig == true
     run: |-
       set -e
       exit_code=0
