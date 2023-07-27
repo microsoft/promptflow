@@ -59,3 +59,22 @@ pf run show-details --name "basic_with_connection_default_20230724_160757_016682
 pf run visualize --name "basic_with_connection_default_20230724_160757_016682"
 ```
 
+### Run with connection overwrite
+
+Ensure you have created `azure_open_ai_connection` connection before.
+
+```bash
+pf connection show -n azure_open_ai_connection
+```
+
+Create connection if you haven't done that.
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+```
+
+Run flow with newly created connection.
+
+```bash
+pf run create --flow . --data ./data.jsonl --connection llm.connection=azure_open_ai_connection --stream
+``````
