@@ -29,7 +29,6 @@ if __name__ == "__main__":
     parser.add_argument("--content-safety-key", type=str, required=True, help="The api key of content safety")
     parser.add_argument("--folder-path", type=str, required=True, help="The folder to save the connection config file")
     parser.add_argument("--set-aoai", type=str, required=True, help="The folder to save the connection config file")
-    args = parser.parse_args()
 
     print(__file__)
 
