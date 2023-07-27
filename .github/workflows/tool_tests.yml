@@ -34,7 +34,7 @@ jobs:
         if: steps.check_changes.outputs.run_tests == 'true'
         run: |
           python -m pip install --upgrade pip
-          pip install promptflow-sdk[builtins] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+          pip install promptflow-sdk --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
           pip install pytest
           pip install pytest_mock
           pip install azure-identity

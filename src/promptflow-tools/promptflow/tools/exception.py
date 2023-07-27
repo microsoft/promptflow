@@ -63,7 +63,7 @@ class WrappedOpenAIError(UserErrorException):
 
         if self.additional_info:
             result["additionalInfo"] = [{"type": k, "info": v} for k, v in self.additional_info.items()]
-            
+
         if include_debug_info:
             result["debugInfo"] = self.debug_info
 
