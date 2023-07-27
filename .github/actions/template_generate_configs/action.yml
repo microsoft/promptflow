@@ -4,10 +4,10 @@ inputs:
     required: false
     default: true
     type: boolean
-  # generateEndpointConfig:
-  #   required: false
-  #   default: false
-  #   type: boolean
+  generateEndpointConfig:
+    required: false
+    default: false
+    type: boolean
   aoaiApiKey:
     required: true
     type: string
@@ -43,7 +43,7 @@ runs:
     # if: inputs.generateConnections == true
     run: |-
       echo "Generating connection config file..." >> $GITHUB_OUTPUT
-      python ./scripts/generate_connection_config.py \
+      python ./scripts/generate_ai_connection_config.py \
           --bing-key ${{ inputs.bingApiKey }} \
           --aoai-key ${{ inputs.aoaiApiKey }} \
           --aoai-endpoint ${{ inputs.aoaiApiEndpoint }} \
@@ -71,7 +71,7 @@ runs:
   #     exit_code=0
   #     echo "Generating endpoint config file..." >> $GITHUB_OUTPUT
   #     target_folder="${{ env.promptflowRepoLocation }}/src/promptflow-sdk"
-  #     python3 ./scripts/generate_endpoint_config.py \
+  #     python3 ./scripts/generate_ai_connection_config.py \
   #         --url $(ENDPOINT-URL) \
   #         --key $(ENDPOINT-KEY) \
   #         --folder-path ${{ inputs.targetFolder }}
