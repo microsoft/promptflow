@@ -76,7 +76,7 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 Run flow with newly created connection.
 
 ```bash
-pf run create --flow . --data ./data.jsonl --connection llm.connection=azure_open_ai_connection --stream
+pf run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream
 ```
 
 ### Submit run to cloud with connection overwrite
