@@ -4,10 +4,10 @@ inputs:
     required: false
     default: true
     type: boolean
-  generateEndpointConfig:
-    required: false
-    default: false
-    type: boolean
+  # generateEndpointConfig:
+  #   required: false
+  #   default: false
+  #   type: boolean
   aoaiApiKey:
     required: true
     type: string
@@ -34,13 +34,13 @@ runs:
   using: composite
   steps:
   - name: Set Immediate Stop
-    if: inputs.generateConnections == true
+    # if: inputs.generateConnections == true
     run: |-
       set -e
       exit_code=0
     shell: bash
   - name: Generating connection config file
-    if: inputs.generateConnections == true
+    # if: inputs.generateConnections == true
     run: |-
       echo "Generating connection config file..." >> $GITHUB_OUTPUT
       python ./scripts/generate_connection_config.py \
@@ -53,7 +53,7 @@ runs:
           --folder-path ${{ inputs.targetFolder }}
     shell: bash
   - name: Test config file
-    if: inputs.generateConnections == true
+    # if: inputs.generateConnections == true
     run: |-
       if [ -f "${{ inputs.targetFolder }}/connections.json" ]
       then
@@ -64,23 +64,23 @@ runs:
           exit 1
       fi
     shell: bash
-  - name: Generate the endpoint config file
-    if: inputs.generateEndpointConfig == true
-    run: |-
-      set -e
-      exit_code=0
-      echo "Generating endpoint config file..." >> $GITHUB_OUTPUT
-      target_folder="${{ env.promptflowRepoLocation }}/src/promptflow-sdk"
-      python3 ./scripts/generate_endpoint_config.py \
-          --url $(ENDPOINT-URL) \
-          --key $(ENDPOINT-KEY) \
-          --folder-path ${{ inputs.targetFolder }}
-      if [ -f "${{ inputs.targetFolder }}/endpoint_config.json" ]
-      then
-          echo "Config file generated." >> $GITHUB_OUTPUT
-          exit 0
-      else
-          echo "Failed to generate the endpoint file, please check your script and parameters." >> $GITHUB_OUTPUT
-          exit 1
-      fi
-    shell: bash
+  # - name: Generate the endpoint config file
+  #   if: inputs.generateEndpointConfig == true
+  #   run: |-
+  #     set -e
+  #     exit_code=0
+  #     echo "Generating endpoint config file..." >> $GITHUB_OUTPUT
+  #     target_folder="${{ env.promptflowRepoLocation }}/src/promptflow-sdk"
+  #     python3 ./scripts/generate_endpoint_config.py \
+  #         --url $(ENDPOINT-URL) \
+  #         --key $(ENDPOINT-KEY) \
+  #         --folder-path ${{ inputs.targetFolder }}
+  #     if [ -f "${{ inputs.targetFolder }}/endpoint_config.json" ]
+  #     then
+  #         echo "Config file generated." >> $GITHUB_OUTPUT
+  #         exit 0
+  #     else
+  #         echo "Failed to generate the endpoint file, please check your script and parameters." >> $GITHUB_OUTPUT
+  #         exit 1
+  #     fi
+  #   shell: bash
