@@ -7,8 +7,10 @@ from promptflow.connections import CustomConnection
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
 
+
 def to_bool(value) -> bool:
     return str(value).lower() == "true"
+
 
 @tool
 def my_python_tool(
@@ -31,7 +33,7 @@ def my_python_tool(
     connection: CustomConnection = None,
     **kwargs,
 ) -> str:
-    
+
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
 
@@ -55,7 +57,7 @@ def my_python_tool(
         logit_bias=logit_bias if logit_bias else {},
         user=user,
         request_timeout=30,
-        **dict(connection), # custom connection is dict like object contains the configs and secrets
+        **dict(connection),  # custom connection is dict like object contains the configs and secrets
     )
 
     # get first element because prompt is single.

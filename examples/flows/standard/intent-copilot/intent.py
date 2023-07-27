@@ -6,7 +6,7 @@ from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplat
 
 
 def extract_intent(customer_info: str, history: list, user_prompt_template: str):
-    if not "AZURE_OPENAI_API_KEY" in os.environ:
+    if "AZURE_OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         try:
             from dotenv import load_dotenv
@@ -57,8 +57,8 @@ if __name__ == "__main__":
     for item in data:
         reply = extract_intent(item["customer_info"], item["history"], user_prompt_template)
         print("=====================================")
-        #print("Customer info: ", item["customer_info"])
-        #print("+++++++++++++++++++++++++++++++++++++")
+        # print("Customer info: ", item["customer_info"])
+        # print("+++++++++++++++++++++++++++++++++++++")
         print("Chat history: ", item["history"])
         print("+++++++++++++++++++++++++++++++++++++")
         print(reply)

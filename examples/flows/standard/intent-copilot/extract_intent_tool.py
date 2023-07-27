@@ -11,7 +11,8 @@ def extract_intent_tool(
     customer_info,
     history,
     user_prompt_template,
-    connection: CustomConnection) -> str:
+    connection: CustomConnection
+) -> str:
 
     # set environment variables
     for key, value in connection.items():
