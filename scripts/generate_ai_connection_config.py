@@ -1,6 +1,8 @@
 import argparse
 import json
 from pathlib import Path
+import promptflow as pf
+from promptflow.entities import AzureOpenAIConnection
 
 CONNECTION_FILE_NAME = "connections.json"
 
@@ -26,6 +28,7 @@ if __name__ == "__main__":
     parser.add_argument("--serpapi-key", type=str, required=True, help="The api key of serpapi")
     parser.add_argument("--content-safety-key", type=str, required=True, help="The api key of content safety")
     parser.add_argument("--folder-path", type=str, required=True, help="The folder to save the connection config file")
+    parser.add_argument("--set-aoai", type=str, required=True, help="The folder to save the connection config file")
     args = parser.parse_args()
 
     print(__file__)
@@ -45,3 +48,14 @@ if __name__ == "__main__":
 
     with open(file_path, "w") as f:
         json.dump(template_dict, f)
+
+    # client can help manage your runs and connections.
+    client = pf.PFClient()
+    # Initialize an AzureOpenAIConnection object
+    connection = AzureOpenAIConnection(
+        name="azure_open_ai_connection", 
+        api_key=args.aoai_key,
+        api_base=args.aoai_endpoint,
+    )
+    # Create the connection, note that api_key will be scrubbed in the returned result
+    result = client.connections.create_or_update(connection)
