@@ -31,7 +31,7 @@ def aggregate(processed_results: List[str], variant_ids: List[str], line_numbers
     aggregated_results = {}
 
     # Log metric for each variant
-    # from promptflow improt log_metric
+    # from promptflow import log_metric
     # log_metric(key="<my-metric-name>", value=aggregated_results["<variant-id>"]["<my-metric-name>"],
     #            variant_id="<variant-id>")
 

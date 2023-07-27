@@ -59,3 +59,36 @@ pf run show-details --name "basic_with_connection_default_20230724_160757_016682
 pf run visualize --name "basic_with_connection_default_20230724_160757_016682"
 ```
 
+### Run with connection overwrite
+
+Ensure you have created `azure_open_ai_connection` connection before.
+
+```bash
+pf connection show -n azure_open_ai_connection
+```
+
+Create connection if you haven't done that.
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+```
+
+Run flow with newly created connection.
+
+```bash
+pf run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream
+```
+
+### Run in cloud with connection overwrite
+
+Ensure you have created `azure_open_ai_connection` connection in cloud. Reference [this notebook](../../../tutorials/get-started/quickstart-azure.ipynb) on how to create connections in cloud with UI.
+
+Run flow with connection `azure_open_ai_connection`.
+
+```bash
+# set default workspace
+az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
+az configure --defaults group="promptflow" workspace="promptflow-eastus"
+
+pfazure run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream --runtime demo-mir
+```
