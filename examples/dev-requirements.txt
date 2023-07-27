@@ -4,3 +4,5 @@
 ipython_genutils
 ipykernel==5.5.5
 papermill==2.3.3
+pyyaml
+keyring
