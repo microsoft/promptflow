@@ -1,0 +1,8 @@
+# required for notebook testing in workflow actions
+# pinned to avoid surprises
+#adding ipython_genutils to fix a weird papermill error
+ipython_genutils
+ipykernel
+papermill
+pyyaml
+keyrings.alt
