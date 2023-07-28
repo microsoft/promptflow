@@ -37,8 +37,7 @@ jobs:
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev-requirements.txt
       - name: Test connection
-        run: |
-          pf connection list
+        run: pf connection list
       - name: Generate Configs
         uses: "./.github/actions/template_generate_configs"
         with:
@@ -51,4 +50,5 @@ jobs:
           serpApiKey: ""
           contentSafetyApiKey: ""
           targetFolder: ${{ github.workspace }}/scripts
-
+      - name: Test Connection again
+        run: pf connection list
