@@ -58,11 +58,11 @@ jobs:
         working-directory: examples
       - name: Test Notebook
         run: |
-          papermill -k python quickstart.ipynb quickstart.output.ipynb
+          papermill -k python quickstart-azure.ipynb quickstart-azure.output.ipynb
         working-directory: examples/tutorials/get-started
       - name: upload notebook's working folder as an artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
-          name: quickstart
+          name: quickstart-azure
           path: examples/tutorials/get-started
