@@ -21,7 +21,23 @@ curl http://localhost:8080/score --data '{"text":"Hello world!"}' -X POST  -H "C
 
 ## Export a flow as docker format
 
-Doc to be added.
+Note that we must have all dependent connections created before exporting as docker:
+
+```bash
+pf connection create --file ../../flows/standard/basic-with-connection/custom.yml
+```
+
+The following CLI commands allows you export a flow as a sharable folder with a Dockerfile and its dependencies.
+
+```bash
+pf flow export --source ../../flows/standard/basic-with-connection --output <your-output-dir> --format docker
+```
+
+You'll be asked to input a secret encryption key when running this command, which needs to be provided when you run the built docker image.
+You can also provide the key via `--encryption-key` directly or passing it with a file via `--encryption-key-file`.
+
+More details about how to use the exported docker can be seen in `<your-output-dir>/README.md`. 
+Part of sample output are under [./linux](./linux/) so you can also check [this README](./linux/README.md) directly.
 
 ## Export a flow as portable package format
 
