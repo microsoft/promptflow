@@ -56,3 +56,13 @@ jobs:
         run: |
           papermill -k python configuration.ipynb -
         working-directory: examples
+      - name: Test Notebook
+        run: |
+          papermill -k python quickstart.ipynb quickstart.output.ipynb
+        working-directory: examples/tutorials/get-started
+      - name: upload notebook's working folder as an artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: quickstart
+          path: examples/tutorials/get-started
