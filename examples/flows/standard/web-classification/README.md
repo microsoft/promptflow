@@ -62,7 +62,7 @@ pf run show-details --name "web_classification_variant_1_20230724_173442_973403"
 create `evaluation` run:
 ```bash
 # create run using command line args
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "web_classification_variant_1_20230724_173442_973403" --stream
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run "web_classification_variant_1_20230724_173442_973403" --stream
 # create run using yaml file
 pf run create --file run_evaluation.yml --run "web_classification_variant_1_20230724_173442_973403" --stream
 ```
@@ -92,7 +92,7 @@ pfazure run show-details --name "web_classification_default_20230724_173705_4627
 pfazure run show-metrics --name "web_classification_default_20230724_173705_462735"
 
 # create evaluation run
-pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run "web_classification_default_20230724_173705_462735" --runtime demo-mir
+pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run "web_classification_default_20230724_173705_462735" --runtime demo-mir
 pfazure run create --file run_evaluation.yml --run "web_classification_default_20230724_173705_462735" --stream # serverless compute
 
 pfazure run stream --name "classification_accuracy_eval_default_20230724_173843_841080"

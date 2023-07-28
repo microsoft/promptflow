@@ -51,7 +51,7 @@ pf run show-details --name "intent_copilot_default_20230724_171809_745938" -r 3
 
 ```bash
 # create evaluation run
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping "groundtruth=${data.intent},prediction=${run.outputs.output}" --run "intent_copilot_default_20230724_171809_745938" 
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run "intent_copilot_default_20230724_171809_745938" 
 ```
 
 ```bash
