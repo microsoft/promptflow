@@ -1,6 +1,8 @@
 # Flow with additional_includes
 
-Sometimes some common files or folders on other top level folders. In this case, use additional includes to set the additional file or folders used by the flow. The file or folders in additional includes will be copied to the snapshot folder by the promptflow-sdk when operate this flow.
+User sometimes need to reference some common files or folders on other top level folders. In this case, use additional 
+includes to set the additional file or folders used by the flow. The file or folders in additional includes will be 
+copied to the snapshot folder by the promptflow-sdk when operate this flow.
 
 ## Tools used in this flow
 - LLM Tool
@@ -22,17 +24,23 @@ pip install -r requirements.txt
 
 ### 1. Add additional includes to flow
 
-You can add this field `additional_includes` into the `flow.dag.yaml`. The value of this field is a list of the relative file/folder path to the flow folder.
+You can add this field `additional_includes` into the [`flow.dag.yaml`](flow.dag.yaml). 
+The value of this field is a list of the relative file/folder path to the flow folder.
 
 ``` yaml
 additional_includes:
- - your/local/path1
- - your/local/path2
+- ../web-classification/classify_with_llm.jinja2
+- ../web-classification/convert_to_dict.py
+- ../web-classification/fetch_text_content_from_url.py
+- ../web-classification/prepare_examples.py
+- ../web-classification/summarize_text_content.jinja2
+- ../web-classification/summarize_text_content__variant_1.jinja2
 ```
 
-### 2. Operate the flow
+### 2. Test & run the flow with additional includes
 
-In this sample, this flow will references some files in [web-classification flow](../web-classification/README.md). You can execute this flow with additional_include locally or submit it to cloud.
+In this sample, this flow will references some files in the [web-classification](../web-classification/README.md) flow. 
+You can execute this flow with additional_include locally or submit it to cloud.
 
 
 #### Test flow with single line data
@@ -51,6 +59,7 @@ pf run create --flow . --data ./data.jsonl --stream
 # create run using yaml file
 pf run create --file run.yml --stream
 ```
+Note: the snapshot folder in run should contain the additional_includes file.
 
 #### Submit run to cloud
 
@@ -61,3 +70,5 @@ pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 pfazure run create --file run.yml --runtime demo-mir
 pfazure run create --file run.yml --stream # serverless compute
 ```
+
+Note: the snapshot folder in run should contain the additional_includes file. Click portal_url of the run to view the final snapshot.
