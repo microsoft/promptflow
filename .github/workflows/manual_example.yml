@@ -62,7 +62,7 @@ jobs:
         working-directory: examples/tutorials/get-started
       - name: upload notebook's working folder as an artifact
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: quickstart
           path: examples/tutorials/get-started
