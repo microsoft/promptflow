@@ -47,7 +47,7 @@ pf run create --flow . --data ./data.jsonl --stream
 - list and show run meta
 ```bash
 # list created run
-pf run list
+pf run list -r 3
 
 # show specific run detail
 pf run show --name "basic_with_connection_default_20230724_160757_016682"
