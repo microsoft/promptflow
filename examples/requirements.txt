@@ -4,7 +4,7 @@
 # not sure if we should include azure here
 promptflow[azure]==0.0.100887214
 # To be remove when promptflow fully ready
-promptflow-sdk[azure]==0.0.100885945
+promptflow-sdk[azure]==0.0.100889951
 prompt-flow-tools==0.0.6
 python-dotenv
 langchain
