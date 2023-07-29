@@ -2,7 +2,7 @@
 
 User sometimes need to reference some common files or folders on other top level folders. In this case, use additional 
 includes to set the additional file or folders used by the flow. The file or folders in additional includes will be 
-copied to the snapshot folder by the promptflow-sdk when operate this flow.
+copied to the snapshot folder by promptflow when operate this flow.
 
 ## Tools used in this flow
 - LLM Tool

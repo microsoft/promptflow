@@ -3,7 +3,7 @@ This example shows how to create a flow from existing langchain [code](./intent.
 
 ## Prerequisites
 
-install promptflow-sdk and other dependencies:
+install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```

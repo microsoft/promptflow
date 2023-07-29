@@ -8,7 +8,7 @@
 - Bootstrap your python env. 
   - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
   - install required packages in python environment : `pip install -r requirements.txt`
-    - show installed sdk: `pip show promptflow-sdk`
+    - show installed sdk: `pip show promptflow`
 
 
 ## Examples available
