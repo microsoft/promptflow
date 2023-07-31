@@ -1,6 +1,4 @@
-# This is a basic workflow that is for execute examples
-
-name: quickstart-azure workflow
+name: tutorials get-started qickstart-azure
 on:
   pull_request:
     branches: [ main,preview/code-first ]
@@ -15,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Generate config.json
         run: |
-          echo "{\"subscription_id\": \"96aede12-2f73-41cb-b983-6d11a904839b\",\"resource_group\": \"promptflow\",\"workspace_name\": \"promptflow-eastus\"}" > ${{ github.workspace }}/examples/config.json
+          echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Azure login
         uses: azure/login@v1
         with:
@@ -29,22 +27,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev-requirements.txt
-      - name: Test connection
-        run: pf connection list
-      - name: Generate Configs
-        uses: "./.github/actions/template_generate_configs"
-        with:
-          generateConnections: true
-          generateEndpointConfig: false
-          aoaiApiKey: ${{ secrets.AOAI_API_KEY }}
-          aoaiApiEndpoint: ${{ secrets.AOAI_API_ENDPOINT }}
-          bingApiKey: ${{ secrets.BING_API_KEY }}
-          openaiApiKey: ${{ secrets.OPENAI_API_KEY }}
-          serpApiKey: ""
-          contentSafetyApiKey: ""
-          targetFolder: ${{ github.workspace }}/scripts
-      - name: Test Connection again
-        run: pf connection list
+      - name: Create aoai connection
+        run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
       - name: Test Config Notebook
         run: |
           papermill -k python configuration.ipynb -
