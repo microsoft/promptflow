@@ -1,0 +1,43 @@
+name: tutorials get-started qickstart
+on:
+  pull_request:
+    branches: [ main,preview/code-first ]
+  workflow_dispatch:
+
+jobs:
+  quickstart:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Generate config.json
+        run: |
+          echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Set up Python 3.9 environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - name: Prepare requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ${{ github.workspace }}/examples/requirements.txt
+          pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
+      - name: Test connection
+        run: pf connection list
+      - name: Create aoai connection
+        run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
+      - name: Test Notebook
+        run: |
+          papermill -k python quickstart.ipynb quickstart.output.ipynb
+        working-directory: examples/tutorials/get-started
+      - name: upload notebook's working folder as an artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: quickstart
+          path: examples/tutorials/get-started

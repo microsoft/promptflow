@@ -1,0 +1,6 @@
+# required for notebook sample ci
+ipython_genutils
+ipykernel
+papermill
+pyyaml
+keyrings.alt
