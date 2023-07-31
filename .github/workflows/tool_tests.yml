@@ -1,4 +1,4 @@
-name: Tool E2E Test
+name: Tool Test
 on:
   # Triggers the workflow pull request events but only for the main branch
   pull_request:
