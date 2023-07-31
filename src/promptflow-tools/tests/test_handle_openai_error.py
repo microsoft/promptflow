@@ -249,7 +249,18 @@ class TestHandleOpenAIError:
         error_code = "UserError/OpenAIError/RateLimitError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="text-ada-001")
-        assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
+        assert to_openai_error_message(dummyEx) == exc_info.value.message
+        assert mock_method.call_count == 1
+        assert error_code == ErrorResponse.from_exception(
+            exc_info.value).error_code_hierarchy
+
+    def test_non_retriable_connection_error(self, azure_open_ai_connection, mocker: MockerFixture):
+        dummyEx = APIConnectionError("Something went wrong")
+        mock_method = mocker.patch("promptflow.tools.aoai.openai.Completion.create", side_effect=dummyEx)
+        error_code = "UserError/OpenAIError/APIConnectionError"
+        with pytest.raises(WrappedOpenAIError) as exc_info:
+            completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="text-ada-001")
+        assert to_openai_error_message(dummyEx) == exc_info.value.message
         assert mock_method.call_count == 1
         assert error_code == ErrorResponse.from_exception(
             exc_info.value).error_code_hierarchy
@@ -263,6 +274,8 @@ class TestHandleOpenAIError:
                     ServiceUnavailableError("Something went wrong"),
                     APIError("Something went wrong"),
                     Timeout("Something went wrong"),
+                    APIConnectionError("Error communicating with OpenAI: "
+                                       "('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))")
                 ]
             ),
         ],
@@ -282,7 +295,7 @@ class TestHandleOpenAIError:
                 decorated_test_method()
 
             assert patched_test_method.call_count == max_retry + 1
-            assert to_openai_error_message(dummyEx) == exc_info.value.message
+            assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
             assert "UserError/OpenAIError/" + type(dummyEx).__name__ == ErrorResponse.from_exception(
                 exc_info.value).error_code_hierarchy
             expected_calls = [
@@ -300,6 +313,9 @@ class TestHandleOpenAIError:
                     ServiceUnavailableError("Something went wrong", headers={"Retry-After": "0.3"}),
                     APIError("Something went wrong", headers={"Retry-After": "0.3"}),
                     Timeout("Something went wrong", headers={"Retry-After": "0.3"}),
+                    APIConnectionError("Error communicating with OpenAI: "
+                                       "('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))",
+                                       headers={"Retry-After": "0.3"})
                 ]
             ),
         ],
@@ -322,7 +338,7 @@ class TestHandleOpenAIError:
                 decorated_test_method()
 
             assert patched_test_method.call_count == max_retry + 1
-            assert to_openai_error_message(dummyEx) == exc_info.value.message
+            assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
             assert "UserError/OpenAIError/" + type(dummyEx).__name__ == ErrorResponse.from_exception(
                 exc_info.value).error_code_hierarchy
             expected_calls = [
