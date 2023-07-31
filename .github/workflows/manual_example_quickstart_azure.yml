@@ -26,7 +26,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
-          pip install -r ${{ github.workspace }}/examples/dev-requirements.txt
+          pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
       - name: Create aoai connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
       - name: Test Config Notebook
