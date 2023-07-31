@@ -39,7 +39,6 @@ jobs:
           pip install pytest_mock
           pip install azure-identity
           pip install azure-keyvault-secrets
-          pip install sqlalchemy
 
 
       - name: Generate configs
