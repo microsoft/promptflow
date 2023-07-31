@@ -35,11 +35,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install promptflow --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-          pip install pandas
           pip install pytest
           pip install pytest_mock
           pip install azure-identity
           pip install azure-keyvault-secrets
+          pip install sqlalchemy
 
 
       - name: Generate configs
