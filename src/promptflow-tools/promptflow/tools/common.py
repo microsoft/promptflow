@@ -167,9 +167,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
                         raise WrappedOpenAIError(e)
-                    if isinstance(e, APIConnectionError) and str(
-                            e) != "Error communicating with OpenAI: " \
-                                  "('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))":
+                    if isinstance(e, APIConnectionError) and "connection aborted" not in str(e).lower():
                         raise WrappedOpenAIError(e)
                     if i == tries:
                         # Exit retry if max retry reached
