@@ -6,8 +6,6 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture  # noqa: E402
 
-from promptflow._constants import PROMPTFLOW_CONNECTIONS
-
 PROMOTFLOW_ROOT = Path(__file__) / "../.."
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 root_str = str(PROMOTFLOW_ROOT.resolve().absolute())
@@ -20,7 +18,7 @@ PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
 
 @pytest.fixture
 def use_secrets_config_file(mocker: MockerFixture):
-    mocker.patch.dict(os.environ, {PROMPTFLOW_CONNECTIONS: CONNECTION_FILE})
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
 
 
 @pytest.fixture
