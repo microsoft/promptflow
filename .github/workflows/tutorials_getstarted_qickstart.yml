@@ -1,4 +1,4 @@
-name: tutorials get-started qickstart-azure
+name: tutorials get-started qickstart
 on:
   pull_request:
     branches: [ main,preview/code-first ]
