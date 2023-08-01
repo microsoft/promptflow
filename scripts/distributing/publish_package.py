@@ -43,8 +43,7 @@ def package_name_based_blob_prefix(package_name):
 
 
 def override_version_with_latest(distribution_name):
-    pattern = r"-\d+\.\d+\.\d+(\.\w+)?(\w+)?-"
-    return re.sub(pattern, "-latest-", distribution_name, count=1)
+    return re.sub("-([0-9.]*)-", "-latest-", distribution_name, count=1)
 
 
 def publish_package_internal(package_dir_path, storage_key, release_config):
