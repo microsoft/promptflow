@@ -43,7 +43,8 @@ def package_name_based_blob_prefix(package_name):
 
 
 def override_version_with_latest(distribution_name):
-    return re.sub("-([0-9.]*)-", "-latest-", distribution_name, count=1)
+    pattern = r"-\d+\.\d+\.\d+(\.\w+)?(\w+)?-"
+    return re.sub(pattern, "-latest-", distribution_name, count=1)
 
 
 def publish_package_internal(package_dir_path, storage_key, release_config):
@@ -88,7 +89,7 @@ def publish_package_internal(package_dir_path, storage_key, release_config):
         with open(file=upload_file_path, mode="rb") as package_file:
             print(
                 f"[Debug] Uploading {whl_distribution} as latest distribution to "
-                "container: {packages_container}, blob: {latest_package_blob}..."
+                f"container: {packages_container}, blob: {latest_package_blob}..."
             )
             latest_package_blob_client.upload_blob(package_file, overwrite=True)
 
