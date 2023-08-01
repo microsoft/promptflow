@@ -44,8 +44,8 @@ def serp_connection():
 
 
 @pytest.fixture(autouse=True)
-def skip_if_no_key(request):
-    os.environ["PROMPTFLOW_CONNECTIONS"] = CONNECTION_FILE
+def skip_if_no_key(request, mocker):
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
     if request.node.get_closest_marker('skip_if_no_key'):
         conn_name = request.node.get_closest_marker('skip_if_no_key').args[0]
         connection = request.getfixturevalue(conn_name)
