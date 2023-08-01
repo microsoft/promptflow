@@ -1,7 +1,7 @@
 ### Test your tool locally
 * Packages to install in order to run tool tests locally:
     ```cmd
-    pip install promptflow-sdk[builtins] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+    pip install promptflow --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
     ```
 * Generate connections config.
   
