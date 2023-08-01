@@ -4,3 +4,4 @@ ipykernel
 papermill
 pyyaml
 keyrings.alt
+black-nb
