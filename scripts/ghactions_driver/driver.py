@@ -1,5 +1,5 @@
 # Driver to create github workflows
-from typing import List
+from typing import List, Dict
 
 
 class Step:
@@ -37,9 +37,11 @@ class Job:
 
 
 class Jobs:
-    _jobs = {}
+
+    _jobs: Dict[str, Job]
 
     def add_job(self, job: Job) -> "Jobs":
+        self._jobs = {}
         self._jobs[job.name] = job
         return self
 

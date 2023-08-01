@@ -10,38 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  quickstart-azure:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Generate config.json
-        run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Setup Python 3.9 environment
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-      - name: Prepare requirements
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r ${{ github.workspace }}/examples/requirements.txt
-          pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
-      - name: Create Aoai Connection
-        run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
-      - name: Test Notebook
-        working-directory: examples/tutorials/get-started
-        run: |
-          papermill -k python quickstart-azure.ipynb quickstart-azure.output.ipynb
-      - name: Upload artifact
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifact
-          path: examples/tutorials/get-started  quickstart:
+  quickstart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
