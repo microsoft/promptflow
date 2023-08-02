@@ -18,7 +18,7 @@ NOTE: the status in below table is a fake one. WIP.
 **Tutorials** ([tutorials](tutorials))
 path|status|description
 -|-|-
-[quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![tutorials_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstart.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstart.yml)| Quick start tutorial for local promptflow setup
+[quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![tutorials_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstart.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstart.yml)| get started
 [deploy.md](tutorials/flow-deploy/deploy.md)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| deploy flow as endpoint
 [run.ipynb](tutorials/advanced-run-management/run.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| advanced flow run management
 [quickstart-azure.ipynb](tutorials/get-started/quickstart-azure.ipynb)|[![tutorials_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstartazure.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstartazure.yml)| Quick start tutorial from local promptflow deployment to Machine Learning Studio deployment
@@ -56,7 +56,7 @@ path|status|description
 **Connections** ([connections](connections))
 path|status|description
 -|-|-
-[connection.ipynb](connections/connection.ipynb)|[![connections_connection](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml)| promptflow-sdk connections management experiences
+[connection.ipynb](connections/connection.ipynb)|[![connections_connection](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml)| promptflow connections management experiences
 
 ## Reference
 
