@@ -19,10 +19,10 @@ In this flow, you will learn
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs line_number=<value> variant_id=<value>
+pf flow test --flow . --inputs line_number=0 variant_id=variant_0
 
 # test node with inputs
-pf flow test --flow . --node grade --inputs groundtruth=<value> prediction=<value>
+pf flow test --flow . --node grade --inputs groundtruth=groundtruth prediction=prediction
 ```
 
 ### 2. create flow run with multi line data

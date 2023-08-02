@@ -36,7 +36,7 @@ pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<
 pf flow test --flow .
 
 # test with inputs
-pf flow test --flow . --inputs text=<value>
+pf flow test --flow . --inputs text="Hello World!"
 ```
 
 ### run with multiple lines data
