@@ -21,9 +21,9 @@ path|status|description
 [quickstart.ipynb](tutorials/get-started/quickstart.ipynb)|[![tutorials_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstart.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstart.yml)| get started
 [deploy.md](tutorials/flow-deploy/deploy.md)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| deploy flow as endpoint
 [run.ipynb](tutorials/advanced-run-management/run.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| advanced flow run management
-[quickstart-azure.ipynb](tutorials/get-started/quickstart-azure.ipynb)|[![tutorials_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstartazure.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstartazure.yml)| Quick start tutorial from local promptflow deployment to Machine Learning Studio deployment
-[pipeline.ipynb](tutorials/flow-in-pipeline/pipeline.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| SDK demo for "flow as component" functionality in Machine Learning Studio
-[cloud-run-management.ipynb](tutorials/run-management/cloud-run-management.ipynb)|[![tutorials_runmanagement_cloudrunmanagement](https://github.com/microsoft/promptflow/actions/workflows/tutorials_runmanagement_cloudrunmanagement.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_runmanagement_cloudrunmanagement.yml)| SDK demo for run management in Machine Learning Studio
+[quickstart-azure.ipynb](tutorials/get-started/quickstart-azure.ipynb)|[![tutorials_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstartazure.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_getstarted_quickstartazure.yml)| get started - local to cloud
+[pipeline.ipynb](tutorials/flow-in-pipeline/pipeline.ipynb)|[![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml)| flow as component in pipeline
+[cloud-run-management.ipynb](tutorials/run-management/cloud-run-management.ipynb)|[![tutorials_runmanagement_cloudrunmanagement](https://github.com/microsoft/promptflow/actions/workflows/tutorials_runmanagement_cloudrunmanagement.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/tutorials_runmanagement_cloudrunmanagement.yml)| cloud run management
 
 
 **Flows** ([flows](flows))
@@ -56,7 +56,7 @@ path|status|description
 **Connections** ([connections](connections))
 path|status|description
 -|-|-
-[connection.ipynb](connections/connection.ipynb)|[![connections_connection](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml)| promptflow connections management experiences
+[connection.ipynb](connections/connection.ipynb)|[![connections_connection](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml/badge.svg)](https://github.com/microsoft/promptflow/actions/workflows/connections_connection.yml)| connections sdk experience
 
 ## Reference
 
