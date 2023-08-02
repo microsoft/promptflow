@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 saved_path = os.getcwd()
-os.chdir("./")
+os.chdir(Path(__file__).parent)
 
 source_folder = Path("../web-classification")
 for file_name in os.listdir(source_folder):
