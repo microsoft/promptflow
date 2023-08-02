@@ -1,0 +1,12 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: autogpt_example_summarizing_film
+display_name: AutoGPT Example Summarizing Film
+type: standard
+path: ./flow.dag.yaml
+description: An AI specialist that using autogpt to autonomously figures out how to apply the given 
+  functions to solve the goal.
+properties:
+  promptflow.stage: test
+  promptflow.details.type: markdown
+  promptflow.details.source: README.md
+  promptflow.batch_inputs: samples.json
