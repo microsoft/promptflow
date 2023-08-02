@@ -1,0 +1,34 @@
+promptflow.tools.embedding.embedding:
+  name: Embedding
+  description: Use Open AI's embedding model to create an embedding vector representing the input text.
+  type: python
+  module: promptflow.tools.embedding
+  function: embedding
+  inputs:
+    connection:
+      type: [AzureOpenAIConnection, OpenAIConnection]
+    deployment_name:
+      type:
+      - string
+      enabled_by: connection
+      enabled_by_type: [AzureOpenAIConnection]
+      capabilities:
+        completion: false
+        chat_completion: false
+        embeddings: true
+      model_list:
+      - text-embedding-ada-002
+      - text-search-ada-doc-001
+      - text-search-ada-query-001
+    model:
+      type:
+      - string
+      enabled_by: connection
+      enabled_by_type: [OpenAIConnection]
+      enum:
+      - text-embedding-ada-002
+      - text-search-ada-doc-001
+      - text-search-ada-query-001
+    input:
+      type:
+      - string

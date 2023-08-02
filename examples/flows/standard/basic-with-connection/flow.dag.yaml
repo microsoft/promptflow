@@ -7,21 +7,20 @@ outputs:
     type: string
     reference: ${llm.output}
 nodes:
-- inputs:
-    text: ${inputs.text}
-  name: hello_prompt
+- name: hello_prompt
   type: prompt
   source:
     type: code
     path: hello.jinja2
-- inputs:
-    prompt: ${hello_prompt.output}
-    deployment_name: text-davinci-003
-    max_tokens: "120"
-    connection: basic_custom_connection
-  name: llm
+  inputs:
+    text: ${inputs.text}
+- name: llm
   type: python
   source:
     type: code
     path: hello.py
-node_variants: {}
+  inputs:
+    connection: basic_custom_connection
+    deployment_name: text-davinci-003
+    max_tokens: "120"
+    prompt: ${hello_prompt.output}

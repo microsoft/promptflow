@@ -11,6 +11,7 @@ def transfer(input_path, output_path):
                 json.dump(row_dict, output_f)
                 output_f.write("\n")
 
+
 if __name__ == "__main__":
     _, _input, _output = sys.argv
     transfer(_input, _output)

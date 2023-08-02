@@ -18,9 +18,9 @@ In this flow, you will learn
 pf flow test --flow .
 ```
 
-### 2. create flow run with batch data
+### 2. create flow run with multi line data
 There are two ways to evaluate an classification flow.
 
 ```bash
-pf run create --flow . --type batch --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --stream
 ```

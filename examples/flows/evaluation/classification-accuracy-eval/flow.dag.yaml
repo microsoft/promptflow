@@ -37,5 +37,3 @@ nodes:
     grades: ${grade.output}
     variant_ids: ${inputs.variant_id}
   aggregation: true
-id: classification_accuracy_eval
-name: Classification Accuracy Evaluation
