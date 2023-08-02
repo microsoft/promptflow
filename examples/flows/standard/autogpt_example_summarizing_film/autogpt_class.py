@@ -1,5 +1,3 @@
-import time
-from openai.error import RateLimitError
 from promptflow.tools.aoai import chat as aoai_chat
 from promptflow.tools.openai import chat as openai_chat
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
@@ -92,7 +90,6 @@ class AutoGPT:
             return response
         else:
             raise ValueError("Connection must be an instance of AzureOpenAIConnection or OpenAIConnection")
-
 
     def run(self):
         tools = {t.__name__: t for t in self.tools}
