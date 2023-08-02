@@ -1,6 +1,5 @@
 import json
 import unittest
-from pathlib import Path
 
 import pytest
 
@@ -9,8 +8,6 @@ from promptflow.core.connection_manager import ConnectionManager
 from promptflow.tools import AzureFormRecognizer
 
 import tests.utils as utils
-
-PROMOTFLOW_ROOT = Path(__file__) / "../../../../"
 
 
 @pytest.fixture

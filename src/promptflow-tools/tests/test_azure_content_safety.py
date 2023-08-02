@@ -1,6 +1,5 @@
 import json
 import unittest
-from pathlib import Path
 
 import pytest
 
@@ -9,8 +8,6 @@ from promptflow.tools.azure_content_safety import AzureContentSafety, TextCatego
 from promptflow.connections import AzureContentSafetyConnection
 
 import tests.utils as utils
-
-PROMOTFLOW_ROOT = Path(__file__) / "../../../../"
 
 
 @pytest.fixture
