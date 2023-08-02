@@ -23,10 +23,16 @@ Ensure you have put your azure open ai endpoint key in [.env](.env) file. You ca
 cat .env
 ```
 
-- Test with single line data
+- Test flow/node
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
+
+# test with flow inputs
+pf flow test --flow . --inputs text=<value>
+
+# test node with inputs
+pf flow test --flow . --node llm --inputs prompt=<value>
 ```
 
 - Create run with multiple lines data
