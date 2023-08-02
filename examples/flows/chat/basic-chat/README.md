@@ -51,6 +51,9 @@ pf connection show --name azure_open_ai_connection
 # run chat flow with default question in flow.dag.yaml
 pf flow test --flow . 
 
+# run chat flow with new question
+pf flow test --flow . --inputs question="What's Azure Machine Learning?"
+
 # start a interactive chat session in CLI
 pf flow test --flow . --interactive
 

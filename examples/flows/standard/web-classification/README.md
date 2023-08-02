@@ -36,6 +36,8 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
+# test with user specified inputs
+pf flow test --flow . --inputs url='https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h'
 ```
 
 ### 4. Run with multi-line data
