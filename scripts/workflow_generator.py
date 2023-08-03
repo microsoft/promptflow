@@ -1,7 +1,16 @@
 import os
 import glob
 from ghactions_driver.driver import Workflow, Jobs, Job
-from ghactions_driver.steps import *
+from ghactions_driver.steps import (
+    CheckoutStep,
+    GenerateConfigStep,
+    AzureLoginStep,
+    SetupPythonStep,
+    InstallDependenciesStep,
+    CreateAoaiConnectionStep,
+    RunTestStep,
+    UploadArtifactStep,
+)
 import argparse
 from pathlib import Path
 import ntpath
@@ -27,7 +36,7 @@ def _get_paths(paths_list):
 
 
 def write_notebook_workflow(notebook, name):
-    temp_name_list = re.split("/|\.", notebook)
+    temp_name_list = re.split(r"/|\.", notebook)
     temp_name_list.remove("examples")
     temp_name_list.remove("ipynb")
     temp_name_list = [x.replace("-", "") for x in temp_name_list]
