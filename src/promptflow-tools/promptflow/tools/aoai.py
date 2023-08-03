@@ -10,7 +10,6 @@ from promptflow.core.tool import ToolProvider, tool
 from promptflow.core.tools_manager import register_api_method, register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
     validate_functions, process_function_call, post_process_chat_api_response
-from promptflow.utils.utils import deprecated
 
 
 class AzureOpenAI(ToolProvider):
@@ -18,11 +17,6 @@ class AzureOpenAI(ToolProvider):
         super().__init__()
         self.connection = connection
         self._connection_dict = asdict(self.connection)
-
-    @staticmethod
-    @deprecated(replace="AzureOpenAI()")
-    def from_config(config: AzureOpenAIConnection):
-        return AzureOpenAI(config)
 
     def calculate_cache_string_for_completion(
         self,
@@ -62,7 +56,6 @@ class AzureOpenAI(ToolProvider):
         # TODO: remove below type conversion after client can pass json rather than string.
         echo = to_bool(echo)
         stream = to_bool(stream)
-
         response = openai.Completion.create(
             prompt=prompt,
             engine=deployment_name,
@@ -89,7 +82,6 @@ class AzureOpenAI(ToolProvider):
             headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"},
             **self._connection_dict,
         )
-
         if stream:
             def generator():
                 for chunk in response:
@@ -123,7 +115,7 @@ class AzureOpenAI(ToolProvider):
         function_call: str = None,
         functions: list = None,
         **kwargs,
-    ) -> str:
+    ) -> [str, dict]:
         # keep_trailing_newline=True is to keep the last \n in the prompt to avoid converting "user:\t\n" to "user:".
         chat_str = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
         messages = parse_chat(chat_str)
@@ -152,6 +144,7 @@ class AzureOpenAI(ToolProvider):
         completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
         return post_process_chat_api_response(completion, stream, functions)
 
+    # TODO: embedding is a separate builtin tool, will remove it from llm.
     @tool
     @handle_openai_error()
     def embedding(self, input, deployment_name: str, user: str = ""):
@@ -249,11 +242,5 @@ def chat(
     )
 
 
-@tool
-def embedding(connection: AzureOpenAIConnection, input, deployment_name: str, user: str = ""):
-    return AzureOpenAI(connection).embedding(input=input, deployment_name=deployment_name, user=user)
-
-
 register_api_method(completion)
 register_api_method(chat)
-register_api_method(embedding)

@@ -12,7 +12,8 @@ from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 from promptflow.core.tool import ToolProvider
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
-from promptflow.utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
+
+from utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
 
 
 def asdict_without_none(obj):

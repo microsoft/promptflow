@@ -88,7 +88,7 @@ def publish_package_internal(package_dir_path, storage_key, release_config):
         with open(file=upload_file_path, mode="rb") as package_file:
             print(
                 f"[Debug] Uploading {whl_distribution} as latest distribution to "
-                "container: {packages_container}, blob: {latest_package_blob}..."
+                f"container: {packages_container}, blob: {latest_package_blob}..."
             )
             latest_package_blob_client.upload_blob(package_file, overwrite=True)
 

@@ -9,8 +9,7 @@ import time
 import requests
 import urllib3
 from jinja2 import Template
-from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout
-
+from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
@@ -158,20 +157,22 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                 except (SystemErrorException, UserErrorException) as e:
                     # Throw inner wrapped exception directly
                     raise e
-                except (RateLimitError, ServiceUnavailableError, APIError, Timeout) as e:
+                except (RateLimitError, ServiceUnavailableError, APIError, Timeout, APIConnectionError) as e:
                     #  Handle retriable exception, please refer to
                     #  https://platform.openai.com/docs/guides/error-codes/api-errors
                     #  Use default Timeout 600s, refer to
                     #  https://github.com/openai/openai-python/blob/d1c36582e82cfa97568d7e9184454ee3b77975fc/openai/api_requestor.py#L37  # noqa
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
-                    if type(e) == RateLimitError and getattr(e.error, "type", None) == "insufficient_quota":
+                    if isinstance(e, RateLimitError) and getattr(e.error, "type", None) == "insufficient_quota":
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
-                        raise ExceedMaxRetryTimes(e)
+                        raise WrappedOpenAIError(e)
+                    if isinstance(e, APIConnectionError) and "connection aborted" not in str(e).lower():
+                        raise WrappedOpenAIError(e)
                     if i == tries:
                         # Exit retry if max retry reached
                         print(f"{type(e).__name__} reached max retry. Exit retry with user error.", file=sys.stderr)
-                        raise WrappedOpenAIError(e)
+                        raise ExceedMaxRetryTimes(e)
                     retry_after_in_header = e.headers.get("Retry-After", None)
                     if not retry_after_in_header:
                         retry_after_seconds = delay * (2 ** i)
