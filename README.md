@@ -6,6 +6,7 @@
 > ℹ️ **NOTE**: This project is just like AI and will evolve quickly.
 > We invite you to join us in developing the Prompt Flow together!
 > Please contribute by
+> using GitHub [Discussions](https://github.com/microsoft/promptflow/discussions),
 > opening GitHub [Issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > sending us [PRs](https://github.com/microsoft/promptflow/pulls).
 
