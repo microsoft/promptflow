@@ -13,9 +13,16 @@ In this flow, you will learn
 
 ### 1. Test flow with single line data
 
+Testing flow/node:
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
+
+# test with flow inputs
+pf flow test --flow . --inputs groundtruth=groundtruth prediction=prediction
+
+# test node with inputs
+pf flow test --flow . --node line_process --inputs groundtruth=groundtruth prediction=prediction
 ```
 
 ### 2. create flow run with multi line data

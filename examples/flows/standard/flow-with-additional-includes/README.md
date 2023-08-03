@@ -48,6 +48,8 @@ You can execute this flow with additional_include locally or submit it to cloud.
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
+# test with user specified inputs
+pf flow test --flow . --inputs url='https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h'
 ```
 
 
