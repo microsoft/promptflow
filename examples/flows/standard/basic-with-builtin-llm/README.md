@@ -10,7 +10,7 @@ Connections used in this flow:
 
 ## Prerequisites
 
-Install prompt-flow sdk and other dependencies:
+Install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
