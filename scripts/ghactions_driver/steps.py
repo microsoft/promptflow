@@ -84,7 +84,8 @@ class CreateAoaiConnectionStep(Step):
             Step.get_step(self)
             + "\n"
             + " " * 8
-            + 'run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"'
+            + 'run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml'
+            + '--set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"'
         )
 
 
