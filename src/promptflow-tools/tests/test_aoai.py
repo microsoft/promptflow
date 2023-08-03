@@ -4,7 +4,7 @@ import pytest
 
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.tools.aoai import chat, completion
-from promptflow.utils.utils import AttrDict
+from tests.utils import AttrDict
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
