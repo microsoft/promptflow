@@ -15,8 +15,8 @@ Install promptflow sdk and other dependencies:
 pip install -r requirements.txt
 ```
 
-## Setup environment variables
-
+## Setup connection
+Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 Ensure you have created `basic_custom_connection` connection before.
 ```bash
 pf connection show -n basic_custom_connection
