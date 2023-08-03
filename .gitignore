@@ -82,6 +82,8 @@ target/
 profile_default/
 ipython_config.py
 
+# Vscode
+.vscode/
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
 #   intended to run in multiple environments; otherwise, check them in:
@@ -159,5 +161,12 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# ignore 
+# TODO: ignore when PFS supports submit without tools.json
+.promptflow
+.runs
+connection.json
+.env
+.azureml
 # secrets
 **/connections.json

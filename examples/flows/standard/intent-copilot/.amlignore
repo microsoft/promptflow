@@ -1,0 +1,7 @@
+*.ipynb
+.venv/
+.data/
+.env
+.vscode/
+outputs/
+connection.json
