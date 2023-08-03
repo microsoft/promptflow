@@ -15,7 +15,7 @@ In this flow, you will learn
 
 ## Prerequisites
 
-Install prompt-flow sdk and other dependencies:
+Install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
