@@ -33,8 +33,8 @@ The following CLI commands allows you export a flow as a sharable folder with a 
 pf flow export --source ../../flows/standard/basic-with-connection --output <your-output-dir> --format docker
 ```
 
-You'll be asked to input a secret encryption key when running this command, which needs to be provided when you run the built docker image.
-You can also provide the key via `--encryption-key` directly or passing it with a file via `--encryption-key-file`.
+You'll be asked to input a migration secret when running this command, which needs to be provided when you run the built docker image.
+You can also provide the key via `--migration-secret` directly or passing it with a file via `--migration-secret-file`.
 
 More details about how to use the exported docker can be seen in `<your-output-dir>/README.md`. 
 Part of sample output are under [./linux](./linux/) so you can also check [this README](./linux/README.md) directly.
