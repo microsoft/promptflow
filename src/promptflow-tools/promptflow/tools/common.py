@@ -164,7 +164,7 @@ def handle_openai_error(tries: int = 10, delay: float = 8.0):
                     #  Use default Timeout 600s, refer to
                     #  https://github.com/openai/openai-python/blob/d1c36582e82cfa97568d7e9184454ee3b77975fc/openai/api_requestor.py#L37  # noqa
                     print(f"Exception occurs: {type(e).__name__}: {str(e)}", file=sys.stderr)
-                    if e is RateLimitError and getattr(e.error, "type", None) == "insufficient_quota":
+                    if type(e) == RateLimitError and getattr(e.error, "type", None) == "insufficient_quota":
                         # Exit retry if this is quota insufficient error
                         print(f"{type(e).__name__} with insufficient quota. Throw user error.", file=sys.stderr)
                         raise ExceedMaxRetryTimes(e)
