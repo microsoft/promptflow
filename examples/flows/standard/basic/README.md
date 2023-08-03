@@ -10,7 +10,7 @@ Connections used in this flow:
 
 ## Prerequisites
 
-Install prompt-flow sdk and other dependencies:
+Install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
@@ -23,10 +23,16 @@ Ensure you have put your azure open ai endpoint key in [.env](.env) file. You ca
 cat .env
 ```
 
-- Test with single line data
+- Test flow/node
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
+
+# test with flow inputs
+pf flow test --flow . --inputs text="Hello World!"
+
+# test node with inputs
+pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
 ```
 
 - Create run with multiple lines data
@@ -74,7 +80,7 @@ pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open
 # create run
 pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
 # create run using yaml file
-pfazure run create --file run.yml --stream
+pf run create --file run.yml --stream
 
 # show outputs
 pf run show-details --name "basic_default_20230724_160138_517171"

@@ -10,7 +10,7 @@ Connections used in this flow:
 
 ## Prerequisites
 
-Install prompt-flow sdk and other dependencies:
+Install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
@@ -34,6 +34,9 @@ pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
+
+# test with inputs
+pf flow test --flow . --inputs text="Hello World!"
 ```
 
 ### run with multiple lines data
