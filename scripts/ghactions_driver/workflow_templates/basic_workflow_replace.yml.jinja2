@@ -1,0 +1,8 @@
+{% extends "workflow_skeleton.yml.jinja2" %}
+{% block steps %}
+runs-on: ubuntu-latest
+steps:
+{% for step in steps %}
+  {{ step.get_workflow_step() }}
+{% endfor %}
+{% endblock steps %}

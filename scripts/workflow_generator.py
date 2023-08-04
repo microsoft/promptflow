@@ -1,20 +1,10 @@
 import os
 import glob
-from ghactions_driver.driver import Workflow, Jobs, Job
-from ghactions_driver.steps import (
-    CheckoutStep,
-    GenerateConfigStep,
-    AzureLoginStep,
-    SetupPythonStep,
-    InstallDependenciesStep,
-    CreateAoaiConnectionStep,
-    RunTestStep,
-    UploadArtifactStep,
-)
 import argparse
 from pathlib import Path
 import ntpath
 import re
+from jinja2 import Environment, FileSystemLoader
 
 
 def format_ipynb(notebooks):
@@ -48,28 +38,17 @@ def write_notebook_workflow(notebook, name):
 
     gh_working_dir = "/".join(notebook.split("/")[:-1])
 
+    template = Environment(loader=FileSystemLoader("./scripts/ghactions_driver/workflow_templates")).get_template('basic_workflow.yml.jinja2')
+    content = template.render({
+        "workflow_name": workflow_name,
+        "name": name,
+        "gh_working_dir": gh_working_dir
+    })
+
     # To customize workflow, add new steps in steps.py
     # make another function for special cases.
-    workflow = Workflow(
-        workflow_name,
-        Jobs().add_job(
-            Job(
-                name,
-                [
-                    CheckoutStep(),
-                    GenerateConfigStep(),
-                    AzureLoginStep(),
-                    SetupPythonStep(),
-                    InstallDependenciesStep(),
-                    CreateAoaiConnectionStep(),
-                    RunTestStep(name, gh_working_dir),
-                    UploadArtifactStep(gh_working_dir),
-                ],
-            )
-        ),
-    )
     with open(place_to_write.resolve(), "w") as f:
-        f.write(workflow.get_workflow())
+        f.write(content)
     print(f"Write workflow: {place_to_write.resolve()}")
 
 
