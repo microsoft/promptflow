@@ -1,8 +1,8 @@
-{{ Steps.setup_target("Readme.md", "basic_workflow_replace.yml.jinja2", "workflow.yml") }}
+{{- Steps.setup_target("examples/flows/standard/basic", "Readme.md", "basic_workflow_replace.yml.jinja2", "workflow.yml") -}}
 # Basic
 A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
 
-Tools used in this flow:
+Tools used in this flow：
 - `prompt` tool
 - custom `python` Tool
 
@@ -13,14 +13,18 @@ Connections used in this flow:
 
 Install promptflow sdk and other dependencies:
 ```bash
-{{ Steps.checkout_step().get_readme_step() }}
-```bash
+{{ Steps.install_dependencies().get_readme_step() }}
+```
 
 ## Run flow in local
 
+- Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+
 - Setup environment variables
+
 Ensure you have put your azure open ai endpoint key in [.env](.env) file. You can create one refer to this [example file](.env.example).
-```bash
+
+```bash{{ Steps.create_env().get_readme_step() }}
 cat .env
 ```
 
@@ -28,16 +32,17 @@ cat .env
 ```bash
 {{ Steps.bash(command="pf flow test --flow .", comment="test with default input value in flow.dag.yaml").get_readme_step() }}
 
-{{ Steps.bash(command="pf flow test --flow . --inputs text=\"Hello World!\"", comment="test node with default input value in node.dag.yaml").get_readme_step() }}
+# test with flow inputs
+{{ Steps.bash(command="pf flow test --flow . --inputs text=\"Hello World!\"").get_readme_step() }}
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
+{{ Steps.bash(command="pf flow test --flow . --node llm --inputs prompt=\"Write a simple Hello World program that displays the greeting message when executed.\"").get_readme_step() }}
 ```
 
 - Create run with multiple lines data
 ```bash
 # using environment from .env file (loaded in user code: hello.py)
-pf run create --flow . --data ./data.jsonl --stream
+{{ Steps.bash(command="pf run create --flow . --data ./data.jsonl --stream").get_readme_step() }}
 ```
 
 - List and show run meta
@@ -54,7 +59,7 @@ pf run show-details --name "basic_default_20230724_155834_331725"
 # visualize run in browser
 pf run visualize --name "basic_default_20230724_155834_331725"
 ```
-
+{{ Steps.bash(command="name=\$(pf run list | jq '.[:1] | .[] | .name' | tr -d '\"') && pf run show --name $name && pf run show-details --name $name && pf run visualize --name $name", no_output=True).get_readme_step() }}
 ## Run flow locally with connection
 Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
 
@@ -71,15 +76,15 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 - Test using connection secret specified in environment variables
 ```bash
 # test with default input value in flow.dag.yaml 
-pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
+{{ Steps.bash(command="pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}", demo_command="pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'").get_readme_step() }}
 ```
 
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
-# create run using yaml file
-pf run create --file run.yml --stream
+{{ Steps.bash(command="pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}", demo_command="pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'").get_readme_step() }}
+# create run using yaml file{{ Steps.create_run_yaml().get_readme_step() }}
+{{ Steps.bash(command="pf run create --file run.yml --stream").get_readme_step() }}
 
 # show outputs
 pf run show-details --name "basic_default_20230724_160138_517171"
@@ -89,16 +94,16 @@ pf run show-details --name "basic_default_20230724_160138_517171"
 - Assume we already have a connection named `azure_open_ai_connection` in workspace.
 ```bash
 # set default workspace
-az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
-az configure --defaults group="promptflow" workspace="promptflow-eastus"
+{{ Steps.bash("az account set -s 96aede12-2f73-41cb-b983-6d11a904839b").get_readme_step() }}
+{{ Steps.bash("az configure --defaults group=\"promptflow\" workspace=\"promptflow-eastus\"").get_readme_step() }}
 ```
 
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace 
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}' --stream --runtime demo-mir
+{{ Steps.bash(command="pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }} --stream --runtime demo-mir",demo_command="pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}' --stream --runtime demo-mir").get_readme_step() }}
 # run using yaml file
-pfazure run create --file run.yml --stream --runtime demo-mir
+{{ Steps.bash(command="pfazure run create --file run.yml --stream --runtime demo-mir").get_readme_step() }}
 ```
 
 - List and show run meta
@@ -114,4 +119,4 @@ pfazure run show-details --name "basic_default_20230724_160252_071554"
 
 # visualize run in browser
 pfazure run visualize --name "basic_default_20230724_160252_071554"
-```
+```{{ Steps.bash(command="name=\$(pf run list -r 3 | jq '.[:1] | .[] | .name' | tr -d '\"') && pfazure run show --name $name && pfazure run show-details --name $name && pfazure run visualize --name $name", no_output=True).get_readme_step() }}

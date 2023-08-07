@@ -1,6 +1,5 @@
 from jinja2 import Environment, FileSystemLoader
 from readme_step import ReadmeSteps, ReadmeStepsManage
-import yaml
 
 
 if __name__ == "__main__":

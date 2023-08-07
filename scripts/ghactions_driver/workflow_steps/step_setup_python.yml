@@ -1,4 +1,0 @@
-- name: Setup Python 3.9 environment
-  uses: actions/setup-python@v4
-  with:
-    python-version: "3.9"
