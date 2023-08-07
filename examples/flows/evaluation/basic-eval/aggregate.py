@@ -4,14 +4,11 @@ from promptflow import tool
 
 
 @tool
-def aggregate(processed_results: List[str], variant_ids: List[str], line_numbers: List[int]):
+def aggregate(processed_results: List[str]):
     """
     This tool aggregates the processed result of all lines to the variant level and log metric for each variant.
 
     :param processed_results: List of the output of line_process node.
-    :param variant_ids: List of variant ids that can be used to group the results by variant.
-    :param line_numbers: List of line numbers of the variants. If provided, this can be used to
-                        group the results by line number.
     """
 
     # Add your aggregation logic here
@@ -28,6 +25,7 @@ def aggregate(processed_results: List[str], variant_ids: List[str], line_numbers
     #    },
     #    ...
     # }
+    print(len(processed_results))
     aggregated_results = {}
 
     # Log metric for each variant
