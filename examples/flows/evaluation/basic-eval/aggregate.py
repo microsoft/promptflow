@@ -12,25 +12,20 @@ def aggregate(processed_results: List[str]):
     """
 
     # Add your aggregation logic here
-    # aggregated_results should be a dictionary with variant id as key, and for each variant id, it is also a
-    # dictionary with the metric name as the key and the metric value as the value.
+    # aggregated_results should be a dictionary with the metric name as the key and the metric value as the value.
     # For example: {
-    #    "variant_0": {
-    #       "metric_name_0": metric_value_0,
-    #       "metric_name_1": metric_value_1,
-    #       ...
-    #    },
-    #    "variant_1": {
-    #       ...
-    #    },
-    #    ...
+    #     "metric_name_0": metric_value_0,
+    #     "metric_name_1": metric_value_1,
+    #     ...
     # }
     print(len(processed_results))
-    aggregated_results = {}
+    print(processed_results)
+    aggregated_results = {
+        "original_results": processed_results,
+    }
 
     # Log metric for each variant
-    # from promptflow import log_metric
-    # log_metric(key="<my-metric-name>", value=aggregated_results["<variant-id>"]["<my-metric-name>"],
-    #            variant_id="<variant-id>")
+    from promptflow import log_metric
+    log_metric(key="aggregated_results", value=aggregated_results)
 
     return aggregated_results
