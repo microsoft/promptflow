@@ -1,7 +1,4 @@
 inputs:
-  line_number:
-    type: int
-    default: 0
   variant_id:
     type: string
     default: variant_0
