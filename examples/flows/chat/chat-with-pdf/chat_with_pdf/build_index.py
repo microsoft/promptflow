@@ -1,9 +1,6 @@
 import PyPDF2
 import faiss
 import os
-import sys
-
-sys.path.append(os.path.dirname(__file__))
 
 from utils.aoai import AOAIEmbedding
 from utils.langchain_faiss import LangChainFaissEngine

@@ -1,8 +1,6 @@
 import requests
 import os
-import sys
-
-sys.path.append(os.path.dirname(__file__))
+import re
 
 from utils.lock import acquire_lock
 from utils.logging import log
@@ -25,9 +23,6 @@ def download(url: str) -> str:
             f.write(response.content)
 
         return path
-
-
-import re
 
 
 def normalize_filename(filename):

@@ -1,3 +1,5 @@
+# flake8: noqa: E402
+
 import argparse
 from dotenv import load_dotenv
 import os
@@ -12,6 +14,7 @@ from utils.lock import acquire_lock
 
 
 def chat_with_pdf(question: str, pdf_url: str, history: list):
+
     with acquire_lock("create_folder.lock"):
         if not os.path.exists(".pdfs"):
             os.mkdir(".pdfs")

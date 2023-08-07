@@ -1,8 +1,7 @@
 from jinja2 import Environment, FileSystemLoader
 import os
-import sys
 
-sys.path.append(os.path.dirname(__file__))
+
 from utils.logging import log
 from utils.aoai import AOAIChat, render_with_token_limit
 

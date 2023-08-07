@@ -3,9 +3,6 @@ import os
 from promptflow import tool
 from promptflow.connections import CustomConnection
 
-import sys
-
-sys.path.append(os.path.dirname(__file__))
 from chat_with_pdf.utils.lock import acquire_lock
 
 

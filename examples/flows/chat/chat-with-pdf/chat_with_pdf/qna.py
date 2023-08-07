@@ -1,9 +1,7 @@
 import faiss
 from jinja2 import Environment, FileSystemLoader
 import os
-import sys
 
-sys.path.append(os.path.dirname(__file__))
 from utils.langchain_faiss import LangChainFaissEngine
 from utils.aoai import AOAIEmbedding, AOAIChat, render_with_token_limit
 from utils.logging import log

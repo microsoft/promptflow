@@ -88,7 +88,7 @@ class LangChainFaissEngine:
     def clear(self):
         self.__init_langchain_faiss()
 
-    def merge_from(self, other_engine: "LangChainEngine"):
+    def merge_from(self, other_engine):
         self.__langchain_faiss.merge_from(other_engine.__langchain_faiss)
 
     def load_data_index_from_disk(self, path: str):
