@@ -19,10 +19,10 @@ Testing flow/node:
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs groundtruth=groundtruth prediction=prediction
+pf flow test --flow . --inputs groundtruth=ABC prediction=ABC
 
 # test node with inputs
-pf flow test --flow . --node line_process --inputs groundtruth=groundtruth prediction=prediction
+pf flow test --flow . --node line_process --inputs groundtruth=ABC prediction=ABC
 ```
 
 ### 2. create flow run with multi line data

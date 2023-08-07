@@ -1,10 +1,4 @@
 inputs:
-  line_number:
-    type: int
-    default: 0
-  variant_id:
-    type: string
-    default: variant_0
   groundtruth:
     type: string
     description: Please specify the groundtruth column, which contains the true label
@@ -35,5 +29,4 @@ nodes:
     path: calculate_accuracy.py
   inputs:
     grades: ${grade.output}
-    variant_ids: ${inputs.variant_id}
   aggregation: true
