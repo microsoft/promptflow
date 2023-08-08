@@ -9,8 +9,7 @@ steps:
     with:
       python-version: "3.9"
 {%- filter indent(width=2) -%}
-{%- for step in steps -%}
-{{ step.get_workflow_step() }}
-{%- endfor -%}
+{% for step in steps %}
+{{ step.get_workflow_step() }}{% endfor %}
 {%- endfilter -%}
 {% endblock steps %}

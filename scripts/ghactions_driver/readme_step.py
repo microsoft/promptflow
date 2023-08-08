@@ -8,53 +8,66 @@ class ReadmeStep:
     Deal with readme replacements
     """
 
-    def set_readme_name(self, name: str, comment=None, demo_command=None) -> None:
-        self.readme_name = name
+    def __init__(self, comment="", demo_command="") -> None:
         self.replacements = {
             "comment": comment,
             "demo_command": demo_command,
         }
 
     def get_readme_step(self) -> str:
-        # virtual method for overide
-        if self.replacements['comment'] is not None:
-            comment_items = self.replacements['comment'].split("\n")
-            comments = '\n'.join([f"# {item}" for item in comment_items])
+        # virtual method for override
+        if (
+            self.replacements["comment"] is not None
+            and self.replacements["comment"] != ""
+        ):
+            comment_items = self.replacements["comment"].split("\n")
+            comments = "\n".join([f"# {item}" for item in comment_items])
             return f"{comments}\n{self.replacements['demo_command']}"
         else:
             return f"{self.replacements['demo_command']}"
 
+
 class Step:
     """
-    StepType
+    StepType in workflow
     """
 
     Environment = None
 
     @staticmethod
     def init_jinja_loader() -> Environment:
-        jinja_folderpath = Path(ReadmeStepsManage.git_base_dir()) / "scripts" / "ghactions_driver" / "workflow_steps"
-        Step.Environment = Environment(loader=FileSystemLoader(jinja_folderpath.resolve()))
+        jinja_folder_path = (
+            Path(ReadmeStepsManage.git_base_dir())
+            / "scripts"
+            / "ghactions_driver"
+            / "workflow_steps"
+        )
+        Step.Environment = Environment(
+            loader=FileSystemLoader(jinja_folder_path.resolve())
+        )
 
-    def set_workflow_name(self, name: str) -> None:
+    def __init__(self, name: str) -> None:
         self.workflow_name = name
-    
+
     def get_workflow_step(self) -> str:
-        # virtual method for overide
+        # virtual method for override
         return ""
 
     @staticmethod
     def get_workflow_template(step_file_name: str) -> Template:
-        # virtual method for overide
+        # virtual method for override
         if Step.Environment is None:
             Step.init_jinja_loader()
         template = Step.Environment.get_template(step_file_name)
         return template
 
+
 class BashStep(Step, ReadmeStep):
-    def __init__(self, command, demo_command=None, comment=None, no_output=False) -> None:
-        super().set_workflow_name("Bash Execution")
-        super().set_readme_name("Bash Execution")
+    def __init__(
+        self, command, demo_command=None, comment=None, no_output=False
+    ) -> None:
+        Step.__init__(self, "Bash Execution")
+        ReadmeStep.__init__(self)
         if demo_command is None:
             demo_command = command
         self.replacements = {
@@ -70,7 +83,7 @@ class BashStep(Step, ReadmeStep):
         template = Step.get_workflow_template("step_bash.yml.jinja2")
         content = template.render(self.replacements)
         return content
-    
+
     def get_readme_step(self) -> str:
         if self.no_output:
             return ""
@@ -79,98 +92,124 @@ class BashStep(Step, ReadmeStep):
 
 class AzureLoginStep(Step, ReadmeStep):
     def __init__(self) -> None:
-        super().set_workflow_name("Azure Login")
-        super().set_readme_name("Azure Login")
+        Step.__init__(self, "Azure Login")
+        ReadmeStep.__init__(self, "Azure Login")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_azure_login.yml.jinja2")
-        template.render({
-            "step_name": self.workflow_name,
-        })
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+            }
+        )
+
     def get_readme_step(self) -> str:
         return ""
+
 
 class InstallDependenciesStep(Step, ReadmeStep):
     def __init__(self) -> None:
-        super().set_workflow_name("Prepare requirements")
-        super().set_readme_name("Prepare requirements")
+        Step.__init__(self, "Prepare requirements")
+        ReadmeStep.__init__(self, "Prepare requirements")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_install_deps.yml.jinja2")
-        return template.render({
-            "step_name": self.workflow_name,
-            "working_dir": ReadmeSteps.working_dir,
-        })
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+            }
+        )
+
     def get_readme_step(self) -> str:
         return "pip install -r requirements.txt"
 
+
 class InstallDevDependenciesStep(Step, ReadmeStep):
     def __init__(self) -> None:
-        super().set_workflow_name("Prepare dev requirements")
-        super().set_readme_name("Prepare dev requirements")
+        Step.__init__(self, "Prepare dev requirements")
+        ReadmeStep.__init__(self, "Prepare dev requirements")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_install_devdeps.yml.jinja2")
-        return template.render({
-            "step_name": self.workflow_name,
-            "working_dir": ReadmeSteps.working_dir,
-        })
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+            }
+        )
+
     def get_readme_step(self) -> str:
         return ""
-    
+
+
 class CreateAoaiFromYaml(Step, ReadmeStep):
     def __init__(self, yaml_name: str) -> None:
-        super().set_workflow_name("Create AOAI Connection from YAML")
-        super().set_readme_name("Create AOAI Connection from YAML")
+        Step.__init__(self, "Create AOAI Connection from YAML")
+        ReadmeStep.__init__(self)
         self.yaml_name = yaml_name
+
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_yml_create_aoai.yml.jinja2")
-        return template.render({
-            "step_name": self.workflow_name,
-            "working_dir": ReadmeSteps.working_dir,
-            "yaml_name": self.yaml_name,
-        })
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+                "yaml_name": self.yaml_name,
+            }
+        )
+
     def get_readme_step(self) -> str:
         return "pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>"
 
+
 class CreateEnv(Step, ReadmeStep):
     def __init__(self) -> None:
-        super().set_workflow_name("Create Python Environment")
-        super().set_readme_name("Create Python Environment")
+        Step.__init__(self, "Create Python Environment")
+        ReadmeStep.__init__(self)
+
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_create_env.yml.jinja2")
-        content = template.render({
-            "step_name": self.workflow_name,
-            "working_dir": ReadmeSteps.working_dir
-        })
+        content = template.render(
+            {"step_name": self.workflow_name, "working_dir": ReadmeSteps.working_dir}
+        )
         return content
+
     def get_readme_step(self) -> str:
         return ""
+
 
 class CreateRunYaml(Step, ReadmeStep):
     def __init__(self) -> None:
-        super().set_workflow_name("Create run.yml")
-        super().set_readme_name("Create run.yml")
+        Step.__init__(self, "Create run.yml")
+        ReadmeStep.__init__(self, "Create run.yml")
+
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_create_run_yml.yml.jinja2")
-        content = template.render({
-            "step_name": self.workflow_name,
-            "working_dir": ReadmeSteps.working_dir
-        })
+        content = template.render(
+            {"step_name": self.workflow_name, "working_dir": ReadmeSteps.working_dir}
+        )
         return content
+
     def get_readme_step(self) -> str:
         return ""
 
+
 class ReadmeSteps:
     """
-    Static class for jinja replacements
+    Static class to record steps, to be filled in workflow templates and Readme
+
+    Readme jinja templates --> ReadmeSteps --> Readme File
+                                           |-> Workflow File
+
+    This is not normal class since ReadmeSteps lifetime is longer than template.
     """
 
-    step_array = []
-    working_dir = ""
-    readme = ""
-    template = ""
-    workflow = ""
+    step_array = []  # Record steps
+    working_dir = ""  # the working directory of flow, relative to git_base_dir
+    readme = ""  # Generated readme name under the working_dir
+    template = ""  # Select a base template under workflow_templates folder
+    workflow = ""  # Target workflow name to be generated
 
     @staticmethod
     def remember_step(step: ReadmeStep) -> ReadmeStep:
@@ -180,7 +219,8 @@ class ReadmeSteps:
     @staticmethod
     def get_length() -> int:
         return len(ReadmeSteps.step_array)
-    
+
+    # region steps
     @staticmethod
     def create_env() -> ReadmeStep:
         return ReadmeSteps.remember_step(CreateEnv())
@@ -196,76 +236,96 @@ class ReadmeSteps:
     @staticmethod
     def install_dependencies() -> ReadmeStep:
         return ReadmeSteps.remember_step(InstallDependenciesStep())
-    
+
     @staticmethod
     def install_dev_dependencies() -> ReadmeStep:
         return ReadmeSteps.remember_step(InstallDevDependenciesStep())
 
     @staticmethod
     def bash(command, demo_command=None, comment=None, no_output=False) -> ReadmeStep:
-        return ReadmeSteps.remember_step(BashStep(command, demo_command, comment, no_output=no_output))
-    
+        return ReadmeSteps.remember_step(
+            BashStep(command, demo_command, comment, no_output=no_output)
+        )
+
     @staticmethod
     def create_run_yaml() -> ReadmeStep:
         return ReadmeSteps.remember_step(CreateRunYaml())
 
-    # @staticmethod
-    # def run_tests() -> str:
-    #    step = RunTestsStep()
-    #    ReadmeSteps.remember_step(step)
-    #    return step
+    # end region steps
 
     @staticmethod
     def setup_target(working_dir: str, readme: str, template: str, target: str) -> str:
+        """
+        Used at the very head of jinja template to indicate basic information
+        """
         ReadmeSteps.working_dir = working_dir
         ReadmeSteps.readme = readme
         ReadmeSteps.template = template
         ReadmeSteps.workflow = target
         ReadmeSteps.step_array = []
         return ""
-    
+
     @staticmethod
     def cleanup() -> None:
-        ReadmeSteps.working_dir = ''
-        ReadmeSteps.readme = ''
-        ReadmeSteps.template = ''
-        ReadmeSteps.workflow = ''
+        ReadmeSteps.working_dir = ""
+        ReadmeSteps.readme = ""
+        ReadmeSteps.template = ""
+        ReadmeSteps.workflow = ""
         ReadmeSteps.step_array = []
-        return ""
+
 
 class ReadmeStepsManage:
     """
     # Static method for driver use.
     """
+
     repo_base_dir = ""
+
     @staticmethod
     def git_base_dir() -> str:
         """
         Get the base directory of the git repo
         """
         if ReadmeStepsManage.repo_base_dir == "":
-            repo_base_dir = subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode("utf-8").strip()
-        return repo_base_dir
+            ReadmeStepsManage.repo_base_dir = (
+                subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
+                .decode("utf-8")
+                .strip()
+            )
+        return ReadmeStepsManage.repo_base_dir
 
     @staticmethod
     def write_readme(content: str) -> None:
-        filename = Path(ReadmeStepsManage.git_base_dir()) / ReadmeSteps.working_dir / ReadmeSteps.readme
-        with open(filename.resolve(), 'w', encoding='utf-8') as f:
+        filename = (
+            Path(ReadmeStepsManage.git_base_dir())
+            / ReadmeSteps.working_dir
+            / ReadmeSteps.readme
+        )
+        with open(filename.resolve(), "w", encoding="utf-8") as f:
             f.write(content)
-    
+
     @staticmethod
-    def write_workflow() -> None:
-        workflow_name = "Yes"
+    def write_workflow(workflow_name: str, pipeline_name: str) -> None:
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
-            "name": workflow_name,
+            "name": pipeline_name,
         }
-        template = Environment(loader=FileSystemLoader("./workflow_templates")).get_template(
-            ReadmeSteps.template
+        workflow_template_path = (
+            Path(ReadmeStepsManage.git_base_dir())
+            / "scripts"
+            / "ghactions_driver"
+            / "workflow_templates"
         )
-        Path(ReadmeStepsManage.git_base_dir()) / ".github" / "workflows" / f"{workflow_name}.yml"
+        template = Environment(
+            loader=FileSystemLoader(workflow_template_path.resolve())
+        ).get_template(ReadmeSteps.template)
+        target_path = (
+            Path(ReadmeStepsManage.git_base_dir())
+            / ".github"
+            / "workflows"
+            / f"{workflow_name}.yml"
+        )
         content = template.render(replacements)
-        with open(ReadmeSteps.workflow, 'w') as f:
+        with open(target_path.resolve(), "w", encoding="utf-8") as f:
             f.write(content)
-            
