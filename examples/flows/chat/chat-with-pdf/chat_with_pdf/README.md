@@ -18,6 +18,8 @@ CHAT_MODEL_DEPLOYMENT_NAME=gpt-35-turbo
 PROMPT_TOKEN_LIMIT=3000
 MAX_COMPLETION_TOKENS=256
 VERBOSE=false
+CHUNK_SIZE=1024
+CHUNK_OVERLAP=0
 ```
 Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
 ### Run the command line
