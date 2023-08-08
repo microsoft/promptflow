@@ -30,10 +30,11 @@ def readme_parser(filename: str):
     doc = panflute.load(f)
     panflute.run_filter(action, doc=doc)
 
-def write_readme_workflow(readme_path, name):
-    relative_path = Path(readme_path).relative_to(Path(ReadmeStepsManage.git_base_dir()) / "examples")
+def write_readme_workflow(readme_path):
+    relative_path = Path(readme_path).relative_to(Path(ReadmeStepsManage.git_base_dir()))
     workflow_path = relative_path.as_posix()
-    workflow_name = relative_path.as_posix().replace("/", "_")
+    relative_name_path = Path(readme_path).relative_to(Path(ReadmeStepsManage.git_base_dir()) / "examples")
+    workflow_name = relative_name_path.as_posix().replace("/", "_")
 
     ReadmeSteps.setup_target(workflow_path, "Readme.md", "basic_workflow_replace.yml.jinja2", f"{workflow_name}.yml")
     ReadmeSteps.install_dependencies()

@@ -11,9 +11,8 @@ def main(args):
 
     for readme in readme_items:
         workflow_name = readme.parent.relative_to(ReadmeStepsManage.git_base_dir())
-        pipeline_name = "auto_generated_steps"
         # Deal with readme
-        write_readme_workflow(workflow_name.resolve(), pipeline_name)
+        write_readme_workflow(workflow_name.resolve())
         ReadmeSteps.cleanup()
 
 
