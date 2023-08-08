@@ -22,6 +22,7 @@ def aggregate(processed_results: List[str]):
     print(processed_results)
     aggregated_results = {
         "original_results": processed_results,
+        "results_len": len(processed_results),
     }
 
     # Log metric for each variant
