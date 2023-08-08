@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 import os
 import sys
 
-sys.path.append(os.path.dirname(__file__))
 from qna import qna
 from rewrite_question import rewrite_question
 from build_index import create_faiss_index

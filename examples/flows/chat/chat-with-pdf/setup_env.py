@@ -1,4 +1,8 @@
+# flake8: noqa: E402
 import os
+import sys
+
+sys.path.append(f"{os.path.dirname(__file__)}/chat_with_pdf")
 
 from promptflow import tool
 from promptflow.connections import CustomConnection
