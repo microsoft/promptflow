@@ -68,12 +68,12 @@ Storing connection info in .env with plaintext is not safe. We recommend to use 
 
 - Show or create `azure_open_ai_connection`
 ```bash
-# check if connection exists
-pf connection show -n azure_open_ai_connection
-
 # create connection from `azure_openai.yml` file
 # Override keys with --set to avoid yaml file changes
 pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+
+# check if connection exists
+pf connection show -n azure_open_ai_connection
 ```
 
 - Test using connection secret specified in environment variables

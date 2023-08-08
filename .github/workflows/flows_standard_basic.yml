@@ -75,8 +75,8 @@ jobs:
       - name: Bash Execution
         working-directory: examples/flows/standard/basic
         run: |
-          pf connection show -n azure_open_ai_connection
           pf connection create --file azure_openai.yml --set api_key=${{ secrets.AOAI_API_KEY }} api_base=${{ secrets.AOAI_API_ENDPOINT }}
+          pf connection show -n azure_open_ai_connection
       - name: Bash Execution
         working-directory: examples/flows/standard/basic
         run: |
