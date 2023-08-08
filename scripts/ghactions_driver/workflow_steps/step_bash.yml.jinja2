@@ -1,3 +1,4 @@
 - name: {{ step_name }}
-  run: {{ command }}
   working-directory: {{ working_dir }}
+  run: |{% filter indent(width=4) %}
+{{ command }}{% endfilter %}

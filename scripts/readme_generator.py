@@ -1,30 +1,29 @@
+import argparse
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from ghactions_driver.readme_step import ReadmeStepsManage, ReadmeSteps
+from ghactions_driver.extract_steps_from_readme import write_readme_workflow
 
 
-def main():
-    template_folder = (
-        Path(ReadmeStepsManage.git_base_dir())
-        / "scripts"
-        / "ghactions_driver"
-        / "readme_templates"
-    )
+def main(args):
+    globs = [sorted(Path(ReadmeStepsManage.git_base_dir()).glob(p)) for p in args.input_glob]
+    readme_items = sorted([j for i in globs for j in i])
 
-    jinja_env = Environment(loader=FileSystemLoader(template_folder))
-    template_names = jinja_env.list_templates()
-    # get list of workflows
-    values = {"Steps": ReadmeSteps}
-
-    for template_name in template_names:
-        workflow_name = template_name.split(".")[0]
+    for readme in readme_items:
+        workflow_name = readme.parent.relative_to(ReadmeStepsManage.git_base_dir())
         pipeline_name = "auto_generated_steps"
-        template = jinja_env.get_template(template_name)
-        content = template.render(values)  # side effect: ReadmeSteps is changed
-        ReadmeStepsManage.write_readme(content)
-        ReadmeStepsManage.write_workflow(workflow_name, pipeline_name)
+        # Deal with readme
+        write_readme_workflow(workflow_name.resolve(), pipeline_name)
         ReadmeSteps.cleanup()
 
 
 if __name__ == "__main__":
-    main()
+    # setup argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-g", "--input-glob", nargs="+", help="Input Readme.md glob example 'examples/flows/**/Readme.md'"
+    )
+    args = parser.parse_args()
+
+    # call main
+    main(args)

@@ -5,3 +5,5 @@ papermill
 pyyaml
 keyrings.alt
 black-nb
+pypandoc
+panflute

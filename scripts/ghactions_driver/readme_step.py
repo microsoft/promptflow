@@ -251,7 +251,7 @@ class ReadmeSteps:
     def create_run_yaml() -> ReadmeStep:
         return ReadmeSteps.remember_step(CreateRunYaml())
 
-    # end region steps
+    # endregion steps
 
     @staticmethod
     def setup_target(working_dir: str, readme: str, template: str, target: str) -> str:

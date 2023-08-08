@@ -50,14 +50,17 @@ pf run create --flow . --data ./data.jsonl --stream
 # list created run
 pf run list
 
+# get a sample run name
+name=$(pf run list -r 1 | jq '.[:1] | .[] | .name' | tr -d '"')
+
 # show specific run detail
-pf run show --name "basic_default_20230724_155834_331725"
+pf run show --name $name
 
 # show output
-pf run show-details --name "basic_default_20230724_155834_331725"
+pf run show-details --name $name
 
 # visualize run in browser
-pf run visualize --name "basic_default_20230724_155834_331725"
+pf run visualize --name $name
 ```
 
 ## Run flow locally with connection
@@ -76,32 +79,33 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 - Test using connection secret specified in environment variables
 ```bash
 # test with default input value in flow.dag.yaml 
-pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
+pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY=<your_api_key> AZURE_OPENAI_API_BASE=<your_api_base>
 ```
 
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY=<your_api_key> AZURE_OPENAI_API_BASE=<your_api_base>
 # create run using yaml file
 pf run create --file run.yml --stream
 
 # show outputs
-pf run show-details --name "basic_default_20230724_160138_517171"
+name=$(pf run list -r 1 | jq '.[:1] | .[] | .name' | tr -d '"')
+pf run show-details --name $name
 ```
 
 ## Run flow in cloud with connection
 - Assume we already have a connection named `azure_open_ai_connection` in workspace.
 ```bash
 # set default workspace
-az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
-az configure --defaults group="promptflow" workspace="promptflow-eastus"
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
 ```
 
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace 
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}' --stream --runtime demo-mir
+pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY=<your_api_key> AZURE_OPENAI_API_BASE=<your_api_base> --stream --runtime demo-mir
 # run using yaml file
 pfazure run create --file run.yml --stream --runtime demo-mir
 ```
@@ -111,12 +115,15 @@ pfazure run create --file run.yml --stream --runtime demo-mir
 # list created run
 pfazure run list -r 3
 
+# get a sample run name
+name=$(pfazure run list -r 1 | jq '.[:1] | .[] | .name' | tr -d '"')
+
 # show specific run detail
-pfazure run show --name "basic_default_20230724_160252_071554"
+pfazure run show --name $name
 
 # show output
-pfazure run show-details --name "basic_default_20230724_160252_071554"
+pfazure run show-details --name $name
 
 # visualize run in browser
-pfazure run visualize --name "basic_default_20230724_160252_071554"
+pfazure run visualize --name $name
 ```
