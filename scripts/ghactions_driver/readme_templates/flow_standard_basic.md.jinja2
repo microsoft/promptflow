@@ -76,13 +76,13 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 - Test using connection secret specified in environment variables
 ```bash
 # test with default input value in flow.dag.yaml 
-{{ Steps.bash(command="pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}", demo_command="pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'").get_readme_step() }}
+{{ Steps.bash(command="pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}", demo_command="pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'").get_readme_step() }}
 ```
 
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-{{ Steps.bash(command="pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}", demo_command="pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'").get_readme_step() }}
+{{ Steps.bash(command="pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}", demo_command="pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'").get_readme_step() }}
 # create run using yaml file{{ Steps.create_run_yaml().get_readme_step() }}
 {{ Steps.bash(command="pf run create --file run.yml --stream").get_readme_step() }}
 
@@ -101,7 +101,7 @@ pf run show-details --name "basic_default_20230724_160138_517171"
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace 
-{{ Steps.bash(command="pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }} --stream --runtime demo-mir",demo_command="pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}' --stream --runtime demo-mir").get_readme_step() }}
+{{ Steps.bash(command="pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }} --stream --runtime demo-mir",demo_command="pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}' --stream --runtime demo-mir").get_readme_step() }}
 # run using yaml file
 {{ Steps.bash(command="pfazure run create --file run.yml --stream --runtime demo-mir").get_readme_step() }}
 ```
