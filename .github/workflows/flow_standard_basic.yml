@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Create Python Environment
-        working_directory: examples/flows/standard/basic
+        working-directory: examples/flows/standard/basic
         run: |
           echo AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }} > .env
           echo AZURE_OPENAI_API_BASE=${{ secrets.AOAI_API_ENDPOINT }} >> .env
@@ -53,7 +53,7 @@ jobs:
         run: pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
         working-directory: examples/flows/standard/basic
       - name: Create run.yml
-        working_directory: examples/flows/standard/basic
+        working-directory: examples/flows/standard/basic
         run: |
           sed -e "s/\${azure_open_ai_connection.api_key}/${{ secrets.AZURE_OPENAI_API_KEY }}/g" -e "s/\${azure_open_ai_connection.api_base}/${{ secrets.AOAI_API_ENDPOINT }}/g" run.yml > run.yml
       - name: Bash Execution

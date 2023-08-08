@@ -1,5 +1,5 @@
 - name: {{ step_name }}
-  working_directory: {{ working_dir }}
+  working-directory: {{ working_dir }}
   run: |
     echo AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AZURE_OPENAI_API_KEY }} > .env
     echo AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }} >> .env
