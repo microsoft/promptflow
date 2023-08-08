@@ -24,7 +24,7 @@ This auto-generated script will create one tool for you. The parameters _destina
 
 The command will generate the tool project as follows with one tool `hello_world_tool.py` in it:
 
-![tool folder structure](../docs/media/contributing/tool-folder-structure.png)
+![tool folder structure](../../docs/media/contributing/tool-folder-structure.png)
 
 ```The points outlined below explain the purpose of each folder/file in the package. If your aim is to develop multiple tools within your package, please make sure to closely examine point 2 and 5.```
 
