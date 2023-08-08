@@ -13,20 +13,12 @@ def aggregate(processed_results: List[str]):
 
     # Add your aggregation logic here
     # aggregated_results should be a dictionary with the metric name as the key and the metric value as the value.
-    # For example: {
-    #     "metric_name_0": metric_value_0,
-    #     "metric_name_1": metric_value_1,
-    #     ...
-    # }
-    print(len(processed_results))
+    results_num = len(processed_results)
+    print(results_num)
     print(processed_results)
-    aggregated_results = {
-        "original_results": processed_results,
-        "results_len": len(processed_results),
-    }
 
     # Log metric for each variant
     from promptflow import log_metric
-    log_metric(key="aggregated_results", value=aggregated_results)
+    log_metric(key="results_num", value=results_num)
 
-    return aggregated_results
+    return results_num
