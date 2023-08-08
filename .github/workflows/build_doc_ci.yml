@@ -1,0 +1,42 @@
+name: Build Doc CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - preview/docs
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'scripts/doc/**'
+      - '.github/workflows/build_doc_ci.yml'
+
+jobs:
+  build_doc_job:
+    runs-on: windows-latest
+    name: Build Doc
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Build Doc
+        shell: powershell
+        working-directory: scripts/doc/
+        run: ./doc_generation.ps1 -WarningAsError:$true
+
+  # Note: We have this job separately because some error may missing when build link check exists.
+  link_check_job:
+    runs-on: windows-latest
+    name: Build Link Check
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Build LinkCheck
+        shell: powershell
+        working-directory: scripts/doc/
+        run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
