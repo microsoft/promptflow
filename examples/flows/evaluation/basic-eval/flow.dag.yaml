@@ -5,12 +5,6 @@ inputs:
   prediction:
     type: string
     default: prediction
-  variant_id:
-    type: string
-    default: variant_0
-  line_number:
-    type: int
-    default: 0
 outputs:
   results:
     type: string
@@ -31,8 +25,4 @@ nodes:
     path: aggregate.py
   inputs:
     processed_results: ${line_process.output}
-    variant_ids: ${inputs.variant_id}
-    line_numbers: ${inputs.line_number}
   aggregation: true
-id: template_eval_flow
-name: Template Evaluation Flow

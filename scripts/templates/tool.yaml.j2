@@ -1,0 +1,13 @@
+{{ package_name }}.tools.{{ tool_name }}.{{ function_name }}:
+  function: {{ function_name }}
+  inputs:
+    connection:
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+  module: {{ package_name }}.tools.{{ tool_name }}
+  name: Hello World Tool
+  description: This is hello world tool
+  type: python
