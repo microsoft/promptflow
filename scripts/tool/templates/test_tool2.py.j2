@@ -1,0 +1,27 @@
+import pytest
+import unittest
+
+from {{ package_name }}.tools.{{ tool_name }} import {{ class_name }}
+
+
+@pytest.fixture
+def my_url() -> str:
+    my_url = "https://www.bing.com"
+    return my_url
+
+
+@pytest.fixture
+def my_tool_provider(my_url) -> {{ class_name }}:
+    my_tool_provider = {{ class_name }}(my_url)
+    return my_tool_provider
+
+
+class TestTool:
+    def test_{{ tool_name }}(self, my_tool_provider):
+        result = my_tool_provider.{{ function_name }}(query="Microsoft")
+        assert result == "Hello Microsoft"
+
+
+# Run the unit tests
+if __name__ == "__main__":
+    unittest.main()
