@@ -1,6 +1,0 @@
-{% extends "workflow_skeleton.yml.jinja2" %}
-{% block steps %}
-runs-on: ubuntu-latest
-steps:
-{{ Steps.checkout().get_workflow_step() }}
-{% endblock steps %}

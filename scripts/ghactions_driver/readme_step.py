@@ -3,30 +3,6 @@ import subprocess
 from pathlib import Path
 
 
-class ReadmeStep:
-    """
-    Deal with readme replacements
-    """
-
-    def __init__(self, comment="", demo_command="") -> None:
-        self.replacements = {
-            "comment": comment,
-            "demo_command": demo_command,
-        }
-
-    def get_readme_step(self) -> str:
-        # virtual method for override
-        if (
-            self.replacements["comment"] is not None
-            and self.replacements["comment"] != ""
-        ):
-            comment_items = self.replacements["comment"].split("\n")
-            comments = "\n".join([f"# {item}" for item in comment_items])
-            return f"{comments}\n{self.replacements['demo_command']}"
-        else:
-            return f"{self.replacements['demo_command']}"
-
-
 class Step:
     """
     StepType in workflow
@@ -62,12 +38,11 @@ class Step:
         return template
 
 
-class BashStep(Step, ReadmeStep):
+class BashStep(Step):
     def __init__(
         self, command, demo_command=None, comment=None, no_output=False
     ) -> None:
         Step.__init__(self, "Bash Execution")
-        ReadmeStep.__init__(self)
         if demo_command is None:
             demo_command = command
         self.replacements = {
@@ -84,16 +59,10 @@ class BashStep(Step, ReadmeStep):
         content = template.render(self.replacements)
         return content
 
-    def get_readme_step(self) -> str:
-        if self.no_output:
-            return ""
-        return super().get_readme_step()
 
-
-class AzureLoginStep(Step, ReadmeStep):
+class AzureLoginStep(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Azure Login")
-        ReadmeStep.__init__(self, "Azure Login")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_azure_login.yml.jinja2")
@@ -103,14 +72,10 @@ class AzureLoginStep(Step, ReadmeStep):
             }
         )
 
-    def get_readme_step(self) -> str:
-        return ""
 
-
-class InstallDependenciesStep(Step, ReadmeStep):
+class InstallDependenciesStep(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Prepare requirements")
-        ReadmeStep.__init__(self, "Prepare requirements")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_install_deps.yml.jinja2")
@@ -121,14 +86,10 @@ class InstallDependenciesStep(Step, ReadmeStep):
             }
         )
 
-    def get_readme_step(self) -> str:
-        return "pip install -r requirements.txt"
 
-
-class InstallDevDependenciesStep(Step, ReadmeStep):
+class InstallDevDependenciesStep(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Prepare dev requirements")
-        ReadmeStep.__init__(self, "Prepare dev requirements")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_install_devdeps.yml.jinja2")
@@ -139,14 +100,10 @@ class InstallDevDependenciesStep(Step, ReadmeStep):
             }
         )
 
-    def get_readme_step(self) -> str:
-        return ""
 
-
-class CreateAoaiFromYaml(Step, ReadmeStep):
+class CreateAoaiFromYaml(Step):
     def __init__(self, yaml_name: str) -> None:
         Step.__init__(self, "Create AOAI Connection from YAML")
-        ReadmeStep.__init__(self)
         self.yaml_name = yaml_name
 
     def get_workflow_step(self) -> str:
@@ -159,14 +116,10 @@ class CreateAoaiFromYaml(Step, ReadmeStep):
             }
         )
 
-    def get_readme_step(self) -> str:
-        return "pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>"
 
-
-class CreateEnv(Step, ReadmeStep):
+class CreateEnv(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Create Python Environment")
-        ReadmeStep.__init__(self)
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_create_env.yml.jinja2")
@@ -175,14 +128,10 @@ class CreateEnv(Step, ReadmeStep):
         )
         return content
 
-    def get_readme_step(self) -> str:
-        return ""
 
-
-class CreateRunYaml(Step, ReadmeStep):
+class CreateRunYaml(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Create run.yml")
-        ReadmeStep.__init__(self, "Create run.yml")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_create_run_yml.yml.jinja2")
@@ -191,18 +140,10 @@ class CreateRunYaml(Step, ReadmeStep):
         )
         return content
 
-    def get_readme_step(self) -> str:
-        return ""
-
 
 class ReadmeSteps:
     """
     Static class to record steps, to be filled in workflow templates and Readme
-
-    Readme jinja templates --> ReadmeSteps --> Readme File
-                                           |-> Workflow File
-
-    This is not normal class since ReadmeSteps lifetime is longer than template.
     """
 
     step_array = []  # Record steps
@@ -212,7 +153,7 @@ class ReadmeSteps:
     workflow = ""  # Target workflow name to be generated
 
     @staticmethod
-    def remember_step(step: ReadmeStep) -> ReadmeStep:
+    def remember_step(step: Step) -> Step:
         ReadmeSteps.step_array.append(step)
         return step
 
@@ -222,33 +163,33 @@ class ReadmeSteps:
 
     # region steps
     @staticmethod
-    def create_env() -> ReadmeStep:
+    def create_env() -> Step:
         return ReadmeSteps.remember_step(CreateEnv())
 
     @staticmethod
-    def yml_create_aoai(yaml_name: str) -> ReadmeStep:
+    def yml_create_aoai(yaml_name: str) -> Step:
         return ReadmeSteps.remember_step(CreateAoaiFromYaml(yaml_name=yaml_name))
 
     @staticmethod
-    def azure_login() -> ReadmeStep:
+    def azure_login() -> Step:
         return ReadmeSteps.remember_step(AzureLoginStep())
 
     @staticmethod
-    def install_dependencies() -> ReadmeStep:
+    def install_dependencies() -> Step:
         return ReadmeSteps.remember_step(InstallDependenciesStep())
 
     @staticmethod
-    def install_dev_dependencies() -> ReadmeStep:
+    def install_dev_dependencies() -> Step:
         return ReadmeSteps.remember_step(InstallDevDependenciesStep())
 
     @staticmethod
-    def bash(command, demo_command=None, comment=None, no_output=False) -> ReadmeStep:
+    def bash(command, demo_command=None, comment=None, no_output=False) -> Step:
         return ReadmeSteps.remember_step(
             BashStep(command, demo_command, comment, no_output=no_output)
         )
 
     @staticmethod
-    def create_run_yaml() -> ReadmeStep:
+    def create_run_yaml() -> Step:
         return ReadmeSteps.remember_step(CreateRunYaml())
 
     # endregion steps
