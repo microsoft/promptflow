@@ -44,6 +44,7 @@ function ProcessFiles {
     $exclude_files = [System.Collections.ArrayList]::new()
     $exclude_files.Add("README.md")
     $exclude_files.Add("dev\dev_setup.md")
+    $exclude_files.Add("code-samples\tool-package-quickstart\README.md")
     foreach ($f in $exclude_files)
     {
         $full_path = [System.IO.Path]::Combine($TempDocPath, $f)

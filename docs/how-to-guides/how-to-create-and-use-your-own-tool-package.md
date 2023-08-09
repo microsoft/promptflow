@@ -15,6 +15,10 @@ Install Pytest packages for running tests:
 pip install pytest
 pip install pytest-mock
 ```
+Clone the PromptFlow repository from GitHub using the following command:
+```
+git clone https://github.com/microsoft/promptflow.git
+```
 
 ### Create custom tool package
 Run below command under root folder to create your tool project quickly:
@@ -29,7 +33,26 @@ This auto-generated script will create one tool for you. The parameters _destina
 
 The command will generate the tool project as follows with one tool `hello_world_tool.py` in it:
 
-![tool folder structure](../media/contributing/tool-folder-structure.png)
+```
+hello-world-proj/    
+│    
+├── hello_world/    
+│   ├── tools/    
+│   │   ├── __init__.py    
+│   │   ├── hello_world_tool.py    
+│   │   └── utils.py    
+│   ├── yamls/    
+│   │   └── hello_world_tool.yaml    
+│   └── __init__.py    
+│    
+├── tests/     
+│   ├── __init__.py    
+│   └── test_hello_world_tool.py    
+│    
+├── MANIFEST.in    
+│    
+└── setup.py  
+```
 
 ```The points outlined below explain the purpose of each folder/file in the package. If your aim is to develop multiple tools within your package, please make sure to closely examine point 2 and 5.```
 
@@ -37,9 +60,9 @@ The command will generate the tool project as follows with one tool `hello_world
 2. **hello-world/tools**: This directory contains the individual tools for your project. You tool package can contain either one tool or many tools. When adding a new tool, you should create another *_tool.py under the `tools` folder.
 3. **hello-world/tools/hello_world_tool.py**: Develop your tool within the def function. Use the `@tool` decorator to identify the function as a tool.
     > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/Azure/promptflow/blob/main/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
-3. **hello-world/tools/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
+4. **hello-world/tools/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
     > [!Note] There's no need to create your own list method if you maintain the existing folder structure. You can simply use the auto-generated list method provided in the `utils.py` file.
-4. **hello_world/yamls/hello_world_tool.yaml**: Tool YAMLs defines the metadata of the tool. The tool list method, as outlined in the `utils.py`, fetches these tool YAMLs.
+5. **hello_world/yamls/hello_world_tool.yaml**: Tool YAMLs defines the metadata of the tool. The tool list method, as outlined in the `utils.py`, fetches these tool YAMLs.
 
     You may want to update `name` and `description` to a better one in `your_tool.yaml`, so that tool can have a great name and description hint in prompt flow UI.
     > [!Note] If you create a new tool, don't forget to also create the corresponding tool YAML. you can use below command under your tool project to auto generate your tool YAML.
@@ -51,13 +74,13 @@ The command will generate the tool project as follows with one tool `hello_world
     python ..\scripts\package_tools_generator.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml
     ```
     To populate your tool module, adhere to the pattern \<package_name\>.tools.\<tool_name\>, which represents the folder path to your tool within the package.
-5. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
+6. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
     ```
     pytest tests
     ```
-6. **MANIFEST.in**: This file is used to determine which files to include in the distribution of the project. Tool YAML files should be included in MANIFEST.in so that your tool YAMLs would be packaged and your tools can show in the UI.
+7. **MANIFEST.in**: This file is used to determine which files to include in the distribution of the project. Tool YAML files should be included in MANIFEST.in so that your tool YAMLs would be packaged and your tools can show in the UI.
     > [!Note] There's no need to update this file if you maintain the existing folder structure.
-7. **setup.py**: This file contains metadata about your project like the name, version, author, and more. Additionally, the entry point is automatically configured for you in the `generate_tool_package_template.py` script. In Python, configuring the entry point in `setup.py` helps establish the primary execution point for a package, streamlining its integration with other software. 
+8. **setup.py**: This file contains metadata about your project like the name, version, author, and more. Additionally, the entry point is automatically configured for you in the `generate_tool_package_template.py` script. In Python, configuring the entry point in `setup.py` helps establish the primary execution point for a package, streamlining its integration with other software. 
 
     The `package_tools` entry point together with the tool list method are used to retrieve all the tools and display them in the UI.
     ```python
