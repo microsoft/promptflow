@@ -1,8 +1,8 @@
 import inspect
 from enum import Enum, EnumMeta
 from typing import Callable, Union, get_args, get_origin
-from jinja2 import Environment, meta
-from promptflow.contracts.tool import ConnectionType, InputDefinition, ValueType
+from promptflow.contracts.tool import ConnectionType, InputDefinition, ValueType, ToolType
+from promptflow.contracts.types import PromptTemplate
 
 
 def value_to_str(val):
@@ -27,10 +27,8 @@ def resolve_annotation(anno) -> Union[str, list]:
     return args[0] if len(args) == 1 else args
 
 
-def param_to_definition(param) -> (InputDefinition, bool):
+def param_to_definition(param, value_type) -> (InputDefinition, bool):
     default_value = param.default
-    # Get value type and enum from annotation
-    value_type = resolve_annotation(param.annotation)
     enum = None
     # Get value type and enum from default if no annotation
     if default_value is not inspect.Parameter.empty and value_type == inspect.Parameter.empty:
@@ -54,7 +52,7 @@ def param_to_definition(param) -> (InputDefinition, bool):
     return InputDefinition(type=typ, default=value_to_str(default_value), description=None, enum=enum), is_connection
 
 
-def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
+def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
     input_defs = {}
@@ -73,7 +71,12 @@ def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
     )
     # Resolve inputs to definitions.
     for k, v in all_inputs.items():
-        input_def, is_connection = param_to_definition(v)
+        # Get value type from annotation
+        value_type = resolve_annotation(v.annotation)
+        if tool_type==ToolType.CUSTOM_LLM and value_type is PromptTemplate:
+            # custom llm tool has prompt template as input, skip it
+            continue
+        input_def, is_connection = param_to_definition(v, value_type)
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
@@ -86,9 +89,3 @@ def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
     #             type(getattr(sign.return_annotation, f.name)))], "", False)
     return input_defs, outputs, connection_types
 
-
-def get_inputs_for_prompt_template(template_str):
-    """Get all input variable names from a jinja2 template string."""
-    env = Environment()
-    template = env.parse(template_str)
-    return sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
