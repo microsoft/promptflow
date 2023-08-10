@@ -1,6 +1,6 @@
 # remove when we publish to pypi
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow[azure]==0.0.101492828
+promptflow[azure]==0.0.101541404
 promptflow-tools==0.0.1.dev0
 python-dotenv
 langchain
