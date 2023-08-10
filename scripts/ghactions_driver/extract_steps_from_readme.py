@@ -17,8 +17,8 @@ def strip_comments(code):
     code = re.sub(r"(?m)^ *#.*\n?", "", code)  # remove comments
     splits = [ll.rstrip() for ll in code.splitlines() if ll.strip()]  # remove empty
     splits_no_interactive = [
-        split for split in splits if "interactive" not in split
-    ]  # remove --interactive
+        split for split in splits if "interactive" not in split and "pf flow serve" not in split
+    ]  # remove --interactive and pf flow serve
     text = "\n".join([ll.rstrip() for ll in splits_no_interactive])
     # replacements
     text = text.replace("<your_api_key>", "$1")

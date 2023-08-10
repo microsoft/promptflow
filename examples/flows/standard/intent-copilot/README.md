@@ -41,20 +41,24 @@ pf run create --flow . --data ./data
 ```bash
 # list created run
 pf run list
+# get a sample completed run name
+name=$(pf run list | jq '.[] | select(.name | contains("intent_copilot")) | .name'| head -n 1)
 # show run
-pf run show --name "intent_copilot_default_20230724_171809_745938"
+pf run show --name $name
 # show specific run detail, top 3 lines
-pf run show-details --name "intent_copilot_default_20230724_171809_745938" -r 3
+pf run show-details --name $name -r 3
 ```
 
 6. evaluation
 
 ```bash
 # create evaluation run
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run "intent_copilot_default_20230724_171809_745938" 
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name 
 ```
 
 ```bash
+# get the evaluation run in previous step
+name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1)
 # show run
 pf run show --name "classification_accuracy_eval_default_20230724_172154_294669"
 # show run output
@@ -65,21 +69,6 @@ pf run show-details --name "classification_accuracy_eval_default_20230724_172154
 ```bash
 # visualize in browser
 pf run visualize --name "classification_accuracy_eval_default_20230724_172154_294669" # your evaluation run name
-```
-
-## Tuning node variant
-TODO: Compare the zero_shot & few_shot prompt.
-
-1. change the dag to include node variants
-
-2. validate the dag
-```bash
-pf validate --flow .
-```
-
-3. run the node_variant
-```bash
-pf run create --flow . --node_variant node.variant1
 ```
 
 ## Deploy 
@@ -93,12 +82,6 @@ pf flow serve --source . --port 5123 --host localhost
 TODO: introduce the browser based test app 
 
 ### Export
-
-#### Export as package
-
-```bash
-pf flow export --source . --format package --path ./package
-```
 
 #### Export as docker
 ```bash

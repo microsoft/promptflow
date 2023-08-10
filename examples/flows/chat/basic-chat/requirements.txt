@@ -1,3 +1,4 @@
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow[azure]
-promptflow-tools
+promptflow
+langchain
+jinja2

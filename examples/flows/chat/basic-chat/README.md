@@ -4,6 +4,13 @@ This example shows how to create a basic chat flow. It demonstrates how to creat
 Tools used in this flow：
 - `llm` tool
 
+## Prerequisites
+
+Install promptflow sdk and other dependencies in this folder:
+```bash
+pip install -r requirements.txt
+```
+
 ## What you will learn
 
 In this flow, you will learn
