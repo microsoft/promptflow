@@ -58,7 +58,7 @@ def create_remote_branch_in_ADO_with_new_tool_pkg_version(
     # Make changes
     # 1. add test endpoint 'promptflow-gallery-tool-test.yaml'
     # 2. update tool package version
-    source_file = Path(scripts_dir) / "utils/configs/promptflow-gallery-tool-test.yaml"
+    source_file = Path(scripts_dir) / "tool/utils/configs/promptflow-gallery-tool-test.yaml"
     destination_folder = "deploy/model"
     shutil.copy(source_file, destination_folder)
 
@@ -86,7 +86,7 @@ def create_remote_branch_in_ADO_with_new_tool_pkg_version(
 def deploy_test_endpoint(branch_name: str, ado_pat: str):
     # PromptFlow-deploy-endpoint pipeline in ADO: https://msdata.visualstudio.com/Vienna/_build?definitionId=24767&_a=summary  # noqa: E501
     url = "https://dev.azure.com/msdata/Vienna/_apis/pipelines/24767/runs?api-version=7.0-preview.1"
-    request_body_file = Path(scripts_dir) / "utils/configs/deploy-endpoint-request-body.json"
+    request_body_file = Path(scripts_dir) / "tool/utils/configs/deploy-endpoint-request-body.json"
     with open(request_body_file, "r") as f:
         body = json.load(f)
     body["resources"]["repositories"]["self"]["refName"] = f"refs/heads/{branch_name}"
