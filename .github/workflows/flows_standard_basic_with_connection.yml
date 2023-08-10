@@ -37,9 +37,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Create AOAI Connection from YAML
-        working-directory: ${{ github.workspace }}
-        run: pf connection create --file examples/flows/standard/basic-with-connection/custom.yml --set api_key=${{ secrets.AOAI_API_KEY }} api_base=${{ secrets.AOAI_API_ENDPOINT }}
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
@@ -49,6 +46,7 @@ jobs:
         run: |
           bash bash_script.sh ${{secrets.AOAI_API_KEY }} ${{ secrets.AOAI_API_ENDPOINT }} ${{ secrets.TEST_WORKSPACE_SUB_ID }} ${{ secrets.TEST_WORKSPACE_RG }} ${{ secrets.TEST_WORKSPACE_NAME }}
       - name: Upload artifact
+        if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: artifact

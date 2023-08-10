@@ -26,10 +26,8 @@ def write_readme_workflow(readme_path):
         ReadmeSteps.create_env()
     if workflow_name == "flows_standard_basic":
         ReadmeSteps.create_run_yaml()
-    if workflow_name == "flows_standard_basic_with_builtin_llm" or workflow_name == "flows_standard_flow_with_symlinks":
+    if workflow_name == "flows_standard_basic_with_builtin_llm" or workflow_name == "flows_standard_flow_with_symlinks" or workflow_name == "flows_standard_flow_with_additional_includes":
         ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
-    if workflow_name == "flows_standard_basic_with_connection":
-        ReadmeSteps.yml_create_aoai("examples/flows/standard/basic-with-connection/custom.yml")
     ReadmeSteps.extract_steps_and_run()
 
     ReadmeStepsManage.write_workflow(workflow_name, "auto_generated_steps")
