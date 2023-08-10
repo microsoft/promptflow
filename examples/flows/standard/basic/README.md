@@ -79,13 +79,13 @@ pf connection show -n azure_open_ai_connection
 - Test using connection secret specified in environment variables
 ```bash
 # test with default input value in flow.dag.yaml 
-pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY=<your_api_key> AZURE_OPENAI_API_BASE=<your_api_base>
+pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
 ```
 
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY=<your_api_key> AZURE_OPENAI_API_BASE=<your_api_base>
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
 # create run using yaml file
 pf run create --file run.yml --stream
 
@@ -105,7 +105,7 @@ az configure --defaults group=<your_resource_group_id> workspace=<your_workspace
 - Create run
 ```bash
 # run with environment variable reference connection in azureml workspace 
-pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY=<your_api_key> AZURE_OPENAI_API_BASE=<your_api_base> --stream --runtime demo-mir
+pfazure run create --flow . --data ./data.jsonl --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}' --stream --runtime demo-mir
 # run using yaml file
 pfazure run create --file run.yml --stream --runtime demo-mir
 ```

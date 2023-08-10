@@ -38,28 +38,6 @@ class Step:
         return template
 
 
-class BashStep(Step):
-    def __init__(
-        self, command, demo_command=None, comment=None, no_output=False
-    ) -> None:
-        Step.__init__(self, "Bash Execution")
-        if demo_command is None:
-            demo_command = command
-        self.replacements = {
-            "step_name": self.workflow_name,
-            "command": command,
-            "demo_command": demo_command,
-            "comment": comment,
-            "working_dir": ReadmeSteps.working_dir,
-        }
-        self.no_output = no_output
-
-    def get_workflow_step(self) -> str:
-        template = Step.get_workflow_template("step_bash.yml.jinja2")
-        content = template.render(self.replacements)
-        return content
-
-
 class AzureLoginStep(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Azure Login")
@@ -117,6 +95,21 @@ class CreateAoaiFromYaml(Step):
         )
 
 
+class ExtractStepsAndRun(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Extract Steps")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template("step_extract_steps_and_run.yml.jinja2")
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+            }
+        )
+
+
 class CreateEnv(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Create Python Environment")
@@ -148,7 +141,6 @@ class ReadmeSteps:
 
     step_array = []  # Record steps
     working_dir = ""  # the working directory of flow, relative to git_base_dir
-    readme = ""  # Generated readme name under the working_dir
     template = ""  # Select a base template under workflow_templates folder
     workflow = ""  # Target workflow name to be generated
 
@@ -183,24 +175,21 @@ class ReadmeSteps:
         return ReadmeSteps.remember_step(InstallDevDependenciesStep())
 
     @staticmethod
-    def bash(command, demo_command=None, comment=None, no_output=False) -> Step:
-        return ReadmeSteps.remember_step(
-            BashStep(command, demo_command, comment, no_output=no_output)
-        )
-
-    @staticmethod
     def create_run_yaml() -> Step:
         return ReadmeSteps.remember_step(CreateRunYaml())
+    
+    @staticmethod
+    def extract_steps_and_run() -> Step:
+        return ReadmeSteps.remember_step(ExtractStepsAndRun())
 
     # endregion steps
 
     @staticmethod
-    def setup_target(working_dir: str, readme: str, template: str, target: str) -> str:
+    def setup_target(working_dir: str, template: str, target: str) -> str:
         """
         Used at the very head of jinja template to indicate basic information
         """
         ReadmeSteps.working_dir = working_dir
-        ReadmeSteps.readme = readme
         ReadmeSteps.template = template
         ReadmeSteps.workflow = target
         ReadmeSteps.step_array = []
@@ -209,7 +198,6 @@ class ReadmeSteps:
     @staticmethod
     def cleanup() -> None:
         ReadmeSteps.working_dir = ""
-        ReadmeSteps.readme = ""
         ReadmeSteps.template = ""
         ReadmeSteps.workflow = ""
         ReadmeSteps.step_array = []
@@ -217,7 +205,7 @@ class ReadmeSteps:
 
 class ReadmeStepsManage:
     """
-    # Static method for driver use.
+    # Static methods for manage all readme steps
     """
 
     repo_base_dir = ""
@@ -234,16 +222,6 @@ class ReadmeStepsManage:
                 .strip()
             )
         return ReadmeStepsManage.repo_base_dir
-
-    @staticmethod
-    def write_readme(content: str) -> None:
-        filename = (
-            Path(ReadmeStepsManage.git_base_dir())
-            / ReadmeSteps.working_dir
-            / ReadmeSteps.readme
-        )
-        with open(filename.resolve(), "w", encoding="utf-8") as f:
-            f.write(content)
 
     @staticmethod
     def write_workflow(workflow_name: str, pipeline_name: str) -> None:

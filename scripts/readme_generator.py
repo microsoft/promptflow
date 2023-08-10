@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from ghactions_driver.extract_steps_from_readme import write_readme_workflow
+from ghactions_driver.readme_workflow_generate import write_readme_workflow
 from ghactions_driver.readme_step import ReadmeStepsManage, ReadmeSteps
 
 
