@@ -8,6 +8,10 @@ steps:
     uses: actions/setup-python@v4
     with:
       python-version: "3.9"
+  - name: Setup Pandoc
+    uses: maxheld83/pandoc@v2
+    with:
+      args: "--help"
 {%- filter indent(width=2) -%}
 {% for step in steps %}
 {{ step.get_workflow_step() }}{% endfor %}
