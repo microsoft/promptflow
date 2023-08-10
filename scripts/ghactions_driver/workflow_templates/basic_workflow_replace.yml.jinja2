@@ -1,0 +1,19 @@
+{% extends "workflow_skeleton.yml.jinja2" %}
+{% block steps %}
+runs-on: ubuntu-latest
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v3
+  - name: Setup Python 3.9 environment
+    uses: actions/setup-python@v4
+    with:
+      python-version: "3.9"
+  - name: Setup Pandoc
+    uses: r-lib/actions/setup-pandoc@v1
+    with:
+      pandoc-version: '2.12'
+{%- filter indent(width=2) -%}
+{% for step in steps %}
+{{ step.get_workflow_step() }}{% endfor %}
+{%- endfilter -%}
+{% endblock steps %}

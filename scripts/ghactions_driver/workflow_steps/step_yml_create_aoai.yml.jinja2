@@ -1,0 +1,3 @@
+- name: {{ step_name }}
+  working-directory: {{ working_dir }}
+  run: pf connection create --file {{ yaml_name }} --set api_key=${{ '{{' }} secrets.AOAI_API_KEY }} api_base=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
