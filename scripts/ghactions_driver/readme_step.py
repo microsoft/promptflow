@@ -1,6 +1,7 @@
-from jinja2 import Environment, FileSystemLoader, Template
 import subprocess
 from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader, Template
 
 
 class Step:
@@ -177,7 +178,7 @@ class ReadmeSteps:
     @staticmethod
     def create_run_yaml() -> Step:
         return ReadmeSteps.remember_step(CreateRunYaml())
-    
+
     @staticmethod
     def extract_steps_and_run() -> Step:
         return ReadmeSteps.remember_step(ExtractStepsAndRun())
