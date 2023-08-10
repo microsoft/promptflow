@@ -116,7 +116,7 @@ pfazure run create --file run.yml --stream --runtime demo-mir
 pfazure run list -r 3
 
 # get a sample run name
-name=$(pfazure run list -r 100 | jq '.[] | select(.name | contains("basic_default")) | .name'| head -n 1)
+name=$(pfazure run list -r 100 | jq '.[] | select(.name | contains("basic_default")) | .name'| head -n 1 | tr -d '"')
 
 # show specific run detail
 pfazure run show --name $name
