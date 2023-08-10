@@ -113,7 +113,7 @@ class ExtractStepsAndRun(Step):
 
 class CreateEnv(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Create Python Environment")
+        Step.__init__(self, "Refine .env file")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_create_env.yml.jinja2")
