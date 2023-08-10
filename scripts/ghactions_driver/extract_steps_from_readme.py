@@ -31,7 +31,7 @@ def strip_comments(code):
 
 def action(elem, doc):
     global full_text
-    if elem is panflute.CodeBlock and "bash" in elem.classes:
+    if isinstance(elem, panflute.CodeBlock) and "bash" in elem.classes:
         full_text = "\n".join([full_text, strip_comments(elem.text)])
 
 
