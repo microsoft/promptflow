@@ -37,6 +37,9 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Create AOAI Connection from YAML
+        working-directory: ${{ github.workspace }}
+        run: pf connection create --file examples/flows/standard/basic-with-connection/custom.yml --set api_key=${{ secrets.AOAI_API_KEY }} api_base=${{ secrets.AOAI_API_ENDPOINT }}
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |

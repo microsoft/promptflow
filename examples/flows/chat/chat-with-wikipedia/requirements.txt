@@ -3,3 +3,4 @@ promptflow
 promptflow-tools
 langchain
 jinja2
+bs4
