@@ -1,6 +1,3 @@
 #!/usr/bin/env bash
-
-foo() {
-{% filter indent(width=4) %}
-{{ command }}{% endfilter %}
-}
+set -xe
+{{ command }}

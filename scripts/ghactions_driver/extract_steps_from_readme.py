@@ -33,7 +33,8 @@ def action(elem, doc):
 
 
 def readme_parser(filename: str):
-    data = pypandoc.convert_file(filename, "json")
+    real_filename = Path(ReadmeStepsManage.git_base_dir()) / filename
+    data = pypandoc.convert_file(str(real_filename), "json")
     f = io.StringIO(data)
     doc = panflute.load(f)
     panflute.run_filter(action, doc=doc)
