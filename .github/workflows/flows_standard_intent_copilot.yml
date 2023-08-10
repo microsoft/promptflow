@@ -44,12 +44,6 @@ jobs:
           echo AZURE_OPENAI_API_BASE=${{ secrets.AOAI_API_ENDPOINT }} >> .env
           echo AZURE_OPENAI_API_TYPE=azure >> .env
           echo AZURE_OPENAI_API_VERSION=2023-03-15-preview >> .env
-      - name: Create run.yml
-        working-directory: examples/flows/standard/intent-copilot
-        run: |
-          gpt_base=${{ secrets.AOAI_API_ENDPOINT }}
-          gpt_base=$(echo ${gpt_base//\//\\/})
-          sed -i -e "s/\${azure_open_ai_connection.api_key}/${{ secrets.AOAI_API_KEY }}/g" -e "s/\${azure_open_ai_connection.api_base}/$gpt_base/g" run.yml
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
