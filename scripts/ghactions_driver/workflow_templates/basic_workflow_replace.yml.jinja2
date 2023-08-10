@@ -9,9 +9,9 @@ steps:
     with:
       python-version: "3.9"
   - name: Setup Pandoc
-    uses: maxheld83/pandoc@v2
+    uses: r-lib/actions/setup-pandoc@v1
     with:
-      args: "--help"
+      pandoc-version: '2.12'
 {%- filter indent(width=2) -%}
 {% for step in steps %}
 {{ step.get_workflow_step() }}{% endfor %}
