@@ -42,7 +42,7 @@ pf run create --flow . --data ./data
 # list created run
 pf run list
 # get a sample completed run name
-name=$(pf run list | jq '.[] | select(.name | contains("intent_copilot")) | .name'| head -n 1)
+name=$(pf run list | jq '.[] | select(.name | contains("intent_copilot")) | .name'| head -n 1 | tr -d '"')
 # show run
 pf run show --name $name
 # show specific run detail, top 3 lines
@@ -53,22 +53,22 @@ pf run show-details --name $name -r 3
 
 ```bash
 # create evaluation run
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name 
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name
 ```
 
 ```bash
 # get the evaluation run in previous step
-name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1)
+evalue_name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1 | tr -d '"')
 # show run
-pf run show --name "classification_accuracy_eval_default_20230724_172154_294669"
+pf run show --name $evalue_name
 # show run output
-pf run show-details --name "classification_accuracy_eval_default_20230724_172154_294669" -r 3
+pf run show-details --name $evalue_name -r 3
 ```
 
 6. visualize
 ```bash
 # visualize in browser
-pf run visualize --name "classification_accuracy_eval_default_20230724_172154_294669" # your evaluation run name
+pf run visualize --name $evalue_name # your evaluation run name
 ```
 
 ## Deploy 
