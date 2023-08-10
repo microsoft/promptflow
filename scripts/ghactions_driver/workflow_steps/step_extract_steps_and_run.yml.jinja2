@@ -1,0 +1,13 @@
+- name: {{ step_name }}
+  working-directory: ${{ '{{' }} github.workspace }}
+  run: |
+    python scripts/ghactions_driver/extract_steps_from_readme.py -f {{ working_dir }}/README.md -o {{ working_dir }}
+- name: Run scripts
+  working-directory: {{ working_dir }}
+  run: |
+    bash bash_script.sh ${{ '{{' }}secrets.AOAI_API_KEY }} ${{ '{{' }} secrets.AOAI_API_ENDPOINT }} ${{ '{{' }} secrets.TEST_WORKSPACE_SUB_ID }} ${{ '{{' }} secrets.TEST_WORKSPACE_RG }} ${{ '{{' }} secrets.TEST_WORKSPACE_NAME }}
+- name: Upload artifact
+  uses: actions/upload-artifact@v3
+  with:
+    name: artifact
+    path: {{ working_dir }}/bash_script.sh
