@@ -47,61 +47,74 @@ pf flow test --flow . --inputs url='https://www.microsoft.com/en-us/d/xbox-wirel
 ```bash
 # create run using command line args
 pf run create --flow . --data ./data.jsonl --stream
-# create run using yaml file
-pf run create --file run.yml --stream
+
+# create a random run name
+run_name="web_classification_"$(openssl rand -hex 12)
+# create run using yaml file, run_name will be used in following contents
+pf run create --file run.yml --stream --name $run_name
 ```
 
 ```bash
 # list run
 pf run list
 # show run
-pf run show --name "web_classification_variant_1_20230724_173442_973403"
+pf run show --name $run_name
 # show run outputs
-
-pf run show-details --name "web_classification_variant_1_20230724_173442_973403"
+pf run show-details --name $run_name
 ```
 
 ### 5. Run with classification evaluation flow
 
 create `evaluation` run:
 ```bash
+# save previous run name into variable, and create a new random run name for furthur use
+prev_run_name=$run_name
+run_name="classification_accuracy_"$(openssl rand -hex 12)
 # create run using command line args
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run "web_classification_variant_1_20230724_173442_973403" --stream
+pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --stream
 # create run using yaml file
-pf run create --file run_evaluation.yml --run "web_classification_variant_1_20230724_173442_973403" --stream
+pf run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name
 ```
 
 ```bash
-pf run show-details --name "classification_accuracy_eval_default_20230724_173628_639497"
-pf run show-metrics --name "classification_accuracy_eval_default_20230724_173628_639497"
-pf run visualize --name "classification_accuracy_eval_default_20230724_173628_639497"
+pf run show-details --name $run_name
+pf run show-metrics --name $run_name
+pf run visualize --name $run_name
 ```
 
 
 ### 6. Submit run to cloud
 ```bash
 # set default workspace
-az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
-az configure --defaults group="promptflow" workspace="promptflow-eastus"
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
 
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g promptflow -w promptflow-eastus
+pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_id> -w <your_workspace_name>
 pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 pfazure run create --file run.yml --runtime demo-mir
-pfazure run create --file run.yml --stream # serverless compute
+
+# create a new random run name for furthur use
+run_name="web_classification_"$(openssl rand -hex 12)
+pfazure run create --file run.yml --stream --name $run_name # serverless compute
 
 
-pfazure run stream --name "web_classification_default_20230724_173705_462735"
-pfazure run show-details --name "web_classification_default_20230724_173705_462735"
-pfazure run show-metrics --name "web_classification_default_20230724_173705_462735"
+pfazure run stream --name $run_name
+pfazure run show-details --name $run_name
+pfazure run show-metrics --name $run_name
+
+
+# save previous run name into variable, and create a new random run name for furthur use
+prev_run_name=$run_name
+run_name="classification_accuracy_"$(openssl rand -hex 12)
 
 # create evaluation run
-pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run "web_classification_default_20230724_173705_462735" --runtime demo-mir
-pfazure run create --file run_evaluation.yml --run "web_classification_default_20230724_173705_462735" --stream # serverless compute
+pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime demo-mir
+pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name # serverless compute
 
-pfazure run stream --name "classification_accuracy_eval_default_20230724_173843_841080"
-pfazure run show --name "classification_accuracy_eval_default_20230724_173843_841080"
-pfazure run show-details --name "classification_accuracy_eval_default_20230724_173843_841080"
-pfazure run show-metrics --name "classification_accuracy_eval_default_20230724_173843_841080"
-pfazure run visualize --name "classification_accuracy_eval_default_20230724_173843_841080" 
+pfazure run stream --name $run_name
+pfazure run show --name $run_name
+pfazure run show-details --name $run_name
+pfazure run show-metrics --name $run_name
+pfazure run visualize --name $run_name
 ```

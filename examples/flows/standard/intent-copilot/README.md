@@ -85,5 +85,5 @@ TODO: introduce the browser based test app
 
 #### Export as docker
 ```bash
-pf flow export --source . --format docker --path ./package
+pf flow export --source . --format docker --output ./package
 ```

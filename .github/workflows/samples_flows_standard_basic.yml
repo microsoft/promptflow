@@ -26,6 +26,8 @@ jobs:
         uses: r-lib/actions/setup-pandoc@v1
         with:
           pandoc-version: '2.12'
+      - name: Generate config.json
+        run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
         working-directory: examples/flows/standard/basic
         run: |
@@ -61,7 +63,12 @@ jobs:
       - name: Run scripts
         working-directory: examples/flows/standard/basic
         run: |
-          bash bash_script.sh ${{secrets.AOAI_API_KEY }} ${{ secrets.AOAI_API_ENDPOINT }} ${{ secrets.TEST_WORKSPACE_SUB_ID }} ${{ secrets.TEST_WORKSPACE_RG }} ${{ secrets.TEST_WORKSPACE_NAME }}
+          export aoai_api_key=${{secrets.AOAI_API_KEY }}
+          export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT }}
+          export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
+          export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
+          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
+          bash bash_script.sh
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

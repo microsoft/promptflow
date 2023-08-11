@@ -23,11 +23,11 @@ def strip_comments(code):
     ]  # remove --interactive and pf flow serve
     text = "\n".join([ll.rstrip() for ll in splits_no_interactive])
     # replacements
-    text = text.replace("<your_api_key>", "$1")
-    text = text.replace("<your_api_base>", "$2")
-    text = text.replace("<your_subscription_id>", "$3")
-    text = text.replace("<your_resource_group_id>", "$4")
-    text = text.replace("<your_workspace_name>", "$5")
+    text = text.replace("<your_api_key>", "$aoai_api_key")
+    text = text.replace("<your_api_base>", "$aoai_api_endpoint")
+    text = text.replace("<your_subscription_id>", "$test_workspace_sub_id")
+    text = text.replace("<your_resource_group_id>", "$test_workspace_rg")
+    text = text.replace("<your_workspace_name>", "$test_workspace_name")
     return text
 
 

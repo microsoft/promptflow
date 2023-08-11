@@ -23,17 +23,16 @@ def write_readme_workflow(readme_path):
     ReadmeSteps.install_dependencies()
     ReadmeSteps.install_dev_dependencies()
     ReadmeSteps.azure_login()
-    if (
-        workflow_name == "flows_standard_basic"
-        or workflow_name == "flows_standard_intent_copilot"
+    if workflow_name.endswith("flows_standard_basic") or workflow_name.endswith(
+        "flows_standard_intent_copilot"
     ):
         ReadmeSteps.create_env()
-    if workflow_name == "flows_standard_basic":
+    if workflow_name.endswith("flows_standard_basic"):
         ReadmeSteps.create_run_yaml()
     if (
-        workflow_name == "flows_standard_basic_with_builtin_llm"
-        or workflow_name == "flows_standard_flow_with_symlinks"
-        or workflow_name == "flows_standard_flow_with_additional_includes"
+        workflow_name.endswith("flows_standard_basic_with_builtin_llm")
+        or workflow_name.endswith("flows_standard_flow_with_symlinks")
+        or workflow_name.endswith("flows_standard_flow_with_additional_includes")
     ):
         ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
     ReadmeSteps.extract_steps_and_run()
