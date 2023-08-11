@@ -48,9 +48,9 @@ pf flow test --flow . --inputs url='https://www.microsoft.com/en-us/d/xbox-wirel
 # create run using command line args
 pf run create --flow . --data ./data.jsonl --stream
 
-# create a random run name
+# (Optional) create a random run name
 run_name="web_classification_"$(openssl rand -hex 12)
-# create run using yaml file, run_name will be used in following contents
+# create run using yaml file, run_name will be used in following contents, --name is optional
 pf run create --file run.yml --stream --name $run_name
 ```
 
@@ -67,12 +67,12 @@ pf run show-details --name $run_name
 
 create `evaluation` run:
 ```bash
-# save previous run name into variable, and create a new random run name for furthur use
+# (Optional) save previous run name into variable, and create a new random run name for furthur use
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 # create run using command line args
 pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --stream
-# create run using yaml file
+# create run using yaml file, --name is optional
 pf run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name
 ```
 
@@ -93,8 +93,10 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
 # pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 
-# create a new random run name for furthur use
+# (Optional) create a new random run name for furthur use
 run_name="web_classification_"$(openssl rand -hex 12)
+
+# create run using yaml file, --name is optional
 pfazure run create --file run.yml --runtime demo-mir --name $run_name
 # pfazure run create --file run.yml --stream --name $run_name # serverless compute
 
@@ -104,11 +106,11 @@ pfazure run show-details --name $run_name
 pfazure run show-metrics --name $run_name
 
 
-# save previous run name into variable, and create a new random run name for furthur use
+# (Optional) save previous run name into variable, and create a new random run name for furthur use
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 
-# create evaluation run
+# create evaluation run, --name is optional
 pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime demo-mir
 pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name --runtime demo-mir
 
