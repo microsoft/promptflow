@@ -58,17 +58,17 @@ pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data
 
 ```bash
 # get the evaluation run in previous step
-evalue_name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1 | tr -d '"')
+eval_run_name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1 | tr -d '"')
 # show run
-pf run show --name $evalue_name
+pf run show --name $eval_run_name
 # show run output
-pf run show-details --name $evalue_name -r 3
+pf run show-details --name $eval_run_name -r 3
 ```
 
 6. visualize
 ```bash
 # visualize in browser
-pf run visualize --name $evalue_name # your evaluation run name
+pf run visualize --name $eval_run_name # your evaluation run name
 ```
 
 ## Deploy 

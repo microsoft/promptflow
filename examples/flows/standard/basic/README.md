@@ -99,7 +99,7 @@ pf run show-details --name $name
 ```bash
 # set default workspace
 az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 ```
 
 - Create run

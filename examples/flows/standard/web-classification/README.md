@@ -87,10 +87,10 @@ pf run visualize --name $run_name
 ```bash
 # set default workspace
 az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_id> -w <your_workspace_name>
+pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
 # pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 
 # create a new random run name for furthur use

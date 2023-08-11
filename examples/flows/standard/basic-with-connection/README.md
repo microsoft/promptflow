@@ -99,7 +99,7 @@ Run flow with connection `azure_open_ai_connection`.
 ```bash
 # set default workspace
 az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 pfazure run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream --runtime demo-mir
 ```

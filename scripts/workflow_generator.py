@@ -79,11 +79,11 @@ def write_workflows(notebooks):
         write_notebook_workflow(notebook, name)
 
 
-def main(args):
+def main(input_glob):
     # get list of workflows
 
     workflows = _get_paths(
-        [j for i in [glob.glob(p, recursive=True) for p in args.input_glob] for j in i]
+        [j for i in [glob.glob(p, recursive=True) for p in input_glob] for j in i]
     )
 
     # format code
@@ -103,4 +103,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # call main
-    main(args)
+    main(input_glob=args.input_glob)
