@@ -57,7 +57,7 @@ def write_notebook_workflow(notebook, name):
             "gh_working_dir": gh_working_dir,
             "path_filter": "[ examples/** ]",
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
-            "crontab_comment": f"Every day starting at {schedule_hour}:{schedule_minute} UTC",
+            "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
         }
     )
 

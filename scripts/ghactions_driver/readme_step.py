@@ -236,7 +236,7 @@ class ReadmeStepsManage:
             "name": pipeline_name,
             "path_filter": "[ examples/** ]",
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
-            "crontab_comment": f"Every day starting at {schedule_hour}:{schedule_minute} UTC",
+            "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
         }
         workflow_template_path = (
             Path(ReadmeStepsManage.git_base_dir())

@@ -6,7 +6,7 @@
 name: samples_flowinpipeline_pipeline
 on:
   schedule:
-    - cron: "28 19 * * *" # Every day starting at 19:28 UTC
+    - cron: "28 19 * * *" # Every day starting at 3:28 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]

@@ -6,7 +6,7 @@
 name: samples_flows_standard_basic
 on:
   schedule:
-    - cron: "41 21 * * *" # Every day starting at 21:41 UTC
+    - cron: "41 21 * * *" # Every day starting at 5:41 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]
