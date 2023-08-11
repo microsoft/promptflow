@@ -2,9 +2,10 @@
 import os
 import sys
 
-sys.path.append(f"{os.path.dirname(__file__)}/chat_with_pdf")
-
 from promptflow import tool
+
+# append chat_with_pdf to sys.path so code inside it can discover its modules
+sys.path.append(f"{os.path.dirname(__file__)}/chat_with_pdf")
 from chat_with_pdf.rewrite_question import rewrite_question
 
 
