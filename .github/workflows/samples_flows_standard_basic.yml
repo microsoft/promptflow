@@ -3,10 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: flows_standard_basic
+name: samples_flows_standard_basic
 on:
+  schedule:
+    - cron: "41 21 * * *" # Every day starting at 5:41 BJT
   pull_request:
     branches: [ main ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:
@@ -37,7 +40,7 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Create Python Environment
+      - name: Refine .env file
         working-directory: examples/flows/standard/basic
         run: |
           echo AZURE_OPENAI_API_KEY=${{ secrets.AOAI_API_KEY }} > .env

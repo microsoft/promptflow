@@ -12,6 +12,7 @@ def write_readme_workflow(readme_path):
         Path(ReadmeStepsManage.git_base_dir()) / "examples"
     )
     workflow_name = relative_name_path.as_posix().replace("/", "_").replace("-", "_")
+    workflow_name = "samples_" + workflow_name
 
     ReadmeSteps.setup_target(
         workflow_path,
