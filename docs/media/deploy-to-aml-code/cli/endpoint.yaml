@@ -1,0 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+name: basic-chat-endpoint
+description: basic chat endpoint deployed using CLI
+auth_mode: key

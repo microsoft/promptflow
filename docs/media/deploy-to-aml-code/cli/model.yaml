@@ -1,0 +1,15 @@
+$schema: https://azuremlschemas.azureedge.net/latest/model.schema.json
+name: basic-chat-model
+path: ../../../../examples/flows/chat/basic-chat
+description: register basic chat flow folder as a custom model
+properties:
+  # endpoint detail UI Test tab needs this property to know it's from prompt flow
+  azureml.promptflow.source_flow_id: basic-chat
+  
+  # Following are properties only for chat flow 
+  # endpoint detail UI Test tab needs this property to know it's a chat flow
+  azureml.promptflow.mode: chat
+  # endpoint detail UI Test tab needs this property to know which is the input column for chat flow
+  azureml.promptflow.chat_input: question
+  # endpoint detail UI Test tab needs this property to know which is the output column for chat flow
+  azureml.promptflow.chat_output: answer

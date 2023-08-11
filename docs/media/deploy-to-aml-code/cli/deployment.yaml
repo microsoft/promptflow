@@ -1,0 +1,33 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: blue
+endpoint_name: basic-chat-endpoint
+model: azureml:basic-chat-model:1
+environment: 
+  image: mcr.microsoft.com/azureml/promptflow/promptflow-runtime:20230801.v1
+  # deploy prompt flow is BYOC, so we need to specify the inference config
+  inference_config:
+    liveness_route:
+      path: /health
+      port: 8080
+    readiness_route:
+      path: /health
+      port: 8080
+    scoring_route:
+      path: /score
+      port: 8080
+instance_type: Standard_E16s_v3
+instance_count: 1
+environment_variables:
+  # When there are multiple fields in the response, using this env variable will filter the fields to expose in the response.
+  # For example, if there are 2 flow outputs: "answer", "context", and I only want to have "answer" in the endpoint response, I can set this env variable to '["answer"]'
+  # PROMPTFLOW_RESPONSE_INCLUDED_FIELDS: '["category", "evidence"]'
+
+  # "compute" mode is the default mode, if you want to deploy to serving mode, you need to set this env variable to "serving"
+  PROMPTFLOW_RUN_MODE: serving
+  azureml.promptflow.mode: chat
+  # endpoint detail UI Test tab needs this property to know which is the input column for chat flow
+  azureml.promptflow.chat_input: question
+  # endpoint detail UI Test tab needs this property to know which is the output column for chat flow
+  azureml.promptflow.chat_output: answer
+  # currently it is for pulling connections from workspace
+  PRT_CONFIG_OVERRIDE: deployment.subscription_id=<subscription_id>,deployment.resource_group=<resource_group>,deployment.workspace_name=<workspace_name>,deployment.endpoint_name=<endpoint_name>,deployment.deployment_name=<deployment_name>
