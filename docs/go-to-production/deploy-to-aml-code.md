@@ -87,6 +87,7 @@ auth_mode: key
 :sync: Kubernetes online endpoint
 
 ```yaml
+$schema: https://azuremlschemas.azureedge.net/latest/kubernetesOnlineEndpoint.schema.json
 name: basic-chat-endpoint
 compute: azureml:<Kubernetes compute name>
 auth_mode: key
@@ -169,6 +170,7 @@ environment_variables:
 :sync: Kubernetes online deployment
 
 ```yaml
+$schema: https://azuremlschemas.azureedge.net/latest/kubernetesOnlineDeployment.schema.json
 name: blue
 endpoint_name: basic-chat-endpoint
 model: azureml:basic-chat-model:1
