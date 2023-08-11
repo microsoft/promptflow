@@ -7,7 +7,7 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.core.cache_manager import enable_cache
 from promptflow.core.tool import ToolProvider, tool
-from promptflow.core.tools_manager import register_api_method, register_apis
+from promptflow.core.tools_manager import register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, parse_chat, to_bool, \
     validate_functions, process_function_call, post_process_chat_api_response
 
@@ -162,7 +162,7 @@ class AzureOpenAI(ToolProvider):
 register_apis(AzureOpenAI)
 
 
-@tool
+# provide below functions for easy way to use pf tools in python script.
 def completion(
     connection: AzureOpenAIConnection,
     prompt: PromptTemplate,
@@ -204,7 +204,6 @@ def completion(
     )
 
 
-@tool
 def chat(
     connection: AzureOpenAIConnection,
     prompt: PromptTemplate,
@@ -241,7 +240,3 @@ def chat(
         functions=functions,
         **kwargs,
     )
-
-
-register_api_method(completion)
-register_api_method(chat)

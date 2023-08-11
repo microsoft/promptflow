@@ -6,6 +6,7 @@ import requests
 
 from promptflow.core.tool import ToolProvider, tool
 from promptflow.connections import SerpConnection
+# TODO: remove below legacy register functions.
 from promptflow.core.tools_manager import register_builtin_method, register_builtins
 from promptflow.exceptions import PromptflowException
 from promptflow.tools.exception import SerpAPIUserError, SerpAPISystemError
@@ -120,6 +121,7 @@ class SerpAPI(ToolProvider):
 register_builtins(SerpAPI)
 
 
+# provide below functions for easy way to use pf tools in python script.
 @tool
 def search(
         connection: SerpConnection,

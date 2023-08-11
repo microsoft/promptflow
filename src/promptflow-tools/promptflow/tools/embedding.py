@@ -6,6 +6,7 @@ import openai
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 from promptflow.core.tool import tool
+# TODO: remove below legacy register functions.
 from promptflow.core.tools_manager import register_builtin_method
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import InvalidConnectionType

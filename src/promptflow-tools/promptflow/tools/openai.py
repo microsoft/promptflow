@@ -6,7 +6,7 @@ import openai
 from promptflow.connections import OpenAIConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.core.tool import ToolProvider, tool
-from promptflow.core.tools_manager import register_api_method, register_apis
+from promptflow.core.tools_manager import register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, post_process_chat_api_response
 
@@ -154,7 +154,7 @@ class OpenAI(ToolProvider):
 register_apis(OpenAI)
 
 
-@tool
+# provide below functions for easy way to use pf tools in python script.
 def completion(
         connection: OpenAIConnection,
         prompt: PromptTemplate,
@@ -196,7 +196,6 @@ def completion(
     )
 
 
-@tool
 def chat(
         connection: OpenAIConnection,
         prompt: PromptTemplate,
@@ -232,7 +231,3 @@ def chat(
         functions=functions,
         **kwargs,
     )
-
-
-register_api_method(completion)
-register_api_method(chat)
