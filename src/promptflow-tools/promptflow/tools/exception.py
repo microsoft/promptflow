@@ -22,8 +22,9 @@ def to_openai_error_message(e: Exception) -> str:
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         return f"OpenAI API hits {ex_type}: {msg}"
     elif "The completion operation does not work with the specified model" in str(e):
-        msg = "The completion operation only support some specified models, please choose the model text-davinci-001, text-davinci-002," \
-              "text-davinci-003, text-curie-001, text-babbage-001, text-ada-001, code-cushman-001 or code-davinci-002 for completion operation."
+        msg = "The completion operation only support some specified models, please choose the model text-davinci-001, " \
+              "text-davinci-002, text-davinci-003, text-curie-001, text-babbage-001, text-ada-001, code-cushman-001 " \
+              "or code-davinci-002 for completion operation."
         return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
