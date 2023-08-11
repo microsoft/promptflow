@@ -16,7 +16,7 @@ class TestAOAI:
         aoai_provider.completion(
             prompt=prompt_template, deployment_name="text-ada-001", stop=[], logit_bias={}
         )
-    
+
     def test_aoai_stream_completion(self, aoai_provider):
         prompt_template = "please complete this sentence: world war II "
         # test whether tool can handle param "stop" with value empty list in stream mode
