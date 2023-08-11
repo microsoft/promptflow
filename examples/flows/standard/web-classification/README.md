@@ -91,12 +91,12 @@ az configure --defaults group=<your_resource_group_id> workspace=<your_workspace
 
 # create run
 pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_id> -w <your_workspace_name>
-pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
-pfazure run create --file run.yml --runtime demo-mir
+# pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 
 # create a new random run name for furthur use
 run_name="web_classification_"$(openssl rand -hex 12)
-pfazure run create --file run.yml --stream --name $run_name # serverless compute
+pfazure run create --file run.yml --runtime demo-mir --name $run_name
+# pfazure run create --file run.yml --stream --name $run_name # serverless compute
 
 
 pfazure run stream --name $run_name
@@ -110,7 +110,7 @@ run_name="classification_accuracy_"$(openssl rand -hex 12)
 
 # create evaluation run
 pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime demo-mir
-pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name # serverless compute
+pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name --runtime demo-mir
 
 pfazure run stream --name $run_name
 pfazure run show --name $run_name

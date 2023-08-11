@@ -110,6 +110,23 @@ class ExtractStepsAndRun(Step):
         )
 
 
+class ExtractStepsAndRunGPTFour(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Extract Steps")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template(
+            "step_extract_steps_and_run_gpt4.yml.jinja2"
+        )
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+            }
+        )
+
+
 class CreateEnv(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Refine .env file")
@@ -181,6 +198,10 @@ class ReadmeSteps:
     @staticmethod
     def extract_steps_and_run() -> Step:
         return ReadmeSteps.remember_step(ExtractStepsAndRun())
+
+    @staticmethod
+    def extract_steps_and_run_gpt_four() -> Step:
+        return ReadmeSteps.remember_step(ExtractStepsAndRunGPTFour())
 
     # endregion steps
 

@@ -35,7 +35,10 @@ def write_readme_workflow(readme_path):
         or workflow_name.endswith("flows_standard_flow_with_additional_includes")
     ):
         ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
-    ReadmeSteps.extract_steps_and_run()
+    if workflow_name.endswith("flows_standard_summarizing_film_with_autogpt"):
+        ReadmeSteps.extract_steps_and_run_gpt_four()
+    else:
+        ReadmeSteps.extract_steps_and_run()
 
     ReadmeStepsManage.write_workflow(workflow_name, "auto_generated_steps")
     ReadmeSteps.cleanup()

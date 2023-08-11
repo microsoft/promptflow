@@ -57,14 +57,17 @@ pf run create --flow . --data ./data.jsonl --stream
 # list created run
 pf run list -r 3
 
+# get a sample run name
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_with_connection")) | .name'| head -n 1 | tr -d '"')
+
 # show specific run detail
-pf run show --name "basic_with_connection_default_20230724_160757_016682"
+pf run show --name $name
 
 # show output
-pf run show-details --name "basic_with_connection_default_20230724_160757_016682"
+pf run show-details --name $name
 
 # visualize run in browser
-pf run visualize --name "basic_with_connection_default_20230724_160757_016682"
+pf run visualize --name $name
 ```
 
 ### Run with connection overwrite
@@ -95,8 +98,8 @@ Run flow with connection `azure_open_ai_connection`.
 
 ```bash
 # set default workspace
-az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
-az configure --defaults group="promptflow" workspace="promptflow-eastus"
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
 
 pfazure run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream --runtime demo-mir
 ```
