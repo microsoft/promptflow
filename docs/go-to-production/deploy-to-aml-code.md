@@ -66,14 +66,36 @@ To define an endpoint, you need to specify:
 - **Authentication mode**: The authentication method for the endpoint. Choose between key-based authentication and Azure Machine Learning token-based authentication. A key doesn't expire, but a token does expire. For more information on authenticating, see [Authenticate to an online endpoint](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-authenticate-online-endpoint?view=azureml-api-2).
 Optionally, you can add a description and tags to your endpoint.
 - Optionally, you can add a description and tags to your endpoint.
+- If you want to deploy to a Kubernetes cluster (AKS or Arc enabled cluster)  which is attaching to your workspace, you can deploy the flow to be a **Kubernetes online endpoint**.
 
 Following is an endpoint definition example.
+
+::::{tab-set}
+
+:::{tab-item} Managed online endpoint
+:sync: Managed online endpoint
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
 name: basic-chat-endpoint
 auth_mode: key
 ```
+
+:::
+
+:::{tab-item} Kubernetes online endpoint
+:sync: Kubernetes online endpoint
+
+```yaml
+name: basic-chat-endpoint
+compute: azureml:<Kubernetes compute name>
+auth_mode: key
+```
+
+:::
+
+::::
+
 
 | Key         | Description                                                                                                                                                                                                                                                 |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -93,11 +115,16 @@ auth_mode: key
 A deployment is a set of resources required for hosting the model that does the actual inferencing. To deploy a flow, you must have:
 
 - **Model files (or the name and version of a model that's already registered in your workspace).** In the example, we have a scikit-learn model that does regression.
-- **A scoring script, that is, code that executes the model on a given input request. The scoring script receives data submitted to a deployed web service and passes it to the model. The script then executes the model and returns its response to the client. The scoring script is specific to your model and must understand the data that the model expects as input and returns as output. In this example, we have a score.py file.
+- **A scoring script**, that is, code that executes the model on a given input request. The scoring script receives data submitted to a deployed web service and passes it to the model. The script then executes the model and returns its response to the client. The scoring script is specific to your model and must understand the data that the model expects as input and returns as output. In this example, we have a score.py file.
 An environment in which your model runs. The environment can be a Docker image with Conda dependencies or a Dockerfile.
 Settings to specify the instance type and scaling capacity.
 
 Following is a deployment definition example.
+
+::::{tab-set}
+
+:::{tab-item} Managed online deployment
+:sync: Managed online deployment
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
@@ -135,6 +162,50 @@ environment_variables:
   # If you don't set this environment, by default all flow outputs will be included in the endpoint response.
   # PROMPTFLOW_RESPONSE_INCLUDED_FIELDS: '["category", "evidence"]'
 ```
+
+:::
+
+:::{tab-item} Kubernetes online deployment
+:sync: Kubernetes online deployment
+
+```yaml
+name: blue
+endpoint_name: basic-chat-endpoint
+model: azureml:basic-chat-model:1
+  # You can also specify model files path inline
+  # path: examples/flows/chat/basic-chat
+environment: 
+  image: mcr.microsoft.com/azureml/promptflow/promptflow-runtime:20230801.v1
+  mcr.microsoft.com/azureml/promptflow/promptflow-runtime:20230801.v1
+  # inference config is used to build a serving container for online deployments
+  inference_config:
+    liveness_route:
+      path: /health
+      port: 8080
+    readiness_route:
+      path: /health
+      port: 8080
+    scoring_route:
+      path: /score
+      port: 8080
+instance_type: <kubernetes custom instance type>
+instance_count: 1
+environment_variables:
+
+  # "compute" mode is the default mode, if you want to deploy to serving mode, you need to set this env variable to "serving"
+  PROMPTFLOW_RUN_MODE: serving
+
+  # for pulling connections from workspace
+  PRT_CONFIG_OVERRIDE: deployment.subscription_id=<subscription_id>,deployment.resource_group=<resource_group>,deployment.workspace_name=<workspace_name>,deployment.endpoint_name=<endpoint_name>,deployment.deployment_name=<deployment_name>
+
+  # (Optional) When there are multiple fields in the response, using this env variable will filter the fields to expose in the response.
+  # For example, if there are 2 flow outputs: "answer", "context", and I only want to have "answer" in the endpoint response, I can set this env variable to '["answer"]'.
+  # If you don't set this environment, by default all flow outputs will be included in the endpoint response.
+  # PROMPTFLOW_RESPONSE_INCLUDED_FIELDS: '["category", "evidence"]'
+```
+:::
+
+::::
 
 | Attribute      | Description                                                                                                                                                                                                                                                                                                                                                                                    |
 |-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
