@@ -16,6 +16,10 @@ class TestOpenAI:
         prompt_template = "please complete this sentence: world war II "
         openai_provider.completion(prompt=prompt_template)
 
+    def test_openai_stream_completion(self, openai_provider):
+        prompt_template = "please complete this sentence: world war II "
+        openai_provider.completion(prompt=prompt_template, stream=True)
+
     def test_openai_completion_api(self, open_ai_connection):
         prompt_template = "please complete this sentence: world war II "
         completion(open_ai_connection, prompt=prompt_template)
@@ -30,6 +34,24 @@ class TestOpenAI:
             chat_history=chat_history,
         )
         assert "details about trend 2" in result.lower()
+
+    def test_openai_stream_chat(self, openai_provider, example_prompt_template, chat_history):
+        result = openai_provider.chat(
+            prompt=example_prompt_template,
+            model="gpt-3.5-turbo",
+            max_tokens=32,
+            temperature=0,
+            user_input="Fill in more detalis about trend 2.",
+            chat_history=chat_history,
+            stream=True,
+        )
+        answer = ""
+        while True:
+            try:
+                answer += next(result)
+            except Exception:
+                break
+        assert "details about trend 2" in answer.lower()
 
     def test_openai_chat_api(self, open_ai_connection, example_prompt_template, chat_history):
         result = chat(
