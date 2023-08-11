@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 import ntpath
 import re
+import hashlib
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -27,12 +28,13 @@ def _get_paths(paths_list):
 
 def write_notebook_workflow(notebook, name):
     temp_name_list = re.split(r"/|\.", notebook)
-    temp_name_list.remove("examples")
-    temp_name_list.remove("ipynb")
-    if temp_name_list[0] != "tutorials":
-        temp_name_list = ["tutorials"] + temp_name_list
+    temp_name_list = [
+        x
+        for x in temp_name_list
+        if x != "tutorials" and x != "examples" and x != "ipynb"
+    ]
     temp_name_list = [x.replace("-", "") for x in temp_name_list]
-    workflow_name = "_".join(temp_name_list)
+    workflow_name = "_".join(["samples"] + temp_name_list)
 
     place_to_write = (
         Path(__file__).parent.parent / ".github" / "workflows" / f"{workflow_name}.yml"
@@ -43,12 +45,20 @@ def write_notebook_workflow(notebook, name):
     template = Environment(
         loader=FileSystemLoader("./scripts/ghactions_driver/workflow_templates")
     ).get_template("basic_workflow.yml.jinja2")
+
+    # Schedule notebooks at different times to reduce maximum quota usage.
+    name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
+    schedule_minute = name_hash % 60
+    hours_between_runs = 12
+    schedule_hour = (name_hash // 60) % hours_between_runs
     content = template.render(
         {
             "workflow_name": workflow_name,
             "name": name,
             "gh_working_dir": gh_working_dir,
             "path_filter": "[ examples/** ]",
+            "crontab": f"{schedule_minute} {schedule_hour}/{hours_between_runs} * * *",
+            "crontab_comment": f"Every {hours_between_runs} hours starting at {schedule_hour}:{schedule_minute} UTC",
         }
     )
 

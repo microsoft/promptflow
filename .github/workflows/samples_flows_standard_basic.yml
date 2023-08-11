@@ -5,6 +5,8 @@
 
 name: samples_flows_standard_basic
 on:
+  schedule:
+    - cron: "41 10/12 * * *" # Every 12 hours starting at 10:41 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]
