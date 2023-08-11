@@ -7,6 +7,7 @@ name: {{ workflow_name }}
 on:
   pull_request:
     branches: [ main ]
+    paths: {{ path_filter }}
   workflow_dispatch:
 
 jobs:

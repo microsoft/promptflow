@@ -29,6 +29,8 @@ def write_notebook_workflow(notebook, name):
     temp_name_list = re.split(r"/|\.", notebook)
     temp_name_list.remove("examples")
     temp_name_list.remove("ipynb")
+    if temp_name_list[0] != "tutorials":
+        temp_name_list = ["tutorials"] + temp_name_list
     temp_name_list = [x.replace("-", "") for x in temp_name_list]
     workflow_name = "_".join(temp_name_list)
 
@@ -42,7 +44,12 @@ def write_notebook_workflow(notebook, name):
         loader=FileSystemLoader("./scripts/ghactions_driver/workflow_templates")
     ).get_template("basic_workflow.yml.jinja2")
     content = template.render(
-        {"workflow_name": workflow_name, "name": name, "gh_working_dir": gh_working_dir}
+        {
+            "workflow_name": workflow_name,
+            "name": name,
+            "gh_working_dir": gh_working_dir,
+            "path_filter": "[ examples/** ]",
+        }
     )
 
     # To customize workflow, add new steps in steps.py

@@ -230,6 +230,7 @@ class ReadmeStepsManage:
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
             "name": pipeline_name,
+            "path_filter": "[ examples/** ]",
         }
         workflow_template_path = (
             Path(ReadmeStepsManage.git_base_dir())

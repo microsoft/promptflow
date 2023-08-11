@@ -6,7 +6,8 @@
 name: tutorials_flowinpipeline_pipeline
 on:
   pull_request:
-    branches: [ main,preview/code-first ]
+    branches: [ main ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:

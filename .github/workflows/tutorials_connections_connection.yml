@@ -3,14 +3,15 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: configuration
+name: tutorials_connections_connection
 on:
   pull_request:
-    branches: [ main,preview/code-first ]
+    branches: [ main ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:
-  configuration:
+  connection:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,12 +34,12 @@ jobs:
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
       - name: Test Notebook
-        working-directory: examples
+        working-directory: examples/connections
         run: |
-          papermill -k python configuration.ipynb configuration.output.ipynb
+          papermill -k python connection.ipynb connection.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples
+          path: examples/connections
