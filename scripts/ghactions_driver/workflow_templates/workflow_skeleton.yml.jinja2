@@ -5,8 +5,11 @@
 
 name: {{ workflow_name }}
 on:
+  schedule:
+    - cron: "{{ crontab }}" # {{ crontab_comment }}
   pull_request:
     branches: [ main ]
+    paths: {{ path_filter }}
   workflow_dispatch:
 
 jobs:
