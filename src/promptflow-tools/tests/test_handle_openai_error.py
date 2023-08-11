@@ -287,3 +287,11 @@ class TestHandleOpenAIError:
                 deployment_name="gpt-35-turbo"
             )
         assert "'name' is required if role is function," in exc_info.value.message
+
+    def test_completion_with_chat_model(self, azure_open_ai_connection):
+        with pytest.raises(UserErrorException) as exc_info:
+            completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-4")
+        msg = "OpenAI API hits InvalidRequestError: The completion operation only support some specified models, " \
+              "please choose the model text-davinci-001, text-davinci-002,text-davinci-003, text-curie-001, text-babbage-001, " \
+              "text-ada-001, code-cushman-001 or code-davinci-002 for completion operation."
+        assert msg == exc_info.value.message
