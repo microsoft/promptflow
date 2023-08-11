@@ -45,7 +45,7 @@ jobs:
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/ghactions_driver/extract_steps_from_readme.py -f examples/flows/standard/web-classification/README.md -o examples/flows/standard/web-classification
+          python scripts/readme/ghactions_driver/extract_steps_from_readme.py -f examples/flows/standard/web-classification/README.md -o examples/flows/standard/web-classification
       - name: Run scripts
         working-directory: examples/flows/standard/web-classification
         run: |

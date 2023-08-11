@@ -1,7 +1,7 @@
 - name: {{ step_name }}
   working-directory: ${{ '{{' }} github.workspace }}
   run: |
-    python scripts/ghactions_driver/extract_steps_from_readme.py -f {{ working_dir }}/README.md -o {{ working_dir }}
+    python scripts/readme/ghactions_driver/extract_steps_from_readme.py -f {{ working_dir }}/README.md -o {{ working_dir }}
 - name: Run scripts
   working-directory: {{ working_dir }}
   run: |

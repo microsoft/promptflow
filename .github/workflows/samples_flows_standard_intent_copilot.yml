@@ -53,7 +53,7 @@ jobs:
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/ghactions_driver/extract_steps_from_readme.py -f examples/flows/standard/intent-copilot/README.md -o examples/flows/standard/intent-copilot
+          python scripts/readme/ghactions_driver/extract_steps_from_readme.py -f examples/flows/standard/intent-copilot/README.md -o examples/flows/standard/intent-copilot
       - name: Run scripts
         working-directory: examples/flows/standard/intent-copilot
         run: |
