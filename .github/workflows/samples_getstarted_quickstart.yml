@@ -3,14 +3,17 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: tutorials_getstarted_quickstartazure
+name: samples_getstarted_quickstart
 on:
+  schedule:
+    - cron: "55 21 * * *" # Every day starting at 5:55 BJT
   pull_request:
-    branches: [ main,preview/code-first ]
+    branches: [ main ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:
-  quickstart-azure:
+  quickstart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -35,7 +38,7 @@ jobs:
       - name: Test Notebook
         working-directory: examples/tutorials/get-started
         run: |
-          papermill -k python quickstart-azure.ipynb quickstart-azure.output.ipynb
+          papermill -k python quickstart.ipynb quickstart.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
