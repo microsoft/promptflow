@@ -16,6 +16,7 @@ class Step:
         jinja_folder_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / "scripts"
+            / "readme"
             / "ghactions_driver"
             / "workflow_steps"
         )
@@ -261,6 +262,7 @@ class ReadmeStepsManage:
         workflow_template_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / "scripts"
+            / "readme"
             / "ghactions_driver"
             / "workflow_templates"
         )

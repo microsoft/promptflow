@@ -54,7 +54,7 @@ def write_readme_shell(readme_path: str, output_folder: str):
     template_env = Environment(
         loader=FileSystemLoader(
             Path(ReadmeStepsManage.git_base_dir())
-            / "scripts/ghactions_driver/bash_script"
+            / "scripts/readme/ghactions_driver/bash_script"
         )
     )
     bash_script_template = template_env.get_template("bash_script.sh.jinja2")

@@ -6,6 +6,7 @@ import ntpath
 import re
 import hashlib
 from jinja2 import Environment, FileSystemLoader
+from ghactions_driver.readme_step import ReadmeStepsManage
 
 
 def format_ipynb(notebooks):
@@ -37,13 +38,16 @@ def write_notebook_workflow(notebook, name):
     workflow_name = "_".join(["samples"] + temp_name_list)
 
     place_to_write = (
-        Path(__file__).parent.parent / ".github" / "workflows" / f"{workflow_name}.yml"
+        Path(ReadmeStepsManage.git_base_dir())
+        / ".github"
+        / "workflows"
+        / f"{workflow_name}.yml"
     )
 
     gh_working_dir = "/".join(notebook.split("/")[:-1])
 
     template = Environment(
-        loader=FileSystemLoader("./scripts/ghactions_driver/workflow_templates")
+        loader=FileSystemLoader("./scripts/readme/ghactions_driver/workflow_templates")
     ).get_template("basic_workflow.yml.jinja2")
 
     # Schedule notebooks at different times to reduce maximum quota usage.
