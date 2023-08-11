@@ -67,9 +67,9 @@ Note: the snapshot folder in run should contain the additional_includes file.
 
 ``` bash
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_id> -w <your_workspace_name>
+# pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_id> -w <your_workspace_name>
 # pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
-pfazure run create --file run.yml --runtime demo-mir
+# pfazure run create --file run.yml --runtime demo-mir
 # pfazure run create --file run.yml --stream # serverless compute
 ```
 

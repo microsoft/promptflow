@@ -33,6 +33,7 @@ def write_readme_workflow(readme_path):
         workflow_name.endswith("flows_standard_basic_with_builtin_llm")
         or workflow_name.endswith("flows_standard_flow_with_symlinks")
         or workflow_name.endswith("flows_standard_flow_with_additional_includes")
+        or workflow_name.endswith("flows_standard_basic_with_connection")
     ):
         ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
     if workflow_name.endswith("flows_standard_summarizing_film_with_autogpt"):
