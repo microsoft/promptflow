@@ -18,11 +18,12 @@ For managed online endpoints, Azure Machine Learning reserves 20% of your comput
 
 Each flow will have a folder which contains codes/prompts, definition and other artifacts of the flow. If you have developed your flow with UI, you can download the flow folder from the flow details page. If you have developed your flow with CLI or SDK, you should have the flow folder already. 
 
-This article will use the [sample flow "basic-chat"](../../examples/flows/chat/basic-chat) as an example to deploy to AzureML managed online endpoint. All the material used in this article can be found [here](../media/deploy-to-aml-code).
+This article will use the [sample flow "basic-chat"](../../examples/flows/chat/basic-chat) as an example to deploy to AzureML managed online endpoint. 
+
+- For **CLI** experience, all the sample yaml files can be found [here](../media/deploy-to-aml-code/cli).
+- For **Python SDK** experience, sample notebook is [here](../media/deploy-to-aml-code/sdk/deploy.ipynb).
 
 ## Set default workspace
-
-### CLI experience
 
 Use the following commands to set the default workspace and resource group for the CLI.
 
@@ -31,50 +32,9 @@ az account set --subscription <subscription ID>
 az configure --defaults workspace=<Azure Machine Learning workspace name> group=<resource group>
 ```
 
-### SDK experience
-
-1. Import the required libraries:
-
-    ```python
-    # import required libraries
-    from azure.ai.ml import MLClient
-    from azure.ai.ml.entities import (
-        ManagedOnlineEndpoint,
-        ManagedOnlineDeployment,
-        Model,
-        Environment,
-        CodeConfiguration,
-    )
-    from azure.identity import DefaultAzureCredential
-    ```
-
-    > [!NOTE]
-    > If you're using the Kubernetes online endpoint, import the `KubernetesOnlineEndpoint` and `KubernetesOnlineDeployment` class from the `azure.ai.ml.entities` library.
-
-1. Configure workspace details and get a handle to the workspace:
-
-    To connect to a workspace, we need identifier parameters - a subscription, resource group and workspace name. We'll use these details in the `MLClient` from `azure.ai.ml` to get a handle to the required Azure Machine Learning workspace. This example uses the [default Azure authentication](https://learn.microsoft.com/en-us/python/api/azure-identity/azure.identity.defaultazurecredential).
-
-    ```python
-    # enter details of your Azure Machine Learning workspace
-    subscription_id = "<SUBSCRIPTION_ID>"
-    resource_group = "<RESOURCE_GROUP>"
-    workspace = "<AZUREML_WORKSPACE_NAME>"
-    ```
-
-    ```python
-    # get a handle to the workspace
-    ml_client = MLClient(
-        DefaultAzureCredential(), subscription_id, resource_group, workspace
-    )
-    ```
-
-
 ## (optional) Register the flow as a model
 
 In the online deployment, you can either refer to a registered model, or specify the model path (where to upload the model files from) inline. It is recommended to register the model and specify the model name and version in the deployment definition. Use the form `model:<model_name>:<version>`.
-
-### CLI experience
 
 Following is a model definition example.
 
@@ -97,8 +57,6 @@ properties:
 ```
 
 Use `az ml model create --file model.yaml` to register the model to your workspace.
-
-### SDK experience
 
 ## Define the endpoint
 
@@ -206,9 +164,11 @@ az ml online-deployment create --file blue-deployment.yml --all-traffic
 This deployment might take up to 20 minutes, depending on whether the underlying environment or image is being built for the first time. Subsequent deployments that use the same environment will finish processing more quickly.
 
 > [!TIP]
+>
 > * If you prefer not to block your CLI console, you may add the flag `--no-wait` to the command. However, this will stop the interactive display of the deployment status.
 
 > [!IMPORTANT]
+>
 > The `--all-traffic` flag in the above `az ml online-deployment create` allocates 100% of the endpoint traffic to the newly created blue deployment. Though this is helpful for development and testing purposes, for production, you might want to open traffic to the new deployment through an explicit command. For example, `az ml online-endpoint update -n $ENDPOINT_NAME --traffic "blue=100"`.
 
 ### Check status of the endpoint and deployment
@@ -230,14 +190,6 @@ az ml online-deployment get-logs --name blue --endpoint basic-chat-endpoint
 ```Azure CLI
 az ml online-endpoint invoke --name basic-chat-endpoint --request-file endpoints/online/model-1/sample-request.json
 ```
-
-## Deploy with SDK
-
-### Define the endpoint
-
-### Define the deployment
-
-### Deploy your online endpoint to Azure
 
 ## Next steps
 
