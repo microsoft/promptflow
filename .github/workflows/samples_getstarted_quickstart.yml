@@ -6,7 +6,7 @@
 name: samples_getstarted_quickstart
 on:
   schedule:
-    - cron: "55 6/12 * * *" # Every 12 hours starting at 6:55 UTC
+    - cron: "55 21 * * *" # Every day starting at 21:55 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]

@@ -6,7 +6,7 @@
 name: samples_connections_connection
 on:
   schedule:
-    - cron: "13 3/12 * * *" # Every 12 hours starting at 3:13 UTC
+    - cron: "13 22 * * *" # Every day starting at 22:13 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]

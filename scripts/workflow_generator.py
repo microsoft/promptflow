@@ -49,16 +49,15 @@ def write_notebook_workflow(notebook, name):
     # Schedule notebooks at different times to reduce maximum quota usage.
     name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
     schedule_minute = name_hash % 60
-    hours_between_runs = 12
-    schedule_hour = (name_hash // 60) % hours_between_runs
+    schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
     content = template.render(
         {
             "workflow_name": workflow_name,
             "name": name,
             "gh_working_dir": gh_working_dir,
             "path_filter": "[ examples/** ]",
-            "crontab": f"{schedule_minute} {schedule_hour}/{hours_between_runs} * * *",
-            "crontab_comment": f"Every {hours_between_runs} hours starting at {schedule_hour}:{schedule_minute} UTC",
+            "crontab": f"{schedule_minute} {schedule_hour} * * *",
+            "crontab_comment": f"Every day starting at {schedule_hour}:{schedule_minute} UTC",
         }
     )
 

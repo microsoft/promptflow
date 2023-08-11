@@ -6,7 +6,7 @@
 name: samples_flowinpipeline_pipeline
 on:
   schedule:
-    - cron: "28 0/12 * * *" # Every 12 hours starting at 0:28 UTC
+    - cron: "28 19 * * *" # Every day starting at 19:28 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]

@@ -6,7 +6,7 @@
 name: samples_configuration
 on:
   schedule:
-    - cron: "40 7/12 * * *" # Every 12 hours starting at 7:40 UTC
+    - cron: "40 22 * * *" # Every day starting at 22:40 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]

@@ -6,7 +6,7 @@
 name: samples_runmanagement_cloudrunmanagement
 on:
   schedule:
-    - cron: "24 5/12 * * *" # Every 12 hours starting at 5:24 UTC
+    - cron: "24 20 * * *" # Every day starting at 20:24 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]

@@ -6,7 +6,7 @@
 name: samples_getstarted_quickstartazure
 on:
   schedule:
-    - cron: "24 1/12 * * *" # Every 12 hours starting at 1:24 UTC
+    - cron: "24 20 * * *" # Every day starting at 20:24 UTC
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]
