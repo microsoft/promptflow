@@ -16,6 +16,14 @@ class TestAOAI:
         aoai_provider.completion(
             prompt=prompt_template, deployment_name="text-ada-001", stop=[], logit_bias={}
         )
+    
+    def test_aoai_stream_completion(self, aoai_provider):
+        prompt_template = "please complete this sentence: world war II "
+        # test whether tool can handle param "stop" with value empty list in stream mode
+        # as openai raises "[] is not valid under any of the given schemas - 'stop'"
+        aoai_provider.completion(
+            prompt=prompt_template, deployment_name="text-ada-001", stop=[], logit_bias={}, stream=True
+        )
 
     def test_aoai_chat(self, aoai_provider, example_prompt_template, chat_history):
         result = aoai_provider.chat(
@@ -68,6 +76,24 @@ class TestAOAI:
         # empty content after role name:\n
         prompt = "user:\n"
         aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
+
+    def test_aoai_stream_chat(self, aoai_provider, example_prompt_template, chat_history):
+        result = aoai_provider.chat(
+            prompt=example_prompt_template,
+            deployment_name="gpt-35-turbo",
+            max_tokens="32",
+            temperature=0,
+            user_input="Fill in more detalis about trend 2.",
+            chat_history=chat_history,
+            stream=True,
+        )
+        answer = ""
+        while True:
+            try:
+                answer += next(result)
+            except Exception:
+                break
+        assert "details about trend 2" in answer.lower()
 
     @pytest.mark.parametrize(
         "params, expected",
