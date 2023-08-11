@@ -295,4 +295,3 @@ class TestHandleOpenAIError:
               "please choose the model text-davinci-001, text-davinci-002,text-davinci-003, text-curie-001, " \
               "text-babbage-001, text-ada-001, code-cushman-001 or code-davinci-002 for completion operation."
         assert msg == exc_info.value.message
-
