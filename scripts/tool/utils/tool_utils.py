@@ -57,6 +57,9 @@ def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tup
     all_inputs = {}
     input_defs = {}
     connection_types = []
+    # Initialize the counter for prompt template
+    # More than one prompt template is not supported and will raise error
+    prompt_template_count = 0
     # Collect all inputs from class and func
     if initialize_inputs:
         if any(k for k in initialize_inputs if k in sign.parameters):
@@ -73,8 +76,12 @@ def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tup
     for k, v in all_inputs.items():
         # Get value type from annotation
         value_type = resolve_annotation(v.annotation)
-        if tool_type==ToolType.CUSTOM_LLM and value_type is PromptTemplate:
+        if tool_type == ToolType.CUSTOM_LLM and value_type is PromptTemplate:
             # custom llm tool has prompt template as input, skip it
+            prompt_template_count += 1
+            if prompt_template_count >= 2:
+                raise Exception(f"Multiple inputs of type 'PromptTemplate' were found in '{f.__name__}'. "
+                                "Only one input of this type is expected.")
             continue
         input_def, is_connection = param_to_definition(v, value_type)
         input_defs[k] = input_def
@@ -88,4 +95,3 @@ def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tup
     #         outputs[f.name] = OutputDefinition(f.name, [ValueType.from_type(
     #             type(getattr(sign.return_annotation, f.name)))], "", False)
     return input_defs, outputs, connection_types
-

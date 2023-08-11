@@ -5,11 +5,11 @@ import inspect
 import types
 from dataclasses import asdict
 
-from promptflow.core.tool import ToolProvider
-from promptflow.contracts.tool import Tool, ToolType
-from promptflow.exceptions import ErrorTarget, UserErrorException
-
 from utils.tool_utils import function_to_interface
+
+from promptflow.contracts.tool import Tool, ToolType
+from promptflow.core.tool import ToolProvider
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
 def asdict_without_none(obj):
@@ -47,7 +47,7 @@ def collect_tool_methods_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, initialize_inputs=None,  tool_type=ToolType.PYTHON, name=None, description=None):
+def _parse_tool_from_function(f, initialize_inputs=None, tool_type=ToolType.PYTHON, name=None, description=None):
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
@@ -75,22 +75,26 @@ def generate_python_tools_in_module(module, name, description):
     tool_functions = collect_tool_functions_in_module(module)
     tool_methods = collect_tool_methods_in_module(module)
     return [_parse_tool_from_function(f, name=name, description=description) for f in tool_functions] + [
-        _parse_tool_from_function(f, initialize_inputs, name=name, description=description) for (f, initialize_inputs) in tool_methods
+        _parse_tool_from_function(f, initialize_inputs, name=name, description=description)
+        for (f, initialize_inputs) in tool_methods
     ]
 
 
 def generate_python_tools_in_module_as_dict(module, name=None, description=None):
     tools = generate_python_tools_in_module(module, name, description)
-    return {
-        f"{t.module}.{t.name}": asdict_without_none(t) for t in tools
-    }
+    return {f"{t.module}.{t.name}": asdict_without_none(t) for t in tools}
 
 
 def generate_custom_llm_tools_in_module(module, name, description):
     tool_functions = collect_tool_functions_in_module(module)
     tool_methods = collect_tool_methods_in_module(module)
-    return [_parse_tool_from_function(f, tool_type=ToolType.CUSTOM_LLM, name=name, description=description) for f in tool_functions] + [
-        _parse_tool_from_function(f, initialize_inputs, tool_type=ToolType.CUSTOM_LLM, name=name, description=description)
+    return [
+        _parse_tool_from_function(f, tool_type=ToolType.CUSTOM_LLM, name=name, description=description)
+        for f in tool_functions
+    ] + [
+        _parse_tool_from_function(
+            f, initialize_inputs, tool_type=ToolType.CUSTOM_LLM, name=name, description=description
+        )
         for (f, initialize_inputs) in tool_methods
     ]
 
