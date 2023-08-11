@@ -6,6 +6,12 @@ Tools used in this flow：
 - `llm` tool
 - custom `python` Tool
 
+## Prerequisites
+
+Install promptflow sdk and other dependencies in this folder:
+```bash
+pip install -r requirements.txt
+```
 
 ## What you will learn
 

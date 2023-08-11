@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 from .readme_step import ReadmeStepsManage, ReadmeSteps
 
 
@@ -22,8 +23,18 @@ def write_readme_workflow(readme_path):
     ReadmeSteps.install_dependencies()
     ReadmeSteps.install_dev_dependencies()
     ReadmeSteps.azure_login()
-    ReadmeSteps.create_env()
-    ReadmeSteps.create_run_yaml()
+    if workflow_name.endswith("flows_standard_basic") or workflow_name.endswith(
+        "flows_standard_intent_copilot"
+    ):
+        ReadmeSteps.create_env()
+    if workflow_name.endswith("flows_standard_basic"):
+        ReadmeSteps.create_run_yaml()
+    if (
+        workflow_name.endswith("flows_standard_basic_with_builtin_llm")
+        or workflow_name.endswith("flows_standard_flow_with_symlinks")
+        or workflow_name.endswith("flows_standard_flow_with_additional_includes")
+    ):
+        ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
     ReadmeSteps.extract_steps_and_run()
 
     ReadmeStepsManage.write_workflow(workflow_name, "auto_generated_steps")

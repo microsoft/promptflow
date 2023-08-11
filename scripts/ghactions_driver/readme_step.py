@@ -90,7 +90,6 @@ class CreateAoaiFromYaml(Step):
         return template.render(
             {
                 "step_name": self.workflow_name,
-                "working_dir": ReadmeSteps.working_dir,
                 "yaml_name": self.yaml_name,
             }
         )

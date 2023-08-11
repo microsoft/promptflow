@@ -5,8 +5,14 @@
 - name: Run scripts
   working-directory: {{ working_dir }}
   run: |
-    bash bash_script.sh ${{ '{{' }}secrets.AOAI_API_KEY }} ${{ '{{' }} secrets.AOAI_API_ENDPOINT }} ${{ '{{' }} secrets.TEST_WORKSPACE_SUB_ID }} ${{ '{{' }} secrets.TEST_WORKSPACE_RG }} ${{ '{{' }} secrets.TEST_WORKSPACE_NAME }}
+    export aoai_api_key=${{ '{{' }}secrets.AOAI_API_KEY }}
+    export aoai_api_endpoint=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
+    export test_workspace_sub_id=${{ '{{' }} secrets.TEST_WORKSPACE_SUB_ID }}
+    export test_workspace_rg=${{ '{{' }} secrets.TEST_WORKSPACE_RG }}
+    export test_workspace_name=${{ '{{' }} secrets.TEST_WORKSPACE_NAME }}
+    bash bash_script.sh
 - name: Upload artifact
+  if: ${{ '{{' }} always() }}
   uses: actions/upload-artifact@v3
   with:
     name: artifact

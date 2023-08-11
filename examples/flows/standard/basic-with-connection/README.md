@@ -17,15 +17,16 @@ pip install -r requirements.txt
 
 ## Setup connection
 Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
-Ensure you have created `basic_custom_connection` connection before.
-```bash
-pf connection show -n basic_custom_connection
-```
 
 Create connection if you haven't done that.
 ```bash
 # Override keys with --set to avoid yaml file changes
 pf connection create -f custom.yml --set secrets.api_key=<your_api_key> configs.api_base=<your_api_base>
+```
+
+Ensure you have created `basic_custom_connection` connection.
+```bash
+pf connection show -n basic_custom_connection
 ```
 
 ## Run flow in local
@@ -40,7 +41,7 @@ pf flow test --flow .
 pf flow test --flow . --inputs text="Hello World!"
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
+# pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
 
 ```
 

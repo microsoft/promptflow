@@ -3,10 +3,10 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_standard_basic
+name: samples_flows_chat_chat_with_wikipedia
 on:
   schedule:
-    - cron: "41 21 * * *" # Every day starting at 5:41 BJT
+    - cron: "10 22 * * *" # Every day starting at 6:10 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]
@@ -29,7 +29,7 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/flows/standard/basic
+        working-directory: examples/flows/chat/chat-with-wikipedia
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -42,26 +42,12 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Refine .env file
-        working-directory: examples/flows/standard/basic
-        run: |
-          echo AZURE_OPENAI_API_KEY=${{ secrets.AOAI_API_KEY }} > .env
-          echo AZURE_OPENAI_API_BASE=${{ secrets.AOAI_API_ENDPOINT }} >> .env
-          echo AZURE_OPENAI_API_TYPE=azure >> .env
-          echo AZURE_OPENAI_API_VERSION=2023-03-15-preview >> .env
-          echo CHAT_DEPLOYMENT_NAME=gpt-35-turbo >> .env
-      - name: Create run.yml
-        working-directory: examples/flows/standard/basic
-        run: |
-          gpt_base=${{ secrets.AOAI_API_ENDPOINT }}
-          gpt_base=$(echo ${gpt_base//\//\\/})
-          sed -i -e "s/\${azure_open_ai_connection.api_key}/${{ secrets.AOAI_API_KEY }}/g" -e "s/\${azure_open_ai_connection.api_base}/$gpt_base/g" run.yml
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/ghactions_driver/extract_steps_from_readme.py -f examples/flows/standard/basic/README.md -o examples/flows/standard/basic
+          python scripts/ghactions_driver/extract_steps_from_readme.py -f examples/flows/chat/chat-with-wikipedia/README.md -o examples/flows/chat/chat-with-wikipedia
       - name: Run scripts
-        working-directory: examples/flows/standard/basic
+        working-directory: examples/flows/chat/chat-with-wikipedia
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT }}
@@ -74,4 +60,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/standard/basic/bash_script.sh
+          path: examples/flows/chat/chat-with-wikipedia/bash_script.sh
