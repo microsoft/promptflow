@@ -58,7 +58,6 @@ def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tup
     input_defs = {}
     connection_types = []
     # Initialize the counter for prompt template
-    # For custom llm tool, there should be exactly one PromptTemplate input
     prompt_template_count = 0
     # Collect all inputs from class and func
     if initialize_inputs:
@@ -76,20 +75,27 @@ def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tup
     for k, v in all_inputs.items():
         # Get value type from annotation
         value_type = resolve_annotation(v.annotation)
-        if tool_type == ToolType.CUSTOM_LLM and value_type is PromptTemplate:
+        if value_type is PromptTemplate:
             # custom llm tool has prompt template as input, skip it
             prompt_template_count += 1
-            if prompt_template_count >= 2:
-                raise Exception(f"Multiple inputs of type 'PromptTemplate' were found in '{f.__name__}'. "
-                                "Only one input of this type is expected.")
             continue
         input_def, is_connection = param_to_definition(v, value_type)
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
 
+    # Check PromptTemplate input:
+    # a. For custom llm tool, there should be exactly one PromptTemplate input
+    # b. For python tool, PromptTemplate input is not supported
+    if tool_type == ToolType.PYTHON and prompt_template_count > 0:
+        raise Exception(f"Input of type 'PromptTemplate' not suppoted in python tool '{f.__name__}'. ")
+
     if tool_type == ToolType.CUSTOM_LLM and prompt_template_count == 0:
         raise Exception(f"No input of type 'PromptTemplate' was found in custom llm tool '{f.__name__}'. ")
+
+    if tool_type == ToolType.CUSTOM_LLM and prompt_template_count > 1:
+        raise Exception(f"Multiple inputs of type 'PromptTemplate' were found in '{f.__name__}'. "
+                        "Only one input of this type is expected.")
 
     outputs = {}
     # Note: We don't have output definition now
