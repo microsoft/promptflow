@@ -23,9 +23,10 @@ def to_openai_error_message(e: Exception) -> str:
         return f"OpenAI API hits {ex_type}: {msg}"
     elif "The completion operation does not work with the specified model" in str(e) or \
             "logprobs, best_of and echo parameters are not available" in str(e):
-        msg = "The completion operation only support some specified models, please choose the model " \
-              "text-davinci-001, text-davinci-002, text-davinci-003, text-curie-001, text-babbage-001, " \
-              "text-ada-001, code-cushman-001 or code-davinci-002 for completion operation."
+        msg = "Completion API is a legacy api now, we recommend you to use Chat api instead of Completion API." \
+              "If you insist on using the Completion API, please select the appropriate API type and deployment name. " \
+              "If you intend to use the Chat API, please refer to the guideline at " \
+              "https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."
         return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
