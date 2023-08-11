@@ -24,7 +24,8 @@ def to_openai_error_message(e: Exception) -> str:
     elif "The completion operation does not work with the specified model" in str(e) or \
             "logprobs, best_of and echo parameters are not available" in str(e):
         msg = "The completion operation does not work with the current model. " \
-              "Completion API is a legacy api now, we recommend you to use Chat api instead of Completion API." \
+              "Completion API is a legacy api now and is going to be deprecated soon, " \
+              "we recommend you to use Chat API instead of Completion API." \
               "If you insist on using the Completion API, please select the appropriate API type and deployment name. " \
               "If you intend to use the Chat API, please refer to the guideline at " \
               "https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."
