@@ -82,7 +82,7 @@ def generate_python_tools_in_module(module, name, description):
 
 def generate_python_tools_in_module_as_dict(module, name=None, description=None):
     tools = generate_python_tools_in_module(module, name, description)
-    return {f"{t.module}.{t.name}": asdict_without_none(t) for t in tools}
+    return _construct_tool_dict(tools)
 
 
 def generate_custom_llm_tools_in_module(module, name, description):
@@ -101,7 +101,16 @@ def generate_custom_llm_tools_in_module(module, name, description):
 
 def generate_custom_llm_tools_in_module_as_dict(module, name=None, description=None):
     tools = generate_custom_llm_tools_in_module(module, name, description)
-    return {f"{t.module}.{t.name}": asdict_without_none(t) for t in tools}
+    return _construct_tool_dict(tools)
+
+
+def _construct_tool_dict(tools):
+    return {
+        f"{t.module}.{t.class_name}.{t.function}"
+        if t.class_name is not None
+        else f"{t.module}.{t.function}": asdict_without_none(t)
+        for t in tools
+    }
 
 
 class ToolValidationError(UserErrorException):
