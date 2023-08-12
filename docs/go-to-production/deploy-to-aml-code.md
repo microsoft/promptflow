@@ -104,6 +104,11 @@ auth_mode: key
 | `name`      | The name of the endpoint.                                               |
 | `auth_mode` | Use `key` for key-based authentication. Use `aml_token` for Azure Machine Learning token-based authentication. To get the most recent token, use the `az ml online-endpoint get-credentials` command. |
 
+If you create a Kubernetes online endpoint, you need to specify the following additional attributes:
+| Key         | Description                                                                                                                                                                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compute`   | The Kubernetes compute target to deploy the endpoint to.                                                                                                     |
+
 > [!IMPORTANT]
 >
 > By default, when you create an online endpoint, a system-assigned managed identity is automatically generated for you. You can also specify an existing user-assigned managed identity for the endpoint.
@@ -172,6 +177,7 @@ environment_variables:
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/latest/kubernetesOnlineDeployment.schema.json
 name: blue
+type: kubernetes
 endpoint_name: basic-chat-endpoint
 model: azureml:basic-chat-model:1
   # You can also specify model files path inline
@@ -215,9 +221,16 @@ environment_variables:
 | Endpoint name  | The name of the endpoint to create the deployment under.   |
 | Model          | The model to use for the deployment. This value can be either a reference to an existing versioned model in the workspace or an inline model specification.  |
 | Environment    | The environment to host the model and code. It contains: <br>    - `image`<br>      - `inference_config`: is used to build a serving container for online deployments, including `liveness route`, `readiness_route`, and `scoring_route` .                                                             |
-| Instance type  | The VM size to use for the deployment. For the list of supported sizes, see [Managed online endpoints SKU list](https://learn.microsoft.com/en-us/azure/machine-learning/reference-managed-online-endpoints-vm-sku-list?view=azureml-api-2). |
+| Instance type  | The VM size to use for the deployment. For the list of supported sizes, see [Managed online endpoints SKU list](https://learn.microsoft.com/en-us/azure/machine-learning/reference-managed-online-endpoints-vm-sku-list?view=azureml-api-2).  |
 | Instance count | The number of instances to use for the deployment. Base the value on the workload you expect. For high availability, we recommend that you set the value to at least `3`. We reserve an extra 20% for performing upgrades. For more information, see [managed online endpoint quotas](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-quotas?view=azureml-api-2#azure-machine-learning-managed-online-endpoints).    |
 |Environment variables| Following environment variables need to be set for endpoints deployed from a flow: <br> - (required) `PROMPTFLOW_RUN_MODE: serving`: specify the mode to serving <br> - (required) `PRT_CONFIG_OVERRIDE`: for pulling connections from workspace <br> - (optional) `PROMPTFLOW_RESPONSE_INCLUDED_FIELDS:`: When there are multiple fields in the response, using this env variable will filter the fields to expose in the response. <br> For example, if there are 2 flow outputs: "answer", "context", and if you only want to have "answer" in the endpoint response, you can set this env variable to '["answer"]'. <br> - <br>|
+
+If you create a Kubernetes online deployment, you need to specify the following additional attributes:
+
+| Attribute      | Description                                                                                                                                                                                                                                                                                                                                                                                    |
+|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Type      | The type of the deployment. Set the value to `kubernetes`. |
+| Instance type  | The instance type you have created in your kubernetes cluster to use for the deployment, represent the request/limit compute resource of the  deployment. For more detail, see [Create and manage instance type](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-kubernetes-instance-types?view=azureml-api-2&tabs=select-instancetype-to-trainingjob-with-cli%2Cselect-instancetype-to-modeldeployment-with-cli%2Cdefine-resource-to-modeldeployment-with-cli).  |                                                                                                                                                                                                                                                                                                                                |
 
 
 ### Deploy your online endpoint to Azure
