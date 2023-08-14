@@ -4,6 +4,13 @@ This example shows how to create a basic evaluation flow.
 Tools used in this flow：
 - `python` tool
 
+## Prerequisites
+
+Install promptflow sdk and other dependencies in this folder:
+```bash
+pip install -r requirements.txt
+```
+
 ## What you will learn
 
 In this flow, you will learn
