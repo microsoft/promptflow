@@ -287,3 +287,10 @@ class TestHandleOpenAIError:
                 deployment_name="gpt-35-turbo"
             )
         assert "'name' is required if role is function," in exc_info.value.message
+
+    def test_completion_with_chat_model(self, azure_open_ai_connection):
+        with pytest.raises(UserErrorException) as exc_info:
+            completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-35-turbo")
+        msg = "Completion API is a legacy api and is going to be deprecated soon. " \
+              "Please change to use Chat API for current model."
+        assert msg in exc_info.value.message

@@ -12,6 +12,8 @@ steps:
     uses: r-lib/actions/setup-pandoc@v1
     with:
       pandoc-version: '2.12'
+  - name: Generate config.json
+    run: echo ${{ '{{' }} secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ '{{' }} github.workspace }}/examples/config.json
 {%- filter indent(width=2) -%}
 {% for step in steps %}
 {{ step.get_workflow_step() }}{% endfor %}
