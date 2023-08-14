@@ -3,7 +3,6 @@ import pip
 from langchain import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
-from langchain.prompts.prompt import PromptTemplate
 
 
 def extract_intent(customer_info: str, history: list, user_prompt_template: str):
@@ -31,12 +30,8 @@ def extract_intent(customer_info: str, history: list, user_prompt_template: str)
         temperature=0,
     )
 
-    prompt_template = PromptTemplate.from_template(user_prompt_template, template_format="jinja2")
-
     chat_prompt_template = ChatPromptTemplate.from_messages(
-        [
-            HumanMessagePromptTemplate(prompt=prompt_template)
-        ]
+        [HumanMessagePromptTemplate.from_template(user_prompt_template)]
     )
 
     chain = LLMChain(llm=chat, prompt=chat_prompt_template)
@@ -55,7 +50,7 @@ if __name__ == "__main__":
     data = data[:10]
 
     # load template from file
-    with open("user_intent_zero_shot.jinja2", "r") as f:
+    with open("user_intent_zero_shot.md", "r") as f:
         user_prompt_template = f.read()
 
     # each test
