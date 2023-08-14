@@ -33,7 +33,7 @@ cat .env
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs text="Hello World!"
+pf flow test --flow . --inputs text="Java Hello World!"
 
 # test node with inputs
 # pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World program that displays the greeting message when executed."
