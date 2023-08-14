@@ -1,4 +1,4 @@
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow
+promptflow[azure]
 promptflow-tools
 bs4
