@@ -40,7 +40,7 @@ pf flow test --flow .
 pf flow test --flow . --inputs text="Hello World!"
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
+pf flow test --flow . --node llm --inputs hello_prompt.output="Write a simple Hello World! program that displays the greeting message when executed."
 
 ```
 
