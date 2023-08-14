@@ -89,7 +89,7 @@ More details can be found in [CLI reference: pfazure](./cli-command-reference.md
 from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
 from azure.ai.ml import MLClient
 # azure version promptflow apis
-import promptflow.azure as pf
+from promptflow.azure import PFClient
 ```
 
 2. Get credential
@@ -113,7 +113,7 @@ ml_client = MLClient(
     workspace_name="<AML_WORKSPACE_NAME>",
 )
 # configure global setting pointing to workpsace ml_client
-pf.configure(ml_client)
+pf = PFClient(ml_client)
 ```
 
 4. Submit the flow run

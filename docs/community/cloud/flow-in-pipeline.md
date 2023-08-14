@@ -23,13 +23,13 @@ Note: Component registration has SDK experience only for now. CLI experience is 
 # Import required libraries
 from azure.identity import DefaultAzureCredential
 from azure.ai.ml import MLClient
-import promptflow.azure as pf
+from promptflow.azure import PFClient
 
 # connect to a workspace in Azure Machine Learning
 credential = DefaultAzureCredential()
 ml_client = MLClient.from_config(credential=credential)
 
-pf.configure(ml_client)
+pf = PFClient(ml_client)
 flow_component = pf.load_as_component(
     source="<your-flow-dir>",
     columns_mapping={
@@ -140,8 +140,34 @@ Samples can also be found in [our sample repo](https://github.com/microsoft/prom
 
 ## Download the flow component
 
-Flow will be registered as a component in a specific workspace by default. If you want to use it in another workspace, you can download the registered component. 
+Flow will be registered as a component in a specific workspace by default. If you want to use it in another workspace, you can download the registered component and create or directly use it in another workspace like regular components.
 
-Downloaded component includes a component spec and a folder including a snapshot of the flow.
+The downloaded component is expected to be in below structure:
 
-This feature is still WIP.
+- `component_spec.yaml`
+- `code`
+  - ...
+
+:::{admonition} Important
+1. this feature has not been released yet and you'll need to run `pip install azure-ai-ml==1.10.0a20230808005 --extra-index-url
+https://pkgs.dev.azure.com/azure-sdk/public/_packaging/azure-sdk-for-python/pypi/simple/`
+2. only SDK experience is provided for now
+:::
+
+::::{tab-set}
+:::{tab-item} SDK
+```python
+ml_client.components.download(flow_component.name, version=flow_component.version, download_path="<target-path>")
+
+another_ml_client = MLClient(
+  credential=credential,
+  subscription_id="<another-subscription-id>",
+  resource_group_name="<another-resource-group-name>",
+  workspace_name="<another-workspace-name>",
+)
+
+downloaded_flow_component = load_component("<target-path>/component_spec.yaml")
+another_ml_client.components.create_or_update(downloaded_flow_component)
+```
+:::
+::::

@@ -55,7 +55,7 @@ Promptflow CLI can generate the yaml definitions needed for prompt flow from the
 
 ```bash
 # Create a flow in existing folder
-pf flow test --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-tempate>
+pf flow init --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-tempate>
 ```
 
 For example, using promptflow CLI initialize [intent-copilot](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/intent-copilot)
@@ -83,7 +83,7 @@ Customer can use CLI or VS Code extension to test the flow locally.
 pf flow test --flow <flow-name>
 
 # Test flow with specified variant
-pf flow init --flow <flow-name> --variant ${<node-name>.<variant-name>}
+pf flow test --flow <flow-name> --variant ${<node-name>.<variant-name>}
 ```
 
 The log and result of flow test will be displayed in the terminal.

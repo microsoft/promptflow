@@ -6,7 +6,6 @@
 llm-tool
 prompt-tool
 python-tool
-azure_form_recognizer
 azure_language_detector_tool
 azure_translator_tool
 content-safety-text-tool

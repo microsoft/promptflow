@@ -108,7 +108,7 @@ Find the "connections" section on the Prompt flow left side bar. The "Create con
 
 ::::
 
-## Develope and test your flow
+## Develop and test your flow
 A flow in prompt flow serves as an executable workflow that streamlines the development of your LLM-based AI application. It provides a comprehensive framework for managing data flow and processing within your application. See [Flows](../../concepts/concept-flows.md) for more details.
 
 In this guide, we use [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) sample to walk you through the main user journey, it's a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
@@ -132,7 +132,7 @@ Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/
 pf flow test --flow web-classification  # "web-classification" is the directory name
 ```
 
-![q_0](../../media/community/local/quick-start/flow-test-output-cli.png)
+![flow-test-output-cli](../../media/community/local/quick-start/flow-test-output-cli.png)
 
 :::
 
@@ -261,7 +261,7 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 Learn more about:
 - [Manage connections](./manage-connections.md)
 - [Initialize and test a flow](./init-and-test-a-flow.md)
-- [Run and evluate a flow](./run-and-evaluate-a-flow.md)
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
 - [Tune prompts with variants](./tune-prompts-with-variants.md)
 - [Deploy and export a flow](./deploy-and-export-a-flow.md)
 - [Local to cloud](../cloud/local-to-cloud.md)
