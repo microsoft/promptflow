@@ -21,6 +21,14 @@ def to_openai_error_message(e: Exception) -> str:
               "'2023-07-01-preview'. You can refer to " \
               "https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling."
         return f"OpenAI API hits {ex_type}: {msg}"
+    elif "The completion operation does not work with the specified model" in str(e) or \
+            "logprobs, best_of and echo parameters are not available" in str(e):
+        msg = "The completion operation does not work with the current model. " \
+              "Completion API is a legacy api and is going to be deprecated soon. " \
+              "Please change to use Chat API for current model. " \
+              "You could refer to guideline at https://aka.ms/pfdoc/chat-prompt " \
+              "or view the samples in our gallery that contain 'Chat' in the name."
+        return f"OpenAI API hits {ex_type}: {msg}"
     else:
         return f"OpenAI API hits {ex_type}: {str(e)} [{openai_error_code_ref_message}]"
 
