@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-
+import hashlib
 from jinja2 import Environment, FileSystemLoader, Template
 
 
@@ -16,6 +16,7 @@ class Step:
         jinja_folder_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / "scripts"
+            / "readme"
             / "ghactions_driver"
             / "workflow_steps"
         )
@@ -90,7 +91,6 @@ class CreateAoaiFromYaml(Step):
         return template.render(
             {
                 "step_name": self.workflow_name,
-                "working_dir": ReadmeSteps.working_dir,
                 "yaml_name": self.yaml_name,
             }
         )
@@ -102,6 +102,23 @@ class ExtractStepsAndRun(Step):
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_extract_steps_and_run.yml.jinja2")
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+            }
+        )
+
+
+class ExtractStepsAndRunGPTFour(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Extract Steps")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template(
+            "step_extract_steps_and_run_gpt4.yml.jinja2"
+        )
         return template.render(
             {
                 "step_name": self.workflow_name,
@@ -183,6 +200,10 @@ class ReadmeSteps:
     def extract_steps_and_run() -> Step:
         return ReadmeSteps.remember_step(ExtractStepsAndRun())
 
+    @staticmethod
+    def extract_steps_and_run_gpt_four() -> Step:
+        return ReadmeSteps.remember_step(ExtractStepsAndRunGPTFour())
+
     # endregion steps
 
     @staticmethod
@@ -226,14 +247,22 @@ class ReadmeStepsManage:
 
     @staticmethod
     def write_workflow(workflow_name: str, pipeline_name: str) -> None:
+        # Schedule notebooks at different times to reduce maximum quota usage.
+        name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
+        schedule_minute = name_hash % 60
+        schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
             "name": pipeline_name,
+            "path_filter": "[ examples/** ]",
+            "crontab": f"{schedule_minute} {schedule_hour} * * *",
+            "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
         }
         workflow_template_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / "scripts"
+            / "readme"
             / "ghactions_driver"
             / "workflow_templates"
         )

@@ -43,8 +43,7 @@ Note that you need to use "2023-07-01-preview" as Azure OpenAI connection API ve
 See <a href='https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling' target='_blank'>How to use function calling with Azure OpenAI Service</a> for more details.
 
 ### 2. Configure the flow with your connection
-`flow.dag.yaml` is already configured with connection named `azure_open_ai_connection`. It is recommended to use "gpt-4" model for stable performance. Using "gpt-3.5-turbo" may lead to the model getting 
-stuck in the agent inner loop due to its suboptimal and unstable performance.
+`flow.dag.yaml` is already configured with connection named `azure_open_ai_20230701`. It is recommended to use "gpt-4" model for stable performance. Using "gpt-3.5-turbo" may lead to the model getting stuck in the agent inner loop due to its suboptimal and unstable performance.
 
 ### 3. Test flow with single line data
 

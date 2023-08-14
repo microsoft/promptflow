@@ -54,13 +54,16 @@ pf run create --flow . --data ./data.jsonl --stream
 # list created run
 pf run list
 
+# get a sample run name
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_with_builtin_llm")) | .name'| head -n 1 | tr -d '"')
+
 # show specific run detail
-pf run show --name "basic_with_builtin_llm_default_20230724_160639_803018"
+pf run show --name $name
 
 # show output
-pf run show-details --name "basic_with_builtin_llm_default_20230724_160639_803018"
+pf run show-details --name $name
 
 # visualize run in browser
-pf run visualize --name "basic_with_builtin_llm_default_20230724_160639_803018"
+pf run visualize --name $name
 ```
 

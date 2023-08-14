@@ -17,15 +17,17 @@ def strip_comments(code):
     code = re.sub(r"(?m)^ *#.*\n?", "", code)  # remove comments
     splits = [ll.rstrip() for ll in code.splitlines() if ll.strip()]  # remove empty
     splits_no_interactive = [
-        split for split in splits if "interactive" not in split
-    ]  # remove --interactive
+        split
+        for split in splits
+        if "interactive" not in split and "pf flow serve" not in split
+    ]  # remove --interactive and pf flow serve and pf export docker
     text = "\n".join([ll.rstrip() for ll in splits_no_interactive])
     # replacements
-    text = text.replace("<your_api_key>", "$1")
-    text = text.replace("<your_api_base>", "$2")
-    text = text.replace("<your_subscription_id>", "$3")
-    text = text.replace("<your_resource_group_id>", "$4")
-    text = text.replace("<your_workspace_name>", "$5")
+    text = text.replace("<your_api_key>", "$aoai_api_key")
+    text = text.replace("<your_api_base>", "$aoai_api_endpoint")
+    text = text.replace("<your_subscription_id>", "$test_workspace_sub_id")
+    text = text.replace("<your_resource_group_name>", "$test_workspace_rg")
+    text = text.replace("<your_workspace_name>", "$test_workspace_name")
     return text
 
 
@@ -52,7 +54,7 @@ def write_readme_shell(readme_path: str, output_folder: str):
     template_env = Environment(
         loader=FileSystemLoader(
             Path(ReadmeStepsManage.git_base_dir())
-            / "scripts/ghactions_driver/bash_script"
+            / "scripts/readme/ghactions_driver/bash_script"
         )
     )
     bash_script_template = template_env.get_template("bash_script.sh.jinja2")

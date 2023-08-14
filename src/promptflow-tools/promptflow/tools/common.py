@@ -260,7 +260,8 @@ def post_process_chat_api_response(completion, stream, functions):
 
         def generator():
             for chunk in completion:
-                yield getattr(chunk.choices[0]["delta"], "content", "")
+                if chunk.choices:
+                    yield getattr(chunk.choices[0]["delta"], "content", "")
 
         # We must return the generator object, not using yield directly here.
         # Otherwise, the function itself will become a generator, despite whether stream is True or False.
