@@ -363,6 +363,9 @@ pf run create [--file]
               [--run]
               [--variant]
               [--stream]
+              [--environment-variables]
+              [--connections]
+              [--set]
 ```
 
 #### Examples
@@ -376,14 +379,14 @@ pf run create -f <yaml-filename>
 Create a run from flow directory and reference a run.
 
 ```bash
-pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run <run-name> -- variant "${summarize_text_content.variant_0}" --stream
+pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run <run-name> --variant "${summarize_text_content.variant_0}" --stream
 ```
 
 #### Optional Parameters
 
 `--file -f`
 
-Local path to the YAML file containing the prompt flow run specification; can be overrided by other parameters.
+Local path to the YAML file containing the prompt flow run specification; can be overrided by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
 
 `--flow`
 
@@ -399,7 +402,7 @@ Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${ru
 
 `--run`
 
-Referenced flow run name.
+Referenced flow run name. For example, you can run an evaluation flow against an existing run. For example, "pf run create --flow evaluation_flow_dir --run existing_bulk_run".
 
 `--variant`
 
@@ -409,6 +412,23 @@ Node & variant name in format of `${node_name.variant_name}`.
 
 Indicates whether to stream the run's logs to the console.  
 default value: False
+
+`--environment-variables`
+
+Environment variables to set by specifying a property path and value. Example:
+`--environment-variable key1='${my_connection.api_key}' key2='value2'`. The value reference
+to connection keys will be resolved to the actual value, and all environment variables
+specified will be set into os.environ.
+
+`--connections`
+
+Overwrite node level connections with provided value.
+Example: `--connections node1.connection=test_llm_connection node1.deployment_name=gpt-35-turbo`
+
+`--set`
+
+Update an object by specifying a property path and value to set.
+Example: `--set property1.property2=<value>`.
 
 ### pf run update
 
