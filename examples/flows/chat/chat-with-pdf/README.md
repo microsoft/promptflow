@@ -34,6 +34,8 @@ Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo
 
 ```bash
 if pf connection list | grep chat_with_pdf_custom_connection; then
+    echo "chat_with_pdf_custom_connection already exists"
+else
     pf connection create --file .env --name chat_with_pdf_custom_connection
 fi
 ```
