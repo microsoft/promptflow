@@ -3,7 +3,7 @@
 ## Prerequisites
 Create a new conda environment using python 3.9 or 3.10. Run below command to install PromptFlow dependencies:
 ```
-pip install promptflow-sdk --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 ```
 Install Pytest packages for running tests:
 ```

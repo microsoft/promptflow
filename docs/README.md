@@ -9,7 +9,7 @@ This folder contains the private preview documents for prompt flow.
 |Overview|[What's prompt flow](./overview-what-is-prompt-flow.md)|
 |Quick start|[Get started with prompt flow](./quick-start.md)|
 |Concepts|[Flows](./concepts/concept-flows.md)<br> [Tools](./concepts/concept-tools.md)<br> [Connections](./concepts/concept-connections.md)<br> [Runtime](./concepts/concept-runtime.md)<br> [Variants](./concepts/concept-variants.md)<br> |
-|How-to guides|[How to create and manage run time used in prompt flow](./how-to-guides/how-to-create-manage-run-time.md)|
+|How-to guides|[How to create and manage run time used in prompt flow](./how-to-guides/how-to-create-manage-runtime.md)|
 |How-to guides|[How to develop a standard flow](./how-to-guides/how-to-develop-a-standard-flow.md)|
 |How-to guides|[How to develop a chat flow](./how-to-guides/how-to-develop-a-chat-flow.md)|
 |How-to guides|[How to run bulk test and evaluate](./how-to-guides/how-to-bulk-test-evaluate-flow.md)|
