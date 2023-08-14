@@ -58,7 +58,7 @@ def write_notebook_workflow(notebook, name):
 
     if workflow_name == "samples_flows_standard_basic":
         template_pdf = env.get_template("pdf_workflow.yml.jinja2")
-        content = template.render(
+        content = template_pdf.render(
             {
                 "workflow_name": workflow_name,
                 "name": name,
