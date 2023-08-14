@@ -16,12 +16,13 @@ def local_filter(callback, array: [Path]):
     return results
 
 
-# filter for no reademe generation
 def no_readme_generation_filter(item: Path, index, array) -> bool:
+    """
+    If there is no steps in the readme, then no generation
+    """
     try:
-        # read in notebook
         full_text = readme_parser(item.relative_to(ReadmeStepsManage.git_base_dir()))
-        if full_text == '':
+        if full_text == "":
             return False
         else:
             return True

@@ -46,25 +46,39 @@ def write_notebook_workflow(notebook, name):
     )
 
     gh_working_dir = "/".join(notebook.split("/")[:-1])
-
-    template = Environment(
+    env = Environment(
         loader=FileSystemLoader("./scripts/readme/ghactions_driver/workflow_templates")
-    ).get_template("basic_workflow.yml.jinja2")
+    )
+    template = env.get_template("basic_workflow.yml.jinja2")
 
     # Schedule notebooks at different times to reduce maximum quota usage.
     name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
     schedule_minute = name_hash % 60
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
-    content = template.render(
-        {
-            "workflow_name": workflow_name,
-            "name": name,
-            "gh_working_dir": gh_working_dir,
-            "path_filter": "[ examples/** ]",
-            "crontab": f"{schedule_minute} {schedule_hour} * * *",
-            "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
-        }
-    )
+
+    if workflow_name == "samples_flows_standard_basic":
+        template_pdf = env.get_template("pdf_workflow.yml.jinja2")
+        content = template.render(
+            {
+                "workflow_name": workflow_name,
+                "name": name,
+                "gh_working_dir": gh_working_dir,
+                "path_filter": "[ examples/** ]",
+                "crontab": f"{schedule_minute} {schedule_hour} * * *",
+                "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
+            }
+        )
+    else:
+        content = template.render(
+            {
+                "workflow_name": workflow_name,
+                "name": name,
+                "gh_working_dir": gh_working_dir,
+                "path_filter": "[ examples/** ]",
+                "crontab": f"{schedule_minute} {schedule_hour} * * *",
+                "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
+            }
+        )
 
     # To customize workflow, add new steps in steps.py
     # make another function for special cases.
@@ -94,8 +108,10 @@ def local_filter(callback, array):
     return results
 
 
-# filter for no reademe generation
 def no_readme_generation_filter(item, index, array) -> bool:
+    """
+    Set each ipynb metadata no_readme_generation to "true" to skip readme generation
+    """
     try:
         # read in notebook
         with open(item, "r", encoding="utf-8") as f:

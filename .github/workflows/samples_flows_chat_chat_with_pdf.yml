@@ -38,6 +38,24 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Refine .env file
+        working-directory: examples/flows/chat/chat-with-pdf
+        run: |
+          AOAI_API_KEY=${{ secrets.AOAI_API_KEY }}
+          AOAI_API_BASE=${{ secrets.AOAI_API_ENDPOINT }}
+          if [[ -e .env.examples ]]; then
+            echo "env replacement"
+            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_BASE/g" .env.examples
+            mv .env.examples .env
+          fi
+      - name: Create run.yml
+        working-directory: examples/flows/chat/chat-with-pdf
+        run: |
+          gpt_base=${{ secrets.AOAI_API_ENDPOINT }}
+          gpt_base=$(echo ${gpt_base//\//\\/})
+          if [[ -e run.yml ]]; then
+            sed -i -e "s/\${azure_open_ai_connection.api_key}/${{ secrets.AOAI_API_KEY }}/g" -e "s/\${azure_open_ai_connection.api_base}/$gpt_base/g" run.yml
+          fi
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
