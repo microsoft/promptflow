@@ -34,6 +34,7 @@ jobs:
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
       - name: Create Aoai Connection
+        working-directory: examples/flows/chat/chat-with-pdf
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT }}
