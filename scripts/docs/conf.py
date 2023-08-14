@@ -52,7 +52,6 @@ linkcheck_ignore = [
     r"https://(ms\.)?portal\.azure\.com/",
     r"https://aka\.ms/acs-doc",
     r"https://github\.com/microsoft/promptflow/",
-    r"https://github\.com/Azure/promptflow/",
     r"https://platform\.openai\.com/",
 ]
 
@@ -77,9 +76,14 @@ html_show_sourcelink = False
 # Define the json_url for our version switcher.
 
 html_theme_options = {
-    "github_url": "https://github.com/Azure/promptflow",
+    "github_url": "https://github.com/microsoft/promptflow",
     "header_links_before_dropdown": 6,
     "icon_links": [
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/promptflow/",
+            "icon": "fa-solid fa-box",
+        },
     ],
     "logo": {
         "text": "Prompt flow",
