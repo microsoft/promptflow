@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 from .readme_step import ReadmeStepsManage, ReadmeSteps
 
 
@@ -24,6 +23,8 @@ def write_readme_workflow(readme_path):
     ReadmeSteps.install_dev_dependencies()
     ReadmeSteps.azure_login()
     ReadmeSteps.create_env()
+    if workflow_name.endswith("pdf"):
+        ReadmeSteps.env_create_aoai("chat_with_pdf_custom_connection")
     ReadmeSteps.create_run_yaml()
     if (
         workflow_name.endswith("flows_standard_basic_with_builtin_llm")

@@ -49,6 +49,11 @@ jobs:
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
             mv .env.example .env
           fi
+      - name: Create AOAI Connection from ENV file
+        working-directory: ${{ github.workspace }}
+        run: |
+          pf connection create --file .env --name chat_with_pdf_custom_connection
+          pf connection list
       - name: Create run.yml
         working-directory: examples/flows/chat/chat-with-pdf
         run: |

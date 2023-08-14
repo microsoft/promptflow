@@ -140,6 +140,23 @@ class CreateEnv(Step):
         return content
 
 
+class CreateAoaiFromEnv(Step):
+    def __init__(self, connection_name: str) -> None:
+        Step.__init__(self, "Create AOAI Connection from ENV file")
+        self.connection_name = connection_name
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template("step_env_create_aoai.yml.jinja2")
+        content = template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+                "connection_name": self.connection_name,
+            }
+        )
+        return content
+
+
 class CreateRunYaml(Step):
     def __init__(self) -> None:
         Step.__init__(self, "Create run.yml")
@@ -179,6 +196,12 @@ class ReadmeSteps:
     @staticmethod
     def yml_create_aoai(yaml_name: str) -> Step:
         return ReadmeSteps.remember_step(CreateAoaiFromYaml(yaml_name=yaml_name))
+
+    @staticmethod
+    def env_create_aoai(connection_name: str) -> Step:
+        return ReadmeSteps.remember_step(
+            CreateAoaiFromEnv(connection_name=connection_name)
+        )
 
     @staticmethod
     def azure_login() -> Step:
