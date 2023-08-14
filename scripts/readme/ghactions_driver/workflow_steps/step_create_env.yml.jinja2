@@ -1,8 +1,8 @@
 - name: {{ step_name }}
   working-directory: {{ working_dir }}
   run: |
-    AOAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }}
-    AOAI_API_ENDPOINT=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
+    AOAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY_TEST }}
+    AOAI_API_ENDPOINT=${{ '{{' }} secrets.AOAI_API_ENDPOINT_TEST }}
     AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
     if [[ -e .env.example ]]; then
       echo "env replacement"

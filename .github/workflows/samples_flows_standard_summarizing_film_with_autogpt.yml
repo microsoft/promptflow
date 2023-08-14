@@ -37,8 +37,8 @@ jobs:
       - name: Refine .env file
         working-directory: examples/flows/standard/summarizing-film-with-autogpt
         run: |
-          AOAI_API_KEY=${{ secrets.AOAI_API_KEY }}
-          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT }}
+          AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
+          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
           if [[ -e .env.example ]]; then
             echo "env replacement"
@@ -48,10 +48,10 @@ jobs:
       - name: Create run.yml
         working-directory: examples/flows/standard/summarizing-film-with-autogpt
         run: |
-          gpt_base=${{ secrets.AOAI_API_ENDPOINT }}
+          gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
           if [[ -e run.yml ]]; then
-            sed -i -e "s/\${azure_open_ai_connection.api_key}/${{ secrets.AOAI_API_KEY }}/g" -e "s/\${azure_open_ai_connection.api_base}/$gpt_base/g" run.yml
+            sed -i -e "s/\${azure_open_ai_connection.api_key}/${{ secrets.AOAI_API_KEY_TEST }}/g" -e "s/\${azure_open_ai_connection.api_base}/$gpt_base/g" run.yml
           fi
       - name: Azure Login
         uses: azure/login@v1
