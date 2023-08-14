@@ -291,11 +291,6 @@ class TestHandleOpenAIError:
     def test_completion_with_chat_model(self, azure_open_ai_connection):
         with pytest.raises(UserErrorException) as exc_info:
             completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="gpt-35-turbo")
-        msg = "The completion operation does not work with the current model. " \
-              "Completion API is a legacy api now and is going to be deprecated soon, " \
-              "we recommend you to use Chat API instead of Completion API." \
-              "If you insist on using the Completion API, please select the appropriate API type " \
-              "and deployment name. If you intend to use the Chat API, " \
-              "please refer to the guideline at " \
-              "https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."
+        msg = "Completion API is a legacy api and is going to be deprecated soon. " \
+              "Please change to use Chat API for current model."
         assert msg in exc_info.value.message
