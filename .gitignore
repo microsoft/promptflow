@@ -161,3 +161,6 @@ cython_debug/
 
 # secrets
 **/connections.json
+
+# doc build
+scripts/docs/_build/
