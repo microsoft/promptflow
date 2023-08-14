@@ -1,5 +1,5 @@
 - name: {{ step_name }}
-  working-directory: ${{ '{{' }} github.workspace }}
+  working-directory: {{ working_dir }}
   run: |
     pf connection create --file .env --name {{ connection_name }}
     pf connection list

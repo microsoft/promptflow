@@ -50,7 +50,7 @@ jobs:
             mv .env.example .env
           fi
       - name: Create AOAI Connection from ENV file
-        working-directory: ${{ github.workspace }}
+        working-directory: examples/flows/chat/chat-with-pdf
         run: |
           pf connection create --file .env --name chat_with_pdf_custom_connection
           pf connection list
