@@ -109,7 +109,7 @@ html_sidebars = {
 html_context = {
     "default_mode": "light",
     "github_user": "",
-    "github_repo": "Azure/promptflow",
+    "github_repo": "microsoft/promptflow",
     "github_version": "main",
     "doc_path": "docs",
 }
