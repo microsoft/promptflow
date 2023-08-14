@@ -21,11 +21,12 @@ steps:
       pip install -r ${{ '{{' }} github.workspace }}/examples/dev_requirements.txt
   - name: Create Aoai Connection
     run: |
-      AOAI_API_KEY=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
-      AOAI_API_BASE=$(echo ${gpt_base//\//\\/})
+      AOAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }}
+      AOAI_API_ENDPOINT=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
+      AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
       if [[ -e .env.example ]]; then
         echo "env replacement"
-        sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_BASE/g" .env.example
+        sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
         mv .env.example .env
         pf connection create --file .env --name chat_with_pdf_custom_connection
       fi
