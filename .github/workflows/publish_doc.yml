@@ -2,6 +2,9 @@ name: Publish Promptflow Doc
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - preview/docs
   push: 
     branches:
       - main
