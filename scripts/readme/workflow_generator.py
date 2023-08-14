@@ -56,7 +56,7 @@ def write_notebook_workflow(notebook, name):
     schedule_minute = name_hash % 60
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
-    if workflow_name == "samples_flows_standard_basic":
+    if "chatwithpdf" in workflow_name:
         template_pdf = env.get_template("pdf_workflow.yml.jinja2")
         content = template_pdf.render(
             {

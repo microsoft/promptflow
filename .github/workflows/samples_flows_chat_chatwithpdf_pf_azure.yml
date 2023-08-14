@@ -34,7 +34,16 @@ jobs:
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
       - name: Create Aoai Connection
-        run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
+        run: |
+          AOAI_API_KEY=${{ secrets.AOAI_API_KEY }}
+          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT }}
+          AOAI_API_ENDPOINT=$(echo ${AOAI_API_ENDPOINT//\//\\/})
+          if [[ -e .env.example ]]; then
+            echo "env replacement"
+            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
+            mv .env.example .env
+            pf connection create --file .env --name chat_with_pdf_custom_connection
+          fi
       - name: Test Notebook
         working-directory: examples/flows/chat/chat-with-pdf
         run: |
