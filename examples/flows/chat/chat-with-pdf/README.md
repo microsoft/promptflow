@@ -54,11 +54,14 @@ pf flow test --flow .
 # test with flow inputs
 pf flow test --flow . --inputs question="What is the name of the new language representation model introduced in the document?" pdf_url="https://arxiv.org/pdf/1810.04805.pdf"
 
-# run with multiline data
-pf run create --flow . --data ./data/bert-paper-qna.jsonl --stream
+# (Optional) create a random run name
+run_name="web_classification_"$(openssl rand -hex 12)
+
+# run with multiline data, --name is optional
+pf run create --flow . --data ./data/bert-paper-qna.jsonl --stream --name $run_name
 
 # visualize run output details
-pf run visualize --name chat_with_pdf_default_20230807_105621_551498
+pf run visualize --name $run_name
 ```
 
 ### SDK Example: Run [pf.ipynb](pf.ipynb)
