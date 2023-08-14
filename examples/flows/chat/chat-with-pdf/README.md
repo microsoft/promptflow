@@ -33,8 +33,9 @@ CHUNK_OVERLAP=0
 Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
 
 ```bash
-cat .env
 pf connection create --file .env --name chat_with_pdf_custom_connection
+cat .env
+sleep 10
 ```
 
 ### Turn into a prompt flow with just 1 node [flow.dag.yaml](flow.dag.yaml)
