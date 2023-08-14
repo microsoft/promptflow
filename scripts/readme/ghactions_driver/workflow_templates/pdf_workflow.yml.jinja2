@@ -6,10 +6,6 @@ steps:
     uses: actions/checkout@v3
   - name: Generate config.json
     run: echo ${{ '{{' }} secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ '{{' }} github.workspace }}/examples/config.json
-  - name: Azure Login
-    uses: azure/login@v1
-    with:
-      creds: ${{ '{{' }} secrets.AZURE_CREDENTIALS }}
   - name: Setup Python 3.9 environment
     uses: actions/setup-python@v4
     with:
@@ -31,6 +27,10 @@ steps:
         mv .env.example .env
         pf connection create --file .env --name chat_with_pdf_custom_connection
       fi
+  - name: Azure Login
+    uses: azure/login@v1
+    with:
+      creds: ${{ '{{' }} secrets.AZURE_CREDENTIALS }}
   - name: Test Notebook
     working-directory: {{ gh_working_dir }}
     run: |

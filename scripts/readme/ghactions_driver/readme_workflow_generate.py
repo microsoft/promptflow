@@ -21,7 +21,6 @@ def write_readme_workflow(readme_path):
     )
     ReadmeSteps.install_dependencies()
     ReadmeSteps.install_dev_dependencies()
-    ReadmeSteps.azure_login()
     ReadmeSteps.create_env()
     if workflow_name.endswith("pdf"):
         ReadmeSteps.env_create_aoai("chat_with_pdf_custom_connection")
@@ -33,6 +32,7 @@ def write_readme_workflow(readme_path):
         or workflow_name.endswith("flows_standard_basic_with_connection")
     ):
         ReadmeSteps.yml_create_aoai("examples/connections/azure_openai.yml")
+    ReadmeSteps.azure_login()
     if workflow_name.endswith("flows_standard_summarizing_film_with_autogpt"):
         ReadmeSteps.extract_steps_and_run_gpt_four()
     else:
