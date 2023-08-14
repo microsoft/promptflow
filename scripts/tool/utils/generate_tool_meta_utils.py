@@ -2,61 +2,18 @@
 This file can generate a meta file for the given prompt template or a python file.
 """
 import inspect
-import json
-import re
 import types
 from dataclasses import asdict
 
-from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
+from utils.tool_utils import function_to_interface
 
+from promptflow.contracts.tool import Tool, ToolType
 from promptflow.core.tool import ToolProvider
-from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
-
-from utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
 
 
 def asdict_without_none(obj):
     return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
-
-
-def generate_prompt_tool(name, content, prompt_only=False, source=None):
-    """Generate meta for a single jinja template file."""
-    # Get all the variable name from a jinja template
-    try:
-        inputs = get_inputs_for_prompt_template(content)
-    except Exception as e:
-        msg = f"Parsing jinja got exception: {e}"
-        raise JinjaParsingError(msg) from e
-
-    import promptflow.tools  # noqa: F401
-    from promptflow.core.tools_manager import reserved_keys
-
-    for input in inputs:
-        if input in reserved_keys:
-            msg = f"Parsing jinja got exception: Variable name {input} is reserved by LLM. Please change another name."
-            raise ReservedVariableCannotBeUsed(msg)
-
-    pattern = f"{COMMENT_START_STRING}(((?!{COMMENT_END_STRING}).)*){COMMENT_END_STRING}"
-    match_result = re.match(pattern, content)
-    description = match_result.groups()[0].strip() if match_result else None
-    # Construct the Tool structure
-    tool = Tool(
-        name=name,
-        description=description,
-        type=ToolType.PROMPT if prompt_only else ToolType.LLM,
-        inputs={i: InputDefinition(type=[ValueType.STRING]) for i in inputs},
-        outputs={},
-    )
-    if source is None:
-        tool.code = content
-    else:
-        tool.source = source
-    return tool
-
-
-def generate_prompt_meta_dict(name, content, prompt_only=False, source=None):
-    return asdict_without_none(generate_prompt_tool(name, content, prompt_only, source))
 
 
 def is_tool(f):
@@ -85,17 +42,18 @@ def collect_tool_methods_in_module(m):
         if isinstance(obj, type) and issubclass(obj, ToolProvider) and obj.__module__ == m.__name__:
             for _, method in inspect.getmembers(obj):
                 if is_tool(method):
-                    tools.append(method)
+                    initialize_inputs = obj.get_initialize_inputs()
+                    tools.append((method, initialize_inputs))
     return tools
 
 
-def _parse_tool_from_function(f):
+def _parse_tool_from_function(f, initialize_inputs=None, tool_type=ToolType.PYTHON, name=None, description=None):
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f)
+        inputs, _, _ = function_to_interface(f, tool_type=tool_type, initialize_inputs=initialize_inputs)
     except Exception as e:
         raise BadFunctionInterface(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
     class_name = None
@@ -103,64 +61,56 @@ def _parse_tool_from_function(f):
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
     # Construct the Tool structure
     return Tool(
-        name=f.__qualname__,
-        description=inspect.getdoc(f),
+        name=name or f.__qualname__,
+        description=description or inspect.getdoc(f),
         inputs=inputs,
-        type=ToolType.PYTHON,
+        type=tool_type,
         class_name=class_name,
         function=f.__name__,
         module=f.__module__,
     )
 
 
-def generate_python_tools_in_module(module):
+def generate_python_tools_in_module(module, name, description):
     tool_functions = collect_tool_functions_in_module(module)
     tool_methods = collect_tool_methods_in_module(module)
-    return [_parse_tool_from_function(f) for f in tool_functions + tool_methods]
+    return [_parse_tool_from_function(f, name=name, description=description) for f in tool_functions] + [
+        _parse_tool_from_function(f, initialize_inputs, name=name, description=description)
+        for (f, initialize_inputs) in tool_methods
+    ]
 
 
-def generate_python_tools_in_module_as_dict(module):
-    tools = generate_python_tools_in_module(module)
+def generate_python_tools_in_module_as_dict(module, name=None, description=None):
+    tools = generate_python_tools_in_module(module, name, description)
+    return _construct_tool_dict(tools)
+
+
+def generate_custom_llm_tools_in_module(module, name, description):
+    tool_functions = collect_tool_functions_in_module(module)
+    tool_methods = collect_tool_methods_in_module(module)
+    return [
+        _parse_tool_from_function(f, tool_type=ToolType.CUSTOM_LLM, name=name, description=description)
+        for f in tool_functions
+    ] + [
+        _parse_tool_from_function(
+            f, initialize_inputs, tool_type=ToolType.CUSTOM_LLM, name=name, description=description
+        )
+        for (f, initialize_inputs) in tool_methods
+    ]
+
+
+def generate_custom_llm_tools_in_module_as_dict(module, name=None, description=None):
+    tools = generate_custom_llm_tools_in_module(module, name, description)
+    return _construct_tool_dict(tools)
+
+
+def _construct_tool_dict(tools):
     return {
-        f"{t.module}.{t.name}": asdict_without_none(t) for t in tools
+        f"{t.module}.{t.class_name}.{t.function}"
+        if t.class_name is not None
+        else f"{t.module}.{t.function}": asdict_without_none(t)
+        for t in tools
     }
-
-
-def generate_python_tool(name, content, source=None):
-    try:
-        m = types.ModuleType("promptflow.dummy")
-        exec(content, m.__dict__)
-    except Exception as e:
-        msg = f"Parsing python got exception: {e}"
-        raise PythonParsingError(msg) from e
-    tools = collect_tool_functions_in_module(m)
-    if len(tools) == 0:
-        raise NoToolDefined("No tool found in the python script.")
-    elif len(tools) > 1:
-        tool_names = ", ".join(t.__name__ for t in tools)
-        raise MultipleToolsDefined(f"Expected 1 but collected {len(tools)} tools: {tool_names}.")
-    f = tools[0]
-    tool = _parse_tool_from_function(f)
-    tool.module = None
-    if name is not None:
-        tool.name = name
-    if source is None:
-        tool.code = content
-    else:
-        tool.source = source
-    return tool
-
-
-def generate_python_meta_dict(name, content, source=None):
-    return asdict_without_none(generate_python_tool(name, content, source))
-
-
-def generate_python_meta(name, content, source=None):
-    return json.dumps(generate_python_meta_dict(name, content, source), indent=2)
-
-
-def generate_prompt_meta(name, content, prompt_only=False, source=None):
-    return json.dumps(generate_prompt_meta_dict(name, content, prompt_only, source), indent=2)
 
 
 class ToolValidationError(UserErrorException):
@@ -170,23 +120,7 @@ class ToolValidationError(UserErrorException):
         super().__init__(message, target=ErrorTarget.TOOL)
 
 
-class JinjaParsingError(ToolValidationError):
-    pass
-
-
-class ReservedVariableCannotBeUsed(JinjaParsingError):
-    pass
-
-
 class PythonParsingError(ToolValidationError):
-    pass
-
-
-class NoToolDefined(PythonParsingError):
-    pass
-
-
-class MultipleToolsDefined(PythonParsingError):
     pass
 
 
