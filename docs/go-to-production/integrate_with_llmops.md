@@ -1,4 +1,4 @@
-# Integrate Prompt Flow with LLMOps
+# Integrate Prompt Flow with LLMOps (preview)
 
 In this article, you'll learn about the integration of prompt flow with LLMOps (Large Language Model Operationalization) in Azure Machine Learning. Prompt flow offers a developer-friendly experience for flow developing and iterating with LLMOps. 
 
@@ -10,8 +10,9 @@ We introduce the following sections:
 * [Introduction of code-first experience in Prompt Flow](#introduction-of-code-first-experience-in-prompt-flow)
 * [Accessing prompt flow code definition](#accessing-prompt-flow-code-definition)
 * [Versioning prompt flow code in repository](#versioning-prompt-flow-code-in-repository)
-* [Submitting runs to the cloud from local repository](#submitting-runs-to-the-cloud-from-local-repository)
-* [Next Step for iterations](#next-step-for-iterations)
+* [Submitting runs to cloud](#submitting-runs-to-cloud)
+* [Iterative development](#iterative-development)
+* [CICD integration](#cicd-integration)
 
 
 ## Introduction of code-first experience in Prompt Flow
@@ -70,7 +71,7 @@ For more details, you can refer to [Git integration in Azure machine learning](h
 
 @long to integrate, including flow run, evaluation run, get detail, visualization, etc.
 
-## Next Step for iterations
+## Iterative development
 
 ### Local Iterations
 
@@ -153,3 +154,15 @@ To continue developing and working with the most up-to-date version of the flow 
 In addition, if you prefer continuing to work in the Studio UI, you can directly import a local flow folder as a new draft flow. This allows you to seamlessly transition between local and cloud development.
 
 ![Flow import from local](../media/integrate-with-LLMOps/flow_import_localupload.png)
+
+## CICD integration
+
+### Trigger flow runs in CI pipeline
+
+@Abe to integrate example here, CICD in ADO and Github.
+
+### Continuous deployment
+
+The last step to go to production, is to deploy your flow as an online endpoint in Azure Machine Learning. This allows you to integrate your flow into your application and make it available for use.
+
+For more details on how to deploy your flow, you can refer to [Deploy flows to AzureML managed oneline endpoint for real-time inference with CLI and SDK](deploy-to-aml-code.md).
