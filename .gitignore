@@ -170,3 +170,5 @@ connection.json
 .azureml
 # secrets
 **/connections.json
+# Azure machine lear workspace config json
+config.json

@@ -68,7 +68,283 @@ For more details, you can refer to [Git integration in Azure machine learning](h
 
 ## Submitting runs to the cloud from local repository
 
-@long to integrate, including flow run, evaluation run, get detail, visualization, etc.
+### Prerequisites
+
+- Complete the [Create resources to get started](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources) if you don't already have an Azure Machine Learning workspace.
+
+- A Python environment in which you've installed Azure Machine Learning Python SDK v2 - [install instructions](https://github.com/Azure/azureml-examples/tree/sdk-preview/sdk#getting-started) - check the getting started section. This environment is for defining and controlling your Azure Machine Learning resources and is separate from the environment used at runtime for training.
+
+### Install prompt flow SDK
+
+```shell
+pip install -r ../../exmples/requirements.txt
+```
+
+### Connect to Azure machine learning workspace
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+```sh
+az login
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+import json
+
+# Import required libraries
+from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
+from azure.ai.ml import MLClient
+
+# azure version promptflow apis
+from promptflow.azure import PFClient
+
+# Configure credential
+try:
+    credential = DefaultAzureCredential()
+    # Check if given credential can get token successfully.
+    credential.get_token("https://management.azure.com/.default")
+except Exception as ex:
+    # Fall back to InteractiveBrowserCredential in case DefaultAzureCredential not work
+    credential = InteractiveBrowserCredential()
+
+# Get a handle to workspace
+ml_client = MLClient.from_config(credential=credential)
+
+pf = PFClient(ml_client)
+```
+
+:::
+
+::::
+
+
+### Submit flow run to Azure machine learning workspace
+
+We will use [web-classification flow](../../examples/flows/standard/web-classification/) as example.
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+Prepare the `run.yml` to define the config for this flow run in cloud.
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: <path_to_flow>
+data: <path_to_flow>/data.jsonl
+
+# define cloud resource
+runtime: <runtime_name>
+connections:
+  classify_with_llm:
+    connection: <connection_name>
+    deployment_name: <deployment_name>
+  summarize_text_content:
+    connection: <connection_name>
+    deployment_name: <deployment_name>
+```
+
+```sh
+pfazure run create --file run.yml
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+# load flow
+flow = "<path_to_flow>"
+data = "<path_to_flow>/data.jsonl"
+
+# define cloud resource
+runtime = <runtime_name>
+connections = {"classify_with_llm":
+                  {"connection": <connection_name>,
+                  "deployment_name": <deployment_name>},
+               "summarize_text_content":
+                  {"connection": <connection_name>,
+                  "deployment_name": <deployment_name>}
+                }
+# create run
+base_run = pf.run(
+    flow=flow,
+    data=data,
+    runtime=runtime,  
+    connections=connections,  
+)
+print(base_run)
+```
+
+:::
+
+::::
+
+### Evaluation your flow to Azure machine learning workspace
+
+- We will use [classification-accuracy-eval flow](../../examples/flows/evaluation/classification-accuracy-eval/) as example.
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+Prepare the `run_evaluation.yml` to define the config for this evaluation flow run in cloud.
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+flow: <path_to_flow>
+data: <path_to_flow>/data.jsonl
+run: <id of web-classification flow run>
+column_mapping:
+  groundtruth: ${data.answer}
+  prediction: ${run.outputs.category}
+
+# define cloud resource
+runtime: <runtime_name>
+connections:
+  classify_with_llm:
+    connection: <connection_name>
+    deployment_name: <deployment_name>
+  summarize_text_content:
+    connection: <connection_name>
+    deployment_name: <deployment_name>
+
+```
+
+```sh
+pfazure run create --file run_evaluation.yml
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+# load flow
+flow = "<path_to_flow>"
+data = "<path_to_flow>/data.jsonl"
+
+# define cloud resource
+runtime = <runtime_name>
+connections = {"classify_with_llm":
+                  {"connection": <connection_name>,
+                  "deployment_name": <deployment_name>},
+               "summarize_text_content":
+                  {"connection": <connection_name>,
+                  "deployment_name": <deployment_name>}
+                }
+
+# create evaluation run
+eval_run = pf.run(
+    flow=flow
+    data=data,
+    run=base_run,
+    column_mapping={
+        "groundtruth": "${data.answer}",
+        "prediction": "${run.outputs.category}",
+    },
+    runtime=runtime,
+    connections=connections
+)
+```
+
+:::
+
+::::
+
+
+### View run results in Azure machine learning workspace
+
+Submit flow run to cloud will return the portal url of the run. You can open the uri view the run results in the portal.
+
+You can also use following command to view results for runs.
+
+#### Steam the logs
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+```sh
+pfazure run stream --name <run_name>
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+pf.stream("<run_name>")
+```
+
+:::
+
+::::
+
+#### View run outputs
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+```sh
+pfazure run show-details --name <run_name>
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+details = pf.get_details(eval_run)
+details.head(10)
+```
+
+:::
+
+::::
+
+
+#### View metrics of evaluation run
+
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+```sh
+pfazure run show-metrics --name <evaluation_run_name>
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+pf.get_metrics("evaluation_run_name")
+```
+
+:::
+
+::::
 
 ## Next Step for iterations
 
