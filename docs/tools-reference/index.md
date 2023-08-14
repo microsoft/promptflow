@@ -6,9 +6,6 @@
 llm-tool
 prompt-tool
 python-tool
-azure_language_detector_tool
-azure_translator_tool
-content-safety-text-tool
 db_copilot_tool
 serp-api-tool
 faiss_index_lookup_tool
