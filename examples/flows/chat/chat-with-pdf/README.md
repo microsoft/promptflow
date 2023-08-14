@@ -33,6 +33,7 @@ CHUNK_OVERLAP=0
 Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
 
 ```bash
+cat .env
 pf connection create --file .env --name chat_with_pdf_custom_connection
 ```
 
