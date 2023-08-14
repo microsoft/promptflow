@@ -5,10 +5,8 @@ from ghactions_driver.readme_workflow_generate import write_readme_workflow
 from ghactions_driver.readme_step import ReadmeStepsManage, ReadmeSteps
 
 
-def main(args):
-    globs = [
-        sorted(Path(ReadmeStepsManage.git_base_dir()).glob(p)) for p in args.input_glob
-    ]
+def main(input_glob):
+    globs = [sorted(Path(ReadmeStepsManage.git_base_dir()).glob(p)) for p in input_glob]
     readme_items = sorted([j for i in globs for j in i])
 
     for readme in readme_items:
@@ -30,4 +28,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # call main
-    main(args)
+    main(args.input_glob)

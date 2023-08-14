@@ -16,6 +16,7 @@ class Step:
         jinja_folder_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / "scripts"
+            / "readme"
             / "ghactions_driver"
             / "workflow_steps"
         )
@@ -90,7 +91,6 @@ class CreateAoaiFromYaml(Step):
         return template.render(
             {
                 "step_name": self.workflow_name,
-                "working_dir": ReadmeSteps.working_dir,
                 "yaml_name": self.yaml_name,
             }
         )
@@ -102,6 +102,23 @@ class ExtractStepsAndRun(Step):
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_extract_steps_and_run.yml.jinja2")
+        return template.render(
+            {
+                "step_name": self.workflow_name,
+                "working_dir": ReadmeSteps.working_dir,
+                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+            }
+        )
+
+
+class ExtractStepsAndRunGPTFour(Step):
+    def __init__(self) -> None:
+        Step.__init__(self, "Extract Steps")
+
+    def get_workflow_step(self) -> str:
+        template = Step.get_workflow_template(
+            "step_extract_steps_and_run_gpt4.yml.jinja2"
+        )
         return template.render(
             {
                 "step_name": self.workflow_name,
@@ -183,6 +200,10 @@ class ReadmeSteps:
     def extract_steps_and_run() -> Step:
         return ReadmeSteps.remember_step(ExtractStepsAndRun())
 
+    @staticmethod
+    def extract_steps_and_run_gpt_four() -> Step:
+        return ReadmeSteps.remember_step(ExtractStepsAndRunGPTFour())
+
     # endregion steps
 
     @staticmethod
@@ -241,6 +262,7 @@ class ReadmeStepsManage:
         workflow_template_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / "scripts"
+            / "readme"
             / "ghactions_driver"
             / "workflow_templates"
         )
