@@ -3,14 +3,17 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: connections_connection
+name: samples_getstarted_quickstartazure
 on:
+  schedule:
+    - cron: "24 20 * * *" # Every day starting at 4:24 BJT
   pull_request:
-    branches: [ main,preview/code-first ]
+    branches: [ main ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:
-  connection:
+  quickstart-azure:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,12 +36,12 @@ jobs:
       - name: Create Aoai Connection
         run: pf connection create -f ${{ github.workspace }}/examples/connections/azure_openai.yml --set api_key="${{ secrets.AOAI_API_KEY }}" api_base="${{ secrets.AOAI_API_ENDPOINT }}"
       - name: Test Notebook
-        working-directory: examples/connections
+        working-directory: examples/tutorials/get-started
         run: |
-          papermill -k python connection.ipynb connection.output.ipynb
+          papermill -k python quickstart-azure.ipynb quickstart-azure.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/connections
+          path: examples/tutorials/get-started

@@ -17,15 +17,16 @@ pip install -r requirements.txt
 
 ## Setup connection
 Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
-Ensure you have created `basic_custom_connection` connection before.
-```bash
-pf connection show -n basic_custom_connection
-```
 
 Create connection if you haven't done that.
 ```bash
 # Override keys with --set to avoid yaml file changes
 pf connection create -f custom.yml --set secrets.api_key=<your_api_key> configs.api_base=<your_api_base>
+```
+
+Ensure you have created `basic_custom_connection` connection.
+```bash
+pf connection show -n basic_custom_connection
 ```
 
 ## Run flow in local
@@ -40,7 +41,7 @@ pf flow test --flow .
 pf flow test --flow . --inputs text="Hello World!"
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
+# pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
 
 ```
 
@@ -56,14 +57,17 @@ pf run create --flow . --data ./data.jsonl --stream
 # list created run
 pf run list -r 3
 
+# get a sample run name
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_with_connection")) | .name'| head -n 1 | tr -d '"')
+
 # show specific run detail
-pf run show --name "basic_with_connection_default_20230724_160757_016682"
+pf run show --name $name
 
 # show output
-pf run show-details --name "basic_with_connection_default_20230724_160757_016682"
+pf run show-details --name $name
 
 # visualize run in browser
-pf run visualize --name "basic_with_connection_default_20230724_160757_016682"
+pf run visualize --name $name
 ```
 
 ### Run with connection overwrite
@@ -94,8 +98,8 @@ Run flow with connection `azure_open_ai_connection`.
 
 ```bash
 # set default workspace
-az account set -s 96aede12-2f73-41cb-b983-6d11a904839b
-az configure --defaults group="promptflow" workspace="promptflow-eastus"
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 pfazure run create --flow . --data ./data.jsonl --connections llm.connection=azure_open_ai_connection --stream --runtime demo-mir
 ```

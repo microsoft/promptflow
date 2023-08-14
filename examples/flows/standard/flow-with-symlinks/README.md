@@ -76,8 +76,13 @@ pf run create --file run.yml --stream
 
 ``` bash
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <subscription-id> -g <resource-group-name> -w <workspace-name>
-pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
+pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
+# pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
+
+# set default workspace
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
+
 pfazure run create --file run.yml --runtime demo-mir --stream
-pfazure run create --file run.yml --stream # serverless compute
+# pfazure run create --file run.yml --stream # serverless compute
 ```

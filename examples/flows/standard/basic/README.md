@@ -51,7 +51,7 @@ pf run create --flow . --data ./data.jsonl --stream
 pf run list
 
 # get a sample run name
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_default")) | .name'| head -n 1)
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_default")) | .name'| head -n 1 | tr -d '"')
 
 # show specific run detail
 pf run show --name $name
@@ -90,7 +90,7 @@ pf run create --flow . --data ./data.jsonl --stream --environment-variables AZUR
 pf run create --file run.yml --stream
 
 # show outputs
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_default")) | .name'| head -n 1)
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_default")) | .name'| head -n 1 | tr -d '"')
 pf run show-details --name $name
 ```
 
@@ -99,7 +99,7 @@ pf run show-details --name $name
 ```bash
 # set default workspace
 az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_id> workspace=<your_workspace_name>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 ```
 
 - Create run
