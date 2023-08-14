@@ -43,10 +43,10 @@ jobs:
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY }}
           AOAI_API_BASE=${{ secrets.AOAI_API_ENDPOINT }}
-          if [[ -e .env.examples ]]; then
+          if [[ -e .env.example ]]; then
             echo "env replacement"
-            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_BASE/g" .env.examples
-            mv .env.examples .env
+            sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_BASE/g" .env.example
+            mv .env.example .env
           fi
       - name: Create run.yml
         working-directory: examples/flows/standard/basic
