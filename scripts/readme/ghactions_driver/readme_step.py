@@ -278,3 +278,4 @@ class ReadmeStepsManage:
         content = template.render(replacements)
         with open(target_path.resolve(), "w", encoding="utf-8") as f:
             f.write(content)
+        print(f"Write readme workflow: {target_path.resolve()}")

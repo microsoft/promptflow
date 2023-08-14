@@ -1,8 +1,16 @@
 - name: {{ step_name }}
   working-directory: {{ working_dir }}
   run: |
-    echo AZURE_OPENAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }} > .env
-    echo AZURE_OPENAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }} >> .env
-    echo AZURE_OPENAI_API_TYPE=azure >> .env
-    echo AZURE_OPENAI_API_VERSION=2023-03-15-preview >> .env
-    echo CHAT_DEPLOYMENT_NAME=gpt-35-turbo >> .env
+    AOAI_API_KEY=${{ '{{' }} secrets.AOAI_API_KEY }}
+    AOAI_API_BASE=${{ '{{' }} secrets.AOAI_API_ENDPOINT }}
+    if [[ -e .env.examples ]]; then
+      echo "env replacement"
+      sed -i -e "s/<AOAI_key>/$AOAI_API_KEY/g" -e "s/<AOAI_endpoint>/$AOAI_API_BASE/g" .env.examples
+      mv .env.examples .env
+    else
+      echo AZURE_OPENAI_API_KEY=$AOAI_API_KEY > .env
+      echo AZURE_OPENAI_API_BASE=$AOAI_API_BASE >> .env
+      echo AZURE_OPENAI_API_TYPE=azure >> .env
+      echo AZURE_OPENAI_API_VERSION=2023-03-15-preview >> .env
+      echo CHAT_DEPLOYMENT_NAME=gpt-35-turbo >> .env
+    fi

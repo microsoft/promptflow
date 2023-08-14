@@ -22,10 +22,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Setup Pandoc
-        uses: r-lib/actions/setup-pandoc@v1
-        with:
-          pandoc-version: '2.12'
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
@@ -48,7 +44,7 @@ jobs:
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/ghactions_driver/extract_steps_from_readme.py -f examples/flows/standard/flow-with-symlinks/README.md -o examples/flows/standard/flow-with-symlinks
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/flow-with-symlinks/README.md -o examples/flows/standard/flow-with-symlinks
       - name: Run scripts
         working-directory: examples/flows/standard/flow-with-symlinks
         run: |

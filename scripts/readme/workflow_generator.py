@@ -5,8 +5,10 @@ from pathlib import Path
 import ntpath
 import re
 import hashlib
+import json
 from jinja2 import Environment, FileSystemLoader
 from ghactions_driver.readme_step import ReadmeStepsManage
+from ghactions_driver.readme_parse import readme_parser
 
 
 def format_ipynb(notebooks):
@@ -82,19 +84,46 @@ def write_workflows(notebooks):
         # write workflow file
         write_notebook_workflow(notebook, name)
 
+def local_filter(callback, array):
+  results = []
+  for index, item in enumerate(array):
+    result = callback(item, index, array)
+    # if returned true, append item to results
+    if result:
+      results.append(item)
+  return results
+
+# filter for no reademe generation
+def no_readme_generation_filter(item, index, array) -> bool:
+    try:
+        # read in notebook
+        with open(item, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        try:
+            if data["metadata"]["no_readme_generation"] is not None:
+                # no_readme_generate == "true", then no generation
+                return data["metadata"]["no_readme_generation"] != "true"
+        except:
+            return True # generate readme
+    except BaseException:
+        return False # generate readme
+    
 
 def main(input_glob):
     # get list of workflows
 
-    workflows = _get_paths(
+    notebooks = _get_paths(
         [j for i in [glob.glob(p, recursive=True) for p in input_glob] for j in i]
     )
 
+    # check each workflow, get metadata.
+    notebooks = local_filter(no_readme_generation_filter, notebooks)
+
     # format code
-    format_ipynb(workflows)
+    format_ipynb(notebooks)
 
     # write workflows
-    write_workflows(workflows)
+    write_workflows(notebooks)
 
 
 # run functions
