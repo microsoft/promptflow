@@ -161,10 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-# ignore 
-# TODO: ignore when PFS supports submit without tools.json
-.promptflow
+# ignore
 !flow.tools.json
+.promptflow
 .runs
 connection.json
 .env
