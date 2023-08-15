@@ -1,0 +1,49 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: web_classification_updated
+version: version_updated
+display_name: web_classification_display_name_updated
+description: Create flows that use large language models to classify URLs into multiple
+  categories.
+type: command
+inputs:
+  data:
+    type: uri_folder
+  variant:
+    type: string
+    optional: true
+    default: variant_1
+  groundtruth:
+    type: string
+    optional: true
+    default: '1'
+  prediction:
+    type: string
+    optional: true
+    default: ${{variant.outputs.category}}
+  connections.summarize_text_content.connection:
+    type: string
+    optional: true
+    default: azure_open_ai_connection
+  connections.summarize_text_content.deployment_name:
+    type: string
+    optional: true
+  connections.classify_with_llm.connection:
+    type: string
+    optional: true
+    default: azure_open_ai_connection
+  connections.classify_with_llm.deployment_name:
+    type: string
+    optional: true
+outputs:
+  output:
+    type: uri_folder
+command: pf run_bulk --input ${{inputs.data}} --output ${{outputs.output}} $[[--inputs-mapping
+  groundtruth=${{inputs.groundtruth}},prediction=${{inputs.prediction}}]] --connections
+  "$[[summarize_text_content.deployment_name=${{inputs.connections.summarize_text_content.deployment_name}},]]$[[summarize_text_content.connection=${{inputs.connections.summarize_text_content.connection}},]]$[[classify_with_llm.deployment_name=${{inputs.connections.classify_with_llm.deployment_name}},]]$[[classify_with_llm.connection=${{inputs.connections.classify_with_llm.connection}},]]"
+  $[[--variant ${{inputs.variant}}]]
+environment:
+  name: CliV2AnonymousEnvironment
+  version: e2ebc71877ca60434ac0cb69936b523f
+  image: promptflow.azurecr.io/cli_test:latest
+code: D:/PycharmProjects/PromptFlow/src/promptflow-sdk/tests/test_configs/flows/web_classification
+is_deterministic: true

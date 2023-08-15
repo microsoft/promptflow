@@ -1,0 +1,7 @@
+flow: ../flows/flow_with_dict_input
+data: ../datas/webClassification1.jsonl
+column_mapping:
+   key:
+      val1: 1
+      val2: 2
+

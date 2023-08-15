@@ -1,0 +1,7 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/FormRecognizerConnection.schema.json
+name: my_form_recognizer_connection
+type: form_recognizer
+api_key: "<to-be-replaced>"
+endpoint: "endpoint"
+api_version: "2023-07-31"
+api_type: Form Recognizer
