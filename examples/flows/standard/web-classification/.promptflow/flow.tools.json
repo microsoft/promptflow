@@ -1,0 +1,77 @@
+{
+  "package": {},
+  "code": {
+    "fetch_text_content_from_url.py": {
+      "type": "python",
+      "inputs": {
+        "url": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "fetch_text_content_from_url.py",
+      "function": "fetch_text_content_from_url"
+    },
+    "summarize_text_content.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "summarize_text_content.jinja2"
+    },
+    "summarize_text_content__variant_1.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "summarize_text_content__variant_1.jinja2"
+    },
+    "prepare_examples.py": {
+      "type": "python",
+      "source": "prepare_examples.py",
+      "function": "prepare_examples"
+    },
+    "classify_with_llm.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "url": {
+          "type": [
+            "string"
+          ]
+        },
+        "examples": {
+          "type": [
+            "string"
+          ]
+        },
+        "text_content": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "classify_with_llm.jinja2"
+    },
+    "convert_to_dict.py": {
+      "type": "python",
+      "inputs": {
+        "input_str": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "convert_to_dict.py",
+      "function": "convert_to_dict"
+    }
+  }
+}

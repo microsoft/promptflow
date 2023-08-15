@@ -1,0 +1,30 @@
+{
+  "package": {},
+  "code": {
+    "summarize_text_content.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "description": "Summarize webpage content into a short paragraph."
+    },
+    "summarize_text_content__variant_1.jinja2": {
+      "type": "llm",
+      "inputs": {
+        "text": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "prepare_examples.py": {
+      "type": "python",
+      "function": "prepare_examples"
+    }
+  }
+}

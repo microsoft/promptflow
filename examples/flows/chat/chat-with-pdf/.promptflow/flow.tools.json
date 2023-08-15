@@ -1,0 +1,44 @@
+{
+  "package": {},
+  "code": {
+    "setup_env.py": {
+      "type": "python",
+      "inputs": {
+        "conn": {
+          "type": [
+            "CustomConnection"
+          ]
+        }
+      },
+      "source": "setup_env.py",
+      "function": "setup_env"
+    },
+    "chat_with_pdf_tool.py": {
+      "type": "python",
+      "inputs": {
+        "question": {
+          "type": [
+            "string"
+          ]
+        },
+        "pdf_url": {
+          "type": [
+            "string"
+          ]
+        },
+        "history": {
+          "type": [
+            "list"
+          ]
+        },
+        "ready": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "chat_with_pdf_tool.py",
+      "function": "chat_with_pdf_tool"
+    }
+  }
+}

@@ -9,7 +9,6 @@ from promptflow.core.tool import ToolProvider, tool
 from promptflow.core.tools_manager import register_api_method, register_apis
 from promptflow.tools.common import render_jinja_template, handle_openai_error, \
     parse_chat, to_bool, validate_functions, process_function_call, post_process_chat_api_response
-from promptflow.utils.utils import deprecated
 
 
 class Engine(str, Enum):
@@ -28,11 +27,6 @@ class OpenAI(ToolProvider):
         super().__init__()
         self.connection = connection
         self._connection_dict = asdict(self.connection)
-
-    @staticmethod
-    @deprecated(replace="OpenAI()")
-    def from_config(config: OpenAIConnection):
-        return OpenAI(config)
 
     @tool
     @handle_openai_error()
@@ -86,7 +80,8 @@ class OpenAI(ToolProvider):
         if stream:
             def generator():
                 for chunk in response:
-                    yield chunk.choices[0].text
+                    if chunk.choices:
+                        yield getattr(chunk.choices[0], "text", "")
 
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.
@@ -143,6 +138,7 @@ class OpenAI(ToolProvider):
         completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
         return post_process_chat_api_response(completion, stream, functions)
 
+    # TODO: embedding is a separate builtin tool, will remove it from llm.
     @tool
     @handle_openai_error()
     def embedding(self, input, model: str = "text-embedding-ada-002", user: str = ""):
@@ -238,11 +234,5 @@ def chat(
     )
 
 
-@tool
-def embedding(connection: OpenAIConnection, input, model: str = "text-embedding-ada-002", user: str = ""):
-    return OpenAI(connection).embedding(input=input, model=model, user=user)
-
-
 register_api_method(completion)
 register_api_method(chat)
-register_api_method(embedding)

@@ -1,3 +1,6 @@
+# TODO: previous contract tool meta is not updated as the same time of tool code changes.
+# Will remove the file when new named source code is released to all regions.
+# Probably around Aug 15.
 import traceback
 
 from promptflow.core.tool import ToolProvider, tool

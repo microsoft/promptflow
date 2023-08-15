@@ -21,13 +21,13 @@ With prompt flow, you will be able to:
 
 You can develope your flow locally and seamlessly move the experience to azure cloud, learn more: [Azure Machine Learning prompt flow](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
-By joining the Prompt Flow community, you can build AI-first apps faster and have a front-row
-peek at how the SDK is being built. Prompt Flow has been released as open-source so that more
-pioneering developers can join us in crafting the future of how people building AI applications.
+Prompt Flow has been released as open-source so that more pioneering developers can join us in crafting the future of how people building AI applications.
 
 ## Get Started with Prompt flow ⚡
 
-WIP
+For users: please start with our [examples](./examples/README.md) & [docs](./docs/README.md).
+
+For developers: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
 ## Contributing
 
