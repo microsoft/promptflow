@@ -8,10 +8,15 @@ on:
         default: 'v1.0.0'
         type: string
       ReleaseName:
-        description: 'Tag version'
+        description: 'Release name'
         required: true
         default: 'v1.0.0'
         type: string
+      PreRelease:
+        description: 'If it is a pre-release'
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   build:
@@ -29,19 +34,19 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ github.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ inputs.TagVersion }}
           release_name: ${{ inputs.ReleaseName }}
           body: Description of the release
           draft: false
-          prerelease: false
+          prerelease: ${{ inputs.PreRelease }}
 
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ github.TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./src/promptflow-tools.zip
