@@ -3,7 +3,7 @@
 Faiss Index Lookup is a tool tailored for querying within a user-provided Faiss-based vector store. In combination with our Large Language Model (LLM) tool, it empowers users to extract contextually relevant information from a domain knowledge base.
 
 ## Requirements
-- pip install promptflow-vectordb --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+- promptflow-vectordb --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
 
 ## Prerequisites
 - Prepare an accessible path on Azure Blob Storage. Here's the guide if a new storage account needs to be created:  [Azure Storage Account](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal).
