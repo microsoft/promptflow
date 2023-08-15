@@ -1,0 +1,7 @@
+name: pipelines_templates_steps_template_display_environment_variables_step
+runs:
+  using: composite
+  steps:
+  - name: Display Environment Variables
+    run: env | sort >> $GITHUB_OUTPUT
+    shell: bash

@@ -1,0 +1,29 @@
+name: test_actions
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+env:
+  PYTHONPATH: "${{ github.workspace }}/src/promptflow"
+  RUNTIME-CI-RESOURCE-GROUP: promptflow
+  RUNTIME-CI-SUBSCRIPTION: ${{ secrets.TEST_WORKSPACE_SUB_ID }}
+  RUNTIME-CI-WORKSPACE: ${{ secrets.TEST_WORKSPACE_NAME }}
+  aoai-api-endpoint: ${{ secrets.AOAI_API_ENDPOINT_TEST }}
+  coverageThreshold: 75
+  deployPath: "${{ github.workspace }}/deploy"
+  linuxImage: Ubuntu-latest
+  promptflowRepoLocation: "${{ github.workspace }}"
+  pythonVersion: 3.8
+  scriptPath: "${{ github.workspace }}/scripts"
+  srcPath: "${{ github.workspace }}/src"
+  subscriptionId: ${{ secrets.TEST_WORKSPACE_SUB_ID }}
+  testPath: "${{ github.workspace }}/src/promptflow-sdk/tests/promptflow_test"
+jobs:
+  run_feature_tests:
+    name: Geneate Model
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display Env
+      uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
