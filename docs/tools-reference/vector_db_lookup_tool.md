@@ -11,7 +11,7 @@ Vector DB Lookup is a vector search tool that allows users to search top k simil
 This tool will add support for more vector databases.
 
 ## Requirements
-- embeddingstore --extra-index-url https://azuremlsdktestpypi.azureedge.net/embeddingstore
+- promptflow-vectordb --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
 
 
 ## Prerequisites
@@ -70,7 +70,7 @@ The following are available input parameters:
 
 ## Outputs
 
-The following is an example JSON format response returned by the tool, which includes the top-k scored entities. The entity follows a generic schema of vector search result provided by EmbeddingStore SDK. 
+The following is an example JSON format response returned by the tool, which includes the top-k scored entities. The entity follows a generic schema of vector search result provided by promptflow-vectordb SDK. 
 - **Azure Cognitive Search:**
 
   For Azure Cognitive Search, the following fields are populated:
