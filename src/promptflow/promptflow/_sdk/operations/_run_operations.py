@@ -12,7 +12,12 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
-from promptflow._sdk._constants import MAX_RUN_LIST_RESULTS, ListViewType, LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import (
+    MAX_RUN_LIST_RESULTS,
+    ListViewType,
+    LocalStorageFilenames,
+    RunStatus,
+)
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import incremental_print, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
@@ -171,7 +176,9 @@ class RunOperations:
         :rtype: ~promptflow._sdk.entities._run.Run
         """
         # the kwargs is to support update run status scenario but keep it private
-        ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
+        ORMRun.get(name).update(
+            display_name=display_name, description=description, tags=tags, **kwargs
+        )
         return self.get(name)
 
     def get_details(self, name: Union[str, Run]) -> pd.DataFrame:
@@ -209,7 +216,12 @@ class RunOperations:
 
             local_storage = LocalStorageOperations(run)
             detail = local_storage.load_detail()
-            metadata = RunMetadata(name=run.name, display_name=run.display_name, tags=run.tags, lineage=run.run)
+            metadata = RunMetadata(
+                name=run.name,
+                display_name=run.display_name,
+                tags=run.tags,
+                lineage=run.run,
+            )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
         data_for_visualize = RunVisualization(detail=details, metadata=metadatas)

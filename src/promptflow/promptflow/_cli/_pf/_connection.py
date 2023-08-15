@@ -21,16 +21,26 @@ _client = PFClient()  # Do we have some function like PFClient.get_instance?
 
 
 def add_param_file(parser):
-    parser.add_argument("--file", "-f", type=str, help="File path of the connection yaml.", required=True)
+    parser.add_argument(
+        "--file",
+        "-f",
+        type=str,
+        help="File path of the connection yaml.",
+        required=True,
+    )
 
 
 def add_param_name(parser, required=False):
-    parser.add_argument("--name", "-n", type=str, help="Name of the connection.", required=required)
+    parser.add_argument(
+        "--name", "-n", type=str, help="Name of the connection.", required=required
+    )
 
 
 def add_connection_parser(subparsers):
     connection_parser = subparsers.add_parser(
-        "connection", description="A CLI tool to manage connections for promptflow.", help="pf connection"
+        "connection",
+        description="A CLI tool to manage connections for promptflow.",
+        help="pf connection",
     )
     subparsers = connection_parser.add_subparsers()
     add_connection_create(subparsers)
@@ -153,7 +163,9 @@ def create_connection(file_path, params_override=None, name=None):
     connection = load_connection(source=file_path, params_override=params_override)
     existing_connection = _client.connections.get(connection.name, raise_error=False)
     if existing_connection:
-        logger.warning(f"Connection with name {connection.name} already exists. Updating it.")
+        logger.warning(
+            f"Connection with name {connection.name} already exists. Updating it."
+        )
         # Note: We don't set the existing secret back here, let user input the secrets.
     validate_and_interactive_get_secrets(connection)
     connection = _client.connections.create_or_update(connection)
@@ -178,7 +190,9 @@ def _upsert_connection_from_file(file, params_override=None):
     connection = load_connection(source=file, params_override=params_override)
     existing_connection = _client.connections.get(connection.name, raise_error=False)
     if existing_connection:
-        connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
+        connection = _Connection._load(
+            data=existing_connection._to_dict(), params_override=params_override
+        )
         # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
         connection._secrets = existing_connection._secrets
     else:
@@ -192,7 +206,9 @@ def _upsert_connection_from_file(file, params_override=None):
 def update_connection(name, params_override=None):
     params_override = params_override or []
     existing_connection = _client.connections.get(name)
-    connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
+    connection = _Connection._load(
+        data=existing_connection._to_dict(), params_override=params_override
+    )
     # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
     connection._secrets = existing_connection._secrets
     connection = _client.connections.create_or_update(connection)

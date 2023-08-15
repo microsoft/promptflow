@@ -29,7 +29,9 @@ class PromptFlowHandler(BaseCallbackHandler):
             return
         self._tracer._pop(output, error)
 
-    def on_llm_start(self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any) -> Any:
+    def on_llm_start(
+        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+    ) -> Any:
         name = self._get_name(serialized) or "LLM"
         trace = Trace(name, TraceType.LANGCHAIN, {"prompts": prompts})
         self._push(trace)
@@ -41,10 +43,14 @@ class PromptFlowHandler(BaseCallbackHandler):
         output = response
         self._pop(output)
 
-    def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
+    def on_llm_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
         self._pop(error=error)
 
-    def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any) -> Any:
+    def on_chain_start(
+        self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any
+    ) -> Any:
         name = self._get_name(serialized) or "Chain"
         trace = Trace(name, TraceType.LANGCHAIN, inputs)
         self._push(trace)
@@ -52,10 +58,14 @@ class PromptFlowHandler(BaseCallbackHandler):
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> Any:
         self._pop(outputs)
 
-    def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
+    def on_chain_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
         self._pop(error=error)
 
-    def on_tool_start(self, serialized: Dict[str, Any], input_str: str, **kwargs: Any) -> Any:
+    def on_tool_start(
+        self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
+    ) -> Any:
         name = self._get_name(serialized) or "Tool"
         trace = Trace(name, TraceType.LANGCHAIN, {"input_str": input_str})
         self._push(trace)
@@ -63,7 +73,9 @@ class PromptFlowHandler(BaseCallbackHandler):
     def on_tool_end(self, output: str, **kwargs: Any) -> Any:
         self._pop(output)
 
-    def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
+    def on_tool_error(
+        self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
+    ) -> Any:
         self._pop(error=error)
 
     def on_text(self, text: str, **kwargs: Any) -> Any:

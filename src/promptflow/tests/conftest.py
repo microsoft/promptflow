@@ -26,7 +26,9 @@ def mock_build_info():
     if "BUILD_INFO" not in os.environ:
         m = MonkeyPatch()
         build_number = os.environ.get("BUILD_BUILDNUMBER", "")
-        buid_info = {"build_number": f"ci-{build_number}" if build_number else "local-pytest"}
+        buid_info = {
+            "build_number": f"ci-{build_number}" if build_number else "local-pytest"
+        }
         m.setenv("BUILD_INFO", json.dumps(buid_info))
         yield m
 
@@ -100,7 +102,6 @@ def prepare_symbolic_flow() -> str:
     source_folder = flows_dir / "web_classification"
 
     with _change_working_dir(target_folder):
-
         for file_name in os.listdir(source_folder):
             if not Path(file_name).exists():
                 os.symlink(source_folder / file_name, file_name)

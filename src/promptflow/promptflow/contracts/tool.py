@@ -191,7 +191,9 @@ class OutputDefinition:
     @staticmethod
     def deserialize(data: dict):
         return OutputDefinition(
-            [ValueType(t) for t in data["type"]] if isinstance(data["type"], list) else [ValueType(data["type"])],
+            [ValueType(t) for t in data["type"]]
+            if isinstance(data["type"], list)
+            else [ValueType(data["type"])],
             data.get("description", ""),
             data.get("is_property", False),
         )
@@ -215,7 +217,12 @@ class Tool:
 
     def serialize(self) -> dict:
         # serialize to dict and skip None fields
-        data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and k != "outputs"})
+        data = asdict(
+            self,
+            dict_factory=lambda x: {
+                k: v for (k, v) in x if v is not None and k != "outputs"
+            },
+        )
         if not self.type == ToolType._ACTION:
             return data
         # Pop unused field for action
@@ -228,8 +235,14 @@ class Tool:
             name=data["name"],
             description=data.get("description", ""),
             type=deserialize_enum(ToolType, data["type"]),
-            inputs={k: InputDefinition.deserialize(i) for k, i in data.get("inputs", {}).items()},
-            outputs={k: OutputDefinition.deserialize(o) for k, o in data.get("outputs", {}).items()},
+            inputs={
+                k: InputDefinition.deserialize(i)
+                for k, i in data.get("inputs", {}).items()
+            },
+            outputs={
+                k: OutputDefinition.deserialize(o)
+                for k, o in data.get("outputs", {}).items()
+            },
             module=data.get("module"),
             class_name=data.get("class_name"),
             source=data.get("source"),
@@ -241,4 +254,8 @@ class Tool:
         )
 
     def require_connection(self) -> bool:
-        return self.type is ToolType.LLM or isinstance(self.connection_type, list) and len(self.connection_type) > 0
+        return (
+            self.type is ToolType.LLM
+            or isinstance(self.connection_type, list)
+            and len(self.connection_type) > 0
+        )

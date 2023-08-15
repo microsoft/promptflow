@@ -15,4 +15,4 @@ def to_bool(value) -> bool:
 
 @tool
 def my_python_tool(input1: str) -> str:
-  return 'hello '
+    return "hello "

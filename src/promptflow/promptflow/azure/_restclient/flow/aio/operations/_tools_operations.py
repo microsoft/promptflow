@@ -11,7 +11,13 @@ import functools
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse
 from azure.core.rest import HttpRequest
@@ -19,9 +25,19 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._tools_operations import build_get_package_tools_request, build_get_samples_request, build_get_tool_meta_request, build_get_tool_meta_v2_request, build_get_tool_setting_request
-T = TypeVar('T')
-ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
+from ...operations._tools_operations import (
+    build_get_package_tools_request,
+    build_get_samples_request,
+    build_get_tool_meta_request,
+    build_get_tool_meta_v2_request,
+    build_get_tool_setting_request,
+)
+
+T = TypeVar("T")
+ClsType = Optional[
+    Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]
+]
+
 
 class ToolsOperations:
     """ToolsOperations async operations.
@@ -66,39 +82,45 @@ class ToolsOperations:
         :rtype: ~flow.models.ToolSetting
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ToolSetting"]
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.ToolSetting"]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_tool_setting_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            template_url=self.get_tool_setting.metadata['url'],
+            template_url=self.get_tool_setting.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('ToolSetting', pipeline_response)
+        deserialized = self._deserialize("ToolSetting", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_tool_setting.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/setting'}  # type: ignore
-
+    get_tool_setting.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/setting"}  # type: ignore
 
     @distributed_trace_async
     async def get_samples(
@@ -121,39 +143,45 @@ class ToolsOperations:
         :rtype: dict[str, ~flow.models.Tool]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[Dict[str, "_models.Tool"]]
+        cls = kwargs.pop("cls", None)  # type: ClsType[Dict[str, "_models.Tool"]]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_samples_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
-            template_url=self.get_samples.metadata['url'],
+            template_url=self.get_samples.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('{Tool}', pipeline_response)
+        deserialized = self._deserialize("{Tool}", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_samples.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/samples'}  # type: ignore
-
+    get_samples.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/samples"}  # type: ignore
 
     @distributed_trace_async
     async def get_tool_meta(
@@ -194,13 +222,15 @@ class ToolsOperations:
         :rtype: str
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[str]
+        cls = kwargs.pop("cls", None)  # type: ClsType[str]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "text/plain")  # type: Optional[str]
+        content_type = kwargs.pop("content_type", "text/plain")  # type: Optional[str]
 
         _content = data
 
@@ -215,28 +245,33 @@ class ToolsOperations:
             endpoint_name=endpoint_name,
             flow_runtime_name=flow_runtime_name,
             flow_id=flow_id,
-            template_url=self.get_tool_meta.metadata['url'],
+            template_url=self.get_tool_meta.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('str', pipeline_response)
+        deserialized = self._deserialize("str", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_tool_meta.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta'}  # type: ignore
-
+    get_tool_meta.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta"}  # type: ignore
 
     @distributed_trace_async
     async def get_tool_meta_v2(
@@ -268,16 +303,20 @@ class ToolsOperations:
         :rtype: ~flow.models.ToolMetaDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.ToolMetaDto"]
+        cls = kwargs.pop("cls", None)  # type: ClsType["_models.ToolMetaDto"]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop(
+            "content_type", "application/json"
+        )  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'GenerateToolMetaRequest')
+            _json = self._serialize.body(body, "GenerateToolMetaRequest")
         else:
             _json = None
 
@@ -289,28 +328,33 @@ class ToolsOperations:
             json=_json,
             flow_runtime_name=flow_runtime_name,
             flow_id=flow_id,
-            template_url=self.get_tool_meta_v2.metadata['url'],
+            template_url=self.get_tool_meta_v2.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('ToolMetaDto', pipeline_response)
+        deserialized = self._deserialize("ToolMetaDto", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_tool_meta_v2.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta-v2'}  # type: ignore
-
+    get_tool_meta_v2.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/meta-v2"}  # type: ignore
 
     @distributed_trace_async
     async def get_package_tools(
@@ -339,38 +383,44 @@ class ToolsOperations:
         :rtype: dict[str, ~flow.models.Tool]
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[Dict[str, "_models.Tool"]]
+        cls = kwargs.pop("cls", None)  # type: ClsType[Dict[str, "_models.Tool"]]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        
         request = build_get_package_tools_request(
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
             flow_runtime_name=flow_runtime_name,
             flow_id=flow_id,
-            template_url=self.get_package_tools.metadata['url'],
+            template_url=self.get_package_tools.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('{Tool}', pipeline_response)
+        deserialized = self._deserialize("{Tool}", pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_package_tools.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/packageTools'}  # type: ignore
-
+    get_package_tools.metadata = {"url": "/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/Tools/packageTools"}  # type: ignore

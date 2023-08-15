@@ -12,7 +12,12 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 import pandas as pd
 import yaml
 
-from promptflow._sdk._constants import DEFAULT_ENCODING, LINE_NUMBER, LocalStorageFilenames, get_run_output_path
+from promptflow._sdk._constants import (
+    DEFAULT_ENCODING,
+    LINE_NUMBER,
+    LocalStorageFilenames,
+    get_run_output_path,
+)
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow.exceptions import BulkRunException
@@ -100,7 +105,9 @@ class LocalStorageOperations:
         self._dag_path.unlink()
         shutil.copy(flow.path, self._dag_path)
 
-    def load_io_spec(self) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
+    def load_io_spec(
+        self,
+    ) -> Tuple[Dict[str, Dict[str, str]], Dict[str, Dict[str, str]]]:
         """Load input/output spec from DAG."""
         with open(self._dag_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             flow_dag = yaml.safe_load(f)

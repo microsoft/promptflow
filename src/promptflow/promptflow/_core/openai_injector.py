@@ -33,7 +33,11 @@ def inject_function(args_to_ignore=None, trace_type=TraceType.LLM):
             all_kwargs = {**{k: v for k, v in zip(sig.keys(), args)}, **kwargs}
             for key in args_to_ignore:
                 all_kwargs.pop(key, None)
-            name = f.__qualname__ if not f.__module__ else f.__module__ + "." + f.__qualname__
+            name = (
+                f.__qualname__
+                if not f.__module__
+                else f.__module__ + "." + f.__qualname__
+            )
             trace = Trace(
                 name=name,
                 type=trace_type,
@@ -73,7 +77,12 @@ def get_aoai_telemetry_headers() -> dict:
     headers = {USER_AGENT_HEADER: operation_context.get_user_agent()}
 
     # update header with promptflow info
-    headers.update({f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else "" for k, v in promptflow_info.items()})
+    headers.update(
+        {
+            f"{PROMPTFLOW_PREFIX}{k}": str(v) if v is not None else ""
+            for k, v in promptflow_info.items()
+        }
+    )
 
     return headers
 

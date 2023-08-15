@@ -9,7 +9,9 @@ import pytest
 def test_swagger(flow_serving_client):
     swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
     assert swagger_dict == {
-        "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
+        "components": {
+            "securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}
+        },
         "info": {"title": "Promptflow[default_flow] API", "version": "1.0.0"},
         "openapi": "3.0.0",
         "paths": {
@@ -33,7 +35,12 @@ def test_swagger(flow_serving_client):
                         "200": {
                             "content": {
                                 "application/json": {
-                                    "schema": {"properties": {"output_prompt": {"type": "string"}}, "type": "object"}
+                                    "schema": {
+                                        "properties": {
+                                            "output_prompt": {"type": "string"}
+                                        },
+                                        "type": "object",
+                                    }
                                 }
                             },
                             "description": "successful operation",
@@ -66,7 +73,9 @@ def test_serving_api(flow_serving_client):
 @pytest.mark.usefixtures("evaluation_flow_serving_client", "setup_local_connection")
 @pytest.mark.e2etest
 def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
-    response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
+    response = evaluation_flow_serving_client.post(
+        "/score", data=json.dumps({"url": "https://www.microsoft.com/"})
+    )
     assert (
         response.status_code == 200
     ), f"Response code indicates error {response.status_code} - {response.data.decode()}"

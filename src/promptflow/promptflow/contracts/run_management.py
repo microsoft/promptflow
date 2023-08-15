@@ -6,7 +6,12 @@ import json
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from promptflow._sdk._constants import CDN_LINK, CSS_FILENAME, JS_FILENAME, VISUALIZE_VERSION
+from promptflow._sdk._constants import (
+    CDN_LINK,
+    CSS_FILENAME,
+    JS_FILENAME,
+    VISUALIZE_VERSION,
+)
 
 
 @dataclass
@@ -36,6 +41,10 @@ class VisualizationRender:
     css_link: Optional[str] = None
 
     def __post_init__(self):
-        self.data = json.dumps(json.dumps(self.data))  # double json.dumps to match JS requirements
+        self.data = json.dumps(
+            json.dumps(self.data)
+        )  # double json.dumps to match JS requirements
         self.js_link = CDN_LINK.format(version=VISUALIZE_VERSION, filename=JS_FILENAME)
-        self.css_link = CDN_LINK.format(version=VISUALIZE_VERSION, filename=CSS_FILENAME)
+        self.css_link = CDN_LINK.format(
+            version=VISUALIZE_VERSION, filename=CSS_FILENAME
+        )

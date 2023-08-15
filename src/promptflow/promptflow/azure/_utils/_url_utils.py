@@ -6,9 +6,12 @@ import re
 
 class BulkRunURL:
     """Parser for a flow run URL."""
+
     REGEX_PATTERN = ".*prompts/flow/([^/]+)/([^/]+)/bulktest/([^/]+).*"
-    RUN_URL_FORMAT = "https://ml.azure.com/prompts/flow/{}/{}/bulktest/{}/details?wsid=" \
-                     "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"
+    RUN_URL_FORMAT = (
+        "https://ml.azure.com/prompts/flow/{}/{}/bulktest/{}/details?wsid="
+        "/subscriptions/{}/resourcegroups/{}/providers/Microsoft.MachineLearningServices/workspaces/{}"
+    )
 
     def __init__(self, url: str):
         if url:
@@ -21,15 +24,31 @@ class BulkRunURL:
                 raise ValueError("Invalid flow run URL: {}".format(url))
 
     @classmethod
-    def get_url(cls, experiment_id, flow_id, bulk_test_id, subscription_id, resource_group, workspace_name):
+    def get_url(
+        cls,
+        experiment_id,
+        flow_id,
+        bulk_test_id,
+        subscription_id,
+        resource_group,
+        workspace_name,
+    ):
         return cls.RUN_URL_FORMAT.format(
-            experiment_id, flow_id, bulk_test_id, subscription_id, resource_group, workspace_name
+            experiment_id,
+            flow_id,
+            bulk_test_id,
+            subscription_id,
+            resource_group,
+            workspace_name,
         )
 
 
 class BulkRunId:
     """Parser for a flow run ID."""
-    REGEX_PATTERN = "azureml://experiment/([^/]+)/flow/([^/]+)/bulktest/([^/]+)(/run/[^/]+)?"
+
+    REGEX_PATTERN = (
+        "azureml://experiment/([^/]+)/flow/([^/]+)/bulktest/([^/]+)(/run/[^/]+)?"
+    )
     RUN_ID_FORMAT = "azureml://experiment/{}/flow/{}/bulktest/{}"
 
     def __init__(self, arm_id: str):
@@ -48,9 +67,7 @@ class BulkRunId:
 
     @classmethod
     def get_url(cls, experiment_id, flow_id, bulk_test_id, *, run_id=None):
-        arm_id = cls.RUN_ID_FORMAT.format(
-            experiment_id, flow_id, bulk_test_id
-        )
+        arm_id = cls.RUN_ID_FORMAT.format(experiment_id, flow_id, bulk_test_id)
         if run_id:
             arm_id += "/run/{}".format(run_id)
         return arm_id

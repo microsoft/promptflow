@@ -27,13 +27,17 @@ def load_request_data(flow, raw_data, logger):
                 "Promptflow executor received non json data, but there's more than 1 input fields, "
                 "please use json request data instead."
             )
-            raise JsonPayloadRequiredForMultipleInputFields(message, target=ErrorTarget.SERVING_APP)
+            raise JsonPayloadRequiredForMultipleInputFields(
+                message, target=ErrorTarget.SERVING_APP
+            )
         if isinstance(raw_data, bytes) or isinstance(raw_data, bytearray):
             input = str(raw_data, "UTF-8")
         elif isinstance(raw_data, str):
             input = raw_data
         default_key = list(flow.inputs.keys())[0]
-        logger.info(f"Promptflow executor received non json data: {input}, default key: {default_key}")
+        logger.info(
+            f"Promptflow executor received non json data: {input}, default key: {default_key}"
+        )
         data = {default_key: input}
     return data
 

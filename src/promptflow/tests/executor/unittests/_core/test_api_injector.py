@@ -36,7 +36,9 @@ def test_inject_operation_headers():
 
     aoai_tools_headers = injected_headers.copy()
     aoai_tools_headers.update({"ms-azure-ai-promptflow-called-from": "aoai-tool"})
-    assert f(headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}) == {"headers": aoai_tools_headers}
+    assert f(headers={"ms-azure-ai-promptflow-called-from": "aoai-tool"}) == {
+        "headers": aoai_tools_headers
+    }
 
 
 @pytest.mark.unittest
@@ -53,9 +55,9 @@ def test_aoai_generator_proxy():
             # stream parameter is false or not given, return a string
             return "This is a returned string"
 
-    with patch("openai.Completion.create", new=mock_aoai), patch("openai.ChatCompletion.create", new=mock_aoai), patch(
-        "openai.Embedding.create", new=mock_aoai
-    ):
+    with patch("openai.Completion.create", new=mock_aoai), patch(
+        "openai.ChatCompletion.create", new=mock_aoai
+    ), patch("openai.Embedding.create", new=mock_aoai):
         Tracer.start_tracing("mock_run_id")
         inject_openai_api()
 
@@ -83,9 +85,9 @@ def test_aoai_call_inject():
     def mock_aoai(**kwargs):
         return kwargs.get("headers")
 
-    with patch("openai.Completion.create", new=mock_aoai), patch("openai.ChatCompletion.create", new=mock_aoai), patch(
-        "openai.Embedding.create", new=mock_aoai
-    ):
+    with patch("openai.Completion.create", new=mock_aoai), patch(
+        "openai.ChatCompletion.create", new=mock_aoai
+    ), patch("openai.Embedding.create", new=mock_aoai):
         inject_openai_api()
         injected_headers = get_aoai_telemetry_headers()
 
@@ -130,23 +132,25 @@ def test_aoai_tool_header():
         inject_openai_api()
         aoai_tool_header = {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
 
-        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).completion(
-            prompt="test", deployment_name="test"
-        )
+        return_headers = AzureOpenAI(
+            AzureOpenAIConnection(api_key=None, api_base=None)
+        ).completion(prompt="test", deployment_name="test")
         assert aoai_tool_header.items() <= return_headers.items()
 
-        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
-            prompt="user:\ntest", deployment_name="test"
-        )
+        return_headers = AzureOpenAI(
+            AzureOpenAIConnection(api_key=None, api_base=None)
+        ).chat(prompt="user:\ntest", deployment_name="test")
         assert aoai_tool_header.items() <= return_headers.items()
 
-        return_headers = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).embedding(
-            input="test", deployment_name="test"
-        )
+        return_headers = AzureOpenAI(
+            AzureOpenAIConnection(api_key=None, api_base=None)
+        ).embedding(input="test", deployment_name="test")
         assert aoai_tool_header.items() <= return_headers.items()
 
         return_headers = embedding(
-            AzureOpenAIConnection(api_key=None, api_base=None), input="test", deployment_name="test"
+            AzureOpenAIConnection(api_key=None, api_base=None),
+            input="test",
+            deployment_name="test",
         )
         assert aoai_tool_header.items() <= return_headers.items()
 
@@ -155,7 +159,9 @@ def test_aoai_tool_header():
         aoai_tool_header = {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
 
         return_headers = embedding(
-            AzureOpenAIConnection(api_key=None, api_base=None), input="test", deployment_name="test"
+            AzureOpenAIConnection(api_key=None, api_base=None),
+            input="test",
+            deployment_name="test",
         )
         assert aoai_tool_header.items() <= return_headers.items()
 
@@ -173,18 +179,23 @@ def test_aoai_chat_tool_prompt():
 
     with patch("openai.ChatCompletion.create", new=mock_chat):
         inject_openai_api()
-        return_messages = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
-            prompt="user:\ntest", deployment_name="test"
-        )
+        return_messages = AzureOpenAI(
+            AzureOpenAIConnection(api_key=None, api_base=None)
+        ).chat(prompt="user:\ntest", deployment_name="test")
         assert return_messages == [{"role": "user", "content": "test"}]
 
-        return_messages = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
-            prompt="user:\r\n", deployment_name="test"
-        )
+        return_messages = AzureOpenAI(
+            AzureOpenAIConnection(api_key=None, api_base=None)
+        ).chat(prompt="user:\r\n", deployment_name="test")
         assert return_messages == [{"role": "user", "content": ""}]
 
-        with pytest.raises(UserErrorException, match="The Chat API requires a specific format for prompt"):
-            AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(prompt="user:", deployment_name="test")
+        with pytest.raises(
+            UserErrorException,
+            match="The Chat API requires a specific format for prompt",
+        ):
+            AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
+                prompt="user:", deployment_name="test"
+            )
 
 
 @pytest.mark.parametrize(
@@ -227,7 +238,9 @@ def test_get_aoai_telemetry_headers():
     )
 
     # patch the OperationContext.get_instance method to return the mock operation context
-    with patch("promptflow.core.operation_context.OperationContext.get_instance") as mock_get_instance:
+    with patch(
+        "promptflow.core.operation_context.OperationContext.get_instance"
+    ) as mock_get_instance:
         mock_get_instance.return_value = mock_operation_context
 
         # call the function under test and get the headers

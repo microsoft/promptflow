@@ -119,7 +119,9 @@ class NodeLogWriter(TextIOBase):
         else:
             self._write_to_flow_log(log_info, s)
             stdout: StringIO = self.run_id_to_stdout.get(log_info.run_id)
-            if self._record_datetime and s != "\n":  # For line breaker, do not add datetime prefix.
+            if (
+                self._record_datetime and s != "\n"
+            ):  # For line breaker, do not add datetime prefix.
                 s = f"[{datetime.now(timezone.utc).strftime(self.DATETIME_FORMAT)}] {s}"
             stdout.write(s)
 

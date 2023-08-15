@@ -15,7 +15,11 @@ from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk.entities import Run
 from promptflow._sdk.exceptions import InvalidFlowError
-from promptflow._sdk.operations._run_submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
+from promptflow._sdk.operations._run_submitter import (
+    RunSubmitter,
+    overwrite_variant,
+    variant_overwrite_context,
+)
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
@@ -28,7 +32,9 @@ DATAS_DIR = Path("./tests/test_configs/datas")
 class TestRun:
     def test_overwrite_variant_context(self):
         with variant_overwrite_context(
-            flow_path=FLOWS_DIR / "web_classification", tuning_node="summarize_text_content", variant="variant_0"
+            flow_path=FLOWS_DIR / "web_classification",
+            tuning_node="summarize_text_content",
+            variant="variant_0",
         ) as flow:
             with open(flow.path) as f:
                 flow_dag = yaml.safe_load(f)
@@ -39,7 +45,12 @@ class TestRun:
     def test_overwrite_connections(self):
         with variant_overwrite_context(
             flow_path=FLOWS_DIR / "web_classification",
-            connections={"classify_with_llm": {"connection": "azure_open_ai", "deployment_name": "gpt-35-turbo"}},
+            connections={
+                "classify_with_llm": {
+                    "connection": "azure_open_ai",
+                    "deployment_name": "gpt-35-turbo",
+                }
+            },
         ) as flow:
             with open(flow.path) as f:
                 flow_dag = yaml.safe_load(f)
@@ -63,7 +74,10 @@ class TestRun:
             ),
             ("str", "Invalid connections overwrite format: str"),
             ({"not_exist": 1}, "Node not_exist not found in flow"),
-            ({"classify_with_llm": 1}, "Invalid connection overwrite format: 1, only dict is supported."),
+            (
+                {"classify_with_llm": 1},
+                "Invalid connection overwrite format: 1, only dict is supported.",
+            ),
         ],
     )
     def test_overwrite_connections_invalid(self, connections, error_message):
@@ -82,7 +96,9 @@ class TestRun:
             "flow": (FLOWS_DIR / "web_classification").resolve().as_posix(),
         }
         bulk_run = Run._load_from_dict(
-            data=input_dict, context={BASE_PATH_CONTEXT_KEY: FLOWS_DIR}, additional_message=""
+            data=input_dict,
+            context={BASE_PATH_CONTEXT_KEY: FLOWS_DIR},
+            additional_message="",
         )
         assert isinstance(bulk_run, Run)
 

@@ -19,4 +19,6 @@ class Timer:
 
     def __exit__(self, *args):
         self.end = perf_counter()
-        self.logger.info(f"{self.funcDescription} finished in {self.end - self.start} seconds")
+        self.logger.info(
+            f"{self.funcDescription} finished in {self.end - self.start} seconds"
+        )

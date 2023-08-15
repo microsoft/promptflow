@@ -30,6 +30,7 @@ def chat(connection: AzureOpenAIConnection, question: str, chat_history: List) -
     )
 
     if stream:
+
         def generator():
             for chunk in completion:
                 if chunk.choices:

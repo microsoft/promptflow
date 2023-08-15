@@ -73,7 +73,12 @@ def dump(func, name=None, description=None):
             func.__tool.name = name
         if description:
             func.__tool.description = description
-        data = asdict(func.__tool, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and k != "outputs"})
+        data = asdict(
+            func.__tool,
+            dict_factory=lambda x: {
+                k: v for (k, v) in x if v is not None and k != "outputs"
+            },
+        )
         return json.dumps(data, indent=2)
     except Exception as e:
         raise Exception("Dump tool failed. ") from e
@@ -89,7 +94,9 @@ class ToolProvider(ABC):
     def __new__(cls, *args, **kwargs):
         # Record the init parameters, use __new__ so that user doesn't need to
         # repeat parameters when calling super().__init__()
-        cls._instance_init_params = parse_all_args(cls.get_initialize_inputs().keys(), args, kwargs)
+        cls._instance_init_params = parse_all_args(
+            cls.get_initialize_inputs().keys(), args, kwargs
+        )
         return super(ToolProvider, cls).__new__(cls)
 
     def __init__(self):
@@ -103,7 +110,9 @@ class ToolProvider(ABC):
     def get_initialize_inputs(cls):
         if not cls._initialize_inputs:
             cls._initialize_inputs = {
-                k: v for k, v in inspect.signature(cls.__init__).parameters.items() if k != "self"
+                k: v
+                for k, v in inspect.signature(cls.__init__).parameters.items()
+                if k != "self"
             }
         return cls._initialize_inputs
 

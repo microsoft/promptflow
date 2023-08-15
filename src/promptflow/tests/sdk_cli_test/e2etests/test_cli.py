@@ -145,7 +145,10 @@ class TestCli:
         detail_path = Path.home() / ".promptflow/.runs" / run_id / "detail.json"
         with open(detail_path) as f:
             details = json.load(f)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        tuning_node = next(
+            (x for x in details["node_runs"] if x["node"] == "summarize_text_content"),
+            None,
+        )
         # used variant_0 config, defaults using variant_1
         assert tuning_node["inputs"]["temperature"] == 0.2
 
@@ -248,7 +251,9 @@ class TestCli:
             "answer=Channel",
             "evidence=Url",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        output_path = (
+            Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        )
         assert output_path.exists()
 
         # Test without input
@@ -258,18 +263,26 @@ class TestCli:
             "--flow",
             f"{FLOWS_DIR}/web_classification",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        output_path = (
+            Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        )
         assert output_path.exists()
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
-            shutil.copytree((Path(FLOWS_DIR) / "web_classification").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
+            shutil.copytree(
+                (Path(FLOWS_DIR) / "web_classification").resolve().as_posix(),
+                temp_dir,
+                dirs_exist_ok=True,
+            )
 
             with open(Path(temp_dir) / "flow.dag.yaml", "r") as f:
                 flow_dict = yaml.safe_load(f)
 
             node_name = "summarize_text_content"
-            node = next(filter(lambda item: item["name"] == node_name, flow_dict["nodes"]))
+            node = next(
+                filter(lambda item: item["name"] == node_name, flow_dict["nodes"])
+            )
             flow_dict["nodes"].remove(node)
             flow_dict["nodes"].append({"name": node_name, "use_variants": True})
             with open(Path(temp_dir) / "flow.dag.yaml", "w") as f:
@@ -300,7 +313,11 @@ class TestCli:
                 "--variant",
                 "${summarize_text_content.variant_1}",
             )
-            output_path = Path(temp_dir) / ".promptflow" / "flow-summarize_text_content-variant_1.output.json"
+            output_path = (
+                Path(temp_dir)
+                / ".promptflow"
+                / "flow-summarize_text_content-variant_1.output.json"
+            )
             assert output_path.exists()
 
             # Test flow dag with invalid format
@@ -326,7 +343,10 @@ class TestCli:
                     "${summarize_text_content.variant_1}",
                 )
             outerr = capsys.readouterr()
-            assert f"Cannot find the variant invalid_variant for {node_name}." in outerr.out
+            assert (
+                f"Cannot find the variant invalid_variant for {node_name}."
+                in outerr.out
+            )
 
     def test_pf_flow_test_single_node(self):
         node_name = "fetch_text_content_from_url"
@@ -341,7 +361,12 @@ class TestCli:
             "--node",
             node_name,
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification"
+            / ".promptflow"
+            / f"flow-{node_name}.node.detail.json"
+        )
         assert output_path.exists()
 
         node_name = "fetch_text_content_from_url"
@@ -356,7 +381,12 @@ class TestCli:
             "--node",
             node_name,
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification"
+            / ".promptflow"
+            / f"flow-{node_name}.node.detail.json"
+        )
         assert output_path.exists()
 
         # Test node with node reference input
@@ -370,7 +400,12 @@ class TestCli:
             "--node",
             "convert_to_dict",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow-convert_to_dict.node.detail.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification"
+            / ".promptflow"
+            / "flow-convert_to_dict.node.detail.json"
+        )
         assert output_path.exists()
 
         # Test without input
@@ -382,7 +417,12 @@ class TestCli:
             "--node",
             node_name,
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification"
+            / ".promptflow"
+            / f"flow-{node_name}.node.detail.json"
+        )
         assert output_path.exists()
 
         # Test with input file
@@ -396,7 +436,12 @@ class TestCli:
             "--input",
             f"{FLOWS_DIR}/web_classification/{node_name}_input.jsonl",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification"
+            / ".promptflow"
+            / f"flow-{node_name}.node.detail.json"
+        )
         assert output_path.exists()
 
         # Test with input file
@@ -410,7 +455,12 @@ class TestCli:
             "--inputs",
             f"{FLOWS_DIR}/web_classification/{node_name}_input.jsonl",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / f"flow-{node_name}.node.detail.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification"
+            / ".promptflow"
+            / f"flow-{node_name}.node.detail.json"
+        )
         assert output_path.exists()
 
     def test_pf_flow_test_debug_single_node(self):
@@ -453,7 +503,10 @@ class TestCli:
             "evidence=Url",
         )
         output_path = (
-            Path(FLOWS_DIR) / "web_classification_with_additional_include" / ".promptflow" / "flow.output.json"
+            Path(FLOWS_DIR)
+            / "web_classification_with_additional_include"
+            / ".promptflow"
+            / "flow.output.json"
         )
         assert output_path.exists()
 
@@ -481,7 +534,12 @@ class TestCli:
             "answer=Channel",
             "evidence=Url",
         )
-        output_path = Path(FLOWS_DIR) / "web_classification_with_symbolic" / ".promptflow" / "flow.output.json"
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification_with_symbolic"
+            / ".promptflow"
+            / "flow.output.json"
+        )
         assert output_path.exists()
 
         node_name = "fetch_text_content_from_url"
@@ -517,10 +575,14 @@ class TestCli:
             "--environment-variables",
             "API_BASE=${azure_open_ai_connection.api_base}",
         )
-        with open(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.output.json", "r") as f:
+        with open(
+            Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.output.json", "r"
+        ) as f:
             outputs = json.load(f)
         assert outputs["output"] == env["API_BASE"]
-        validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json")
+        validate_stdout(
+            Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json"
+        )
 
         run_pf_command(
             "flow",
@@ -534,16 +596,29 @@ class TestCli:
             "--node",
             "print_env",
         )
-        with open(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow-print_env.node.output.json", "r") as f:
+        with open(
+            Path(FLOWS_DIR)
+            / "print_env_var"
+            / ".promptflow"
+            / "flow-print_env.node.output.json",
+            "r",
+        ) as f:
             outputs = json.load(f)
         assert outputs["value"] == env["API_BASE"]
-        validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow-print_env.node.detail.json")
+        validate_stdout(
+            Path(FLOWS_DIR)
+            / "print_env_var"
+            / ".promptflow"
+            / "flow-print_env.node.detail.json"
+        )
 
     def _validate_requirement(self, flow_path):
         with open(flow_path) as f:
             flow_dict = yaml.safe_load(f)
         assert flow_dict.get("environment", {}).get("python_requirements_txt", None)
-        assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
+        assert (
+            flow_path.parent / flow_dict["environment"]["python_requirements_txt"]
+        ).exists()
 
     def test_flow_with_exception(self, capsys):
         with pytest.raises(SystemExit):
@@ -554,8 +629,16 @@ class TestCli:
                 f"{FLOWS_DIR}/web_classification_with_exception",
             )
         captured = capsys.readouterr()
-        assert "Execution failure in 'convert_to_dict': (Exception) mock exception" in captured.out
-        output_path = Path(FLOWS_DIR) / "web_classification_with_exception" / ".promptflow" / "flow.detail.json"
+        assert (
+            "Execution failure in 'convert_to_dict': (Exception) mock exception"
+            in captured.out
+        )
+        output_path = (
+            Path(FLOWS_DIR)
+            / "web_classification_with_exception"
+            / ".promptflow"
+            / "flow.detail.json"
+        )
         assert output_path.exists()
 
         with pytest.raises(SystemExit):
@@ -597,7 +680,15 @@ class TestCli:
             assert ignore_file_path.exists()
             ignore_file_path.unlink()
             # TODO remove variant_id & line_number in evaluate template
-            run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "variant_id=mock_id", "line_number=0")
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                flow_name,
+                "--inputs",
+                "variant_id=mock_id",
+                "line_number=0",
+            )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
     def test_init_chat_flow(self):
@@ -653,7 +744,9 @@ class TestCli:
             )
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
             assert ignore_file_path.exists()
-            with open(Path(temp_dir) / flow_name / ".promptflow" / "flow.tools.json", "r") as f:
+            with open(
+                Path(temp_dir) / flow_name / ".promptflow" / "flow.tools.json", "r"
+            ) as f:
                 tools_dict = json.load(f)["code"]
                 assert jinja_name in tools_dict
                 assert len(tools_dict[jinja_name]["inputs"]) == 1
@@ -691,12 +784,18 @@ class TestCli:
                     "--prompt-template",
                     f"{jinja_name}={jinja_name}.jinja2",
                 )
-            assert f"Template parameter {jinja_name} doesn't find in python function arguments." in str(ex.value)
+            assert (
+                f"Template parameter {jinja_name} doesn't find in python function arguments."
+                in str(ex.value)
+            )
 
             with pytest.raises(SystemExit):
                 run_pf_command("flow", "init")
             _, err = capsys.readouterr()
-            assert "pf flow init: error: the following arguments are required: --flow" in err
+            assert (
+                "pf flow init: error: the following arguments are required: --flow"
+                in err
+            )
 
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
@@ -730,7 +829,10 @@ class TestCli:
                 "--interactive",
             )
         outerr = capsys.readouterr()
-        assert "Execution failure in 'show_answer': (Exception) mock exception" in outerr.out
+        assert (
+            "Execution failure in 'show_answer': (Exception) mock exception"
+            in outerr.out
+        )
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.output.json"
         assert output_path.exists()
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
@@ -780,18 +882,36 @@ class TestCli:
             ),
         ],
     )
-    def test_connection_create_update(self, file_name, expected, update_item, capfd, local_client):
+    def test_connection_create_update(
+        self, file_name, expected, update_item, capfd, local_client
+    ):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        run_pf_command("connection", "create", "--file", f"{CONNECTIONS_DIR}/{file_name}", "--name", f"{name}")
+        run_pf_command(
+            "connection",
+            "create",
+            "--file",
+            f"{CONNECTIONS_DIR}/{file_name}",
+            "--name",
+            f"{name}",
+        )
         out, err = capfd.readouterr()
         # Assert in to skip some datetime fields
         assert expected.items() <= json.loads(out).items()
 
         # Update with --set
         update_key, update_value = update_item
-        run_pf_command("connection", "update", "--set", f"{update_key}={update_value}", "--name", f"{name}")
+        run_pf_command(
+            "connection",
+            "update",
+            "--set",
+            f"{update_key}={update_value}",
+            "--name",
+            f"{name}",
+        )
         out, _ = capfd.readouterr()
-        assert update_value in out, f"expected updated value {update_value} not in {out}"
+        assert (
+            update_value in out
+        ), f"expected updated value {update_value} not in {out}"
         connection = local_client.connections.get(name)
         # Assert secrets are not scrubbed
         assert not any(v == SCRUBBED_VALUE for v in connection._secrets.values())

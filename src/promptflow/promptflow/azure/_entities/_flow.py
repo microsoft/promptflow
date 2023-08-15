@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 class Flow(AdditionalIncludesMixin):
-
     def __init__(
         self,
         path: Union[str, PathLike],
@@ -61,6 +60,7 @@ class Flow(AdditionalIncludesMixin):
         For flow, its additional include need to be read from dag with a helper function.
         """
         from promptflow._sdk._utils import _get_additional_includes
+
         return _get_additional_includes(os.path.join(self.code, self.path))
 
     # endregion

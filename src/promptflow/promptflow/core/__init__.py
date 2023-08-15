@@ -28,4 +28,6 @@ class LazyModule(ModuleType):
 # Below block shall be removed once other service updated the modules with the new import
 sys.modules["promptflow.core"] = LazyModule("promptflow.core", "promptflow._core")
 for f in Path(_core.__file__).parent.iterdir():
-    sys.modules[f"promptflow.core.{f.stem}"] = LazyModule("promptflow.core" + f.stem, "promptflow._core." + f.stem)
+    sys.modules[f"promptflow.core.{f.stem}"] = LazyModule(
+        "promptflow.core" + f.stem, "promptflow._core." + f.stem
+    )

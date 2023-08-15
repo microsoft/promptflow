@@ -76,7 +76,9 @@ class Flow(FlowBase):
     ):
         source_path = Path(source)
         if not source_path.exists():
-            raise Exception(f"Source {source_path.absolute().as_posix()} does not exist")
+            raise Exception(
+                f"Source {source_path.absolute().as_posix()} does not exist"
+            )
         if source_path.is_dir() and (source_path / DAG_FILE_NAME).is_file():
             return cls(code=source_path.absolute().as_posix(), **kwargs)
         elif source_path.is_file() and source_path.name == DAG_FILE_NAME:
@@ -106,7 +108,9 @@ class Flow(FlowBase):
                 result[n] = conn.to_execution_connection_dict()
             except ConnectionNotFoundError:
                 # ignore when connection not found since it can be configured with env var.
-                raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
+                raise Exception(
+                    f"Connection {n!r} required for flow {executable.name!r} is not found."
+                )
         return result
 
 
@@ -133,7 +137,10 @@ class FlowProtected(Flow):
         # version 0.0.1 is the dev version of promptflow
         env_obj["sdk_version"] = __version__ if __version__ != "0.0.1" else None
 
-        if not env_obj.get("python_requirements_txt", None) and (Path(self.code) / "requirements.txt").is_file():
+        if (
+            not env_obj.get("python_requirements_txt", None)
+            and (Path(self.code) / "requirements.txt").is_file()
+        ):
             env_obj["python_requirements_txt"] = "requirements.txt"
 
         env_obj["conda_env_name"] = "promptflow-serve"
@@ -181,11 +188,16 @@ class FlowProtected(Flow):
         from promptflow._sdk._pf_client import PFClient
         from promptflow._sdk.entities._connection import _Connection
 
-        with mgmt_db_rebase((output_dir / "connections.sqlite").resolve(), customized_encryption_key=encryption_key):
+        with mgmt_db_rebase(
+            (output_dir / "connections.sqlite").resolve(),
+            customized_encryption_key=encryption_key,
+        ):
             local_client = PFClient()
             for connection_name, connection_execution_dict in connections.items():
                 local_client.connections.create_or_update(
-                    _Connection.from_execution_connection_dict(name=connection_name, data=connection_execution_dict),
+                    _Connection.from_execution_connection_dict(
+                        name=connection_name, data=connection_execution_dict
+                    ),
                     encryption_key=encryption_key,
                 )
 
@@ -198,7 +210,9 @@ class FlowProtected(Flow):
             target=output_dir,
             render_context={
                 "env": environment_config,
-                "local_db_rel_path": LOCAL_MGMT_DB_PATH.relative_to(Path.home()).as_posix(),
+                "local_db_rel_path": LOCAL_MGMT_DB_PATH.relative_to(
+                    Path.home()
+                ).as_posix(),
             },
         )
 
@@ -207,12 +221,14 @@ class FlowProtected(Flow):
         self._copy_tree(self.code, flow_copy_target)
         self._migrate_connections(
             output_dir,
-            encryption_key=base64.urlsafe_b64encode(hashlib.sha256(migration_secret.encode("utf-8")).digest()).decode(
-                "utf-8"
-            ),
+            encryption_key=base64.urlsafe_b64encode(
+                hashlib.sha256(migration_secret.encode("utf-8")).digest()
+            ).decode("utf-8"),
         )
 
-    def export(self, output: Union[str, PathLike], migration_secret: str, format="docker"):
+    def export(
+        self, output: Union[str, PathLike], migration_secret: str, format="docker"
+    ):
         output = Path(output)
         output.mkdir(parents=True, exist_ok=True)
         if format == "docker":

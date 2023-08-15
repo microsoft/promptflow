@@ -1,6 +1,10 @@
 import pytest
 
-from promptflow._utils.str_utils import convert_to_dictionary, join_stripped, remove_prefix
+from promptflow._utils.str_utils import (
+    convert_to_dictionary,
+    join_stripped,
+    remove_prefix,
+)
 
 
 @pytest.mark.unittest
@@ -21,7 +25,9 @@ class TestStrUtils:
         assert remove_prefix(text, prefix) == expected_value
 
     def test_convert_to_dictionary(self):
-        assert convert_to_dictionary("locations/eastus2euap/data/test_asset/versions/1") == {
+        assert convert_to_dictionary(
+            "locations/eastus2euap/data/test_asset/versions/1"
+        ) == {
             "locations": "eastus2euap",
             "data": "test_asset",
             "versions": "1",

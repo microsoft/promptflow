@@ -47,7 +47,9 @@ class SchemaV2(declarative_base()):
 
     @staticmethod
     def generate(engine) -> None:
-        entity = SchemaV2(column1=random_string(), column2=random_string(), column3=random_string())
+        entity = SchemaV2(
+            column1=random_string(), column2=random_string(), column3=random_string()
+        )
         dump(entity, engine)
         return
 
@@ -63,7 +65,10 @@ class SchemaV3(declarative_base()):
     @staticmethod
     def generate(engine) -> None:
         entity = SchemaV3(
-            column1=random_string(), column2=random_string(), column3=random_string(), column4=random_string()
+            column1=random_string(),
+            column2=random_string(),
+            column3=random_string(),
+            column4=random_string(),
         )
         dump(entity, engine)
         return
@@ -81,7 +86,10 @@ class SchemaV4(declarative_base()):
     @staticmethod
     def generate(engine) -> None:
         entity = SchemaV4(
-            column1=random_string(), column2=random_string(), column3=random_string(), column4=random_string()
+            column1=random_string(),
+            column2=random_string(),
+            column3=random_string(),
+            column4=random_string(),
         )
         dump(entity, engine)
         return
@@ -111,7 +119,9 @@ class TestSchemaManagement:
         # 1 table
         assert inspect(engine).has_table(TABLENAME)
         # 6 rows
-        entities = [entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()]
+        entities = [
+            entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()
+        ]
         assert len(entities) == 6
 
     def test_version_upgrade(self) -> None:
@@ -124,7 +134,9 @@ class TestSchemaManagement:
         assert inspect(engine).has_table(f"{TABLENAME}_v1")
         assert inspect(engine).has_table(f"{TABLENAME}_v2")
         # 2 rows in current table
-        entities = [entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()]
+        entities = [
+            entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()
+        ]
         assert len(entities) == 3
 
     def test_version_downgrade(self, capfd) -> None:
@@ -135,7 +147,9 @@ class TestSchemaManagement:
         # 1 table
         assert inspect(engine).has_table(TABLENAME)
         # 2 rows
-        entities = [entity for entity in sessionmaker(bind=engine)().query(SchemaV1).all()]
+        entities = [
+            entity for entity in sessionmaker(bind=engine)().query(SchemaV1).all()
+        ]
         assert len(entities) == 3
         # with warning message
         out, _ = capfd.readouterr()
@@ -152,7 +166,9 @@ class TestSchemaManagement:
         assert inspect(engine).has_table(TABLENAME)
         assert inspect(engine).has_table(f"{TABLENAME}_v2")
         # 12(all) rows in current table
-        entities = [entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()]
+        entities = [
+            entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()
+        ]
         assert len(entities) == 12
 
     def test_version_across_same_schema_version(self, capfd) -> None:
@@ -175,7 +191,9 @@ class TestSchemaManagement:
         engine = generate_engine()
         # manually create a table to avoid creation of schema_info table
         with engine.begin() as connection:
-            connection.execute(text(f"CREATE TABLE {TABLENAME} (column1 TEXT PRIMARY KEY);"))
+            connection.execute(
+                text(f"CREATE TABLE {TABLENAME} (column1 TEXT PRIMARY KEY);")
+            )
             connection.execute(
                 text(f"INSERT INTO {TABLENAME} (column1) VALUES (:column1);"),
                 {"column1": random_string()},
@@ -184,7 +202,9 @@ class TestSchemaManagement:
         # 2 tables: 1 current and 1 legacy with name containing timestamp
         assert inspect(engine).has_table(TABLENAME)
         # 2 rows in current table
-        entities = [entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()]
+        entities = [
+            entity for entity in sessionmaker(bind=engine)().query(SchemaV3).all()
+        ]
         assert len(entities) == 2
 
 

@@ -7,7 +7,6 @@ from typing import Callable
 
 
 class MetricLoggerManager:
-
     _instance = None
 
     def __init__(self):
@@ -22,12 +21,16 @@ class MetricLoggerManager:
     def log_metric(self, key, value, variant_id=None):
         for logger in self._metric_loggers:
             if len(inspect.signature(logger).parameters) == 2:
-                logger(key, value)  # If the logger only accepts two parameters, we don't pass variant_id
+                logger(
+                    key, value
+                )  # If the logger only accepts two parameters, we don't pass variant_id
             else:
                 logger(key, value, variant_id)
 
     def add_metric_logger(self, logger_func: Callable):
-        existing_logger = next((logger for logger in self._metric_loggers if logger is logger_func), None)
+        existing_logger = next(
+            (logger for logger in self._metric_loggers if logger is logger_func), None
+        )
         if existing_logger:
             return
         if not callable(logger_func):

@@ -17,7 +17,9 @@ def aggregate(processed_results: List[str]):
 
     # Add your aggregation logic here
     # Aggregate the results of all lines and calculate the accuracy
-    aggregated_result = round((processed_results.count("Correct") / len(processed_results)), 2)
+    aggregated_result = round(
+        (processed_results.count("Correct") / len(processed_results)), 2
+    )
 
     # Log metric the aggregate result
     log_metric(key="accuracy", value=aggregated_result)

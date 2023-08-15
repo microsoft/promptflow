@@ -22,7 +22,6 @@ def connection_ops(ml_client):
 class TestConnectionOperations:
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
     def test_connection_get_create_delete(self, connection_ops):
-
         connection = _Connection(
             name="test_connection_1",
             type="AzureOpenAI",
@@ -42,7 +41,11 @@ class TestConnectionOperations:
             "name": "test_connection_1",
             "connection_type": "AzureOpenAI",
             "connection_scope": "User",
-            "configs": {"api_base": "test_base", "api_type": "azure", "api_version": "2023-07-01-preview"},
+            "configs": {
+                "api_base": "test_base",
+                "api_type": "azure",
+                "api_version": "2023-07-01-preview",
+            },
         }
 
         # soft delete
@@ -50,9 +53,10 @@ class TestConnectionOperations:
 
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
     def test_custom_connection_create(self, connection_ops):
-
         connection = _Connection(
-            name="test_connection_2", type="Custom", custom_configs=CustomConnection(a="1", b=Secret("2"))
+            name="test_connection_2",
+            type="Custom",
+            custom_configs=CustomConnection(a="1", b=Secret("2")),
         )
 
         try:
@@ -60,13 +64,20 @@ class TestConnectionOperations:
         except FlowRequestException:
             result = connection_ops.create_or_update(connection)
         config_dict = pydash.omit(result._to_dict(), "custom_configs")
-        assert config_dict == {"connection_scope": "User", "connection_type": "Custom", "name": "test_connection_2"}
+        assert config_dict == {
+            "connection_scope": "User",
+            "connection_type": "Custom",
+            "name": "test_connection_2",
+        }
 
         # soft delete
         connection_ops.delete(name=connection.name)
 
     def test_list_connection_spec(self, connection_ops):
-        result = {v.connection_type: v._to_dict() for v in connection_ops.list_connection_specs()}
+        result = {
+            v.connection_type: v._to_dict()
+            for v in connection_ops.list_connection_specs()
+        }
         # Assert custom keys type
         assert "Custom" in result
         assert result["Custom"] == {
@@ -87,8 +98,18 @@ class TestConnectionOperations:
             "connection_type": "AzureOpenAI",
             "flow_value_type": "AzureOpenAIConnection",
             "config_specs": [
-                {"name": "api_key", "display_name": "API key", "config_value_type": "Secret", "is_optional": False},
-                {"name": "api_base", "display_name": "API base", "config_value_type": "String", "is_optional": False},
+                {
+                    "name": "api_key",
+                    "display_name": "API key",
+                    "config_value_type": "Secret",
+                    "is_optional": False,
+                },
+                {
+                    "name": "api_base",
+                    "display_name": "API base",
+                    "config_value_type": "String",
+                    "is_optional": False,
+                },
                 {
                     "name": "api_type",
                     "display_name": "API type",

@@ -21,7 +21,11 @@ _client = PFClient()
 @pytest.mark.e2etest
 class TestFlowTest:
     def test_pf_test_flow(self):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
 
         result = _client.test(flow=flow_path, inputs=inputs)
@@ -38,44 +42,81 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     def test_pf_test_flow_with_variant(self):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
 
         result = _client.test(
-            flow=f"{FLOWS_DIR}/web_classification", inputs=inputs, variant="${summarize_text_content.variant_1}"
+            flow=f"{FLOWS_DIR}/web_classification",
+            inputs=inputs,
+            variant="${summarize_text_content.variant_1}",
         )
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     def test_pf_test_with_additional_includes(self):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
-        result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
+        result = _client.test(
+            flow=f"{FLOWS_DIR}/web_classification_with_additional_include",
+            inputs=inputs,
+        )
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}
-        result = _client.test(flow=f"{FLOWS_DIR}/web_classification", inputs=inputs, node="convert_to_dict")
+        result = _client.test(
+            flow=f"{FLOWS_DIR}/web_classification",
+            inputs=inputs,
+            node="convert_to_dict",
+        )
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
         # Test additional includes don't exist
         with pytest.raises(ValueError) as e:
-            _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
+            _client.test(
+                flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include"
+            )
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
-        result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
+        result = _client.test(
+            flow=f"{FLOWS_DIR}/web_classification_with_additional_include",
+            inputs=inputs,
+        )
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}
-        result = _client.test(flow=f"{FLOWS_DIR}/web_classification", inputs=inputs, node="convert_to_dict")
+        result = _client.test(
+            flow=f"{FLOWS_DIR}/web_classification",
+            inputs=inputs,
+            node="convert_to_dict",
+        )
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     def test_pf_flow_test_with_exception(self, capsys):
         # Test flow with exception
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
         flow_path = Path(f"{FLOWS_DIR}/web_classification_with_exception").absolute()
 
         with pytest.raises(UserErrorException) as exception:
             _client.test(flow=flow_path, inputs=inputs)
-        assert "Execution failure in 'convert_to_dict': (Exception) mock exception" in str(exception.value)
+        assert (
+            "Execution failure in 'convert_to_dict': (Exception) mock exception"
+            in str(exception.value)
+        )
 
         # Test node with exception
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}

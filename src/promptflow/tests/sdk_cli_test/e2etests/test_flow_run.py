@@ -11,7 +11,11 @@ from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
-from promptflow._sdk.exceptions import InvalidFlowError, InvalidRunStatusError, RunNotFoundError
+from promptflow._sdk.exceptions import (
+    InvalidFlowError,
+    InvalidRunStatusError,
+    RunNotFoundError,
+)
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.executor.error_codes import InputNotFoundInInputsMapping
@@ -30,7 +34,9 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
-    def test_basic_flow_bulk_run(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
+    def test_basic_flow_bulk_run(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
@@ -43,14 +49,19 @@ class TestFlowRun:
         # TODO: check details
         # df = pf.show_details(baseline, v1, v2)
 
-    def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+    def test_basic_run_bulk(
+        self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf
+    ):
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
         )
         details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        tuning_node = next(
+            (x for x in details["node_runs"] if x["node"] == "summarize_text_content"),
+            None,
+        )
         # used default variant config
         assert tuning_node["inputs"]["temperature"] == 0.3
         assert "default" in result.name
@@ -60,7 +71,9 @@ class TestFlowRun:
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
-    def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
+    def test_basic_flow_with_variant(
+        self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf
+    ) -> None:
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
@@ -68,7 +81,10 @@ class TestFlowRun:
             variant="${summarize_text_content.variant_0}",
         )
         details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        tuning_node = next(
+            (x for x in details["node_runs"] if x["node"] == "summarize_text_content"),
+            None,
+        )
         assert "variant_0" in result.name
 
         # used variant_0 config
@@ -80,7 +96,10 @@ class TestFlowRun:
             variant="${summarize_text_content.variant_1}",
         )
         details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        tuning_node = next(
+            (x for x in details["node_runs"] if x["node"] == "summarize_text_content"),
+            None,
+        )
         assert "variant_1" in result.name
         # used variant_1 config
         assert tuning_node["inputs"]["temperature"] == 0.3
@@ -91,7 +110,10 @@ class TestFlowRun:
             pf.run(
                 flow=f"{MODEL_ROOT}/not_exist",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"question": "${data.question}", "context": "${data.context}"},
+                column_mapping={
+                    "question": "${data.question}",
+                    "context": "${data.context}",
+                },
                 variant="${summarize_text_content.variant_0}",
             )
         assert "not exist" in str(e.value)
@@ -101,7 +123,10 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"question": "${data.question}", "context": "${data.context}"},
+                column_mapping={
+                    "question": "${data.question}",
+                    "context": "${data.context}",
+                },
                 variant="${not_exist.variant_0}",
             )
         assert "Node not_exist not found in flow" in str(e.value)
@@ -111,12 +136,20 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"question": "${data.question}", "context": "${data.context}"},
+                column_mapping={
+                    "question": "${data.question}",
+                    "context": "${data.context}",
+                },
                 variant="v",
             )
-        assert "Invalid variant format: v, variant should be in format of ${TUNING_NODE.VARIANT}" in str(e.value)
+        assert (
+            "Invalid variant format: v, variant should be in format of ${TUNING_NODE.VARIANT}"
+            in str(e.value)
+        )
 
-    def test_basic_evaluation(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+    def test_basic_evaluation(
+        self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf
+    ):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         result = pf.run(
@@ -167,7 +200,10 @@ class TestFlowRun:
 
     def test_submit_run_from_yaml(self, local_client, pf):
         run_id = str(uuid.uuid4())
-        run = create_yaml_run(source=f"{RUNS_DIR}/sample_bulk_run.yaml", params_override=[{"name": run_id}])
+        run = create_yaml_run(
+            source=f"{RUNS_DIR}/sample_bulk_run.yaml",
+            params_override=[{"name": run_id}],
+        )
 
         assert local_client.runs.get(run.name).status == "Completed"
 
@@ -186,14 +222,19 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
         )
         details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        tuning_node = next(
+            (x for x in details["node_runs"] if x["node"] == "summarize_text_content"),
+            None,
+        )
         # used default variant config
         assert tuning_node["inputs"]["temperature"] == 0.3
 
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
 
-    def test_run_with_connection_overwrite(self, local_client, local_aoai_connection, local_alt_aoai_connection, pf):
+    def test_run_with_connection_overwrite(
+        self, local_client, local_aoai_connection, local_alt_aoai_connection, pf
+    ):
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
@@ -202,7 +243,9 @@ class TestFlowRun:
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
 
-    def test_custom_connection_overwrite(self, local_client, local_custom_connection, pf):
+    def test_custom_connection_overwrite(
+        self, local_client, local_custom_connection, pf
+    ):
         result = pf.run(
             flow=f"{FLOWS_DIR}/custom_connection_flow",
             data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -220,7 +263,9 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
+    def test_run_with_connection_overwrite_non_exist(
+        self, local_client, local_aoai_connection, pf
+    ):
         # overwrite non_exist connection
         with pytest.raises(Exception) as e:
             pf.run(
@@ -322,7 +367,9 @@ class TestFlowRun:
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
-                environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
+                environment_variables={
+                    "API_BASE": "${azure_open_ai_connection.api_base}"
+                },
             )
         )
         assert run.display_name == run.name
@@ -330,13 +377,17 @@ class TestFlowRun:
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
-                environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
+                environment_variables={
+                    "API_BASE": "${azure_open_ai_connection.api_base}"
+                },
                 display_name="my_run",
             )
         )
         assert run.display_name == "my_run"
 
-    def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
+    def test_run_dump(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
         # in fact, `pf.run` will internally query the run from db in `RunSubmitter`
@@ -348,7 +399,9 @@ class TestFlowRun:
         runs = pf_client.runs.list(max_results=1)
         assert len(runs) == 1
 
-    def test_stream_run_summary(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, capfd, pf) -> None:
+    def test_stream_run_summary(
+        self, azure_open_ai_connection: AzureOpenAIConnection, local_client, capfd, pf
+    ) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
         local_client.runs.stream(run.name)
@@ -383,7 +436,9 @@ class TestFlowRun:
             )
         assert "at least one of data or run must be provided" in str(e)
 
-    def test_get_details(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
+    def test_get_details(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -391,16 +446,22 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
         )
 
-        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+        from promptflow._sdk.operations._local_storage_operations import (
+            LocalStorageOperations,
+        )
 
         local_storage = LocalStorageOperations(run)
         # there should be line_number in original DataFrame, but not in details DataFrame
         # as we will set index on line_number to ensure the order
-        outputs = pd.read_json(local_storage._outputs_path, orient="records", lines=True)
+        outputs = pd.read_json(
+            local_storage._outputs_path, orient="records", lines=True
+        )
         details = pf.get_details(run)
         assert "line_number" in outputs and "line_number" not in details
 
-    def test_visualize_run(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
+    def test_visualize_run(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run1 = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -419,7 +480,9 @@ class TestFlowRun:
         )
         pf.visualize([run1, run2])
 
-    def test_incomplete_run_visualize(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
+    def test_incomplete_run_visualize(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
         # modify status in memory
@@ -427,9 +490,14 @@ class TestFlowRun:
         with pytest.raises(InvalidRunStatusError):
             pf.visualize(run)
 
-    def test_flow_bulk_run_with_additional_includes(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
+    def test_flow_bulk_run_with_additional_includes(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        run = pf.run(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", data=data_path)
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification_with_additional_include",
+            data=data_path,
+        )
 
         additional_includes = _get_additional_includes(run.flow / "flow.dag.yaml")
         snapshot_path = Path.home() / ".promptflow" / ".runs" / run.name / "snapshot"
@@ -439,7 +507,9 @@ class TestFlowRun:
         additional_includes = _get_additional_includes(snapshot_path / "flow.dag.yaml")
         assert not additional_includes
 
-    def test_input_mapping_parse_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
+    def test_input_mapping_parse_error(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ):
         # input_mapping parse error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -455,7 +525,9 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=name)
 
-    def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
+    def test_input_mapping_with_dict(
+        self, azure_open_ai_connection: AzureOpenAIConnection, pf
+    ):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         run = pf.run(

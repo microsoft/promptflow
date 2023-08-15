@@ -22,7 +22,9 @@ def run_pf_command(*args, cwd=None):
 @pytest.mark.e2etest
 class TestCliWithAzure:
     # TODO: do we have such scenario? Or run_bulk shouldn't involve remote connections?
-    @pytest.mark.skip(reason="Service principal doesn't have permission to list secrets for connections now")
+    @pytest.mark.skip(
+        reason="Service principal doesn't have permission to list secrets for connections now"
+    )
     def test_basic_flow_run_bulk_without_env(
         self,
         default_subscription_id: str,

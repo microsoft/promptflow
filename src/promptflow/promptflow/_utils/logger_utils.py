@@ -57,7 +57,12 @@ class CredentialScrubberFormatter(logging.Formatter):
 
         if self._scrub_customer_content:
             # Scrub everything after traceback, because it might contain customer information.
-            s = re.sub(r"(?<=traceback)[\s\S]*", CredentialScrubber.PLACE_HOLDER, s, flags=re.IGNORECASE)
+            s = re.sub(
+                r"(?<=traceback)[\s\S]*",
+                CredentialScrubber.PLACE_HOLDER,
+                s,
+                flags=re.IGNORECASE,
+            )
 
         if hasattr(record, "customer_content"):
             if self._scrub_customer_content:
@@ -159,7 +164,9 @@ def get_logger(name: str) -> logging.Logger:
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(
-        CredentialScrubberFormatter(scrub_customer_content=False, fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
+        CredentialScrubberFormatter(
+            scrub_customer_content=False, fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT
+        )
     )
     logger.addHandler(stdout_handler)
     return logger
@@ -184,8 +191,12 @@ class LogContext:
 
     file_path: str  # Log file path.
     run_mode: Optional[RunMode] = RunMode.Flow
-    credential_list: Optional[List[str]] = None  # These credentials will be scrubbed in logs.
-    input_logger: logging.Logger = None  # If set, then context will also be set for input_logger.
+    credential_list: Optional[
+        List[str]
+    ] = None  # These credentials will be scrubbed in logs.
+    input_logger: logging.Logger = (
+        None  # If set, then context will also be set for input_logger.
+    )
 
     def __enter__(self):
         self._set_log_path()
@@ -222,7 +233,10 @@ class LogContext:
         credential_list = self.credential_list or []
         for logger_ in all_logger_list:
             for handler in logger_.handlers:
-                if isinstance(handler, FileHandlerConcurrentWrapper) and handler.handler:
+                if (
+                    isinstance(handler, FileHandlerConcurrentWrapper)
+                    and handler.handler
+                ):
                     handler.handler.set_credential_list(credential_list)
                 elif isinstance(handler.formatter, CredentialScrubberFormatter):
                     handler.formatter.set_credential_list(credential_list)

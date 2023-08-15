@@ -165,5 +165,9 @@ class PFClient:
         :return: The result of flow or node
         """
         return self.flows.test(
-            flow=flow, inputs=inputs, variant=variant, environment_variables=environment_variables, node=node
+            flow=flow,
+            inputs=inputs,
+            variant=variant,
+            environment_variables=environment_variables,
+            node=node,
         )

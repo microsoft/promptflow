@@ -152,7 +152,9 @@ def get_encryption_key(generate_if_not_found: bool = False) -> str:
         return ENCRYPTION_KEY_IN_KEY_RING
     try:
         ENCRYPTION_KEY_IN_KEY_RING = Fernet.generate_key().decode("utf-8")
-        keyring.set_password(KEYRING_SYSTEM, KEYRING_ENCRYPTION_KEY_NAME, ENCRYPTION_KEY_IN_KEY_RING)
+        keyring.set_password(
+            KEYRING_SYSTEM, KEYRING_ENCRYPTION_KEY_NAME, ENCRYPTION_KEY_IN_KEY_RING
+        )
     finally:
         _encryption_key_lock.release()
     return ENCRYPTION_KEY_IN_KEY_RING
@@ -171,7 +173,9 @@ def decrypt_secret_value(connection_name, encrypted_secret_value):
         raise Exception("Encryption key not found in keyring.")
     fernet_client = Fernet(encryption_key)
     try:
-        return fernet_client.decrypt(encrypted_secret_value.encode("utf-8")).decode("utf-8")
+        return fernet_client.decrypt(encrypted_secret_value.encode("utf-8")).decode(
+            "utf-8"
+        )
     except Exception as e:
         if len(encrypted_secret_value) < 57:
             # This is to workaround old custom secrets that are not encrypted with Fernet.
@@ -204,20 +208,28 @@ def dump_yaml(*args, **kwargs):
         """A modified yaml serializer that forces pyyaml to represent an OrderedDict as a mapping instead of a
         sequence."""
 
-    OrderedDumper.add_representer(collections.OrderedDict, yaml.representer.SafeRepresenter.represent_dict)
+    OrderedDumper.add_representer(
+        collections.OrderedDict, yaml.representer.SafeRepresenter.represent_dict
+    )
     return yaml.dump(*args, Dumper=OrderedDumper, **kwargs)
 
 
-def decorate_validation_error(schema: Any, pretty_error: str, additional_message: str = "") -> str:
+def decorate_validation_error(
+    schema: Any, pretty_error: str, additional_message: str = ""
+) -> str:
     return f"Validation for {schema.__name__} failed:\n\n {pretty_error} \n\n {additional_message}"
 
 
-def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: str = "", **kwargs):
+def load_from_dict(
+    schema: Any, data: Dict, context: Dict, additional_message: str = "", **kwargs
+):
     try:
         return schema(context=context).load(data, **kwargs)
     except ValidationError as e:
         pretty_error = json.dumps(e.normalized_messages(), indent=2)
-        raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
+        raise ValidationError(
+            decorate_validation_error(schema, pretty_error, additional_message)
+        )
 
 
 def parse_variant(variant: str) -> Tuple[str, str]:
@@ -226,7 +238,9 @@ def parse_variant(variant: str) -> Tuple[str, str]:
     if match:
         return match.group(1), match.group(2)
     else:
-        raise ValueError(f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}")
+        raise ValueError(
+            f"Invalid variant format: {variant}, variant should be in format of ${{TUNING_NODE.VARIANT}}"
+        )
 
 
 def _match_reference(env_val: str):
@@ -277,7 +291,9 @@ def update_dict_value_with_connections(built_connections, connection_dict: dict)
             continue
         if connection_key not in built_connections[connection_name]["value"]:
             continue
-        connection_dict[key] = built_connections[connection_name]["value"][connection_key]
+        connection_dict[key] = built_connections[connection_name]["value"][
+            connection_key
+        ]
 
 
 def in_jupyter_notebook() -> bool:
@@ -299,9 +315,15 @@ def in_jupyter_notebook() -> bool:
     return True
 
 
-def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
+def render_jinja_template(
+    template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs
+):
     with open(template_path, "r") as f:
-        template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
+        template = Template(
+            f.read(),
+            trim_blocks=trim_blocks,
+            keep_trailing_newline=keep_trailing_newline,
+        )
     return template.render(**kwargs)
 
 
@@ -325,7 +347,9 @@ def safe_parse_object_list(obj_list, parser, message_generator):
         try:
             results.append(parser(obj))
         except Exception as e:
-            extended_message = f"{message_generator(obj)} Error: {type(e).__name__}, {str(e)}"
+            extended_message = (
+                f"{message_generator(obj)} Error: {type(e).__name__}, {str(e)}"
+            )
             print_yellow_warning(extended_message)
     return results
 
@@ -333,7 +357,9 @@ def safe_parse_object_list(obj_list, parser, message_generator):
 def _normalize_identifier_name(name):
     normalized_name = name.lower()
     normalized_name = re.sub(r"[\W_]", " ", normalized_name)  # No non-word characters
-    normalized_name = re.sub(" +", " ", normalized_name).strip()  # No double spaces, leading or trailing spaces
+    normalized_name = re.sub(
+        " +", " ", normalized_name
+    ).strip()  # No double spaces, leading or trailing spaces
     if re.match(r"\d", normalized_name):
         normalized_name = "n" + normalized_name  # No leading digits
     return normalized_name
@@ -395,7 +421,6 @@ def get_promptflow_sdk_version() -> str:
 
 
 class PromptflowIgnoreFile(IgnoreFile):
-
     # TODO add more files to this list.
     IGNORE_FILE = [".runs"]
 

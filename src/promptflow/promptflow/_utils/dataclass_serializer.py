@@ -94,7 +94,10 @@ def serialize(value: object, remove_null=False) -> dict:
         if hasattr(value, "serialize"):
             result = value.serialize()
         else:
-            result = {f.name: serialize(getattr(value, f.name), remove_null) for f in fields(value)}
+            result = {
+                f.name: serialize(getattr(value, f.name), remove_null)
+                for f in fields(value)
+            }
         if not remove_null:
             return result
         null_keys = [k for k, v in result.items() if v is None]
@@ -104,7 +107,9 @@ def serialize(value: object, remove_null=False) -> dict:
     try:
         from pydantic import BaseModel
 
-        if isinstance(value, BaseModel):  # Handle pydantic model, which is used in langchain
+        if isinstance(
+            value, BaseModel
+        ):  # Handle pydantic model, which is used in langchain
             return value.dict()
     except ImportError:
         # Ignore ImportError if pydantic is not installed
@@ -115,7 +120,9 @@ def serialize(value: object, remove_null=False) -> dict:
 def assertEqual(a: dict, b: dict, path: str = ""):
     if isinstance(a, dict):
         assert isinstance(b, dict), f"{path}: {type(a)} != {type(b)}"
-        assert set(a.keys()) == set(b.keys()), f"{path}: {set(a.keys())} != {set(b.keys())}"
+        assert set(a.keys()) == set(
+            b.keys()
+        ), f"{path}: {set(a.keys())} != {set(b.keys())}"
         for key in a.keys():
             assertEqual(a[key], b[key], path + "." + key)
     elif isinstance(a, list):

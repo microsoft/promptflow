@@ -6,7 +6,10 @@ import argparse
 import os
 import sys
 
-from promptflow._cli._pf._connection import add_connection_parser, dispatch_connection_commands
+from promptflow._cli._pf._connection import (
+    add_connection_parser,
+    dispatch_connection_commands,
+)
 from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands
 from promptflow._cli._user_agent import USER_AGENT
@@ -28,7 +31,11 @@ def entry(argv):
         description="PromptFlow CLI. [Preview]",
     )
     parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
+        "-v",
+        "--version",
+        dest="version",
+        action="store_true",
+        help="show current CLI version and exit",
     )
 
     subparsers = parser.add_subparsers()
@@ -56,7 +63,9 @@ def setup_user_agent():
         OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
     # Append CLI user agent
     OperationContext.get_instance().append_user_agent(USER_AGENT)
-    logger.debug(f"Update the user agent to {OperationContext.get_instance().get_user_agent()}")
+    logger.debug(
+        f"Update the user agent to {OperationContext.get_instance().get_user_agent()}"
+    )
 
 
 def main():

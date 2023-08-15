@@ -86,7 +86,9 @@ def generate_swagger(flow: Flow, samples, outputs_to_remove: list) -> dict:
         if isinstance(samples, list):
             example = samples[0]
         else:
-            logging.warning("samples should be a list of dict, but got %s, skipped.", type(samples))
+            logging.warning(
+                "samples should be a list of dict, but got %s, skipped.", type(samples)
+            )
 
     swagger["paths"] = {
         "/score": {

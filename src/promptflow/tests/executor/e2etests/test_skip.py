@@ -30,4 +30,7 @@ class TestExecutorSkip:
         assert len(result.node_run_infos) == 1
         node_run_info = result.node_run_infos["is_even"]
         assert node_run_info.status == Status.Completed
-        assert node_run_info.output == {"is_even": True, "message": "10 is even number, skip the next node"}
+        assert node_run_info.output == {
+            "is_even": True,
+            "message": "10 is even number, skip the next node",
+        }

@@ -27,7 +27,9 @@ class BlobAuthenticationError(UserAuthenticationError):
 class AmlRunStorageInitError(SystemErrorException):
     """Exception raised when import package failed."""
 
-    def __init__(self, message: str, target: ErrorTarget = ErrorTarget.AZURE_RUN_STORAGE):
+    def __init__(
+        self, message: str, target: ErrorTarget = ErrorTarget.AZURE_RUN_STORAGE
+    ):
         super().__init__(message=message, target=target)
 
 
@@ -110,7 +112,9 @@ class UnsupportedRunInfoTypeInBlob(ValidationException):
 class MLFlowOperationError(SystemErrorException):
     """Exception raised when mlflow helper operation failed."""
 
-    def __init__(self, message: str, target: ErrorTarget = ErrorTarget.AZURE_RUN_STORAGE):
+    def __init__(
+        self, message: str, target: ErrorTarget = ErrorTarget.AZURE_RUN_STORAGE
+    ):
         super().__init__(message=message, target=target)
 
 

@@ -57,7 +57,10 @@ def support_transaction(engine):
 def update_current_schema(engine, orm_class, tablename: str) -> None:
     sql = f"REPLACE INTO {SCHEMA_INFO_TABLENAME} (tablename, version) VALUES (:tablename, :version);"
     with engine.begin() as connection:
-        connection.execute(text(sql), {"tablename": tablename, "version": orm_class.__pf_schema_version__})
+        connection.execute(
+            text(sql),
+            {"tablename": tablename, "version": orm_class.__pf_schema_version__},
+        )
     return
 
 
@@ -97,7 +100,9 @@ def mgmt_db_session() -> Session:
     return session_maker()
 
 
-def build_copy_sql(old_name: str, new_name: str, old_columns: List[str], new_columns: List[str]) -> str:
+def build_copy_sql(
+    old_name: str, new_name: str, old_columns: List[str], new_columns: List[str]
+) -> str:
     insert_stmt = f"INSERT INTO {new_name}"
     # append some NULLs for new columns
     columns = old_columns.copy() + ["NULL"] * (len(new_columns) - len(old_columns))
@@ -110,7 +115,9 @@ def generate_legacy_tablename(engine, tablename: str) -> str:
     try:
         with engine.connect() as connection:
             result = connection.execute(
-                text(f"SELECT version FROM {SCHEMA_INFO_TABLENAME} where tablename=(:tablename)"),
+                text(
+                    f"SELECT version FROM {SCHEMA_INFO_TABLENAME} where tablename=(:tablename)"
+                ),
                 {"tablename": tablename},
             ).first()
             current_schema_version = result[0]
@@ -126,7 +133,9 @@ def get_db_schema_version(engine, tablename: str) -> int:
     try:
         with engine.connect() as connection:
             result = connection.execute(
-                text(f"SELECT version FROM {SCHEMA_INFO_TABLENAME} where tablename=(:tablename)"),
+                text(
+                    f"SELECT version FROM {SCHEMA_INFO_TABLENAME} where tablename=(:tablename)"
+                ),
                 {"tablename": tablename},
             ).first()
             return int(result[0])
@@ -181,7 +190,9 @@ def create_or_update_table(engine, orm_class, tablename: str) -> None:
         copy_sql = build_copy_sql(
             old_name=legacy_tablename,
             new_name=tablename,
-            old_columns=[column["name"] for column in inspect(engine).get_columns(tablename)],
+            old_columns=[
+                column["name"] for column in inspect(engine).get_columns(tablename)
+            ],
             new_columns=[column.name for column in orm_class.__table__.columns],
         )
         # note that we should do above in one transaction
@@ -217,7 +228,9 @@ def create_index_for_run_if_not_exists(engine) -> None:
 
 
 @contextmanager
-def mgmt_db_rebase(mgmt_db_path: Union[Path, os.PathLike, str], customized_encryption_key: str = None) -> Session:
+def mgmt_db_rebase(
+    mgmt_db_path: Union[Path, os.PathLike, str], customized_encryption_key: str = None
+) -> Session:
     """
     This function will change the constant LOCAL_MGMT_DB_PATH to the new path so very dangerous.
     It is created for pf flow export only and need to be removed in further version.

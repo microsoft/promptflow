@@ -11,7 +11,13 @@ import functools
 from typing import Any, Callable, Dict, Generic, Optional, TypeVar
 import warnings
 
-from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
+from azure.core.exceptions import (
+    ClientAuthenticationError,
+    HttpResponseError,
+    ResourceExistsError,
+    ResourceNotFoundError,
+    map_error,
+)
 from azure.core.pipeline import PipelineResponse
 from azure.core.pipeline.transport import AsyncHttpResponse
 from azure.core.rest import HttpRequest
@@ -19,9 +25,16 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._flows_provider_operations import build_get_index_entity_by_id_request, build_get_updated_entity_ids_for_workspace_request
-T = TypeVar('T')
-ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
+from ...operations._flows_provider_operations import (
+    build_get_index_entity_by_id_request,
+    build_get_updated_entity_ids_for_workspace_request,
+)
+
+T = TypeVar("T")
+ClsType = Optional[
+    Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]
+]
+
 
 class FlowsProviderOperations:
     """FlowsProviderOperations async operations.
@@ -69,16 +82,22 @@ class FlowsProviderOperations:
         :rtype: ~flow.models.UnversionedEntityResponseDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedEntityResponseDto"]
+        cls = kwargs.pop(
+            "cls", None
+        )  # type: ClsType["_models.UnversionedEntityResponseDto"]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop(
+            "content_type", "application/json"
+        )  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedEntityRequestDto')
+            _json = self._serialize.body(body, "UnversionedEntityRequestDto")
         else:
             _json = None
 
@@ -88,28 +107,35 @@ class FlowsProviderOperations:
             workspace_name=workspace_name,
             content_type=content_type,
             json=_json,
-            template_url=self.get_index_entity_by_id.metadata['url'],
+            template_url=self.get_index_entity_by_id.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedEntityResponseDto', pipeline_response)
+        deserialized = self._deserialize(
+            "UnversionedEntityResponseDto", pipeline_response
+        )
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_index_entity_by_id.metadata = {'url': '/flow/v1.0/flows/getIndexEntities'}  # type: ignore
-
+    get_index_entity_by_id.metadata = {"url": "/flow/v1.0/flows/getIndexEntities"}  # type: ignore
 
     @distributed_trace_async
     async def get_updated_entity_ids_for_workspace(
@@ -135,16 +161,22 @@ class FlowsProviderOperations:
         :rtype: ~flow.models.UnversionedRebuildResponseDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.UnversionedRebuildResponseDto"]
+        cls = kwargs.pop(
+            "cls", None
+        )  # type: ClsType["_models.UnversionedRebuildResponseDto"]
         error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+            401: ClientAuthenticationError,
+            404: ResourceNotFoundError,
+            409: ResourceExistsError,
         }
-        error_map.update(kwargs.pop('error_map', {}))
+        error_map.update(kwargs.pop("error_map", {}))
 
-        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop(
+            "content_type", "application/json"
+        )  # type: Optional[str]
 
         if body is not None:
-            _json = self._serialize.body(body, 'UnversionedRebuildIndexDto')
+            _json = self._serialize.body(body, "UnversionedRebuildIndexDto")
         else:
             _json = None
 
@@ -154,25 +186,32 @@ class FlowsProviderOperations:
             workspace_name=workspace_name,
             content_type=content_type,
             json=_json,
-            template_url=self.get_updated_entity_ids_for_workspace.metadata['url'],
+            template_url=self.get_updated_entity_ids_for_workspace.metadata["url"],
         )
         request = _convert_request(request)
         request.url = self._client.format_url(request.url)
 
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
+        pipeline_response = await self._client._pipeline.run(
+            request, stream=False, **kwargs
+        )
         response = pipeline_response.http_response
 
         if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            map_error(
+                status_code=response.status_code, response=response, error_map=error_map
+            )
+            error = self._deserialize.failsafe_deserialize(
+                _models.ErrorResponse, pipeline_response
+            )
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('UnversionedRebuildResponseDto', pipeline_response)
+        deserialized = self._deserialize(
+            "UnversionedRebuildResponseDto", pipeline_response
+        )
 
         if cls:
             return cls(pipeline_response, deserialized, {})
 
         return deserialized
 
-    get_updated_entity_ids_for_workspace.metadata = {'url': '/flow/v1.0/flows/rebuildIndex'}  # type: ignore
-
+    get_updated_entity_ids_for_workspace.metadata = {"url": "/flow/v1.0/flows/rebuildIndex"}  # type: ignore

@@ -23,7 +23,11 @@ def entry(argv):
         description="PromptFlow CLI cloud version. [Preview]",
     )
     parser.add_argument(
-        "-v", "--version", dest="version", action="store_true", help="show current CLI version and exit"
+        "-v",
+        "--version",
+        dest="version",
+        action="store_true",
+        help="show current CLI version and exit",
     )
 
     # flow command is in holding status, may expose in future

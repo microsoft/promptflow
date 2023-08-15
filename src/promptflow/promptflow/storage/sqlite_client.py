@@ -52,7 +52,12 @@ class TableInfo:
 class SqliteClient:
     @classmethod
     def create_table_if_not_exists(
-        cls, db_folder_path: str, db_name: str, class_: type, in_memory: bool = False, timeout_seconds: int = 30
+        cls,
+        db_folder_path: str,
+        db_name: str,
+        class_: type,
+        in_memory: bool = False,
+        timeout_seconds: int = 30,
     ) -> TableInfo:
         """Create db table if not exists. If table exists, check if columns are consistent with input class_.
 
@@ -60,17 +65,25 @@ class SqliteClient:
         """
         # Check class_ is decorated by dataclass.
         if not dataclasses.is_dataclass(class_):
-            raise ValueError("Input class type must be decorated with dataclasses.dataclass.")
+            raise ValueError(
+                "Input class type must be decorated with dataclasses.dataclass."
+            )
 
         table_name = class_.__name__  # table name is class name.
 
-        col_name_to_field_meta = {field.name: field.metadata for field in fields(class_)}
+        col_name_to_field_meta = {
+            field.name: field.metadata for field in fields(class_)
+        }
         col_name_to_type = {field.name: field.type for field in fields(class_)}
 
         # Get primary key.
-        primary_key_columns = [k for k, v in col_name_to_field_meta.items() if v.get(PRIMARY_KEY)]
+        primary_key_columns = [
+            k for k, v in col_name_to_field_meta.items() if v.get(PRIMARY_KEY)
+        ]
         if len(primary_key_columns) != 1:
-            raise ValueError(f"One and only one primary key column is allowed! Got {len(primary_key_columns)}")
+            raise ValueError(
+                f"One and only one primary key column is allowed! Got {len(primary_key_columns)}"
+            )
         primary_key = primary_key_columns[0]
 
         # Get index column names.

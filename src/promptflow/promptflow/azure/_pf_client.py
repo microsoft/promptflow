@@ -31,7 +31,9 @@ class PFClient:
 
     def __init__(self, ml_client, **kwargs):
         if not isinstance(ml_client, MLClient):
-            raise ValueError(f"ml_client must be an instance of 'azure.ai.MLClient', got {type(ml_client)!r} instead.")
+            raise ValueError(
+                f"ml_client must be an instance of 'azure.ai.MLClient', got {type(ml_client)!r} instead."
+            )
         self._add_user_agent(kwargs)
         self._client = ml_client
         self._flows = FlowOperations(
@@ -58,19 +60,19 @@ class PFClient:
         )
 
     def run(
-            self,
-            flow: Union[str, PathLike],
-            *,
-            data: Union[str, PathLike] = None,
-            run: Union[str, Run] = None,
-            column_mapping: dict = None,
-            variant: str = None,
-            connections: dict = None,
-            environment_variables: dict = None,
-            name: str = None,
-            display_name: str = None,
-            tags: Dict[str, str] = None,
-            **kwargs,
+        self,
+        flow: Union[str, PathLike],
+        *,
+        data: Union[str, PathLike] = None,
+        run: Union[str, Run] = None,
+        column_mapping: dict = None,
+        variant: str = None,
+        connections: dict = None,
+        environment_variables: dict = None,
+        name: str = None,
+        display_name: str = None,
+        tags: Dict[str, str] = None,
+        **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
         Note: at least one of data or run must be provided.
@@ -122,7 +124,7 @@ class PFClient:
             variant=variant,
             flow=Path(flow),
             connections=connections,
-            environment_variables=environment_variables
+            environment_variables=environment_variables,
         )
         return self.runs.create_or_update(run=run, **kwargs)
 

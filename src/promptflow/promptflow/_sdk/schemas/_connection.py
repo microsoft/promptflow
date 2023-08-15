@@ -62,11 +62,15 @@ class EmbeddingStoreConnectionSchema(ConnectionSchema):
 
 
 class QdrantConnectionSchema(EmbeddingStoreConnectionSchema):
-    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.QDRANT), required=True)
+    type = StringTransformedEnum(
+        allowed_values=camel_to_snake(ConnectionType.QDRANT), required=True
+    )
 
 
 class WeaviateConnectionSchema(EmbeddingStoreConnectionSchema):
-    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.WEAVIATE), required=True)
+    type = StringTransformedEnum(
+        allowed_values=camel_to_snake(ConnectionType.WEAVIATE), required=True
+    )
 
 
 class CognitiveSearchConnectionSchema(ConnectionSchema):
@@ -80,7 +84,9 @@ class CognitiveSearchConnectionSchema(ConnectionSchema):
 
 
 class SerpConnectionSchema(ConnectionSchema):
-    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.SERP), required=True)
+    type = StringTransformedEnum(
+        allowed_values=camel_to_snake(ConnectionType.SERP), required=True
+    )
     api_key = fields.Str(required=True)
 
 
@@ -107,7 +113,9 @@ class FormRecognizerConnectionSchema(ConnectionSchema):
 
 
 class CustomConnectionSchema(ConnectionSchema):
-    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.CUSTOM), required=True)
+    type = StringTransformedEnum(
+        allowed_values=camel_to_snake(ConnectionType.CUSTOM), required=True
+    )
     configs = fields.Dict(keys=fields.Str(), values=fields.Str())
     # Secrets is a must-have field for CustomConnection
     secrets = fields.Dict(keys=fields.Str(), values=fields.Str(), required=True)

@@ -11,5 +11,5 @@ __all__ = [
     "FlowJobType",
     "FlowType",
     "DEFAULT_PYTHON_VERSION",
-    "COMMAND_COMPONENT_SPEC_TEMPLATE"
+    "COMMAND_COMPONENT_SPEC_TEMPLATE",
 ]

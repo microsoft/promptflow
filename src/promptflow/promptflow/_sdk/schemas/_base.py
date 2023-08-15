@@ -15,7 +15,11 @@ from marshmallow.decorators import post_dump
 from marshmallow.schema import Schema, SchemaMeta
 from pydash import objects
 
-from promptflow._sdk._constants import BASE_PATH_CONTEXT_KEY, FILE_PREFIX, PARAMS_OVERRIDE_KEY
+from promptflow._sdk._constants import (
+    BASE_PATH_CONTEXT_KEY,
+    FILE_PREFIX,
+    PARAMS_OVERRIDE_KEY,
+)
 from promptflow._sdk._utils import load_yaml
 
 module_logger = logging.getLogger(__name__)
@@ -34,7 +38,9 @@ class PatchedBaseSchema(Schema):
     @post_dump
     def remove_none(self, data, **kwargs):
         """Prevents from dumping attributes that are None, thus making the dump more compact."""
-        return OrderedDict((key, value) for key, value in data.items() if value is not None)
+        return OrderedDict(
+            (key, value) for key, value in data.items() if value is not None
+        )
 
 
 class PatchedSchemaMeta(SchemaMeta):
@@ -65,8 +71,13 @@ class PathAwareSchema(PatchedBaseSchema, metaclass=PatchedSchemaMeta):
     def __init__(self, *args, **kwargs):
         # this will make context of all PathAwareSchema child class point to one object
         self.context = kwargs.get("context", None)
-        if self.context is None or self.context.get(BASE_PATH_CONTEXT_KEY, None) is None:
-            raise Exception("Base path for reading files is required when building PathAwareSchema")
+        if (
+            self.context is None
+            or self.context.get(BASE_PATH_CONTEXT_KEY, None) is None
+        ):
+            raise Exception(
+                "Base path for reading files is required when building PathAwareSchema"
+            )
         # set old base path, note it's an Path object and point to the same object with
         # self.context.get(BASE_PATH_CONTEXT_KEY)
         self.old_base_path = self.context.get(BASE_PATH_CONTEXT_KEY)

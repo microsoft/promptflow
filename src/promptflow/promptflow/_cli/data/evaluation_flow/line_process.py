@@ -15,6 +15,8 @@ def line_process(groundtruth: str, prediction: str):
     """
 
     # Add your line processing logic here
-    processed_result = "Correct" if groundtruth.lower() == prediction.lower() else "Incorrect"
+    processed_result = (
+        "Correct" if groundtruth.lower() == prediction.lower() else "Incorrect"
+    )
 
     return processed_result

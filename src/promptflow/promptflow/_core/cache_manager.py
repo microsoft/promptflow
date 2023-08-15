@@ -50,36 +50,54 @@ class AbstractCacheManager:
         # TODO: Return CacheManager after local execution is enabled.
         return DummyCacheManager()
 
-    def calculate_cache_info(self, flow_id: str, tool_method: Callable, args, kwargs) -> CacheInfo:
-        raise NotImplementedError("AbstractCacheManager has not implemented method calculate_cache_info.")
+    def calculate_cache_info(
+        self, flow_id: str, tool_method: Callable, args, kwargs
+    ) -> CacheInfo:
+        raise NotImplementedError(
+            "AbstractCacheManager has not implemented method calculate_cache_info."
+        )
 
     def get_cache_result(self, cache_info: CacheInfo) -> CacheResult:
-        raise NotImplementedError("AbstractCacheManager has not implemented method get_cache_result.")
+        raise NotImplementedError(
+            "AbstractCacheManager has not implemented method get_cache_result."
+        )
 
-    def persist_result(self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str):
-        raise NotImplementedError("AbstractCacheManager has not implemented method persist_result.")
+    def persist_result(
+        self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str
+    ):
+        raise NotImplementedError(
+            "AbstractCacheManager has not implemented method persist_result."
+        )
 
 
 class DummyCacheManager(AbstractCacheManager):
     def __init__(self):
         pass
 
-    def calculate_cache_info(self, flow_id: str, tool_method: Callable, args, kwargs) -> CacheInfo:
+    def calculate_cache_info(
+        self, flow_id: str, tool_method: Callable, args, kwargs
+    ) -> CacheInfo:
         return None
 
     def get_cache_result(self, cache_info: CacheInfo) -> CacheResult:
         return None
 
-    def persist_result(self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str):
+    def persist_result(
+        self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str
+    ):
         pass
 
 
 class CacheManager(AbstractCacheManager):
-    def __init__(self, run_storage: AbstractRunStorage, cache_storage: AbstractCacheStorage):
+    def __init__(
+        self, run_storage: AbstractRunStorage, cache_storage: AbstractCacheStorage
+    ):
         self._run_storage = run_storage
         self._cache_storage = cache_storage
 
-    def calculate_cache_info(self, flow_id: str, tool_method: Callable, args, kwargs) -> CacheInfo:
+    def calculate_cache_info(
+        self, flow_id: str, tool_method: Callable, args, kwargs
+    ) -> CacheInfo:
         cache_function = get_calculate_cache_func(tool_method)
         # Cache function is not registered with this tool.
         if cache_function is None:
@@ -108,13 +126,17 @@ class CacheManager(AbstractCacheManager):
         hash_id = cache_info.hash_id
 
         # Query if cache result existed by hash_id.
-        cache_result_list: List[CacheInfo] = self._cache_storage.get_cache_record_list(hash_id=hash_id)
+        cache_result_list: List[CacheInfo] = self._cache_storage.get_cache_record_list(
+            hash_id=hash_id
+        )
 
         if len(cache_result_list) == 0:
             return None
 
         # Get the latest cache result.
-        cache_result = sorted(cache_result_list, reverse=True, key=lambda i: i.end_time)[0]
+        cache_result = sorted(
+            cache_result_list, reverse=True, key=lambda i: i.end_time
+        )[0]
         try:
             cached_run_info = self._run_storage.get_node_run(cache_result.run_id)
         except Exception as ex:
@@ -138,7 +160,9 @@ class CacheManager(AbstractCacheManager):
         )
 
     def persist_result(self, run_info: RunInfo, cache_info: CacheInfo, flow_id: str):
-        self._cache_storage.persist_cache_result(run_info, cache_info.hash_id, cache_info.cache_string, flow_id)
+        self._cache_storage.persist_cache_result(
+            run_info, cache_info.hash_id, cache_info.cache_string, flow_id
+        )
 
     @staticmethod
     def _calculate_hash_id(cache_string: str):

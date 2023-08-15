@@ -9,7 +9,9 @@ from typing import Union
 
 
 class BaseInputs(object):
-    def __init__(self, data: Union[str, PathLike], inputs_mapping: dict = None, **kwargs):
+    def __init__(
+        self, data: Union[str, PathLike], inputs_mapping: dict = None, **kwargs
+    ):
         self.data = data
         self.inputs_mapping = inputs_mapping
 

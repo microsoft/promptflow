@@ -24,7 +24,9 @@ class TestConnection:
         _client.connections.create_or_update(conn)
         # Get
         result = _client.connections.get(name)
-        assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
+        assert pydash.omit(
+            result._to_dict(), ["created_date", "last_modified_date", "name"]
+        ) == {
             "module": "promptflow.connections",
             "type": "azure_open_ai",
             "api_key": "******",
@@ -35,7 +37,9 @@ class TestConnection:
         # Update
         conn.api_base = "test2"
         result = _client.connections.create_or_update(conn)
-        assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
+        assert pydash.omit(
+            result._to_dict(), ["created_date", "last_modified_date", "name"]
+        ) == {
             "module": "promptflow.connections",
             "type": "azure_open_ai",
             "api_key": "******",
@@ -74,7 +78,9 @@ class TestConnection:
     def test_custom_connection_get_and_update(self):
         # Test api key not updated
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = CustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
+        conn = CustomConnection(
+            name=name, secrets={"api_key": "test"}, configs={"api_base": "test"}
+        )
         result = _client.connections.create_or_update(conn)
         assert result.secrets["api_key"] == SCRUBBED_VALUE
         # Update api_base only Assert no exception
@@ -93,18 +99,28 @@ class TestConnection:
     @pytest.mark.parametrize(
         "file_name, expected_updated_item, expected_secret_item",
         [
-            ("azure_openai_connection.yaml", ("api_base", "new_value"), ("api_key", "<to-be-replaced>")),
+            (
+                "azure_openai_connection.yaml",
+                ("api_base", "new_value"),
+                ("api_key", "<to-be-replaced>"),
+            ),
             ("custom_connection.yaml", ("key1", "new_value"), ("key2", "test2")),
         ],
     )
-    def test_upsert_connection_from_file(self, file_name, expected_updated_item, expected_secret_item):
+    def test_upsert_connection_from_file(
+        self, file_name, expected_updated_item, expected_secret_item
+    ):
         from promptflow._cli._pf._connection import _upsert_connection_from_file
 
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        result = _upsert_connection_from_file(file=CONNECTION_ROOT / file_name, params_override=[{"name": name}])
+        result = _upsert_connection_from_file(
+            file=CONNECTION_ROOT / file_name, params_override=[{"name": name}]
+        )
         assert result is not None
         update_file_name = f"update_{file_name}"
-        result = _upsert_connection_from_file(file=CONNECTION_ROOT / update_file_name, params_override=[{"name": name}])
+        result = _upsert_connection_from_file(
+            file=CONNECTION_ROOT / update_file_name, params_override=[{"name": name}]
+        )
         # Test secrets not updated, and configs updated
         assert (
             result.configs[expected_updated_item[0]] == expected_updated_item[1]

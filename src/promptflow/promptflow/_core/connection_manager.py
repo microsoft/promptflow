@@ -9,7 +9,11 @@ from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, List
 
-from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, PROMPTFLOW_CONNECTIONS
+from promptflow._constants import (
+    CONNECTION_NAME_PROPERTY,
+    CONNECTION_SECRET_KEYS,
+    PROMPTFLOW_CONNECTIONS,
+)
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
@@ -24,10 +28,16 @@ class ConnectionManager:
         if _dict is None and PROMPTFLOW_CONNECTIONS in os.environ:
             # !!! Important !!!: Do not leverage this environment variable in any production code, this is test only.
             if PROMPTFLOW_CONNECTIONS not in os.environ:
-                raise ValueError(f"Required environment variable {PROMPTFLOW_CONNECTIONS!r} not set.")
-            connection_path = Path(os.environ[PROMPTFLOW_CONNECTIONS]).resolve().absolute()
+                raise ValueError(
+                    f"Required environment variable {PROMPTFLOW_CONNECTIONS!r} not set."
+                )
+            connection_path = (
+                Path(os.environ[PROMPTFLOW_CONNECTIONS]).resolve().absolute()
+            )
             if not connection_path.exists():
-                raise ValueError(f"Connection file not exists. Path {connection_path.as_posix()}.")
+                raise ValueError(
+                    f"Connection file not exists. Path {connection_path.as_posix()}."
+                )
             _dict = json.loads(open(connection_path).read())
         self._connections_dict = _dict or {}
         self._connections = self._build_connections(self._connections_dict)
@@ -42,7 +52,9 @@ class ConnectionManager:
         for key, connection_dict in _dict.items():
             typ = connection_dict.get("type")
             if typ not in cls_mapping:
-                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {cls_mapping.keys()}.")
+                raise ValueError(
+                    f"Unknown connection {key!r} type {typ!r}, supported are {cls_mapping.keys()}."
+                )
             value = connection_dict.get("value", {})
             connection_class = cls_mapping[typ]
 
@@ -52,14 +64,24 @@ class ConnectionManager:
                 connection_value = connection_class(**value)
                 connection_value.__secret_keys = connection_dict.get("secret_keys", [])
                 # Note: CustomConnection definition can not be got, secret keys will be provided in connection dict.
-                setattr(connection_value, CONNECTION_SECRET_KEYS, connection_dict.get("secret_keys", []))
+                setattr(
+                    connection_value,
+                    CONNECTION_SECRET_KEYS,
+                    connection_dict.get("secret_keys", []),
+                )
             else:
                 """
                 Note: Ignore non exists keys of connection class,
                 because there are some keys just used by UX like resource id, while not used by backend.
                 """
-                cls_fields = {f.name: f for f in fields(connection_class)} if is_dataclass(connection_class) else {}
-                connection_value = connection_class(**{k: v for k, v in value.items() if k in cls_fields})
+                cls_fields = (
+                    {f.name: f for f in fields(connection_class)}
+                    if is_dataclass(connection_class)
+                    else {}
+                )
+                connection_value = connection_class(
+                    **{k: v for k, v in value.items() if k in cls_fields}
+                )
                 setattr(
                     connection_value,
                     CONNECTION_SECRET_KEYS,
@@ -105,7 +127,11 @@ class ConnectionManager:
                 modules.add(module)
         for module in modules:
             # Supress import error, as we have legacy module promptflow.tools.connections.
-            try_import(module, f"Import connection module {module!r} failed.", raise_error=False)
+            try_import(
+                module,
+                f"Import connection module {module!r} failed.",
+                raise_error=False,
+            )
 
     @staticmethod
     def is_legacy_connections(_dict: Dict[str, dict]):
@@ -114,7 +140,9 @@ class ConnectionManager:
 
         Legacy connection example: {"aoai_config": {"api_key": "..."}}
         """
-        has_module = any(isinstance(v, dict) and "module" in v for k, v in _dict.items())
+        has_module = any(
+            isinstance(v, dict) and "module" in v for k, v in _dict.items()
+        )
         return not has_module
 
     def to_connections_dict(self) -> dict:

@@ -79,8 +79,14 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._current_tool = f
         all_args = parse_all_args(argnames, args, kwargs)
         node_run_id = self._generate_current_node_run_id()
-        flow_logger.info(f"Executing node {self._current_node.name}. node run id: {node_run_id}")
-        parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
+        flow_logger.info(
+            f"Executing node {self._current_node.name}. node run id: {node_run_id}"
+        )
+        parent_run_id = (
+            f"{self._run_id}_{self._line_number}"
+            if self._line_number is not None
+            else self._run_id
+        )
         run_info: RunInfo = self._run_tracker.start_node_run(
             node=self._current_node.name,
             flow_run_id=self._run_id,
@@ -92,14 +98,21 @@ class FlowExecutionContext(ThreadLocalSingleton):
         run_info.index = self._line_number
         run_info.variant_id = self._variant_id
 
-        self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
+        self._run_tracker.set_inputs(
+            node_run_id,
+            {key: value for key, value in all_args.items() if key != "self"},
+        )
         traces = []
         try:
             hit_cache = False
             # Get result from cache. If hit cache, no need to execute f.
-            cache_info: CacheInfo = self._cache_manager.calculate_cache_info(self._flow_id, f, args, kwargs)
+            cache_info: CacheInfo = self._cache_manager.calculate_cache_info(
+                self._flow_id, f, args, kwargs
+            )
             if self._current_node.enable_cache and cache_info:
-                cache_result: CacheResult = self._cache_manager.get_cache_result(cache_info)
+                cache_result: CacheResult = self._cache_manager.get_cache_result(
+                    cache_info
+                )
                 if cache_result and cache_result.hit_cache:
                     # Assign cached_flow_run_id and cached_run_id.
                     run_info.cached_flow_run_id = cache_result.cached_flow_run_id
@@ -124,7 +137,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
             flow_logger.info(f"Node {self._current_node.name} completes.")
             return result
         except Exception as e:
-            logger.exception(f"Node {self._current_node.name} in line {self._line_number} failed. Exception: {e}.")
+            logger.exception(
+                f"Node {self._current_node.name} in line {self._line_number} failed. Exception: {e}."
+            )
             Tracer.pop(error=e)
             if not traces:
                 traces = Tracer.end_tracing()
@@ -167,12 +182,18 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
     def _persist_cache(self, cache_info: CacheInfo, run_info: RunInfo):
         """Record result in cache storage if hash_id is valid."""
-        if cache_info and cache_info.hash_id is not None and len(cache_info.hash_id) > 0:
+        if (
+            cache_info
+            and cache_info.hash_id is not None
+            and len(cache_info.hash_id) > 0
+        ):
             try:
                 self._cache_manager.persist_result(run_info, cache_info, self._flow_id)
             except Exception as ex:
                 # Not a critical path, swallow the exception.
-                logging.warning(f"Failed to persist cache result. run_id: {run_info.run_id}. Exception: {ex}")
+                logging.warning(
+                    f"Failed to persist cache result. run_id: {run_info.run_id}. Exception: {ex}"
+                )
 
     def _generate_current_node_run_id(self) -> str:
         node = self._current_node

@@ -72,7 +72,9 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
         try:
             flow_dag[NODE_VARIANTS][tuning_node][VARIANTS][variant]
         except KeyError as e:
-            raise InvalidFlowError(f"Variant {variant} not found for node {tuning_node}") from e
+            raise InvalidFlowError(
+                f"Variant {variant} not found for node {tuning_node}"
+            ) from e
     try:
         node_variants = flow_dag.get(NODE_VARIANTS, {})
         updated_nodes = []
@@ -88,10 +90,14 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
             variant_id = variant if node_name == tuning_node else None
             if not variant_id:
                 if DEFAULT_VAR_ID not in variants_cfg:
-                    raise InvalidFlowError(f"Default variant id is not specified for {node_name}.")
+                    raise InvalidFlowError(
+                        f"Default variant id is not specified for {node_name}."
+                    )
                 variant_id = variants_cfg[DEFAULT_VAR_ID]
             if variant_id not in variants_cfg.get(VARIANTS, {}):
-                raise InvalidFlowError(f"Cannot find the variant {variant_id} for {node_name}.")
+                raise InvalidFlowError(
+                    f"Cannot find the variant {variant_id} for {node_name}."
+                )
             variant_cfg = variants_cfg[VARIANTS][variant_id][NODE]
             updated_nodes.append({"name": node_name, **variant_cfg})
         flow_dag[NODES] = updated_nodes
@@ -102,15 +108,21 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
         yaml.safe_dump(flow_dag, f)
 
 
-def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathLike = None):
+def overwrite_connections(
+    flow_path: Path, connections: dict, working_dir: PathLike = None
+):
     if not connections:
         return
     if not isinstance(connections, dict):
-        raise InvalidFlowError(f"Invalid connections overwrite format: {connections}, only list is supported.")
+        raise InvalidFlowError(
+            f"Invalid connections overwrite format: {connections}, only list is supported."
+        )
 
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     # Load executable flow to check if connection is LLM connection
-    executable_flow = ExecutableFlow.from_yaml(flow_file=flow_path, working_dir=working_dir)
+    executable_flow = ExecutableFlow.from_yaml(
+        flow_file=flow_path, working_dir=working_dir
+    )
 
     node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
 
@@ -118,7 +130,9 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
         if node_name not in node_name_2_node:
             raise InvalidFlowError(f"Node {node_name} not found in flow")
         if not isinstance(connection_dict, dict):
-            raise InvalidFlowError(f"Invalid connection overwrite format: {connection_dict}, only dict is supported.")
+            raise InvalidFlowError(
+                f"Invalid connection overwrite format: {connection_dict}, only dict is supported."
+            )
         node = node_name_2_node[node_name]
         executable_node = executable_flow.get_node(node_name=node_name)
         if executable_flow.is_llm_node(executable_node):
@@ -136,12 +150,18 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
                 if deploy_name:
                     node[INPUTS][ConnectionFields.DEPLOYMENT_NAME] = deploy_name
             except KeyError as e:
-                raise KeyError(f"Failed to overwrite llm node {node_name} with connections {connections}") from e
+                raise KeyError(
+                    f"Failed to overwrite llm node {node_name} with connections {connections}"
+                ) from e
         else:
-            connection_inputs = executable_flow.get_connection_input_names_for_node(node_name=node_name)
+            connection_inputs = executable_flow.get_connection_input_names_for_node(
+                node_name=node_name
+            )
             for c, v in connection_dict.items():
                 if c not in connection_inputs:
-                    raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
+                    raise InvalidFlowError(
+                        f"Connection with name {c} not found in node {node_name}'s inputs"
+                    )
                 node[INPUTS][c] = v
 
     with open(flow_path, "w") as f:
@@ -156,7 +176,12 @@ def remove_additional_includes(flow_path: Path):
 
 
 @contextlib.contextmanager
-def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant: str = None, connections: dict = None):
+def variant_overwrite_context(
+    flow_path: Path,
+    tuning_node: str = None,
+    variant: str = None,
+    connections: dict = None,
+):
     """Override variant and connections in the flow."""
     flow_dag_path, _ = _load_flow_dag(flow_path)
     if _get_additional_includes(flow_dag_path):
@@ -173,7 +198,9 @@ def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant:
         # the dag path points to the temp dag file after overwriting variant.
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dag_file = Path(temp_dir) / DAG_FILE_NAME
-            shutil.copy2((flow_path / DAG_FILE_NAME).resolve().as_posix(), temp_dag_file)
+            shutil.copy2(
+                (flow_path / DAG_FILE_NAME).resolve().as_posix(), temp_dag_file
+            )
             overwrite_variant(Path(temp_dir), tuning_node, variant)
             overwrite_connections(Path(temp_dir), connections, working_dir=flow_path)
             flow = Flow(code=flow_path, path=temp_dag_file)
@@ -191,7 +218,9 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(flow: Flow):
-        executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+        executable = ExecutableFlow.from_yaml(
+            flow_file=flow.path, working_dir=flow.code
+        )
         executable.name = str(Path(flow.code).stem)
 
         return Flow._get_local_connections(executable=executable)
@@ -202,7 +231,9 @@ class SubmitterHelper:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
         connections = cls.resolve_connection_names(connection_names=connection_names)
-        update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
+        update_dict_value_with_connections(
+            built_connections=connections, connection_dict=environment_variables
+        )
 
     @staticmethod
     def resolve_connection_names(connection_names, raise_error=False):
@@ -231,7 +262,9 @@ class RunSubmitter:
         return self.run_operations.get(name=run.name)
 
     @classmethod
-    def _dump_executor_result(cls, local_storage, flow: Flow, executor_result: dict) -> None:
+    def _dump_executor_result(
+        cls, local_storage, flow: Flow, executor_result: dict
+    ) -> None:
         """Dump executor return to local storage."""
         local_storage.dump_snapshot(flow=flow)
         local_storage.dump_inputs(inputs=executor_result["inputs"])
@@ -251,15 +284,21 @@ class RunSubmitter:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
             if not isinstance(run.run, Run):
-                raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+                raise TypeError(
+                    f"Referenced run must be a Run instance, got {type(run.run)}"
+                )
             if run.run.status != Status.Completed.value:
-                raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
+                raise ValueError(
+                    f"Referenced run {run.run.name} is not completed, got status {run.run.status}"
+                )
             run.run.outputs = self.run_operations._get_outputs(run.run)
         if not run.run and not run.data:
             raise ValueError("Either run or data must be specified for flow run.")
 
         # running specified variant
-        with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
+        with variant_overwrite_context(
+            run.flow, tuning_node, variant, connections=run.connections
+        ) as flow:
             local_storage = LocalStorageOperations(run)
             with local_storage.logger.setup_logger(stream=stream):
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
@@ -269,7 +308,9 @@ class RunSubmitter:
         connections = SubmitterHelper.resolve_connections(flow=flow)
         inputs_mapping = run.column_mapping
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
+        SubmitterHelper.resolve_environment_variables(
+            environment_variables=run.environment_variables
+        )
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
 
         flow_executor = FlowExecutor.create(
@@ -280,7 +321,9 @@ class RunSubmitter:
         )
         # prepare data
         input_dicts = self._resolve_data(run)
-        mapped_inputs = flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        mapped_inputs = flow_executor.validate_and_apply_inputs_mapping(
+            input_dicts, inputs_mapping
+        )
         bulk_result = None
         status = Status.Failed.value
         exception = None
@@ -308,7 +351,9 @@ class RunSubmitter:
                 "status": status,
                 "exception": exception,
             }
-            self._dump_executor_result(local_storage=local_storage, flow=flow, executor_result=result)
+            self._dump_executor_result(
+                local_storage=local_storage, flow=flow, executor_result=result
+            )
             self.run_operations.update(
                 name=run.name,
                 status=status,
@@ -323,7 +368,9 @@ class RunSubmitter:
         for input_key, local_file in input_dicts.items():
             result[input_key] = load_data(local_file)
         if run.run is not None:
-            variant_output = reverse_transpose(self.run_operations._get_outputs(run.run))
+            variant_output = reverse_transpose(
+                self.run_operations._get_outputs(run.run)
+            )
             result["run.outputs"] = variant_output
             variant_input = reverse_transpose(self.run_operations._get_inputs(run.run))
             result["run.inputs"] = variant_input

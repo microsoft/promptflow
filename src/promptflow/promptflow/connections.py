@@ -78,4 +78,6 @@ class CustomConnection(dict):
         setattr(self, CONNECTION_SECRET_KEYS, secret_keys)
 
 
-register_connections([v for v in globals().values() if is_dataclass(v) or v is CustomConnection])
+register_connections(
+    [v for v in globals().values() if is_dataclass(v) or v is CustomConnection]
+)

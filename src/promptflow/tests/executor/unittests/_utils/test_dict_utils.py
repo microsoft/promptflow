@@ -57,9 +57,26 @@ class TestDictUtils:
         assert get_value_by_key_path(TEST_DICT, key_path) == expected_value
 
     def test_get_value_by_key_path_invalid_key_path(self):
-        assert get_value_by_key_path(TEST_DICT, "Earth/Asia/China/Beijing/Chaoyang/ZipCode") is None
-        assert get_value_by_key_path(TEST_DICT, "Earth/Asia/China/Beijing/Chaoyang/ZipCode", default_value="0") == "0"
-        assert get_value_by_key_path(TEST_DICT, "Earth/Asia/China/Beijing/Haidian/Population") is None
+        assert (
+            get_value_by_key_path(
+                TEST_DICT, "Earth/Asia/China/Beijing/Chaoyang/ZipCode"
+            )
+            is None
+        )
+        assert (
+            get_value_by_key_path(
+                TEST_DICT,
+                "Earth/Asia/China/Beijing/Chaoyang/ZipCode",
+                default_value="0",
+            )
+            == "0"
+        )
+        assert (
+            get_value_by_key_path(
+                TEST_DICT, "Earth/Asia/China/Beijing/Haidian/Population"
+            )
+            is None
+        )
         assert get_value_by_key_path(TEST_DICT, "Mars") is None
 
         with pytest.raises(ValueError, match="key_path must not be empty"):
@@ -82,4 +99,7 @@ class TestDictUtils:
         ],
     )
     def test_default_value(self, dict, key_path, expected_value):
-        assert get_value_by_key_path(dict, key_path, default_value="default") == expected_value
+        assert (
+            get_value_by_key_path(dict, key_path, default_value="default")
+            == expected_value
+        )

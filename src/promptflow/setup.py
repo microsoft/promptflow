@@ -13,7 +13,10 @@ PACKAGE_NAME = "promptflow"
 PACKAGE_FOLDER_PATH = Path(__file__).parent / "promptflow"
 
 with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), "r") as f:
-    version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(1)
+    version = cast(
+        Match[Any],
+        re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE),
+    ).group(1)
 
 REQUIRES = [
     "openai>=0.27.8,<0.28.0",  # promptflow.core.api_injector

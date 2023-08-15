@@ -87,7 +87,13 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
         help="Initialize a prompt flow directory.",
     )
 
-    add_params = [add_param_yes, add_param_flow_name, add_param_entry, add_param_function, add_param_prompt_template]
+    add_params = [
+        add_param_yes,
+        add_param_flow_name,
+        add_param_entry,
+        add_param_function,
+        add_param_prompt_template,
+    ]
     for add_param_func in add_params:
         add_param_func(init_parser)
 
@@ -160,15 +166,27 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         help="Test the prompt flow or flow node in local.",
     )
 
-    test_parser.add_argument("--flow", type=str, required=True, help="the flow directory to test.")
-    add_param_inputs(test_parser)
-    test_parser.add_argument("--node", type=str, help="the node name in the flow need to be tested.")
-    test_parser.add_argument("--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}.")
     test_parser.add_argument(
-        "--interactive", action="store_true", help="start a interactive chat session for chat flow."
+        "--flow", type=str, required=True, help="the flow directory to test."
+    )
+    add_param_inputs(test_parser)
+    test_parser.add_argument(
+        "--node", type=str, help="the node name in the flow need to be tested."
     )
     test_parser.add_argument(
-        "--verbose", action="store_true", help="displays the output for each step in the chat flow."
+        "--variant",
+        type=str,
+        help="Node & variant name in format of ${node_name.variant_name}.",
+    )
+    test_parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="start a interactive chat session for chat flow.",
+    )
+    test_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="displays the output for each step in the chat flow.",
     )
     test_parser.add_argument("--input", type=str, help=argparse.SUPPRESS)
     test_parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
@@ -190,7 +208,9 @@ def init_flow(args):
         _init_flow_by_template(args.flow, args.type, args.yes)
 
 
-def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dict = None):
+def _init_existing_flow(
+    flow_name, entry=None, function=None, prompt_params: dict = None
+):
     flow_path = Path(flow_name).resolve()
     if not function:
         logger.error("--function must be specified when --entry is specified.")
@@ -215,7 +235,9 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     python_tool_inputs = [arg.name for arg in python_tool.tool_arg_list]
     for tool_input in tools.prompt_params.keys():
         if tool_input not in python_tool_inputs:
-            raise ValueError(f"Template parameter {tool_input} doesn't find in python function arguments.")
+            raise ValueError(
+                f"Template parameter {tool_input} doesn't find in python function arguments."
+            )
 
     python_tool.generate_to_file(tool_py)
     # Create .promptflow and flow.tools.json
@@ -223,7 +245,9 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     meta_dir.mkdir(parents=True, exist_ok=True)
     tools.generate_to_file(meta_dir / "flow.tools.json")
     # Create flow.dag.yaml
-    FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file("flow.dag.yaml")
+    FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file(
+        "flow.dag.yaml"
+    )
     copy_extra_files(flow_path=flow_path, extra_files=[".gitignore"])
     logger.info(f"Done. Generated flow in folder: {flow_path.resolve()}.")
 
@@ -237,7 +261,9 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
         answer = (
             overwrite
             if overwrite
-            else confirm("The flow folder already exists, do you want to create the flow in this existing folder?")
+            else confirm(
+                "The flow folder already exists, do you want to create the flow in this existing folder?"
+            )
         )
         if not answer:
             logger.info("The 'pf init' command has been cancelled.")
@@ -253,10 +279,16 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
         else:
             logger.info(f"{action} {item.name} folder...")
             shutil.copytree(item, target, dirs_exist_ok=True)
-    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
+    copy_extra_files(
+        flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"]
+    )
 
     logger.info(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
-    flow_test_args = "--interactive" if flow_type == "chat" else f"--input {os.path.join(flow_name, 'data.jsonl')}"
+    flow_test_args = (
+        "--interactive"
+        if flow_type == "chat"
+        else f"--input {os.path.join(flow_name, 'data.jsonl')}"
+    )
     flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
     logger.info(f"You can execute this command to test the flow, {flow_test_command}")
 
@@ -301,16 +333,24 @@ def test_flow(args):
         # Dump flow/node test info
         flow = load_flow(args.flow)
         if args.node:
-            TestSubmitter._dump_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{args.node}.node")
+            TestSubmitter._dump_result(
+                flow_folder=flow.code,
+                node_result=result,
+                prefix=f"flow-{args.node}.node",
+            )
         else:
             if args.variant:
                 tuning_node, node_variant = parse_variant(args.variant)
                 prefix = f"flow-{tuning_node}-{node_variant}"
             else:
                 prefix = "flow"
-            TestSubmitter._dump_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
+            TestSubmitter._dump_result(
+                flow_folder=flow.code, flow_result=result, prefix=prefix
+            )
 
-        TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
+        TestSubmitter._raise_error_when_test_failed(
+            result, show_trace=args.node is not None
+        )
         # Print flow/node test result
         if isinstance(result.output, dict):
             print(json.dumps(result.output, indent=4))
@@ -336,7 +376,8 @@ def serve_flow(args):
     print(f"Change working directory to model dir {source}")
     os.chdir(source)
     app = create_app(
-        static_folder=static_folder, environment_variables=list_of_dict_to_dict(args.environment_variables)
+        static_folder=static_folder,
+        environment_variables=list_of_dict_to_dict(args.environment_variables),
     )
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
     app.run(port=args.port, host=args.host)

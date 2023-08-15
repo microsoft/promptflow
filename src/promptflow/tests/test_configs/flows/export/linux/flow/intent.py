@@ -7,6 +7,7 @@ def extract_intent(customer_info: str, history: list, user_prompt_template: str)
     from langchain import LLMChain
     from langchain.chat_models import AzureChatOpenAI
     from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+
     try:
         from dotenv import load_dotenv
     except ImportError:
@@ -15,7 +16,9 @@ def extract_intent(customer_info: str, history: list, user_prompt_template: str)
         from dotenv import load_dotenv
 
     load_dotenv()
-    chat_history_text = "\n".join([message["role"] + ": " + message["content"] for message in history])
+    chat_history_text = "\n".join(
+        [message["role"] + ": " + message["content"] for message in history]
+    )
 
     chat = AzureChatOpenAI(
         deployment_name=os.environ["CHAT_DEPLOYMENT_NAME"],
@@ -51,7 +54,9 @@ if __name__ == "__main__":
 
     # each test
     for item in data:
-        reply = extract_intent(item["customer_info"], item["history"], user_prompt_template)
+        reply = extract_intent(
+            item["customer_info"], item["history"], user_prompt_template
+        )
         print("=====================================")
         # print("Customer info: ", item["customer_info"])
         # print("+++++++++++++++++++++++++++++++++++++")

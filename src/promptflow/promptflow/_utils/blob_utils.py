@@ -14,7 +14,9 @@ class BlobStream(TextIOWrapper):
         try:
             self._blob_client = BlobClient.from_blob_url(sas_uri)
         except Exception as ex:
-            logging.exception(f"Failed to create blob client from sas uri. Exception: {ex}")
+            logging.exception(
+                f"Failed to create blob client from sas uri. Exception: {ex}"
+            )
             if raise_exception:
                 raise
 

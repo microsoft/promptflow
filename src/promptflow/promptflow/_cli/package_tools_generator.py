@@ -8,12 +8,18 @@ import json
 
 import yaml
 
-from promptflow._utils.generate_tool_meta_utils import generate_python_tools_in_module_as_dict
+from promptflow._utils.generate_tool_meta_utils import (
+    generate_python_tools_in_module_as_dict,
+)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate meta for a tool.")
-    parser.add_argument("--module", "-m", help="Module to generate tools.", type=str, required=True)
-    parser.add_argument("--output", "-o", help="Path to the output tool json file.", required=True)
+    parser.add_argument(
+        "--module", "-m", help="Module to generate tools.", type=str, required=True
+    )
+    parser.add_argument(
+        "--output", "-o", help="Path to the output tool json file.", required=True
+    )
     args = parser.parse_args()
     m = importlib.import_module(args.module)
     tools_dict = generate_python_tools_in_module_as_dict(m)

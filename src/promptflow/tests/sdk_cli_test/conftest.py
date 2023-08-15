@@ -7,7 +7,9 @@ from pytest_mock import MockerFixture
 
 from promptflow import PFClient
 from promptflow._sdk._serving.app import create_app as create_serving_app
-from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
+from promptflow._sdk.entities import (
+    AzureOpenAIConnection as AzureOpenAIConnectionEntity,
+)
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
@@ -70,15 +72,21 @@ def setup_local_connection(local_client):
     for name, _dct in connection_dict.items():
         if _dct["type"] == "BingConnection":
             continue
-        local_client.connections.create_or_update(_Connection.from_execution_connection_dict(name=name, data=_dct))
+        local_client.connections.create_or_update(
+            _Connection.from_execution_connection_dict(name=name, data=_dct)
+        )
     _connection_setup = True
 
 
 @pytest.fixture
 def flow_serving_client(mocker: MockerFixture):
-    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    model_path = (
+        (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    )
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
-    app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
+    app = create_serving_app(
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"}
+    )
     app.init_executor_if_not_exist()
     app.config.update(
         {
@@ -90,7 +98,9 @@ def flow_serving_client(mocker: MockerFixture):
 
 @pytest.fixture
 def evaluation_flow_serving_client(mocker: MockerFixture):
-    model_path = (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
+    model_path = (
+        (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
+    )
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     app = create_serving_app()
     app.init_executor_if_not_exist()

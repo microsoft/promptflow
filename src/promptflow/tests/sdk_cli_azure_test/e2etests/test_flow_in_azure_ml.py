@@ -131,14 +131,22 @@ class TestFlowInAzureML:
             **load_params,
         )
 
-        update_saved_spec(flow_func, f"./tests/test_configs/flows/saved_component_spec/{request.node.callspec.id}.yaml")
+        update_saved_spec(
+            flow_func,
+            f"./tests/test_configs/flows/saved_component_spec/{request.node.callspec.id}.yaml",
+        )
 
         component_dict = flow_func._to_dict()
-        slimmed_created_component_attrs = {key: pydash.get(component_dict, key) for key in expected_spec_attrs.keys()}
+        slimmed_created_component_attrs = {
+            key: pydash.get(component_dict, key) for key in expected_spec_attrs.keys()
+        }
         assert slimmed_created_component_attrs == expected_spec_attrs
 
     def test_flow_as_component_in_dsl_pipeline(
-        self, azure_open_ai_connection: AzureOpenAIConnection, temp_output_dir, ml_client_canary
+        self,
+        azure_open_ai_connection: AzureOpenAIConnection,
+        temp_output_dir,
+        ml_client_canary,
     ) -> None:
         pf = PFClient(ml_client_canary)
 
@@ -170,7 +178,10 @@ class TestFlowInAzureML:
             return flow_node.outputs
 
         pipeline: PipelineJob = pipeline_with_flow(
-            input_data=Input(path=f"{flows_dir}/web_classification_input_dir", type=AssetTypes.URI_FOLDER),
+            input_data=Input(
+                path=f"{flows_dir}/web_classification_input_dir",
+                type=AssetTypes.URI_FOLDER,
+            ),
         )
         # compute cluster doesn't have access to azurecr for now, so the submitted job will fail in building image stage
         pipeline.settings.default_compute = "cpu-cluster"

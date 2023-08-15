@@ -22,7 +22,6 @@ class FlowRequestException(Exception):
 
 
 class TelemetryMixin(object):
-
     def __init__(self):
         # Need to call init for potential parent, otherwise it won't be initialized.
         super().__init__()
@@ -32,14 +31,13 @@ class TelemetryMixin(object):
 
 
 class RequestTelemetryMixin(TelemetryMixin):
-
     def __init__(self):
         super().__init__()
         self._request_id = None
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
-        return {'request_id': self._request_id, 'from_cli': self._from_cli}
+        return {"request_id": self._request_id, "from_cli": self._from_cli}
 
     def _set_from_cli_for_telemetry(self):
         self._from_cli = True
@@ -58,15 +56,15 @@ class FlowServiceCaller(RequestTelemetryMixin):
     """
 
     # The default namespace placeholder is used when namespace is None for get_module API.
-    DEFAULT_COMPONENT_NAMESPACE_PLACEHOLDER = '-'
-    DEFAULT_MODULE_WORKING_MECHANISM = 'OutputToDataset'
-    DEFAULT_DATATYPE_MECHANISM = 'RegisterBuildinDataTypeOnly'
-    MODULE_CLUSTER_ADDRESS = 'MODULE_CLUSTER_ADDRESS'
-    WORKSPACE_INDEPENDENT_ENDPOINT_ADDRESS = 'WORKSPACE_INDEPENDENT_ENDPOINT_ADDRESS'
-    DEFAULT_BASE_URL = 'https://{}.api.azureml.ms'
-    MASTER_BASE_API = 'https://master.api.azureml-test.ms'
-    DEFAULT_BASE_REGION = 'westus2'
-    AML_USE_ARM_TOKEN = 'AML_USE_ARM_TOKEN'
+    DEFAULT_COMPONENT_NAMESPACE_PLACEHOLDER = "-"
+    DEFAULT_MODULE_WORKING_MECHANISM = "OutputToDataset"
+    DEFAULT_DATATYPE_MECHANISM = "RegisterBuildinDataTypeOnly"
+    MODULE_CLUSTER_ADDRESS = "MODULE_CLUSTER_ADDRESS"
+    WORKSPACE_INDEPENDENT_ENDPOINT_ADDRESS = "WORKSPACE_INDEPENDENT_ENDPOINT_ADDRESS"
+    DEFAULT_BASE_URL = "https://{}.api.azureml.ms"
+    MASTER_BASE_API = "https://master.api.azureml-test.ms"
+    DEFAULT_BASE_REGION = "westus2"
+    AML_USE_ARM_TOKEN = "AML_USE_ARM_TOKEN"
 
     def __init__(self, workspace, credential, base_url=None, region=None, **kwargs):
         """Initializes DesignerServiceCaller."""
@@ -88,13 +86,15 @@ class FlowServiceCaller(RequestTelemetryMixin):
         retry_policy = RetryPolicy()
         # stop retry 500 since it will cause 409 for run creation scenario
         retry_policy._retry_on_status_codes.remove(500)
-        self.caller = AzureMachineLearningDesignerServiceClient(base_url=base_url, retry_policy=retry_policy, **kwargs)
+        self.caller = AzureMachineLearningDesignerServiceClient(
+            base_url=base_url, retry_policy=retry_policy, **kwargs
+        )
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default")
         custom_header = {
             "Authorization": "Bearer " + token.token,
-            "x-ms-client-request-id": str(uuid.uuid4())
+            "x-ms-client-request-id": str(uuid.uuid4()),
         }
         return custom_header
 
@@ -105,7 +105,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         workspace_name,  # type: str
         experiment_id=None,  # type: Optional[str]
         body=None,  # type: Optional["_models.CreateFlowRequest"]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         # TODO: move the wrapper to decorator
         self._refresh_request_id_for_telemetry()
@@ -118,10 +118,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 experiment_id=experiment_id,
                 body=body,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def create_component_from_flow(
         self,
@@ -129,7 +131,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         resource_group_name,  # type: str
         workspace_name,  # type: str
         body=None,  # type: Optional["_models.LoadFlowAsComponentRequest"]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -140,14 +142,18 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 workspace_name=workspace_name,
                 body=body,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except ResourceExistsError:
-            return f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}" \
-                   f"/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}" \
-                   f"/components/{body.component_name}/versions/{body.component_version}"
+            return (
+                f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
+                f"/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+                f"/components/{body.component_name}/versions/{body.component_version}"
+            )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def list_flows(
         self,
@@ -158,7 +164,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         owned_only=None,  # type: Optional[bool]
         flow_type=None,  # type: Optional[Union[str, "_models.FlowType"]]
         list_view_type=None,  # type: Optional[Union[str, "_models.ListViewType"]]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -175,7 +181,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def submit_flow(
         self,
@@ -185,7 +193,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         experiment_id,  # type: str
         endpoint_name=None,  # type: Optional[str]
         body=None,  # type: Optional["_models.SubmitFlowRequest"]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -198,10 +206,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 endpoint_name=endpoint_name,
                 body=body,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def get_flow(
         self,
@@ -210,7 +220,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         workspace_name,  # type: str
         flow_id,  # type: str
         experiment_id,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -222,10 +232,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 experiment_id=experiment_id,
                 flow_id=flow_id,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def create_connection(
         self,
@@ -234,7 +246,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         workspace_name,  # type: str
         connection_name,  # type: str
         body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequest"]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -246,10 +258,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 connection_name=connection_name,
                 body=body,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def update_connection(
         self,
@@ -258,7 +272,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         workspace_name,  # type: str
         connection_name,  # type: str
         body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequestDto"]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -270,10 +284,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 connection_name=connection_name,
                 body=body,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def get_connection(
         self,
@@ -281,7 +297,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         resource_group_name,  # type: str
         workspace_name,  # type: str
         connection_name,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -292,10 +308,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 workspace_name=workspace_name,
                 connection_name=connection_name,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def delete_connection(
         self,
@@ -303,7 +321,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         resource_group_name,  # type: str
         workspace_name,  # type: str
         connection_name,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -314,17 +332,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 workspace_name=workspace_name,
                 connection_name=connection_name,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def list_connections(
         self,
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -334,17 +354,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def list_connection_specs(
         self,
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -354,17 +376,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def list_runs(
         self,
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         """List runs in the workspace.
 
@@ -379,18 +403,20 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def submit_bulk_run(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            body=None,  # type: Optional["_models.SubmitBulkRunRequest"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        body=None,  # type: Optional["_models.SubmitBulkRunRequest"]
+        **kwargs,  # type: Any
     ):
         """submit_bulk_run.
 
@@ -416,10 +442,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 workspace_name=workspace_name,
                 headers=headers,
                 body=body,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def get_bulk_run(
         self,
@@ -427,7 +455,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         resource_group_name,  # type: str
         workspace_name,  # type: str
         flow_run_id,  # type: str
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -438,10 +466,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 workspace_name=workspace_name,
                 flow_run_id=flow_run_id,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def get_child_runs(
         self,
@@ -452,7 +482,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         index=None,  # type: Optional[int]
         start_index=None,  # type: Optional[int]
         end_index=None,  # type: Optional[int]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -466,10 +496,12 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 start_index=start_index,
                 end_index=end_index,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e
 
     def get_node_runs(
         self,
@@ -482,7 +514,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         start_index=None,  # type: Optional[int]
         end_index=None,  # type: Optional[int]
         aggregation=False,  # type: Optional[bool]
-        **kwargs  # type: Any
+        **kwargs,  # type: Any
     ):
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -498,7 +530,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 end_index=end_index,
                 aggregation=aggregation,
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+            raise FlowRequestException(
+                f"Request id: {headers['x-ms-client-request-id']}"
+            ) from e

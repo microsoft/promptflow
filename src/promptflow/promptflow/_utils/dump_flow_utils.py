@@ -67,7 +67,9 @@ def _dump_request_to_model(request: BatchFlowRequest, dump_to: Path):
     save_json_dict(dump_to / SAMPLES_FILE, serialize(request.batch_inputs))
 
 
-def dump_from_flow_obj(f, dump_to, mode, inputs: Dict[str, Union[Any, List[Any]]] = None):
+def dump_from_flow_obj(
+    f, dump_to, mode, inputs: Dict[str, Union[Any, List[Any]]] = None
+):
     """Dump flow object to flow json with different mode."""
     inputs = inputs or {}
     if not hasattr(f, "__flow") or f.__flow is None:

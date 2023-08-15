@@ -42,14 +42,24 @@ class StringTransformedEnum(Field):
     def _serialize(self, value, attr, obj, **kwargs):
         if not value:
             return
-        if isinstance(value, str) and self.casing_transform(value) in self.allowed_values:
+        if (
+            isinstance(value, str)
+            and self.casing_transform(value) in self.allowed_values
+        ):
             return value if self.pass_original else self.casing_transform(value)
-        raise ValidationError(f"Value {value!r} passed is not in set {self.allowed_values}")
+        raise ValidationError(
+            f"Value {value!r} passed is not in set {self.allowed_values}"
+        )
 
     def _deserialize(self, value, attr, data, **kwargs):
-        if isinstance(value, str) and self.casing_transform(value) in self.allowed_values:
+        if (
+            isinstance(value, str)
+            and self.casing_transform(value) in self.allowed_values
+        ):
             return value if self.pass_original else self.casing_transform(value)
-        raise ValidationError(f"Value {value!r} passed is not in set {self.allowed_values}")
+        raise ValidationError(
+            f"Value {value!r} passed is not in set {self.allowed_values}"
+        )
 
 
 class LocalPathField(fields.Str):
@@ -83,11 +93,15 @@ class LocalPathField(fields.Str):
             # for non-path string like "azureml:/xxx", OSError can be raised in either
             # resolve() or is_dir() or is_file()
             result = result.resolve()
-            if (self._allow_dir and result.is_dir()) or (self._allow_file and result.is_file()):
+            if (self._allow_dir and result.is_dir()) or (
+                self._allow_file and result.is_file()
+            ):
                 return result
         except OSError:
             raise self.make_error("invalid_path")
-        raise self.make_error("path_not_exist", path=result.as_posix(), allow_type=self.allowed_path_type)
+        raise self.make_error(
+            "path_not_exist", path=result.as_posix(), allow_type=self.allowed_path_type
+        )
 
     @property
     def allowed_path_type(self) -> str:
@@ -110,13 +124,17 @@ class LocalPathField(fields.Str):
         if value is None:
             return None
         # always dump path as absolute path in string as base_path will be dropped after serialization
-        return super(LocalPathField, self)._serialize(self._resolve_path(value).as_posix(), attr, obj, **kwargs)
+        return super(LocalPathField, self)._serialize(
+            self._resolve_path(value).as_posix(), attr, obj, **kwargs
+        )
 
     def _deserialize(self, value, attr, data, **kwargs):
         # resolve to absolute path
         if value is None:
             return None
-        return super()._deserialize(self._resolve_path(value).as_posix(), attr, data, **kwargs)
+        return super()._deserialize(
+            self._resolve_path(value).as_posix(), attr, data, **kwargs
+        )
 
 
 # Note: Currently contains a bug where the order in which fields are inputted can potentially cause a bug
@@ -125,17 +143,23 @@ class LocalPathField(fields.Str):
 # inputs = UnionField([fields.List(NestedField(DataSchema)), NestedField(DataSchema)])
 # inputs = UnionField([NestedField(DataSchema), fields.List(NestedField(DataSchema))])
 class UnionField(fields.Field):
-    def __init__(self, union_fields: typing.List[fields.Field], is_strict=False, **kwargs):
+    def __init__(
+        self, union_fields: typing.List[fields.Field], is_strict=False, **kwargs
+    ):
         super().__init__(**kwargs)
         try:
             # add the validation and make sure union_fields must be subclasses or instances of
             # marshmallow.base.FieldABC
-            self._union_fields = [resolve_field_instance(cls_or_instance) for cls_or_instance in union_fields]
+            self._union_fields = [
+                resolve_field_instance(cls_or_instance)
+                for cls_or_instance in union_fields
+            ]
             # TODO: make serialization/de-serialization work in the same way as json schema when is_strict is True
             self.is_strict = is_strict  # S\When True, combine fields with oneOf instead of anyOf at schema generation
         except FieldInstanceResolutionError as error:
             raise ValueError(
-                'Elements of "union_fields" must be subclasses or ' "instances of marshmallow.base.FieldABC."
+                'Elements of "union_fields" must be subclasses or '
+                "instances of marshmallow.base.FieldABC."
             ) from error
 
     @property
@@ -195,9 +219,13 @@ class UnionField(fields.Field):
                     and isinstance(schema.schema, PathAwareSchema)
                 ):
                     # use old base path to recover original base path
-                    schema.schema.context[BASE_PATH_CONTEXT_KEY] = schema.schema.old_base_path
+                    schema.schema.context[
+                        BASE_PATH_CONTEXT_KEY
+                    ] = schema.schema.old_base_path
                     # recover base path of parent schema
-                    schema.context[BASE_PATH_CONTEXT_KEY] = schema.schema.context[BASE_PATH_CONTEXT_KEY]
+                    schema.context[BASE_PATH_CONTEXT_KEY] = schema.schema.context[
+                        BASE_PATH_CONTEXT_KEY
+                    ]
         raise ValidationError(errors, field_name=attr)
 
 

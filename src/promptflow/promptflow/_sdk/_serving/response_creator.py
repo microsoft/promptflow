@@ -8,19 +8,26 @@ from types import GeneratorType
 from flask import Response, jsonify
 from werkzeug.datastructures import MIMEAccept
 
-from promptflow._sdk._serving.error_codes import MultipleStreamOutputFieldsNotSupported, NotAcceptable
+from promptflow._sdk._serving.error_codes import (
+    MultipleStreamOutputFieldsNotSupported,
+    NotAcceptable,
+)
 
 
 class ResponseCreator:
     """Generates http response from flow run result."""
 
-    def __init__(self,
-                 flow_run_result,
-                 accept_mimetypes,
-                 stream_start_callback_func=None,
-                 stream_end_callback_func=None):
+    def __init__(
+        self,
+        flow_run_result,
+        accept_mimetypes,
+        stream_start_callback_func=None,
+        stream_end_callback_func=None,
+    ):
         # Fields that are with GeneratorType are streaming outputs.
-        stream_fields = [k for k, v in flow_run_result.items() if isinstance(v, GeneratorType)]
+        stream_fields = [
+            k for k, v in flow_run_result.items() if isinstance(v, GeneratorType)
+        ]
         if len(stream_fields) > 1:
             raise MultipleStreamOutputFieldsNotSupported()
 
@@ -96,10 +103,14 @@ class ResponseCreator:
                 return self.create_json_response()
             else:
                 raise NotAcceptable(
-                    media_type=self.accept_mimetypes, supported_media_types="text/event-stream, application/json"
+                    media_type=self.accept_mimetypes,
+                    supported_media_types="text/event-stream, application/json",
                 )
         else:
             if self.accept_json:
                 return self.create_json_response()
             else:
-                raise NotAcceptable(media_type=self.accept_mimetypes, supported_media_types="application/json")
+                raise NotAcceptable(
+                    media_type=self.accept_mimetypes,
+                    supported_media_types="application/json",
+                )

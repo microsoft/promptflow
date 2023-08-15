@@ -14,7 +14,9 @@ from azure.ai.ml.operations import WorkspaceOperations
 
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow._sdk.entities._connection import _Connection
-from promptflow.azure._entities._workspace_connection_spec import WorkspaceConnectionSpec
+from promptflow.azure._entities._workspace_connection_spec import (
+    WorkspaceConnectionSpec,
+)
 
 
 class ConnectionOperations(_ScopeDependentOperations):
@@ -26,12 +28,12 @@ class ConnectionOperations(_ScopeDependentOperations):
     """
 
     def __init__(
-            self,
-            operation_scope: OperationScope,
-            operation_config: OperationConfig,
-            all_operations: OperationsContainer,
-            credential,
-            **kwargs: Dict,
+        self,
+        operation_scope: OperationScope,
+        operation_config: OperationConfig,
+        all_operations: OperationsContainer,
+        credential,
+        **kwargs: Dict,
     ):
         super(ConnectionOperations, self).__init__(operation_scope, operation_config)
         self._all_operations = all_operations
@@ -66,7 +68,7 @@ class ConnectionOperations(_ScopeDependentOperations):
             resource_group_name=self._operation_scope.resource_group_name,
             workspace_name=self._operation_scope.workspace_name,
             connection_name=name,
-            **kwargs
+            **kwargs,
         )
 
         return _Connection._from_rest_object(rest_conn)
@@ -77,7 +79,7 @@ class ConnectionOperations(_ScopeDependentOperations):
             resource_group_name=self._operation_scope.resource_group_name,
             workspace_name=self._operation_scope.workspace_name,
             connection_name=name,
-            **kwargs
+            **kwargs,
         )
 
     def list(self, **kwargs):
@@ -85,19 +87,16 @@ class ConnectionOperations(_ScopeDependentOperations):
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
             workspace_name=self._operation_scope.workspace_name,
-            **kwargs
+            **kwargs,
         )
 
         return [Connection._from_rest_object(conn) for conn in rest_connections]
 
-    def list_connection_specs(
-        self,
-        **kwargs
-    ):
+    def list_connection_specs(self, **kwargs):
         results = self._service_caller.list_connection_specs(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
             workspace_name=self._operation_scope.workspace_name,
-            **kwargs
+            **kwargs,
         )
         return [WorkspaceConnectionSpec._from_rest_object(spec) for spec in results]

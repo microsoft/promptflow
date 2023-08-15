@@ -37,7 +37,6 @@ def my_python_tool(
     connection: AzureOpenAIConnection = None,
     **kwargs,
 ) -> str:
-
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
     # Assert environment variable resolved

@@ -92,7 +92,11 @@ class TestExecutorLogs:
             executor = FlowExecutor.create(get_yaml_file(folder_name), {})
             executor.exec_line({"text": "line_text"})
             log_content = load_content(flow_run_log_path)
-            node_logs_list = ["print_input in line", "stdout> STDOUT:", "stderr> STDERR:"]
+            node_logs_list = [
+                "print_input in line",
+                "stdout> STDOUT:",
+                "stderr> STDERR:",
+            ]
             assert all(node_log in log_content for node_log in node_logs_list)
 
         # bulk run: test exec_bulk

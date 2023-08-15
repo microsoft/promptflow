@@ -9,7 +9,9 @@ from typing import Optional
 
 class LoggerFactory:
     @staticmethod
-    def get_logger(name: str, verbosity: int = logging.INFO, target_stdout: bool = False):
+    def get_logger(
+        name: str, verbosity: int = logging.INFO, target_stdout: bool = False
+    ):
         logger = logging.getLogger(name)
         logger.propagate = False
         logger.setLevel(logging.DEBUG)
@@ -22,18 +24,28 @@ class LoggerFactory:
         return logger
 
     @staticmethod
-    def _find_handler(logger: logging.Logger, handler_type: type) -> Optional[logging.Handler]:
+    def _find_handler(
+        logger: logging.Logger, handler_type: type
+    ) -> Optional[logging.Handler]:
         for log_handler in logger.handlers:
             if isinstance(log_handler, handler_type):
                 return log_handler
         return None
 
     @staticmethod
-    def _add_handler(logger: logging.Logger, verbosity: int, target_stdout: bool = False) -> None:
+    def _add_handler(
+        logger: logging.Logger, verbosity: int, target_stdout: bool = False
+    ) -> None:
         # set target_stdout=True can log data into sys.stdout instead of default sys.stderr, in this way
         # logger info and python print result can be synchronized
-        handler = logging.StreamHandler(stream=sys.stdout) if target_stdout else logging.StreamHandler()
-        formatter = logging.Formatter("[%(asctime)s][%(name)s][%(levelname)s] - %(message)s")
+        handler = (
+            logging.StreamHandler(stream=sys.stdout)
+            if target_stdout
+            else logging.StreamHandler()
+        )
+        formatter = logging.Formatter(
+            "[%(asctime)s][%(name)s][%(levelname)s] - %(message)s"
+        )
         handler.setFormatter(formatter)
         handler.setLevel(verbosity)
         logger.addHandler(handler)

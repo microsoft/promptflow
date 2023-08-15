@@ -26,6 +26,7 @@ def configure(client: MLClient, **kwargs):
     logger.info(f"Configured MLClient {_CLIENT} with runtime {_RUNTIME}")
 
     from . import PFClient
+
     _PF_CLIENT = PFClient(_CLIENT, **kwargs)
 
 

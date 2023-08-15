@@ -135,7 +135,9 @@ class Run(YAMLTranslatableMixin):
             # show posix path to avoid windows path escaping
             result = {
                 FlowRunProperties.FLOW_PATH: Path(self.flow).as_posix(),
-                FlowRunProperties.OUTPUT_PATH: Path(get_run_output_path(self)).as_posix(),
+                FlowRunProperties.OUTPUT_PATH: Path(
+                    get_run_output_path(self)
+                ).as_posix(),
             }
             if self.run:
                 run_name = self.run.name if isinstance(self.run, Run) else self.run
@@ -161,8 +163,12 @@ class Run(YAMLTranslatableMixin):
             tags=json.loads(str(obj.tags)) if obj.tags else None,
             # keyword arguments
             created_on=datetime.datetime.fromisoformat(str(obj.created_on)),
-            start_time=datetime.datetime.fromisoformat(str(obj.start_time)) if obj.start_time else None,
-            end_time=datetime.datetime.fromisoformat(str(obj.end_time)) if obj.end_time else None,
+            start_time=datetime.datetime.fromisoformat(str(obj.start_time))
+            if obj.start_time
+            else None,
+            end_time=datetime.datetime.fromisoformat(str(obj.end_time))
+            if obj.end_time
+            else None,
             status=str(obj.status),
         )
 
@@ -176,7 +182,9 @@ class Run(YAMLTranslatableMixin):
             name=run_entity["properties"]["runId"],
             flow=Path(f"azureml://flows/{run_entity['properties']['experimentName']}"),
             type=AZURE_RUN_TYPE_2_RUN_TYPE[run_entity["properties"]["runType"]],
-            created_on=date_parser.parse(run_entity["properties"]["creationContext"]["createdTime"]),
+            created_on=date_parser.parse(
+                run_entity["properties"]["creationContext"]["createdTime"]
+            ),
             status=run_entity["annotations"]["status"],
             display_name=run_entity["annotations"]["displayName"],
             description=run_entity["annotations"]["description"],
@@ -213,7 +221,9 @@ class Run(YAMLTranslatableMixin):
             description=run_entity["description"],
             tags=run_entity["tags"],
             properties=run_entity["properties"],
-            is_archived=run_entity.get("archived", False),  # TODO: Get archived status, depends on run history team
+            is_archived=run_entity.get(
+                "archived", False
+            ),  # TODO: Get archived status, depends on run history team
             error=run_entity.get("error", None),
             run_source=RunInfoSources.RUN_HISTORY,
             portal_url=run_entity[RunDataKeys.PORTAL_URL],
@@ -263,7 +273,9 @@ class Run(YAMLTranslatableMixin):
         return Path(self.properties[FlowRunProperties.OUTPUT_PATH])
 
     def _to_dict(self):
-        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+        from promptflow._sdk.operations._local_storage_operations import (
+            LocalStorageOperations,
+        )
 
         result = {
             "name": self.name,
@@ -287,12 +299,16 @@ class Run(YAMLTranslatableMixin):
             result["creation_context"] = self._creation_context
             result["flow_name"] = self._experiment_name
             result["is_archived"] = self._is_archived
-            result["start_time"] = self._start_time.isoformat() if self._start_time else None
+            result["start_time"] = (
+                self._start_time.isoformat() if self._start_time else None
+            )
             result["end_time"] = self._end_time.isoformat() if self._end_time else None
             result["duration"] = self._duration
         elif self._run_source == RunInfoSources.RUN_HISTORY:
             result["creation_context"] = self._creation_context
-            result["start_time"] = self._start_time.isoformat() if self._start_time else None
+            result["start_time"] = (
+                self._start_time.isoformat() if self._start_time else None
+            )
             result["end_time"] = self._end_time.isoformat() if self._end_time else None
             result["duration"] = self._duration
             result[RunDataKeys.PORTAL_URL] = self._portal_url
@@ -358,7 +374,10 @@ class Run(YAMLTranslatableMixin):
     def _to_rest_object(self):
         from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
-        from promptflow.azure._restclient.flow.models import BatchDataInput, SubmitBulkRunRequest
+        from promptflow.azure._restclient.flow.models import (
+            BatchDataInput,
+            SubmitBulkRunRequest,
+        )
 
         if self.run is not None:
             if isinstance(self.run, Run):
@@ -416,7 +435,11 @@ class Run(YAMLTranslatableMixin):
 
     def _check_run_status_is_completed(self) -> None:
         if self.status != RunStatus.COMPLETED:
-            error_message = f"Run {self.name!r} is not completed, the status is {self.status!r}."
+            error_message = (
+                f"Run {self.name!r} is not completed, the status is {self.status!r}."
+            )
             if self.status != RunStatus.FAILED:
-                error_message += " Please wait for its completion, or select other completed run(s)."
+                error_message += (
+                    " Please wait for its completion, or select other completed run(s)."
+                )
             raise InvalidRunStatusError(error_message)

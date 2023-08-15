@@ -23,4 +23,6 @@ class Trace:
     end_time: Optional[float] = None  # The timestamp of the end time
     error: Optional[str] = None
     children: Optional[List["Trace"]] = None
-    node_name: Optional[str] = None  # The node name of the trace, used for flow level trace
+    node_name: Optional[
+        str
+    ] = None  # The node name of the trace, used for flow level trace

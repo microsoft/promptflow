@@ -39,9 +39,13 @@ class YAMLTranslatableMixin(abc.ABC):
             return super(YAMLTranslatableMixin, self).__str__()
 
     @classmethod
-    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str, **kwargs):
+    def _load_from_dict(
+        cls, data: Dict, context: Dict, additional_message: str, **kwargs
+    ):
         schema_cls = cls._get_schema_cls()
-        loaded_data = load_from_dict(schema_cls, data, context, additional_message, **kwargs)
+        loaded_data = load_from_dict(
+            schema_cls, data, context, additional_message, **kwargs
+        )
         # pop the type field since it already exists in class init
         loaded_data.pop(CommonYamlFields.TYPE, None)
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)

@@ -9,7 +9,10 @@ import sys
 from pathlib import Path
 
 from promptflow._core.tools_manager import collect_package_tools
-from promptflow._utils.generate_tool_meta_utils import generate_prompt_meta_dict, generate_python_meta_dict
+from promptflow._utils.generate_tool_meta_utils import (
+    generate_prompt_meta_dict,
+    generate_python_meta_dict,
+)
 
 
 def infer_tool_type_by_file(f: Path, tool_type):
@@ -48,7 +51,9 @@ def collect_script_tool(args, working_dir):
     elif tool_type == "llm":
         meta_dict = generate_prompt_meta_dict(name, content, source=args.file)
     elif tool_type == "prompt":
-        meta_dict = generate_prompt_meta_dict(name, content, prompt_only=True, source=args.file)
+        meta_dict = generate_prompt_meta_dict(
+            name, content, prompt_only=True, source=args.file
+        )
     else:
         raise ValueError(f"Unsupported tool type {args.type}.")
     useless_variables = ["outputs", "name"]
@@ -60,11 +65,19 @@ def collect_script_tool(args, working_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate meta for a tool.")
-    parser.add_argument("--list", help="List all the tools in current packages.", action="store_true")
+    parser.add_argument(
+        "--list", help="List all the tools in current packages.", action="store_true"
+    )
     parser.add_argument("--file", "-f", help="Path to the tool script file.", type=str)
-    parser.add_argument("--working-dir", "-wd", help="Flow working directory of the tool.", default=None)
-    parser.add_argument("--type", "-t", help="Type of the tool, python or llm or prompt.")
-    parser.add_argument("--output", "-o", help="Path to the output tool json file.", required=True)
+    parser.add_argument(
+        "--working-dir", "-wd", help="Flow working directory of the tool.", default=None
+    )
+    parser.add_argument(
+        "--type", "-t", help="Type of the tool, python or llm or prompt."
+    )
+    parser.add_argument(
+        "--output", "-o", help="Path to the output tool json file.", required=True
+    )
     parser.add_argument("--mode", "-m", choices=["append", "output"], default="append")
     args = parser.parse_args()
     working_dir = Path(args.working_dir or Path.cwd()).absolute().resolve()

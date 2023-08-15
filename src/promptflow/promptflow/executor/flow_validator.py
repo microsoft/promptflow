@@ -39,11 +39,16 @@ class FlowValidator:
         picked = set()
         for _ in range(len(flow.nodes)):
             available_nodes_iterator = (
-                n for n in flow.nodes if n.name not in picked and all(d in picked for d in dependencies[n.name])
+                n
+                for n in flow.nodes
+                if n.name not in picked
+                and all(d in picked for d in dependencies[n.name])
             )
             node_to_pick = next(available_nodes_iterator, None)
             if not node_to_pick:
-                raise NodeCircularDependency(message=f"There is a circular dependency in the flow '{flow.name}'.")
+                raise NodeCircularDependency(
+                    message=f"There is a circular dependency in the flow '{flow.name}'."
+                )
             sorted_nodes.append(node_to_pick)
             picked.add(node_to_pick.name)
         if any(n1.name != n2.name for n1, n2 in zip(flow.nodes, sorted_nodes)):
@@ -76,7 +81,9 @@ class FlowValidator:
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
-    def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def resolve_flow_inputs_type(
+        flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None
+    ) -> Mapping[str, Any]:
         """
         Resolve inputs by type if existing. Ignore missing inputs. This method is used for PRS case
 
@@ -94,7 +101,9 @@ class FlowValidator:
         return updated_inputs
 
     @staticmethod
-    def ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def ensure_flow_inputs_type(
+        flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None
+    ) -> Mapping[str, Any]:
         """
         Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
@@ -103,7 +112,9 @@ class FlowValidator:
         """
         for k, v in flow.inputs.items():
             if k not in inputs:
-                message = f"Input '{k}'" if idx is None else f"Input '{k}' in line {idx}"
+                message = (
+                    f"Input '{k}'" if idx is None else f"Input '{k}' in line {idx}"
+                )
                 raise InputNotFound(message=f"{message} is not provided for flow.")
         return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
 
@@ -120,7 +131,11 @@ class FlowValidator:
         for k, v in node.inputs.items():
             if v.value_type == InputValueType.FLOW_INPUT:
                 if v.value not in flow.inputs:
-                    flow_input_keys = ", ".join(flow.inputs.keys()) if flow.inputs is not None else None
+                    flow_input_keys = (
+                        ", ".join(flow.inputs.keys())
+                        if flow.inputs is not None
+                        else None
+                    )
                     raise InputNotFound(
                         message=f"Node input {k} is not found in flow input '{flow_input_keys}' for node"
                     )
@@ -130,7 +145,9 @@ class FlowValidator:
                         message=f"Node input {k} is not found in input data with keys of '{input_keys}' for node"
                     )
                 try:
-                    updated_inputs[v.value] = flow.inputs[v.value].type.parse(inputs[v.value])
+                    updated_inputs[v.value] = flow.inputs[v.value].type.parse(
+                        inputs[v.value]
+                    )
                 except Exception as e:
                     msg = (
                         f"Input '{k}' for node '{node.name}' of value '{inputs[v.value]}' "
@@ -143,10 +160,16 @@ class FlowValidator:
     def _ensure_outputs_valid(flow: Flow):
         updated_outputs = {}
         for k, v in flow.outputs.items():
-            if v.reference.value_type == InputValueType.LITERAL and v.reference.value == "":
+            if (
+                v.reference.value_type == InputValueType.LITERAL
+                and v.reference.value == ""
+            ):
                 msg = f"Output '{k}' is empty."
                 raise EmptyOutputError(message=msg)
-            if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
+            if (
+                v.reference.value_type == InputValueType.FLOW_INPUT
+                and v.reference.value not in flow.inputs
+            ):
                 msg = f"Output '{k}' references flow input '{v.reference.value}' which is not in the flow."
                 raise OutputReferenceNotFound(message=msg)
             if v.reference.value_type == InputValueType.NODE_REFERENCE:
@@ -164,7 +187,8 @@ class FlowValidator:
 
     @staticmethod
     def ensure_flow_inputs_mapping_valid(
-        flow_inputs: Mapping[str, FlowInputDefinition], inputs_mapping: Mapping[str, str]
+        flow_inputs: Mapping[str, FlowInputDefinition],
+        inputs_mapping: Mapping[str, str],
     ):
         if not flow_inputs:
             return
@@ -176,5 +200,7 @@ class FlowValidator:
                     "All available keys in mapping are {inputs_mapping_keys}."
                 )
                 raise InputNotFoundInInputsMapping(
-                    message_format=message_format, input_key=each_input, inputs_mapping_keys=list(inputs_mapping.keys())
+                    message_format=message_format,
+                    input_key=each_input,
+                    inputs_mapping_keys=list(inputs_mapping.keys()),
                 )

@@ -36,9 +36,17 @@ from promptflow.contracts.flow import Flow, InputAssignment, InputValueType, Nod
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, UserErrorException
+from promptflow.exceptions import (
+    ErrorTarget,
+    PromptflowException,
+    SystemErrorException,
+    UserErrorException,
+)
 from promptflow.executor._tool_resolver import ToolResolver
-from promptflow.executor.error_codes import InputNotFound, InputNotFoundFromAncestorNodeOutput
+from promptflow.executor.error_codes import (
+    InputNotFound,
+    InputNotFoundFromAncestorNodeOutput,
+)
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.executor.tool_invoker import DefaultToolInvoker
 from promptflow.storage import AbstractRunStorage, DummyRunStorage
@@ -98,13 +106,19 @@ class FlowExecutor:
         self._flow = flow
         self._flow_id = flow.id or str(uuid.uuid4())
         self._connections = connections
-        self._aggregation_inputs_references = self._get_aggregation_inputs_properties(flow)
-        self._aggregation_nodes = {node.name for node in self._flow.nodes if node.reduce}
+        self._aggregation_inputs_references = self._get_aggregation_inputs_properties(
+            flow
+        )
+        self._aggregation_nodes = {
+            node.name for node in self._flow.nodes if node.reduce
+        }
         if worker_count is not None:
             self._worker_count = worker_count
         else:
             try:
-                worker_count = int(os.environ.get("PF_WORKER_COUNT", self.DEFAULT_WORKER_COUNT))
+                worker_count = int(
+                    os.environ.get("PF_WORKER_COUNT", self.DEFAULT_WORKER_COUNT)
+                )
                 self._worker_count = worker_count
             except Exception:
                 self._worker_count = self.DEFAULT_WORKER_COUNT
@@ -116,7 +130,9 @@ class FlowExecutor:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
             custom_tools = {
-                node.name: self._tools_manager._load_custom_tool(tool_to_meta[node.tool], node.name)
+                node.name: self._tools_manager._load_custom_tool(
+                    tool_to_meta[node.tool], node.name
+                )
                 for node in flow.nodes
                 if not self._tools_manager.loaded(node.name)
             }
@@ -126,7 +142,9 @@ class FlowExecutor:
             # Will try to find one common way to handle this case.
             raise e
         except Exception as e:
-            raise ValueError(f"Failed to load custom tools for flow due to exception:\n {e}.") from e
+            raise ValueError(
+                f"Failed to load custom tools for flow due to exception:\n {e}."
+            ) from e
         for node in flow.nodes:
             self._tools_manager.assert_loaded(node.name)
         self._raise_ex = raise_ex
@@ -152,9 +170,16 @@ class FlowExecutor:
         tool_resolver = ToolResolver(working_dir, ConnectionManager(connections))
 
         with _change_working_dir(working_dir):
-            resolved_tools = [tool_resolver.resolve_tool_by_node(node) for node in flow.nodes]
+            resolved_tools = [
+                tool_resolver.resolve_tool_by_node(node) for node in flow.nodes
+            ]
         flow = Flow(
-            flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
+            flow.id,
+            flow.name,
+            [r.node for r in resolved_tools],
+            inputs=flow.inputs,
+            outputs=flow.outputs,
+            tools=[],
         )
         # ensure_flow_valid including validation + resolve
         # Todo: 1) split pure validation + resovle from below method 2) provide completed validation()
@@ -200,18 +225,26 @@ class FlowExecutor:
         if node is None:
             raise ValueError(f"Node {node_name} not found in flow {flow_file}.")
         if not node.source or not node.type:
-            raise ValueError(f"Node {node_name} is not a valid node in flow {flow_file}.")
+            raise ValueError(
+                f"Node {node_name} is not a valid node in flow {flow_file}."
+            )
 
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(
+            flow, node, flow_inputs
+        )
 
-        tool_resolver = ToolResolver(working_dir, connection_manager=ConnectionManager(connections))
+        tool_resolver = ToolResolver(
+            working_dir, connection_manager=ConnectionManager(connections)
+        )
         resolved_node = tool_resolver.resolve_tool_by_node(node)
 
         # Prepare callable and real inputs here
 
         resolved_inputs = {}
         for k, v in resolved_node.node.inputs.items():
-            value = FlowExecutor._parse_value(v, dependency_nodes_outputs, converted_flow_inputs_for_node)
+            value = FlowExecutor._parse_value(
+                v, dependency_nodes_outputs, converted_flow_inputs_for_node
+            )
             resolved_inputs[k] = value
             if resolved_node.node.reduce:
                 # For aggregation node, we need to convert value to list.
@@ -224,7 +257,9 @@ class FlowExecutor:
 
         # Note that the init args are only used when resolving the tool,
         # so we need to remove them from the inputs before invoking.
-        resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
+        resolved_inputs = {
+            k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args
+        }
 
         # TODO: Simplify the logic here
         run_tracker = RunTracker(DummyRunStorage())
@@ -279,7 +314,9 @@ class FlowExecutor:
 
     @staticmethod
     def _get_aggregation_inputs_properties(flow: Flow) -> AbstractSet[str]:
-        normal_node_names = {node.name for node in flow.nodes if flow.is_normal_node(node.name)}
+        normal_node_names = {
+            node.name for node in flow.nodes if flow.is_normal_node(node.name)
+        }
         properties = set()
         for node in flow.nodes:
             if node.name in normal_node_names:
@@ -291,7 +328,9 @@ class FlowExecutor:
                     properties.add(value.serialize())
         return properties
 
-    def _collect_lines(self, indexes: List[int], kvs: Mapping[str, List]) -> Mapping[str, List]:
+    def _collect_lines(
+        self, indexes: List[int], kvs: Mapping[str, List]
+    ) -> Mapping[str, List]:
         """Collect the values from the kvs according to the indexes."""
         return {k: [v[i] for i in indexes] for k, v in kvs.items()}
 
@@ -302,7 +341,9 @@ class FlowExecutor:
             result[idx] = value
         return result
 
-    def _handle_failures(self, run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False):
+    def _handle_failures(
+        self, run_infos: List[FlowRunInfo], raise_on_line_failure: bool = False
+    ):
         failed = [i for i, r in enumerate(run_infos) if r.status == Status.Failed]
         failed_msg = None
         if len(failed) > 0:
@@ -319,7 +360,11 @@ class FlowExecutor:
             logger.error(failed_msg)
 
     def _exec_batch_with_threads(
-        self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, variant_id: str = ""
+        self,
+        batch_inputs: List[dict],
+        run_id,
+        validate_inputs: bool = True,
+        variant_id: str = "",
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
         # Copy context variables to new threads,
@@ -329,7 +374,9 @@ class FlowExecutor:
         self._completed_idx = manager.dict()
         parent_context = contextvars.copy_context()
         with ThreadPool(
-            processes=min(self._worker_count, nlines), initializer=set_context, initargs=(parent_context,)
+            processes=min(self._worker_count, nlines),
+            initializer=set_context,
+            initargs=(parent_context,),
         ) as pool:
             with RepeatLogTimer(
                 interval_seconds=self._log_interval,
@@ -343,7 +390,10 @@ class FlowExecutor:
             ):
                 inputs = pool.imap_unordered(
                     self._exec_in_thread,
-                    ((inputs, run_id, i, variant_id, validate_inputs) for i, inputs in enumerate(batch_inputs)),
+                    (
+                        (inputs, run_id, i, variant_id, validate_inputs)
+                        for i, inputs in enumerate(batch_inputs)
+                    ),
                 )
                 results_gen = count_and_log_progress(
                     inputs=inputs,
@@ -357,7 +407,9 @@ class FlowExecutor:
     def _generate_thread_status_messages(self, pool: ThreadPool, total_count: int):
         msgs = []
         active_threads = sum(thread.is_alive() for thread in pool._pool)
-        msgs.append(f"[Thread Pool] [Active threads: {active_threads} / {len(pool._pool)}]")
+        msgs.append(
+            f"[Thread Pool] [Active threads: {active_threads} / {len(pool._pool)}]"
+        )
         processing_lines_copy = self._processing_idx.copy()
         completed_lines_copy = self._completed_idx.copy()
         msgs.append(
@@ -372,9 +424,16 @@ class FlowExecutor:
         return msgs
 
     def _exec_bulk(
-        self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, raise_on_line_failure=False, variant_id=""
+        self,
+        batch_inputs: List[dict],
+        run_id,
+        validate_inputs: bool = True,
+        raise_on_line_failure=False,
+        variant_id="",
     ) -> List[LineResult]:
-        results = self._exec_batch_with_threads(batch_inputs, run_id, validate_inputs, variant_id)
+        results = self._exec_batch_with_threads(
+            batch_inputs, run_id, validate_inputs, variant_id
+        )
         run_infos = [r.run_info for r in results]
         self._handle_failures(run_infos, raise_on_line_failure)
         return results
@@ -395,18 +454,25 @@ class FlowExecutor:
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input)
+            for input in succeeded_batch_inputs
         ]
 
-        succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
+        succeeded_inputs = transpose(
+            resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys())
+        )
 
         aggregation_inputs = transpose(
             [result.aggregation_inputs for result in results],
             keys=self._aggregation_inputs_references,
         )
-        succeeded_aggregation_inputs = self._collect_lines(succeeded, aggregation_inputs)
+        succeeded_aggregation_inputs = self._collect_lines(
+            succeeded, aggregation_inputs
+        )
         try:
-            aggr_results = self._exec_aggregation(succeeded_inputs, succeeded_aggregation_inputs, run_id)
+            aggr_results = self._exec_aggregation(
+                succeeded_inputs, succeeded_aggregation_inputs, run_id
+            )
             logger.info("Finish executing aggregation nodes.")
             return aggr_results
         except PromptflowException as e:
@@ -449,7 +515,8 @@ class FlowExecutor:
         # Update the inputs of the aggregation nodes with the aggregation inputs.
         for node in nodes:
             node.inputs = {
-                k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs) for k, v in node.inputs.items()
+                k: FlowExecutor._try_get_aggregation_input(v, aggregation_inputs)
+                for k, v in node.inputs.items()
             }
 
         # TODO: Use a new run tracker to avoid memory increase infinitely.
@@ -472,7 +539,9 @@ class FlowExecutor:
             self._traverse_nodes_inner(context, inputs, nodes)
             node_run_infos = run_tracker.collect_child_node_runs(run_id)
             # Output is set as an empty dict, because the aggregation outputs story is not finalized.
-            return AggregationResult({}, metrics, {run.node: run for run in node_run_infos})
+            return AggregationResult(
+                {}, metrics, {run.node: run for run in node_run_infos}
+            )
         finally:
             remove_metric_logger(_log_metric)
             context.end()
@@ -487,7 +556,11 @@ class FlowExecutor:
         self._processing_idx[line_number] = thread_name
         self._run_tracker._activate_in_context()
         results = self._exec(
-            inputs, run_id=run_id, line_number=line_number, variant_id=variant_id, validate_inputs=validate_inputs
+            inputs,
+            run_id=run_id,
+            line_number=line_number,
+            variant_id=variant_id,
+            validate_inputs=validate_inputs,
         )
         self._run_tracker._deactivate_in_context()
         self._processing_idx.pop(line_number)
@@ -496,10 +569,13 @@ class FlowExecutor:
 
     def _extract_aggregation_inputs(self, nodes_outputs: dict):
         return {
-            prop: self._extract_aggregation_input(nodes_outputs, prop) for prop in self._aggregation_inputs_references
+            prop: self._extract_aggregation_input(nodes_outputs, prop)
+            for prop in self._aggregation_inputs_references
         }
 
-    def _extract_aggregation_input(self, nodes_outputs: dict, aggregation_input_property: str):
+    def _extract_aggregation_input(
+        self, nodes_outputs: dict, aggregation_input_property: str
+    ):
         assign = InputAssignment.deserialize(aggregation_input_property)
         return self._parse_value(assign, nodes_outputs, {})
 
@@ -511,7 +587,9 @@ class FlowExecutor:
     ) -> LineResult:
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
-            line_result = self._exec(inputs, run_id=run_id, line_number=index, validate_inputs=True)
+            line_result = self._exec(
+                inputs, run_id=run_id, line_number=index, validate_inputs=True
+            )
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -545,8 +623,15 @@ class FlowExecutor:
         """
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
-            line_results = self._exec_bulk(inputs, run_id, validate_inputs, raise_on_line_failure=raise_on_line_failure)
-            aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
+            line_results = self._exec_bulk(
+                inputs,
+                run_id,
+                validate_inputs,
+                raise_on_line_failure=raise_on_line_failure,
+            )
+            aggr_results = self._exec_aggregation_with_bulk_results(
+                inputs, line_results, run_id
+            )
         outputs = [
             {LINE_NUMBER_KEY: r.run_info.index, **r.output}
             for r in line_results
@@ -599,9 +684,15 @@ class FlowExecutor:
         return self.exec_bulk(resolved_inputs, run_id, validate_inputs)
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping):
-        inputs_mapping = inputs_mapping if inputs_mapping else self.default_inputs_mapping
-        FlowValidator.ensure_flow_inputs_mapping_valid(self._flow.inputs, inputs_mapping)
-        resolved_inputs = self.apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
+        inputs_mapping = (
+            inputs_mapping if inputs_mapping else self.default_inputs_mapping
+        )
+        FlowValidator.ensure_flow_inputs_mapping_valid(
+            self._flow.inputs, inputs_mapping
+        )
+        resolved_inputs = self.apply_inputs_mapping_for_all_lines(
+            inputs, inputs_mapping
+        )
         return resolved_inputs
 
     def _exec(
@@ -654,7 +745,9 @@ class FlowExecutor:
         aggregation_inputs = {}
         try:
             if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+                inputs = FlowValidator.ensure_flow_inputs_type(
+                    flow=self._flow, inputs=inputs, idx=line_number
+                )
             output, nodes_outputs = self.traverse_nodes(inputs, context)
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -680,10 +773,15 @@ class FlowExecutor:
             if node.skip:
                 skip_condition = self._parse_value(node.skip.condition, results, inputs)
                 if skip_condition == node.skip.condition_value:
-                    return_value = self._parse_value(node.skip.return_value, results, inputs)
+                    return_value = self._parse_value(
+                        node.skip.return_value, results, inputs
+                    )
                     results[node.name] = return_value
                     continue
-            kwargs = {name: self._parse_value(i, results, inputs) for name, i in (node.inputs or {}).items()}
+            kwargs = {
+                name: self._parse_value(i, results, inputs)
+                for name, i in (node.inputs or {}).items()
+            }
             f = self._tools_manager.get_tool(node.name)
             flow_execution_context.current_node = node
             result = f(**kwargs)
@@ -701,8 +799,12 @@ class FlowExecutor:
                 outputs[name] = flow_inputs[output.reference.value]
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
-                raise NotImplementedError(f"Unsupported output type {output.reference.value_type}")
-            node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
+                raise NotImplementedError(
+                    f"Unsupported output type {output.reference.value_type}"
+                )
+            node = next(
+                (n for n in self._flow.nodes if n.name == output.reference.value), None
+            )
             if not node:
                 raise ValueError(f"Invalid node name {output.reference.value}")
             if node.reduce:
@@ -716,7 +818,9 @@ class FlowExecutor:
             )
         return outputs
 
-    def traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
+    def traverse_nodes(
+        self, inputs, context: FlowExecutionContext
+    ) -> Tuple[dict, dict]:
         context.start()
         batch_nodes = [node for node in self._flow.nodes if not node.reduce]
         outputs = {}
@@ -735,19 +839,31 @@ class FlowExecutor:
             return i.value
         if i.value_type == InputValueType.FLOW_INPUT:
             if i.value not in flow_inputs:
-                flow_input_keys = ", ".join(flow_inputs.keys()) if flow_inputs is not None else None
-                raise InputNotFound(message=f"{i.value} is not found from flow inputs '{flow_input_keys}'")
+                flow_input_keys = (
+                    ", ".join(flow_inputs.keys()) if flow_inputs is not None else None
+                )
+                raise InputNotFound(
+                    message=f"{i.value} is not found from flow inputs '{flow_input_keys}'"
+                )
             return flow_inputs[i.value]
         if i.value_type == InputValueType.NODE_REFERENCE:
             if i.section != "output":
                 raise UnsupportedReference(f"Unsupported reference {i.serialize()}")
             if i.value not in nodes_outputs:
-                node_output_keys = ", ".join(nodes_outputs.keys()) if nodes_outputs is not None else None
+                node_output_keys = (
+                    ", ".join(nodes_outputs.keys())
+                    if nodes_outputs is not None
+                    else None
+                )
                 raise InputNotFoundFromAncestorNodeOutput(
                     message=f"{i.value} is not found from ancestor node output '{node_output_keys}'"
                 )
-            return FlowExecutor._parse_node_property(i.value, nodes_outputs[i.value], i.property)
-        raise NotImplementedError(f"The value type {i.value_type} cannot be parsed for input {i}")
+            return FlowExecutor._parse_node_property(
+                i.value, nodes_outputs[i.value], i.property
+            )
+        raise NotImplementedError(
+            f"The value type {i.value_type} cannot be parsed for input {i}"
+        )
 
     property_pattern = r"(\w+)|(\['.*?'\])|(\[\d+\])"
 
@@ -760,12 +876,19 @@ class FlowExecutor:
                 part = [p for p in part if p][0]
                 if part.startswith("[") and part.endswith("]"):
                     index = part[1:-1]
-                    if index.startswith("'") and index.endswith("'") or index.startswith('"') and index.endswith('"'):
+                    if (
+                        index.startswith("'")
+                        and index.endswith("'")
+                        or index.startswith('"')
+                        and index.endswith('"')
+                    ):
                         index = index[1:-1]
                     elif index.isdigit():
                         index = int(index)
                     else:
-                        raise InvalidReferenceProperty(f"Invalid index {index} when accessing property {property}")
+                        raise InvalidReferenceProperty(
+                            f"Invalid index {index} when accessing property {property}"
+                        )
                     val = val[index]
                 else:
                     if isinstance(val, dict):
@@ -773,7 +896,9 @@ class FlowExecutor:
                     else:
                         val = getattr(val, part)
         except (KeyError, IndexError, AttributeError) as e:
-            raise InvalidReferenceProperty(f"Invalid property {property} for the node {node_name}") from e
+            raise InvalidReferenceProperty(
+                f"Invalid property {property} for the node {node_name}"
+            ) from e
         return val
 
     @staticmethod
@@ -853,7 +978,9 @@ class FlowExecutor:
 
         result = {}
         for map_to_key, map_value in inputs_mapping.items():
-            if not isinstance(map_value, str):  # All non-string values are literal values.
+            if not isinstance(
+                map_value, str
+            ):  # All non-string values are literal values.
                 result[map_to_key] = map_value
                 continue
             match = re.search(r"^\${([^{}]+)}$", map_value)
@@ -922,7 +1049,9 @@ class FlowExecutor:
                             tmp_dict[index] = {}
                         tmp_dict[index][input_key] = one_line_item
         # Missing input is not acceptable line.
-        return list(filter(lambda dict: len(dict) == len(input_dict), tmp_dict.values()))
+        return list(
+            filter(lambda dict: len(dict) == len(input_dict), tmp_dict.values())
+        )
 
     @staticmethod
     def apply_inputs_mapping_for_all_lines(
@@ -969,7 +1098,10 @@ class FlowExecutor:
             raise NoneInputsMappingIsNotSupported("Inputs mapping is None.")
         merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
 
-        result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
+        result = [
+            FlowExecutor.apply_inputs_mapping(item, inputs_mapping)
+            for item in merged_list
+        ]
         return result
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
@@ -984,7 +1116,9 @@ class FlowExecutor:
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=inject_stream_options(stream_required))
+                self._tools_manager.wrap_tool(
+                    node.name, wrapper=inject_stream_options(stream_required)
+                )
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -997,7 +1131,9 @@ class FlowExecutor:
         to consume the streaming outputs and merge them into a string for executor usage.
         """
         for node in self._flow.nodes:
-            self._tools_manager.wrap_tool(node.name, wrapper=ensure_node_result_is_serializable)
+            self._tools_manager.wrap_tool(
+                node.name, wrapper=ensure_node_result_is_serializable
+            )
 
 
 def inject_stream_options(should_stream: Callable[[], bool]):

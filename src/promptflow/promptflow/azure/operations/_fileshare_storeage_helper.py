@@ -27,8 +27,14 @@ uploading_lock = defaultdict(Lock)
 
 
 class FlowFileStorageClient(FileStorageClient):
-    def __init__(self, credential: str, file_share_name: str, account_url: str, azure_cred):
-        super().__init__(credential=credential, file_share_name=file_share_name, account_url=account_url)
+    def __init__(
+        self, credential: str, file_share_name: str, account_url: str, azure_cred
+    ):
+        super().__init__(
+            credential=credential,
+            file_share_name=file_share_name,
+            account_url=account_url,
+        )
         try:
             user_alias = get_user_alias_from_credential(azure_cred)
         except Exception:
@@ -38,7 +44,11 @@ class FlowFileStorageClient(FileStorageClient):
 
         # TODO: update this after we finalize the design for flow file storage client
         # create user folder if not exist
-        for directory_path in ["Users", f"Users/{user_alias}", f"Users/{user_alias}/{PROMPTFLOW_FILE_SHARE_DIR}"]:
+        for directory_path in [
+            "Users",
+            f"Users/{user_alias}",
+            f"Users/{user_alias}/{PROMPTFLOW_FILE_SHARE_DIR}",
+        ]:
             self.directory_client = ShareDirectoryClient(
                 account_url=account_url,
                 credential=credential,
@@ -87,27 +97,33 @@ class FlowFileStorageClient(FileStorageClient):
                         ignore_file=ignore_file,
                     )
             else:
-                self.upload_file(source, dest=dest, msg=msg, show_progress=show_progress)
+                self.upload_file(
+                    source, dest=dest, msg=msg, show_progress=show_progress
+                )
 
         artifact_info = {"remote path": dest, "name": name, "version": version}
 
         return artifact_info
 
     def upload_file(
-            self,
-            source: str,
-            dest: str,
-            show_progress: Optional[bool] = None,
-            msg: Optional[str] = None,
-            in_directory: bool = False,
-            subdirectory_client: Optional[ShareDirectoryClient] = None,
-            callback: Optional[Any] = None,
+        self,
+        source: str,
+        dest: str,
+        show_progress: Optional[bool] = None,
+        msg: Optional[str] = None,
+        in_directory: bool = False,
+        subdirectory_client: Optional[ShareDirectoryClient] = None,
+        callback: Optional[Any] = None,
     ) -> None:
         """ " Upload a single file to a path inside the file system
         directory."""
-        validate_content = os.stat(source).st_size > 0  # don't do checksum for empty files
+        validate_content = (
+            os.stat(source).st_size > 0
+        )  # don't do checksum for empty files
         # relative path from root
-        relative_path = Path(subdirectory_client.directory_path).relative_to(self.directory_client.directory_path)
+        relative_path = Path(subdirectory_client.directory_path).relative_to(
+            self.directory_client.directory_path
+        )
         dest = Path(dest).relative_to(relative_path).as_posix()
         if "/" in dest:
             # dest is a folder, need to switch subdirectory client
@@ -139,16 +155,18 @@ class FlowFileStorageClient(FileStorageClient):
                             raw_response_hook=pbar.update_to,
                         )
                 else:
-                    self.directory_client.upload_file(file_name=dest, data=data, validate_content=validate_content)
+                    self.directory_client.upload_file(
+                        file_name=dest, data=data, validate_content=validate_content
+                    )
         self.uploaded_file_count = self.uploaded_file_count + 1
 
     def upload_dir(
-            self,
-            source: str,
-            dest: str,
-            msg: str,
-            show_progress: bool,
-            ignore_file: IgnoreFile,
+        self,
+        source: str,
+        dest: str,
+        msg: str,
+        show_progress: bool,
+        ignore_file: IgnoreFile,
     ) -> None:
         """Upload a directory to a path inside the fileshare directory."""
         subdir = self.directory_client.create_subdirectory(dest)
@@ -176,7 +194,9 @@ class FlowFileStorageClient(FileStorageClient):
         travers_recursively(child_dir=subdir, source_dir=source)
 
         if show_progress:
-            with DirectoryUploadProgressBar(dir_size=get_directory_size(source_path), msg=msg) as pbar:
+            with DirectoryUploadProgressBar(
+                dir_size=get_directory_size(source_path), msg=msg
+            ) as pbar:
                 for src, destination in upload_paths:
                     self.upload_file(
                         src,
@@ -200,7 +220,9 @@ class FlowFileStorageClient(FileStorageClient):
         """Recursively delete a directory with content in the file share."""
         for item in dir_client.list_directories_and_files():
             if isinstance(item, DirectoryProperties):
-                self._delete_file_share_directory(dir_client.get_subdirectory_client(item.name))
+                self._delete_file_share_directory(
+                    dir_client.get_subdirectory_client(item.name)
+                )
             else:
                 dir_client.delete_file(item.name)
 

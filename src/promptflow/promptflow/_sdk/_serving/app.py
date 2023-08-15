@@ -47,7 +47,9 @@ class PromptflowServingApp(Flask):
             logger.info(f"Static_folder: {self.static_folder}")
             self.environment_variables = kwargs.get("environment_variables", {})
             os.environ.update(self.environment_variables)
-            logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
+            logger.info(
+                f"Environment variable keys: {self.environment_variables.keys()}"
+            )
             self.sample = get_sample_json(self.project_path, logger)
             self.init_swagger()
             # ensure response has the correct content type
@@ -60,12 +62,19 @@ class PromptflowServingApp(Flask):
         logger.info("Promptflow executor starts initializing...")
         # try get the connections
         logger.info("Promptflow serving app start getting connections from local...")
-        connections = Flow._get_local_connections(executable=self.flow_entity._init_executable())
+        connections = Flow._get_local_connections(
+            executable=self.flow_entity._init_executable()
+        )
         update_environment_variables_with_connections(connections)
-        logger.info(f"Promptflow serving app get connections successfully. keys: {connections.keys()}")
+        logger.info(
+            f"Promptflow serving app get connections successfully. keys: {connections.keys()}"
+        )
         with variant_overwrite_context(self.flow_entity.code, None, None) as flow:
             self.executor = FlowExecutor.create(
-                flow_file=flow.path, working_dir=flow.code, connections=connections, raise_ex=True
+                flow_file=flow.path,
+                working_dir=flow.code,
+                connections=connections,
+                raise_ex=True,
             )
         self.executor._run_tracker.allow_generator_types = True
         self.flow = self.executor._flow
@@ -76,7 +85,9 @@ class PromptflowServingApp(Flask):
     def init_swagger(self):
         flow = self.flow_entity._init_executable()
         self.response_fields_to_remove = get_output_fields_to_remove(flow, logger)
-        self.swagger = generate_swagger(flow, self.sample, self.response_fields_to_remove)
+        self.swagger = generate_swagger(
+            flow, self.sample, self.response_fields_to_remove
+        )
 
 
 app = PromptflowServingApp(__name__)

@@ -201,7 +201,12 @@ def traverse_directory(
     result = []
     for origin_file_path in origin_file_paths:
         relative_path = origin_file_path.relative_to(root)
-        result.append((_resolve_path(origin_file_path).as_posix(), Path(prefix).joinpath(relative_path).as_posix()))
+        result.append(
+            (
+                _resolve_path(origin_file_path).as_posix(),
+                Path(prefix).joinpath(relative_path).as_posix(),
+            )
+        )
     return result
 
 

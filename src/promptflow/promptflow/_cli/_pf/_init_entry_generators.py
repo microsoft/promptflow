@@ -15,7 +15,10 @@ from promptflow._sdk._constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
-EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
+EXTRA_FILES_MAPPING = {
+    "requirements.txt": "requirements_txt",
+    ".gitignore": "gitignore",
+}
 
 
 class BaseGenerator(ABC):
@@ -33,9 +36,13 @@ class BaseGenerator(ABC):
         """Generate content based on given template and actual value of template keys."""
         with open(self.tpl_file) as f:
             entry_template = f.read()
-            entry_template = Template(entry_template, trim_blocks=True, lstrip_blocks=True)
+            entry_template = Template(
+                entry_template, trim_blocks=True, lstrip_blocks=True
+            )
 
-        return entry_template.render(**{key: getattr(self, key) for key in self.entry_template_keys})
+        return entry_template.render(
+            **{key: getattr(self, key) for key in self.entry_template_keys}
+        )
 
     def generate_to_file(self, target):
         """Generate content to a file based on given template and actual value of template keys."""
@@ -111,13 +118,17 @@ class ToolMetaGenerator(BaseGenerator):
             with open(file_name, "r") as f:
                 content = f.read()
             name = Path(file_name).stem
-            prompt_objs[key] = generate_prompt_meta_dict(name, content, prompt_only=True, source=file_name)
+            prompt_objs[key] = generate_prompt_meta_dict(
+                name, content, prompt_only=True, source=file_name
+            )
         return prompt_objs
 
     def get_tool_meta_args(self, function_obj):
         func_params = inspect.signature(function_obj).parameters
         # TODO: Support enum/union in the future
-        return {k: ValueType.from_type(v.annotation).value for k, v in func_params.items()}
+        return {
+            k: ValueType.from_type(v.annotation).value for k, v in func_params.items()
+        }
 
     @property
     def tpl_file(self):
@@ -140,7 +151,11 @@ class FlowDAGGenerator(BaseGenerator):
 
     def get_flow_inputs(self, function_obj, prompt_params):
         func_params = inspect.signature(function_obj).parameters
-        return {k: ValueType.from_type(v.annotation).value for k, v in func_params.items() if k not in prompt_params}
+        return {
+            k: ValueType.from_type(v.annotation).value
+            for k, v in func_params.items()
+            if k not in prompt_params
+        }
 
     @property
     def tpl_file(self):
@@ -148,7 +163,14 @@ class FlowDAGGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["flow_inputs", "main_node_name", "prompt_params", "tool_file", "setup_sh", "python_requirements_txt"]
+        return [
+            "flow_inputs",
+            "main_node_name",
+            "prompt_params",
+            "tool_file",
+            "setup_sh",
+            "python_requirements_txt",
+        ]
 
     def generate_to_file(self, target):
         # Get requirements.txt and setup.sh from target folder.
@@ -177,7 +199,10 @@ class FlowMetaYamlGenerator(BaseGenerator):
 def copy_extra_files(flow_path, extra_files):
     for file_name in extra_files:
         extra_file_path = (
-            Path(__file__).parent.parent / "data" / "entry_flow" / EXTRA_FILES_MAPPING.get(file_name, file_name)
+            Path(__file__).parent.parent
+            / "data"
+            / "entry_flow"
+            / EXTRA_FILES_MAPPING.get(file_name, file_name)
         )
         target_path = Path(flow_path) / file_name
         action = "Overwriting" if target_path.exists() else "Creating"

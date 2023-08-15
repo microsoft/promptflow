@@ -58,7 +58,9 @@ class _Connection(YAMLTranslatableMixin):
         """
         self.name = name
         self.type = self.TYPE
-        self.class_name = f"{self.TYPE.value}Connection"  # The type in executor connection dict
+        self.class_name = (
+            f"{self.TYPE.value}Connection"  # The type in executor connection dict
+        )
         self.configs = configs or {}
         self.module = module
         self.secrets = secrets or {}
@@ -92,17 +94,23 @@ class _Connection(YAMLTranslatableMixin):
                 v = self._secrets.get(k)
             if not v or v == SCRUBBED_VALUE:
                 # Can't find the original value, raise error.
-                raise ValueError(f"Connection {self.name!r} secrets {k!r} value invalid, please fill it.")
+                raise ValueError(
+                    f"Connection {self.name!r} secrets {k!r} value invalid, please fill it."
+                )
             encrypt_secrets[k] = encrypt_secret_value(v)
         return encrypt_secrets
 
     @classmethod
-    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
+    def _load_from_dict(
+        cls, data: Dict, context: Dict, additional_message: str = None, **kwargs
+    ):
         schema_cls = cls._get_schema_cls()
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
-            raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
+            raise Exception(
+                f"Load connection failed with {str(e)}. f{(additional_message or '')}."
+            )
         return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
 
     def _to_dict(self) -> Dict:
@@ -132,14 +140,18 @@ class _Connection(YAMLTranslatableMixin):
     @abc.abstractmethod
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
         # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
-        type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
+        type_cls, _ = cls._resolve_cls_and_type(
+            data={"type": orm_object.connectionType}
+        )
         obj = type_cls._from_orm_object_with_secrets(orm_object)
         return obj
 
     @classmethod
     def _from_orm_object(cls, orm_object: ORMConnection):
         """This function will create a connection object then scrub secrets."""
-        type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
+        type_cls, _ = cls._resolve_cls_and_type(
+            data={"type": orm_object.connectionType}
+        )
         obj = type_cls._from_orm_object_with_secrets(orm_object)
         # Note: we may can't get secret keys for custom connection from MT
         obj.secrets = {k: SCRUBBED_VALUE for k in obj.secrets}
@@ -173,7 +185,9 @@ class _Connection(YAMLTranslatableMixin):
         data = data or {}
         params_override = params_override or []
         context = {
-            BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent if yaml_path else Path("../../azure/_entities/"),
+            BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent
+            if yaml_path
+            else Path("../../azure/_entities/"),
             PARAMS_OVERRIDE_KEY: params_override,
         }
         connection_type, type_str = cls._resolve_cls_and_type(data, params_override)
@@ -198,10 +212,14 @@ class _Connection(YAMLTranslatableMixin):
 
     @classmethod
     def from_execution_connection_dict(cls, name, data) -> "_Connection":
-        type_cls, _ = cls._resolve_cls_and_type(data={"type": data.get("type")[: -len("Connection")]})
+        type_cls, _ = cls._resolve_cls_and_type(
+            data={"type": data.get("type")[: -len("Connection")]}
+        )
         value_dict = data.get("value", {})
         if type_cls == CustomConnection:
-            secrets = {k: v for k, v in value_dict.items() if k in data.get("secret_keys", [])}
+            secrets = {
+                k: v for k, v in value_dict.items() if k in data.get("secret_keys", [])
+            }
             configs = {k: v for k, v in value_dict.items() if k not in secrets}
             return CustomConnection(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
@@ -225,7 +243,9 @@ class _StrongTypeConnection(_Connection):
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
         # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
         # Both keys & secrets will be stored in configs for strong type connection.
-        type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
+        type_cls, _ = cls._resolve_cls_and_type(
+            data={"type": orm_object.connectionType}
+        )
         obj = type_cls(
             name=orm_object.connectionName,
             expiry_time=orm_object.expiryTime,
@@ -233,7 +253,9 @@ class _StrongTypeConnection(_Connection):
             last_modified_date=orm_object.lastModifiedDate,
             **json.loads(orm_object.configs),
         )
-        obj.secrets = {k: decrypt_secret_value(obj.name, v) for k, v in obj.secrets.items()}
+        obj.secrets = {
+            k: decrypt_secret_value(obj.name, v) for k, v in obj.secrets.items()
+        }
         obj._secrets = {**obj.secrets}
         return obj
 
@@ -250,9 +272,18 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
-        self, api_key: str, api_base: str, api_type: str = "azure", api_version: str = "2023-07-01-preview", **kwargs
+        self,
+        api_key: str,
+        api_base: str,
+        api_type: str = "azure",
+        api_version: str = "2023-07-01-preview",
+        **kwargs,
     ):
-        configs = {"api_base": api_base, "api_type": api_type, "api_version": api_version}
+        configs = {
+            "api_base": api_base,
+            "api_type": api_type,
+            "api_version": api_version,
+        }
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -324,7 +355,12 @@ class _EmbeddingStoreConnection(_StrongTypeConnection):
     def __init__(self, api_key: str, api_base: str, **kwargs):
         configs = {"api_base": api_base}
         secrets = {"api_key": api_key}
-        super().__init__(module="promptflow_vectordb.connections", configs=configs, secrets=secrets, **kwargs)
+        super().__init__(
+            module="promptflow_vectordb.connections",
+            configs=configs,
+            secrets=secrets,
+            **kwargs,
+        )
 
     @property
     def api_base(self):
@@ -354,7 +390,13 @@ class WeaviateConnection(_EmbeddingStoreConnection):
 class CognitiveSearchConnection(_StrongTypeConnection):
     TYPE = ConnectionType.COGNITIVE_SEARCH
 
-    def __init__(self, api_key: str, api_base: str, api_version: str = "2023-07-01-Preview", **kwargs):
+    def __init__(
+        self,
+        api_key: str,
+        api_base: str,
+        api_version: str = "2023-07-01-Preview",
+        **kwargs,
+    ):
         configs = {"api_base": api_base, "api_version": api_version}
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
@@ -391,7 +433,11 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
         api_type: str = "Content Safety",
         **kwargs,
     ):
-        configs = {"endpoint": endpoint, "api_version": api_version, "api_type": api_type}
+        configs = {
+            "endpoint": endpoint,
+            "api_version": api_version,
+            "api_type": api_type,
+        }
         secrets = {"api_key": api_key}
         super().__init__(configs=configs, secrets=secrets, **kwargs)
 
@@ -429,9 +475,20 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
     TYPE = ConnectionType.FORM_RECOGNIZER
 
     def __init__(
-        self, api_key: str, endpoint: str, api_version: str = "2023-07-31", api_type: str = "Form Recognizer", **kwargs
+        self,
+        api_key: str,
+        endpoint: str,
+        api_version: str = "2023-07-31",
+        api_type: str = "Form Recognizer",
+        **kwargs,
     ):
-        super().__init__(api_key=api_key, endpoint=endpoint, api_version=api_version, api_type=api_type, **kwargs)
+        super().__init__(
+            api_key=api_key,
+            endpoint=endpoint,
+            api_version=api_version,
+            api_type=api_type,
+            **kwargs,
+        )
 
     @classmethod
     def _get_schema_cls(cls):
@@ -441,7 +498,9 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
 class CustomConnection(_Connection):
     TYPE = ConnectionType.CUSTOM
 
-    def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
+    def __init__(
+        self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs
+    ):
         if not secrets:
             raise ValueError("secrets is required for custom connection.")
         super().__init__(secrets=secrets, configs=configs, **kwargs)
@@ -453,11 +512,15 @@ class CustomConnection(_Connection):
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
         custom_configs = {
-            k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
+            k: {"configValueType": ConfigValueType.STRING.value, "value": v}
+            for k, v in self.configs.items()
         }
         encrypted_secrets = self._validate_and_encrypt_secrets()
         custom_configs.update(
-            {k: {"configValueType": ConfigValueType.SECRET.value, "value": v} for k, v in encrypted_secrets.items()}
+            {
+                k: {"configValueType": ConfigValueType.SECRET.value, "value": v}
+                for k, v in encrypted_secrets.items()
+            }
         )
         return ORMConnection(
             connectionName=self.name,
@@ -509,5 +572,7 @@ class CustomConnection(_Connection):
 _supported_types = {
     v.TYPE.value: v
     for v in globals().values()
-    if isinstance(v, type) and issubclass(v, _Connection) and not v.__name__.startswith("_")
+    if isinstance(v, type)
+    and issubclass(v, _Connection)
+    and not v.__name__.startswith("_")
 }

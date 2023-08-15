@@ -49,7 +49,9 @@ class TestFlow:
 
     @pytest.mark.skip(reason="TODO: add back when we bring back meta.yaml")
     def test_load_flow_from_remote_storage(self):
-        local_file = tests_root_dir / "test_configs/flows/meta_files/remote_fs.meta.yaml"
+        local_file = (
+            tests_root_dir / "test_configs/flows/meta_files/remote_fs.meta.yaml"
+        )
 
         flow = load_flow(source=local_file)
 

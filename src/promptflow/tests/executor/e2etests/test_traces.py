@@ -43,7 +43,9 @@ class TestExecutorTraces:
         return get_trace
 
     def test_executor_openai_api_flow(self, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file("openai_api_flow"), dev_connections)
+        executor = FlowExecutor.create(
+            get_yaml_file("openai_api_flow"), dev_connections
+        )
         inputs = {"question": "What's your name?", "chat_history": []}
         flow_result = executor.exec_line(inputs)
 
@@ -58,7 +60,9 @@ class TestExecutorTraces:
         assert get_traced is True
 
     def test_executor_generator_tools(self, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file("generator_tools"), dev_connections)
+        executor = FlowExecutor.create(
+            get_yaml_file("generator_tools"), dev_connections
+        )
         inputs = {"text": "This is a test"}
         flow_result = executor.exec_line(inputs)
 

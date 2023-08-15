@@ -22,7 +22,10 @@ class TestOperationContext:
         assert operation_context.get_user_agent() == f"promptflow/{VERSION}"
 
         operation_context.user_agent = "test_agent/0.0.2"
-        assert operation_context.get_user_agent() == f"promptflow/{VERSION} test_agent/0.0.2"
+        assert (
+            operation_context.get_user_agent()
+            == f"promptflow/{VERSION} test_agent/0.0.2"
+        )
 
     @pytest.mark.parametrize(
         "run_mode, expected",

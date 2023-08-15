@@ -16,7 +16,9 @@ class TestValidation:
             ("input_type_not_parsable", {"num": "hello"}, InputTypeError),
         ],
     )
-    def test_input_type_invalid(self, flow_folder, line_input, error_class, dev_connections):
+    def test_input_type_invalid(
+        self, flow_folder, line_input, error_class, dev_connections
+    ):
         # case III: Single Node run - the inputs are from flow_inputs + dependency_nodes_outputs
         with pytest.raises(error_class):
             FlowExecutor.load_and_exec_node(

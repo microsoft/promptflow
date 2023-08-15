@@ -62,7 +62,10 @@ class TestFlowRun:
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             data=data_path,
             run=run,
-            column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
+            column_mapping={
+                "groundtruth": "${data.answer}",
+                "prediction": "${run.outputs.category}",
+            },
             runtime=runtime,
         )
         assert isinstance(eval_run, Run)
@@ -101,7 +104,9 @@ class TestFlowRun:
         run = remote_client.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_run_with_remote_data(self, remote_client, pf, runtime, remote_web_classification_data):
+    def test_run_with_remote_data(
+        self, remote_client, pf, runtime, remote_web_classification_data
+    ):
         # run with arm id
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -141,7 +146,9 @@ class TestFlowRun:
         assert len(runs) == 10
 
     def test_show_run(self, remote_client):
-        run = remote_client.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
+        run = remote_client.runs.get(
+            run="classification_accuracy_eval_default_20230808_153241_422491"
+        )
         run_dict = run._to_dict()
         print(json.dumps(run_dict, indent=4))
         assert run_dict == {
@@ -225,7 +232,10 @@ class TestFlowRun:
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             data=data_path,
             run=run1,
-            column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
+            column_mapping={
+                "groundtruth": "${data.answer}",
+                "prediction": "${run.outputs.category}",
+            },
             runtime=runtime,
         )
         remote_client.runs.stream(run=run2.name)
@@ -270,12 +280,16 @@ class TestFlowRun:
         from requests import Response
 
         from promptflow.azure._restclient.flow.models import SubmitBulkRunRequest
-        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+        from promptflow.azure._restclient.flow_service_caller import (
+            FlowRequestException,
+        )
 
         mock_run = MagicMock()
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow"
+        ):
             with patch.object(RequestsTransport, "send") as mock_request:
                 fake_response = Response()
                 # won't retry 500
@@ -290,7 +304,9 @@ class TestFlowRun:
                     remote_client.runs.create_or_update(run=mock_run)
                 assert mock_request.call_count == 1
 
-        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(
+            RunOperations, "_resolve_flow"
+        ):
             with patch.object(RequestsTransport, "send") as mock_request:
                 fake_response = Response()
                 # will retry 503
@@ -331,7 +347,9 @@ class TestFlowRun:
             assert body.max_idle_time_seconds is None
             return body
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+        with patch.object(
+            FlowServiceCaller, "submit_bulk_run"
+        ) as mock_submit, patch.object(RunOperations, "get"):
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(

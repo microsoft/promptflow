@@ -28,7 +28,9 @@ try:
     from azure.ai.ml.entities import Component
     from azure.ai.ml.entities._load_functions import load_common
     from azure.ai.ml.entities._assets import Code
-    from azure.ai.ml.entities._component._additional_includes import AdditionalIncludesMixin
+    from azure.ai.ml.entities._component._additional_includes import (
+        AdditionalIncludesMixin,
+    )
 except ImportError:
 
     class load_component(_DummyCallableClassForLazyImportError):
@@ -48,6 +50,7 @@ except ImportError:
 
     class AdditionalIncludesMixin(_DummyCallableClassForLazyImportError):
         pass
+
 
 __all__ = [
     "load_component",

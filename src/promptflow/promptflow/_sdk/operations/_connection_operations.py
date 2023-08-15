@@ -27,7 +27,9 @@ class ConnectionOperations:
         :return: List of run objects.
         :rtype: List[~promptflow.sdk.entities._connection._Connection]
         """
-        orm_connections = ORMConnection.list(max_results=max_results, all_results=all_results)
+        orm_connections = ORMConnection.list(
+            max_results=max_results, all_results=all_results
+        )
         return safe_parse_object_list(
             obj_list=orm_connections,
             parser=_Connection._from_orm_object,

@@ -55,7 +55,10 @@ class TestExecutor:
     def skip_serp(self, flow_folder, dev_connections):
         serp_required_flows = ["package_tools"]
         #  Real key is usually more than 32 chars
-        if flow_folder in serp_required_flows and len(dev_connections.get("serp_connection", "test")) < 32:
+        if (
+            flow_folder in serp_required_flows
+            and len(dev_connections.get("serp_connection", "test")) < 32
+        ):
             pytest.skip("serp_connection is not prepared")
 
     def test_executor_storage(self, dev_connections):
@@ -81,7 +84,9 @@ class TestExecutor:
                 run_info_in_mem = mem_run_storage._node_runs[node_run_info.run_id]
                 assert serialize(node_run_info) == serialize(run_info_in_mem)
                 msg = f"Node run name {node_run_info.node} is not correct, expected {node_name}"
-                assert mem_run_storage._node_runs[node_run_info.run_id].node == node_name
+                assert (
+                    mem_run_storage._node_runs[node_run_info.run_id].node == node_name
+                )
 
     @pytest.mark.parametrize(
         "flow_folder",
@@ -93,7 +98,9 @@ class TestExecutor:
         ],
     )
     def test_executor_exec_bulk(self, flow_folder, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder), dev_connections, raise_ex=True
+        )
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs()
         nlines = len(bulk_inputs)
@@ -103,36 +110,54 @@ class TestExecutor:
         assert len(bulk_results.outputs) == nlines, msg
         for i, output in enumerate(bulk_results.outputs):
             assert isinstance(output, dict)
-            assert "line_number" in output, f"line_number is not in {i}th output {output}"
-            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            assert (
+                "line_number" in output
+            ), f"line_number is not in {i}th output {output}"
+            assert (
+                output["line_number"] == i
+            ), f"line_number is not correct in {i}th output {output}"
         msg = f"Bulk result only has {len(bulk_results.line_results)}/{nlines} line results"
         assert len(bulk_results.line_results) == nlines, msg
         for i, line_result in enumerate(bulk_results.line_results):
             assert isinstance(line_result, LineResult)
-            assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+            assert (
+                line_result.run_info.status == Status.Completed
+            ), f"{i}th line got {line_result.run_info.status}"
 
     def test_executor_exec_bulk_then_eval(self, dev_connections):
-        classification_executor = FlowExecutor.create(get_yaml_file(SAMPLE_FLOW), dev_connections, raise_ex=True)
+        classification_executor = FlowExecutor.create(
+            get_yaml_file(SAMPLE_FLOW), dev_connections, raise_ex=True
+        )
         bulk_inputs = self.get_bulk_inputs()
         nlines = len(bulk_inputs)
         bulk_results = classification_executor.exec_bulk(bulk_inputs)
         assert len(bulk_results.outputs) == len(bulk_inputs)
-        eval_executor = FlowExecutor.create(get_yaml_file(SAMPLE_EVAL_FLOW), dev_connections, raise_ex=True)
+        eval_executor = FlowExecutor.create(
+            get_yaml_file(SAMPLE_EVAL_FLOW), dev_connections, raise_ex=True
+        )
         input_dicts = {"data": bulk_inputs, "run.outputs": bulk_results.outputs}
         inputs_mapping = {
             "variant_id": "baseline",
             "groundtruth": "${data.url}",
             "prediction": "${run.outputs.category}",
         }
-        mapped_inputs = eval_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        mapped_inputs = eval_executor.validate_and_apply_inputs_mapping(
+            input_dicts, inputs_mapping
+        )
         result = eval_executor.exec_bulk(mapped_inputs)
-        assert len(result.outputs) == nlines, f"Only {len(result.outputs)}/{nlines} outputs are returned."
+        assert (
+            len(result.outputs) == nlines
+        ), f"Only {len(result.outputs)}/{nlines} outputs are returned."
         assert len(result.metrics) > 0, "No metrics are returned."
-        assert result.metrics["accuracy"] == 0, f"Accuracy should be 0, got {result.metrics}."
+        assert (
+            result.metrics["accuracy"] == 0
+        ), f"Accuracy should be 0, got {result.metrics}."
 
     def test_executor_exec_bulk_with_metrics(self, dev_connections):
         flow_folder = SAMPLE_EVAL_FLOW
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder), dev_connections, raise_ex=True
+        )
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
         bulk_results = executor.exec_bulk(bulk_inputs, run_id)
@@ -158,7 +183,10 @@ class TestExecutor:
         assert isinstance(flow_result.output, dict)
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
-        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == node_count
+        assert (
+            isinstance(flow_result.run_info.api_calls, list)
+            and len(flow_result.run_info.api_calls) == node_count
+        )
         assert len(flow_result.node_run_infos) == node_count
         for node, node_run_info in flow_result.node_run_infos.items():
             assert node_run_info.status == Status.Completed
@@ -168,18 +196,35 @@ class TestExecutor:
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
         [
-            ("web_classification_no_variants", "summarize_text_content", {}, {"fetch_text_content_from_url": "Hello"}),
+            (
+                "web_classification_no_variants",
+                "summarize_text_content",
+                {},
+                {"fetch_text_content_from_url": "Hello"},
+            ),
             ("prompt_tools", "summarize_text_content_prompt", {"text": "text"}, {}),
             ("script_with___file__", "node1", {"text": "text"}, None),
             ("script_with___file__", "node2", None, {"node1": "text"}),
             ("script_with___file__", "node3", None, None),
-            ("package_tools", "search_by_text", {"text": "elon mask"}, None),  # Skip since no api key in CI
+            (
+                "package_tools",
+                "search_by_text",
+                {"text": "elon mask"},
+                None,
+            ),  # Skip since no api key in CI
             ("connection_as_input", "conn_node", None, None),
             ("simple_aggregation", "accuracy", {"text": "A"}, {"passthrough": "B"}),
             ("script_with_import", "node1", {"text": "text"}, None),
         ],
     )
-    def test_executor_exec_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections):
+    def test_executor_exec_node(
+        self,
+        flow_folder,
+        node_name,
+        flow_inputs,
+        dependency_nodes_outputs,
+        dev_connections,
+    ):
         self.skip_serp(flow_folder, dev_connections)
         yaml_file = get_yaml_file(flow_folder)
         run_info = FlowExecutor.load_and_exec_node(

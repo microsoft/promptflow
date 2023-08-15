@@ -22,7 +22,9 @@ from typing import Optional
 from typing import Pattern as PatternHint
 from typing import Tuple, Union
 
-NORMALIZE_PATH_SEPS = [sep for sep in [os.sep, os.altsep] if sep and sep != posixpath.sep]
+NORMALIZE_PATH_SEPS = [
+    sep for sep in [os.sep, os.altsep] if sep and sep != posixpath.sep
+]
 
 # The encoding to use when parsing a byte string pattern.
 # This provides the base definition for patterns.
@@ -85,7 +87,9 @@ class Pattern(object):
         Returns the match result if *file* matched; otherwise, :data:`None`.
         """
         raise NotImplementedError(
-            ("{0.__module__}.{0.__qualname__} must override match_file().").format(self.__class__)
+            ("{0.__module__}.{0.__qualname__} must override match_file().").format(
+                self.__class__
+            )
         )
 
 
@@ -117,9 +121,9 @@ class RegexPattern(Pattern):
         """
 
         if isinstance(pattern, (str, bytes)):
-            assert include is None, ("include:{!r} must be null when pattern:{!r} is a string.").format(
-                include, pattern
-            )
+            assert include is None, (
+                "include:{!r} must be null when pattern:{!r} is a string."
+            ).format(include, pattern)
             regex, include = self.pattern_to_regex(pattern)
             # NOTE: Make sure to allow a null regular expression to be
             # returned for a null-operation.
@@ -134,10 +138,14 @@ class RegexPattern(Pattern):
         elif pattern is None:
             # NOTE: Make sure to allow a null pattern to be passed for a
             # null-operation.
-            assert include is None, ("include:{!r} must be null when pattern:{!r} is null.").format(include, pattern)
+            assert include is None, (
+                "include:{!r} must be null when pattern:{!r} is null."
+            ).format(include, pattern)
 
         else:
-            raise TypeError("pattern:{!r} is not a string, re.Pattern, or None.".format(pattern))
+            raise TypeError(
+                "pattern:{!r} is not a string, re.Pattern, or None.".format(pattern)
+            )
 
         super(RegexPattern, self).__init__(include)
 
@@ -289,7 +297,11 @@ class GitWildMatchPattern(RegexPattern):
                 if prev == "**" and seg == "**":
                     del pattern_segs[i]
 
-            if len(pattern_segs) == 2 and pattern_segs[0] == "**" and not pattern_segs[1]:
+            if (
+                len(pattern_segs) == 2
+                and pattern_segs[0] == "**"
+                and not pattern_segs[1]
+            ):
                 # EDGE CASE: The '**/' pattern should match everything except
                 # individual files in the root directory. This case cannot be
                 # adequately handled through normalization. Use the override.
@@ -302,7 +314,9 @@ class GitWildMatchPattern(RegexPattern):
                 # to root.
                 del pattern_segs[0]
 
-            elif len(pattern_segs) == 1 or (len(pattern_segs) == 2 and not pattern_segs[1]):
+            elif len(pattern_segs) == 1 or (
+                len(pattern_segs) == 2 and not pattern_segs[1]
+            ):
                 # A single pattern without a beginning slash ('/') will match
                 # any descendant path. This is equivalent to "**/{pattern}". So,
                 # prepend with double-asterisks to make pattern relative to
@@ -322,7 +336,9 @@ class GitWildMatchPattern(RegexPattern):
             if not pattern_segs:
                 # After resolving the edge cases, we end up with no pattern at
                 # all. This must be because the pattern is invalid.
-                raise GitWildMatchPatternError(f"Invalid git pattern: {original_pattern!r}")
+                raise GitWildMatchPatternError(
+                    f"Invalid git pattern: {original_pattern!r}"
+                )
 
             if not pattern_segs[-1] and len(pattern_segs) > 1:
                 # A pattern ending with a slash ('/') will match all descendant
@@ -380,7 +396,9 @@ class GitWildMatchPattern(RegexPattern):
                         try:
                             output.append(cls._translate_segment_glob(seg))
                         except ValueError as e:
-                            raise GitWildMatchPatternError(f"Invalid git pattern: {original_pattern!r}") from e
+                            raise GitWildMatchPatternError(
+                                f"Invalid git pattern: {original_pattern!r}"
+                            ) from e
 
                         if i == end:
                             # A pattern ending without a slash ('/') will match a file
@@ -511,7 +529,9 @@ class GitWildMatchPattern(RegexPattern):
                 regex += re.escape(char)
 
         if escape:
-            raise ValueError(f"Escape character found with no next character to escape: {pattern!r}")
+            raise ValueError(
+                f"Escape character found with no next character to escape: {pattern!r}"
+            )
 
         return regex
 

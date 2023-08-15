@@ -47,7 +47,9 @@ class LocalCacheStorage(AbstractCacheStorage):
         Note that this method involves disk io, it is not safe to be invoked concurrently.
         """
         # Create table for local cache record.
-        SqliteClient.create_table_if_not_exists(db_folder_path, db_name, LocalCacheRecord, test_mode)
+        SqliteClient.create_table_if_not_exists(
+            db_folder_path, db_name, LocalCacheRecord, test_mode
+        )
 
     def __init__(self, db_folder_path: str, db_name: str, test_mode: bool = False):
         """Create table clients and create db tables if not exists.
@@ -63,7 +65,9 @@ class LocalCacheStorage(AbstractCacheStorage):
         local_cache_list = self._sqlite_client.get_by_field(hash_id=hash_id)
         return [CacheRecord(**asdict(c)) for c in local_cache_list]
 
-    def persist_cache_result(self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str):
+    def persist_cache_result(
+        self, run_info: RunInfo, hash_id: str, cache_string: str, flow_id: str
+    ):
         cache_record = LocalCacheRecord(
             run_id=run_info.run_id,
             hash_id=hash_id,

@@ -41,7 +41,10 @@ from promptflow.azure._constants._flow import CHILD_RUNS_PAGE_SIZE, NODE_RUNS_PA
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import FlowRunInfo
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure._utils.gerneral import (
+    get_user_alias_from_credential,
+    is_remote_uri,
+)
 from promptflow.azure.operations._flow_opearations import FlowOperations
 from promptflow.contracts.run_management import RunDetail, RunMetadata, RunVisualization
 
@@ -65,8 +68,12 @@ class RunOperations(_ScopeDependentOperations):
     attaches it as an attribute.
     """
 
-    DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
-    ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
+    DATASTORE_PATH_PATTERN = re.compile(
+        r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$"
+    )
+    ASSET_ID_PATTERN = re.compile(
+        r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$"
+    )
 
     def __init__(
         self,
@@ -83,8 +90,12 @@ class RunOperations(_ScopeDependentOperations):
         self._service_caller = FlowServiceCaller(workspace, credential, **kwargs)
         self._credential = credential
         self._flow_operations = flow_operations
-        self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
-        self._workspace_default_datastore = self._datastore_operations.get_default().name
+        self._orchestrators = OperationOrchestrator(
+            self._all_operations, self._operation_scope, self._operation_config
+        )
+        self._workspace_default_datastore = (
+            self._datastore_operations.get_default().name
+        )
 
     @property
     def _workspace_operations(self) -> WorkspaceOperations:
@@ -94,7 +105,9 @@ class RunOperations(_ScopeDependentOperations):
 
     @property
     def _data_operations(self):
-        return self._all_operations.get_operation(AzureMLResourceType.DATA, lambda x: isinstance(x, DataOperations))
+        return self._all_operations.get_operation(
+            AzureMLResourceType.DATA, lambda x: isinstance(x, DataOperations)
+        )
 
     @property
     def _datastore_operations(self) -> "DatastoreOperations":
@@ -154,7 +167,9 @@ class RunOperations(_ScopeDependentOperations):
 
     def _get_portal_url_from_asset_id(self, output_uri):
         """Get the portal url for the data output."""
-        error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
+        error_msg = (
+            f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
+        )
         if not output_uri:
             return None
         match = self.ASSET_ID_PATTERN.match(output_uri)
@@ -165,7 +180,9 @@ class RunOperations(_ScopeDependentOperations):
         return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
 
     def _get_headers(self):
-        token = self._credential.get_token("https://management.azure.com/.default").token
+        token = self._credential.get_token(
+            "https://management.azure.com/.default"
+        ).token
         custom_header = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -184,7 +201,9 @@ class RunOperations(_ScopeDependentOperations):
         rest_obj = run._to_rest_object()
         if runtime:
             if not isinstance(runtime, str):
-                raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
+                raise TypeError(
+                    f"runtime should be a string, got {type(runtime)} for {runtime}"
+                )
             rest_obj.runtime_name = runtime
             if runtime == "None":
                 # HARD CODE for office scenario, use workspace default runtime when specified None
@@ -200,9 +219,13 @@ class RunOperations(_ScopeDependentOperations):
             rest_obj.session_id = self._get_session_id(flow=flow_path)
             if run._resources is not None:
                 if not isinstance(run._resources, dict):
-                    raise TypeError(f"resources should be a dict, got {type(run._resources)} for {run._resources}")
+                    raise TypeError(
+                        f"resources should be a dict, got {type(run._resources)} for {run._resources}"
+                    )
                 rest_obj.vm_size = run._resources.get("instance_type", None)
-                rest_obj.max_idle_time_seconds = run._resources.get("idle_time_before_shutdown_minutes", None)
+                rest_obj.max_idle_time_seconds = run._resources.get(
+                    "idle_time_before_shutdown_minutes", None
+                )
         self._service_caller.submit_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
@@ -215,7 +238,12 @@ class RunOperations(_ScopeDependentOperations):
             self.stream(run=run.name)
         return self.get(run=run.name)
 
-    def list(self, max_results, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs):
+    def list(
+        self,
+        max_results,
+        list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
+        **kwargs,
+    ):
         """List runs in the workspace with index service call."""
         headers = self._get_headers()
         filter_archived = []
@@ -229,7 +257,11 @@ class RunOperations(_ScopeDependentOperations):
         pay_load = {
             "filters": [
                 {"field": "type", "operator": "eq", "values": ["runs"]},
-                {"field": "annotations/archived", "operator": "eq", "values": filter_archived},
+                {
+                    "field": "annotations/archived",
+                    "operator": "eq",
+                    "values": filter_archived,
+                },
                 {
                     "field": "properties/runType",
                     "operator": "contains",
@@ -241,7 +273,9 @@ class RunOperations(_ScopeDependentOperations):
                 },
             ],
             "freeTextSearch": "",
-            "order": [{"direction": "Desc", "field": "properties/creationContext/createdTime"}],
+            "order": [
+                {"direction": "Desc", "field": "properties/creationContext/createdTime"}
+            ],
             # index service can return 100 results at most
             "pageSize": min(max_results, 100),
             "skip": 0,
@@ -328,7 +362,9 @@ class RunOperations(_ScopeDependentOperations):
         """Get the metrics from metric service."""
         headers = self._get_headers()
         # refer to MetricController: https://msdata.visualstudio.com/Vienna/_git/vienna?path=/src/azureml-api/src/Metric/EntryPoints/Api/Controllers/MetricController.cs&version=GBmaster  # noqa: E501
-        endpoint = self._run_history_endpoint_url.replace("/history/v1.0", "/metric/v2.0")
+        endpoint = self._run_history_endpoint_url.replace(
+            "/history/v1.0", "/metric/v2.0"
+        )
         url = endpoint + f"/runs/{run_id}/lastvalues"
         response = requests.post(url, headers=headers, json={})
         if response.status_code == 200:
@@ -345,7 +381,11 @@ class RunOperations(_ScopeDependentOperations):
 
         Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.failed, __pf__.nodes.xx.completed
         """
-        return metric.endswith(".completed") or metric.endswith(".failed") or metric.endswith(".is_completed")
+        return (
+            metric.endswith(".completed")
+            or metric.endswith(".failed")
+            or metric.endswith(".is_completed")
+        )
 
     def get(self, run: str, **kwargs) -> Run:
         """Get a run.
@@ -387,7 +427,9 @@ class RunOperations(_ScopeDependentOperations):
         """
         run_data = run_data["runMetadata"]
         # add cloud run url
-        run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_data["runId"])
+        run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(
+            run_id=run_data["runId"]
+        )
 
         # get input and output value
         # TODO: Unify below values to the same pattern - azureml://xx
@@ -402,9 +444,15 @@ class RunOperations(_ScopeDependentOperations):
         run_data[RunDataKeys.OUTPUT] = output_data
 
         # get portal urls
-        run_data[RunDataKeys.DATA_PORTAL_URL] = self._get_input_portal_url_from_input_uri(input_data)
-        run_data[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._get_run_portal_url(run_id=input_run_id)
-        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data)
+        run_data[
+            RunDataKeys.DATA_PORTAL_URL
+        ] = self._get_input_portal_url_from_input_uri(input_data)
+        run_data[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._get_run_portal_url(
+            run_id=input_run_id
+        )
+        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(
+            output_data
+        )
         return run_data
 
     def _get_run_from_index_service(self, flow_run_id, **kwargs):
@@ -413,8 +461,16 @@ class RunOperations(_ScopeDependentOperations):
         payload = {
             "filters": [
                 {"field": "type", "operator": "eq", "values": ["runs"]},
-                {"field": "annotations/archived", "operator": "eq", "values": ["false"]},
-                {"field": "properties/runId", "operator": "eq", "values": [flow_run_id]},
+                {
+                    "field": "annotations/archived",
+                    "operator": "eq",
+                    "values": ["false"],
+                },
+                {
+                    "field": "properties/runId",
+                    "operator": "eq",
+                    "values": [flow_run_id],
+                },
             ],
             "order": [{"direction": "Desc", "field": "properties/startTime"}],
             "pageSize": 50,
@@ -495,7 +551,9 @@ class RunOperations(_ScopeDependentOperations):
             return run
 
     def _resolve_data_to_asset_id(self, run: Run):
-        from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
+        from azure.ai.ml._artifacts._artifact_utilities import (
+            _upload_and_generate_remote_uri,
+        )
         from azure.ai.ml.constants._common import AssetTypes
 
         # Skip if no data provided
@@ -514,7 +572,9 @@ class RunOperations(_ScopeDependentOperations):
             run.data = test_data
             return
 
-        if os.path.exists(test_data):  # absolute local path, upload, transform to remote url
+        if os.path.exists(
+            test_data
+        ):  # absolute local path, upload, transform to remote url
             data_type = _get_data_type(test_data)
             test_data = _upload_and_generate_remote_uri(
                 self._operation_scope,
@@ -523,7 +583,11 @@ class RunOperations(_ScopeDependentOperations):
                 datastore_name=self._workspace_default_datastore,
                 show_progress=self._show_progress,
             )
-            if data_type == AssetTypes.URI_FOLDER and test_data and not test_data.endswith("/"):
+            if (
+                data_type == AssetTypes.URI_FOLDER
+                and test_data
+                and not test_data.endswith("/")
+            ):
                 test_data = test_data + "/"
         else:
             raise ValueError(
@@ -549,7 +613,9 @@ class RunOperations(_ScopeDependentOperations):
     def _get_child_runs_from_pfs(self, run_id: str):
         """Get the child runs from the PFS."""
         headers = self._get_headers()
-        endpoint_url = self._run_history_endpoint_url.replace("/history/v1.0", "/flow/api")
+        endpoint_url = self._run_history_endpoint_url.replace(
+            "/history/v1.0", "/flow/api"
+        )
         url = endpoint_url + f"/BulkRuns/{run_id}/childRuns"
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -595,7 +661,10 @@ class RunOperations(_ScopeDependentOperations):
             # no data in current page
             if len(current_flow_runs) == 0:
                 break
-            start_index, end_index = start_index + CHILD_RUNS_PAGE_SIZE, end_index + CHILD_RUNS_PAGE_SIZE
+            start_index, end_index = (
+                start_index + CHILD_RUNS_PAGE_SIZE,
+                end_index + CHILD_RUNS_PAGE_SIZE,
+            )
             flow_runs += current_flow_runs
         return flow_runs
 
@@ -617,7 +686,10 @@ class RunOperations(_ScopeDependentOperations):
             # no data in current page
             if len(current_node_runs) == 0:
                 break
-            start_index, end_index = start_index + NODE_RUNS_PAGE_SIZE, end_index + NODE_RUNS_PAGE_SIZE
+            start_index, end_index = (
+                start_index + NODE_RUNS_PAGE_SIZE,
+                end_index + NODE_RUNS_PAGE_SIZE,
+            )
             node_runs += current_node_runs
         return node_runs
 

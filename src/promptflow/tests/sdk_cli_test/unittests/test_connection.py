@@ -164,7 +164,9 @@ class TestConnection:
         assert class_name(**init_param)._to_dict() == expected
 
     def test_connection_load_from_env(self):
-        connection = _load_env_to_connection(source=CONNECTION_ROOT / ".env", params_override=[{"name": "env_conn"}])
+        connection = _load_env_to_connection(
+            source=CONNECTION_ROOT / ".env", params_override=[{"name": "env_conn"}]
+        )
         assert connection._to_dict() == {
             "name": "env_conn",
             "module": "promptflow.connections",
@@ -187,16 +189,24 @@ secrets:
     def test_connection_load_from_env_file_bad_case(self):
         # Test file not found
         with pytest.raises(FileNotFoundError) as e:
-            _load_env_to_connection(source=CONNECTION_ROOT / "mock.env", params_override=[{"name": "env_conn"}])
+            _load_env_to_connection(
+                source=CONNECTION_ROOT / "mock.env",
+                params_override=[{"name": "env_conn"}],
+            )
         assert "not found" in str(e.value)
         # Test file empty
         with pytest.raises(Exception) as e:
-            _load_env_to_connection(source=CONNECTION_ROOT / "empty.env", params_override=[{"name": "env_conn"}])
+            _load_env_to_connection(
+                source=CONNECTION_ROOT / "empty.env",
+                params_override=[{"name": "env_conn"}],
+            )
         assert "Load nothing" in str(e.value)
 
     def test_to_execution_connection_dict(self):
         # Assert custom connection build
-        connection = CustomConnection(name="test_connection", configs={"a": "1"}, secrets={"b": "2"})
+        connection = CustomConnection(
+            name="test_connection", configs={"a": "1"}, secrets={"b": "2"}
+        )
         assert connection.to_execution_connection_dict() == {
             "module": "promptflow.connections",
             "secret_keys": ["b"],
@@ -240,7 +250,9 @@ secrets:
         }
 
     def test_validate_and_interactive_get_secrets(self):
-        connection = CustomConnection(name="test_connection", secrets={"key1": SCRUBBED_VALUE, "key2": ""})
+        connection = CustomConnection(
+            name="test_connection", secrets={"key1": SCRUBBED_VALUE, "key2": ""}
+        )
         with patch("getpass.getpass", new=lambda prompt: "test_value"):
             validate_and_interactive_get_secrets(connection)
         assert connection.secrets == {"key1": "test_value", "key2": "test_value"}

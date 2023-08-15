@@ -53,7 +53,9 @@ def load_json(file_path: Union[str, Path]) -> dict:
         return json.load(f)
 
 
-def transpose(values: List[Dict[str, Any]], keys: Optional[List] = None) -> Dict[str, List]:
+def transpose(
+    values: List[Dict[str, Any]], keys: Optional[List] = None
+) -> Dict[str, List]:
     keys = keys or list(values[0].keys())
     return {key: [v.get(key) for v in values] for key in keys}
 
@@ -63,7 +65,9 @@ def reverse_transpose(values: Dict[str, List]) -> List[Dict[str, Any]]:
     value_lists = list(values.values())
     _len = len(value_lists[0])
     if any(len(value_list) != _len for value_list in value_lists):
-        raise Exception(f"Value list of each key must have same length, please check {values!r}.")
+        raise Exception(
+            f"Value list of each key must have same length, please check {values!r}."
+        )
     result = []
     for i in range(_len):
         result.append({})
@@ -74,7 +78,10 @@ def reverse_transpose(values: Dict[str, List]) -> List[Dict[str, Any]]:
 
 
 def get_mlflow_tracking_uri(
-    subscription_id: str, resource_group_name: str, workspace_name: str, mt_endpoint: str
+    subscription_id: str,
+    resource_group_name: str,
+    workspace_name: str,
+    mt_endpoint: str,
 ) -> str:
     """Get the full mlflow tracking uri"""
     # "https://master.api.azureml-test.ms" to "azureml://master.api.azureml-test.ms"
@@ -121,7 +128,10 @@ def is_in_ci_pipeline():
 
 
 def count_and_log_progress(
-    inputs: Iterable[T], logger: logging.Logger, total_count: int, formatter="{count} / {total_count} finished."
+    inputs: Iterable[T],
+    logger: logging.Logger,
+    total_count: int,
+    formatter="{count} / {total_count} finished.",
 ) -> Iterator[T]:
     log_interval = max(int(total_count / 10), 1)
     count = 0
@@ -152,7 +162,9 @@ def format_user_stacktrace(frame):
     return traceback.format_list(user_frame_summaries)
 
 
-def generate_elapsed_time_messages(func_name: str, start_time: float, interval: int, thread_id: int):
+def generate_elapsed_time_messages(
+    func_name: str, start_time: float, interval: int, thread_id: int
+):
     import sys
 
     frames = sys._current_frames()

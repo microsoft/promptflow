@@ -9,7 +9,13 @@ from typing import Tuple, Union
 from sqlalchemy.exc import OperationalError
 
 
-def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay=3, backoff=2, logger=None):
+def retry(
+    exception_to_check: Union[Exception, Tuple[Exception]],
+    tries=4,
+    delay=3,
+    backoff=2,
+    logger=None,
+):
     """
     From https://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
 
@@ -46,7 +52,11 @@ def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay
                     mtries -= 1
                     mdelay *= backoff
                     if logger:
-                        logger.warning("%s, Retrying in %d seconds...", str(exception_to_check), mdelay)
+                        logger.warning(
+                            "%s, Retrying in %d seconds...",
+                            str(exception_to_check),
+                            mdelay,
+                        )
             return f(*args, **kwargs)
 
         return f_retry  # true decorator
@@ -54,4 +64,6 @@ def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay
     return deco_retry
 
 
-sqlite_retry = partial(retry, exception_to_check=OperationalError, tries=3, delay=0.5, backoff=1)()
+sqlite_retry = partial(
+    retry, exception_to_check=OperationalError, tries=3, delay=0.5, backoff=1
+)()

@@ -58,9 +58,13 @@ class TestToolMetaUtils:
             ),
         ],
     )
-    def test_generate_tool_meta_dict_by_file_exception(self, flow_dir, tool_path, tool_type, msg):
+    def test_generate_tool_meta_dict_by_file_exception(
+        self, flow_dir, tool_path, tool_type, msg
+    ):
         with Pool(1) as pool:
             wd = str((FLOW_ROOT / flow_dir).resolve())
             ret = pool.apply(cd_and_run, (wd, tool_path, tool_type))
-            assert isinstance(ret, str), "Call cd_and_run should fail but succeeded:\n" + str(ret)
+            assert isinstance(
+                ret, str
+            ), "Call cd_and_run should fail but succeeded:\n" + str(ret)
             assert msg in ret

@@ -20,7 +20,11 @@ from promptflow._cli._utils import (
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
 )
-from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, MAX_SHOW_DETAILS_RESULTS, get_list_view_type
+from promptflow._sdk._constants import (
+    MAX_LIST_CLI_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
+    get_list_view_type,
+)
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
@@ -28,7 +32,9 @@ from promptflow._sdk.entities import Run
 
 
 def add_run_parser(subparsers):
-    run_parser = subparsers.add_parser("run", description="A CLI tool to manage runs for prompt flow.", help="pf run")
+    run_parser = subparsers.add_parser(
+        "run", description="A CLI tool to manage runs for prompt flow.", help="pf run"
+    )
     subparsers = run_parser.add_subparsers()
     add_run_create(subparsers)
     # add_run_cancel(subparsers)
@@ -47,7 +53,9 @@ def add_run_parser(subparsers):
 
 def add_run_create(subparsers):
     create_parser = subparsers.add_parser(
-        "create", help="Create a run.", epilog="pf run create --file <local-path-to-yaml> [--stream]"
+        "create",
+        help="Create a run.",
+        epilog="pf run create --file <local-path-to-yaml> [--stream]",
     )
     # pf run create --file batch_run.yaml [--stream]
     create_parser.add_argument(
@@ -67,11 +75,15 @@ def add_run_create(subparsers):
     )
     # pf run create --type batch --flow ./flow_dir --data xx.jsonl \
     #   --inputs_mapping "xx=yy,aa=bb" --node_variant "${node_name.variant1}" --name "run1"
-    create_parser.add_argument("--flow", type=str, help="Local path to the flow directory.")
+    create_parser.add_argument(
+        "--flow", type=str, help="Local path to the flow directory."
+    )
     create_parser.add_argument("--data", type=str, help="Local path to the data file.")
     add_param_columns_mapping(create_parser)
     create_parser.add_argument(
-        "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
+        "--variant",
+        type=str,
+        help="Node & variant name in format of ${node_name.variant_name}.",
     )
     create_parser.add_argument(
         "--run",
@@ -89,8 +101,12 @@ def add_run_create(subparsers):
 
 
 def add_run_cancel(subparsers):
-    cancel_parser = subparsers.add_parser("cancel", help="Cancel a run.", epilog="pf run cancel --name <name>")
-    cancel_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    cancel_parser = subparsers.add_parser(
+        "cancel", help="Cancel a run.", epilog="pf run cancel --name <name>"
+    )
+    cancel_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     cancel_parser.set_defaults(sub_action="cancel")
 
 
@@ -100,16 +116,22 @@ def add_run_update(subparsers):
         help="Update a run metadata, including display name, description and tags.",
         epilog='pf run update --name <name> --set display_name="<display-name>" description="<description>" tag.key="<value>"',  # noqa: E501
     )
-    update_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    update_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     add_param_set(update_parser)
     update_parser.set_defaults(sub_action="update")
 
 
 def add_run_stream(subparsers):
     stream_parser = subparsers.add_parser(
-        "stream", help="Stream run logs to the console.", epilog="pf run stream --name <name>"
+        "stream",
+        help="Stream run logs to the console.",
+        epilog="pf run stream --name <name>",
     )
-    stream_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    stream_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     stream_parser.set_defaults(sub_action="stream")
 
 
@@ -152,16 +174,24 @@ def add_run_list(subparsers):
 
 
 def add_run_show(subparsers):
-    show_parser = subparsers.add_parser("show", help="Show details for a run.", epilog="pf run show --name <name>")
-    show_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    show_parser = subparsers.add_parser(
+        "show", help="Show details for a run.", epilog="pf run show --name <name>"
+    )
+    show_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     show_parser.set_defaults(sub_action="show")
 
 
 def add_run_show_details(subparsers):
     show_details_parser = subparsers.add_parser(
-        "show-details", help="Preview a run's input(s) and output(s).", epilog="pf run show-details --name <name>"
+        "show-details",
+        help="Preview a run's input(s) and output(s).",
+        epilog="pf run show-details --name <name>",
     )
-    show_details_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    show_details_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     show_details_parser.add_argument(
         "-r",
         "--max-results",
@@ -175,9 +205,13 @@ def add_run_show_details(subparsers):
 
 def add_run_show_metrics(subparsers):
     show_metrics_parser = subparsers.add_parser(
-        "show-metrics", help="Print run metrics to the console.", epilog="pf run show-metrics --name <name>"
+        "show-metrics",
+        help="Print run metrics to the console.",
+        epilog="pf run show-metrics --name <name>",
     )
-    show_metrics_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    show_metrics_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     show_metrics_parser.set_defaults(sub_action="show-metrics")
 
 
@@ -185,22 +219,38 @@ def add_run_visualize(subparsers):
     visualize_parser = subparsers.add_parser(
         "visualize", help="Visualize a run.", epilog='pf run visualize "run1,run2"'
     )
-    visualize_parser.add_argument("-n", "--names", type=str, required=True, help="Name of the runs, comma separated.")
-    visualize_parser.add_argument("--html-path", type=str, default=None, help=argparse.SUPPRESS)
+    visualize_parser.add_argument(
+        "-n",
+        "--names",
+        type=str,
+        required=True,
+        help="Name of the runs, comma separated.",
+    )
+    visualize_parser.add_argument(
+        "--html-path", type=str, default=None, help=argparse.SUPPRESS
+    )
     visualize_parser.set_defaults(sub_action="visualize")
 
 
 def add_run_archive(subparsers):
-    archive_parser = subparsers.add_parser("archive", help="Archive a run.", epilog="pf run archive --name <name>")
-    archive_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    archive_parser = subparsers.add_parser(
+        "archive", help="Archive a run.", epilog="pf run archive --name <name>"
+    )
+    archive_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     archive_parser.set_defaults(sub_action="archive")
 
 
 def add_run_restore(subparsers):
     restore_parser = subparsers.add_parser(
-        "restore", help="Restore an archived run.", epilog="pf run restore --name <name>"
+        "restore",
+        help="Restore an archived run.",
+        epilog="pf run restore --name <name>",
     )
-    restore_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+    restore_parser.add_argument(
+        "-n", "--name", required=True, type=str, help="Name of the run."
+    )
     restore_parser.set_defaults(sub_action="restore")
 
 
@@ -236,7 +286,9 @@ def dispatch_run_commands(args: argparse.Namespace):
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
 
-def _merge_params(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
+def _merge_params(
+    params: List[Dict[str, str]]
+) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
     display_name, description, tags = None, None, {}
     for param in params:
         for k, v in param.items():
@@ -293,7 +345,9 @@ def list_runs(
         max_results = None
     runs = pf_client.runs.list(
         max_results=max_results,
-        list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
+        list_view_type=get_list_view_type(
+            archived_only=archived_only, include_archived=include_archived
+        ),
     )
     json_list = [run._to_dict() for run in runs]
     print(json.dumps(json_list, indent=4))

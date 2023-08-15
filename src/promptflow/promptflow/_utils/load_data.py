@@ -67,7 +67,9 @@ def _bfs_dir(dir_path: List[str]) -> Tuple[List[str], List[str]]:
     return files, dirs
 
 
-def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = None) -> pd.DataFrame:
+def _handle_dir(
+    dir_path: str, max_rows_count: int, logger: logging.Logger = None
+) -> pd.DataFrame:
     """load data from directory"""
     df = pd.DataFrame()
 
@@ -91,7 +93,9 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
     return df
 
 
-def load_data(local_path: str, *, logger: logging.Logger = None, max_rows_count: int = None) -> List[Dict[str, Any]]:
+def load_data(
+    local_path: str, *, logger: logging.Logger = None, max_rows_count: int = None
+) -> List[Dict[str, Any]]:
     """load data from local file"""
     df = load_df(local_path, logger, max_rows_count=max_rows_count or MAX_ROWS_COUNT)
 
@@ -103,7 +107,9 @@ def load_data(local_path: str, *, logger: logging.Logger = None, max_rows_count:
     return result
 
 
-def load_df(local_path: str, logger: logging.Logger = None, max_rows_count: int = None) -> pd.DataFrame:
+def load_df(
+    local_path: str, logger: logging.Logger = None, max_rows_count: int = None
+) -> pd.DataFrame:
     """load data from local file to df. For the usage of PRS."""
     lp = Path(local_path)
     try:

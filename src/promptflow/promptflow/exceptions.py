@@ -80,7 +80,11 @@ class ErrorResponse:
     def response_code(self):
         """Given the error code, return the corresponding http response code."""
         root_error_code = self._error_dict.get("code")
-        return ResponseCode.CLIENT_ERROR if root_error_code == RootErrorCode.USER_ERROR else ResponseCode.SERVICE_ERROR
+        return (
+            ResponseCode.CLIENT_ERROR
+            if root_error_code == RootErrorCode.USER_ERROR
+            else ResponseCode.SERVICE_ERROR
+        )
 
     @property
     def additional_info(self):
@@ -116,8 +120,12 @@ class ErrorResponse:
 
     def get_user_execution_error_info(self):
         """Get user tool execution error info from additional info."""
-        user_execution_error_info = self.get_additional_info(ADDITIONAL_INFO_USER_EXECUTION_ERROR)
-        if not user_execution_error_info or not isinstance(user_execution_error_info, dict):
+        user_execution_error_info = self.get_additional_info(
+            ADDITIONAL_INFO_USER_EXECUTION_ERROR
+        )
+        if not user_execution_error_info or not isinstance(
+            user_execution_error_info, dict
+        ):
             return {}
         return user_execution_error_info
 
@@ -305,7 +313,9 @@ class PromptflowException(Exception):
     ):
         self._inner_exception = kwargs.get("error")
         self.exc_type, self.exc_value, self.exc_traceback = sys.exc_info()
-        self.exc_type = self.exc_type.__name__ if self.exc_type else type(self._inner_exception)
+        self.exc_type = (
+            self.exc_type.__name__ if self.exc_type else type(self._inner_exception)
+        )
         self.exc_msg = "{}, {}: {}".format(message, self.exc_type, self.exc_value)
         self._message = str(message)
         self._target = target
@@ -492,7 +502,9 @@ class PromptflowException(Exception):
             else:
                 result["innerError"] = None
         if self.additional_info:
-            result["additionalInfo"] = [{"type": k, "info": v} for k, v in self.additional_info.items()]
+            result["additionalInfo"] = [
+                {"type": k, "info": v} for k, v in self.additional_info.items()
+            ]
         if include_debug_info:
             result["debugInfo"] = self.debug_info
 
@@ -501,7 +513,8 @@ class PromptflowException(Exception):
     def __str__(self):
         """Return the error message.
 
-        Some child classes may override this method to return a more detailed error message."""
+        Some child classes may override this method to return a more detailed error message.
+        """
         return self.message
 
 
@@ -539,7 +552,9 @@ class ToolExecutionError(UserErrorException):
     def message_parameters(self):
         error_type_and_message = None
         if self.inner_exception:
-            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            error_type_and_message = (
+                f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+            )
 
         return {
             "node_name": self._node_name,
@@ -590,7 +605,9 @@ class ToolExecutionError(UserErrorException):
                 #   In "my_node", line 1, in <module>
                 if self._node_name:
                     # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=79670
-                    formatted_tb = formatted_tb.replace('File "<string>"', 'In "{}"'.format(self._node_name))
+                    formatted_tb = formatted_tb.replace(
+                        'File "<string>"', 'In "{}"'.format(self._node_name)
+                    )
 
                 return formatted_tb
 
@@ -646,14 +663,20 @@ class AccessDeniedError(UserErrorException):
     """Exception raised when run info can not be found in storage"""
 
     def __init__(self, operation: str, target: ErrorTarget):
-        super().__init__(message=f"Access is denied to perform operation {operation!r}", target=target)
+        super().__init__(
+            message=f"Access is denied to perform operation {operation!r}",
+            target=target,
+        )
 
 
 class FlowRunTimeoutError(UserErrorException):
     """Exception raised when sync submission flow run timeout"""
 
     def __init__(self, timeout):
-        super().__init__(message=f"Flow run timeout for exceeding {timeout} seconds", target=ErrorTarget.RUNTIME)
+        super().__init__(
+            message=f"Flow run timeout for exceeding {timeout} seconds",
+            target=ErrorTarget.RUNTIME,
+        )
 
 
 class ConnectionNotSet(ValidationException):
@@ -705,7 +728,9 @@ class FailedToImportModule(UserErrorException):
 class BulkRunException(PromptflowException):
     """Exception raised when bulk run failed."""
 
-    def __init__(self, *, failed_lines: int, total_lines: int, module: str = None, **kwargs):
+    def __init__(
+        self, *, failed_lines: int, total_lines: int, module: str = None, **kwargs
+    ):
         self.failed_lines = failed_lines
         self.total_lines = total_lines
         super().__init__(target=ErrorTarget.RUNTIME, module=module, **kwargs)

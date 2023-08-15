@@ -17,7 +17,9 @@ from promptflow.storage import DummyRunStorage
 from promptflow.connections import *  # noqa
 
 
-def resolve_json_inputs(input_data, working_dir) -> Mapping[str, List[Mapping[str, Any]]]:
+def resolve_json_inputs(
+    input_data, working_dir
+) -> Mapping[str, List[Mapping[str, Any]]]:
     """
     Populate file contents if inputs file has file reference, for example:
      "baseline": "baseline.json",
@@ -28,7 +30,9 @@ def resolve_json_inputs(input_data, working_dir) -> Mapping[str, List[Mapping[st
     """
     if working_dir is None:
         raise Exception("working_dir is None")
-    return {key: load_json(f"{working_dir}/{value}") for key, value in input_data.items()}
+    return {
+        key: load_json(f"{working_dir}/{value}") for key, value in input_data.items()
+    }
 
 
 if __name__ == "__main__":
@@ -36,11 +40,15 @@ if __name__ == "__main__":
     parser.add_argument("--flow", "-f", type=str, required=True)
     parser.add_argument("--working-dir", "-wd", type=str, default=None)
     parser.add_argument("--inputs", "-i", type=str, required=True)
-    parser.add_argument("--need_inputs_resolve", action="store_true")  # Indicate if the inputs is raw without resolve
+    parser.add_argument(
+        "--need_inputs_resolve", action="store_true"
+    )  # Indicate if the inputs is raw without resolve
     parser.add_argument("--inputs_mapping", "-im", type=str, default=None)
     parser.add_argument("--output", "-o", type=str, required=True)
     parser.add_argument("--connections", "-c", default="connections.json")
-    parser.add_argument("--run-mode", "-m", choices=list(RunMode), default="Flow", type=RunMode.parse)
+    parser.add_argument(
+        "--run-mode", "-m", choices=list(RunMode), default="Flow", type=RunMode.parse
+    )
     parser.add_argument("--run-id", "-r", type=str, default=None)
     parser.add_argument("--node-name", "-n", type=str, default=None)
     parser.add_argument("--raise_ex", action="store_true")
@@ -84,7 +92,9 @@ if __name__ == "__main__":
         # Always save run info even if exception is raised
         if executor:
             with open(args.output, "w") as f:
-                json.dump(executor.collect_run_infos(), f, indent=2)  # Collect run info for the flow
+                json.dump(
+                    executor.collect_run_infos(), f, indent=2
+                )  # Collect run info for the flow
             print(f"Run info is saved saved to '{args.output}'")
     end = datetime.now()
     print(f"{datetime.now()} Execute the flow in {end - start}.")

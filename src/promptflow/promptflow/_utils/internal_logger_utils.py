@@ -32,7 +32,9 @@ class BlobFileHandler(FileHandler):
 
     def _get_stream_handler(self, file_path: str) -> logging.StreamHandler:
         """Override FileHandler's _get_stream_handler method."""
-        from promptflow._utils.blob_utils import BlobStream  # TODO: Move it to top of file.
+        from promptflow._utils.blob_utils import (
+            BlobStream,
+        )  # TODO: Move it to top of file.
 
         return logging.StreamHandler(BlobStream(file_path))
 
@@ -45,8 +47,12 @@ class FileType(Enum):
 @dataclass
 class SystemLogContext(LogContext):
     file_type: Optional[FileType] = FileType.Local
-    app_insights_instrumentation_key: Optional[str] = None  # If set, logs will also be sent to app insights.
-    custom_dimensions: Optional[Dict[str, str]] = None  # Custom dimension column in app insight log.
+    app_insights_instrumentation_key: Optional[
+        str
+    ] = None  # If set, logs will also be sent to app insights.
+    custom_dimensions: Optional[
+        Dict[str, str]
+    ] = None  # Custom dimension column in app insight log.
 
     def __enter__(self):
         self.loggers = [system_logger]
@@ -56,7 +62,9 @@ class SystemLogContext(LogContext):
         for logger in self.loggers:
             for log_handler in logger.handlers:
                 if isinstance(log_handler, TelemetryLogHandler):
-                    log_handler.set_connection_string(self.app_insights_instrumentation_key)
+                    log_handler.set_connection_string(
+                        self.app_insights_instrumentation_key
+                    )
                     log_handler.set_or_update_context(self.custom_dimensions)
                     log_handler.set_credential_list(self.credential_list or [])
 
@@ -89,7 +97,9 @@ class SystemLogContext(LogContext):
 
 
 @contextmanager
-def set_custom_dimensions_to_logger(input_logger: logging.Logger, custom_dimensions: Dict[str, str]):
+def set_custom_dimensions_to_logger(
+    input_logger: logging.Logger, custom_dimensions: Dict[str, str]
+):
     for handler in input_logger.handlers:
         if isinstance(handler, TelemetryLogHandler):
             handler.set_or_update_context(custom_dimensions)
@@ -113,7 +123,8 @@ class TelemetryLogHandler(logging.Handler):
         self._handler = None
         self._context = ContextVar("request_context", default=None)
         self._formatter = CredentialScrubberFormatter(
-            scrub_customer_content=True, fmt=self.FORMAT  # Telemetry log should not contain customer content.
+            scrub_customer_content=True,
+            fmt=self.FORMAT,  # Telemetry log should not contain customer content.
         )
 
     @classmethod
@@ -175,7 +186,9 @@ class TelemetryLogHandler(logging.Handler):
         if self._handler:
             self._handler.flush()
 
-        self._handler = AzureLogHandler(connection_string=TelemetryLogHandler.CONNECTION_STRING)
+        self._handler = AzureLogHandler(
+            connection_string=TelemetryLogHandler.CONNECTION_STRING
+        )
         self._handler.setFormatter(self._formatter)
 
     def close(self):
@@ -232,7 +245,9 @@ def _get_system_logger(
     logger.setLevel(log_level)
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(
-        CredentialScrubberFormatter(scrub_customer_content=True, fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
+        CredentialScrubberFormatter(
+            scrub_customer_content=True, fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT
+        )
     )
     logger.addHandler(stdout_handler)
     logger.addHandler(TelemetryLogHandler.get_instance())

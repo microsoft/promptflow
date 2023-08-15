@@ -8,7 +8,9 @@ import argparse
 class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-access
     def __call__(self, parser, namespace, values, option_string=None):
         action = self.get_action(values, option_string)
-        super(AppendToDictAction, self).__call__(parser, namespace, action, option_string)
+        super(AppendToDictAction, self).__call__(
+            parser, namespace, action, option_string
+        )
 
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
         kwargs = {}
@@ -17,7 +19,9 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
                 key, value = item.split("=", 1)
                 kwargs[key] = value
             except ValueError:
-                raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
+                raise Exception(
+                    "Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string)
+                )
         return kwargs
 
 
@@ -44,7 +48,9 @@ def add_param_yes(parser):
 
 
 def add_param_flow_name(parser):
-    parser.add_argument("--flow", type=str, required=True, help="the flow name to create.")
+    parser.add_argument(
+        "--flow", type=str, required=True, help="the flow name to create."
+    )
 
 
 def add_param_entry(parser):
@@ -57,7 +63,10 @@ def add_param_function(parser):
 
 def add_param_prompt_template(parser):
     parser.add_argument(
-        "--prompt-template", action=AppendToDictAction, help="the prompt template parameter and assignment.", nargs="+"
+        "--prompt-template",
+        action=AppendToDictAction,
+        help="the prompt template parameter and assignment.",
+        nargs="+",
     )
 
 
@@ -115,7 +124,10 @@ def add_param_inputs(parser):
 
 def add_param_input(parser):
     parser.add_argument(
-        "--input", type=str, required=True, help="the input file path. Note that we accept jsonl file only for now."
+        "--input",
+        type=str,
+        required=True,
+        help="the input file path. Note that we accept jsonl file only for now.",
     )
 
 
@@ -129,28 +141,44 @@ def add_param_env(parser):
 
 
 def add_param_output(parser):
-    parser.add_argument("--output", type=str, default="outputs", help="the output directory to store the results.")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="outputs",
+        help="the output directory to store the results.",
+    )
 
 
 def add_param_flow(parser):
-    parser.add_argument("--flow", type=str, required=True, help="the evaluation flow to be used.")
+    parser.add_argument(
+        "--flow", type=str, required=True, help="the evaluation flow to be used."
+    )
 
 
 def add_param_source(parser):
-    parser.add_argument("--source", type=str, required=True, help="The flow or run source to be used.")
+    parser.add_argument(
+        "--source", type=str, required=True, help="The flow or run source to be used."
+    )
 
 
 def add_param_bulk_run_output(parser):
-    parser.add_argument("--bulk-run-output", type=str, help="the output directory of the bulk run.")
+    parser.add_argument(
+        "--bulk-run-output", type=str, help="the output directory of the bulk run."
+    )
 
 
 def add_param_eval_output(parser):
-    parser.add_argument("--eval-output", type=str, help="the output file path of the evaluation result.")
+    parser.add_argument(
+        "--eval-output", type=str, help="the output file path of the evaluation result."
+    )
 
 
 def add_param_column_mapping(parser):
     parser.add_argument(
-        "--column-mapping", type=str, required=True, help="the column mapping to be used in the evaluation."
+        "--column-mapping",
+        type=str,
+        required=True,
+        help="the column mapping to be used in the evaluation.",
     )
 
 
@@ -164,7 +192,9 @@ def add_param_runtime(parser):
 
 
 def add_param_connection(parser):
-    parser.add_argument("--connection", type=str, help="Name of your connection in Azure ML workspace.")
+    parser.add_argument(
+        "--connection", type=str, help="Name of your connection in Azure ML workspace."
+    )
 
 
 def add_param_variants(parser):
@@ -183,7 +213,10 @@ def add_param_subscription(parser):
         "--subscription",
         dest="subscription_id",
         type=str,
-        help=("ID of subscription. You can configure the default subscription \n" "using `az account set -s ID`."),
+        help=(
+            "ID of subscription. You can configure the default subscription \n"
+            "using `az account set -s ID`."
+        ),
     )
 
 
@@ -218,12 +251,21 @@ def add_parser_export(parent_parser, entity_name: str):
     parser = parent_parser.add_parser(
         "export",
         description=description,
-        epilog=f"pf {entity_name} export --source <source> --output <output> --format " f"docker|package",
+        epilog=f"pf {entity_name} export --source <source> --output <output> --format "
+        f"docker|package",
         help=description,
     )
     add_param_source(parser)
-    parser.add_argument("--output", "-o", type=str, help="The destination folder path for exported.")
-    parser.add_argument("--format", "-f", type=str, help="The format to export in.", choices=["docker", "package"])
+    parser.add_argument(
+        "--output", "-o", type=str, help="The destination folder path for exported."
+    )
+    parser.add_argument(
+        "--format",
+        "-f",
+        type=str,
+        help="The format to export in.",
+        choices=["docker", "package"],
+    )
     parser.add_argument(
         "--migration-secret",
         type=str,

@@ -38,7 +38,11 @@ class FlowOperations:
         :return: The result of flow or node
         """
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables
+            flow=flow,
+            inputs=inputs,
+            variant=variant,
+            node=node,
+            environment_variables=environment_variables,
         )
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
@@ -69,8 +73,12 @@ class FlowOperations:
 
         flow = load_flow(flow)
         with TestSubmitter(flow=flow, variant=variant).init() as submitter:
-            flow_inputs, dependency_nodes_outputs = submitter._resolve_data(node_name=node, inputs=inputs)
-            if self._is_chat_flow(submitter.dataplane_flow) and flow_inputs.get(CHAT_HISTORY, None):
+            flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
+                node_name=node, inputs=inputs
+            )
+            if self._is_chat_flow(submitter.dataplane_flow) and flow_inputs.get(
+                CHAT_HISTORY, None
+            ):
                 flow_inputs[CHAT_HISTORY] = []
             if node:
                 return submitter.node_test(
@@ -81,7 +89,11 @@ class FlowOperations:
                     stream=True,
                 )
             else:
-                return submitter.flow_test(inputs=flow_inputs, environment_variables=environment_variables, stream=True)
+                return submitter.flow_test(
+                    inputs=flow_inputs,
+                    environment_variables=environment_variables,
+                    stream=True,
+                )
 
     @staticmethod
     def _is_chat_flow(flow):

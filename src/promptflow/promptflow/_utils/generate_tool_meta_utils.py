@@ -16,9 +16,17 @@ from pathlib import Path
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
 from promptflow._core.tool import ToolProvider
-from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
+from promptflow._utils.tool_utils import (
+    function_to_interface,
+    get_inputs_for_prompt_template,
+)
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
-from promptflow.exceptions import ErrorTarget, MetaFileNotFound, MetaFileReadError, UserErrorException
+from promptflow.exceptions import (
+    ErrorTarget,
+    MetaFileNotFound,
+    MetaFileReadError,
+    UserErrorException,
+)
 
 PF_MAIN_MODULE_NAME = "__pf_main__"
 
@@ -56,7 +64,9 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
             )
             raise ReservedVariableCannotBeUsed(msg)
 
-    pattern = f"{COMMENT_START_STRING}(((?!{COMMENT_END_STRING}).)*){COMMENT_END_STRING}"
+    pattern = (
+        f"{COMMENT_START_STRING}(((?!{COMMENT_END_STRING}).)*){COMMENT_END_STRING}"
+    )
     match_result = re.match(pattern, content)
     description = match_result.groups()[0].strip() if match_result else None
     # Construct the Tool structure
@@ -101,7 +111,11 @@ def collect_tool_functions_in_module(m):
 def collect_tool_methods_in_module(m):
     tools = []
     for _, obj in inspect.getmembers(m):
-        if isinstance(obj, type) and issubclass(obj, ToolProvider) and obj.__module__ == m.__name__:
+        if (
+            isinstance(obj, type)
+            and issubclass(obj, ToolProvider)
+            and obj.__module__ == m.__name__
+        ):
             for _, method in inspect.getmembers(obj):
                 if is_tool(method):
                     tools.append(method)
@@ -116,7 +130,9 @@ def _parse_tool_from_function(f):
     try:
         inputs, _, _ = function_to_interface(f)
     except Exception as e:
-        raise BadFunctionInterface(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
+        raise BadFunctionInterface(
+            f"Failed to parse interface for tool {f.__name__}, reason: {e}"
+        ) from e
     class_name = None
     if "." in f.__qualname__:
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
@@ -147,13 +163,17 @@ def load_python_module_from_file(src_file: Path):
     # Here we hard code the module name as __pf_main__ since it is invoked as a main script in pf.
     spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
     if spec is None or spec.loader is None:
-        raise PythonLoaderNotFound(f"Failed to load python file '{src_file}', please make sure it is a valid .py file.")
+        raise PythonLoaderNotFound(
+            f"Failed to load python file '{src_file}', please make sure it is a valid .py file."
+        )
     m = importlib.util.module_from_spec(spec)
     try:
         spec.loader.exec_module(m)
     except Exception as e:
         # TODO: add stacktrace to additional info
-        raise PythonParsingError(f"Failed to load python module from file {src_file}, reason: {e}.") from e
+        raise PythonParsingError(
+            f"Failed to load python module from file {src_file}, reason: {e}."
+        ) from e
     return m
 
 
@@ -176,7 +196,9 @@ def collect_tool_function_in_module(m):
         raise NoToolDefined("No tool found in the python script.")
     elif len(tools) > 1:
         tool_names = ", ".join(t.__name__ for t in tools)
-        raise MultipleToolsDefined(f"Expected 1 but collected {len(tools)} tools: {tool_names}.")
+        raise MultipleToolsDefined(
+            f"Expected 1 but collected {len(tools)} tools: {tool_names}."
+        )
     return tools[0]
 
 
@@ -203,7 +225,9 @@ def generate_python_meta(name, content, source=None):
 
 
 def generate_prompt_meta(name, content, prompt_only=False, source=None):
-    return json.dumps(generate_prompt_meta_dict(name, content, prompt_only, source), indent=2)
+    return json.dumps(
+        generate_prompt_meta_dict(name, content, prompt_only, source), indent=2
+    )
 
 
 def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
@@ -222,7 +246,9 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
         content = file.read_text()
     except Exception as e:
         raise MetaFileReadError(
-            message_format=("Reading meta file failed, path '{file_path}', type '{tool_type}', exception {exception}."),
+            message_format=(
+                "Reading meta file failed, path '{file_path}', type '{tool_type}', exception {exception}."
+            ),
             file_path=str(file),
             tool_type=tool_type,
             exception=str(e),

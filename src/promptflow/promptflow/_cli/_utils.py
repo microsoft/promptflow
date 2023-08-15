@@ -26,7 +26,9 @@ from promptflow._sdk._utils import print_red_error
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
-AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
+AzureMLWorkspaceTriad = namedtuple(
+    "AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"]
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,18 +37,33 @@ def _set_workspace_argument_for_subparsers(subparser, required=False):
     """Add workspace arguments to subparsers."""
     # Make these arguments optional so that user can use local azure cli context
     subparser.add_argument(
-        "--subscription", required=required, type=str, help="Subscription id, required when pass run id."
+        "--subscription",
+        required=required,
+        type=str,
+        help="Subscription id, required when pass run id.",
     )
     subparser.add_argument(
-        "--resource-group", "-g", required=required, type=str, help="Resource group name, required when pass run id."
+        "--resource-group",
+        "-g",
+        required=required,
+        type=str,
+        help="Resource group name, required when pass run id.",
     )
     subparser.add_argument(
-        "--workspace-name", "-w", required=required, type=str, help="Workspace name, required when pass run id."
+        "--workspace-name",
+        "-w",
+        required=required,
+        type=str,
+        help="Workspace name, required when pass run id.",
     )
 
 
 def dump_connection_file(dot_env_file: str):
-    for key in ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_API_BASE", "CHAT_DEPLOYMENT_NAME"]:
+    for key in [
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_API_BASE",
+        "CHAT_DEPLOYMENT_NAME",
+    ]:
         if key not in os.environ:
             # skip dump connection file if not all required environment variables are set
             return
@@ -99,7 +116,11 @@ def get_credentials_for_cli():
     some local imports.
     """
     from azure.ai.ml.identity import AzureMLOnBehalfOfCredential
-    from azure.identity import AzureCliCredential, DefaultAzureCredential, ManagedIdentityCredential
+    from azure.identity import (
+        AzureCliCredential,
+        DefaultAzureCredential,
+        ManagedIdentityCredential,
+    )
 
     # May return a different one if executing in local
     # credential priority: OBO > managed identity > default
@@ -109,7 +130,9 @@ def get_credentials_for_cli():
         logger.info("User identity is configured, use OBO credential.")
         credential = AzureMLOnBehalfOfCredential()
     else:
-        client_id_from_env = os.getenv(IdentityEnvironmentVariable.DEFAULT_IDENTITY_CLIENT_ID)
+        client_id_from_env = os.getenv(
+            IdentityEnvironmentVariable.DEFAULT_IDENTITY_CLIENT_ID
+        )
         if client_id_from_env:
             # use managed identity when client id is available from environment variable.
             # reference code:
@@ -128,7 +151,12 @@ def get_credentials_for_cli():
     return credential
 
 
-def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str = None, workspace_name: str = None):
+def get_client_for_cli(
+    *,
+    subscription_id: str = None,
+    resource_group_name: str = None,
+    workspace_name: str = None,
+):
     from azure.ai.ml import MLClient
 
     if not (subscription_id and resource_group_name and workspace_name):
@@ -140,7 +168,9 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
     if not (subscription_id and resource_group_name and workspace_name):
         workspace_name = workspace_name or os.getenv("AZUREML_ARM_WORKSPACE_NAME")
         subscription_id = subscription_id or os.getenv("AZUREML_ARM_SUBSCRIPTION")
-        resource_group_name = resource_group_name or os.getenv("AZUREML_ARM_RESOURCEGROUP")
+        resource_group_name = resource_group_name or os.getenv(
+            "AZUREML_ARM_RESOURCEGROUP"
+        )
 
     missing_fields = []
     for key in ["workspace_name", "subscription_id", "resource_group_name"]:
@@ -148,7 +178,9 @@ def get_client_for_cli(*, subscription_id: str = None, resource_group_name: str 
             missing_fields.append(key)
     if missing_fields:
         raise UserErrorException(
-            "Please provide all required fields to work on specific workspace: {}".format(", ".join(missing_fields)),
+            "Please provide all required fields to work on specific workspace: {}".format(
+                ", ".join(missing_fields)
+            ),
             target=ErrorTarget.CONTROL_PLANE_SDK,
         )
 
@@ -177,7 +209,9 @@ def inject_sys_path(path):
         sys.path = original_sys_path
 
 
-def activate_action(name, description, epilog, add_params, subparsers, action_param_name="action"):
+def activate_action(
+    name, description, epilog, add_params, subparsers, action_param_name="action"
+):
     parser = subparsers.add_parser(
         name,
         description=description,
@@ -218,7 +252,9 @@ def get_migration_secret_from_args(args, *, raise_errors=True, allow_input=True)
     if args.migration_secret_file:
         if not os.path.exists(args.migration_secret_file):
             if raise_errors:
-                raise UserErrorException(f"Migration secret file {args.migration_secret_file} does not exist.")
+                raise UserErrorException(
+                    f"Migration secret file {args.migration_secret_file} does not exist."
+                )
             else:
                 return None
         return Path(args.migration_secret_file).read_text()
@@ -285,7 +321,9 @@ def exception_handler(command: str):
             try:
                 return func(*args, **kwargs)
             except PromptflowException as e:
-                print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
+                print_red_error(
+                    f"{command} failed with {e.__class__.__name__}: {str(e)}"
+                )
                 exit(1)
 
         return wrapper

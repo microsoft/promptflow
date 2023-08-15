@@ -16,13 +16,24 @@ from msrest import Deserializer, Serializer
 
 from . import models
 from ._configuration import AzureMachineLearningDesignerServiceClientConfiguration
-from .operations import BulkRunsOperations, ConnectionOperations, ConnectionsOperations, FlowRunsAdminOperations, FlowRuntimesOperations, FlowSessionsAdminOperations, FlowsOperations, FlowsProviderOperations, ToolsOperations
+from .operations import (
+    BulkRunsOperations,
+    ConnectionOperations,
+    ConnectionsOperations,
+    FlowRunsAdminOperations,
+    FlowRuntimesOperations,
+    FlowSessionsAdminOperations,
+    FlowsOperations,
+    FlowsProviderOperations,
+    ToolsOperations,
+)
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Optional
 
     from azure.core.rest import HttpRequest, HttpResponse
+
 
 class AzureMachineLearningDesignerServiceClient(object):
     """AzureMachineLearningDesignerServiceClient.
@@ -58,20 +69,39 @@ class AzureMachineLearningDesignerServiceClient(object):
         self._config = AzureMachineLearningDesignerServiceClientConfiguration(**kwargs)
         self._client = PipelineClient(base_url=base_url, config=self._config, **kwargs)
 
-        client_models = {k: v for k, v in models.__dict__.items() if isinstance(v, type)}
+        client_models = {
+            k: v for k, v in models.__dict__.items() if isinstance(v, type)
+        }
         self._serialize = Serializer(client_models)
         self._deserialize = Deserializer(client_models)
         self._serialize.client_side_validation = False
-        self.bulk_runs = BulkRunsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.connection = ConnectionOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.connections = ConnectionsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flow_runs_admin = FlowRunsAdminOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flow_runtimes = FlowRuntimesOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flows = FlowsOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flow_sessions_admin = FlowSessionsAdminOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.flows_provider = FlowsProviderOperations(self._client, self._config, self._serialize, self._deserialize)
-        self.tools = ToolsOperations(self._client, self._config, self._serialize, self._deserialize)
-
+        self.bulk_runs = BulkRunsOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.connection = ConnectionOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.connections = ConnectionsOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.flow_runs_admin = FlowRunsAdminOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.flow_runtimes = FlowRuntimesOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.flows = FlowsOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.flow_sessions_admin = FlowSessionsAdminOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.flows_provider = FlowsProviderOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
+        self.tools = ToolsOperations(
+            self._client, self._config, self._serialize, self._deserialize
+        )
 
     def _send_request(
         self,

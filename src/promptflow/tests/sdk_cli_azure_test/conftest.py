@@ -55,7 +55,12 @@ def remote_web_classification_data(remote_client):
         return remote_client._client.data.get(name=data_name, version=data_version)
     except ResourceNotFoundError:
         return remote_client._client.data.create_or_update(
-            Data(name=data_name, version=data_version, path=f"{DATAS_DIR}/webClassification1.jsonl", type="uri_file")
+            Data(
+                name=data_name,
+                version=data_version,
+                path=f"{DATAS_DIR}/webClassification1.jsonl",
+                type="uri_file",
+            )
         )
 
 

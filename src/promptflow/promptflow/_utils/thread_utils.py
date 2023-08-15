@@ -38,7 +38,12 @@ class RepeatLogTimer(threading.Timer):
     """Repeat to log message every interval seconds until it is cancelled."""
 
     def __init__(
-        self, interval_seconds: float, logger: logging.Logger, level: int, log_message_function, args: tuple = None
+        self,
+        interval_seconds: float,
+        logger: logging.Logger,
+        level: int,
+        log_message_function,
+        args: tuple = None,
     ):
         self._logger = logger
         self._level = level
@@ -66,7 +71,9 @@ class RepeatLogTimer(threading.Timer):
         self.finished.set()
 
 
-def execute_func_with_timeout(func: Callable, timeout_seconds: float, func_name: str = None):
+def execute_func_with_timeout(
+    func: Callable, timeout_seconds: float, func_name: str = None
+):
     """Execute a function in a daemon thread with timeout.
 
     After timeout, TimeoutError will be raised if the function is still running.
@@ -93,7 +100,9 @@ def timeout(timeout_seconds: float, func_name: str = None):
     def decorator(func):
         @wraps(func)
         def f_timeout(*args, **kwargs):
-            return execute_func_with_timeout(lambda: func(*args, **kwargs), timeout_seconds, func_name)
+            return execute_func_with_timeout(
+                lambda: func(*args, **kwargs), timeout_seconds, func_name
+            )
 
         return f_timeout
 

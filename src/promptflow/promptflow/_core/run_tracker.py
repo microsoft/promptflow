@@ -15,7 +15,12 @@ from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
-from promptflow.exceptions import ErrorTarget, ExceptionPresenter, UserErrorException, ValidationException
+from promptflow.exceptions import (
+    ErrorTarget,
+    ExceptionPresenter,
+    UserErrorException,
+    ValidationException,
+)
 from promptflow.storage import AbstractRunStorage, DummyRunStorage
 
 
@@ -28,7 +33,9 @@ class RunTracker(ThreadLocalSingleton):
     def init_dummy() -> "RunTracker":
         return RunTracker(DummyRunStorage())
 
-    def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Flow):
+    def __init__(
+        self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Flow
+    ):
         self._node_runs: Dict[str, RunInfo] = {}
         self._flow_runs: Dict[str, FlowRunInfo] = {}
         self._current_run_id = ""
@@ -126,7 +133,9 @@ class RunTracker(ThreadLocalSingleton):
         self.node_log_manager.set_node_context(run_id, node, index)
         return run_info
 
-    def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
+    def _flow_run_postprocess(
+        self, run_info: FlowRunInfo, output, ex: Optional[Exception]
+    ):
         if output:
             try:
                 self._assert_flow_output_serializable(output)
@@ -139,7 +148,9 @@ class RunTracker(ThreadLocalSingleton):
         run_info.api_calls = self._collect_traces_from_nodes(run_id)
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
-        run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
+        run_info.system_metrics.update(
+            self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS)
+        )
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):
         run_id = run_info.run_id
@@ -149,7 +160,9 @@ class RunTracker(ThreadLocalSingleton):
         self.node_log_manager.clear_node_context(run_id)
 
         if run_info.inputs:
-            run_info.inputs = self._ensure_inputs_is_json_serializable(run_info.inputs, run_info.node)
+            run_info.inputs = self._ensure_inputs_is_json_serializable(
+                run_info.inputs, run_info.node
+            )
         if output is not None:
             msg = f"Output of {run_info.node} is not json serializable, use str to store it."
             output = self._ensure_serializable_value(output, msg)
@@ -185,7 +198,9 @@ class RunTracker(ThreadLocalSingleton):
     ):
         run_info = self._flow_runs.get(run_id) or self._node_runs.get(run_id)
         if run_info is None:
-            raise RunRecordNotFound(message=f"Run {run_id} not found", target=ErrorTarget.RUN_TRACKER)
+            raise RunRecordNotFound(
+                message=f"Run {run_id} not found", target=ErrorTarget.RUN_TRACKER
+            )
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
         elif isinstance(run_info, RunInfo):
@@ -210,7 +225,8 @@ class RunTracker(ThreadLocalSingleton):
     def _ensure_inputs_is_json_serializable(self, inputs: dict, node_name: str) -> dict:
         return {
             k: self._ensure_serializable_value(
-                v, f"Input '{k}' of {node_name} is not json serializable, use str to store it."
+                v,
+                f"Input '{k}' of {node_name} is not json serializable, use str to store it.",
             )
             for k, v in inputs.items()
         }
@@ -225,7 +241,9 @@ class RunTracker(ThreadLocalSingleton):
                 target=ErrorTarget.FLOW_EXECUTOR,
             ) from e
 
-    def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
+    def _enrich_run_info_with_exception(
+        self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception
+    ):
         """Update exception details into run info."""
         run_info.error = ExceptionPresenter(ex).to_dict(include_debug_info=self._debug)
         run_info.status = Status.Failed
@@ -241,18 +259,27 @@ class RunTracker(ThreadLocalSingleton):
     def collect_node_runs(self, flow_run_id: Optional[str] = None) -> List[RunInfo]:
         """If flow_run_id is None, return all node runs."""
         if flow_run_id:
-            return [run_info for run_info in self.node_run_list if run_info.flow_run_id == flow_run_id]
+            return [
+                run_info
+                for run_info in self.node_run_list
+                if run_info.flow_run_id == flow_run_id
+            ]
 
         return [run_info for run_info in self.node_run_list]
 
     def collect_child_node_runs(self, parent_run_id: str) -> List[RunInfo]:
-        return [run_info for run_info in self.node_run_list if run_info.parent_run_id == parent_run_id]
+        return [
+            run_info
+            for run_info in self.node_run_list
+            if run_info.parent_run_id == parent_run_id
+        ]
 
     def ensure_run_info(self, run_id: str) -> Union[RunInfo, FlowRunInfo]:
         run_info = self._node_runs.get(run_id) or self._flow_runs.get(run_id)
         if run_info is None:
             raise RunRecordNotFound(
-                message=f"Run {run_id} not found when tracking inputs", target=ErrorTarget.RUN_TRACKER
+                message=f"Run {run_id} not found when tracking inputs",
+                target=ErrorTarget.RUN_TRACKER,
             )
         return run_info
 
@@ -309,7 +336,9 @@ class RunTracker(ThreadLocalSingleton):
 
     OPENAI_AGGREGATE_METRICS = ["total_tokens"]
 
-    def collect_metrics(self, run_infos: List[RunInfo], aggregate_metrics: List[str] = []):
+    def collect_metrics(
+        self, run_infos: List[RunInfo], aggregate_metrics: List[str] = []
+    ):
         if not aggregate_metrics:
             return {}
         total_metrics = {}
@@ -317,7 +346,9 @@ class RunTracker(ThreadLocalSingleton):
             if not run_info.system_metrics:
                 continue
             for metric in aggregate_metrics:
-                total_metrics[metric] = total_metrics.get(metric, 0) + run_info.system_metrics.get(metric, 0)
+                total_metrics[metric] = total_metrics.get(
+                    metric, 0
+                ) + run_info.system_metrics.get(metric, 0)
         return total_metrics
 
     def get_run(self, run_id):
@@ -338,16 +369,25 @@ class RunTracker(ThreadLocalSingleton):
                 if run_info.index not in line_status.keys():
                     line_status[run_info.index] = True
 
-                line_status[run_info.index] = line_status[run_info.index] and run_info.status == Status.Completed
+                line_status[run_info.index] = (
+                    line_status[run_info.index] and run_info.status == Status.Completed
+                )
 
                 node_name = run_info.node
-                if "__pf__.nodes." + node_name + ".completed" not in status_summary.keys():
+                if (
+                    "__pf__.nodes." + node_name + ".completed"
+                    not in status_summary.keys()
+                ):
                     status_summary["__pf__.nodes." + node_name + ".completed"] = 0
                     status_summary["__pf__.nodes." + node_name + ".failed"] = 0
 
                 # Only consider Completed and Failed status, because the UX only support two status.
                 if run_info.status in (Status.Completed, Status.Failed):
-                    status_summary["__pf__.nodes." + node_name + f".{run_info.status.value}".lower()] += 1
+                    status_summary[
+                        "__pf__.nodes."
+                        + node_name
+                        + f".{run_info.status.value}".lower()
+                    ] += 1
 
             # For reduce node, the index is None.
             else:
@@ -357,7 +397,9 @@ class RunTracker(ThreadLocalSingleton):
                 )
 
         status_summary["__pf__.lines.completed"] = sum(line_status.values())
-        status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]
+        status_summary["__pf__.lines.failed"] = (
+            len(line_status) - status_summary["__pf__.lines.completed"]
+        )
         return status_summary
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):

@@ -24,7 +24,10 @@ def e2e_test_docker_build_and_run(output_path):
     import tempfile
 
     subprocess.check_output(["docker", "build", ".", "-t", "test"], cwd=output_path)
-    subprocess.check_output(["docker", "tag", "test", "elliotz/promptflow-export-result:latest"], cwd=output_path)
+    subprocess.check_output(
+        ["docker", "tag", "test", "elliotz/promptflow-export-result:latest"],
+        cwd=output_path,
+    )
 
     migration_secret_name = "MIGRATION_SECRET"
     subprocess.call(["docker", "swarm", "init"], cwd=output_path)
@@ -35,7 +38,13 @@ def e2e_test_docker_build_and_run(output_path):
         secret_file = Path(temp_dir) / "secret.txt"
         secret_file.write_text("123")
         subprocess.call(
-            ["docker", "secret", "create", migration_secret_name, secret_file.as_posix()],
+            [
+                "docker",
+                "secret",
+                "create",
+                migration_secret_name,
+                secret_file.as_posix(),
+            ],
             cwd=output_path,
         )
     subprocess.call(
@@ -69,7 +78,9 @@ def e2e_test_docker_build_and_run(output_path):
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowLocalOperations:
-    def test_flow_export_as_docker(self, azure_open_ai_connection: AzureOpenAIConnection) -> None:
+    def test_flow_export_as_docker(
+        self, azure_open_ai_connection: AzureOpenAIConnection
+    ) -> None:
         _ = {
             "azure_open_ai_connection": azure_open_ai_connection,
         }
@@ -115,7 +126,9 @@ class TestFlowLocalOperations:
 
         # check if .amlignore works
         assert os.path.isfile(f"{source}/.promptflow/flow.tools.json")
-        assert not (Path(output_path) / "flow" / ".promptflow" / "flow.tools.json").exists()
+        assert not (
+            Path(output_path) / "flow" / ".promptflow" / "flow.tools.json"
+        ).exists()
         assert os.path.isdir(f"{source}/data")
         assert not (Path(output_path) / "flow" / "data").exists()
 
@@ -158,7 +171,9 @@ class TestFlowLocalOperations:
             data = f.readlines()
         number_of_lines = len(data)
 
-        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+        from promptflow._sdk.operations._local_storage_operations import (
+            LocalStorageOperations,
+        )
 
         local_storage = LocalStorageOperations(local_client.runs.get(run.name))
         detail = local_storage.load_detail()

@@ -15,11 +15,15 @@ from promptflow.contracts.run_management import VisualizationRender
 
 def generate_html_string(data: dict) -> str:
     visualization_render = VisualizationRender(data)
-    return render_jinja_template(VISUALIZE_HTML_TEMPLATE, **asdict(visualization_render))
+    return render_jinja_template(
+        VISUALIZE_HTML_TEMPLATE, **asdict(visualization_render)
+    )
 
 
 def try_to_open_html(html_path: str) -> None:
-    print(f"The HTML file is generated at {str(Path(html_path).resolve().absolute())!r}.")
+    print(
+        f"The HTML file is generated at {str(Path(html_path).resolve().absolute())!r}."
+    )
     print("Trying to view the result in a web browser...")
     web_browser_opened = False
     web_browser_opened = webbrowser.open(f"file://{html_path}")
@@ -32,12 +36,16 @@ def try_to_open_html(html_path: str) -> None:
         print("Successfully visualized from the web browser.")
 
 
-def dump_html(html_string: str, html_path: Optional[str] = None, open_html: bool = True) -> None:
+def dump_html(
+    html_string: str, html_path: Optional[str] = None, open_html: bool = True
+) -> None:
     if html_path is not None:
         with open(html_path, "w") as f:
             f.write(html_string)
     else:
-        with tempfile.NamedTemporaryFile(prefix="pf-visualize-detail-", suffix=".html", delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            prefix="pf-visualize-detail-", suffix=".html", delete=False
+        ) as f:
             f.write(html_string.encode("utf-8"))
             html_path = f.name
 

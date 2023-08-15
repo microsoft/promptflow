@@ -28,7 +28,10 @@ class InputValueType(Enum):
 
 
 FLOW_INPUT_PREFIX = "flow."
-FLOW_INPUT_PREFIXES = [FLOW_INPUT_PREFIX, "inputs."]  # Use a list for backward compatibility
+FLOW_INPUT_PREFIXES = [
+    FLOW_INPUT_PREFIX,
+    "inputs.",
+]  # Use a list for backward compatibility
 
 
 @dataclass
@@ -95,7 +98,9 @@ class FlowInputAssignment(InputAssignment):
         for prefix in FLOW_INPUT_PREFIXES:
             if value.startswith(prefix):
                 return FlowInputAssignment(
-                    value=value[len(prefix) :], value_type=InputValueType.FLOW_INPUT, prefix=prefix
+                    value=value[len(prefix) :],
+                    value_type=InputValueType.FLOW_INPUT,
+                    prefix=prefix,
                 )
         raise ValueError(f"Unexpected flow input value {value}")
 
@@ -156,7 +161,9 @@ class Node:
     def serialize(self):
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v})
         self.inputs = self.inputs or {}
-        data.update({"inputs": {name: i.serialize() for name, i in self.inputs.items()}})
+        data.update(
+            {"inputs": {name: i.serialize() for name, i in self.inputs.items()}}
+        )
         if self.reduce:
             data["reduce"] = True
         return data
@@ -166,7 +173,10 @@ class Node:
         node = Node(
             name=data["name"],
             tool=data.get("tool"),
-            inputs={name: InputAssignment.deserialize(v) for name, v in (data.get("inputs") or {}).items()},
+            inputs={
+                name: InputAssignment.deserialize(v)
+                for name, v in (data.get("inputs") or {}).items()
+            },
             comment=data.get("comment", ""),
             api=data.get("api", None),
             provider=data.get("provider", None),
@@ -276,15 +286,22 @@ class Flow:
             # Import tool modules to ensure register_builtins & registered_connections executed
             for tool in tools:
                 if tool.module:
-                    try_import(tool.module, f"Import tool {tool.name!r} module {tool.module!r} failed.")
+                    try_import(
+                        tool.module,
+                        f"Import tool {tool.name!r} module {tool.module!r} failed.",
+                    )
             # Import node provider to ensure register_apis executed so that provider & connection exists.
             for node in nodes:
                 if node.module:
-                    try_import(node.module, f"Import node {node.name!r} provider module {node.module!r} failed.")
+                    try_import(
+                        node.module,
+                        f"Import node {node.name!r} provider module {node.module!r} failed.",
+                    )
         except Exception as e:
             logger.warning("Failed to import modules...")
             raise FailedToImportModule(
-                message=f"Failed to import modules with error: {str(e)}.", target=ErrorTarget.RUNTIME
+                message=f"Failed to import modules with error: {str(e)}.",
+                target=ErrorTarget.RUNTIME,
             ) from e
 
     @staticmethod
@@ -297,8 +314,14 @@ class Flow:
             data.get("id", data.get("name", "default_flow_id")),
             data.get("name", "default_flow"),
             nodes,
-            {name: FlowInputDefinition.deserialize(i) for name, i in data.get("inputs", {}).items()},
-            {name: FlowOutputDefinition.deserialize(o) for name, o in data.get("outputs", {}).items()},
+            {
+                name: FlowInputDefinition.deserialize(i)
+                for name, i in data.get("inputs", {}).items()
+            },
+            {
+                name: FlowOutputDefinition.deserialize(o)
+                for name, o in data.get("outputs", {}).items()
+            },
             tools=tools,
         )
 
@@ -324,7 +347,9 @@ class Flow:
 
         for node in flow.nodes:
             if node.source:
-                tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
+                tool = gen_tool_by_source(
+                    node.name, node.source, node.type, working_dir
+                )
                 node.tool = tool.name
                 flow.tools.append(tool)
         return flow
@@ -394,12 +419,17 @@ class Flow:
         return other_node.inputs and any(
             input
             for input in other_node.inputs.values()
-            if input.value_type == InputValueType.NODE_REFERENCE and input.value == node.name
+            if input.value_type == InputValueType.NODE_REFERENCE
+            and input.value == node.name
         )
 
     def is_referenced_by_other_node(self, node):
         """Given a node, return whether it is referenced by other node."""
-        return any(flow_node for flow_node in self.nodes if self.is_node_referenced_by(node, flow_node))
+        return any(
+            flow_node
+            for flow_node in self.nodes
+            if self.is_node_referenced_by(node, flow_node)
+        )
 
     def is_chat_flow(self):
         chat_input_name = self.get_chat_input_name()
@@ -409,7 +439,9 @@ class Flow:
         return next((name for name, i in self.inputs.items() if i.is_chat_input), None)
 
     def get_chat_output_name(self):
-        return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
+        return next(
+            (name for name, o in self.outputs.items() if o.is_chat_output), None
+        )
 
     def get_connection_input_names_for_node(self, node_name):
         """Return connection input names."""
@@ -426,7 +458,10 @@ class Flow:
                 continue
             input_assignment = node.inputs.get(k)
             # Add literal node assignment values to results, skip node reference
-            if isinstance(input_assignment, InputAssignment) and input_assignment.value_type == InputValueType.LITERAL:
+            if (
+                isinstance(input_assignment, InputAssignment)
+                and input_assignment.value_type == InputValueType.LITERAL
+            ):
                 result.append(k)
         return result
 
@@ -447,7 +482,9 @@ class Flow:
             tool = tool_metas.get(node.tool)
             # Force regard input type not in ValueType as connection type.
             for k, v in tool.inputs.items():
-                input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
+                input_type = [
+                    typ.value if isinstance(typ, Enum) else typ for typ in v.type
+                ]
                 if all(typ.lower() in value_types for typ in input_type):
                     # All type is value type, the key is not a possible connection key.
                     continue
@@ -511,11 +548,15 @@ class BatchFlowRequest(BaseFlowRequest):
                 variant_id: [Node.deserialize(node) for node in nodes]
                 for variant_id, nodes in data.get("variants", {}).items()
             },
-            variants_tools=[Tool.deserialize(t) for t in data.get("variants_tools", [])],
+            variants_tools=[
+                Tool.deserialize(t) for t in data.get("variants_tools", [])
+            ],
             variants_runs=data.get("variants_runs", {}),
             variants_codes=data.get("variants_codes", {}),
             bulk_test_id=data.get("bulk_test_id", None),
-            eval_flow=Flow.deserialize(data["eval_flow"]) if data.get("eval_flow", None) else None,
+            eval_flow=Flow.deserialize(data["eval_flow"])
+            if data.get("eval_flow", None)
+            else None,
             eval_flow_run_id=data.get("eval_flow_run_id"),
             eval_flow_inputs_mapping=data.get("eval_flow_inputs_mapping", {}),
         )
@@ -540,7 +581,9 @@ class NodesRequest(BaseFlowRequest):
                 variant_id: [Node.deserialize(node) for node in nodes]
                 for variant_id, nodes in data.get("variants", {}).items()
             },
-            variants_tools=[Tool.deserialize(t) for t in data.get("variants_tools", [])],
+            variants_tools=[
+                Tool.deserialize(t) for t in data.get("variants_tools", [])
+            ],
             variants_codes=data.get("variants_codes", {}),
         )
 
@@ -562,7 +605,12 @@ class NodesRequest(BaseFlowRequest):
         # Create a new flow, leave node to execute only and update the inputs.
         new_flow = copy.deepcopy(self.flow)
         node_idx, node = next(
-            ((_idx, n) for _idx, n in enumerate(new_flow.nodes) if n.name == self.node_name), (None, None)
+            (
+                (_idx, n)
+                for _idx, n in enumerate(new_flow.nodes)
+                if n.name == self.node_name
+            ),
+            (None, None),
         )
         from .run_mode import RunMode
 
@@ -572,7 +620,9 @@ class NodesRequest(BaseFlowRequest):
         elif run_mode == RunMode.FromNode:
             new_flow.nodes = new_flow.nodes[node_idx:]
         else:
-            raise NotImplementedError(f"Run mode {run_mode} is not supported in current version.")
+            raise NotImplementedError(
+                f"Run mode {run_mode} is not supported in current version."
+            )
         return new_flow.get_connection_names()
 
 

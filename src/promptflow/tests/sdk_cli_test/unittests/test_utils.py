@@ -7,7 +7,11 @@ from pathlib import Path
 import pytest
 
 from promptflow._cli._utils import list_of_dict_to_nested_dict
-from promptflow._sdk._utils import decrypt_secret_value, encrypt_secret_value, snake_to_camel
+from promptflow._sdk._utils import (
+    decrypt_secret_value,
+    encrypt_secret_value,
+    snake_to_camel,
+)
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"

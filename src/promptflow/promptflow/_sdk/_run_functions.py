@@ -14,7 +14,9 @@ def _create_run(run: Run, **kwargs):
     return client.runs.create_or_update(run=run, **kwargs)
 
 
-def create_yaml_run(source: Union[str, PathLike, IO[AnyStr]], params_override: list = None, **kwargs):
+def create_yaml_run(
+    source: Union[str, PathLike, IO[AnyStr]], params_override: list = None, **kwargs
+):
     """Create a run from a yaml file. Should only call from CLI."""
     run = load_run(source, params_override=params_override, **kwargs)
     return _create_run(run=run, **kwargs)

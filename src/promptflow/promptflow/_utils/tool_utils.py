@@ -47,8 +47,15 @@ def param_to_definition(param) -> (InputDefinition, bool):
     value_type = resolve_annotation(param.annotation)
     enum = None
     # Get value type and enum from default if no annotation
-    if default_value is not inspect.Parameter.empty and value_type == inspect.Parameter.empty:
-        value_type = default_value.__class__ if isinstance(default_value, Enum) else type(default_value)
+    if (
+        default_value is not inspect.Parameter.empty
+        and value_type == inspect.Parameter.empty
+    ):
+        value_type = (
+            default_value.__class__
+            if isinstance(default_value, Enum)
+            else type(default_value)
+        )
     # Extract enum for enum class
     if isinstance(value_type, EnumMeta):
         enum = [str(option.value) for option in value_type]
@@ -65,7 +72,12 @@ def param_to_definition(param) -> (InputDefinition, bool):
             is_connection = True
     else:
         typ = [ValueType.from_type(value_type)]
-    return InputDefinition(type=typ, default=value_to_str(default_value), description=None, enum=enum), is_connection
+    return (
+        InputDefinition(
+            type=typ, default=value_to_str(default_value), description=None, enum=enum
+        ),
+        is_connection,
+    )
 
 
 def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
@@ -76,13 +88,17 @@ def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
     # Collect all inputs from class and func
     if initialize_inputs:
         if any(k for k in initialize_inputs if k in sign.parameters):
-            raise Exception(f'Duplicate inputs found from {f.__name__!r} and "__init__()"!')
+            raise Exception(
+                f'Duplicate inputs found from {f.__name__!r} and "__init__()"!'
+            )
         all_inputs = {**initialize_inputs}
     all_inputs.update(
         {
             k: v
             for k, v in sign.parameters.items()
-            if k != "self" and v.kind != v.VAR_KEYWORD and v.kind != v.VAR_POSITIONAL  # TODO: Handle these cases
+            if k != "self"
+            and v.kind != v.VAR_KEYWORD
+            and v.kind != v.VAR_POSITIONAL  # TODO: Handle these cases
         }
     )
     # Resolve inputs to definitions.
@@ -115,12 +131,20 @@ def referenced_global_variable_names(f: Callable):
 
 def parse_globals(f: Callable):
     f = getattr(f, "__original_function", f)
-    required_globals = {name: f.__globals__.get(name) for name in referenced_global_variable_names(f)}
+    required_globals = {
+        name: f.__globals__.get(name) for name in referenced_global_variable_names(f)
+    }
     # Types on function annotation also need to be included.
     required_globals.update(
-        {v.__name__: f.__globals__.get(v.__name__) for v in f.__annotations__.values() if isinstance(v, type)}
+        {
+            v.__name__: f.__globals__.get(v.__name__)
+            for v in f.__annotations__.values()
+            if isinstance(v, type)
+        }
     )
-    required_globals = {name: value for name, value in required_globals.items() if value is not None}
+    required_globals = {
+        name: value for name, value in required_globals.items() if value is not None
+    }
     return required_globals
 
 
@@ -188,7 +212,9 @@ def prepare_globals(function_globals):
     sources = [
         "from typing import List, Mapping, Dict",
     ]
-    promptflow_globals = sorted([name for name in function_globals.keys() if name in PROMPTFLOW_GLOBALS])
+    promptflow_globals = sorted(
+        [name for name in function_globals.keys() if name in PROMPTFLOW_GLOBALS]
+    )
     if "tool" not in function_globals:
         promptflow_globals = ["tool"] + promptflow_globals
     sources.append(f"from promptflow import {', '.join(promptflow_globals)}")
@@ -230,10 +256,14 @@ def create_function_source(f, existing_globals={}) -> str:
     # TODO: Handle them for more scenarios
     # Filter out function in same file with f
     file_scoped_functions = {
-        k: v for k, v in function_globals.items() if isinstance(v, Callable) and v.__module__ == f.__module__
+        k: v
+        for k, v in function_globals.items()
+        if isinstance(v, Callable) and v.__module__ == f.__module__
     }
     function_globals = {
-        k: v for k, v in function_globals.items() if k not in existing_globals and k not in file_scoped_functions
+        k: v
+        for k, v in function_globals.items()
+        if k not in existing_globals and k not in file_scoped_functions
     }
     function_source = inspect.getsource(f)
     function_prefix = prepare_globals(function_globals)
@@ -243,7 +273,12 @@ def create_function_source(f, existing_globals={}) -> str:
 
 
 def function_to_tool_definition(
-    f: Callable, type=None, is_builtin=False, provided_kwargs=None, prompt_name_mapping=None, initialize_inputs=None
+    f: Callable,
+    type=None,
+    is_builtin=False,
+    provided_kwargs=None,
+    prompt_name_mapping=None,
+    initialize_inputs=None,
 ) -> Tool:
     """Translate a function to tool definition.
 
@@ -273,10 +308,14 @@ def function_to_tool_definition(
         "class_name": class_name,
         "function": f.__name__,
         # !!!Note: We use class name - Connection suffix as connection type, the value will be shown on UI.
-        "connection_type": [re.sub("Connection$", "", i) for i in connection_types] if type is ToolType.LLM else None,
+        "connection_type": [re.sub("Connection$", "", i) for i in connection_types]
+        if type is ToolType.LLM
+        else None,
     }
     if is_builtin:
-        return Tool(type=type, module=f.__module__, **meta_dict, is_builtin=True, stage="test")
+        return Tool(
+            type=type, module=f.__module__, **meta_dict, is_builtin=True, stage="test"
+        )
     if type is ToolType.LLM:
         prompt_tpl_name = get_prompt_param_name_from_func(f)
         prompt_tpl_value = provided_kwargs.get(prompt_tpl_name, "")
@@ -301,9 +340,18 @@ def get_inputs_for_prompt_template(template_str):
     """Get all input variable names from a jinja2 template string."""
     env = Environment()
     template = env.parse(template_str)
-    return sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
+    return sorted(
+        meta.find_undeclared_variables(template), key=lambda x: template_str.find(x)
+    )
 
 
 def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
-    return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
+    return next(
+        (
+            k
+            for k, annotation in f.__annotations__.items()
+            if annotation == PromptTemplate
+        ),
+        None,
+    )

@@ -22,7 +22,9 @@ if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
 
 LOCAL_MGMT_DB_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite").resolve()
-LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock").resolve()
+LOCAL_MGMT_DB_SESSION_ACQUIRE_LOCK_PATH = (
+    HOME_PROMPT_FLOW_DIR / "pf.sqlite.lock"
+).resolve()
 SCHEMA_INFO_TABLENAME = "schema_info"
 RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
@@ -207,13 +209,11 @@ class RunInfoSources(str, Enum):
 
 
 class ConfigValueType(str, Enum):
-
     STRING = "String"
     SECRET = "Secret"
 
 
 class ConnectionType(str, Enum):
-
     _NOT_SET = "NotSet"
     AZURE_OPEN_AI = "AzureOpenAI"
     OPEN_AI = "OpenAI"
@@ -241,4 +241,7 @@ class RunDataKeys:
     OUTPUT_PORTAL_URL = "output_portal_url"
 
 
-SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
+SUPPORTED_CONNECTION_FIELDS = {
+    ConnectionFields.CONNECTION.value,
+    ConnectionFields.DEPLOYMENT_NAME.value,
+}

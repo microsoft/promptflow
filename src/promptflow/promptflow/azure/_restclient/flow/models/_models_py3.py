@@ -37,19 +37,24 @@ class ACIAdvanceSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'container_resource_requirements': {'key': 'containerResourceRequirements', 'type': 'ContainerResourceRequirements'},
-        'app_insights_enabled': {'key': 'appInsightsEnabled', 'type': 'bool'},
-        'ssl_enabled': {'key': 'sslEnabled', 'type': 'bool'},
-        'ssl_certificate': {'key': 'sslCertificate', 'type': 'str'},
-        'ssl_key': {'key': 'sslKey', 'type': 'str'},
-        'c_name': {'key': 'cName', 'type': 'str'},
-        'dns_name_label': {'key': 'dnsNameLabel', 'type': 'str'},
+        "container_resource_requirements": {
+            "key": "containerResourceRequirements",
+            "type": "ContainerResourceRequirements",
+        },
+        "app_insights_enabled": {"key": "appInsightsEnabled", "type": "bool"},
+        "ssl_enabled": {"key": "sslEnabled", "type": "bool"},
+        "ssl_certificate": {"key": "sslCertificate", "type": "str"},
+        "ssl_key": {"key": "sslKey", "type": "str"},
+        "c_name": {"key": "cName", "type": "str"},
+        "dns_name_label": {"key": "dnsNameLabel", "type": "str"},
     }
 
     def __init__(
         self,
         *,
-        container_resource_requirements: Optional["ContainerResourceRequirements"] = None,
+        container_resource_requirements: Optional[
+            "ContainerResourceRequirements"
+        ] = None,
         app_insights_enabled: Optional[bool] = None,
         ssl_enabled: Optional[bool] = None,
         ssl_certificate: Optional[str] = None,
@@ -96,9 +101,9 @@ class AdhocTriggerScheduledCommandJobRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_name': {'key': 'jobName', 'type': 'str'},
-        'job_display_name': {'key': 'jobDisplayName', 'type': 'str'},
-        'trigger_time_string': {'key': 'triggerTimeString', 'type': 'str'},
+        "job_name": {"key": "jobName", "type": "str"},
+        "job_display_name": {"key": "jobDisplayName", "type": "str"},
+        "trigger_time_string": {"key": "triggerTimeString", "type": "str"},
     }
 
     def __init__(
@@ -135,9 +140,9 @@ class AdhocTriggerScheduledSparkJobRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_name': {'key': 'jobName', 'type': 'str'},
-        'job_display_name': {'key': 'jobDisplayName', 'type': 'str'},
-        'trigger_time_string': {'key': 'triggerTimeString', 'type': 'str'},
+        "job_name": {"key": "jobName", "type": "str"},
+        "job_display_name": {"key": "jobDisplayName", "type": "str"},
+        "trigger_time_string": {"key": "triggerTimeString", "type": "str"},
     }
 
     def __init__(
@@ -174,15 +179,26 @@ class AetherAmlDataset(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'registered_data_set_reference': {'key': 'registeredDataSetReference', 'type': 'AetherRegisteredDataSetReference'},
-        'saved_data_set_reference': {'key': 'savedDataSetReference', 'type': 'AetherSavedDataSetReference'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "registered_data_set_reference": {
+            "key": "registeredDataSetReference",
+            "type": "AetherRegisteredDataSetReference",
+        },
+        "saved_data_set_reference": {
+            "key": "savedDataSetReference",
+            "type": "AetherSavedDataSetReference",
+        },
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
         self,
         *,
-        registered_data_set_reference: Optional["AetherRegisteredDataSetReference"] = None,
+        registered_data_set_reference: Optional[
+            "AetherRegisteredDataSetReference"
+        ] = None,
         saved_data_set_reference: Optional["AetherSavedDataSetReference"] = None,
         additional_transformations: Optional[str] = None,
         **kwargs
@@ -239,22 +255,25 @@ class AetherAmlSparkCloudSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'entry': {'key': 'entry', 'type': 'AetherEntrySetting'},
-        'files': {'key': 'files', 'type': '[str]'},
-        'archives': {'key': 'archives', 'type': '[str]'},
-        'jars': {'key': 'jars', 'type': '[str]'},
-        'py_files': {'key': 'pyFiles', 'type': '[str]'},
-        'driver_memory': {'key': 'driverMemory', 'type': 'str'},
-        'driver_cores': {'key': 'driverCores', 'type': 'int'},
-        'executor_memory': {'key': 'executorMemory', 'type': 'str'},
-        'executor_cores': {'key': 'executorCores', 'type': 'int'},
-        'number_executors': {'key': 'numberExecutors', 'type': 'int'},
-        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
-        'inline_environment_definition_string': {'key': 'inlineEnvironmentDefinitionString', 'type': 'str'},
-        'conf': {'key': 'conf', 'type': '{str}'},
-        'compute': {'key': 'compute', 'type': 'str'},
-        'resources': {'key': 'resources', 'type': 'AetherResourcesSetting'},
-        'identity': {'key': 'identity', 'type': 'AetherIdentitySetting'},
+        "entry": {"key": "entry", "type": "AetherEntrySetting"},
+        "files": {"key": "files", "type": "[str]"},
+        "archives": {"key": "archives", "type": "[str]"},
+        "jars": {"key": "jars", "type": "[str]"},
+        "py_files": {"key": "pyFiles", "type": "[str]"},
+        "driver_memory": {"key": "driverMemory", "type": "str"},
+        "driver_cores": {"key": "driverCores", "type": "int"},
+        "executor_memory": {"key": "executorMemory", "type": "str"},
+        "executor_cores": {"key": "executorCores", "type": "int"},
+        "number_executors": {"key": "numberExecutors", "type": "int"},
+        "environment_asset_id": {"key": "environmentAssetId", "type": "str"},
+        "inline_environment_definition_string": {
+            "key": "inlineEnvironmentDefinitionString",
+            "type": "str",
+        },
+        "conf": {"key": "conf", "type": "{str}"},
+        "compute": {"key": "compute", "type": "str"},
+        "resources": {"key": "resources", "type": "AetherResourcesSetting"},
+        "identity": {"key": "identity", "type": "AetherIdentitySetting"},
     }
 
     def __init__(
@@ -343,9 +362,9 @@ class AetherAPCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'referenced_ap_module_guid': {'key': 'referencedAPModuleGuid', 'type': 'str'},
-        'user_alias': {'key': 'userAlias', 'type': 'str'},
-        'aether_module_type': {'key': 'aetherModuleType', 'type': 'str'},
+        "referenced_ap_module_guid": {"key": "referencedAPModuleGuid", "type": "str"},
+        "user_alias": {"key": "userAlias", "type": "str"},
+        "aether_module_type": {"key": "aetherModuleType", "type": "str"},
     }
 
     def __init__(
@@ -385,10 +404,16 @@ class AetherArgumentAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value_type': {'key': 'valueType', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
-        'nested_argument_list': {'key': 'nestedArgumentList', 'type': '[AetherArgumentAssignment]'},
-        'string_interpolation_argument_list': {'key': 'stringInterpolationArgumentList', 'type': '[AetherArgumentAssignment]'},
+        "value_type": {"key": "valueType", "type": "str"},
+        "value": {"key": "value", "type": "str"},
+        "nested_argument_list": {
+            "key": "nestedArgumentList",
+            "type": "[AetherArgumentAssignment]",
+        },
+        "string_interpolation_argument_list": {
+            "key": "stringInterpolationArgumentList",
+            "type": "[AetherArgumentAssignment]",
+        },
     }
 
     def __init__(
@@ -397,7 +422,9 @@ class AetherArgumentAssignment(msrest.serialization.Model):
         value_type: Optional[Union[str, "AetherArgumentValueType"]] = None,
         value: Optional[str] = None,
         nested_argument_list: Optional[List["AetherArgumentAssignment"]] = None,
-        string_interpolation_argument_list: Optional[List["AetherArgumentAssignment"]] = None,
+        string_interpolation_argument_list: Optional[
+            List["AetherArgumentAssignment"]
+        ] = None,
         **kwargs
     ):
         """
@@ -435,11 +462,11 @@ class AetherAssetDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'path': {'key': 'path', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'initial_asset_id': {'key': 'initialAssetId', 'type': 'str'},
-        'serialized_asset_id': {'key': 'serializedAssetId', 'type': 'str'},
+        "path": {"key": "path", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "initial_asset_id": {"key": "initialAssetId", "type": "str"},
+        "serialized_asset_id": {"key": "serializedAssetId", "type": "str"},
     }
 
     def __init__(
@@ -495,13 +522,16 @@ class AetherAssetOutputSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'path': {'key': 'path', 'type': 'str'},
-        'path_parameter_assignment': {'key': 'PathParameterAssignment', 'type': 'AetherParameterAssignment'},
-        'type': {'key': 'type', 'type': 'str'},
-        'options': {'key': 'options', 'type': '{str}'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "path": {"key": "path", "type": "str"},
+        "path_parameter_assignment": {
+            "key": "PathParameterAssignment",
+            "type": "AetherParameterAssignment",
+        },
+        "type": {"key": "type", "type": "str"},
+        "options": {"key": "options", "type": "{str}"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -552,7 +582,10 @@ class AetherAutoFeaturizeConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'featurization_config': {'key': 'featurizationConfig', 'type': 'AetherFeaturizationSettings'},
+        "featurization_config": {
+            "key": "featurizationConfig",
+            "type": "AetherFeaturizationSettings",
+        },
     }
 
     def __init__(
@@ -579,8 +612,14 @@ class AetherAutoMLComponentConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'auto_train_config': {'key': 'autoTrainConfig', 'type': 'AetherAutoTrainConfiguration'},
-        'auto_featurize_config': {'key': 'autoFeaturizeConfig', 'type': 'AetherAutoFeaturizeConfiguration'},
+        "auto_train_config": {
+            "key": "autoTrainConfig",
+            "type": "AetherAutoTrainConfiguration",
+        },
+        "auto_featurize_config": {
+            "key": "autoFeaturizeConfig",
+            "type": "AetherAutoFeaturizeConfiguration",
+        },
     }
 
     def __init__(
@@ -631,18 +670,30 @@ class AetherAutoTrainConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'general_settings': {'key': 'generalSettings', 'type': 'AetherGeneralSettings'},
-        'limit_settings': {'key': 'limitSettings', 'type': 'AetherLimitSettings'},
-        'data_settings': {'key': 'dataSettings', 'type': 'AetherDataSettings'},
-        'forecasting_settings': {'key': 'forecastingSettings', 'type': 'AetherForecastingSettings'},
-        'training_settings': {'key': 'trainingSettings', 'type': 'AetherTrainingSettings'},
-        'sweep_settings': {'key': 'sweepSettings', 'type': 'AetherSweepSettings'},
-        'image_model_settings': {'key': 'imageModelSettings', 'type': '{object}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'compute_configuration': {'key': 'computeConfiguration', 'type': 'AetherComputeConfiguration'},
-        'resource_configurtion': {'key': 'resourceConfigurtion', 'type': 'AetherResourceConfiguration'},
-        'environment_id': {'key': 'environmentId', 'type': 'str'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
+        "general_settings": {"key": "generalSettings", "type": "AetherGeneralSettings"},
+        "limit_settings": {"key": "limitSettings", "type": "AetherLimitSettings"},
+        "data_settings": {"key": "dataSettings", "type": "AetherDataSettings"},
+        "forecasting_settings": {
+            "key": "forecastingSettings",
+            "type": "AetherForecastingSettings",
+        },
+        "training_settings": {
+            "key": "trainingSettings",
+            "type": "AetherTrainingSettings",
+        },
+        "sweep_settings": {"key": "sweepSettings", "type": "AetherSweepSettings"},
+        "image_model_settings": {"key": "imageModelSettings", "type": "{object}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "compute_configuration": {
+            "key": "computeConfiguration",
+            "type": "AetherComputeConfiguration",
+        },
+        "resource_configurtion": {
+            "key": "resourceConfigurtion",
+            "type": "AetherResourceConfiguration",
+        },
+        "environment_id": {"key": "environmentId", "type": "str"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
     }
 
     def __init__(
@@ -723,13 +774,13 @@ class AetherAzureBlobReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'container': {'key': 'container', 'type': 'str'},
-        'sas_token': {'key': 'sasToken', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'path_type': {'key': 'pathType', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "container": {"key": "container", "type": "str"},
+        "sas_token": {"key": "sasToken", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "path_type": {"key": "pathType", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -790,13 +841,16 @@ class AetherAzureDatabaseReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'server_uri': {'key': 'serverUri', 'type': 'str'},
-        'database_name': {'key': 'databaseName', 'type': 'str'},
-        'table_name': {'key': 'tableName', 'type': 'str'},
-        'sql_query': {'key': 'sqlQuery', 'type': 'str'},
-        'stored_procedure_name': {'key': 'storedProcedureName', 'type': 'str'},
-        'stored_procedure_parameters': {'key': 'storedProcedureParameters', 'type': '[AetherStoredProcedureParameter]'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "server_uri": {"key": "serverUri", "type": "str"},
+        "database_name": {"key": "databaseName", "type": "str"},
+        "table_name": {"key": "tableName", "type": "str"},
+        "sql_query": {"key": "sqlQuery", "type": "str"},
+        "stored_procedure_name": {"key": "storedProcedureName", "type": "str"},
+        "stored_procedure_parameters": {
+            "key": "storedProcedureParameters",
+            "type": "[AetherStoredProcedureParameter]",
+        },
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -807,7 +861,9 @@ class AetherAzureDatabaseReference(msrest.serialization.Model):
         table_name: Optional[str] = None,
         sql_query: Optional[str] = None,
         stored_procedure_name: Optional[str] = None,
-        stored_procedure_parameters: Optional[List["AetherStoredProcedureParameter"]] = None,
+        stored_procedure_parameters: Optional[
+            List["AetherStoredProcedureParameter"]
+        ] = None,
         aml_data_store_name: Optional[str] = None,
         **kwargs
     ):
@@ -855,12 +911,12 @@ class AetherAzureDataLakeGen2Reference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file_system_name': {'key': 'fileSystemName', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'path_type': {'key': 'pathType', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "file_system_name": {"key": "fileSystemName", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "path_type": {"key": "pathType", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -921,15 +977,15 @@ class AetherAzureDataLakeReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'tenant': {'key': 'tenant', 'type': 'str'},
-        'subscription': {'key': 'subscription', 'type': 'str'},
-        'resource_group': {'key': 'resourceGroup', 'type': 'str'},
-        'data_lake_uri': {'key': 'dataLakeUri', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'path_type': {'key': 'pathType', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "tenant": {"key": "tenant", "type": "str"},
+        "subscription": {"key": "subscription", "type": "str"},
+        "resource_group": {"key": "resourceGroup", "type": "str"},
+        "data_lake_uri": {"key": "dataLakeUri", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "path_type": {"key": "pathType", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -996,12 +1052,12 @@ class AetherAzureFilesReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'share': {'key': 'share', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'path_type': {'key': 'pathType', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "share": {"key": "share", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "path_type": {"key": "pathType", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -1054,11 +1110,11 @@ class AetherBatchAiComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'batch_ai_subscription_id': {'key': 'batchAiSubscriptionId', 'type': 'str'},
-        'batch_ai_resource_group': {'key': 'batchAiResourceGroup', 'type': 'str'},
-        'batch_ai_workspace_name': {'key': 'batchAiWorkspaceName', 'type': 'str'},
-        'cluster_name': {'key': 'clusterName', 'type': 'str'},
-        'native_shared_directory': {'key': 'nativeSharedDirectory', 'type': 'str'},
+        "batch_ai_subscription_id": {"key": "batchAiSubscriptionId", "type": "str"},
+        "batch_ai_resource_group": {"key": "batchAiResourceGroup", "type": "str"},
+        "batch_ai_workspace_name": {"key": "batchAiWorkspaceName", "type": "str"},
+        "cluster_name": {"key": "clusterName", "type": "str"},
+        "native_shared_directory": {"key": "nativeSharedDirectory", "type": "str"},
     }
 
     def __init__(
@@ -1103,9 +1159,15 @@ class AetherBuildArtifactInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'cloud_build_drop_path_info': {'key': 'cloudBuildDropPathInfo', 'type': 'AetherCloudBuildDropPathInfo'},
-        'vso_build_artifact_info': {'key': 'vsoBuildArtifactInfo', 'type': 'AetherVsoBuildArtifactInfo'},
+        "type": {"key": "type", "type": "str"},
+        "cloud_build_drop_path_info": {
+            "key": "cloudBuildDropPathInfo",
+            "type": "AetherCloudBuildDropPathInfo",
+        },
+        "vso_build_artifact_info": {
+            "key": "vsoBuildArtifactInfo",
+            "type": "AetherVsoBuildArtifactInfo",
+        },
     }
 
     def __init__(
@@ -1140,8 +1202,8 @@ class AetherCloudBuildDropPathInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'build_info': {'key': 'buildInfo', 'type': 'AetherCloudBuildInfo'},
-        'root': {'key': 'root', 'type': 'str'},
+        "build_info": {"key": "buildInfo", "type": "AetherCloudBuildInfo"},
+        "root": {"key": "root", "type": "str"},
     }
 
     def __init__(
@@ -1174,9 +1236,9 @@ class AetherCloudBuildInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'queue_info': {'key': 'queueInfo', 'type': 'AetherCloudBuildQueueInfo'},
-        'build_id': {'key': 'buildId', 'type': 'str'},
-        'drop_url': {'key': 'dropUrl', 'type': 'str'},
+        "queue_info": {"key": "queueInfo", "type": "AetherCloudBuildQueueInfo"},
+        "build_id": {"key": "buildId", "type": "str"},
+        "drop_url": {"key": "dropUrl", "type": "str"},
     }
 
     def __init__(
@@ -1211,8 +1273,8 @@ class AetherCloudBuildQueueInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'build_queue': {'key': 'buildQueue', 'type': 'str'},
-        'build_role': {'key': 'buildRole', 'type': 'str'},
+        "build_queue": {"key": "buildQueue", "type": "str"},
+        "build_role": {"key": "buildRole", "type": "str"},
     }
 
     def __init__(
@@ -1247,10 +1309,19 @@ class AetherCloudPrioritySetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'scope_priority': {'key': 'scopePriority', 'type': 'AetherPriorityConfiguration'},
-        'aml_compute_priority': {'key': 'AmlComputePriority', 'type': 'AetherPriorityConfiguration'},
-        'itp_priority': {'key': 'ItpPriority', 'type': 'AetherPriorityConfiguration'},
-        'singularity_priority': {'key': 'SingularityPriority', 'type': 'AetherPriorityConfiguration'},
+        "scope_priority": {
+            "key": "scopePriority",
+            "type": "AetherPriorityConfiguration",
+        },
+        "aml_compute_priority": {
+            "key": "AmlComputePriority",
+            "type": "AetherPriorityConfiguration",
+        },
+        "itp_priority": {"key": "ItpPriority", "type": "AetherPriorityConfiguration"},
+        "singularity_priority": {
+            "key": "SingularityPriority",
+            "type": "AetherPriorityConfiguration",
+        },
     }
 
     def __init__(
@@ -1307,17 +1378,47 @@ class AetherCloudSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'linked_settings': {'key': 'linkedSettings', 'type': '[AetherParameterAssignment]'},
-        'priority_config': {'key': 'priorityConfig', 'type': 'AetherPriorityConfiguration'},
-        'hdi_run_config': {'key': 'hdiRunConfig', 'type': 'AetherHdiRunConfiguration'},
-        'sub_graph_config': {'key': 'subGraphConfig', 'type': 'AetherSubGraphConfiguration'},
-        'auto_ml_component_config': {'key': 'autoMLComponentConfig', 'type': 'AetherAutoMLComponentConfiguration'},
-        'ap_cloud_config': {'key': 'apCloudConfig', 'type': 'AetherAPCloudConfiguration'},
-        'scope_cloud_config': {'key': 'scopeCloudConfig', 'type': 'AetherScopeCloudConfiguration'},
-        'es_cloud_config': {'key': 'esCloudConfig', 'type': 'AetherEsCloudConfiguration'},
-        'data_transfer_cloud_config': {'key': 'dataTransferCloudConfig', 'type': 'AetherDataTransferCloudConfiguration'},
-        'aml_spark_cloud_setting': {'key': 'amlSparkCloudSetting', 'type': 'AetherAmlSparkCloudSetting'},
-        'data_transfer_v2_cloud_setting': {'key': 'dataTransferV2CloudSetting', 'type': 'AetherDataTransferV2CloudSetting'},
+        "linked_settings": {
+            "key": "linkedSettings",
+            "type": "[AetherParameterAssignment]",
+        },
+        "priority_config": {
+            "key": "priorityConfig",
+            "type": "AetherPriorityConfiguration",
+        },
+        "hdi_run_config": {"key": "hdiRunConfig", "type": "AetherHdiRunConfiguration"},
+        "sub_graph_config": {
+            "key": "subGraphConfig",
+            "type": "AetherSubGraphConfiguration",
+        },
+        "auto_ml_component_config": {
+            "key": "autoMLComponentConfig",
+            "type": "AetherAutoMLComponentConfiguration",
+        },
+        "ap_cloud_config": {
+            "key": "apCloudConfig",
+            "type": "AetherAPCloudConfiguration",
+        },
+        "scope_cloud_config": {
+            "key": "scopeCloudConfig",
+            "type": "AetherScopeCloudConfiguration",
+        },
+        "es_cloud_config": {
+            "key": "esCloudConfig",
+            "type": "AetherEsCloudConfiguration",
+        },
+        "data_transfer_cloud_config": {
+            "key": "dataTransferCloudConfig",
+            "type": "AetherDataTransferCloudConfiguration",
+        },
+        "aml_spark_cloud_setting": {
+            "key": "amlSparkCloudSetting",
+            "type": "AetherAmlSparkCloudSetting",
+        },
+        "data_transfer_v2_cloud_setting": {
+            "key": "dataTransferV2CloudSetting",
+            "type": "AetherDataTransferV2CloudSetting",
+        },
     }
 
     def __init__(
@@ -1331,9 +1432,13 @@ class AetherCloudSettings(msrest.serialization.Model):
         ap_cloud_config: Optional["AetherAPCloudConfiguration"] = None,
         scope_cloud_config: Optional["AetherScopeCloudConfiguration"] = None,
         es_cloud_config: Optional["AetherEsCloudConfiguration"] = None,
-        data_transfer_cloud_config: Optional["AetherDataTransferCloudConfiguration"] = None,
+        data_transfer_cloud_config: Optional[
+            "AetherDataTransferCloudConfiguration"
+        ] = None,
         aml_spark_cloud_setting: Optional["AetherAmlSparkCloudSetting"] = None,
-        data_transfer_v2_cloud_setting: Optional["AetherDataTransferV2CloudSetting"] = None,
+        data_transfer_v2_cloud_setting: Optional[
+            "AetherDataTransferV2CloudSetting"
+        ] = None,
         **kwargs
     ):
         """
@@ -1384,8 +1489,8 @@ class AetherColumnTransformer(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'fields': {'key': 'fields', 'type': '[str]'},
-        'parameters': {'key': 'parameters', 'type': 'object'},
+        "fields": {"key": "fields", "type": "[str]"},
+        "parameters": {"key": "parameters", "type": "object"},
     }
 
     def __init__(
@@ -1428,14 +1533,14 @@ class AetherComputeConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'target': {'key': 'target', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'is_local': {'key': 'isLocal', 'type': 'bool'},
-        'location': {'key': 'location', 'type': 'str'},
-        'is_clusterless': {'key': 'isClusterless', 'type': 'bool'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{object}'},
-        'is_preemptable': {'key': 'isPreemptable', 'type': 'bool'},
+        "target": {"key": "target", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "is_local": {"key": "isLocal", "type": "bool"},
+        "location": {"key": "location", "type": "str"},
+        "is_clusterless": {"key": "isClusterless", "type": "bool"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "properties": {"key": "properties", "type": "{object}"},
+        "is_preemptable": {"key": "isPreemptable", "type": "bool"},
     }
 
     def __init__(
@@ -1501,13 +1606,25 @@ class AetherComputeSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'batch_ai_compute_info': {'key': 'batchAiComputeInfo', 'type': 'AetherBatchAiComputeInfo'},
-        'remote_docker_compute_info': {'key': 'remoteDockerComputeInfo', 'type': 'AetherRemoteDockerComputeInfo'},
-        'hdi_cluster_compute_info': {'key': 'hdiClusterComputeInfo', 'type': 'AetherHdiClusterComputeInfo'},
-        'mlc_compute_info': {'key': 'mlcComputeInfo', 'type': 'AetherMlcComputeInfo'},
-        'databricks_compute_info': {'key': 'databricksComputeInfo', 'type': 'AetherDatabricksComputeInfo'},
+        "name": {"key": "name", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "batch_ai_compute_info": {
+            "key": "batchAiComputeInfo",
+            "type": "AetherBatchAiComputeInfo",
+        },
+        "remote_docker_compute_info": {
+            "key": "remoteDockerComputeInfo",
+            "type": "AetherRemoteDockerComputeInfo",
+        },
+        "hdi_cluster_compute_info": {
+            "key": "hdiClusterComputeInfo",
+            "type": "AetherHdiClusterComputeInfo",
+        },
+        "mlc_compute_info": {"key": "mlcComputeInfo", "type": "AetherMlcComputeInfo"},
+        "databricks_compute_info": {
+            "key": "databricksComputeInfo",
+            "type": "AetherDatabricksComputeInfo",
+        },
     }
 
     def __init__(
@@ -1559,8 +1676,8 @@ class AetherControlInput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "str"},
     }
 
     def __init__(
@@ -1589,15 +1706,10 @@ class AetherControlOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        name: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, name: Optional[str] = None, **kwargs):
         """
         :keyword name:
         :paramtype name: str
@@ -1614,7 +1726,7 @@ class AetherCopyDataTask(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_copy_mode': {'key': 'DataCopyMode', 'type': 'str'},
+        "data_copy_mode": {"key": "DataCopyMode", "type": "str"},
     }
 
     def __init__(
@@ -1643,9 +1755,9 @@ class AetherCosmosReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'cluster': {'key': 'cluster', 'type': 'str'},
-        'vc': {'key': 'vc', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "cluster": {"key": "cluster", "type": "str"},
+        "vc": {"key": "vc", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -1694,15 +1806,18 @@ class AetherCreatedBy(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'user_object_id': {'key': 'userObjectId', 'type': 'str'},
-        'user_tenant_id': {'key': 'userTenantId', 'type': 'str'},
-        'user_name': {'key': 'userName', 'type': 'str'},
-        'puid': {'key': 'puid', 'type': 'str'},
-        'iss': {'key': 'iss', 'type': 'str'},
-        'idp': {'key': 'idp', 'type': 'str'},
-        'altsec_id': {'key': 'altsecId', 'type': 'str'},
-        'source_ip': {'key': 'sourceIp', 'type': 'str'},
-        'skip_registry_private_link_check': {'key': 'skipRegistryPrivateLinkCheck', 'type': 'bool'},
+        "user_object_id": {"key": "userObjectId", "type": "str"},
+        "user_tenant_id": {"key": "userTenantId", "type": "str"},
+        "user_name": {"key": "userName", "type": "str"},
+        "puid": {"key": "puid", "type": "str"},
+        "iss": {"key": "iss", "type": "str"},
+        "idp": {"key": "idp", "type": "str"},
+        "altsec_id": {"key": "altsecId", "type": "str"},
+        "source_ip": {"key": "sourceIp", "type": "str"},
+        "skip_registry_private_link_check": {
+            "key": "skipRegistryPrivateLinkCheck",
+            "type": "bool",
+        },
     }
 
     def __init__(
@@ -1761,8 +1876,8 @@ class AetherCustomReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -1793,16 +1908,12 @@ class AetherDatabaseSink(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection': {'key': 'connection', 'type': 'str'},
-        'table': {'key': 'table', 'type': 'str'},
+        "connection": {"key": "connection", "type": "str"},
+        "table": {"key": "table", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        connection: Optional[str] = None,
-        table: Optional[str] = None,
-        **kwargs
+        self, *, connection: Optional[str] = None, table: Optional[str] = None, **kwargs
     ):
         """
         :keyword connection:
@@ -1829,10 +1940,13 @@ class AetherDatabaseSource(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection': {'key': 'connection', 'type': 'str'},
-        'query': {'key': 'query', 'type': 'str'},
-        'stored_procedure_name': {'key': 'storedProcedureName', 'type': 'str'},
-        'stored_procedure_parameters': {'key': 'storedProcedureParameters', 'type': '[AetherStoredProcedureParameter]'},
+        "connection": {"key": "connection", "type": "str"},
+        "query": {"key": "query", "type": "str"},
+        "stored_procedure_name": {"key": "storedProcedureName", "type": "str"},
+        "stored_procedure_parameters": {
+            "key": "storedProcedureParameters",
+            "type": "[AetherStoredProcedureParameter]",
+        },
     }
 
     def __init__(
@@ -1841,7 +1955,9 @@ class AetherDatabaseSource(msrest.serialization.Model):
         connection: Optional[str] = None,
         query: Optional[str] = None,
         stored_procedure_name: Optional[str] = None,
-        stored_procedure_parameters: Optional[List["AetherStoredProcedureParameter"]] = None,
+        stored_procedure_parameters: Optional[
+            List["AetherStoredProcedureParameter"]
+        ] = None,
         **kwargs
     ):
         """
@@ -1869,15 +1985,10 @@ class AetherDatabricksComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'existing_cluster_id': {'key': 'existingClusterId', 'type': 'str'},
+        "existing_cluster_id": {"key": "existingClusterId", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        existing_cluster_id: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, existing_cluster_id: Optional[str] = None, **kwargs):
         """
         :keyword existing_cluster_id:
         :paramtype existing_cluster_id: str
@@ -1911,15 +2022,18 @@ class AetherDataLocation(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'storage_type': {'key': 'storageType', 'type': 'str'},
-        'storage_id': {'key': 'storageId', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_reference': {'key': 'dataReference', 'type': 'AetherDataReference'},
-        'aml_dataset': {'key': 'amlDataset', 'type': 'AetherAmlDataset'},
-        'asset_definition': {'key': 'assetDefinition', 'type': 'AetherAssetDefinition'},
-        'is_compliant': {'key': 'isCompliant', 'type': 'bool'},
-        'reuse_calculation_fields': {'key': 'reuseCalculationFields', 'type': 'AetherDataLocationReuseCalculationFields'},
+        "storage_type": {"key": "storageType", "type": "str"},
+        "storage_id": {"key": "storageId", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_reference": {"key": "dataReference", "type": "AetherDataReference"},
+        "aml_dataset": {"key": "amlDataset", "type": "AetherAmlDataset"},
+        "asset_definition": {"key": "assetDefinition", "type": "AetherAssetDefinition"},
+        "is_compliant": {"key": "isCompliant", "type": "bool"},
+        "reuse_calculation_fields": {
+            "key": "reuseCalculationFields",
+            "type": "AetherDataLocationReuseCalculationFields",
+        },
     }
 
     def __init__(
@@ -1933,7 +2047,9 @@ class AetherDataLocation(msrest.serialization.Model):
         aml_dataset: Optional["AetherAmlDataset"] = None,
         asset_definition: Optional["AetherAssetDefinition"] = None,
         is_compliant: Optional[bool] = None,
-        reuse_calculation_fields: Optional["AetherDataLocationReuseCalculationFields"] = None,
+        reuse_calculation_fields: Optional[
+            "AetherDataLocationReuseCalculationFields"
+        ] = None,
         **kwargs
     ):
         """
@@ -1979,8 +2095,8 @@ class AetherDataLocationReuseCalculationFields(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -2013,9 +2129,9 @@ class AetherDataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'sql_data_path': {'key': 'sqlDataPath', 'type': 'AetherSqlDataPath'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "sql_data_path": {"key": "sqlDataPath", "type": "AetherSqlDataPath"},
     }
 
     def __init__(
@@ -2074,19 +2190,43 @@ class AetherDataReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'azure_blob_reference': {'key': 'azureBlobReference', 'type': 'AetherAzureBlobReference'},
-        'azure_data_lake_reference': {'key': 'azureDataLakeReference', 'type': 'AetherAzureDataLakeReference'},
-        'azure_files_reference': {'key': 'azureFilesReference', 'type': 'AetherAzureFilesReference'},
-        'cosmos_reference': {'key': 'cosmosReference', 'type': 'AetherCosmosReference'},
-        'philly_hdfs_reference': {'key': 'phillyHdfsReference', 'type': 'AetherPhillyHdfsReference'},
-        'azure_sql_database_reference': {'key': 'azureSqlDatabaseReference', 'type': 'AetherAzureDatabaseReference'},
-        'azure_postgres_database_reference': {'key': 'azurePostgresDatabaseReference', 'type': 'AetherAzureDatabaseReference'},
-        'azure_data_lake_gen2_reference': {'key': 'azureDataLakeGen2Reference', 'type': 'AetherAzureDataLakeGen2Reference'},
-        'dbfs_reference': {'key': 'dbfsReference', 'type': 'AetherDBFSReference'},
-        'azure_my_sql_database_reference': {'key': 'azureMySqlDatabaseReference', 'type': 'AetherAzureDatabaseReference'},
-        'custom_reference': {'key': 'customReference', 'type': 'AetherCustomReference'},
-        'hdfs_reference': {'key': 'hdfsReference', 'type': 'AetherHdfsReference'},
+        "type": {"key": "type", "type": "str"},
+        "azure_blob_reference": {
+            "key": "azureBlobReference",
+            "type": "AetherAzureBlobReference",
+        },
+        "azure_data_lake_reference": {
+            "key": "azureDataLakeReference",
+            "type": "AetherAzureDataLakeReference",
+        },
+        "azure_files_reference": {
+            "key": "azureFilesReference",
+            "type": "AetherAzureFilesReference",
+        },
+        "cosmos_reference": {"key": "cosmosReference", "type": "AetherCosmosReference"},
+        "philly_hdfs_reference": {
+            "key": "phillyHdfsReference",
+            "type": "AetherPhillyHdfsReference",
+        },
+        "azure_sql_database_reference": {
+            "key": "azureSqlDatabaseReference",
+            "type": "AetherAzureDatabaseReference",
+        },
+        "azure_postgres_database_reference": {
+            "key": "azurePostgresDatabaseReference",
+            "type": "AetherAzureDatabaseReference",
+        },
+        "azure_data_lake_gen2_reference": {
+            "key": "azureDataLakeGen2Reference",
+            "type": "AetherAzureDataLakeGen2Reference",
+        },
+        "dbfs_reference": {"key": "dbfsReference", "type": "AetherDBFSReference"},
+        "azure_my_sql_database_reference": {
+            "key": "azureMySqlDatabaseReference",
+            "type": "AetherAzureDatabaseReference",
+        },
+        "custom_reference": {"key": "customReference", "type": "AetherCustomReference"},
+        "hdfs_reference": {"key": "hdfsReference", "type": "AetherHdfsReference"},
     }
 
     def __init__(
@@ -2099,10 +2239,16 @@ class AetherDataReference(msrest.serialization.Model):
         cosmos_reference: Optional["AetherCosmosReference"] = None,
         philly_hdfs_reference: Optional["AetherPhillyHdfsReference"] = None,
         azure_sql_database_reference: Optional["AetherAzureDatabaseReference"] = None,
-        azure_postgres_database_reference: Optional["AetherAzureDatabaseReference"] = None,
-        azure_data_lake_gen2_reference: Optional["AetherAzureDataLakeGen2Reference"] = None,
+        azure_postgres_database_reference: Optional[
+            "AetherAzureDatabaseReference"
+        ] = None,
+        azure_data_lake_gen2_reference: Optional[
+            "AetherAzureDataLakeGen2Reference"
+        ] = None,
         dbfs_reference: Optional["AetherDBFSReference"] = None,
-        azure_my_sql_database_reference: Optional["AetherAzureDatabaseReference"] = None,
+        azure_my_sql_database_reference: Optional[
+            "AetherAzureDatabaseReference"
+        ] = None,
         custom_reference: Optional["AetherCustomReference"] = None,
         hdfs_reference: Optional["AetherHdfsReference"] = None,
         **kwargs
@@ -2165,9 +2311,9 @@ class AetherDataSetDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_type_short_name': {'key': 'dataTypeShortName', 'type': 'str'},
-        'parameter_name': {'key': 'parameterName', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'AetherDataSetDefinitionValue'},
+        "data_type_short_name": {"key": "dataTypeShortName", "type": "str"},
+        "parameter_name": {"key": "parameterName", "type": "str"},
+        "value": {"key": "value", "type": "AetherDataSetDefinitionValue"},
     }
 
     def __init__(
@@ -2206,10 +2352,16 @@ class AetherDataSetDefinitionValue(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'literal_value': {'key': 'literalValue', 'type': 'AetherDataPath'},
-        'data_set_reference': {'key': 'dataSetReference', 'type': 'AetherRegisteredDataSetReference'},
-        'saved_data_set_reference': {'key': 'savedDataSetReference', 'type': 'AetherSavedDataSetReference'},
-        'asset_definition': {'key': 'assetDefinition', 'type': 'AetherAssetDefinition'},
+        "literal_value": {"key": "literalValue", "type": "AetherDataPath"},
+        "data_set_reference": {
+            "key": "dataSetReference",
+            "type": "AetherRegisteredDataSetReference",
+        },
+        "saved_data_set_reference": {
+            "key": "savedDataSetReference",
+            "type": "AetherSavedDataSetReference",
+        },
+        "asset_definition": {"key": "assetDefinition", "type": "AetherAssetDefinition"},
     }
 
     def __init__(
@@ -2250,9 +2402,15 @@ class AetherDatasetOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'dataset_type': {'key': 'datasetType', 'type': 'str'},
-        'dataset_registration': {'key': 'datasetRegistration', 'type': 'AetherDatasetRegistration'},
-        'dataset_output_options': {'key': 'datasetOutputOptions', 'type': 'AetherDatasetOutputOptions'},
+        "dataset_type": {"key": "datasetType", "type": "str"},
+        "dataset_registration": {
+            "key": "datasetRegistration",
+            "type": "AetherDatasetRegistration",
+        },
+        "dataset_output_options": {
+            "key": "datasetOutputOptions",
+            "type": "AetherDatasetOutputOptions",
+        },
     }
 
     def __init__(
@@ -2289,9 +2447,12 @@ class AetherDatasetOutputOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source_globs': {'key': 'sourceGlobs', 'type': 'AetherGlobsOptions'},
-        'path_on_datastore': {'key': 'pathOnDatastore', 'type': 'str'},
-        'path_on_datastore_parameter_assignment': {'key': 'PathOnDatastoreParameterAssignment', 'type': 'AetherParameterAssignment'},
+        "source_globs": {"key": "sourceGlobs", "type": "AetherGlobsOptions"},
+        "path_on_datastore": {"key": "pathOnDatastore", "type": "str"},
+        "path_on_datastore_parameter_assignment": {
+            "key": "PathOnDatastoreParameterAssignment",
+            "type": "AetherParameterAssignment",
+        },
     }
 
     def __init__(
@@ -2299,7 +2460,9 @@ class AetherDatasetOutputOptions(msrest.serialization.Model):
         *,
         source_globs: Optional["AetherGlobsOptions"] = None,
         path_on_datastore: Optional[str] = None,
-        path_on_datastore_parameter_assignment: Optional["AetherParameterAssignment"] = None,
+        path_on_datastore_parameter_assignment: Optional[
+            "AetherParameterAssignment"
+        ] = None,
         **kwargs
     ):
         """
@@ -2313,7 +2476,9 @@ class AetherDatasetOutputOptions(msrest.serialization.Model):
         super(AetherDatasetOutputOptions, self).__init__(**kwargs)
         self.source_globs = source_globs
         self.path_on_datastore = path_on_datastore
-        self.path_on_datastore_parameter_assignment = path_on_datastore_parameter_assignment
+        self.path_on_datastore_parameter_assignment = (
+            path_on_datastore_parameter_assignment
+        )
 
 
 class AetherDatasetRegistration(msrest.serialization.Model):
@@ -2332,11 +2497,14 @@ class AetherDatasetRegistration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'create_new_version': {'key': 'createNewVersion', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "create_new_version": {"key": "createNewVersion", "type": "bool"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -2385,11 +2553,14 @@ class AetherDataSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'target_column_name': {'key': 'targetColumnName', 'type': 'str'},
-        'weight_column_name': {'key': 'weightColumnName', 'type': 'str'},
-        'positive_label': {'key': 'positiveLabel', 'type': 'str'},
-        'validation_data': {'key': 'validationData', 'type': 'AetherValidationDataSettings'},
-        'test_data': {'key': 'testData', 'type': 'AetherTestDataSettings'},
+        "target_column_name": {"key": "targetColumnName", "type": "str"},
+        "weight_column_name": {"key": "weightColumnName", "type": "str"},
+        "positive_label": {"key": "positiveLabel", "type": "str"},
+        "validation_data": {
+            "key": "validationData",
+            "type": "AetherValidationDataSettings",
+        },
+        "test_data": {"key": "testData", "type": "AetherTestDataSettings"},
     }
 
     def __init__(
@@ -2430,15 +2601,10 @@ class AetherDatastoreSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        data_store_name: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, data_store_name: Optional[str] = None, **kwargs):
         """
         :keyword data_store_name:
         :paramtype data_store_name: str
@@ -2455,15 +2621,10 @@ class AetherDataTransferCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'allow_overwrite': {'key': 'AllowOverwrite', 'type': 'bool'},
+        "allow_overwrite": {"key": "AllowOverwrite", "type": "bool"},
     }
 
-    def __init__(
-        self,
-        *,
-        allow_overwrite: Optional[bool] = None,
-        **kwargs
-    ):
+    def __init__(self, *, allow_overwrite: Optional[bool] = None, **kwargs):
         """
         :keyword allow_overwrite:
         :paramtype allow_overwrite: bool
@@ -2484,9 +2645,9 @@ class AetherDataTransferSink(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'file_system': {'key': 'fileSystem', 'type': 'AetherFileSystem'},
-        'database_sink': {'key': 'databaseSink', 'type': 'AetherDatabaseSink'},
+        "type": {"key": "type", "type": "str"},
+        "file_system": {"key": "fileSystem", "type": "AetherFileSystem"},
+        "database_sink": {"key": "databaseSink", "type": "AetherDatabaseSink"},
     }
 
     def __init__(
@@ -2523,9 +2684,9 @@ class AetherDataTransferSource(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'file_system': {'key': 'fileSystem', 'type': 'AetherFileSystem'},
-        'database_source': {'key': 'databaseSource', 'type': 'AetherDatabaseSource'},
+        "type": {"key": "type", "type": "str"},
+        "file_system": {"key": "fileSystem", "type": "AetherFileSystem"},
+        "database_source": {"key": "databaseSource", "type": "AetherDatabaseSource"},
     }
 
     def __init__(
@@ -2572,14 +2733,20 @@ class AetherDataTransferV2CloudSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'task_type': {'key': 'taskType', 'type': 'str'},
-        'compute_name': {'key': 'ComputeName', 'type': 'str'},
-        'copy_data_task': {'key': 'CopyDataTask', 'type': 'AetherCopyDataTask'},
-        'import_data_task': {'key': 'ImportDataTask', 'type': 'AetherImportDataTask'},
-        'export_data_task': {'key': 'ExportDataTask', 'type': 'AetherExportDataTask'},
-        'data_transfer_sources': {'key': 'DataTransferSources', 'type': '{AetherDataTransferSource}'},
-        'data_transfer_sinks': {'key': 'DataTransferSinks', 'type': '{AetherDataTransferSink}'},
-        'data_copy_mode': {'key': 'DataCopyMode', 'type': 'str'},
+        "task_type": {"key": "taskType", "type": "str"},
+        "compute_name": {"key": "ComputeName", "type": "str"},
+        "copy_data_task": {"key": "CopyDataTask", "type": "AetherCopyDataTask"},
+        "import_data_task": {"key": "ImportDataTask", "type": "AetherImportDataTask"},
+        "export_data_task": {"key": "ExportDataTask", "type": "AetherExportDataTask"},
+        "data_transfer_sources": {
+            "key": "DataTransferSources",
+            "type": "{AetherDataTransferSource}",
+        },
+        "data_transfer_sinks": {
+            "key": "DataTransferSinks",
+            "type": "{AetherDataTransferSink}",
+        },
+        "data_copy_mode": {"key": "DataCopyMode", "type": "str"},
     }
 
     def __init__(
@@ -2634,8 +2801,8 @@ class AetherDBFSReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -2670,10 +2837,10 @@ class AetherDockerSettingConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'use_docker': {'key': 'useDocker', 'type': 'bool'},
-        'shared_volumes': {'key': 'sharedVolumes', 'type': 'bool'},
-        'shm_size': {'key': 'shmSize', 'type': 'str'},
-        'arguments': {'key': 'arguments', 'type': '[str]'},
+        "use_docker": {"key": "useDocker", "type": "bool"},
+        "shared_volumes": {"key": "sharedVolumes", "type": "bool"},
+        "shm_size": {"key": "shmSize", "type": "str"},
+        "arguments": {"key": "arguments", "type": "[str]"},
     }
 
     def __init__(
@@ -2715,15 +2882,23 @@ class AetherDoWhileControlFlowInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'output_port_name_to_input_port_names_mapping': {'key': 'outputPortNameToInputPortNamesMapping', 'type': '{[str]}'},
-        'condition_output_port_name': {'key': 'conditionOutputPortName', 'type': 'str'},
-        'run_settings': {'key': 'runSettings', 'type': 'AetherDoWhileControlFlowRunSettings'},
+        "output_port_name_to_input_port_names_mapping": {
+            "key": "outputPortNameToInputPortNamesMapping",
+            "type": "{[str]}",
+        },
+        "condition_output_port_name": {"key": "conditionOutputPortName", "type": "str"},
+        "run_settings": {
+            "key": "runSettings",
+            "type": "AetherDoWhileControlFlowRunSettings",
+        },
     }
 
     def __init__(
         self,
         *,
-        output_port_name_to_input_port_names_mapping: Optional[Dict[str, List[str]]] = None,
+        output_port_name_to_input_port_names_mapping: Optional[
+            Dict[str, List[str]]
+        ] = None,
         condition_output_port_name: Optional[str] = None,
         run_settings: Optional["AetherDoWhileControlFlowRunSettings"] = None,
         **kwargs
@@ -2738,7 +2913,9 @@ class AetherDoWhileControlFlowInfo(msrest.serialization.Model):
         :paramtype run_settings: ~flow.models.AetherDoWhileControlFlowRunSettings
         """
         super(AetherDoWhileControlFlowInfo, self).__init__(**kwargs)
-        self.output_port_name_to_input_port_names_mapping = output_port_name_to_input_port_names_mapping
+        self.output_port_name_to_input_port_names_mapping = (
+            output_port_name_to_input_port_names_mapping
+        )
         self.condition_output_port_name = condition_output_port_name
         self.run_settings = run_settings
 
@@ -2751,7 +2928,10 @@ class AetherDoWhileControlFlowRunSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_loop_iteration_count': {'key': 'maxLoopIterationCount', 'type': 'AetherParameterAssignment'},
+        "max_loop_iteration_count": {
+            "key": "maxLoopIterationCount",
+            "type": "AetherParameterAssignment",
+        },
     }
 
     def __init__(
@@ -2780,9 +2960,9 @@ class AetherEntityInterfaceDocumentation(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'inputs_documentation': {'key': 'inputsDocumentation', 'type': '{str}'},
-        'outputs_documentation': {'key': 'outputsDocumentation', 'type': '{str}'},
-        'parameters_documentation': {'key': 'parametersDocumentation', 'type': '{str}'},
+        "inputs_documentation": {"key": "inputsDocumentation", "type": "{str}"},
+        "outputs_documentation": {"key": "outputsDocumentation", "type": "{str}"},
+        "parameters_documentation": {"key": "parametersDocumentation", "type": "{str}"},
     }
 
     def __init__(
@@ -2817,16 +2997,12 @@ class AetherEntrySetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file': {'key': 'file', 'type': 'str'},
-        'class_name': {'key': 'className', 'type': 'str'},
+        "file": {"key": "file", "type": "str"},
+        "class_name": {"key": "className", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        file: Optional[str] = None,
-        class_name: Optional[str] = None,
-        **kwargs
+        self, *, file: Optional[str] = None, class_name: Optional[str] = None, **kwargs
     ):
         """
         :keyword file:
@@ -2853,10 +3029,16 @@ class AetherEnvironmentConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'use_environment_definition': {'key': 'useEnvironmentDefinition', 'type': 'bool'},
-        'environment_definition_string': {'key': 'environmentDefinitionString', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "use_environment_definition": {
+            "key": "useEnvironmentDefinition",
+            "type": "bool",
+        },
+        "environment_definition_string": {
+            "key": "environmentDefinitionString",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -2923,22 +3105,52 @@ class AetherEsCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'enable_output_to_file_based_on_data_type_id': {'key': 'enableOutputToFileBasedOnDataTypeId', 'type': 'bool'},
-        'aml_compute_priority_internal': {'key': 'amlComputePriorityInternal', 'type': 'AetherPriorityConfiguration'},
-        'itp_priority_internal': {'key': 'itpPriorityInternal', 'type': 'AetherPriorityConfiguration'},
-        'singularity_priority_internal': {'key': 'singularityPriorityInternal', 'type': 'AetherPriorityConfiguration'},
-        'environment': {'key': 'environment', 'type': 'AetherEnvironmentConfiguration'},
-        'hyper_drive_configuration': {'key': 'hyperDriveConfiguration', 'type': 'AetherHyperDriveConfiguration'},
-        'k8_s_config': {'key': 'k8sConfig', 'type': 'AetherK8SConfiguration'},
-        'resource_config': {'key': 'resourceConfig', 'type': 'AetherResourceConfiguration'},
-        'torch_distributed_config': {'key': 'torchDistributedConfig', 'type': 'AetherTorchDistributedConfiguration'},
-        'target_selector_config': {'key': 'targetSelectorConfig', 'type': 'AetherTargetSelectorConfiguration'},
-        'docker_config': {'key': 'dockerConfig', 'type': 'AetherDockerSettingConfiguration'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'max_run_duration_seconds': {'key': 'maxRunDurationSeconds', 'type': 'int'},
-        'identity': {'key': 'identity', 'type': 'AetherIdentitySetting'},
-        'application_endpoints': {'key': 'applicationEndpoints', 'type': '{ApplicationEndpointConfiguration}'},
-        'run_config': {'key': 'runConfig', 'type': 'str'},
+        "enable_output_to_file_based_on_data_type_id": {
+            "key": "enableOutputToFileBasedOnDataTypeId",
+            "type": "bool",
+        },
+        "aml_compute_priority_internal": {
+            "key": "amlComputePriorityInternal",
+            "type": "AetherPriorityConfiguration",
+        },
+        "itp_priority_internal": {
+            "key": "itpPriorityInternal",
+            "type": "AetherPriorityConfiguration",
+        },
+        "singularity_priority_internal": {
+            "key": "singularityPriorityInternal",
+            "type": "AetherPriorityConfiguration",
+        },
+        "environment": {"key": "environment", "type": "AetherEnvironmentConfiguration"},
+        "hyper_drive_configuration": {
+            "key": "hyperDriveConfiguration",
+            "type": "AetherHyperDriveConfiguration",
+        },
+        "k8_s_config": {"key": "k8sConfig", "type": "AetherK8SConfiguration"},
+        "resource_config": {
+            "key": "resourceConfig",
+            "type": "AetherResourceConfiguration",
+        },
+        "torch_distributed_config": {
+            "key": "torchDistributedConfig",
+            "type": "AetherTorchDistributedConfiguration",
+        },
+        "target_selector_config": {
+            "key": "targetSelectorConfig",
+            "type": "AetherTargetSelectorConfiguration",
+        },
+        "docker_config": {
+            "key": "dockerConfig",
+            "type": "AetherDockerSettingConfiguration",
+        },
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "max_run_duration_seconds": {"key": "maxRunDurationSeconds", "type": "int"},
+        "identity": {"key": "identity", "type": "AetherIdentitySetting"},
+        "application_endpoints": {
+            "key": "applicationEndpoints",
+            "type": "{ApplicationEndpointConfiguration}",
+        },
+        "run_config": {"key": "runConfig", "type": "str"},
     }
 
     def __init__(
@@ -2952,13 +3164,17 @@ class AetherEsCloudConfiguration(msrest.serialization.Model):
         hyper_drive_configuration: Optional["AetherHyperDriveConfiguration"] = None,
         k8_s_config: Optional["AetherK8SConfiguration"] = None,
         resource_config: Optional["AetherResourceConfiguration"] = None,
-        torch_distributed_config: Optional["AetherTorchDistributedConfiguration"] = None,
+        torch_distributed_config: Optional[
+            "AetherTorchDistributedConfiguration"
+        ] = None,
         target_selector_config: Optional["AetherTargetSelectorConfiguration"] = None,
         docker_config: Optional["AetherDockerSettingConfiguration"] = None,
         environment_variables: Optional[Dict[str, str]] = None,
         max_run_duration_seconds: Optional[int] = None,
         identity: Optional["AetherIdentitySetting"] = None,
-        application_endpoints: Optional[Dict[str, "ApplicationEndpointConfiguration"]] = None,
+        application_endpoints: Optional[
+            Dict[str, "ApplicationEndpointConfiguration"]
+        ] = None,
         run_config: Optional[str] = None,
         **kwargs
     ):
@@ -2997,7 +3213,9 @@ class AetherEsCloudConfiguration(msrest.serialization.Model):
         :paramtype run_config: str
         """
         super(AetherEsCloudConfiguration, self).__init__(**kwargs)
-        self.enable_output_to_file_based_on_data_type_id = enable_output_to_file_based_on_data_type_id
+        self.enable_output_to_file_based_on_data_type_id = (
+            enable_output_to_file_based_on_data_type_id
+        )
         self.aml_compute_priority_internal = aml_compute_priority_internal
         self.itp_priority_internal = itp_priority_internal
         self.singularity_priority_internal = singularity_priority_internal
@@ -3023,14 +3241,14 @@ class AetherExportDataTask(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_transfer_sink': {'key': 'DataTransferSink', 'type': 'AetherDataTransferSink'},
+        "data_transfer_sink": {
+            "key": "DataTransferSink",
+            "type": "AetherDataTransferSink",
+        },
     }
 
     def __init__(
-        self,
-        *,
-        data_transfer_sink: Optional["AetherDataTransferSink"] = None,
-        **kwargs
+        self, *, data_transfer_sink: Optional["AetherDataTransferSink"] = None, **kwargs
     ):
         """
         :keyword data_transfer_sink:
@@ -3061,13 +3279,16 @@ class AetherFeaturizationSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'blocked_transformers': {'key': 'blockedTransformers', 'type': '[str]'},
-        'column_purposes': {'key': 'columnPurposes', 'type': '{str}'},
-        'drop_columns': {'key': 'dropColumns', 'type': '[str]'},
-        'transformer_params': {'key': 'transformerParams', 'type': '{[AetherColumnTransformer]}'},
-        'dataset_language': {'key': 'datasetLanguage', 'type': 'str'},
-        'enable_dnn_featurization': {'key': 'enableDnnFeaturization', 'type': 'bool'},
+        "mode": {"key": "mode", "type": "str"},
+        "blocked_transformers": {"key": "blockedTransformers", "type": "[str]"},
+        "column_purposes": {"key": "columnPurposes", "type": "{str}"},
+        "drop_columns": {"key": "dropColumns", "type": "[str]"},
+        "transformer_params": {
+            "key": "transformerParams",
+            "type": "{[AetherColumnTransformer]}",
+        },
+        "dataset_language": {"key": "datasetLanguage", "type": "str"},
+        "enable_dnn_featurization": {"key": "enableDnnFeaturization", "type": "bool"},
     }
 
     def __init__(
@@ -3119,16 +3340,12 @@ class AetherFileSystem(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection': {'key': 'connection', 'type': 'str'},
-        'path': {'key': 'path', 'type': 'str'},
+        "connection": {"key": "connection", "type": "str"},
+        "path": {"key": "path", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        connection: Optional[str] = None,
-        path: Optional[str] = None,
-        **kwargs
+        self, *, connection: Optional[str] = None, path: Optional[str] = None, **kwargs
     ):
         """
         :keyword connection:
@@ -3151,8 +3368,8 @@ class AetherForecastHorizon(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -3206,19 +3423,31 @@ class AetherForecastingSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'country_or_region_for_holidays': {'key': 'countryOrRegionForHolidays', 'type': 'str'},
-        'time_column_name': {'key': 'timeColumnName', 'type': 'str'},
-        'target_lags': {'key': 'targetLags', 'type': 'AetherTargetLags'},
-        'target_rolling_window_size': {'key': 'targetRollingWindowSize', 'type': 'AetherTargetRollingWindowSize'},
-        'forecast_horizon': {'key': 'forecastHorizon', 'type': 'AetherForecastHorizon'},
-        'time_series_id_column_names': {'key': 'timeSeriesIdColumnNames', 'type': '[str]'},
-        'frequency': {'key': 'frequency', 'type': 'str'},
-        'feature_lags': {'key': 'featureLags', 'type': 'str'},
-        'seasonality': {'key': 'seasonality', 'type': 'AetherSeasonality'},
-        'short_series_handling_config': {'key': 'shortSeriesHandlingConfig', 'type': 'str'},
-        'use_stl': {'key': 'useStl', 'type': 'str'},
-        'target_aggregate_function': {'key': 'targetAggregateFunction', 'type': 'str'},
-        'cv_step_size': {'key': 'cvStepSize', 'type': 'int'},
+        "country_or_region_for_holidays": {
+            "key": "countryOrRegionForHolidays",
+            "type": "str",
+        },
+        "time_column_name": {"key": "timeColumnName", "type": "str"},
+        "target_lags": {"key": "targetLags", "type": "AetherTargetLags"},
+        "target_rolling_window_size": {
+            "key": "targetRollingWindowSize",
+            "type": "AetherTargetRollingWindowSize",
+        },
+        "forecast_horizon": {"key": "forecastHorizon", "type": "AetherForecastHorizon"},
+        "time_series_id_column_names": {
+            "key": "timeSeriesIdColumnNames",
+            "type": "[str]",
+        },
+        "frequency": {"key": "frequency", "type": "str"},
+        "feature_lags": {"key": "featureLags", "type": "str"},
+        "seasonality": {"key": "seasonality", "type": "AetherSeasonality"},
+        "short_series_handling_config": {
+            "key": "shortSeriesHandlingConfig",
+            "type": "str",
+        },
+        "use_stl": {"key": "useStl", "type": "str"},
+        "target_aggregate_function": {"key": "targetAggregateFunction", "type": "str"},
+        "cv_step_size": {"key": "cvStepSize", "type": "int"},
     }
 
     def __init__(
@@ -3233,9 +3462,13 @@ class AetherForecastingSettings(msrest.serialization.Model):
         frequency: Optional[str] = None,
         feature_lags: Optional[str] = None,
         seasonality: Optional["AetherSeasonality"] = None,
-        short_series_handling_config: Optional[Union[str, "AetherShortSeriesHandlingConfiguration"]] = None,
+        short_series_handling_config: Optional[
+            Union[str, "AetherShortSeriesHandlingConfiguration"]
+        ] = None,
         use_stl: Optional[Union[str, "AetherUseStl"]] = None,
-        target_aggregate_function: Optional[Union[str, "AetherTargetAggregationFunction"]] = None,
+        target_aggregate_function: Optional[
+            Union[str, "AetherTargetAggregationFunction"]
+        ] = None,
         cv_step_size: Optional[int] = None,
         **kwargs
     ):
@@ -3303,9 +3536,9 @@ class AetherGeneralSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'primary_metric': {'key': 'primaryMetric', 'type': 'str'},
-        'task_type': {'key': 'taskType', 'type': 'str'},
-        'log_verbosity': {'key': 'logVerbosity', 'type': 'str'},
+        "primary_metric": {"key": "primaryMetric", "type": "str"},
+        "task_type": {"key": "taskType", "type": "str"},
+        "log_verbosity": {"key": "logVerbosity", "type": "str"},
     }
 
     def __init__(
@@ -3345,15 +3578,10 @@ class AetherGlobsOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'glob_patterns': {'key': 'globPatterns', 'type': '[str]'},
+        "glob_patterns": {"key": "globPatterns", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        glob_patterns: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, glob_patterns: Optional[List[str]] = None, **kwargs):
         """
         :keyword glob_patterns:
         :paramtype glob_patterns: list[str]
@@ -3377,10 +3605,13 @@ class AetherGraphControlNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'control_type': {'key': 'controlType', 'type': 'str'},
-        'control_parameter': {'key': 'controlParameter', 'type': 'AetherParameterAssignment'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "control_type": {"key": "controlType", "type": "str"},
+        "control_parameter": {
+            "key": "controlParameter",
+            "type": "AetherParameterAssignment",
+        },
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -3432,14 +3663,20 @@ class AetherGraphControlReferenceNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'control_flow_type': {'key': 'controlFlowType', 'type': 'str'},
-        'reference_node_id': {'key': 'referenceNodeId', 'type': 'str'},
-        'do_while_control_flow_info': {'key': 'doWhileControlFlowInfo', 'type': 'AetherDoWhileControlFlowInfo'},
-        'parallel_for_control_flow_info': {'key': 'parallelForControlFlowInfo', 'type': 'AetherParallelForControlFlowInfo'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "control_flow_type": {"key": "controlFlowType", "type": "str"},
+        "reference_node_id": {"key": "referenceNodeId", "type": "str"},
+        "do_while_control_flow_info": {
+            "key": "doWhileControlFlowInfo",
+            "type": "AetherDoWhileControlFlowInfo",
+        },
+        "parallel_for_control_flow_info": {
+            "key": "parallelForControlFlowInfo",
+            "type": "AetherParallelForControlFlowInfo",
+        },
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -3451,7 +3688,9 @@ class AetherGraphControlReferenceNode(msrest.serialization.Model):
         control_flow_type: Optional[Union[str, "AetherControlFlowType"]] = None,
         reference_node_id: Optional[str] = None,
         do_while_control_flow_info: Optional["AetherDoWhileControlFlowInfo"] = None,
-        parallel_for_control_flow_info: Optional["AetherParallelForControlFlowInfo"] = None,
+        parallel_for_control_flow_info: Optional[
+            "AetherParallelForControlFlowInfo"
+        ] = None,
         run_attribution: Optional[str] = None,
         **kwargs
     ):
@@ -3498,10 +3737,13 @@ class AetherGraphDatasetNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'dataset_id': {'key': 'datasetId', 'type': 'str'},
-        'data_path_parameter_name': {'key': 'dataPathParameterName', 'type': 'str'},
-        'data_set_definition': {'key': 'dataSetDefinition', 'type': 'AetherDataSetDefinition'},
+        "id": {"key": "id", "type": "str"},
+        "dataset_id": {"key": "datasetId", "type": "str"},
+        "data_path_parameter_name": {"key": "dataPathParameterName", "type": "str"},
+        "data_set_definition": {
+            "key": "dataSetDefinition",
+            "type": "AetherDataSetDefinition",
+        },
     }
 
     def __init__(
@@ -3540,8 +3782,11 @@ class AetherGraphEdge(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source_output_port': {'key': 'sourceOutputPort', 'type': 'AetherPortInfo'},
-        'destination_input_port': {'key': 'destinationInputPort', 'type': 'AetherPortInfo'},
+        "source_output_port": {"key": "sourceOutputPort", "type": "AetherPortInfo"},
+        "destination_input_port": {
+            "key": "destinationInputPort",
+            "type": "AetherPortInfo",
+        },
     }
 
     def __init__(
@@ -3602,23 +3847,38 @@ class AetherGraphEntity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_nodes': {'key': 'moduleNodes', 'type': '[AetherGraphModuleNode]'},
-        'dataset_nodes': {'key': 'datasetNodes', 'type': '[AetherGraphDatasetNode]'},
-        'sub_graph_nodes': {'key': 'subGraphNodes', 'type': '[AetherGraphReferenceNode]'},
-        'control_reference_nodes': {'key': 'controlReferenceNodes', 'type': '[AetherGraphControlReferenceNode]'},
-        'control_nodes': {'key': 'controlNodes', 'type': '[AetherGraphControlNode]'},
-        'edges': {'key': 'edges', 'type': '[AetherGraphEdge]'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'AetherComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'AetherDatastoreSetting'},
-        'default_cloud_priority': {'key': 'defaultCloudPriority', 'type': 'AetherCloudPrioritySetting'},
-        'parent_sub_graph_module_ids': {'key': 'parentSubGraphModuleIds', 'type': '[str]'},
-        'id': {'key': 'id', 'type': 'str'},
-        'workspace_id': {'key': 'workspaceId', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '[str]'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
+        "module_nodes": {"key": "moduleNodes", "type": "[AetherGraphModuleNode]"},
+        "dataset_nodes": {"key": "datasetNodes", "type": "[AetherGraphDatasetNode]"},
+        "sub_graph_nodes": {
+            "key": "subGraphNodes",
+            "type": "[AetherGraphReferenceNode]",
+        },
+        "control_reference_nodes": {
+            "key": "controlReferenceNodes",
+            "type": "[AetherGraphControlReferenceNode]",
+        },
+        "control_nodes": {"key": "controlNodes", "type": "[AetherGraphControlNode]"},
+        "edges": {"key": "edges", "type": "[AetherGraphEdge]"},
+        "default_compute": {"key": "defaultCompute", "type": "AetherComputeSetting"},
+        "default_datastore": {
+            "key": "defaultDatastore",
+            "type": "AetherDatastoreSetting",
+        },
+        "default_cloud_priority": {
+            "key": "defaultCloudPriority",
+            "type": "AetherCloudPrioritySetting",
+        },
+        "parent_sub_graph_module_ids": {
+            "key": "parentSubGraphModuleIds",
+            "type": "[str]",
+        },
+        "id": {"key": "id", "type": "str"},
+        "workspace_id": {"key": "workspaceId", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "tags": {"key": "tags", "type": "[str]"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
     }
 
     def __init__(
@@ -3627,7 +3887,9 @@ class AetherGraphEntity(msrest.serialization.Model):
         module_nodes: Optional[List["AetherGraphModuleNode"]] = None,
         dataset_nodes: Optional[List["AetherGraphDatasetNode"]] = None,
         sub_graph_nodes: Optional[List["AetherGraphReferenceNode"]] = None,
-        control_reference_nodes: Optional[List["AetherGraphControlReferenceNode"]] = None,
+        control_reference_nodes: Optional[
+            List["AetherGraphControlReferenceNode"]
+        ] = None,
         control_nodes: Optional[List["AetherGraphControlNode"]] = None,
         edges: Optional[List["AetherGraphEdge"]] = None,
         default_compute: Optional["AetherComputeSetting"] = None,
@@ -3753,30 +4015,51 @@ class AetherGraphModuleNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'cloud_priority': {'key': 'cloudPriority', 'type': 'int'},
-        'default_data_retention_hint': {'key': 'defaultDataRetentionHint', 'type': 'int'},
-        'compliance_cluster': {'key': 'complianceCluster', 'type': 'str'},
-        'euclid_workspace_id': {'key': 'euclidWorkspaceId', 'type': 'str'},
-        'attached_modules': {'key': 'attachedModules', 'type': '[str]'},
-        'acceptable_machine_clusters': {'key': 'acceptableMachineClusters', 'type': '[str]'},
-        'custom_data_location_id': {'key': 'customDataLocationId', 'type': 'str'},
-        'alert_timeout_duration': {'key': 'alertTimeoutDuration', 'type': 'str'},
-        'runconfig': {'key': 'runconfig', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'module_id': {'key': 'moduleId', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'module_parameters': {'key': 'moduleParameters', 'type': '[AetherParameterAssignment]'},
-        'module_metadata_parameters': {'key': 'moduleMetadataParameters', 'type': '[AetherParameterAssignment]'},
-        'module_output_settings': {'key': 'moduleOutputSettings', 'type': '[AetherOutputSetting]'},
-        'module_input_settings': {'key': 'moduleInputSettings', 'type': '[AetherInputSetting]'},
-        'use_graph_default_compute': {'key': 'useGraphDefaultCompute', 'type': 'bool'},
-        'use_graph_default_datastore': {'key': 'useGraphDefaultDatastore', 'type': 'bool'},
-        'regenerate_output': {'key': 'regenerateOutput', 'type': 'bool'},
-        'control_inputs': {'key': 'controlInputs', 'type': '[AetherControlInput]'},
-        'cloud_settings': {'key': 'cloudSettings', 'type': 'AetherCloudSettings'},
-        'execution_phase': {'key': 'executionPhase', 'type': 'str'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "cloud_priority": {"key": "cloudPriority", "type": "int"},
+        "default_data_retention_hint": {
+            "key": "defaultDataRetentionHint",
+            "type": "int",
+        },
+        "compliance_cluster": {"key": "complianceCluster", "type": "str"},
+        "euclid_workspace_id": {"key": "euclidWorkspaceId", "type": "str"},
+        "attached_modules": {"key": "attachedModules", "type": "[str]"},
+        "acceptable_machine_clusters": {
+            "key": "acceptableMachineClusters",
+            "type": "[str]",
+        },
+        "custom_data_location_id": {"key": "customDataLocationId", "type": "str"},
+        "alert_timeout_duration": {"key": "alertTimeoutDuration", "type": "str"},
+        "runconfig": {"key": "runconfig", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "module_id": {"key": "moduleId", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "module_parameters": {
+            "key": "moduleParameters",
+            "type": "[AetherParameterAssignment]",
+        },
+        "module_metadata_parameters": {
+            "key": "moduleMetadataParameters",
+            "type": "[AetherParameterAssignment]",
+        },
+        "module_output_settings": {
+            "key": "moduleOutputSettings",
+            "type": "[AetherOutputSetting]",
+        },
+        "module_input_settings": {
+            "key": "moduleInputSettings",
+            "type": "[AetherInputSetting]",
+        },
+        "use_graph_default_compute": {"key": "useGraphDefaultCompute", "type": "bool"},
+        "use_graph_default_datastore": {
+            "key": "useGraphDefaultDatastore",
+            "type": "bool",
+        },
+        "regenerate_output": {"key": "regenerateOutput", "type": "bool"},
+        "control_inputs": {"key": "controlInputs", "type": "[AetherControlInput]"},
+        "cloud_settings": {"key": "cloudSettings", "type": "AetherCloudSettings"},
+        "execution_phase": {"key": "executionPhase", "type": "str"},
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -3928,24 +4211,42 @@ class AetherGraphReferenceNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'AetherComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'AetherDatastoreSetting'},
-        'id': {'key': 'id', 'type': 'str'},
-        'module_id': {'key': 'moduleId', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'module_parameters': {'key': 'moduleParameters', 'type': '[AetherParameterAssignment]'},
-        'module_metadata_parameters': {'key': 'moduleMetadataParameters', 'type': '[AetherParameterAssignment]'},
-        'module_output_settings': {'key': 'moduleOutputSettings', 'type': '[AetherOutputSetting]'},
-        'module_input_settings': {'key': 'moduleInputSettings', 'type': '[AetherInputSetting]'},
-        'use_graph_default_compute': {'key': 'useGraphDefaultCompute', 'type': 'bool'},
-        'use_graph_default_datastore': {'key': 'useGraphDefaultDatastore', 'type': 'bool'},
-        'regenerate_output': {'key': 'regenerateOutput', 'type': 'bool'},
-        'control_inputs': {'key': 'controlInputs', 'type': '[AetherControlInput]'},
-        'cloud_settings': {'key': 'cloudSettings', 'type': 'AetherCloudSettings'},
-        'execution_phase': {'key': 'executionPhase', 'type': 'str'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "default_compute": {"key": "defaultCompute", "type": "AetherComputeSetting"},
+        "default_datastore": {
+            "key": "defaultDatastore",
+            "type": "AetherDatastoreSetting",
+        },
+        "id": {"key": "id", "type": "str"},
+        "module_id": {"key": "moduleId", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "module_parameters": {
+            "key": "moduleParameters",
+            "type": "[AetherParameterAssignment]",
+        },
+        "module_metadata_parameters": {
+            "key": "moduleMetadataParameters",
+            "type": "[AetherParameterAssignment]",
+        },
+        "module_output_settings": {
+            "key": "moduleOutputSettings",
+            "type": "[AetherOutputSetting]",
+        },
+        "module_input_settings": {
+            "key": "moduleInputSettings",
+            "type": "[AetherInputSetting]",
+        },
+        "use_graph_default_compute": {"key": "useGraphDefaultCompute", "type": "bool"},
+        "use_graph_default_datastore": {
+            "key": "useGraphDefaultDatastore",
+            "type": "bool",
+        },
+        "regenerate_output": {"key": "regenerateOutput", "type": "bool"},
+        "control_inputs": {"key": "controlInputs", "type": "[AetherControlInput]"},
+        "cloud_settings": {"key": "cloudSettings", "type": "AetherCloudSettings"},
+        "execution_phase": {"key": "executionPhase", "type": "str"},
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -4041,8 +4342,8 @@ class AetherHdfsReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -4077,10 +4378,10 @@ class AetherHdiClusterComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'address': {'key': 'address', 'type': 'str'},
-        'username': {'key': 'username', 'type': 'str'},
-        'password': {'key': 'password', 'type': 'str'},
-        'private_key': {'key': 'privateKey', 'type': 'str'},
+        "address": {"key": "address", "type": "str"},
+        "username": {"key": "username", "type": "str"},
+        "password": {"key": "password", "type": "str"},
+        "private_key": {"key": "privateKey", "type": "str"},
     }
 
     def __init__(
@@ -4145,21 +4446,21 @@ class AetherHdiRunConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file': {'key': 'file', 'type': 'str'},
-        'class_name': {'key': 'className', 'type': 'str'},
-        'files': {'key': 'files', 'type': '[str]'},
-        'archives': {'key': 'archives', 'type': '[str]'},
-        'jars': {'key': 'jars', 'type': '[str]'},
-        'py_files': {'key': 'pyFiles', 'type': '[str]'},
-        'compute_name': {'key': 'computeName', 'type': 'str'},
-        'queue': {'key': 'queue', 'type': 'str'},
-        'driver_memory': {'key': 'driverMemory', 'type': 'str'},
-        'driver_cores': {'key': 'driverCores', 'type': 'int'},
-        'executor_memory': {'key': 'executorMemory', 'type': 'str'},
-        'executor_cores': {'key': 'executorCores', 'type': 'int'},
-        'number_executors': {'key': 'numberExecutors', 'type': 'int'},
-        'conf': {'key': 'conf', 'type': '{str}'},
-        'name': {'key': 'name', 'type': 'str'},
+        "file": {"key": "file", "type": "str"},
+        "class_name": {"key": "className", "type": "str"},
+        "files": {"key": "files", "type": "[str]"},
+        "archives": {"key": "archives", "type": "[str]"},
+        "jars": {"key": "jars", "type": "[str]"},
+        "py_files": {"key": "pyFiles", "type": "[str]"},
+        "compute_name": {"key": "computeName", "type": "str"},
+        "queue": {"key": "queue", "type": "str"},
+        "driver_memory": {"key": "driverMemory", "type": "str"},
+        "driver_cores": {"key": "driverCores", "type": "int"},
+        "executor_memory": {"key": "executorMemory", "type": "str"},
+        "executor_cores": {"key": "executorCores", "type": "int"},
+        "number_executors": {"key": "numberExecutors", "type": "int"},
+        "conf": {"key": "conf", "type": "{str}"},
+        "name": {"key": "name", "type": "str"},
     }
 
     def __init__(
@@ -4246,10 +4547,10 @@ class AetherHyperDriveConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'hyper_drive_run_config': {'key': 'hyperDriveRunConfig', 'type': 'str'},
-        'primary_metric_goal': {'key': 'primaryMetricGoal', 'type': 'str'},
-        'primary_metric_name': {'key': 'primaryMetricName', 'type': 'str'},
-        'arguments': {'key': 'arguments', 'type': '[AetherArgumentAssignment]'},
+        "hyper_drive_run_config": {"key": "hyperDriveRunConfig", "type": "str"},
+        "primary_metric_goal": {"key": "primaryMetricGoal", "type": "str"},
+        "primary_metric_name": {"key": "primaryMetricName", "type": "str"},
+        "arguments": {"key": "arguments", "type": "[AetherArgumentAssignment]"},
     }
 
     def __init__(
@@ -4292,10 +4593,10 @@ class AetherIdentitySetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'client_id': {'key': 'clientId', 'type': 'str'},
-        'object_id': {'key': 'objectId', 'type': 'str'},
-        'msi_resource_id': {'key': 'msiResourceId', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "client_id": {"key": "clientId", "type": "str"},
+        "object_id": {"key": "objectId", "type": "str"},
+        "msi_resource_id": {"key": "msiResourceId", "type": "str"},
     }
 
     def __init__(
@@ -4332,7 +4633,10 @@ class AetherImportDataTask(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_transfer_source': {'key': 'DataTransferSource', 'type': 'AetherDataTransferSource'},
+        "data_transfer_source": {
+            "key": "DataTransferSource",
+            "type": "AetherDataTransferSource",
+        },
     }
 
     def __init__(
@@ -4366,11 +4670,14 @@ class AetherInputSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'options': {'key': 'options', 'type': '{str}'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "options": {"key": "options", "type": "{str}"},
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -4420,11 +4727,11 @@ class AetherInteractiveConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'is_ssh_enabled': {'key': 'isSSHEnabled', 'type': 'bool'},
-        'ssh_public_key': {'key': 'sshPublicKey', 'type': 'str'},
-        'is_i_python_enabled': {'key': 'isIPythonEnabled', 'type': 'bool'},
-        'is_tensor_board_enabled': {'key': 'isTensorBoardEnabled', 'type': 'bool'},
-        'interactive_port': {'key': 'interactivePort', 'type': 'int'},
+        "is_ssh_enabled": {"key": "isSSHEnabled", "type": "bool"},
+        "ssh_public_key": {"key": "sshPublicKey", "type": "str"},
+        "is_i_python_enabled": {"key": "isIPythonEnabled", "type": "bool"},
+        "is_tensor_board_enabled": {"key": "isTensorBoardEnabled", "type": "bool"},
+        "interactive_port": {"key": "interactivePort", "type": "int"},
     }
 
     def __init__(
@@ -4471,10 +4778,19 @@ class AetherK8SConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_retry_count': {'key': 'maxRetryCount', 'type': 'int'},
-        'resource_configuration': {'key': 'resourceConfiguration', 'type': 'AetherResourceConfig'},
-        'priority_configuration': {'key': 'priorityConfiguration', 'type': 'AetherPriorityConfig'},
-        'interactive_configuration': {'key': 'interactiveConfiguration', 'type': 'AetherInteractiveConfig'},
+        "max_retry_count": {"key": "maxRetryCount", "type": "int"},
+        "resource_configuration": {
+            "key": "resourceConfiguration",
+            "type": "AetherResourceConfig",
+        },
+        "priority_configuration": {
+            "key": "priorityConfiguration",
+            "type": "AetherPriorityConfig",
+        },
+        "interactive_configuration": {
+            "key": "interactiveConfiguration",
+            "type": "AetherInteractiveConfig",
+        },
     }
 
     def __init__(
@@ -4516,9 +4832,9 @@ class AetherLegacyDataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -4564,13 +4880,13 @@ class AetherLimitSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_trials': {'key': 'maxTrials', 'type': 'int'},
-        'timeout': {'key': 'timeout', 'type': 'str'},
-        'trial_timeout': {'key': 'trialTimeout', 'type': 'str'},
-        'max_concurrent_trials': {'key': 'maxConcurrentTrials', 'type': 'int'},
-        'max_cores_per_trial': {'key': 'maxCoresPerTrial', 'type': 'int'},
-        'exit_score': {'key': 'exitScore', 'type': 'float'},
-        'enable_early_termination': {'key': 'enableEarlyTermination', 'type': 'bool'},
+        "max_trials": {"key": "maxTrials", "type": "int"},
+        "timeout": {"key": "timeout", "type": "str"},
+        "trial_timeout": {"key": "trialTimeout", "type": "str"},
+        "max_concurrent_trials": {"key": "maxConcurrentTrials", "type": "int"},
+        "max_cores_per_trial": {"key": "maxCoresPerTrial", "type": "int"},
+        "exit_score": {"key": "exitScore", "type": "float"},
+        "enable_early_termination": {"key": "enableEarlyTermination", "type": "bool"},
     }
 
     def __init__(
@@ -4619,15 +4935,10 @@ class AetherMlcComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mlc_compute_type': {'key': 'mlcComputeType', 'type': 'str'},
+        "mlc_compute_type": {"key": "mlcComputeType", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        mlc_compute_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, mlc_compute_type: Optional[str] = None, **kwargs):
         """
         :keyword mlc_compute_type:
         :paramtype mlc_compute_type: str
@@ -4773,70 +5084,97 @@ class AetherModuleEntity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'last_updated_by': {'key': 'lastUpdatedBy', 'type': 'AetherCreatedBy'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'module_execution_type': {'key': 'moduleExecutionType', 'type': 'str'},
-        'module_type': {'key': 'moduleType', 'type': 'str'},
-        'module_type_version': {'key': 'moduleTypeVersion', 'type': 'str'},
-        'resource_requirements': {'key': 'resourceRequirements', 'type': 'AetherResourceModel'},
-        'machine_cluster': {'key': 'machineCluster', 'type': '[str]'},
-        'default_compliance_cluster': {'key': 'defaultComplianceCluster', 'type': 'str'},
-        'repository_type': {'key': 'repositoryType', 'type': 'str'},
-        'relative_path_to_source_code': {'key': 'relativePathToSourceCode', 'type': 'str'},
-        'commit_id': {'key': 'commitId', 'type': 'str'},
-        'code_review_link': {'key': 'codeReviewLink', 'type': 'str'},
-        'unit_tests_available': {'key': 'unitTestsAvailable', 'type': 'bool'},
-        'is_compressed': {'key': 'isCompressed', 'type': 'bool'},
-        'execution_environment': {'key': 'executionEnvironment', 'type': 'str'},
-        'is_output_markup_enabled': {'key': 'isOutputMarkupEnabled', 'type': 'bool'},
-        'docker_image_id': {'key': 'dockerImageId', 'type': 'str'},
-        'docker_image_reference': {'key': 'dockerImageReference', 'type': 'str'},
-        'docker_image_security_groups': {'key': 'dockerImageSecurityGroups', 'type': 'str'},
-        'extended_properties': {'key': 'extendedProperties', 'type': 'AetherModuleExtendedProperties'},
-        'deployment_source': {'key': 'deploymentSource', 'type': 'str'},
-        'deployment_source_metadata': {'key': 'deploymentSourceMetadata', 'type': 'str'},
-        'identifier_hash': {'key': 'identifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'identifierHashV2', 'type': 'str'},
-        'kv_tags': {'key': 'kvTags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'created_by': {'key': 'createdBy', 'type': 'AetherCreatedBy'},
-        'runconfig': {'key': 'runconfig', 'type': 'str'},
-        'cloud_settings': {'key': 'cloudSettings', 'type': 'AetherCloudSettings'},
-        'category': {'key': 'category', 'type': 'str'},
-        'step_type': {'key': 'stepType', 'type': 'str'},
-        'stage': {'key': 'stage', 'type': 'str'},
-        'upload_state': {'key': 'uploadState', 'type': 'str'},
-        'source_code_location': {'key': 'sourceCodeLocation', 'type': 'str'},
-        'size_in_bytes': {'key': 'sizeInBytes', 'type': 'long'},
-        'download_location': {'key': 'downloadLocation', 'type': 'str'},
-        'data_location': {'key': 'dataLocation', 'type': 'AetherDataLocation'},
-        'scripting_runtime_id': {'key': 'scriptingRuntimeId', 'type': 'str'},
-        'interface_documentation': {'key': 'interfaceDocumentation', 'type': 'AetherEntityInterfaceDocumentation'},
-        'is_eyes_on': {'key': 'isEyesOn', 'type': 'bool'},
-        'compliance_cluster': {'key': 'complianceCluster', 'type': 'str'},
-        'is_deterministic': {'key': 'isDeterministic', 'type': 'bool'},
-        'information_url': {'key': 'informationUrl', 'type': 'str'},
-        'is_experiment_id_in_parameters': {'key': 'isExperimentIdInParameters', 'type': 'bool'},
-        'interface_string': {'key': 'interfaceString', 'type': 'str'},
-        'default_parameters': {'key': 'defaultParameters', 'type': '{str}'},
-        'structured_interface': {'key': 'structuredInterface', 'type': 'AetherStructuredInterface'},
-        'family_id': {'key': 'familyId', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'hash': {'key': 'hash', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'sequence_number_in_family': {'key': 'sequenceNumberInFamily', 'type': 'int'},
-        'owner': {'key': 'owner', 'type': 'str'},
-        'azure_tenant_id': {'key': 'azureTenantId', 'type': 'str'},
-        'azure_user_id': {'key': 'azureUserId', 'type': 'str'},
-        'collaborators': {'key': 'collaborators', 'type': '[str]'},
-        'id': {'key': 'id', 'type': 'str'},
-        'workspace_id': {'key': 'workspaceId', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '[str]'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
+        "last_updated_by": {"key": "lastUpdatedBy", "type": "AetherCreatedBy"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "module_execution_type": {"key": "moduleExecutionType", "type": "str"},
+        "module_type": {"key": "moduleType", "type": "str"},
+        "module_type_version": {"key": "moduleTypeVersion", "type": "str"},
+        "resource_requirements": {
+            "key": "resourceRequirements",
+            "type": "AetherResourceModel",
+        },
+        "machine_cluster": {"key": "machineCluster", "type": "[str]"},
+        "default_compliance_cluster": {
+            "key": "defaultComplianceCluster",
+            "type": "str",
+        },
+        "repository_type": {"key": "repositoryType", "type": "str"},
+        "relative_path_to_source_code": {
+            "key": "relativePathToSourceCode",
+            "type": "str",
+        },
+        "commit_id": {"key": "commitId", "type": "str"},
+        "code_review_link": {"key": "codeReviewLink", "type": "str"},
+        "unit_tests_available": {"key": "unitTestsAvailable", "type": "bool"},
+        "is_compressed": {"key": "isCompressed", "type": "bool"},
+        "execution_environment": {"key": "executionEnvironment", "type": "str"},
+        "is_output_markup_enabled": {"key": "isOutputMarkupEnabled", "type": "bool"},
+        "docker_image_id": {"key": "dockerImageId", "type": "str"},
+        "docker_image_reference": {"key": "dockerImageReference", "type": "str"},
+        "docker_image_security_groups": {
+            "key": "dockerImageSecurityGroups",
+            "type": "str",
+        },
+        "extended_properties": {
+            "key": "extendedProperties",
+            "type": "AetherModuleExtendedProperties",
+        },
+        "deployment_source": {"key": "deploymentSource", "type": "str"},
+        "deployment_source_metadata": {
+            "key": "deploymentSourceMetadata",
+            "type": "str",
+        },
+        "identifier_hash": {"key": "identifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "identifierHashV2", "type": "str"},
+        "kv_tags": {"key": "kvTags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "created_by": {"key": "createdBy", "type": "AetherCreatedBy"},
+        "runconfig": {"key": "runconfig", "type": "str"},
+        "cloud_settings": {"key": "cloudSettings", "type": "AetherCloudSettings"},
+        "category": {"key": "category", "type": "str"},
+        "step_type": {"key": "stepType", "type": "str"},
+        "stage": {"key": "stage", "type": "str"},
+        "upload_state": {"key": "uploadState", "type": "str"},
+        "source_code_location": {"key": "sourceCodeLocation", "type": "str"},
+        "size_in_bytes": {"key": "sizeInBytes", "type": "long"},
+        "download_location": {"key": "downloadLocation", "type": "str"},
+        "data_location": {"key": "dataLocation", "type": "AetherDataLocation"},
+        "scripting_runtime_id": {"key": "scriptingRuntimeId", "type": "str"},
+        "interface_documentation": {
+            "key": "interfaceDocumentation",
+            "type": "AetherEntityInterfaceDocumentation",
+        },
+        "is_eyes_on": {"key": "isEyesOn", "type": "bool"},
+        "compliance_cluster": {"key": "complianceCluster", "type": "str"},
+        "is_deterministic": {"key": "isDeterministic", "type": "bool"},
+        "information_url": {"key": "informationUrl", "type": "str"},
+        "is_experiment_id_in_parameters": {
+            "key": "isExperimentIdInParameters",
+            "type": "bool",
+        },
+        "interface_string": {"key": "interfaceString", "type": "str"},
+        "default_parameters": {"key": "defaultParameters", "type": "{str}"},
+        "structured_interface": {
+            "key": "structuredInterface",
+            "type": "AetherStructuredInterface",
+        },
+        "family_id": {"key": "familyId", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "hash": {"key": "hash", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "sequence_number_in_family": {"key": "sequenceNumberInFamily", "type": "int"},
+        "owner": {"key": "owner", "type": "str"},
+        "azure_tenant_id": {"key": "azureTenantId", "type": "str"},
+        "azure_user_id": {"key": "azureUserId", "type": "str"},
+        "collaborators": {"key": "collaborators", "type": "[str]"},
+        "id": {"key": "id", "type": "str"},
+        "workspace_id": {"key": "workspaceId", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "tags": {"key": "tags", "type": "[str]"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
     }
 
     def __init__(
@@ -4856,7 +5194,9 @@ class AetherModuleEntity(msrest.serialization.Model):
         code_review_link: Optional[str] = None,
         unit_tests_available: Optional[bool] = None,
         is_compressed: Optional[bool] = None,
-        execution_environment: Optional[Union[str, "AetherExecutionEnvironment"]] = None,
+        execution_environment: Optional[
+            Union[str, "AetherExecutionEnvironment"]
+        ] = None,
         is_output_markup_enabled: Optional[bool] = None,
         docker_image_id: Optional[str] = None,
         docker_image_reference: Optional[str] = None,
@@ -5118,8 +5458,11 @@ class AetherModuleExtendedProperties(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'auto_deployed_artifact': {'key': 'autoDeployedArtifact', 'type': 'AetherBuildArtifactInfo'},
-        'script_needs_approval': {'key': 'scriptNeedsApproval', 'type': 'bool'},
+        "auto_deployed_artifact": {
+            "key": "autoDeployedArtifact",
+            "type": "AetherBuildArtifactInfo",
+        },
+        "script_needs_approval": {"key": "scriptNeedsApproval", "type": "bool"},
     }
 
     def __init__(
@@ -5150,8 +5493,8 @@ class AetherNCrossValidations(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -5209,21 +5552,42 @@ class AetherOutputSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_name_parameter_assignment': {'key': 'DataStoreNameParameterAssignment', 'type': 'AetherParameterAssignment'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'data_store_mode_parameter_assignment': {'key': 'DataStoreModeParameterAssignment', 'type': 'AetherParameterAssignment'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'path_on_compute_parameter_assignment': {'key': 'PathOnComputeParameterAssignment', 'type': 'AetherParameterAssignment'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'data_reference_name': {'key': 'dataReferenceName', 'type': 'str'},
-        'web_service_port': {'key': 'webServicePort', 'type': 'str'},
-        'dataset_registration': {'key': 'datasetRegistration', 'type': 'AetherDatasetRegistration'},
-        'dataset_output_options': {'key': 'datasetOutputOptions', 'type': 'AetherDatasetOutputOptions'},
-        'asset_output_settings': {'key': 'AssetOutputSettings', 'type': 'AetherAssetOutputSettings'},
-        'parameter_name': {'key': 'parameterName', 'type': 'str'},
-        'asset_output_settings_parameter_name': {'key': 'AssetOutputSettingsParameterName', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_name_parameter_assignment": {
+            "key": "DataStoreNameParameterAssignment",
+            "type": "AetherParameterAssignment",
+        },
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "data_store_mode_parameter_assignment": {
+            "key": "DataStoreModeParameterAssignment",
+            "type": "AetherParameterAssignment",
+        },
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "path_on_compute_parameter_assignment": {
+            "key": "PathOnComputeParameterAssignment",
+            "type": "AetherParameterAssignment",
+        },
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "data_reference_name": {"key": "dataReferenceName", "type": "str"},
+        "web_service_port": {"key": "webServicePort", "type": "str"},
+        "dataset_registration": {
+            "key": "datasetRegistration",
+            "type": "AetherDatasetRegistration",
+        },
+        "dataset_output_options": {
+            "key": "datasetOutputOptions",
+            "type": "AetherDatasetOutputOptions",
+        },
+        "asset_output_settings": {
+            "key": "AssetOutputSettings",
+            "type": "AetherAssetOutputSettings",
+        },
+        "parameter_name": {"key": "parameterName", "type": "str"},
+        "asset_output_settings_parameter_name": {
+            "key": "AssetOutputSettingsParameterName",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -5231,11 +5595,17 @@ class AetherOutputSetting(msrest.serialization.Model):
         *,
         name: Optional[str] = None,
         data_store_name: Optional[str] = None,
-        data_store_name_parameter_assignment: Optional["AetherParameterAssignment"] = None,
+        data_store_name_parameter_assignment: Optional[
+            "AetherParameterAssignment"
+        ] = None,
         data_store_mode: Optional[Union[str, "AetherDataStoreMode"]] = None,
-        data_store_mode_parameter_assignment: Optional["AetherParameterAssignment"] = None,
+        data_store_mode_parameter_assignment: Optional[
+            "AetherParameterAssignment"
+        ] = None,
         path_on_compute: Optional[str] = None,
-        path_on_compute_parameter_assignment: Optional["AetherParameterAssignment"] = None,
+        path_on_compute_parameter_assignment: Optional[
+            "AetherParameterAssignment"
+        ] = None,
         overwrite: Optional[bool] = None,
         data_reference_name: Optional[str] = None,
         web_service_port: Optional[str] = None,
@@ -5305,7 +5675,10 @@ class AetherParallelForControlFlowInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'parallel_for_items_input': {'key': 'parallelForItemsInput', 'type': 'AetherParameterAssignment'},
+        "parallel_for_items_input": {
+            "key": "parallelForItemsInput",
+            "type": "AetherParameterAssignment",
+        },
     }
 
     def __init__(
@@ -5341,12 +5714,21 @@ class AetherParameterAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value_type': {'key': 'valueType', 'type': 'str'},
-        'assignments_to_concatenate': {'key': 'assignmentsToConcatenate', 'type': '[AetherParameterAssignment]'},
-        'data_path_assignment': {'key': 'dataPathAssignment', 'type': 'AetherLegacyDataPath'},
-        'data_set_definition_value_assignment': {'key': 'dataSetDefinitionValueAssignment', 'type': 'AetherDataSetDefinitionValue'},
-        'name': {'key': 'name', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "value_type": {"key": "valueType", "type": "str"},
+        "assignments_to_concatenate": {
+            "key": "assignmentsToConcatenate",
+            "type": "[AetherParameterAssignment]",
+        },
+        "data_path_assignment": {
+            "key": "dataPathAssignment",
+            "type": "AetherLegacyDataPath",
+        },
+        "data_set_definition_value_assignment": {
+            "key": "dataSetDefinitionValueAssignment",
+            "type": "AetherDataSetDefinitionValue",
+        },
+        "name": {"key": "name", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -5355,7 +5737,9 @@ class AetherParameterAssignment(msrest.serialization.Model):
         value_type: Optional[Union[str, "AetherParameterValueType"]] = None,
         assignments_to_concatenate: Optional[List["AetherParameterAssignment"]] = None,
         data_path_assignment: Optional["AetherLegacyDataPath"] = None,
-        data_set_definition_value_assignment: Optional["AetherDataSetDefinitionValue"] = None,
+        data_set_definition_value_assignment: Optional[
+            "AetherDataSetDefinitionValue"
+        ] = None,
         name: Optional[str] = None,
         value: Optional[str] = None,
         **kwargs
@@ -5396,9 +5780,9 @@ class AetherPhillyHdfsReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'cluster': {'key': 'cluster', 'type': 'str'},
-        'vc': {'key': 'vc', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "cluster": {"key": "cluster", "type": "str"},
+        "vc": {"key": "vc", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -5439,11 +5823,11 @@ class AetherPortInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
-        'graph_port_name': {'key': 'graphPortName', 'type': 'str'},
-        'is_parameter': {'key': 'isParameter', 'type': 'bool'},
-        'web_service_port': {'key': 'webServicePort', 'type': 'str'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
+        "graph_port_name": {"key": "graphPortName", "type": "str"},
+        "is_parameter": {"key": "isParameter", "type": "bool"},
+        "web_service_port": {"key": "webServicePort", "type": "str"},
     }
 
     def __init__(
@@ -5490,10 +5874,10 @@ class AetherPriorityConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_priority': {'key': 'jobPriority', 'type': 'int'},
-        'is_preemptible': {'key': 'isPreemptible', 'type': 'bool'},
-        'node_count_set': {'key': 'nodeCountSet', 'type': '[int]'},
-        'scale_interval': {'key': 'scaleInterval', 'type': 'int'},
+        "job_priority": {"key": "jobPriority", "type": "int"},
+        "is_preemptible": {"key": "isPreemptible", "type": "bool"},
+        "node_count_set": {"key": "nodeCountSet", "type": "[int]"},
+        "scale_interval": {"key": "scaleInterval", "type": "int"},
     }
 
     def __init__(
@@ -5532,8 +5916,8 @@ class AetherPriorityConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'cloud_priority': {'key': 'cloudPriority', 'type': 'int'},
-        'string_type_priority': {'key': 'stringTypePriority', 'type': 'str'},
+        "cloud_priority": {"key": "cloudPriority", "type": "int"},
+        "string_type_priority": {"key": "stringTypePriority", "type": "str"},
     }
 
     def __init__(
@@ -5566,9 +5950,9 @@ class AetherRegisteredDataSetReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -5607,10 +5991,10 @@ class AetherRemoteDockerComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'address': {'key': 'address', 'type': 'str'},
-        'username': {'key': 'username', 'type': 'str'},
-        'password': {'key': 'password', 'type': 'str'},
-        'private_key': {'key': 'privateKey', 'type': 'str'},
+        "address": {"key": "address", "type": "str"},
+        "username": {"key": "username", "type": "str"},
+        "password": {"key": "password", "type": "str"},
+        "private_key": {"key": "privateKey", "type": "str"},
     }
 
     def __init__(
@@ -5647,7 +6031,10 @@ class AetherResourceAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'attributes': {'key': 'attributes', 'type': '{AetherResourceAttributeAssignment}'},
+        "attributes": {
+            "key": "attributes",
+            "type": "{AetherResourceAttributeAssignment}",
+        },
     }
 
     def __init__(
@@ -5676,9 +6063,9 @@ class AetherResourceAttributeAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'attribute': {'key': 'attribute', 'type': 'AetherResourceAttributeDefinition'},
-        'operator': {'key': 'operator', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "attribute": {"key": "attribute", "type": "AetherResourceAttributeDefinition"},
+        "operator": {"key": "operator", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -5717,14 +6104,14 @@ class AetherResourceAttributeDefinition(msrest.serialization.Model):
     """
 
     _validation = {
-        'allowed_operators': {'unique': True},
+        "allowed_operators": {"unique": True},
     }
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'units': {'key': 'units', 'type': 'str'},
-        'allowed_operators': {'key': 'allowedOperators', 'type': '[str]'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "units": {"key": "units", "type": "str"},
+        "allowed_operators": {"key": "allowedOperators", "type": "[str]"},
     }
 
     def __init__(
@@ -5765,9 +6152,9 @@ class AetherResourceConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'gpu_count': {'key': 'gpuCount', 'type': 'int'},
-        'cpu_count': {'key': 'cpuCount', 'type': 'int'},
-        'memory_request_in_gb': {'key': 'memoryRequestInGB', 'type': 'int'},
+        "gpu_count": {"key": "gpuCount", "type": "int"},
+        "cpu_count": {"key": "cpuCount", "type": "int"},
+        "memory_request_in_gb": {"key": "memoryRequestInGB", "type": "int"},
     }
 
     def __init__(
@@ -5808,11 +6195,11 @@ class AetherResourceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{object}'},
-        'locations': {'key': 'locations', 'type': '[str]'},
-        'instance_priority': {'key': 'instancePriority', 'type': 'str'},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "properties": {"key": "properties", "type": "{object}"},
+        "locations": {"key": "locations", "type": "[str]"},
+        "instance_priority": {"key": "instancePriority", "type": "str"},
     }
 
     def __init__(
@@ -5853,14 +6240,11 @@ class AetherResourceModel(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'resources': {'key': 'resources', 'type': '[AetherResourceAssignment]'},
+        "resources": {"key": "resources", "type": "[AetherResourceAssignment]"},
     }
 
     def __init__(
-        self,
-        *,
-        resources: Optional[List["AetherResourceAssignment"]] = None,
-        **kwargs
+        self, *, resources: Optional[List["AetherResourceAssignment"]] = None, **kwargs
     ):
         """
         :keyword resources:
@@ -5880,8 +6264,8 @@ class AetherResourcesSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_size': {'key': 'instanceSize', 'type': 'str'},
-        'spark_version': {'key': 'sparkVersion', 'type': 'str'},
+        "instance_size": {"key": "instanceSize", "type": "str"},
+        "spark_version": {"key": "sparkVersion", "type": "str"},
     }
 
     def __init__(
@@ -5910,15 +6294,10 @@ class AetherSavedDataSetReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        id: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, id: Optional[str] = None, **kwargs):
         """
         :keyword id:
         :paramtype id: str
@@ -5945,12 +6324,18 @@ class AetherScopeCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'input_path_suffixes': {'key': 'inputPathSuffixes', 'type': '{AetherArgumentAssignment}'},
-        'output_path_suffixes': {'key': 'outputPathSuffixes', 'type': '{AetherArgumentAssignment}'},
-        'user_alias': {'key': 'userAlias', 'type': 'str'},
-        'tokens': {'key': 'tokens', 'type': 'int'},
-        'auto_token': {'key': 'autoToken', 'type': 'int'},
-        'vcp': {'key': 'vcp', 'type': 'float'},
+        "input_path_suffixes": {
+            "key": "inputPathSuffixes",
+            "type": "{AetherArgumentAssignment}",
+        },
+        "output_path_suffixes": {
+            "key": "outputPathSuffixes",
+            "type": "{AetherArgumentAssignment}",
+        },
+        "user_alias": {"key": "userAlias", "type": "str"},
+        "tokens": {"key": "tokens", "type": "int"},
+        "auto_token": {"key": "autoToken", "type": "int"},
+        "vcp": {"key": "vcp", "type": "float"},
     }
 
     def __init__(
@@ -5997,8 +6382,8 @@ class AetherSeasonality(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -6033,10 +6418,13 @@ class AetherSqlDataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'sql_table_name': {'key': 'sqlTableName', 'type': 'str'},
-        'sql_query': {'key': 'sqlQuery', 'type': 'str'},
-        'sql_stored_procedure_name': {'key': 'sqlStoredProcedureName', 'type': 'str'},
-        'sql_stored_procedure_params': {'key': 'sqlStoredProcedureParams', 'type': '[AetherStoredProcedureParameter]'},
+        "sql_table_name": {"key": "sqlTableName", "type": "str"},
+        "sql_query": {"key": "sqlQuery", "type": "str"},
+        "sql_stored_procedure_name": {"key": "sqlStoredProcedureName", "type": "str"},
+        "sql_stored_procedure_params": {
+            "key": "sqlStoredProcedureParams",
+            "type": "[AetherStoredProcedureParameter]",
+        },
     }
 
     def __init__(
@@ -6045,7 +6433,9 @@ class AetherSqlDataPath(msrest.serialization.Model):
         sql_table_name: Optional[str] = None,
         sql_query: Optional[str] = None,
         sql_stored_procedure_name: Optional[str] = None,
-        sql_stored_procedure_params: Optional[List["AetherStoredProcedureParameter"]] = None,
+        sql_stored_procedure_params: Optional[
+            List["AetherStoredProcedureParameter"]
+        ] = None,
         **kwargs
     ):
         """
@@ -6079,15 +6469,23 @@ class AetherStackEnsembleSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'stack_meta_learner_type': {'key': 'stackMetaLearnerType', 'type': 'str'},
-        'stack_meta_learner_train_percentage': {'key': 'stackMetaLearnerTrainPercentage', 'type': 'float'},
-        'stack_meta_learner_k_wargs': {'key': 'stackMetaLearnerKWargs', 'type': 'object'},
+        "stack_meta_learner_type": {"key": "stackMetaLearnerType", "type": "str"},
+        "stack_meta_learner_train_percentage": {
+            "key": "stackMetaLearnerTrainPercentage",
+            "type": "float",
+        },
+        "stack_meta_learner_k_wargs": {
+            "key": "stackMetaLearnerKWargs",
+            "type": "object",
+        },
     }
 
     def __init__(
         self,
         *,
-        stack_meta_learner_type: Optional[Union[str, "AetherStackMetaLearnerType"]] = None,
+        stack_meta_learner_type: Optional[
+            Union[str, "AetherStackMetaLearnerType"]
+        ] = None,
         stack_meta_learner_train_percentage: Optional[float] = None,
         stack_meta_learner_k_wargs: Optional[Any] = None,
         **kwargs
@@ -6120,9 +6518,9 @@ class AetherStoredProcedureParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "value": {"key": "value", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
@@ -6167,13 +6565,19 @@ class AetherStructuredInterface(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'command_line_pattern': {'key': 'commandLinePattern', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '[AetherStructuredInterfaceInput]'},
-        'outputs': {'key': 'outputs', 'type': '[AetherStructuredInterfaceOutput]'},
-        'control_outputs': {'key': 'controlOutputs', 'type': '[AetherControlOutput]'},
-        'parameters': {'key': 'parameters', 'type': '[AetherStructuredInterfaceParameter]'},
-        'metadata_parameters': {'key': 'metadataParameters', 'type': '[AetherStructuredInterfaceParameter]'},
-        'arguments': {'key': 'arguments', 'type': '[AetherArgumentAssignment]'},
+        "command_line_pattern": {"key": "commandLinePattern", "type": "str"},
+        "inputs": {"key": "inputs", "type": "[AetherStructuredInterfaceInput]"},
+        "outputs": {"key": "outputs", "type": "[AetherStructuredInterfaceOutput]"},
+        "control_outputs": {"key": "controlOutputs", "type": "[AetherControlOutput]"},
+        "parameters": {
+            "key": "parameters",
+            "type": "[AetherStructuredInterfaceParameter]",
+        },
+        "metadata_parameters": {
+            "key": "metadataParameters",
+            "type": "[AetherStructuredInterfaceParameter]",
+        },
+        "arguments": {"key": "arguments", "type": "[AetherArgumentAssignment]"},
     }
 
     def __init__(
@@ -6184,7 +6588,9 @@ class AetherStructuredInterface(msrest.serialization.Model):
         outputs: Optional[List["AetherStructuredInterfaceOutput"]] = None,
         control_outputs: Optional[List["AetherControlOutput"]] = None,
         parameters: Optional[List["AetherStructuredInterfaceParameter"]] = None,
-        metadata_parameters: Optional[List["AetherStructuredInterfaceParameter"]] = None,
+        metadata_parameters: Optional[
+            List["AetherStructuredInterfaceParameter"]
+        ] = None,
         arguments: Optional[List["AetherArgumentAssignment"]] = None,
         **kwargs
     ):
@@ -6247,23 +6653,26 @@ class AetherStructuredInterfaceInput(msrest.serialization.Model):
     """
 
     _validation = {
-        'dataset_types': {'unique': True},
+        "dataset_types": {"unique": True},
     }
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'data_type_ids_list': {'key': 'dataTypeIdsList', 'type': '[str]'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'skip_processing': {'key': 'skipProcessing', 'type': 'bool'},
-        'is_resource': {'key': 'isResource', 'type': 'bool'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'data_reference_name': {'key': 'dataReferenceName', 'type': 'str'},
-        'dataset_types': {'key': 'datasetTypes', 'type': '[str]'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "data_type_ids_list": {"key": "dataTypeIdsList", "type": "[str]"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "description": {"key": "description", "type": "str"},
+        "skip_processing": {"key": "skipProcessing", "type": "bool"},
+        "is_resource": {"key": "isResource", "type": "bool"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "data_reference_name": {"key": "dataReferenceName", "type": "str"},
+        "dataset_types": {"key": "datasetTypes", "type": "[str]"},
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -6368,22 +6777,28 @@ class AetherStructuredInterfaceOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'data_type_id': {'key': 'dataTypeId', 'type': 'str'},
-        'pass_through_data_type_input_name': {'key': 'passThroughDataTypeInputName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'skip_processing': {'key': 'skipProcessing', 'type': 'bool'},
-        'is_artifact': {'key': 'isArtifact', 'type': 'bool'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'data_reference_name': {'key': 'dataReferenceName', 'type': 'str'},
-        'training_output': {'key': 'trainingOutput', 'type': 'AetherTrainingOutput'},
-        'dataset_output': {'key': 'datasetOutput', 'type': 'AetherDatasetOutput'},
-        'asset_output_settings': {'key': 'AssetOutputSettings', 'type': 'AetherAssetOutputSettings'},
-        'early_available': {'key': 'earlyAvailable', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "data_type_id": {"key": "dataTypeId", "type": "str"},
+        "pass_through_data_type_input_name": {
+            "key": "passThroughDataTypeInputName",
+            "type": "str",
+        },
+        "description": {"key": "description", "type": "str"},
+        "skip_processing": {"key": "skipProcessing", "type": "bool"},
+        "is_artifact": {"key": "isArtifact", "type": "bool"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "data_reference_name": {"key": "dataReferenceName", "type": "str"},
+        "training_output": {"key": "trainingOutput", "type": "AetherTrainingOutput"},
+        "dataset_output": {"key": "datasetOutput", "type": "AetherDatasetOutput"},
+        "asset_output_settings": {
+            "key": "AssetOutputSettings",
+            "type": "AetherAssetOutputSettings",
+        },
+        "early_available": {"key": "earlyAvailable", "type": "bool"},
     }
 
     def __init__(
@@ -6501,23 +6916,32 @@ class AetherStructuredInterfaceParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'parameter_type': {'key': 'parameterType', 'type': 'str'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
-        'lower_bound': {'key': 'lowerBound', 'type': 'str'},
-        'upper_bound': {'key': 'upperBound', 'type': 'str'},
-        'enum_values': {'key': 'enumValues', 'type': '[str]'},
-        'enum_values_to_argument_strings': {'key': 'enumValuesToArgumentStrings', 'type': '{str}'},
-        'description': {'key': 'description', 'type': 'str'},
-        'set_environment_variable': {'key': 'setEnvironmentVariable', 'type': 'bool'},
-        'environment_variable_override': {'key': 'environmentVariableOverride', 'type': 'str'},
-        'enabled_by_parameter_name': {'key': 'enabledByParameterName', 'type': 'str'},
-        'enabled_by_parameter_values': {'key': 'enabledByParameterValues', 'type': '[str]'},
-        'ui_hint': {'key': 'uiHint', 'type': 'AetherUIParameterHint'},
-        'group_names': {'key': 'groupNames', 'type': '[str]'},
-        'argument_name': {'key': 'argumentName', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "parameter_type": {"key": "parameterType", "type": "str"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "default_value": {"key": "defaultValue", "type": "str"},
+        "lower_bound": {"key": "lowerBound", "type": "str"},
+        "upper_bound": {"key": "upperBound", "type": "str"},
+        "enum_values": {"key": "enumValues", "type": "[str]"},
+        "enum_values_to_argument_strings": {
+            "key": "enumValuesToArgumentStrings",
+            "type": "{str}",
+        },
+        "description": {"key": "description", "type": "str"},
+        "set_environment_variable": {"key": "setEnvironmentVariable", "type": "bool"},
+        "environment_variable_override": {
+            "key": "environmentVariableOverride",
+            "type": "str",
+        },
+        "enabled_by_parameter_name": {"key": "enabledByParameterName", "type": "str"},
+        "enabled_by_parameter_values": {
+            "key": "enabledByParameterValues",
+            "type": "[str]",
+        },
+        "ui_hint": {"key": "uiHint", "type": "AetherUIParameterHint"},
+        "group_names": {"key": "groupNames", "type": "[str]"},
+        "argument_name": {"key": "argumentName", "type": "str"},
     }
 
     def __init__(
@@ -6619,13 +7043,22 @@ class AetherSubGraphConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'graph_draft_id': {'key': 'graphDraftId', 'type': 'str'},
-        'default_compute_internal': {'key': 'defaultComputeInternal', 'type': 'AetherComputeSetting'},
-        'default_datastore_internal': {'key': 'defaultDatastoreInternal', 'type': 'AetherDatastoreSetting'},
-        'default_cloud_priority': {'key': 'DefaultCloudPriority', 'type': 'AetherCloudPrioritySetting'},
-        'user_alias': {'key': 'UserAlias', 'type': 'str'},
-        'is_dynamic': {'key': 'IsDynamic', 'type': 'bool'},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "graph_draft_id": {"key": "graphDraftId", "type": "str"},
+        "default_compute_internal": {
+            "key": "defaultComputeInternal",
+            "type": "AetherComputeSetting",
+        },
+        "default_datastore_internal": {
+            "key": "defaultDatastoreInternal",
+            "type": "AetherDatastoreSetting",
+        },
+        "default_cloud_priority": {
+            "key": "DefaultCloudPriority",
+            "type": "AetherCloudPrioritySetting",
+        },
+        "user_alias": {"key": "UserAlias", "type": "str"},
+        "is_dynamic": {"key": "IsDynamic", "type": "bool"},
     }
 
     def __init__(
@@ -6684,12 +7117,12 @@ class AetherSweepEarlyTerminationPolicy(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'policy_type': {'key': 'policyType', 'type': 'str'},
-        'evaluation_interval': {'key': 'evaluationInterval', 'type': 'int'},
-        'delay_evaluation': {'key': 'delayEvaluation', 'type': 'int'},
-        'slack_factor': {'key': 'slackFactor', 'type': 'float'},
-        'slack_amount': {'key': 'slackAmount', 'type': 'float'},
-        'truncation_percentage': {'key': 'truncationPercentage', 'type': 'int'},
+        "policy_type": {"key": "policyType", "type": "str"},
+        "evaluation_interval": {"key": "evaluationInterval", "type": "int"},
+        "delay_evaluation": {"key": "delayEvaluation", "type": "int"},
+        "slack_factor": {"key": "slackFactor", "type": "float"},
+        "slack_amount": {"key": "slackAmount", "type": "float"},
+        "truncation_percentage": {"key": "truncationPercentage", "type": "int"},
     }
 
     def __init__(
@@ -6741,10 +7174,13 @@ class AetherSweepSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'limits': {'key': 'limits', 'type': 'AetherSweepSettingsLimits'},
-        'search_space': {'key': 'searchSpace', 'type': '[{str}]'},
-        'sampling_algorithm': {'key': 'samplingAlgorithm', 'type': 'str'},
-        'early_termination': {'key': 'earlyTermination', 'type': 'AetherSweepEarlyTerminationPolicy'},
+        "limits": {"key": "limits", "type": "AetherSweepSettingsLimits"},
+        "search_space": {"key": "searchSpace", "type": "[{str}]"},
+        "sampling_algorithm": {"key": "samplingAlgorithm", "type": "str"},
+        "early_termination": {
+            "key": "earlyTermination",
+            "type": "AetherSweepEarlyTerminationPolicy",
+        },
     }
 
     def __init__(
@@ -6783,8 +7219,8 @@ class AetherSweepSettingsLimits(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_total_trials': {'key': 'maxTotalTrials', 'type': 'int'},
-        'max_concurrent_trials': {'key': 'maxConcurrentTrials', 'type': 'int'},
+        "max_total_trials": {"key": "maxTotalTrials", "type": "int"},
+        "max_concurrent_trials": {"key": "maxConcurrentTrials", "type": "int"},
     }
 
     def __init__(
@@ -6815,8 +7251,8 @@ class AetherTargetLags(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'values': {'key': 'values', 'type': '[int]'},
+        "mode": {"key": "mode", "type": "str"},
+        "values": {"key": "values", "type": "[int]"},
     }
 
     def __init__(
@@ -6847,8 +7283,8 @@ class AetherTargetRollingWindowSize(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -6897,17 +7333,17 @@ class AetherTargetSelectorConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'low_priority_vm_tolerant': {'key': 'lowPriorityVMTolerant', 'type': 'bool'},
-        'cluster_block_list': {'key': 'clusterBlockList', 'type': '[str]'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'instance_type': {'key': 'instanceType', 'type': '[str]'},
-        'instance_types': {'key': 'instanceTypes', 'type': '[str]'},
-        'my_resource_only': {'key': 'myResourceOnly', 'type': 'bool'},
-        'plan_id': {'key': 'planId', 'type': 'str'},
-        'plan_region_id': {'key': 'planRegionId', 'type': 'str'},
-        'region': {'key': 'region', 'type': '[str]'},
-        'regions': {'key': 'regions', 'type': '[str]'},
-        'vc_block_list': {'key': 'vcBlockList', 'type': '[str]'},
+        "low_priority_vm_tolerant": {"key": "lowPriorityVMTolerant", "type": "bool"},
+        "cluster_block_list": {"key": "clusterBlockList", "type": "[str]"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "instance_type": {"key": "instanceType", "type": "[str]"},
+        "instance_types": {"key": "instanceTypes", "type": "[str]"},
+        "my_resource_only": {"key": "myResourceOnly", "type": "bool"},
+        "plan_id": {"key": "planId", "type": "str"},
+        "plan_region_id": {"key": "planRegionId", "type": "str"},
+        "region": {"key": "region", "type": "[str]"},
+        "regions": {"key": "regions", "type": "[str]"},
+        "vc_block_list": {"key": "vcBlockList", "type": "[str]"},
     }
 
     def __init__(
@@ -6972,15 +7408,10 @@ class AetherTestDataSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'test_data_size': {'key': 'testDataSize', 'type': 'float'},
+        "test_data_size": {"key": "testDataSize", "type": "float"},
     }
 
-    def __init__(
-        self,
-        *,
-        test_data_size: Optional[float] = None,
-        **kwargs
-    ):
+    def __init__(self, *, test_data_size: Optional[float] = None, **kwargs):
         """
         :keyword test_data_size:
         :paramtype test_data_size: float
@@ -6997,15 +7428,10 @@ class AetherTorchDistributedConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'process_count_per_node': {'key': 'processCountPerNode', 'type': 'int'},
+        "process_count_per_node": {"key": "processCountPerNode", "type": "int"},
     }
 
-    def __init__(
-        self,
-        *,
-        process_count_per_node: Optional[int] = None,
-        **kwargs
-    ):
+    def __init__(self, *, process_count_per_node: Optional[int] = None, **kwargs):
         """
         :keyword process_count_per_node:
         :paramtype process_count_per_node: int
@@ -7028,10 +7454,10 @@ class AetherTrainingOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'training_output_type': {'key': 'trainingOutputType', 'type': 'str'},
-        'iteration': {'key': 'iteration', 'type': 'int'},
-        'metric': {'key': 'metric', 'type': 'str'},
-        'model_file': {'key': 'modelFile', 'type': 'str'},
+        "training_output_type": {"key": "trainingOutputType", "type": "str"},
+        "iteration": {"key": "iteration", "type": "int"},
+        "metric": {"key": "metric", "type": "str"},
+        "model_file": {"key": "modelFile", "type": "str"},
     }
 
     def __init__(
@@ -7084,15 +7510,27 @@ class AetherTrainingSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'block_list_models': {'key': 'blockListModels', 'type': '[str]'},
-        'allow_list_models': {'key': 'allowListModels', 'type': '[str]'},
-        'enable_dnn_training': {'key': 'enableDnnTraining', 'type': 'bool'},
-        'enable_onnx_compatible_models': {'key': 'enableOnnxCompatibleModels', 'type': 'bool'},
-        'stack_ensemble_settings': {'key': 'stackEnsembleSettings', 'type': 'AetherStackEnsembleSettings'},
-        'enable_stack_ensemble': {'key': 'enableStackEnsemble', 'type': 'bool'},
-        'enable_vote_ensemble': {'key': 'enableVoteEnsemble', 'type': 'bool'},
-        'ensemble_model_download_timeout': {'key': 'ensembleModelDownloadTimeout', 'type': 'str'},
-        'enable_model_explainability': {'key': 'enableModelExplainability', 'type': 'bool'},
+        "block_list_models": {"key": "blockListModels", "type": "[str]"},
+        "allow_list_models": {"key": "allowListModels", "type": "[str]"},
+        "enable_dnn_training": {"key": "enableDnnTraining", "type": "bool"},
+        "enable_onnx_compatible_models": {
+            "key": "enableOnnxCompatibleModels",
+            "type": "bool",
+        },
+        "stack_ensemble_settings": {
+            "key": "stackEnsembleSettings",
+            "type": "AetherStackEnsembleSettings",
+        },
+        "enable_stack_ensemble": {"key": "enableStackEnsemble", "type": "bool"},
+        "enable_vote_ensemble": {"key": "enableVoteEnsemble", "type": "bool"},
+        "ensemble_model_download_timeout": {
+            "key": "ensembleModelDownloadTimeout",
+            "type": "str",
+        },
+        "enable_model_explainability": {
+            "key": "enableModelExplainability",
+            "type": "bool",
+        },
     }
 
     def __init__(
@@ -7149,7 +7587,10 @@ class AetherUIAzureOpenAIDeploymentNameSelector(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'capabilities': {'key': 'Capabilities', 'type': 'AetherUIAzureOpenAIModelCapabilities'},
+        "capabilities": {
+            "key": "Capabilities",
+            "type": "AetherUIAzureOpenAIModelCapabilities",
+        },
     }
 
     def __init__(
@@ -7178,9 +7619,9 @@ class AetherUIAzureOpenAIModelCapabilities(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'completion': {'key': 'Completion', 'type': 'bool'},
-        'chat_completion': {'key': 'ChatCompletion', 'type': 'bool'},
-        'embeddings': {'key': 'Embeddings', 'type': 'bool'},
+        "completion": {"key": "Completion", "type": "bool"},
+        "chat_completion": {"key": "ChatCompletion", "type": "bool"},
+        "embeddings": {"key": "Embeddings", "type": "bool"},
     }
 
     def __init__(
@@ -7217,9 +7658,12 @@ class AetherUIColumnPicker(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'column_picker_for': {'key': 'columnPickerFor', 'type': 'str'},
-        'column_selection_categories': {'key': 'columnSelectionCategories', 'type': '[str]'},
-        'single_column_selection': {'key': 'singleColumnSelection', 'type': 'bool'},
+        "column_picker_for": {"key": "columnPickerFor", "type": "str"},
+        "column_selection_categories": {
+            "key": "columnSelectionCategories",
+            "type": "[str]",
+        },
+        "single_column_selection": {"key": "singleColumnSelection", "type": "bool"},
     }
 
     def __init__(
@@ -7252,15 +7696,10 @@ class AetherUIJsonEditor(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'json_schema': {'key': 'jsonSchema', 'type': 'str'},
+        "json_schema": {"key": "jsonSchema", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        json_schema: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, json_schema: Optional[str] = None, **kwargs):
         """
         :keyword json_schema:
         :paramtype json_schema: str
@@ -7295,14 +7734,20 @@ class AetherUIParameterHint(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'ui_widget_type': {'key': 'uiWidgetType', 'type': 'str'},
-        'column_picker': {'key': 'columnPicker', 'type': 'AetherUIColumnPicker'},
-        'ui_script_language': {'key': 'uiScriptLanguage', 'type': 'str'},
-        'json_editor': {'key': 'jsonEditor', 'type': 'AetherUIJsonEditor'},
-        'prompt_flow_connection_selector': {'key': 'PromptFlowConnectionSelector', 'type': 'AetherUIPromptFlowConnectionSelector'},
-        'azure_open_ai_deployment_name_selector': {'key': 'AzureOpenAIDeploymentNameSelector', 'type': 'AetherUIAzureOpenAIDeploymentNameSelector'},
-        'ux_ignore': {'key': 'UxIgnore', 'type': 'bool'},
-        'anonymous': {'key': 'Anonymous', 'type': 'bool'},
+        "ui_widget_type": {"key": "uiWidgetType", "type": "str"},
+        "column_picker": {"key": "columnPicker", "type": "AetherUIColumnPicker"},
+        "ui_script_language": {"key": "uiScriptLanguage", "type": "str"},
+        "json_editor": {"key": "jsonEditor", "type": "AetherUIJsonEditor"},
+        "prompt_flow_connection_selector": {
+            "key": "PromptFlowConnectionSelector",
+            "type": "AetherUIPromptFlowConnectionSelector",
+        },
+        "azure_open_ai_deployment_name_selector": {
+            "key": "AzureOpenAIDeploymentNameSelector",
+            "type": "AetherUIAzureOpenAIDeploymentNameSelector",
+        },
+        "ux_ignore": {"key": "UxIgnore", "type": "bool"},
+        "anonymous": {"key": "Anonymous", "type": "bool"},
     }
 
     def __init__(
@@ -7312,8 +7757,12 @@ class AetherUIParameterHint(msrest.serialization.Model):
         column_picker: Optional["AetherUIColumnPicker"] = None,
         ui_script_language: Optional[Union[str, "AetherUIScriptLanguageEnum"]] = None,
         json_editor: Optional["AetherUIJsonEditor"] = None,
-        prompt_flow_connection_selector: Optional["AetherUIPromptFlowConnectionSelector"] = None,
-        azure_open_ai_deployment_name_selector: Optional["AetherUIAzureOpenAIDeploymentNameSelector"] = None,
+        prompt_flow_connection_selector: Optional[
+            "AetherUIPromptFlowConnectionSelector"
+        ] = None,
+        azure_open_ai_deployment_name_selector: Optional[
+            "AetherUIAzureOpenAIDeploymentNameSelector"
+        ] = None,
         ux_ignore: Optional[bool] = None,
         anonymous: Optional[bool] = None,
         **kwargs
@@ -7347,7 +7796,9 @@ class AetherUIParameterHint(msrest.serialization.Model):
         self.ui_script_language = ui_script_language
         self.json_editor = json_editor
         self.prompt_flow_connection_selector = prompt_flow_connection_selector
-        self.azure_open_ai_deployment_name_selector = azure_open_ai_deployment_name_selector
+        self.azure_open_ai_deployment_name_selector = (
+            azure_open_ai_deployment_name_selector
+        )
         self.ux_ignore = ux_ignore
         self.anonymous = anonymous
 
@@ -7360,15 +7811,13 @@ class AetherUIPromptFlowConnectionSelector(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'prompt_flow_connection_type': {'key': 'PromptFlowConnectionType', 'type': 'str'},
+        "prompt_flow_connection_type": {
+            "key": "PromptFlowConnectionType",
+            "type": "str",
+        },
     }
 
-    def __init__(
-        self,
-        *,
-        prompt_flow_connection_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, prompt_flow_connection_type: Optional[str] = None, **kwargs):
         """
         :keyword prompt_flow_connection_type:
         :paramtype prompt_flow_connection_type: str
@@ -7391,10 +7840,13 @@ class AetherValidationDataSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'n_cross_validations': {'key': 'nCrossValidations', 'type': 'AetherNCrossValidations'},
-        'validation_data_size': {'key': 'validationDataSize', 'type': 'float'},
-        'cv_split_column_names': {'key': 'cvSplitColumnNames', 'type': '[str]'},
-        'validation_type': {'key': 'validationType', 'type': 'str'},
+        "n_cross_validations": {
+            "key": "nCrossValidations",
+            "type": "AetherNCrossValidations",
+        },
+        "validation_data_size": {"key": "validationDataSize", "type": "float"},
+        "cv_split_column_names": {"key": "cvSplitColumnNames", "type": "[str]"},
+        "validation_type": {"key": "validationType", "type": "str"},
     }
 
     def __init__(
@@ -7433,8 +7885,8 @@ class AetherVsoBuildArtifactInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'build_info': {'key': 'buildInfo', 'type': 'AetherVsoBuildInfo'},
-        'download_url': {'key': 'downloadUrl', 'type': 'str'},
+        "build_info": {"key": "buildInfo", "type": "AetherVsoBuildInfo"},
+        "download_url": {"key": "downloadUrl", "type": "str"},
     }
 
     def __init__(
@@ -7467,9 +7919,9 @@ class AetherVsoBuildDefinitionInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'account_name': {'key': 'accountName', 'type': 'str'},
-        'project_id': {'key': 'projectId', 'type': 'str'},
-        'build_definition_id': {'key': 'buildDefinitionId', 'type': 'int'},
+        "account_name": {"key": "accountName", "type": "str"},
+        "project_id": {"key": "projectId", "type": "str"},
+        "build_definition_id": {"key": "buildDefinitionId", "type": "int"},
     }
 
     def __init__(
@@ -7504,8 +7956,11 @@ class AetherVsoBuildInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'definition_info': {'key': 'definitionInfo', 'type': 'AetherVsoBuildDefinitionInfo'},
-        'build_id': {'key': 'buildId', 'type': 'int'},
+        "definition_info": {
+            "key": "definitionInfo",
+            "type": "AetherVsoBuildDefinitionInfo",
+        },
+        "build_id": {"key": "buildId", "type": "int"},
     }
 
     def __init__(
@@ -7548,14 +8003,14 @@ class AEVAComputeConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'target': {'key': 'target', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'is_local': {'key': 'isLocal', 'type': 'bool'},
-        'location': {'key': 'location', 'type': 'str'},
-        'is_clusterless': {'key': 'isClusterless', 'type': 'bool'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{object}'},
-        'is_preemptable': {'key': 'isPreemptable', 'type': 'bool'},
+        "target": {"key": "target", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "is_local": {"key": "isLocal", "type": "bool"},
+        "location": {"key": "location", "type": "str"},
+        "is_clusterless": {"key": "isClusterless", "type": "bool"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "properties": {"key": "properties", "type": "{object}"},
+        "is_preemptable": {"key": "isPreemptable", "type": "bool"},
     }
 
     def __init__(
@@ -7616,11 +8071,11 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{object}'},
-        'locations': {'key': 'locations', 'type': '[str]'},
-        'instance_priority': {'key': 'instancePriority', 'type': 'str'},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "properties": {"key": "properties", "type": "{object}"},
+        "locations": {"key": "locations", "type": "[str]"},
+        "instance_priority": {"key": "instancePriority", "type": "str"},
     }
 
     def __init__(
@@ -7699,25 +8154,34 @@ class AISuperComputerConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'instance_types': {'key': 'instanceTypes', 'type': '[str]'},
-        'image_version': {'key': 'imageVersion', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
-        'locations': {'key': 'locations', 'type': '[str]'},
-        'ai_super_computer_storage_data': {'key': 'aiSuperComputerStorageData', 'type': '{AISuperComputerStorageReferenceConfiguration}'},
-        'interactive': {'key': 'interactive', 'type': 'bool'},
-        'scale_policy': {'key': 'scalePolicy', 'type': 'AISuperComputerScalePolicy'},
-        'virtual_cluster_arm_id': {'key': 'virtualClusterArmId', 'type': 'str'},
-        'tensorboard_log_directory': {'key': 'tensorboardLogDirectory', 'type': 'str'},
-        'ssh_public_key': {'key': 'sshPublicKey', 'type': 'str'},
-        'ssh_public_keys': {'key': 'sshPublicKeys', 'type': '[str]'},
-        'enable_azml_int': {'key': 'enableAzmlInt', 'type': 'bool'},
-        'priority': {'key': 'priority', 'type': 'str'},
-        'sla_tier': {'key': 'slaTier', 'type': 'str'},
-        'suspend_on_idle_time_hours': {'key': 'suspendOnIdleTimeHours', 'type': 'long'},
-        'user_alias': {'key': 'userAlias', 'type': 'str'},
-        'quota_enforcement_resource_id': {'key': 'quotaEnforcementResourceId', 'type': 'str'},
-        'model_compute_specification_id': {'key': 'modelComputeSpecificationId', 'type': 'str'},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "instance_types": {"key": "instanceTypes", "type": "[str]"},
+        "image_version": {"key": "imageVersion", "type": "str"},
+        "location": {"key": "location", "type": "str"},
+        "locations": {"key": "locations", "type": "[str]"},
+        "ai_super_computer_storage_data": {
+            "key": "aiSuperComputerStorageData",
+            "type": "{AISuperComputerStorageReferenceConfiguration}",
+        },
+        "interactive": {"key": "interactive", "type": "bool"},
+        "scale_policy": {"key": "scalePolicy", "type": "AISuperComputerScalePolicy"},
+        "virtual_cluster_arm_id": {"key": "virtualClusterArmId", "type": "str"},
+        "tensorboard_log_directory": {"key": "tensorboardLogDirectory", "type": "str"},
+        "ssh_public_key": {"key": "sshPublicKey", "type": "str"},
+        "ssh_public_keys": {"key": "sshPublicKeys", "type": "[str]"},
+        "enable_azml_int": {"key": "enableAzmlInt", "type": "bool"},
+        "priority": {"key": "priority", "type": "str"},
+        "sla_tier": {"key": "slaTier", "type": "str"},
+        "suspend_on_idle_time_hours": {"key": "suspendOnIdleTimeHours", "type": "long"},
+        "user_alias": {"key": "userAlias", "type": "str"},
+        "quota_enforcement_resource_id": {
+            "key": "quotaEnforcementResourceId",
+            "type": "str",
+        },
+        "model_compute_specification_id": {
+            "key": "modelComputeSpecificationId",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -7728,7 +8192,9 @@ class AISuperComputerConfiguration(msrest.serialization.Model):
         image_version: Optional[str] = None,
         location: Optional[str] = None,
         locations: Optional[List[str]] = None,
-        ai_super_computer_storage_data: Optional[Dict[str, "AISuperComputerStorageReferenceConfiguration"]] = None,
+        ai_super_computer_storage_data: Optional[
+            Dict[str, "AISuperComputerStorageReferenceConfiguration"]
+        ] = None,
         interactive: Optional[bool] = None,
         scale_policy: Optional["AISuperComputerScalePolicy"] = None,
         virtual_cluster_arm_id: Optional[str] = None,
@@ -7822,10 +8288,13 @@ class AISuperComputerScalePolicy(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'auto_scale_instance_type_count_set': {'key': 'autoScaleInstanceTypeCountSet', 'type': '[int]'},
-        'auto_scale_interval_in_sec': {'key': 'autoScaleIntervalInSec', 'type': 'int'},
-        'max_instance_type_count': {'key': 'maxInstanceTypeCount', 'type': 'int'},
-        'min_instance_type_count': {'key': 'minInstanceTypeCount', 'type': 'int'},
+        "auto_scale_instance_type_count_set": {
+            "key": "autoScaleInstanceTypeCountSet",
+            "type": "[int]",
+        },
+        "auto_scale_interval_in_sec": {"key": "autoScaleIntervalInSec", "type": "int"},
+        "max_instance_type_count": {"key": "maxInstanceTypeCount", "type": "int"},
+        "min_instance_type_count": {"key": "minInstanceTypeCount", "type": "int"},
     }
 
     def __init__(
@@ -7864,8 +8333,8 @@ class AISuperComputerStorageReferenceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'container_name': {'key': 'containerName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "container_name": {"key": "containerName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -7902,18 +8371,23 @@ class AKSAdvanceSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'auto_scaler': {'key': 'autoScaler', 'type': 'AutoScaler'},
-        'container_resource_requirements': {'key': 'containerResourceRequirements', 'type': 'ContainerResourceRequirements'},
-        'app_insights_enabled': {'key': 'appInsightsEnabled', 'type': 'bool'},
-        'scoring_timeout_ms': {'key': 'scoringTimeoutMs', 'type': 'int'},
-        'num_replicas': {'key': 'numReplicas', 'type': 'int'},
+        "auto_scaler": {"key": "autoScaler", "type": "AutoScaler"},
+        "container_resource_requirements": {
+            "key": "containerResourceRequirements",
+            "type": "ContainerResourceRequirements",
+        },
+        "app_insights_enabled": {"key": "appInsightsEnabled", "type": "bool"},
+        "scoring_timeout_ms": {"key": "scoringTimeoutMs", "type": "int"},
+        "num_replicas": {"key": "numReplicas", "type": "int"},
     }
 
     def __init__(
         self,
         *,
         auto_scaler: Optional["AutoScaler"] = None,
-        container_resource_requirements: Optional["ContainerResourceRequirements"] = None,
+        container_resource_requirements: Optional[
+            "ContainerResourceRequirements"
+        ] = None,
         app_insights_enabled: Optional[bool] = None,
         scoring_timeout_ms: Optional[int] = None,
         num_replicas: Optional[int] = None,
@@ -7953,10 +8427,10 @@ class AKSReplicaStatus(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'desired_replicas': {'key': 'desiredReplicas', 'type': 'int'},
-        'updated_replicas': {'key': 'updatedReplicas', 'type': 'int'},
-        'available_replicas': {'key': 'availableReplicas', 'type': 'int'},
-        'error': {'key': 'error', 'type': 'ModelManagementErrorResponse'},
+        "desired_replicas": {"key": "desiredReplicas", "type": "int"},
+        "updated_replicas": {"key": "updatedReplicas", "type": "int"},
+        "available_replicas": {"key": "availableReplicas", "type": "int"},
+        "error": {"key": "error", "type": "ModelManagementErrorResponse"},
     }
 
     def __init__(
@@ -8005,13 +8479,13 @@ class AMLComputeConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'vm_priority': {'key': 'vmPriority', 'type': 'str'},
-        'retain_cluster': {'key': 'retainCluster', 'type': 'bool'},
-        'cluster_max_node_count': {'key': 'clusterMaxNodeCount', 'type': 'int'},
-        'os_type': {'key': 'osType', 'type': 'str'},
-        'virtual_machine_image': {'key': 'virtualMachineImage', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "vm_priority": {"key": "vmPriority", "type": "str"},
+        "retain_cluster": {"key": "retainCluster", "type": "bool"},
+        "cluster_max_node_count": {"key": "clusterMaxNodeCount", "type": "int"},
+        "os_type": {"key": "osType", "type": "str"},
+        "virtual_machine_image": {"key": "virtualMachineImage", "type": "str"},
     }
 
     def __init__(
@@ -8064,9 +8538,18 @@ class AmlDataset(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'registered_data_set_reference': {'key': 'registeredDataSetReference', 'type': 'RegisteredDataSetReference'},
-        'saved_data_set_reference': {'key': 'savedDataSetReference', 'type': 'SavedDataSetReference'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "registered_data_set_reference": {
+            "key": "registeredDataSetReference",
+            "type": "RegisteredDataSetReference",
+        },
+        "saved_data_set_reference": {
+            "key": "savedDataSetReference",
+            "type": "SavedDataSetReference",
+        },
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -8103,9 +8586,18 @@ class AmlK8SConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'resource_configuration': {'key': 'resourceConfiguration', 'type': 'ResourceConfiguration'},
-        'priority_configuration': {'key': 'priorityConfiguration', 'type': 'AmlK8SPriorityConfiguration'},
-        'interactive_configuration': {'key': 'interactiveConfiguration', 'type': 'InteractiveConfiguration'},
+        "resource_configuration": {
+            "key": "resourceConfiguration",
+            "type": "ResourceConfiguration",
+        },
+        "priority_configuration": {
+            "key": "priorityConfiguration",
+            "type": "AmlK8SPriorityConfiguration",
+        },
+        "interactive_configuration": {
+            "key": "interactiveConfiguration",
+            "type": "InteractiveConfiguration",
+        },
     }
 
     def __init__(
@@ -8144,10 +8636,10 @@ class AmlK8SPriorityConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_priority': {'key': 'jobPriority', 'type': 'int'},
-        'is_preemptible': {'key': 'isPreemptible', 'type': 'bool'},
-        'node_count_set': {'key': 'nodeCountSet', 'type': '[int]'},
-        'scale_interval': {'key': 'scaleInterval', 'type': 'int'},
+        "job_priority": {"key": "jobPriority", "type": "int"},
+        "is_preemptible": {"key": "isPreemptible", "type": "bool"},
+        "node_count_set": {"key": "nodeCountSet", "type": "[int]"},
+        "scale_interval": {"key": "scaleInterval", "type": "int"},
     }
 
     def __init__(
@@ -8214,22 +8706,25 @@ class AmlSparkCloudSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'entry': {'key': 'entry', 'type': 'EntrySetting'},
-        'files': {'key': 'files', 'type': '[str]'},
-        'archives': {'key': 'archives', 'type': '[str]'},
-        'jars': {'key': 'jars', 'type': '[str]'},
-        'py_files': {'key': 'pyFiles', 'type': '[str]'},
-        'driver_memory': {'key': 'driverMemory', 'type': 'str'},
-        'driver_cores': {'key': 'driverCores', 'type': 'int'},
-        'executor_memory': {'key': 'executorMemory', 'type': 'str'},
-        'executor_cores': {'key': 'executorCores', 'type': 'int'},
-        'number_executors': {'key': 'numberExecutors', 'type': 'int'},
-        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
-        'inline_environment_definition_string': {'key': 'inlineEnvironmentDefinitionString', 'type': 'str'},
-        'conf': {'key': 'conf', 'type': '{str}'},
-        'compute': {'key': 'compute', 'type': 'str'},
-        'resources': {'key': 'resources', 'type': 'ResourcesSetting'},
-        'identity': {'key': 'identity', 'type': 'IdentitySetting'},
+        "entry": {"key": "entry", "type": "EntrySetting"},
+        "files": {"key": "files", "type": "[str]"},
+        "archives": {"key": "archives", "type": "[str]"},
+        "jars": {"key": "jars", "type": "[str]"},
+        "py_files": {"key": "pyFiles", "type": "[str]"},
+        "driver_memory": {"key": "driverMemory", "type": "str"},
+        "driver_cores": {"key": "driverCores", "type": "int"},
+        "executor_memory": {"key": "executorMemory", "type": "str"},
+        "executor_cores": {"key": "executorCores", "type": "int"},
+        "number_executors": {"key": "numberExecutors", "type": "int"},
+        "environment_asset_id": {"key": "environmentAssetId", "type": "str"},
+        "inline_environment_definition_string": {
+            "key": "inlineEnvironmentDefinitionString",
+            "type": "str",
+        },
+        "conf": {"key": "conf", "type": "{str}"},
+        "compute": {"key": "compute", "type": "str"},
+        "resources": {"key": "resources", "type": "ResourcesSetting"},
+        "identity": {"key": "identity", "type": "IdentitySetting"},
     }
 
     def __init__(
@@ -8318,9 +8813,9 @@ class APCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'referenced_ap_module_guid': {'key': 'referencedAPModuleGuid', 'type': 'str'},
-        'user_alias': {'key': 'userAlias', 'type': 'str'},
-        'aether_module_type': {'key': 'aetherModuleType', 'type': 'str'},
+        "referenced_ap_module_guid": {"key": "referencedAPModuleGuid", "type": "str"},
+        "user_alias": {"key": "userAlias", "type": "str"},
+        "aether_module_type": {"key": "aetherModuleType", "type": "str"},
     }
 
     def __init__(
@@ -8355,8 +8850,8 @@ class ApiAndParameters(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'api': {'key': 'api', 'type': 'str'},
-        'parameters': {'key': 'parameters', 'type': '{FlowToolSettingParameter}'},
+        "api": {"key": "api", "type": "str"},
+        "parameters": {"key": "parameters", "type": "{FlowToolSettingParameter}"},
     }
 
     def __init__(
@@ -8392,10 +8887,10 @@ class ApplicationEndpointConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'port': {'key': 'port', 'type': 'int'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'nodes': {'key': 'nodes', 'type': 'Nodes'},
+        "type": {"key": "type", "type": "str"},
+        "port": {"key": "port", "type": "int"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "nodes": {"key": "nodes", "type": "Nodes"},
     }
 
     def __init__(
@@ -8440,10 +8935,16 @@ class ArgumentAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value_type': {'key': 'valueType', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
-        'nested_argument_list': {'key': 'nestedArgumentList', 'type': '[ArgumentAssignment]'},
-        'string_interpolation_argument_list': {'key': 'stringInterpolationArgumentList', 'type': '[ArgumentAssignment]'},
+        "value_type": {"key": "valueType", "type": "str"},
+        "value": {"key": "value", "type": "str"},
+        "nested_argument_list": {
+            "key": "nestedArgumentList",
+            "type": "[ArgumentAssignment]",
+        },
+        "string_interpolation_argument_list": {
+            "key": "stringInterpolationArgumentList",
+            "type": "[ArgumentAssignment]",
+        },
     }
 
     def __init__(
@@ -8483,16 +8984,12 @@ class Asset(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        asset_id: Optional[str] = None,
-        type: Optional[str] = None,
-        **kwargs
+        self, *, asset_id: Optional[str] = None, type: Optional[str] = None, **kwargs
     ):
         """
         :keyword asset_id:
@@ -8520,10 +9017,10 @@ class AssetDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'path': {'key': 'path', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'serialized_asset_id': {'key': 'serializedAssetId', 'type': 'str'},
+        "path": {"key": "path", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "serialized_asset_id": {"key": "serializedAssetId", "type": "str"},
     }
 
     def __init__(
@@ -8565,9 +9062,9 @@ class AssetNameAndVersionIdentifier(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'asset_name': {'key': 'assetName', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'feed_name': {'key': 'feedName', 'type': 'str'},
+        "asset_name": {"key": "assetName", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "feed_name": {"key": "feedName", "type": "str"},
     }
 
     def __init__(
@@ -8614,13 +9111,16 @@ class AssetOutputSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'path': {'key': 'path', 'type': 'str'},
-        'path_parameter_assignment': {'key': 'PathParameterAssignment', 'type': 'ParameterAssignment'},
-        'type': {'key': 'type', 'type': 'str'},
-        'options': {'key': 'options', 'type': '{str}'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "path": {"key": "path", "type": "str"},
+        "path_parameter_assignment": {
+            "key": "PathParameterAssignment",
+            "type": "ParameterAssignment",
+        },
+        "type": {"key": "type", "type": "str"},
+        "options": {"key": "options", "type": "{str}"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -8675,9 +9175,9 @@ class AssetOutputSettingsParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'documentation': {'key': 'documentation', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'AssetOutputSettings'},
+        "name": {"key": "name", "type": "str"},
+        "documentation": {"key": "documentation", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "AssetOutputSettings"},
     }
 
     def __init__(
@@ -8726,15 +9226,18 @@ class AssetPublishResult(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'asset_name': {'key': 'assetName', 'type': 'str'},
-        'asset_version': {'key': 'assetVersion', 'type': 'str'},
-        'step_name': {'key': 'stepName', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'error_message': {'key': 'errorMessage', 'type': 'str'},
-        'created_time': {'key': 'createdTime', 'type': 'iso-8601'},
-        'last_updated_time': {'key': 'lastUpdatedTime', 'type': 'iso-8601'},
-        'regional_publish_results': {'key': 'regionalPublishResults', 'type': '{AssetPublishSingleRegionResult}'},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "asset_name": {"key": "assetName", "type": "str"},
+        "asset_version": {"key": "assetVersion", "type": "str"},
+        "step_name": {"key": "stepName", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "error_message": {"key": "errorMessage", "type": "str"},
+        "created_time": {"key": "createdTime", "type": "iso-8601"},
+        "last_updated_time": {"key": "lastUpdatedTime", "type": "iso-8601"},
+        "regional_publish_results": {
+            "key": "regionalPublishResults",
+            "type": "{AssetPublishSingleRegionResult}",
+        },
     }
 
     def __init__(
@@ -8748,7 +9251,9 @@ class AssetPublishResult(msrest.serialization.Model):
         error_message: Optional[str] = None,
         created_time: Optional[datetime.datetime] = None,
         last_updated_time: Optional[datetime.datetime] = None,
-        regional_publish_results: Optional[Dict[str, "AssetPublishSingleRegionResult"]] = None,
+        regional_publish_results: Optional[
+            Dict[str, "AssetPublishSingleRegionResult"]
+        ] = None,
         **kwargs
     ):
         """
@@ -8803,13 +9308,13 @@ class AssetPublishSingleRegionResult(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'step_name': {'key': 'stepName', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'error_message': {'key': 'errorMessage', 'type': 'str'},
-        'last_updated_time': {'key': 'lastUpdatedTime', 'type': 'iso-8601'},
-        'total_steps': {'key': 'totalSteps', 'type': 'int'},
-        'finished_steps': {'key': 'finishedSteps', 'type': 'int'},
-        'remaining_steps': {'key': 'remainingSteps', 'type': 'int'},
+        "step_name": {"key": "stepName", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "error_message": {"key": "errorMessage", "type": "str"},
+        "last_updated_time": {"key": "lastUpdatedTime", "type": "iso-8601"},
+        "total_steps": {"key": "totalSteps", "type": "int"},
+        "finished_steps": {"key": "finishedSteps", "type": "int"},
+        "remaining_steps": {"key": "remainingSteps", "type": "int"},
     }
 
     def __init__(
@@ -8858,14 +9363,11 @@ class AssetTypeMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'consumption_mode': {'key': 'consumptionMode', 'type': 'str'},
+        "consumption_mode": {"key": "consumptionMode", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        consumption_mode: Optional[Union[str, "ConsumeMode"]] = None,
-        **kwargs
+        self, *, consumption_mode: Optional[Union[str, "ConsumeMode"]] = None, **kwargs
     ):
         """
         :keyword consumption_mode: Possible values include: "Reference", "Copy", "CopyAndAutoUpgrade".
@@ -8904,16 +9406,19 @@ class AssetVersionPublishRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'asset_type': {'key': 'assetType', 'type': 'str'},
-        'asset_source_type': {'key': 'assetSourceType', 'type': 'str'},
-        'yaml_file': {'key': 'yamlFile', 'type': 'str'},
-        'source_zip_url': {'key': 'sourceZipUrl', 'type': 'str'},
-        'source_zip_file': {'key': 'sourceZipFile', 'type': 'IO'},
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'set_as_default_version': {'key': 'setAsDefaultVersion', 'type': 'bool'},
-        'referenced_assets': {'key': 'referencedAssets', 'type': '[AssetNameAndVersionIdentifier]'},
-        'flow_file': {'key': 'flowFile', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "asset_type": {"key": "assetType", "type": "str"},
+        "asset_source_type": {"key": "assetSourceType", "type": "str"},
+        "yaml_file": {"key": "yamlFile", "type": "str"},
+        "source_zip_url": {"key": "sourceZipUrl", "type": "str"},
+        "source_zip_file": {"key": "sourceZipFile", "type": "IO"},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "set_as_default_version": {"key": "setAsDefaultVersion", "type": "bool"},
+        "referenced_assets": {
+            "key": "referencedAssets",
+            "type": "[AssetNameAndVersionIdentifier]",
+        },
+        "flow_file": {"key": "flowFile", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -8979,8 +9484,8 @@ class AssignedUser(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'object_id': {'key': 'objectId', 'type': 'str'},
-        'tenant_id': {'key': 'tenantId', 'type': 'str'},
+        "object_id": {"key": "objectId", "type": "str"},
+        "tenant_id": {"key": "tenantId", "type": "str"},
     }
 
     def __init__(
@@ -9011,8 +9516,8 @@ class AuthKeys(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'primary_key': {'key': 'primaryKey', 'type': 'str'},
-        'secondary_key': {'key': 'secondaryKey', 'type': 'str'},
+        "primary_key": {"key": "primaryKey", "type": "str"},
+        "secondary_key": {"key": "secondaryKey", "type": "str"},
     }
 
     def __init__(
@@ -9049,11 +9554,11 @@ class AutoClusterComputeSpecification(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_size': {'key': 'instanceSize', 'type': 'str'},
-        'instance_priority': {'key': 'instancePriority', 'type': 'str'},
-        'os_type': {'key': 'osType', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
-        'runtime_version': {'key': 'runtimeVersion', 'type': 'str'},
+        "instance_size": {"key": "instanceSize", "type": "str"},
+        "instance_priority": {"key": "instancePriority", "type": "str"},
+        "os_type": {"key": "osType", "type": "str"},
+        "location": {"key": "location", "type": "str"},
+        "runtime_version": {"key": "runtimeVersion", "type": "str"},
     }
 
     def __init__(
@@ -9096,8 +9601,8 @@ class AutoDeleteSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'condition': {'key': 'condition', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "condition": {"key": "condition", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -9126,7 +9631,10 @@ class AutoFeaturizeConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'featurization_config': {'key': 'featurizationConfig', 'type': 'FeaturizationSettings'},
+        "featurization_config": {
+            "key": "featurizationConfig",
+            "type": "FeaturizationSettings",
+        },
     }
 
     def __init__(
@@ -9151,7 +9659,7 @@ class AutologgerSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'ml_flow_autologger': {'key': 'mlFlowAutologger', 'type': 'str'},
+        "ml_flow_autologger": {"key": "mlFlowAutologger", "type": "str"},
     }
 
     def __init__(
@@ -9178,8 +9686,14 @@ class AutoMLComponentConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'auto_train_config': {'key': 'autoTrainConfig', 'type': 'AutoTrainConfiguration'},
-        'auto_featurize_config': {'key': 'autoFeaturizeConfig', 'type': 'AutoFeaturizeConfiguration'},
+        "auto_train_config": {
+            "key": "autoTrainConfig",
+            "type": "AutoTrainConfiguration",
+        },
+        "auto_featurize_config": {
+            "key": "autoFeaturizeConfig",
+            "type": "AutoFeaturizeConfiguration",
+        },
     }
 
     def __init__(
@@ -9216,11 +9730,11 @@ class AutoScaler(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'autoscale_enabled': {'key': 'autoscaleEnabled', 'type': 'bool'},
-        'min_replicas': {'key': 'minReplicas', 'type': 'int'},
-        'max_replicas': {'key': 'maxReplicas', 'type': 'int'},
-        'target_utilization': {'key': 'targetUtilization', 'type': 'int'},
-        'refresh_period_in_seconds': {'key': 'refreshPeriodInSeconds', 'type': 'int'},
+        "autoscale_enabled": {"key": "autoscaleEnabled", "type": "bool"},
+        "min_replicas": {"key": "minReplicas", "type": "int"},
+        "max_replicas": {"key": "maxReplicas", "type": "int"},
+        "target_utilization": {"key": "targetUtilization", "type": "int"},
+        "refresh_period_in_seconds": {"key": "refreshPeriodInSeconds", "type": "int"},
     }
 
     def __init__(
@@ -9283,18 +9797,27 @@ class AutoTrainConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'general_settings': {'key': 'generalSettings', 'type': 'GeneralSettings'},
-        'limit_settings': {'key': 'limitSettings', 'type': 'LimitSettings'},
-        'data_settings': {'key': 'dataSettings', 'type': 'DataSettings'},
-        'forecasting_settings': {'key': 'forecastingSettings', 'type': 'ForecastingSettings'},
-        'training_settings': {'key': 'trainingSettings', 'type': 'TrainingSettings'},
-        'sweep_settings': {'key': 'sweepSettings', 'type': 'SweepSettings'},
-        'image_model_settings': {'key': 'imageModelSettings', 'type': '{object}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'compute_configuration': {'key': 'computeConfiguration', 'type': 'AEVAComputeConfiguration'},
-        'resource_configurtion': {'key': 'resourceConfigurtion', 'type': 'AEVAResourceConfiguration'},
-        'environment_id': {'key': 'environmentId', 'type': 'str'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
+        "general_settings": {"key": "generalSettings", "type": "GeneralSettings"},
+        "limit_settings": {"key": "limitSettings", "type": "LimitSettings"},
+        "data_settings": {"key": "dataSettings", "type": "DataSettings"},
+        "forecasting_settings": {
+            "key": "forecastingSettings",
+            "type": "ForecastingSettings",
+        },
+        "training_settings": {"key": "trainingSettings", "type": "TrainingSettings"},
+        "sweep_settings": {"key": "sweepSettings", "type": "SweepSettings"},
+        "image_model_settings": {"key": "imageModelSettings", "type": "{object}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "compute_configuration": {
+            "key": "computeConfiguration",
+            "type": "AEVAComputeConfiguration",
+        },
+        "resource_configurtion": {
+            "key": "resourceConfigurtion",
+            "type": "AEVAResourceConfiguration",
+        },
+        "environment_id": {"key": "environmentId", "type": "str"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
     }
 
     def __init__(
@@ -9365,8 +9888,8 @@ class AvailabilityResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'is_available': {'key': 'isAvailable', 'type': 'bool'},
-        'error': {'key': 'error', 'type': 'ErrorResponse'},
+        "is_available": {"key": "isAvailable", "type": "bool"},
+        "error": {"key": "error", "type": "ErrorResponse"},
     }
 
     def __init__(
@@ -9405,12 +9928,12 @@ class AzureBlobReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'container': {'key': 'container', 'type': 'str'},
-        'sas_token': {'key': 'sasToken', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "container": {"key": "container", "type": "str"},
+        "sas_token": {"key": "sasToken", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -9463,11 +9986,14 @@ class AzureDatabaseReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'table_name': {'key': 'tableName', 'type': 'str'},
-        'sql_query': {'key': 'sqlQuery', 'type': 'str'},
-        'stored_procedure_name': {'key': 'storedProcedureName', 'type': 'str'},
-        'stored_procedure_parameters': {'key': 'storedProcedureParameters', 'type': '[StoredProcedureParameter]'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "table_name": {"key": "tableName", "type": "str"},
+        "sql_query": {"key": "sqlQuery", "type": "str"},
+        "stored_procedure_name": {"key": "storedProcedureName", "type": "str"},
+        "stored_procedure_parameters": {
+            "key": "storedProcedureParameters",
+            "type": "[StoredProcedureParameter]",
+        },
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -9516,11 +10042,11 @@ class AzureDataLakeGen2Reference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file_system_name': {'key': 'fileSystemName', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "file_system_name": {"key": "fileSystemName", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -9573,13 +10099,13 @@ class AzureDataLakeReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'tenant': {'key': 'tenant', 'type': 'str'},
-        'subscription': {'key': 'subscription', 'type': 'str'},
-        'resource_group': {'key': 'resourceGroup', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "tenant": {"key": "tenant", "type": "str"},
+        "subscription": {"key": "subscription", "type": "str"},
+        "resource_group": {"key": "resourceGroup", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -9636,11 +10162,11 @@ class AzureFilesReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'share': {'key': 'share', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'account': {'key': 'account', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "share": {"key": "share", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "account": {"key": "account", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -9683,8 +10209,8 @@ class AzureMLModuleVersionDescriptor(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_version_id': {'key': 'moduleVersionId', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "module_version_id": {"key": "moduleVersionId", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -9717,9 +10243,9 @@ class AzureOpenAIDeploymentDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'model_name': {'key': 'modelName', 'type': 'str'},
-        'capabilities': {'key': 'capabilities', 'type': 'AzureOpenAIModelCapabilities'},
+        "name": {"key": "name", "type": "str"},
+        "model_name": {"key": "modelName", "type": "str"},
+        "capabilities": {"key": "capabilities", "type": "AzureOpenAIModelCapabilities"},
     }
 
     def __init__(
@@ -9756,9 +10282,9 @@ class AzureOpenAIModelCapabilities(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'completion': {'key': 'completion', 'type': 'bool'},
-        'chat_completion': {'key': 'chat_completion', 'type': 'bool'},
-        'embeddings': {'key': 'embeddings', 'type': 'bool'},
+        "completion": {"key": "completion", "type": "bool"},
+        "chat_completion": {"key": "chat_completion", "type": "bool"},
+        "embeddings": {"key": "embeddings", "type": "bool"},
     }
 
     def __init__(
@@ -9799,11 +10325,11 @@ class BatchAiComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'batch_ai_subscription_id': {'key': 'batchAiSubscriptionId', 'type': 'str'},
-        'batch_ai_resource_group': {'key': 'batchAiResourceGroup', 'type': 'str'},
-        'batch_ai_workspace_name': {'key': 'batchAiWorkspaceName', 'type': 'str'},
-        'cluster_name': {'key': 'clusterName', 'type': 'str'},
-        'native_shared_directory': {'key': 'nativeSharedDirectory', 'type': 'str'},
+        "batch_ai_subscription_id": {"key": "batchAiSubscriptionId", "type": "str"},
+        "batch_ai_resource_group": {"key": "batchAiResourceGroup", "type": "str"},
+        "batch_ai_workspace_name": {"key": "batchAiWorkspaceName", "type": "str"},
+        "cluster_name": {"key": "clusterName", "type": "str"},
+        "native_shared_directory": {"key": "nativeSharedDirectory", "type": "str"},
     }
 
     def __init__(
@@ -9846,16 +10372,12 @@ class BatchDataInput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_uri': {'key': 'dataUri', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "data_uri": {"key": "dataUri", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        data_uri: Optional[str] = None,
-        type: Optional[str] = None,
-        **kwargs
+        self, *, data_uri: Optional[str] = None, type: Optional[str] = None, **kwargs
     ):
         """
         :keyword data_uri:
@@ -9878,8 +10400,11 @@ class BatchExportComponentSpecResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_spec_meta_infos': {'key': 'componentSpecMetaInfos', 'type': '[ComponentSpecMetaInfo]'},
-        'errors': {'key': 'errors', 'type': '[ErrorResponse]'},
+        "component_spec_meta_infos": {
+            "key": "componentSpecMetaInfos",
+            "type": "[ComponentSpecMetaInfo]",
+        },
+        "errors": {"key": "errors", "type": "[ErrorResponse]"},
     }
 
     def __init__(
@@ -9910,8 +10435,8 @@ class BatchExportRawComponentResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'raw_component_dtos': {'key': 'rawComponentDtos', 'type': '[RawComponentDto]'},
-        'errors': {'key': 'errors', 'type': '[ErrorResponse]'},
+        "raw_component_dtos": {"key": "rawComponentDtos", "type": "[RawComponentDto]"},
+        "errors": {"key": "errors", "type": "[ErrorResponse]"},
     }
 
     def __init__(
@@ -9942,8 +10467,8 @@ class BatchGetComponentHashesRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_hash_version': {'key': 'moduleHashVersion', 'type': 'str'},
-        'module_entities': {'key': 'moduleEntities', 'type': '{AetherModuleEntity}'},
+        "module_hash_version": {"key": "moduleHashVersion", "type": "str"},
+        "module_entities": {"key": "moduleEntities", "type": "{AetherModuleEntity}"},
     }
 
     def __init__(
@@ -9974,8 +10499,11 @@ class BatchGetComponentRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'version_ids': {'key': 'versionIds', 'type': '[str]'},
-        'name_and_versions': {'key': 'nameAndVersions', 'type': '[ComponentNameMetaInfo]'},
+        "version_ids": {"key": "versionIds", "type": "[str]"},
+        "name_and_versions": {
+            "key": "nameAndVersions",
+            "type": "[ComponentNameMetaInfo]",
+        },
     }
 
     def __init__(
@@ -10005,15 +10533,10 @@ class Binding(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'binding_type': {'key': 'bindingType', 'type': 'str'},
+        "binding_type": {"key": "bindingType", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        binding_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, binding_type: Optional[str] = None, **kwargs):
         """
         :keyword binding_type:  The only acceptable values to pass in are None and "Basic". The default
          value is None.
@@ -10057,20 +10580,23 @@ class BulkTestDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'bulk_test_id': {'key': 'bulkTestId', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'runtime': {'key': 'runtime', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'SchemaContractsCreatedBy'},
-        'created_on': {'key': 'createdOn', 'type': 'iso-8601'},
-        'evaluation_count': {'key': 'evaluationCount', 'type': 'int'},
-        'variant_count': {'key': 'variantCount', 'type': 'int'},
-        'flow_submit_run_settings': {'key': 'flowSubmitRunSettings', 'type': 'FlowSubmitRunSettings'},
-        'inputs': {'key': 'inputs', 'type': '{FlowInputDefinition}'},
-        'outputs': {'key': 'outputs', 'type': '{FlowOutputDefinition}'},
-        'batch_inputs': {'key': 'batch_inputs', 'type': '[{object}]'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
+        "bulk_test_id": {"key": "bulkTestId", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "runtime": {"key": "runtime", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "SchemaContractsCreatedBy"},
+        "created_on": {"key": "createdOn", "type": "iso-8601"},
+        "evaluation_count": {"key": "evaluationCount", "type": "int"},
+        "variant_count": {"key": "variantCount", "type": "int"},
+        "flow_submit_run_settings": {
+            "key": "flowSubmitRunSettings",
+            "type": "FlowSubmitRunSettings",
+        },
+        "inputs": {"key": "inputs", "type": "{FlowInputDefinition}"},
+        "outputs": {"key": "outputs", "type": "{FlowOutputDefinition}"},
+        "batch_inputs": {"key": "batch_inputs", "type": "[{object}]"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
     }
 
     def __init__(
@@ -10153,10 +10679,16 @@ class CloudPrioritySetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'scope_priority': {'key': 'scopePriority', 'type': 'PriorityConfiguration'},
-        'aml_compute_priority': {'key': 'AmlComputePriority', 'type': 'PriorityConfiguration'},
-        'itp_priority': {'key': 'ItpPriority', 'type': 'PriorityConfiguration'},
-        'singularity_priority': {'key': 'SingularityPriority', 'type': 'PriorityConfiguration'},
+        "scope_priority": {"key": "scopePriority", "type": "PriorityConfiguration"},
+        "aml_compute_priority": {
+            "key": "AmlComputePriority",
+            "type": "PriorityConfiguration",
+        },
+        "itp_priority": {"key": "ItpPriority", "type": "PriorityConfiguration"},
+        "singularity_priority": {
+            "key": "SingularityPriority",
+            "type": "PriorityConfiguration",
+        },
     }
 
     def __init__(
@@ -10213,17 +10745,32 @@ class CloudSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'linked_settings': {'key': 'linkedSettings', 'type': '[ParameterAssignment]'},
-        'priority_config': {'key': 'priorityConfig', 'type': 'PriorityConfiguration'},
-        'hdi_run_config': {'key': 'hdiRunConfig', 'type': 'HdiRunConfiguration'},
-        'sub_graph_config': {'key': 'subGraphConfig', 'type': 'SubGraphConfiguration'},
-        'auto_ml_component_config': {'key': 'autoMLComponentConfig', 'type': 'AutoMLComponentConfiguration'},
-        'ap_cloud_config': {'key': 'apCloudConfig', 'type': 'APCloudConfiguration'},
-        'scope_cloud_config': {'key': 'scopeCloudConfig', 'type': 'ScopeCloudConfiguration'},
-        'es_cloud_config': {'key': 'esCloudConfig', 'type': 'EsCloudConfiguration'},
-        'data_transfer_cloud_config': {'key': 'dataTransferCloudConfig', 'type': 'DataTransferCloudConfiguration'},
-        'aml_spark_cloud_setting': {'key': 'amlSparkCloudSetting', 'type': 'AmlSparkCloudSetting'},
-        'data_transfer_v2_cloud_setting': {'key': 'dataTransferV2CloudSetting', 'type': 'DataTransferV2CloudSetting'},
+        "linked_settings": {"key": "linkedSettings", "type": "[ParameterAssignment]"},
+        "priority_config": {"key": "priorityConfig", "type": "PriorityConfiguration"},
+        "hdi_run_config": {"key": "hdiRunConfig", "type": "HdiRunConfiguration"},
+        "sub_graph_config": {"key": "subGraphConfig", "type": "SubGraphConfiguration"},
+        "auto_ml_component_config": {
+            "key": "autoMLComponentConfig",
+            "type": "AutoMLComponentConfiguration",
+        },
+        "ap_cloud_config": {"key": "apCloudConfig", "type": "APCloudConfiguration"},
+        "scope_cloud_config": {
+            "key": "scopeCloudConfig",
+            "type": "ScopeCloudConfiguration",
+        },
+        "es_cloud_config": {"key": "esCloudConfig", "type": "EsCloudConfiguration"},
+        "data_transfer_cloud_config": {
+            "key": "dataTransferCloudConfig",
+            "type": "DataTransferCloudConfiguration",
+        },
+        "aml_spark_cloud_setting": {
+            "key": "amlSparkCloudSetting",
+            "type": "AmlSparkCloudSetting",
+        },
+        "data_transfer_v2_cloud_setting": {
+            "key": "dataTransferV2CloudSetting",
+            "type": "DataTransferV2CloudSetting",
+        },
     }
 
     def __init__(
@@ -10290,8 +10837,8 @@ class ColumnTransformer(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'fields': {'key': 'fields', 'type': '[str]'},
-        'parameters': {'key': 'parameters', 'type': 'object'},
+        "fields": {"key": "fields", "type": "[str]"},
+        "parameters": {"key": "parameters", "type": "object"},
     }
 
     def __init__(
@@ -10380,39 +10927,57 @@ class CommandJob(msrest.serialization.Model):
     """
 
     _validation = {
-        'command': {'min_length': 1},
+        "command": {"min_length": 1},
     }
 
     _attribute_map = {
-        'job_type': {'key': 'jobType', 'type': 'str'},
-        'code_id': {'key': 'codeId', 'type': 'str'},
-        'command': {'key': 'command', 'type': 'str'},
-        'environment_id': {'key': 'environmentId', 'type': 'str'},
-        'input_data_bindings': {'key': 'inputDataBindings', 'type': '{InputDataBinding}'},
-        'output_data_bindings': {'key': 'outputDataBindings', 'type': '{OutputDataBinding}'},
-        'distribution': {'key': 'distribution', 'type': 'DistributionConfiguration'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'parameters': {'key': 'parameters', 'type': '{object}'},
-        'autologger_settings': {'key': 'autologgerSettings', 'type': 'MfeInternalAutologgerSettings'},
-        'limits': {'key': 'limits', 'type': 'CommandJobLimits'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'parent_job_name': {'key': 'parentJobName', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'interaction_endpoints': {'key': 'interactionEndpoints', 'type': '{JobEndpoint}'},
-        'identity': {'key': 'identity', 'type': 'MfeInternalIdentityConfiguration'},
-        'compute': {'key': 'compute', 'type': 'ComputeConfiguration'},
-        'priority': {'key': 'priority', 'type': 'int'},
-        'output': {'key': 'output', 'type': 'JobOutputArtifacts'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'schedule': {'key': 'schedule', 'type': 'ScheduleBase'},
-        'component_id': {'key': 'componentId', 'type': 'str'},
-        'notification_setting': {'key': 'notificationSetting', 'type': 'NotificationSetting'},
-        'secrets_configuration': {'key': 'secretsConfiguration', 'type': '{MfeInternalSecretConfiguration}'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "job_type": {"key": "jobType", "type": "str"},
+        "code_id": {"key": "codeId", "type": "str"},
+        "command": {"key": "command", "type": "str"},
+        "environment_id": {"key": "environmentId", "type": "str"},
+        "input_data_bindings": {
+            "key": "inputDataBindings",
+            "type": "{InputDataBinding}",
+        },
+        "output_data_bindings": {
+            "key": "outputDataBindings",
+            "type": "{OutputDataBinding}",
+        },
+        "distribution": {"key": "distribution", "type": "DistributionConfiguration"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "parameters": {"key": "parameters", "type": "{object}"},
+        "autologger_settings": {
+            "key": "autologgerSettings",
+            "type": "MfeInternalAutologgerSettings",
+        },
+        "limits": {"key": "limits", "type": "CommandJobLimits"},
+        "provisioning_state": {"key": "provisioningState", "type": "str"},
+        "parent_job_name": {"key": "parentJobName", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "interaction_endpoints": {
+            "key": "interactionEndpoints",
+            "type": "{JobEndpoint}",
+        },
+        "identity": {"key": "identity", "type": "MfeInternalIdentityConfiguration"},
+        "compute": {"key": "compute", "type": "ComputeConfiguration"},
+        "priority": {"key": "priority", "type": "int"},
+        "output": {"key": "output", "type": "JobOutputArtifacts"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "schedule": {"key": "schedule", "type": "ScheduleBase"},
+        "component_id": {"key": "componentId", "type": "str"},
+        "notification_setting": {
+            "key": "notificationSetting",
+            "type": "NotificationSetting",
+        },
+        "secrets_configuration": {
+            "key": "secretsConfiguration",
+            "type": "{MfeInternalSecretConfiguration}",
+        },
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -10443,7 +11008,9 @@ class CommandJob(msrest.serialization.Model):
         schedule: Optional["ScheduleBase"] = None,
         component_id: Optional[str] = None,
         notification_setting: Optional["NotificationSetting"] = None,
-        secrets_configuration: Optional[Dict[str, "MfeInternalSecretConfiguration"]] = None,
+        secrets_configuration: Optional[
+            Dict[str, "MfeInternalSecretConfiguration"]
+        ] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         properties: Optional[Dict[str, str]] = None,
@@ -10555,8 +11122,8 @@ class CommandJobLimits(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_limits_type': {'key': 'jobLimitsType', 'type': 'str'},
-        'timeout': {'key': 'timeout', 'type': 'str'},
+        "job_limits_type": {"key": "jobLimitsType", "type": "str"},
+        "timeout": {"key": "timeout", "type": "str"},
     }
 
     def __init__(
@@ -10587,8 +11154,8 @@ class CommandReturnCodeConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'return_code': {'key': 'returnCode', 'type': 'str'},
-        'successful_return_codes': {'key': 'successfulReturnCodes', 'type': '[int]'},
+        "return_code": {"key": "returnCode", "type": "str"},
+        "successful_return_codes": {"key": "successfulReturnCodes", "type": "[int]"},
     }
 
     def __init__(
@@ -10617,15 +11184,10 @@ class ComponentConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_identifier': {'key': 'componentIdentifier', 'type': 'str'},
+        "component_identifier": {"key": "componentIdentifier", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        component_identifier: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, component_identifier: Optional[str] = None, **kwargs):
         """
         :keyword component_identifier:
         :paramtype component_identifier: str
@@ -10656,14 +11218,14 @@ class ComponentInput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'optional': {'key': 'optional', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'default': {'key': 'default', 'type': 'str'},
-        'enum': {'key': 'enum', 'type': '[str]'},
-        'min': {'key': 'min', 'type': 'str'},
-        'max': {'key': 'max', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "optional": {"key": "optional", "type": "bool"},
+        "description": {"key": "description", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "default": {"key": "default", "type": "str"},
+        "enum": {"key": "enum", "type": "[str]"},
+        "min": {"key": "min", "type": "str"},
+        "max": {"key": "max", "type": "str"},
     }
 
     def __init__(
@@ -10722,10 +11284,10 @@ class ComponentJob(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'compute': {'key': 'compute', 'type': 'ComputeConfiguration'},
-        'component_id': {'key': 'componentId', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{ComponentJobInput}'},
-        'outputs': {'key': 'outputs', 'type': '{ComponentJobOutput}'},
+        "compute": {"key": "compute", "type": "ComputeConfiguration"},
+        "component_id": {"key": "componentId", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{ComponentJobInput}"},
+        "outputs": {"key": "outputs", "type": "{ComponentJobOutput}"},
     }
 
     def __init__(
@@ -10764,8 +11326,8 @@ class ComponentJobInput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data': {'key': 'data', 'type': 'InputData'},
-        'input_binding': {'key': 'inputBinding', 'type': 'str'},
+        "data": {"key": "data", "type": "InputData"},
+        "input_binding": {"key": "inputBinding", "type": "str"},
     }
 
     def __init__(
@@ -10796,8 +11358,8 @@ class ComponentJobOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data': {'key': 'data', 'type': 'MfeInternalOutputData'},
-        'output_binding': {'key': 'outputBinding', 'type': 'str'},
+        "data": {"key": "data", "type": "MfeInternalOutputData"},
+        "output_binding": {"key": "outputBinding", "type": "str"},
     }
 
     def __init__(
@@ -10832,10 +11394,10 @@ class ComponentNameAndDefaultVersion(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'registry_name': {'key': 'registryName', 'type': 'str'},
+        "component_name": {"key": "componentName", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "registry_name": {"key": "registryName", "type": "str"},
     }
 
     def __init__(
@@ -10878,10 +11440,10 @@ class ComponentNameMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'component_version': {'key': 'componentVersion', 'type': 'str'},
-        'registry_name': {'key': 'registryName', 'type': 'str'},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "component_name": {"key": "componentName", "type": "str"},
+        "component_version": {"key": "componentVersion", "type": "str"},
+        "registry_name": {"key": "registryName", "type": "str"},
     }
 
     def __init__(
@@ -10922,9 +11484,9 @@ class ComponentOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
@@ -10957,15 +11519,10 @@ class ComponentPreflightResult(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'error_details': {'key': 'errorDetails', 'type': '[RootError]'},
+        "error_details": {"key": "errorDetails", "type": "[RootError]"},
     }
 
-    def __init__(
-        self,
-        *,
-        error_details: Optional[List["RootError"]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, error_details: Optional[List["RootError"]] = None, **kwargs):
         """
         :keyword error_details:
         :paramtype error_details: list[~flow.models.RootError]
@@ -10996,14 +11553,14 @@ class ComponentSpecMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_spec': {'key': 'componentSpec', 'type': 'object'},
-        'component_version': {'key': 'componentVersion', 'type': 'str'},
-        'is_anonymous': {'key': 'isAnonymous', 'type': 'bool'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
+        "component_spec": {"key": "componentSpec", "type": "object"},
+        "component_version": {"key": "componentVersion", "type": "str"},
+        "is_anonymous": {"key": "isAnonymous", "type": "bool"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "component_name": {"key": "componentName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
     }
 
     def __init__(
@@ -11066,12 +11623,18 @@ class ComponentUpdateRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'original_module_entity': {'key': 'originalModuleEntity', 'type': 'ModuleEntity'},
-        'update_module_entity': {'key': 'updateModuleEntity', 'type': 'ModuleEntity'},
-        'module_name': {'key': 'moduleName', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'overwrite_with_original_name_and_version': {'key': 'overwriteWithOriginalNameAndVersion', 'type': 'bool'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
+        "original_module_entity": {
+            "key": "originalModuleEntity",
+            "type": "ModuleEntity",
+        },
+        "update_module_entity": {"key": "updateModuleEntity", "type": "ModuleEntity"},
+        "module_name": {"key": "moduleName", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "overwrite_with_original_name_and_version": {
+            "key": "overwriteWithOriginalNameAndVersion",
+            "type": "bool",
+        },
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
     }
 
     def __init__(
@@ -11104,7 +11667,9 @@ class ComponentUpdateRequest(msrest.serialization.Model):
         self.update_module_entity = update_module_entity
         self.module_name = module_name
         self.properties = properties
-        self.overwrite_with_original_name_and_version = overwrite_with_original_name_and_version
+        self.overwrite_with_original_name_and_version = (
+            overwrite_with_original_name_and_version
+        )
         self.snapshot_id = snapshot_id
 
 
@@ -11124,11 +11689,17 @@ class ComponentValidationRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_identifier': {'key': 'componentIdentifier', 'type': 'str'},
-        'compute_identity': {'key': 'computeIdentity', 'type': 'ComputeIdentityDto'},
-        'execution_context_dto': {'key': 'executionContextDto', 'type': 'ExecutionContextDto'},
-        'environment_definition': {'key': 'environmentDefinition', 'type': 'EnvironmentDefinitionDto'},
-        'data_port_dtos': {'key': 'dataPortDtos', 'type': '[DataPortDto]'},
+        "component_identifier": {"key": "componentIdentifier", "type": "str"},
+        "compute_identity": {"key": "computeIdentity", "type": "ComputeIdentityDto"},
+        "execution_context_dto": {
+            "key": "executionContextDto",
+            "type": "ExecutionContextDto",
+        },
+        "environment_definition": {
+            "key": "environmentDefinition",
+            "type": "EnvironmentDefinitionDto",
+        },
+        "data_port_dtos": {"key": "dataPortDtos", "type": "[DataPortDto]"},
     }
 
     def __init__(
@@ -11171,8 +11742,8 @@ class ComponentValidationResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'status': {'key': 'status', 'type': 'str'},
-        'error': {'key': 'error', 'type': 'ErrorResponse'},
+        "status": {"key": "status", "type": "str"},
+        "error": {"key": "error", "type": "ErrorResponse"},
     }
 
     def __init__(
@@ -11219,16 +11790,16 @@ class Compute(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'target': {'key': 'target', 'type': 'str'},
-        'target_type': {'key': 'targetType', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'gpu_count': {'key': 'gpuCount', 'type': 'int'},
-        'priority': {'key': 'priority', 'type': 'str'},
-        'region': {'key': 'region', 'type': 'str'},
-        'arm_id': {'key': 'armId', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "target": {"key": "target", "type": "str"},
+        "target_type": {"key": "targetType", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "gpu_count": {"key": "gpuCount", "type": "int"},
+        "priority": {"key": "priority", "type": "str"},
+        "region": {"key": "region", "type": "str"},
+        "arm_id": {"key": "armId", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -11313,19 +11884,19 @@ class ComputeConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'target': {'key': 'target', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'max_instance_count': {'key': 'maxInstanceCount', 'type': 'int'},
-        'is_local': {'key': 'isLocal', 'type': 'bool'},
-        'location': {'key': 'location', 'type': 'str'},
-        'is_clusterless': {'key': 'isClusterless', 'type': 'bool'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'instance_priority': {'key': 'instancePriority', 'type': 'str'},
-        'job_priority': {'key': 'jobPriority', 'type': 'int'},
-        'shm_size': {'key': 'shmSize', 'type': 'str'},
-        'docker_args': {'key': 'dockerArgs', 'type': 'str'},
-        'locations': {'key': 'locations', 'type': '[str]'},
-        'properties': {'key': 'properties', 'type': '{object}'},
+        "target": {"key": "target", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "max_instance_count": {"key": "maxInstanceCount", "type": "int"},
+        "is_local": {"key": "isLocal", "type": "bool"},
+        "location": {"key": "location", "type": "str"},
+        "is_clusterless": {"key": "isClusterless", "type": "bool"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "instance_priority": {"key": "instancePriority", "type": "str"},
+        "job_priority": {"key": "jobPriority", "type": "int"},
+        "shm_size": {"key": "shmSize", "type": "str"},
+        "docker_args": {"key": "dockerArgs", "type": "str"},
+        "locations": {"key": "locations", "type": "[str]"},
+        "properties": {"key": "properties", "type": "{object}"},
     }
 
     def __init__(
@@ -11404,9 +11975,12 @@ class ComputeIdentityDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'compute_name': {'key': 'computeName', 'type': 'str'},
-        'compute_target_type': {'key': 'computeTargetType', 'type': 'str'},
-        'intellectual_property_publisher': {'key': 'intellectualPropertyPublisher', 'type': 'str'},
+        "compute_name": {"key": "computeName", "type": "str"},
+        "compute_target_type": {"key": "computeTargetType", "type": "str"},
+        "intellectual_property_publisher": {
+            "key": "intellectualPropertyPublisher",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -11452,12 +12026,12 @@ class ComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'is_ssl_enabled': {'key': 'isSslEnabled', 'type': 'bool'},
-        'is_gpu_type': {'key': 'isGpuType', 'type': 'bool'},
-        'cluster_purpose': {'key': 'clusterPurpose', 'type': 'str'},
-        'public_ip_address': {'key': 'publicIpAddress', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "is_ssl_enabled": {"key": "isSslEnabled", "type": "bool"},
+        "is_gpu_type": {"key": "isGpuType", "type": "bool"},
+        "cluster_purpose": {"key": "clusterPurpose", "type": "str"},
+        "public_ip_address": {"key": "publicIpAddress", "type": "str"},
     }
 
     def __init__(
@@ -11506,8 +12080,8 @@ class ComputeRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_count': {'key': 'nodeCount', 'type': 'int'},
-        'gpu_count': {'key': 'gpuCount', 'type': 'int'},
+        "node_count": {"key": "nodeCount", "type": "int"},
+        "gpu_count": {"key": "gpuCount", "type": "int"},
     }
 
     def __init__(
@@ -11549,13 +12123,25 @@ class ComputeSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'batch_ai_compute_info': {'key': 'batchAiComputeInfo', 'type': 'BatchAiComputeInfo'},
-        'remote_docker_compute_info': {'key': 'remoteDockerComputeInfo', 'type': 'RemoteDockerComputeInfo'},
-        'hdi_cluster_compute_info': {'key': 'hdiClusterComputeInfo', 'type': 'HdiClusterComputeInfo'},
-        'mlc_compute_info': {'key': 'mlcComputeInfo', 'type': 'MlcComputeInfo'},
-        'databricks_compute_info': {'key': 'databricksComputeInfo', 'type': 'DatabricksComputeInfo'},
+        "name": {"key": "name", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "batch_ai_compute_info": {
+            "key": "batchAiComputeInfo",
+            "type": "BatchAiComputeInfo",
+        },
+        "remote_docker_compute_info": {
+            "key": "remoteDockerComputeInfo",
+            "type": "RemoteDockerComputeInfo",
+        },
+        "hdi_cluster_compute_info": {
+            "key": "hdiClusterComputeInfo",
+            "type": "HdiClusterComputeInfo",
+        },
+        "mlc_compute_info": {"key": "mlcComputeInfo", "type": "MlcComputeInfo"},
+        "databricks_compute_info": {
+            "key": "databricksComputeInfo",
+            "type": "DatabricksComputeInfo",
+        },
     }
 
     def __init__(
@@ -11607,8 +12193,11 @@ class ComputeStatusDetail(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'provisioning_error_message': {'key': 'provisioningErrorMessage', 'type': 'str'},
+        "provisioning_state": {"key": "provisioningState", "type": "str"},
+        "provisioning_error_message": {
+            "key": "provisioningErrorMessage",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -11649,13 +12238,13 @@ class ConnectionConfigSpec(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'config_value_type': {'key': 'configValueType', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
-        'enum_values': {'key': 'enumValues', 'type': '[str]'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "config_value_type": {"key": "configValueType", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "str"},
+        "enum_values": {"key": "enumValues", "type": "[str]"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
     }
 
     def __init__(
@@ -11720,14 +12309,14 @@ class ConnectionDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_name': {'key': 'connectionName', 'type': 'str'},
-        'connection_type': {'key': 'connectionType', 'type': 'str'},
-        'configs': {'key': 'configs', 'type': '{str}'},
-        'custom_configs': {'key': 'customConfigs', 'type': '{CustomConnectionConfig}'},
-        'expiry_time': {'key': 'expiryTime', 'type': 'iso-8601'},
-        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "connection_name": {"key": "connectionName", "type": "str"},
+        "connection_type": {"key": "connectionType", "type": "str"},
+        "configs": {"key": "configs", "type": "{str}"},
+        "custom_configs": {"key": "customConfigs", "type": "{CustomConnectionConfig}"},
+        "expiry_time": {"key": "expiryTime", "type": "iso-8601"},
+        "owner": {"key": "owner", "type": "SchemaContractsCreatedBy"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -11804,17 +12393,17 @@ class ConnectionEntity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_id': {'key': 'connectionId', 'type': 'str'},
-        'connection_name': {'key': 'connectionName', 'type': 'str'},
-        'connection_type': {'key': 'connectionType', 'type': 'str'},
-        'connection_scope': {'key': 'connectionScope', 'type': 'str'},
-        'configs': {'key': 'configs', 'type': '{str}'},
-        'custom_configs': {'key': 'customConfigs', 'type': '{CustomConnectionConfig}'},
-        'expiry_time': {'key': 'expiryTime', 'type': 'iso-8601'},
-        'secret_name': {'key': 'secretName', 'type': 'str'},
-        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "connection_id": {"key": "connectionId", "type": "str"},
+        "connection_name": {"key": "connectionName", "type": "str"},
+        "connection_type": {"key": "connectionType", "type": "str"},
+        "connection_scope": {"key": "connectionScope", "type": "str"},
+        "configs": {"key": "configs", "type": "{str}"},
+        "custom_configs": {"key": "customConfigs", "type": "{CustomConnectionConfig}"},
+        "expiry_time": {"key": "expiryTime", "type": "iso-8601"},
+        "secret_name": {"key": "secretName", "type": "str"},
+        "owner": {"key": "owner", "type": "SchemaContractsCreatedBy"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -11895,14 +12484,14 @@ class ConnectionOverrideSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_source_type': {'key': 'connectionSourceType', 'type': 'str'},
-        'node_name': {'key': 'nodeName', 'type': 'str'},
-        'node_input_name': {'key': 'nodeInputName', 'type': 'str'},
-        'node_deployment_name_input': {'key': 'nodeDeploymentNameInput', 'type': 'str'},
-        'connection_name': {'key': 'connectionName', 'type': 'str'},
-        'deployment_name': {'key': 'deploymentName', 'type': 'str'},
-        'connection_types': {'key': 'connectionTypes', 'type': '[str]'},
-        'capabilities': {'key': 'capabilities', 'type': 'AzureOpenAIModelCapabilities'},
+        "connection_source_type": {"key": "connectionSourceType", "type": "str"},
+        "node_name": {"key": "nodeName", "type": "str"},
+        "node_input_name": {"key": "nodeInputName", "type": "str"},
+        "node_deployment_name_input": {"key": "nodeDeploymentNameInput", "type": "str"},
+        "connection_name": {"key": "connectionName", "type": "str"},
+        "deployment_name": {"key": "deploymentName", "type": "str"},
+        "connection_types": {"key": "connectionTypes", "type": "[str]"},
+        "capabilities": {"key": "capabilities", "type": "AzureOpenAIModelCapabilities"},
     }
 
     def __init__(
@@ -11959,8 +12548,8 @@ class ConnectionSpec(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_type': {'key': 'connectionType', 'type': 'str'},
-        'config_specs': {'key': 'configSpecs', 'type': '[ConnectionConfigSpec]'},
+        "connection_type": {"key": "connectionType", "type": "str"},
+        "config_specs": {"key": "configSpecs", "type": "[ConnectionConfigSpec]"},
     }
 
     def __init__(
@@ -11995,9 +12584,9 @@ class ContainerInstanceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'region': {'key': 'region', 'type': 'str'},
-        'cpu_cores': {'key': 'cpuCores', 'type': 'float'},
-        'memory_gb': {'key': 'memoryGb', 'type': 'float'},
+        "region": {"key": "region", "type": "str"},
+        "cpu_cores": {"key": "cpuCores", "type": "float"},
+        "memory_gb": {"key": "memoryGb", "type": "float"},
     }
 
     def __init__(
@@ -12036,10 +12625,10 @@ class ContainerRegistry(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'address': {'key': 'address', 'type': 'str'},
-        'username': {'key': 'username', 'type': 'str'},
-        'password': {'key': 'password', 'type': 'str'},
-        'registry_identity': {'key': 'registryIdentity', 'type': 'RegistryIdentity'},
+        "address": {"key": "address", "type": "str"},
+        "username": {"key": "username", "type": "str"},
+        "password": {"key": "password", "type": "str"},
+        "registry_identity": {"key": "registryIdentity", "type": "RegistryIdentity"},
     }
 
     def __init__(
@@ -12088,13 +12677,13 @@ class ContainerResourceRequirements(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'cpu': {'key': 'cpu', 'type': 'float'},
-        'cpu_limit': {'key': 'cpuLimit', 'type': 'float'},
-        'memory_in_gb': {'key': 'memoryInGB', 'type': 'float'},
-        'memory_in_gb_limit': {'key': 'memoryInGBLimit', 'type': 'float'},
-        'gpu_enabled': {'key': 'gpuEnabled', 'type': 'bool'},
-        'gpu': {'key': 'gpu', 'type': 'int'},
-        'fpga': {'key': 'fpga', 'type': 'int'},
+        "cpu": {"key": "cpu", "type": "float"},
+        "cpu_limit": {"key": "cpuLimit", "type": "float"},
+        "memory_in_gb": {"key": "memoryInGB", "type": "float"},
+        "memory_in_gb_limit": {"key": "memoryInGBLimit", "type": "float"},
+        "gpu_enabled": {"key": "gpuEnabled", "type": "bool"},
+        "gpu": {"key": "gpu", "type": "int"},
+        "fpga": {"key": "fpga", "type": "int"},
     }
 
     def __init__(
@@ -12145,8 +12734,8 @@ class ControlInput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "str"},
     }
 
     def __init__(
@@ -12175,15 +12764,10 @@ class ControlOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        name: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, name: Optional[str] = None, **kwargs):
         """
         :keyword name:
         :paramtype name: str
@@ -12200,14 +12784,11 @@ class CopyDataTask(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_copy_mode': {'key': 'DataCopyMode', 'type': 'str'},
+        "data_copy_mode": {"key": "DataCopyMode", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        data_copy_mode: Optional[Union[str, "DataCopyMode"]] = None,
-        **kwargs
+        self, *, data_copy_mode: Optional[Union[str, "DataCopyMode"]] = None, **kwargs
     ):
         """
         :keyword data_copy_mode: Possible values include: "MergeWithOverwrite", "FailIfConflict".
@@ -12229,9 +12810,9 @@ class CreatedBy(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'user_object_id': {'key': 'userObjectId', 'type': 'str'},
-        'user_tenant_id': {'key': 'userTenantId', 'type': 'str'},
-        'user_name': {'key': 'userName', 'type': 'str'},
+        "user_object_id": {"key": "userObjectId", "type": "str"},
+        "user_tenant_id": {"key": "userTenantId", "type": "str"},
+        "user_name": {"key": "userName", "type": "str"},
     }
 
     def __init__(
@@ -12270,9 +12851,9 @@ class CreatedFromDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'location_type': {'key': 'locationType', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "location_type": {"key": "locationType", "type": "str"},
+        "location": {"key": "location", "type": "str"},
     }
 
     def __init__(
@@ -12315,11 +12896,11 @@ class CreateFlowFromSampleRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'sample_resource_id': {'key': 'sampleResourceId', 'type': 'str'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "sample_resource_id": {"key": "sampleResourceId", "type": "str"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
     }
 
     def __init__(
@@ -12380,17 +12961,17 @@ class CreateFlowRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'details': {'key': 'details', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'flow': {'key': 'flow', 'type': 'Flow'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'flow_run_settings': {'key': 'flowRunSettings', 'type': 'FlowRunSettings'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "details": {"key": "details", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "flow": {"key": "flow", "type": "Flow"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "flow_run_settings": {"key": "flowRunSettings", "type": "FlowRunSettings"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
     }
 
     def __init__(
@@ -12480,19 +13061,19 @@ class CreateFlowRuntimeRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'runtime_type': {'key': 'runtimeType', 'type': 'str'},
-        'identity': {'key': 'identity', 'type': 'ManagedServiceIdentity'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'from_existing_endpoint': {'key': 'fromExistingEndpoint', 'type': 'bool'},
-        'from_existing_deployment': {'key': 'fromExistingDeployment', 'type': 'bool'},
-        'endpoint_name': {'key': 'endpointName', 'type': 'str'},
-        'deployment_name': {'key': 'deploymentName', 'type': 'str'},
-        'compute_instance_name': {'key': 'computeInstanceName', 'type': 'str'},
-        'from_existing_custom_app': {'key': 'fromExistingCustomApp', 'type': 'bool'},
-        'custom_app_name': {'key': 'customAppName', 'type': 'str'},
-        'runtime_description': {'key': 'runtimeDescription', 'type': 'str'},
-        'environment': {'key': 'environment', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
+        "runtime_type": {"key": "runtimeType", "type": "str"},
+        "identity": {"key": "identity", "type": "ManagedServiceIdentity"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "from_existing_endpoint": {"key": "fromExistingEndpoint", "type": "bool"},
+        "from_existing_deployment": {"key": "fromExistingDeployment", "type": "bool"},
+        "endpoint_name": {"key": "endpointName", "type": "str"},
+        "deployment_name": {"key": "deploymentName", "type": "str"},
+        "compute_instance_name": {"key": "computeInstanceName", "type": "str"},
+        "from_existing_custom_app": {"key": "fromExistingCustomApp", "type": "bool"},
+        "custom_app_name": {"key": "customAppName", "type": "str"},
+        "runtime_description": {"key": "runtimeDescription", "type": "str"},
+        "environment": {"key": "environment", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
     }
 
     def __init__(
@@ -12570,9 +13151,9 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'packages': {'key': 'packages', 'type': '[str]'},
-        'image_details': {'key': 'imageDetails', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
+        "packages": {"key": "packages", "type": "[str]"},
+        "image_details": {"key": "imageDetails", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
     }
 
     def __init__(
@@ -12656,30 +13237,60 @@ class CreateInferencePipelineRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_node_id': {'key': 'moduleNodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
-        'training_pipeline_draft_name': {'key': 'trainingPipelineDraftName', 'type': 'str'},
-        'training_pipeline_run_display_name': {'key': 'trainingPipelineRunDisplayName', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'pipeline_draft_mode': {'key': 'pipelineDraftMode', 'type': 'str'},
-        'graph_components_mode': {'key': 'graphComponentsMode', 'type': 'str'},
-        'sub_pipelines_info': {'key': 'subPipelinesInfo', 'type': 'SubPipelinesInfo'},
-        'flattened_sub_graphs': {'key': 'flattenedSubGraphs', 'type': '{PipelineSubDraft}'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'graph': {'key': 'graph', 'type': 'GraphDraftEntity'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'dataset_access_modes': {'key': 'datasetAccessModes', 'type': 'str'},
+        "module_node_id": {"key": "moduleNodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
+        "training_pipeline_draft_name": {
+            "key": "trainingPipelineDraftName",
+            "type": "str",
+        },
+        "training_pipeline_run_display_name": {
+            "key": "trainingPipelineRunDisplayName",
+            "type": "str",
+        },
+        "name": {"key": "name", "type": "str"},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "pipeline_draft_mode": {"key": "pipelineDraftMode", "type": "str"},
+        "graph_components_mode": {"key": "graphComponentsMode", "type": "str"},
+        "sub_pipelines_info": {"key": "subPipelinesInfo", "type": "SubPipelinesInfo"},
+        "flattened_sub_graphs": {
+            "key": "flattenedSubGraphs",
+            "type": "{PipelineSubDraft}",
+        },
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "graph": {"key": "graph", "type": "GraphDraftEntity"},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "description": {"key": "description", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "dataset_access_modes": {"key": "datasetAccessModes", "type": "str"},
     }
 
     def __init__(
@@ -12697,12 +13308,18 @@ class CreateInferencePipelineRequest(msrest.serialization.Model):
         flattened_sub_graphs: Optional[Dict[str, "PipelineSubDraft"]] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         graph: Optional["GraphDraftEntity"] = None,
         pipeline_run_settings: Optional[List["RunSettingParameterAssignment"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         tags: Optional[Dict[str, str]] = None,
         continue_run_on_step_failure: Optional[bool] = None,
         description: Optional[str] = None,
@@ -12780,7 +13397,9 @@ class CreateInferencePipelineRequest(msrest.serialization.Model):
         self.flattened_sub_graphs = flattened_sub_graphs
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
         self.graph = graph
         self.pipeline_run_settings = pipeline_run_settings
@@ -12812,11 +13431,11 @@ class CreateOrUpdateConnectionRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_type': {'key': 'connectionType', 'type': 'str'},
-        'connection_scope': {'key': 'connectionScope', 'type': 'str'},
-        'configs': {'key': 'configs', 'type': '{str}'},
-        'custom_configs': {'key': 'customConfigs', 'type': '{CustomConnectionConfig}'},
-        'expiry_time': {'key': 'expiryTime', 'type': 'iso-8601'},
+        "connection_type": {"key": "connectionType", "type": "str"},
+        "connection_scope": {"key": "connectionScope", "type": "str"},
+        "configs": {"key": "configs", "type": "{str}"},
+        "custom_configs": {"key": "customConfigs", "type": "{CustomConnectionConfig}"},
+        "expiry_time": {"key": "expiryTime", "type": "iso-8601"},
     }
 
     def __init__(
@@ -12867,10 +13486,10 @@ class CreateOrUpdateConnectionRequestDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_type': {'key': 'connectionType', 'type': 'str'},
-        'configs': {'key': 'configs', 'type': '{str}'},
-        'custom_configs': {'key': 'customConfigs', 'type': '{CustomConnectionConfig}'},
-        'expiry_time': {'key': 'expiryTime', 'type': 'iso-8601'},
+        "connection_type": {"key": "connectionType", "type": "str"},
+        "configs": {"key": "configs", "type": "{str}"},
+        "custom_configs": {"key": "customConfigs", "type": "{CustomConnectionConfig}"},
+        "expiry_time": {"key": "expiryTime", "type": "iso-8601"},
     }
 
     def __init__(
@@ -12952,26 +13571,50 @@ class CreatePipelineDraftRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'pipeline_draft_mode': {'key': 'pipelineDraftMode', 'type': 'str'},
-        'graph_components_mode': {'key': 'graphComponentsMode', 'type': 'str'},
-        'sub_pipelines_info': {'key': 'subPipelinesInfo', 'type': 'SubPipelinesInfo'},
-        'flattened_sub_graphs': {'key': 'flattenedSubGraphs', 'type': '{PipelineSubDraft}'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'graph': {'key': 'graph', 'type': 'GraphDraftEntity'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'dataset_access_modes': {'key': 'datasetAccessModes', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "pipeline_draft_mode": {"key": "pipelineDraftMode", "type": "str"},
+        "graph_components_mode": {"key": "graphComponentsMode", "type": "str"},
+        "sub_pipelines_info": {"key": "subPipelinesInfo", "type": "SubPipelinesInfo"},
+        "flattened_sub_graphs": {
+            "key": "flattenedSubGraphs",
+            "type": "{PipelineSubDraft}",
+        },
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "graph": {"key": "graph", "type": "GraphDraftEntity"},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "description": {"key": "description", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "dataset_access_modes": {"key": "datasetAccessModes", "type": "str"},
     }
 
     def __init__(
@@ -12985,12 +13628,18 @@ class CreatePipelineDraftRequest(msrest.serialization.Model):
         flattened_sub_graphs: Optional[Dict[str, "PipelineSubDraft"]] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         graph: Optional["GraphDraftEntity"] = None,
         pipeline_run_settings: Optional[List["RunSettingParameterAssignment"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         tags: Optional[Dict[str, str]] = None,
         continue_run_on_step_failure: Optional[bool] = None,
         description: Optional[str] = None,
@@ -13056,7 +13705,9 @@ class CreatePipelineDraftRequest(msrest.serialization.Model):
         self.flattened_sub_graphs = flattened_sub_graphs
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
         self.graph = graph
         self.pipeline_run_settings = pipeline_run_settings
@@ -13098,17 +13749,20 @@ class CreatePipelineJobScheduleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'pipeline_job_name': {'key': 'pipelineJobName', 'type': 'str'},
-        'pipeline_job_runtime_settings': {'key': 'pipelineJobRuntimeSettings', 'type': 'PipelineJobRuntimeBasicSettings'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'trigger_type': {'key': 'triggerType', 'type': 'str'},
-        'recurrence': {'key': 'recurrence', 'type': 'Recurrence'},
-        'cron': {'key': 'cron', 'type': 'Cron'},
-        'status': {'key': 'status', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "name": {"key": "name", "type": "str"},
+        "pipeline_job_name": {"key": "pipelineJobName", "type": "str"},
+        "pipeline_job_runtime_settings": {
+            "key": "pipelineJobRuntimeSettings",
+            "type": "PipelineJobRuntimeBasicSettings",
+        },
+        "display_name": {"key": "displayName", "type": "str"},
+        "trigger_type": {"key": "triggerType", "type": "str"},
+        "recurrence": {"key": "recurrence", "type": "Recurrence"},
+        "cron": {"key": "cron", "type": "Cron"},
+        "status": {"key": "status", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -13116,7 +13770,9 @@ class CreatePipelineJobScheduleDto(msrest.serialization.Model):
         *,
         name: Optional[str] = None,
         pipeline_job_name: Optional[str] = None,
-        pipeline_job_runtime_settings: Optional["PipelineJobRuntimeBasicSettings"] = None,
+        pipeline_job_runtime_settings: Optional[
+            "PipelineJobRuntimeBasicSettings"
+        ] = None,
         display_name: Optional[str] = None,
         trigger_type: Optional[Union[str, "TriggerType"]] = None,
         recurrence: Optional["Recurrence"] = None,
@@ -13230,34 +13886,64 @@ class CreatePublishedPipelineRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'use_pipeline_endpoint': {'key': 'usePipelineEndpoint', 'type': 'bool'},
-        'pipeline_name': {'key': 'pipelineName', 'type': 'str'},
-        'pipeline_description': {'key': 'pipelineDescription', 'type': 'str'},
-        'use_existing_pipeline_endpoint': {'key': 'useExistingPipelineEndpoint', 'type': 'bool'},
-        'pipeline_endpoint_name': {'key': 'pipelineEndpointName', 'type': 'str'},
-        'pipeline_endpoint_description': {'key': 'pipelineEndpointDescription', 'type': 'str'},
-        'set_as_default_pipeline_for_endpoint': {'key': 'setAsDefaultPipelineForEndpoint', 'type': 'bool'},
-        'step_tags': {'key': 'stepTags', 'type': '{str}'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'enable_notification': {'key': 'enableNotification', 'type': 'bool'},
-        'sub_pipelines_info': {'key': 'subPipelinesInfo', 'type': 'SubPipelinesInfo'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'graph': {'key': 'graph', 'type': 'GraphDraftEntity'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'dataset_access_modes': {'key': 'datasetAccessModes', 'type': 'str'},
+        "use_pipeline_endpoint": {"key": "usePipelineEndpoint", "type": "bool"},
+        "pipeline_name": {"key": "pipelineName", "type": "str"},
+        "pipeline_description": {"key": "pipelineDescription", "type": "str"},
+        "use_existing_pipeline_endpoint": {
+            "key": "useExistingPipelineEndpoint",
+            "type": "bool",
+        },
+        "pipeline_endpoint_name": {"key": "pipelineEndpointName", "type": "str"},
+        "pipeline_endpoint_description": {
+            "key": "pipelineEndpointDescription",
+            "type": "str",
+        },
+        "set_as_default_pipeline_for_endpoint": {
+            "key": "setAsDefaultPipelineForEndpoint",
+            "type": "bool",
+        },
+        "step_tags": {"key": "stepTags", "type": "{str}"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "enable_notification": {"key": "enableNotification", "type": "bool"},
+        "sub_pipelines_info": {"key": "subPipelinesInfo", "type": "SubPipelinesInfo"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "graph": {"key": "graph", "type": "GraphDraftEntity"},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "description": {"key": "description", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "dataset_access_modes": {"key": "datasetAccessModes", "type": "str"},
     }
 
     def __init__(
@@ -13274,8 +13960,12 @@ class CreatePublishedPipelineRequest(msrest.serialization.Model):
         experiment_name: Optional[str] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         enable_notification: Optional[bool] = None,
         sub_pipelines_info: Optional["SubPipelinesInfo"] = None,
         display_name: Optional[str] = None,
@@ -13284,7 +13974,9 @@ class CreatePublishedPipelineRequest(msrest.serialization.Model):
         graph: Optional["GraphDraftEntity"] = None,
         pipeline_run_settings: Optional[List["RunSettingParameterAssignment"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         tags: Optional[Dict[str, str]] = None,
         continue_run_on_step_failure: Optional[bool] = None,
         description: Optional[str] = None,
@@ -13367,7 +14059,9 @@ class CreatePublishedPipelineRequest(msrest.serialization.Model):
         self.experiment_name = experiment_name
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
         self.enable_notification = enable_notification
         self.sub_pipelines_info = sub_pipelines_info
@@ -13436,28 +14130,49 @@ class CreateRealTimeEndpointRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'compute_info': {'key': 'computeInfo', 'type': 'ComputeInfo'},
-        'description': {'key': 'description', 'type': 'str'},
-        'linked_pipeline_draft_id': {'key': 'linkedPipelineDraftId', 'type': 'str'},
-        'linked_pipeline_run_id': {'key': 'linkedPipelineRunId', 'type': 'str'},
-        'aks_advance_settings': {'key': 'aksAdvanceSettings', 'type': 'AKSAdvanceSettings'},
-        'aci_advance_settings': {'key': 'aciAdvanceSettings', 'type': 'ACIAdvanceSettings'},
-        'linked_training_pipeline_run_id': {'key': 'linkedTrainingPipelineRunId', 'type': 'str'},
-        'linked_experiment_name': {'key': 'linkedExperimentName', 'type': 'str'},
-        'graph_nodes_run_id_mapping': {'key': 'graphNodesRunIdMapping', 'type': '{str}'},
-        'workflow': {'key': 'workflow', 'type': 'PipelineGraph'},
-        'inputs': {'key': 'inputs', 'type': '[InputOutputPortMetadata]'},
-        'outputs': {'key': 'outputs', 'type': '[InputOutputPortMetadata]'},
-        'example_request': {'key': 'exampleRequest', 'type': 'ExampleRequest'},
-        'user_storage_connection_string': {'key': 'userStorageConnectionString', 'type': 'str'},
-        'user_storage_endpoint_uri': {'key': 'userStorageEndpointUri', 'type': 'str'},
-        'user_storage_workspace_sai_token': {'key': 'userStorageWorkspaceSaiToken', 'type': 'str'},
-        'user_storage_container_name': {'key': 'userStorageContainerName', 'type': 'str'},
-        'pipeline_run_id': {'key': 'pipelineRunId', 'type': 'str'},
-        'root_pipeline_run_id': {'key': 'rootPipelineRunId', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "compute_info": {"key": "computeInfo", "type": "ComputeInfo"},
+        "description": {"key": "description", "type": "str"},
+        "linked_pipeline_draft_id": {"key": "linkedPipelineDraftId", "type": "str"},
+        "linked_pipeline_run_id": {"key": "linkedPipelineRunId", "type": "str"},
+        "aks_advance_settings": {
+            "key": "aksAdvanceSettings",
+            "type": "AKSAdvanceSettings",
+        },
+        "aci_advance_settings": {
+            "key": "aciAdvanceSettings",
+            "type": "ACIAdvanceSettings",
+        },
+        "linked_training_pipeline_run_id": {
+            "key": "linkedTrainingPipelineRunId",
+            "type": "str",
+        },
+        "linked_experiment_name": {"key": "linkedExperimentName", "type": "str"},
+        "graph_nodes_run_id_mapping": {
+            "key": "graphNodesRunIdMapping",
+            "type": "{str}",
+        },
+        "workflow": {"key": "workflow", "type": "PipelineGraph"},
+        "inputs": {"key": "inputs", "type": "[InputOutputPortMetadata]"},
+        "outputs": {"key": "outputs", "type": "[InputOutputPortMetadata]"},
+        "example_request": {"key": "exampleRequest", "type": "ExampleRequest"},
+        "user_storage_connection_string": {
+            "key": "userStorageConnectionString",
+            "type": "str",
+        },
+        "user_storage_endpoint_uri": {"key": "userStorageEndpointUri", "type": "str"},
+        "user_storage_workspace_sai_token": {
+            "key": "userStorageWorkspaceSaiToken",
+            "type": "str",
+        },
+        "user_storage_container_name": {
+            "key": "userStorageContainerName",
+            "type": "str",
+        },
+        "pipeline_run_id": {"key": "pipelineRunId", "type": "str"},
+        "root_pipeline_run_id": {"key": "rootPipelineRunId", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
     }
 
     def __init__(
@@ -13570,9 +14285,9 @@ class CreationContext(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'created_time': {'key': 'createdTime', 'type': 'iso-8601'},
-        'created_by': {'key': 'createdBy', 'type': 'SchemaContractsCreatedBy'},
-        'creation_source': {'key': 'creationSource', 'type': 'str'},
+        "created_time": {"key": "createdTime", "type": "iso-8601"},
+        "created_by": {"key": "createdBy", "type": "SchemaContractsCreatedBy"},
+        "creation_source": {"key": "creationSource", "type": "str"},
     }
 
     def __init__(
@@ -13611,10 +14326,10 @@ class Cron(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'expression': {'key': 'expression', 'type': 'str'},
-        'end_time': {'key': 'endTime', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'str'},
-        'time_zone': {'key': 'timeZone', 'type': 'str'},
+        "expression": {"key": "expression", "type": "str"},
+        "end_time": {"key": "endTime", "type": "str"},
+        "start_time": {"key": "startTime", "type": "str"},
+        "time_zone": {"key": "timeZone", "type": "str"},
     }
 
     def __init__(
@@ -13653,8 +14368,8 @@ class CustomConnectionConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'config_value_type': {'key': 'configValueType', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "config_value_type": {"key": "configValueType", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -13685,8 +14400,8 @@ class CustomReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -13725,12 +14440,12 @@ class Data(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_location': {'key': 'dataLocation', 'type': 'ExecutionDataLocation'},
-        'mechanism': {'key': 'mechanism', 'type': 'str'},
-        'environment_variable_name': {'key': 'environmentVariableName', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'options': {'key': 'options', 'type': '{str}'},
+        "data_location": {"key": "dataLocation", "type": "ExecutionDataLocation"},
+        "mechanism": {"key": "mechanism", "type": "str"},
+        "environment_variable_name": {"key": "environmentVariableName", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "options": {"key": "options", "type": "{str}"},
     }
 
     def __init__(
@@ -13777,16 +14492,12 @@ class DatabaseSink(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection': {'key': 'connection', 'type': 'str'},
-        'table': {'key': 'table', 'type': 'str'},
+        "connection": {"key": "connection", "type": "str"},
+        "table": {"key": "table", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        connection: Optional[str] = None,
-        table: Optional[str] = None,
-        **kwargs
+        self, *, connection: Optional[str] = None, table: Optional[str] = None, **kwargs
     ):
         """
         :keyword connection:
@@ -13813,10 +14524,13 @@ class DatabaseSource(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection': {'key': 'connection', 'type': 'str'},
-        'query': {'key': 'query', 'type': 'str'},
-        'stored_procedure_name': {'key': 'storedProcedureName', 'type': 'str'},
-        'stored_procedure_parameters': {'key': 'storedProcedureParameters', 'type': '[StoredProcedureParameter]'},
+        "connection": {"key": "connection", "type": "str"},
+        "query": {"key": "query", "type": "str"},
+        "stored_procedure_name": {"key": "storedProcedureName", "type": "str"},
+        "stored_procedure_parameters": {
+            "key": "storedProcedureParameters",
+            "type": "[StoredProcedureParameter]",
+        },
     }
 
     def __init__(
@@ -13853,15 +14567,10 @@ class DatabricksComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'existing_cluster_id': {'key': 'existingClusterId', 'type': 'str'},
+        "existing_cluster_id": {"key": "existingClusterId", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        existing_cluster_id: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, existing_cluster_id: Optional[str] = None, **kwargs):
         """
         :keyword existing_cluster_id:
         :paramtype existing_cluster_id: str
@@ -13926,31 +14635,40 @@ class DatabricksConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'workers': {'key': 'workers', 'type': 'int'},
-        'minimum_worker_count': {'key': 'minimumWorkerCount', 'type': 'int'},
-        'max_mum_worker_count': {'key': 'maxMumWorkerCount', 'type': 'int'},
-        'spark_version': {'key': 'sparkVersion', 'type': 'str'},
-        'node_type_id': {'key': 'nodeTypeId', 'type': 'str'},
-        'spark_conf': {'key': 'sparkConf', 'type': '{str}'},
-        'spark_env_vars': {'key': 'sparkEnvVars', 'type': '{str}'},
-        'cluster_log_conf_dbfs_path': {'key': 'clusterLogConfDbfsPath', 'type': 'str'},
-        'dbfs_init_scripts': {'key': 'dbfsInitScripts', 'type': '[InitScriptInfoDto]'},
-        'instance_pool_id': {'key': 'instancePoolId', 'type': 'str'},
-        'timeout_seconds': {'key': 'timeoutSeconds', 'type': 'int'},
-        'notebook_task': {'key': 'notebookTask', 'type': 'NoteBookTaskDto'},
-        'spark_python_task': {'key': 'sparkPythonTask', 'type': 'SparkPythonTaskDto'},
-        'spark_jar_task': {'key': 'sparkJarTask', 'type': 'SparkJarTaskDto'},
-        'spark_submit_task': {'key': 'sparkSubmitTask', 'type': 'SparkSubmitTaskDto'},
-        'jar_libraries': {'key': 'jarLibraries', 'type': '[str]'},
-        'egg_libraries': {'key': 'eggLibraries', 'type': '[str]'},
-        'whl_libraries': {'key': 'whlLibraries', 'type': '[str]'},
-        'pypi_libraries': {'key': 'pypiLibraries', 'type': '[PythonPyPiOrRCranLibraryDto]'},
-        'r_cran_libraries': {'key': 'rCranLibraries', 'type': '[PythonPyPiOrRCranLibraryDto]'},
-        'maven_libraries': {'key': 'mavenLibraries', 'type': '[MavenLibraryDto]'},
-        'libraries': {'key': 'libraries', 'type': '[object]'},
-        'linked_adb_workspace_metadata': {'key': 'linkedADBWorkspaceMetadata', 'type': 'LinkedADBWorkspaceMetadata'},
-        'databrick_resource_id': {'key': 'databrickResourceId', 'type': 'str'},
-        'auto_scale': {'key': 'autoScale', 'type': 'bool'},
+        "workers": {"key": "workers", "type": "int"},
+        "minimum_worker_count": {"key": "minimumWorkerCount", "type": "int"},
+        "max_mum_worker_count": {"key": "maxMumWorkerCount", "type": "int"},
+        "spark_version": {"key": "sparkVersion", "type": "str"},
+        "node_type_id": {"key": "nodeTypeId", "type": "str"},
+        "spark_conf": {"key": "sparkConf", "type": "{str}"},
+        "spark_env_vars": {"key": "sparkEnvVars", "type": "{str}"},
+        "cluster_log_conf_dbfs_path": {"key": "clusterLogConfDbfsPath", "type": "str"},
+        "dbfs_init_scripts": {"key": "dbfsInitScripts", "type": "[InitScriptInfoDto]"},
+        "instance_pool_id": {"key": "instancePoolId", "type": "str"},
+        "timeout_seconds": {"key": "timeoutSeconds", "type": "int"},
+        "notebook_task": {"key": "notebookTask", "type": "NoteBookTaskDto"},
+        "spark_python_task": {"key": "sparkPythonTask", "type": "SparkPythonTaskDto"},
+        "spark_jar_task": {"key": "sparkJarTask", "type": "SparkJarTaskDto"},
+        "spark_submit_task": {"key": "sparkSubmitTask", "type": "SparkSubmitTaskDto"},
+        "jar_libraries": {"key": "jarLibraries", "type": "[str]"},
+        "egg_libraries": {"key": "eggLibraries", "type": "[str]"},
+        "whl_libraries": {"key": "whlLibraries", "type": "[str]"},
+        "pypi_libraries": {
+            "key": "pypiLibraries",
+            "type": "[PythonPyPiOrRCranLibraryDto]",
+        },
+        "r_cran_libraries": {
+            "key": "rCranLibraries",
+            "type": "[PythonPyPiOrRCranLibraryDto]",
+        },
+        "maven_libraries": {"key": "mavenLibraries", "type": "[MavenLibraryDto]"},
+        "libraries": {"key": "libraries", "type": "[object]"},
+        "linked_adb_workspace_metadata": {
+            "key": "linkedADBWorkspaceMetadata",
+            "type": "LinkedADBWorkspaceMetadata",
+        },
+        "databrick_resource_id": {"key": "databrickResourceId", "type": "str"},
+        "auto_scale": {"key": "autoScale", "type": "bool"},
     }
 
     def __init__(
@@ -14084,13 +14802,13 @@ class DatacacheConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'datacache_id': {'key': 'datacacheId', 'type': 'str'},
-        'datacache_store': {'key': 'datacacheStore', 'type': 'str'},
-        'dataset_id': {'key': 'datasetId', 'type': 'str'},
-        'mode': {'key': 'mode', 'type': 'str'},
-        'replica': {'key': 'replica', 'type': 'int'},
-        'failure_fallback': {'key': 'failureFallback', 'type': 'bool'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
+        "datacache_id": {"key": "datacacheId", "type": "str"},
+        "datacache_store": {"key": "datacacheStore", "type": "str"},
+        "dataset_id": {"key": "datasetId", "type": "str"},
+        "mode": {"key": "mode", "type": "str"},
+        "replica": {"key": "replica", "type": "int"},
+        "failure_fallback": {"key": "failureFallback", "type": "bool"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
     }
 
     def __init__(
@@ -14211,41 +14929,41 @@ class DataInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'data_source_type': {'key': 'dataSourceType', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'data_type_id': {'key': 'dataTypeId', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'modified_date': {'key': 'modifiedDate', 'type': 'iso-8601'},
-        'registered_by': {'key': 'registeredBy', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'created_by_studio': {'key': 'createdByStudio', 'type': 'bool'},
-        'data_reference_type': {'key': 'dataReferenceType', 'type': 'str'},
-        'dataset_type': {'key': 'datasetType', 'type': 'str'},
-        'saved_dataset_id': {'key': 'savedDatasetId', 'type': 'str'},
-        'dataset_version_id': {'key': 'datasetVersionId', 'type': 'str'},
-        'is_visible': {'key': 'isVisible', 'type': 'bool'},
-        'is_registered': {'key': 'isRegistered', 'type': 'bool'},
-        'properties': {'key': 'properties', 'type': '{object}'},
-        'connection_string': {'key': 'connectionString', 'type': 'str'},
-        'container_name': {'key': 'containerName', 'type': 'str'},
-        'data_storage_endpoint_uri': {'key': 'dataStorageEndpointUri', 'type': 'str'},
-        'workspace_sai_token': {'key': 'workspaceSaiToken', 'type': 'str'},
-        'aml_dataset_data_flow': {'key': 'amlDatasetDataFlow', 'type': 'str'},
-        'system_data': {'key': 'systemData', 'type': 'SystemData'},
-        'arm_id': {'key': 'armId', 'type': 'str'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'asset_uri': {'key': 'assetUri', 'type': 'str'},
-        'asset_type': {'key': 'assetType', 'type': 'str'},
-        'is_data_v2': {'key': 'isDataV2', 'type': 'bool'},
-        'asset_scope_type': {'key': 'assetScopeType', 'type': 'str'},
-        'pipeline_run_id': {'key': 'pipelineRunId', 'type': 'str'},
-        'module_node_id': {'key': 'moduleNodeId', 'type': 'str'},
-        'output_port_name': {'key': 'outputPortName', 'type': 'str'},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "data_source_type": {"key": "dataSourceType", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "data_type_id": {"key": "dataTypeId", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "modified_date": {"key": "modifiedDate", "type": "iso-8601"},
+        "registered_by": {"key": "registeredBy", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "created_by_studio": {"key": "createdByStudio", "type": "bool"},
+        "data_reference_type": {"key": "dataReferenceType", "type": "str"},
+        "dataset_type": {"key": "datasetType", "type": "str"},
+        "saved_dataset_id": {"key": "savedDatasetId", "type": "str"},
+        "dataset_version_id": {"key": "datasetVersionId", "type": "str"},
+        "is_visible": {"key": "isVisible", "type": "bool"},
+        "is_registered": {"key": "isRegistered", "type": "bool"},
+        "properties": {"key": "properties", "type": "{object}"},
+        "connection_string": {"key": "connectionString", "type": "str"},
+        "container_name": {"key": "containerName", "type": "str"},
+        "data_storage_endpoint_uri": {"key": "dataStorageEndpointUri", "type": "str"},
+        "workspace_sai_token": {"key": "workspaceSaiToken", "type": "str"},
+        "aml_dataset_data_flow": {"key": "amlDatasetDataFlow", "type": "str"},
+        "system_data": {"key": "systemData", "type": "SystemData"},
+        "arm_id": {"key": "armId", "type": "str"},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "asset_uri": {"key": "assetUri", "type": "str"},
+        "asset_type": {"key": "assetType", "type": "str"},
+        "is_data_v2": {"key": "isDataV2", "type": "bool"},
+        "asset_scope_type": {"key": "assetScopeType", "type": "str"},
+        "pipeline_run_id": {"key": "pipelineRunId", "type": "str"},
+        "module_node_id": {"key": "moduleNodeId", "type": "str"},
+        "output_port_name": {"key": "outputPortName", "type": "str"},
     }
 
     def __init__(
@@ -14422,13 +15140,13 @@ class DataLocation(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'storage_type': {'key': 'storageType', 'type': 'str'},
-        'storage_id': {'key': 'storageId', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_reference': {'key': 'dataReference', 'type': 'DataReference'},
-        'aml_dataset': {'key': 'amlDataset', 'type': 'AmlDataset'},
-        'asset_definition': {'key': 'assetDefinition', 'type': 'AssetDefinition'},
+        "storage_type": {"key": "storageType", "type": "str"},
+        "storage_id": {"key": "storageId", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_reference": {"key": "dataReference", "type": "DataReference"},
+        "aml_dataset": {"key": "amlDataset", "type": "AmlDataset"},
+        "asset_definition": {"key": "assetDefinition", "type": "AssetDefinition"},
     }
 
     def __init__(
@@ -14482,9 +15200,9 @@ class DataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'sql_data_path': {'key': 'sqlDataPath', 'type': 'SqlDataPath'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "sql_data_path": {"key": "sqlDataPath", "type": "SqlDataPath"},
     }
 
     def __init__(
@@ -14525,11 +15243,11 @@ class DataPathParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'documentation': {'key': 'documentation', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'LegacyDataPath'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'data_type_id': {'key': 'dataTypeId', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "documentation": {"key": "documentation", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "LegacyDataPath"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "data_type_id": {"key": "dataTypeId", "type": "str"},
     }
 
     def __init__(
@@ -14580,11 +15298,17 @@ class DataPortDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_port_type': {'key': 'dataPortType', 'type': 'str'},
-        'data_port_name': {'key': 'dataPortName', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_intellectual_property_access_mode': {'key': 'dataStoreIntellectualPropertyAccessMode', 'type': 'str'},
-        'data_store_intellectual_property_publisher': {'key': 'dataStoreIntellectualPropertyPublisher', 'type': 'str'},
+        "data_port_type": {"key": "dataPortType", "type": "str"},
+        "data_port_name": {"key": "dataPortName", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_intellectual_property_access_mode": {
+            "key": "dataStoreIntellectualPropertyAccessMode",
+            "type": "str",
+        },
+        "data_store_intellectual_property_publisher": {
+            "key": "dataStoreIntellectualPropertyPublisher",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -14593,7 +15317,9 @@ class DataPortDto(msrest.serialization.Model):
         data_port_type: Optional[Union[str, "DataPortType"]] = None,
         data_port_name: Optional[str] = None,
         data_store_name: Optional[str] = None,
-        data_store_intellectual_property_access_mode: Optional[Union[str, "IntellectualPropertyAccessMode"]] = None,
+        data_store_intellectual_property_access_mode: Optional[
+            Union[str, "IntellectualPropertyAccessMode"]
+        ] = None,
         data_store_intellectual_property_publisher: Optional[str] = None,
         **kwargs
     ):
@@ -14615,8 +15341,12 @@ class DataPortDto(msrest.serialization.Model):
         self.data_port_type = data_port_type
         self.data_port_name = data_port_name
         self.data_store_name = data_store_name
-        self.data_store_intellectual_property_access_mode = data_store_intellectual_property_access_mode
-        self.data_store_intellectual_property_publisher = data_store_intellectual_property_publisher
+        self.data_store_intellectual_property_access_mode = (
+            data_store_intellectual_property_access_mode
+        )
+        self.data_store_intellectual_property_publisher = (
+            data_store_intellectual_property_publisher
+        )
 
 
 class DataReference(msrest.serialization.Model):
@@ -14649,17 +15379,38 @@ class DataReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'azure_blob_reference': {'key': 'azureBlobReference', 'type': 'AzureBlobReference'},
-        'azure_data_lake_reference': {'key': 'azureDataLakeReference', 'type': 'AzureDataLakeReference'},
-        'azure_files_reference': {'key': 'azureFilesReference', 'type': 'AzureFilesReference'},
-        'azure_sql_database_reference': {'key': 'azureSqlDatabaseReference', 'type': 'AzureDatabaseReference'},
-        'azure_postgres_database_reference': {'key': 'azurePostgresDatabaseReference', 'type': 'AzureDatabaseReference'},
-        'azure_data_lake_gen2_reference': {'key': 'azureDataLakeGen2Reference', 'type': 'AzureDataLakeGen2Reference'},
-        'dbfs_reference': {'key': 'dbfsReference', 'type': 'DBFSReference'},
-        'azure_my_sql_database_reference': {'key': 'azureMySqlDatabaseReference', 'type': 'AzureDatabaseReference'},
-        'custom_reference': {'key': 'customReference', 'type': 'CustomReference'},
-        'hdfs_reference': {'key': 'hdfsReference', 'type': 'HdfsReference'},
+        "type": {"key": "type", "type": "str"},
+        "azure_blob_reference": {
+            "key": "azureBlobReference",
+            "type": "AzureBlobReference",
+        },
+        "azure_data_lake_reference": {
+            "key": "azureDataLakeReference",
+            "type": "AzureDataLakeReference",
+        },
+        "azure_files_reference": {
+            "key": "azureFilesReference",
+            "type": "AzureFilesReference",
+        },
+        "azure_sql_database_reference": {
+            "key": "azureSqlDatabaseReference",
+            "type": "AzureDatabaseReference",
+        },
+        "azure_postgres_database_reference": {
+            "key": "azurePostgresDatabaseReference",
+            "type": "AzureDatabaseReference",
+        },
+        "azure_data_lake_gen2_reference": {
+            "key": "azureDataLakeGen2Reference",
+            "type": "AzureDataLakeGen2Reference",
+        },
+        "dbfs_reference": {"key": "dbfsReference", "type": "DBFSReference"},
+        "azure_my_sql_database_reference": {
+            "key": "azureMySqlDatabaseReference",
+            "type": "AzureDatabaseReference",
+        },
+        "custom_reference": {"key": "customReference", "type": "CustomReference"},
+        "hdfs_reference": {"key": "hdfsReference", "type": "HdfsReference"},
     }
 
     def __init__(
@@ -14734,11 +15485,11 @@ class DataReferenceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'mode': {'key': 'mode', 'type': 'str'},
-        'path_on_data_store': {'key': 'pathOnDataStore', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "mode": {"key": "mode", "type": "str"},
+        "path_on_data_store": {"key": "pathOnDataStore", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
     }
 
     def __init__(
@@ -14783,9 +15534,9 @@ class DataSetDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_type_short_name': {'key': 'dataTypeShortName', 'type': 'str'},
-        'parameter_name': {'key': 'parameterName', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'DataSetDefinitionValue'},
+        "data_type_short_name": {"key": "dataTypeShortName", "type": "str"},
+        "parameter_name": {"key": "parameterName", "type": "str"},
+        "value": {"key": "value", "type": "DataSetDefinitionValue"},
     }
 
     def __init__(
@@ -14824,10 +15575,16 @@ class DataSetDefinitionValue(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'literal_value': {'key': 'literalValue', 'type': 'DataPath'},
-        'data_set_reference': {'key': 'dataSetReference', 'type': 'RegisteredDataSetReference'},
-        'saved_data_set_reference': {'key': 'savedDataSetReference', 'type': 'SavedDataSetReference'},
-        'asset_definition': {'key': 'assetDefinition', 'type': 'AssetDefinition'},
+        "literal_value": {"key": "literalValue", "type": "DataPath"},
+        "data_set_reference": {
+            "key": "dataSetReference",
+            "type": "RegisteredDataSetReference",
+        },
+        "saved_data_set_reference": {
+            "key": "savedDataSetReference",
+            "type": "SavedDataSetReference",
+        },
+        "asset_definition": {"key": "assetDefinition", "type": "AssetDefinition"},
     }
 
     def __init__(
@@ -14868,9 +15625,9 @@ class DatasetIdentifier(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'saved_id': {'key': 'savedId', 'type': 'str'},
-        'registered_id': {'key': 'registeredId', 'type': 'str'},
-        'registered_version': {'key': 'registeredVersion', 'type': 'str'},
+        "saved_id": {"key": "savedId", "type": "str"},
+        "registered_id": {"key": "registeredId", "type": "str"},
+        "registered_version": {"key": "registeredVersion", "type": "str"},
     }
 
     def __init__(
@@ -14907,9 +15664,9 @@ class DatasetInputDetails(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'input_name': {'key': 'inputName', 'type': 'str'},
-        'mechanism': {'key': 'mechanism', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
+        "input_name": {"key": "inputName", "type": "str"},
+        "mechanism": {"key": "mechanism", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
     }
 
     def __init__(
@@ -14946,9 +15703,9 @@ class DatasetLineage(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier': {'key': 'identifier', 'type': 'DatasetIdentifier'},
-        'consumption_type': {'key': 'consumptionType', 'type': 'str'},
-        'input_details': {'key': 'inputDetails', 'type': 'DatasetInputDetails'},
+        "identifier": {"key": "identifier", "type": "DatasetIdentifier"},
+        "consumption_type": {"key": "consumptionType", "type": "str"},
+        "input_details": {"key": "inputDetails", "type": "DatasetInputDetails"},
     }
 
     def __init__(
@@ -14985,9 +15742,15 @@ class DatasetOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'dataset_type': {'key': 'datasetType', 'type': 'str'},
-        'dataset_registration': {'key': 'datasetRegistration', 'type': 'DatasetRegistration'},
-        'dataset_output_options': {'key': 'datasetOutputOptions', 'type': 'DatasetOutputOptions'},
+        "dataset_type": {"key": "datasetType", "type": "str"},
+        "dataset_registration": {
+            "key": "datasetRegistration",
+            "type": "DatasetRegistration",
+        },
+        "dataset_output_options": {
+            "key": "datasetOutputOptions",
+            "type": "DatasetOutputOptions",
+        },
     }
 
     def __init__(
@@ -15020,15 +15783,10 @@ class DatasetOutputDetails(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'output_name': {'key': 'outputName', 'type': 'str'},
+        "output_name": {"key": "outputName", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        output_name: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, output_name: Optional[str] = None, **kwargs):
         """
         :keyword output_name:
         :paramtype output_name: str
@@ -15049,9 +15807,12 @@ class DatasetOutputOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source_globs': {'key': 'sourceGlobs', 'type': 'GlobsOptions'},
-        'path_on_datastore': {'key': 'pathOnDatastore', 'type': 'str'},
-        'path_on_datastore_parameter_assignment': {'key': 'PathOnDatastoreParameterAssignment', 'type': 'ParameterAssignment'},
+        "source_globs": {"key": "sourceGlobs", "type": "GlobsOptions"},
+        "path_on_datastore": {"key": "pathOnDatastore", "type": "str"},
+        "path_on_datastore_parameter_assignment": {
+            "key": "PathOnDatastoreParameterAssignment",
+            "type": "ParameterAssignment",
+        },
     }
 
     def __init__(
@@ -15073,7 +15834,9 @@ class DatasetOutputOptions(msrest.serialization.Model):
         super(DatasetOutputOptions, self).__init__(**kwargs)
         self.source_globs = source_globs
         self.path_on_datastore = path_on_datastore
-        self.path_on_datastore_parameter_assignment = path_on_datastore_parameter_assignment
+        self.path_on_datastore_parameter_assignment = (
+            path_on_datastore_parameter_assignment
+        )
 
 
 class DataSetPathParameter(msrest.serialization.Model):
@@ -15090,10 +15853,10 @@ class DataSetPathParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'documentation': {'key': 'documentation', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'DataSetDefinitionValue'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "documentation": {"key": "documentation", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "DataSetDefinitionValue"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
     }
 
     def __init__(
@@ -15138,11 +15901,14 @@ class DatasetRegistration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'create_new_version': {'key': 'createNewVersion', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "create_new_version": {"key": "createNewVersion", "type": "bool"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -15183,15 +15949,10 @@ class DatasetRegistrationOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'additional_transformation': {'key': 'additionalTransformation', 'type': 'str'},
+        "additional_transformation": {"key": "additionalTransformation", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        additional_transformation: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, additional_transformation: Optional[str] = None, **kwargs):
         """
         :keyword additional_transformation:
         :paramtype additional_transformation: str
@@ -15216,11 +15977,11 @@ class DataSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'target_column_name': {'key': 'targetColumnName', 'type': 'str'},
-        'weight_column_name': {'key': 'weightColumnName', 'type': 'str'},
-        'positive_label': {'key': 'positiveLabel', 'type': 'str'},
-        'validation_data': {'key': 'validationData', 'type': 'ValidationDataSettings'},
-        'test_data': {'key': 'testData', 'type': 'TestDataSettings'},
+        "target_column_name": {"key": "targetColumnName", "type": "str"},
+        "weight_column_name": {"key": "weightColumnName", "type": "str"},
+        "positive_label": {"key": "positiveLabel", "type": "str"},
+        "validation_data": {"key": "validationData", "type": "ValidationDataSettings"},
+        "test_data": {"key": "testData", "type": "TestDataSettings"},
     }
 
     def __init__(
@@ -15261,15 +16022,10 @@ class DatastoreSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        data_store_name: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, data_store_name: Optional[str] = None, **kwargs):
         """
         :keyword data_store_name:
         :paramtype data_store_name: str
@@ -15286,15 +16042,10 @@ class DataTransferCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'allow_overwrite': {'key': 'AllowOverwrite', 'type': 'bool'},
+        "allow_overwrite": {"key": "AllowOverwrite", "type": "bool"},
     }
 
-    def __init__(
-        self,
-        *,
-        allow_overwrite: Optional[bool] = None,
-        **kwargs
-    ):
+    def __init__(self, *, allow_overwrite: Optional[bool] = None, **kwargs):
         """
         :keyword allow_overwrite:
         :paramtype allow_overwrite: bool
@@ -15315,9 +16066,9 @@ class DataTransferSink(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'file_system': {'key': 'fileSystem', 'type': 'FileSystem'},
-        'database_sink': {'key': 'databaseSink', 'type': 'DatabaseSink'},
+        "type": {"key": "type", "type": "str"},
+        "file_system": {"key": "fileSystem", "type": "FileSystem"},
+        "database_sink": {"key": "databaseSink", "type": "DatabaseSink"},
     }
 
     def __init__(
@@ -15354,9 +16105,9 @@ class DataTransferSource(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'file_system': {'key': 'fileSystem', 'type': 'FileSystem'},
-        'database_source': {'key': 'databaseSource', 'type': 'DatabaseSource'},
+        "type": {"key": "type", "type": "str"},
+        "file_system": {"key": "fileSystem", "type": "FileSystem"},
+        "database_source": {"key": "databaseSource", "type": "DatabaseSource"},
     }
 
     def __init__(
@@ -15403,14 +16154,20 @@ class DataTransferV2CloudSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'task_type': {'key': 'taskType', 'type': 'str'},
-        'compute_name': {'key': 'ComputeName', 'type': 'str'},
-        'copy_data_task': {'key': 'CopyDataTask', 'type': 'CopyDataTask'},
-        'import_data_task': {'key': 'ImportDataTask', 'type': 'ImportDataTask'},
-        'export_data_task': {'key': 'ExportDataTask', 'type': 'ExportDataTask'},
-        'data_transfer_sources': {'key': 'DataTransferSources', 'type': '{DataTransferSource}'},
-        'data_transfer_sinks': {'key': 'DataTransferSinks', 'type': '{DataTransferSink}'},
-        'data_copy_mode': {'key': 'DataCopyMode', 'type': 'str'},
+        "task_type": {"key": "taskType", "type": "str"},
+        "compute_name": {"key": "ComputeName", "type": "str"},
+        "copy_data_task": {"key": "CopyDataTask", "type": "CopyDataTask"},
+        "import_data_task": {"key": "ImportDataTask", "type": "ImportDataTask"},
+        "export_data_task": {"key": "ExportDataTask", "type": "ExportDataTask"},
+        "data_transfer_sources": {
+            "key": "DataTransferSources",
+            "type": "{DataTransferSource}",
+        },
+        "data_transfer_sinks": {
+            "key": "DataTransferSinks",
+            "type": "{DataTransferSink}",
+        },
+        "data_copy_mode": {"key": "DataCopyMode", "type": "str"},
     }
 
     def __init__(
@@ -15473,12 +16230,12 @@ class DataTypeCreationInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'is_directory': {'key': 'isDirectory', 'type': 'bool'},
-        'file_extension': {'key': 'fileExtension', 'type': 'str'},
-        'parent_data_type_ids': {'key': 'parentDataTypeIds', 'type': '[str]'},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "is_directory": {"key": "isDirectory", "type": "bool"},
+        "file_extension": {"key": "fileExtension", "type": "str"},
+        "parent_data_type_ids": {"key": "parentDataTypeIds", "type": "[str]"},
     }
 
     def __init__(
@@ -15525,8 +16282,8 @@ class DBFSReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
     }
 
     def __init__(
@@ -15555,15 +16312,10 @@ class DbfsStorageInfoDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'destination': {'key': 'destination', 'type': 'str'},
+        "destination": {"key": "destination", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        destination: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, destination: Optional[str] = None, **kwargs):
         """
         :keyword destination:
         :paramtype destination: str
@@ -15590,12 +16342,12 @@ class DebugInfoResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'message': {'key': 'message', 'type': 'str'},
-        'stack_trace': {'key': 'stackTrace', 'type': 'str'},
-        'inner_exception': {'key': 'innerException', 'type': 'DebugInfoResponse'},
-        'data': {'key': 'data', 'type': '{object}'},
-        'error_response': {'key': 'errorResponse', 'type': 'ErrorResponse'},
+        "type": {"key": "type", "type": "str"},
+        "message": {"key": "message", "type": "str"},
+        "stack_trace": {"key": "stackTrace", "type": "str"},
+        "inner_exception": {"key": "innerException", "type": "DebugInfoResponse"},
+        "data": {"key": "data", "type": "{object}"},
+        "error_response": {"key": "errorResponse", "type": "ErrorResponse"},
     }
 
     def __init__(
@@ -15676,25 +16428,37 @@ class DeployFlowRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source_resource_id': {'key': 'sourceResourceId', 'type': 'str'},
-        'source_flow_run_id': {'key': 'sourceFlowRunId', 'type': 'str'},
-        'source_flow_id': {'key': 'sourceFlowId', 'type': 'str'},
-        'flow': {'key': 'flow', 'type': 'Flow'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'flow_submit_run_settings': {'key': 'flowSubmitRunSettings', 'type': 'FlowSubmitRunSettings'},
-        'output_names_included_in_endpoint_response': {'key': 'outputNamesIncludedInEndpointResponse', 'type': '[str]'},
-        'endpoint_name': {'key': 'endpointName', 'type': 'str'},
-        'endpoint_description': {'key': 'endpointDescription', 'type': 'str'},
-        'auth_mode': {'key': 'authMode', 'type': 'str'},
-        'identity': {'key': 'identity', 'type': 'ManagedServiceIdentity'},
-        'endpoint_tags': {'key': 'endpointTags', 'type': '{str}'},
-        'connection_overrides': {'key': 'connectionOverrides', 'type': '[ConnectionOverrideSetting]'},
-        'deployment_name': {'key': 'deploymentName', 'type': 'str'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'use_workspace_connection': {'key': 'useWorkspaceConnection', 'type': 'bool'},
-        'enable_streaming_response': {'key': 'enableStreamingResponse', 'type': 'bool'},
-        'enable_model_data_collector': {'key': 'enableModelDataCollector', 'type': 'bool'},
+        "source_resource_id": {"key": "sourceResourceId", "type": "str"},
+        "source_flow_run_id": {"key": "sourceFlowRunId", "type": "str"},
+        "source_flow_id": {"key": "sourceFlowId", "type": "str"},
+        "flow": {"key": "flow", "type": "Flow"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "flow_submit_run_settings": {
+            "key": "flowSubmitRunSettings",
+            "type": "FlowSubmitRunSettings",
+        },
+        "output_names_included_in_endpoint_response": {
+            "key": "outputNamesIncludedInEndpointResponse",
+            "type": "[str]",
+        },
+        "endpoint_name": {"key": "endpointName", "type": "str"},
+        "endpoint_description": {"key": "endpointDescription", "type": "str"},
+        "auth_mode": {"key": "authMode", "type": "str"},
+        "identity": {"key": "identity", "type": "ManagedServiceIdentity"},
+        "endpoint_tags": {"key": "endpointTags", "type": "{str}"},
+        "connection_overrides": {
+            "key": "connectionOverrides",
+            "type": "[ConnectionOverrideSetting]",
+        },
+        "deployment_name": {"key": "deploymentName", "type": "str"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "use_workspace_connection": {"key": "useWorkspaceConnection", "type": "bool"},
+        "enable_streaming_response": {"key": "enableStreamingResponse", "type": "bool"},
+        "enable_model_data_collector": {
+            "key": "enableModelDataCollector",
+            "type": "bool",
+        },
     }
 
     def __init__(
@@ -15768,7 +16532,9 @@ class DeployFlowRequest(msrest.serialization.Model):
         self.flow = flow
         self.flow_type = flow_type
         self.flow_submit_run_settings = flow_submit_run_settings
-        self.output_names_included_in_endpoint_response = output_names_included_in_endpoint_response
+        self.output_names_included_in_endpoint_response = (
+            output_names_included_in_endpoint_response
+        )
         self.endpoint_name = endpoint_name
         self.endpoint_description = endpoint_description
         self.auth_mode = auth_mode
@@ -15797,10 +16563,10 @@ class DeploymentInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'operation_id': {'key': 'operationId', 'type': 'str'},
-        'service_id': {'key': 'serviceId', 'type': 'str'},
-        'service_name': {'key': 'serviceName', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
+        "operation_id": {"key": "operationId", "type": "str"},
+        "service_id": {"key": "serviceId", "type": "str"},
+        "service_name": {"key": "serviceName", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
     }
 
     def __init__(
@@ -15837,7 +16603,7 @@ class DistributionConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'distribution_type': {'key': 'distributionType', 'type': 'str'},
+        "distribution_type": {"key": "distributionType", "type": "str"},
     }
 
     def __init__(
@@ -15868,10 +16634,10 @@ class DistributionParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'input_type': {'key': 'inputType', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "input_type": {"key": "inputType", "type": "str"},
     }
 
     def __init__(
@@ -15912,9 +16678,9 @@ class DockerBuildContext(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'location_type': {'key': 'locationType', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
-        'dockerfile_path': {'key': 'dockerfilePath', 'type': 'str'},
+        "location_type": {"key": "locationType", "type": "str"},
+        "location": {"key": "location", "type": "str"},
+        "dockerfile_path": {"key": "dockerfilePath", "type": "str"},
     }
 
     def __init__(
@@ -15951,9 +16717,9 @@ class DockerConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'use_docker': {'key': 'useDocker', 'type': 'bool'},
-        'shared_volumes': {'key': 'sharedVolumes', 'type': 'bool'},
-        'arguments': {'key': 'arguments', 'type': '[str]'},
+        "use_docker": {"key": "useDocker", "type": "bool"},
+        "shared_volumes": {"key": "sharedVolumes", "type": "bool"},
+        "arguments": {"key": "arguments", "type": "[str]"},
     }
 
     def __init__(
@@ -15988,16 +16754,12 @@ class DockerImagePlatform(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'os': {'key': 'os', 'type': 'str'},
-        'architecture': {'key': 'architecture', 'type': 'str'},
+        "os": {"key": "os", "type": "str"},
+        "architecture": {"key": "architecture", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        os: Optional[str] = None,
-        architecture: Optional[str] = None,
-        **kwargs
+        self, *, os: Optional[str] = None, architecture: Optional[str] = None, **kwargs
     ):
         """
         :keyword os:
@@ -16026,11 +16788,14 @@ class DockerSection(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'base_image': {'key': 'baseImage', 'type': 'str'},
-        'platform': {'key': 'platform', 'type': 'DockerImagePlatform'},
-        'base_dockerfile': {'key': 'baseDockerfile', 'type': 'str'},
-        'build_context': {'key': 'buildContext', 'type': 'DockerBuildContext'},
-        'base_image_registry': {'key': 'baseImageRegistry', 'type': 'ContainerRegistry'},
+        "base_image": {"key": "baseImage", "type": "str"},
+        "platform": {"key": "platform", "type": "DockerImagePlatform"},
+        "base_dockerfile": {"key": "baseDockerfile", "type": "str"},
+        "build_context": {"key": "buildContext", "type": "DockerBuildContext"},
+        "base_image_registry": {
+            "key": "baseImageRegistry",
+            "type": "ContainerRegistry",
+        },
     }
 
     def __init__(
@@ -16077,10 +16842,10 @@ class DockerSettingConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'use_docker': {'key': 'useDocker', 'type': 'bool'},
-        'shared_volumes': {'key': 'sharedVolumes', 'type': 'bool'},
-        'shm_size': {'key': 'shmSize', 'type': 'str'},
-        'arguments': {'key': 'arguments', 'type': '[str]'},
+        "use_docker": {"key": "useDocker", "type": "bool"},
+        "shared_volumes": {"key": "sharedVolumes", "type": "bool"},
+        "shm_size": {"key": "shmSize", "type": "str"},
+        "arguments": {"key": "arguments", "type": "[str]"},
     }
 
     def __init__(
@@ -16122,15 +16887,20 @@ class DoWhileControlFlowInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'output_port_name_to_input_port_names_mapping': {'key': 'outputPortNameToInputPortNamesMapping', 'type': '{[str]}'},
-        'condition_output_port_name': {'key': 'conditionOutputPortName', 'type': 'str'},
-        'run_settings': {'key': 'runSettings', 'type': 'DoWhileControlFlowRunSettings'},
+        "output_port_name_to_input_port_names_mapping": {
+            "key": "outputPortNameToInputPortNamesMapping",
+            "type": "{[str]}",
+        },
+        "condition_output_port_name": {"key": "conditionOutputPortName", "type": "str"},
+        "run_settings": {"key": "runSettings", "type": "DoWhileControlFlowRunSettings"},
     }
 
     def __init__(
         self,
         *,
-        output_port_name_to_input_port_names_mapping: Optional[Dict[str, List[str]]] = None,
+        output_port_name_to_input_port_names_mapping: Optional[
+            Dict[str, List[str]]
+        ] = None,
         condition_output_port_name: Optional[str] = None,
         run_settings: Optional["DoWhileControlFlowRunSettings"] = None,
         **kwargs
@@ -16145,7 +16915,9 @@ class DoWhileControlFlowInfo(msrest.serialization.Model):
         :paramtype run_settings: ~flow.models.DoWhileControlFlowRunSettings
         """
         super(DoWhileControlFlowInfo, self).__init__(**kwargs)
-        self.output_port_name_to_input_port_names_mapping = output_port_name_to_input_port_names_mapping
+        self.output_port_name_to_input_port_names_mapping = (
+            output_port_name_to_input_port_names_mapping
+        )
         self.condition_output_port_name = condition_output_port_name
         self.run_settings = run_settings
 
@@ -16158,7 +16930,10 @@ class DoWhileControlFlowRunSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_loop_iteration_count': {'key': 'maxLoopIterationCount', 'type': 'ParameterAssignment'},
+        "max_loop_iteration_count": {
+            "key": "maxLoopIterationCount",
+            "type": "ParameterAssignment",
+        },
     }
 
     def __init__(
@@ -16185,8 +16960,8 @@ class DownloadResourceInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'download_url': {'key': 'downloadUrl', 'type': 'str'},
-        'size': {'key': 'size', 'type': 'long'},
+        "download_url": {"key": "downloadUrl", "type": "str"},
+        "size": {"key": "size", "type": "long"},
     }
 
     def __init__(
@@ -16233,16 +17008,16 @@ class EndpointSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'port': {'key': 'port', 'type': 'int'},
-        'ssl_thumbprint': {'key': 'sslThumbprint', 'type': 'str'},
-        'endpoint': {'key': 'endpoint', 'type': 'str'},
-        'proxy_endpoint': {'key': 'proxyEndpoint', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'error_message': {'key': 'errorMessage', 'type': 'str'},
-        'enabled': {'key': 'enabled', 'type': 'bool'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'nodes': {'key': 'nodes', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "port": {"key": "port", "type": "int"},
+        "ssl_thumbprint": {"key": "sslThumbprint", "type": "str"},
+        "endpoint": {"key": "endpoint", "type": "str"},
+        "proxy_endpoint": {"key": "proxyEndpoint", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "error_message": {"key": "errorMessage", "type": "str"},
+        "enabled": {"key": "enabled", "type": "bool"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "nodes": {"key": "nodes", "type": "str"},
     }
 
     def __init__(
@@ -16313,12 +17088,21 @@ class EntityInterface(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'parameters': {'key': 'parameters', 'type': '[Parameter]'},
-        'ports': {'key': 'ports', 'type': 'NodePortInterface'},
-        'metadata_parameters': {'key': 'metadataParameters', 'type': '[Parameter]'},
-        'data_path_parameters': {'key': 'dataPathParameters', 'type': '[DataPathParameter]'},
-        'data_path_parameter_list': {'key': 'dataPathParameterList', 'type': '[DataSetPathParameter]'},
-        'asset_output_settings_parameter_list': {'key': 'AssetOutputSettingsParameterList', 'type': '[AssetOutputSettingsParameter]'},
+        "parameters": {"key": "parameters", "type": "[Parameter]"},
+        "ports": {"key": "ports", "type": "NodePortInterface"},
+        "metadata_parameters": {"key": "metadataParameters", "type": "[Parameter]"},
+        "data_path_parameters": {
+            "key": "dataPathParameters",
+            "type": "[DataPathParameter]",
+        },
+        "data_path_parameter_list": {
+            "key": "dataPathParameterList",
+            "type": "[DataSetPathParameter]",
+        },
+        "asset_output_settings_parameter_list": {
+            "key": "AssetOutputSettingsParameterList",
+            "type": "[AssetOutputSettingsParameter]",
+        },
     }
 
     def __init__(
@@ -16329,7 +17113,9 @@ class EntityInterface(msrest.serialization.Model):
         metadata_parameters: Optional[List["Parameter"]] = None,
         data_path_parameters: Optional[List["DataPathParameter"]] = None,
         data_path_parameter_list: Optional[List["DataSetPathParameter"]] = None,
-        asset_output_settings_parameter_list: Optional[List["AssetOutputSettingsParameter"]] = None,
+        asset_output_settings_parameter_list: Optional[
+            List["AssetOutputSettingsParameter"]
+        ] = None,
         **kwargs
     ):
         """
@@ -16366,16 +17152,12 @@ class EntrySetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file': {'key': 'file', 'type': 'str'},
-        'class_name': {'key': 'className', 'type': 'str'},
+        "file": {"key": "file", "type": "str"},
+        "class_name": {"key": "className", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        file: Optional[str] = None,
-        class_name: Optional[str] = None,
-        **kwargs
+        self, *, file: Optional[str] = None, class_name: Optional[str] = None, **kwargs
     ):
         """
         :keyword file:
@@ -16396,15 +17178,10 @@ class EnumParameterRule(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'valid_values': {'key': 'validValues', 'type': '[str]'},
+        "valid_values": {"key": "validValues", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        valid_values: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, valid_values: Optional[List[str]] = None, **kwargs):
         """
         :keyword valid_values:
         :paramtype valid_values: list[str]
@@ -16427,10 +17204,16 @@ class EnvironmentConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'use_environment_definition': {'key': 'useEnvironmentDefinition', 'type': 'bool'},
-        'environment_definition_string': {'key': 'environmentDefinitionString', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "use_environment_definition": {
+            "key": "useEnvironmentDefinition",
+            "type": "bool",
+        },
+        "environment_definition_string": {
+            "key": "environmentDefinitionString",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -16485,16 +17268,16 @@ class EnvironmentDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'auto_rebuild': {'key': 'autoRebuild', 'type': 'bool'},
-        'python': {'key': 'python', 'type': 'PythonSection'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'docker': {'key': 'docker', 'type': 'DockerSection'},
-        'spark': {'key': 'spark', 'type': 'SparkSection'},
-        'r': {'key': 'r', 'type': 'RSection'},
-        'inferencing_stack_version': {'key': 'inferencingStackVersion', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "auto_rebuild": {"key": "autoRebuild", "type": "bool"},
+        "python": {"key": "python", "type": "PythonSection"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "docker": {"key": "docker", "type": "DockerSection"},
+        "spark": {"key": "spark", "type": "SparkSection"},
+        "r": {"key": "r", "type": "RSection"},
+        "inferencing_stack_version": {"key": "inferencingStackVersion", "type": "str"},
     }
 
     def __init__(
@@ -16559,9 +17342,12 @@ class EnvironmentDefinitionDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'environment_name': {'key': 'environmentName', 'type': 'str'},
-        'environment_version': {'key': 'environmentVersion', 'type': 'str'},
-        'intellectual_property_publisher': {'key': 'intellectualPropertyPublisher', 'type': 'str'},
+        "environment_name": {"key": "environmentName", "type": "str"},
+        "environment_version": {"key": "environmentVersion", "type": "str"},
+        "intellectual_property_publisher": {
+            "key": "intellectualPropertyPublisher",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -16604,12 +17390,12 @@ class EPRPipelineRunErrorClassificationRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'root_run_id': {'key': 'rootRunId', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'task_result': {'key': 'taskResult', 'type': 'str'},
-        'failure_type': {'key': 'failureType', 'type': 'str'},
-        'failure_name': {'key': 'failureName', 'type': 'str'},
-        'responsible_team': {'key': 'responsibleTeam', 'type': 'str'},
+        "root_run_id": {"key": "rootRunId", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "task_result": {"key": "taskResult", "type": "str"},
+        "failure_type": {"key": "failureType", "type": "str"},
+        "failure_name": {"key": "failureName", "type": "str"},
+        "responsible_team": {"key": "responsibleTeam", "type": "str"},
     }
 
     def __init__(
@@ -16656,16 +17442,12 @@ class ErrorAdditionalInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'info': {'key': 'info', 'type': 'object'},
+        "type": {"key": "type", "type": "str"},
+        "info": {"key": "info", "type": "object"},
     }
 
     def __init__(
-        self,
-        *,
-        type: Optional[str] = None,
-        info: Optional[Any] = None,
-        **kwargs
+        self, *, type: Optional[str] = None, info: Optional[Any] = None, **kwargs
     ):
         """
         :keyword type: The additional info type.
@@ -16696,12 +17478,12 @@ class ErrorResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'error': {'key': 'error', 'type': 'RootError'},
-        'correlation': {'key': 'correlation', 'type': '{str}'},
-        'environment': {'key': 'environment', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
-        'time': {'key': 'time', 'type': 'iso-8601'},
-        'component_name': {'key': 'componentName', 'type': 'str'},
+        "error": {"key": "error", "type": "RootError"},
+        "correlation": {"key": "correlation", "type": "{str}"},
+        "environment": {"key": "environment", "type": "str"},
+        "location": {"key": "location", "type": "str"},
+        "time": {"key": "time", "type": "iso-8601"},
+        "component_name": {"key": "componentName", "type": "str"},
     }
 
     def __init__(
@@ -16770,19 +17552,37 @@ class EsCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'enable_output_to_file_based_on_data_type_id': {'key': 'enableOutputToFileBasedOnDataTypeId', 'type': 'bool'},
-        'environment': {'key': 'environment', 'type': 'EnvironmentConfiguration'},
-        'hyper_drive_configuration': {'key': 'hyperDriveConfiguration', 'type': 'HyperDriveConfiguration'},
-        'k8_s_config': {'key': 'k8sConfig', 'type': 'K8SConfiguration'},
-        'resource_config': {'key': 'resourceConfig', 'type': 'AEVAResourceConfiguration'},
-        'torch_distributed_config': {'key': 'torchDistributedConfig', 'type': 'TorchDistributedConfiguration'},
-        'target_selector_config': {'key': 'targetSelectorConfig', 'type': 'TargetSelectorConfiguration'},
-        'docker_config': {'key': 'dockerConfig', 'type': 'DockerSettingConfiguration'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'max_run_duration_seconds': {'key': 'maxRunDurationSeconds', 'type': 'int'},
-        'identity': {'key': 'identity', 'type': 'IdentitySetting'},
-        'application_endpoints': {'key': 'applicationEndpoints', 'type': '{ApplicationEndpointConfiguration}'},
-        'run_config': {'key': 'runConfig', 'type': 'str'},
+        "enable_output_to_file_based_on_data_type_id": {
+            "key": "enableOutputToFileBasedOnDataTypeId",
+            "type": "bool",
+        },
+        "environment": {"key": "environment", "type": "EnvironmentConfiguration"},
+        "hyper_drive_configuration": {
+            "key": "hyperDriveConfiguration",
+            "type": "HyperDriveConfiguration",
+        },
+        "k8_s_config": {"key": "k8sConfig", "type": "K8SConfiguration"},
+        "resource_config": {
+            "key": "resourceConfig",
+            "type": "AEVAResourceConfiguration",
+        },
+        "torch_distributed_config": {
+            "key": "torchDistributedConfig",
+            "type": "TorchDistributedConfiguration",
+        },
+        "target_selector_config": {
+            "key": "targetSelectorConfig",
+            "type": "TargetSelectorConfiguration",
+        },
+        "docker_config": {"key": "dockerConfig", "type": "DockerSettingConfiguration"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "max_run_duration_seconds": {"key": "maxRunDurationSeconds", "type": "int"},
+        "identity": {"key": "identity", "type": "IdentitySetting"},
+        "application_endpoints": {
+            "key": "applicationEndpoints",
+            "type": "{ApplicationEndpointConfiguration}",
+        },
+        "run_config": {"key": "runConfig", "type": "str"},
     }
 
     def __init__(
@@ -16799,7 +17599,9 @@ class EsCloudConfiguration(msrest.serialization.Model):
         environment_variables: Optional[Dict[str, str]] = None,
         max_run_duration_seconds: Optional[int] = None,
         identity: Optional["IdentitySetting"] = None,
-        application_endpoints: Optional[Dict[str, "ApplicationEndpointConfiguration"]] = None,
+        application_endpoints: Optional[
+            Dict[str, "ApplicationEndpointConfiguration"]
+        ] = None,
         run_config: Optional[str] = None,
         **kwargs
     ):
@@ -16832,7 +17634,9 @@ class EsCloudConfiguration(msrest.serialization.Model):
         :paramtype run_config: str
         """
         super(EsCloudConfiguration, self).__init__(**kwargs)
-        self.enable_output_to_file_based_on_data_type_id = enable_output_to_file_based_on_data_type_id
+        self.enable_output_to_file_based_on_data_type_id = (
+            enable_output_to_file_based_on_data_type_id
+        )
         self.environment = environment
         self.hyper_drive_configuration = hyper_drive_configuration
         self.k8_s_config = k8_s_config
@@ -16869,14 +17673,17 @@ class EvaluationFlowRunSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_run_id': {'key': 'flowRunId', 'type': 'str'},
-        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
-        'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
-        'data_inputs': {'key': 'dataInputs', 'type': '{str}'},
-        'connection_overrides': {'key': 'connectionOverrides', 'type': '[ConnectionOverrideSetting]'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
+        "flow_run_id": {"key": "flowRunId", "type": "str"},
+        "flow_run_display_name": {"key": "flowRunDisplayName", "type": "str"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
+        "inputs_mapping": {"key": "inputsMapping", "type": "{str}"},
+        "data_inputs": {"key": "dataInputs", "type": "{str}"},
+        "connection_overrides": {
+            "key": "connectionOverrides",
+            "type": "[ConnectionOverrideSetting]",
+        },
+        "runtime_name": {"key": "runtimeName", "type": "str"},
+        "aml_compute_name": {"key": "amlComputeName", "type": "str"},
     }
 
     def __init__(
@@ -16931,8 +17738,8 @@ class ExampleRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'inputs': {'key': 'inputs', 'type': '{[[object]]}'},
-        'global_parameters': {'key': 'globalParameters', 'type': '{object}'},
+        "inputs": {"key": "inputs", "type": "{[[object]]}"},
+        "global_parameters": {"key": "globalParameters", "type": "{object}"},
     }
 
     def __init__(
@@ -16965,9 +17772,9 @@ class ExecutionContextDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'executable': {'key': 'executable', 'type': 'str'},
-        'user_code': {'key': 'userCode', 'type': 'str'},
-        'arguments': {'key': 'arguments', 'type': 'str'},
+        "executable": {"key": "executable", "type": "str"},
+        "user_code": {"key": "userCode", "type": "str"},
+        "arguments": {"key": "arguments", "type": "str"},
     }
 
     def __init__(
@@ -17006,10 +17813,10 @@ class ExecutionDataLocation(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'dataset': {'key': 'dataset', 'type': 'RunDatasetReference'},
-        'data_path': {'key': 'dataPath', 'type': 'ExecutionDataPath'},
-        'uri': {'key': 'uri', 'type': 'UriReference'},
-        'type': {'key': 'type', 'type': 'str'},
+        "dataset": {"key": "dataset", "type": "RunDatasetReference"},
+        "data_path": {"key": "dataPath", "type": "ExecutionDataPath"},
+        "uri": {"key": "uri", "type": "UriReference"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
@@ -17048,8 +17855,8 @@ class ExecutionDataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'datastore_name': {'key': 'datastoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "datastore_name": {"key": "datastoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -17078,15 +17885,10 @@ class ExecutionGlobsOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'glob_patterns': {'key': 'globPatterns', 'type': '[str]'},
+        "glob_patterns": {"key": "globPatterns", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        glob_patterns: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, glob_patterns: Optional[List[str]] = None, **kwargs):
         """
         :keyword glob_patterns:
         :paramtype glob_patterns: list[str]
@@ -17143,27 +17945,27 @@ class ExperimentComputeMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'current_node_count': {'key': 'currentNodeCount', 'type': 'int'},
-        'target_node_count': {'key': 'targetNodeCount', 'type': 'int'},
-        'max_node_count': {'key': 'maxNodeCount', 'type': 'int'},
-        'min_node_count': {'key': 'minNodeCount', 'type': 'int'},
-        'idle_node_count': {'key': 'idleNodeCount', 'type': 'int'},
-        'running_node_count': {'key': 'runningNodeCount', 'type': 'int'},
-        'preparing_node_count': {'key': 'preparingNodeCount', 'type': 'int'},
-        'unusable_node_count': {'key': 'unusableNodeCount', 'type': 'int'},
-        'leaving_node_count': {'key': 'leavingNodeCount', 'type': 'int'},
-        'preempted_node_count': {'key': 'preemptedNodeCount', 'type': 'int'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'state': {'key': 'state', 'type': 'str'},
-        'os_type': {'key': 'osType', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'created_by_studio': {'key': 'createdByStudio', 'type': 'bool'},
-        'is_gpu_type': {'key': 'isGpuType', 'type': 'bool'},
-        'resource_id': {'key': 'resourceId', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
+        "current_node_count": {"key": "currentNodeCount", "type": "int"},
+        "target_node_count": {"key": "targetNodeCount", "type": "int"},
+        "max_node_count": {"key": "maxNodeCount", "type": "int"},
+        "min_node_count": {"key": "minNodeCount", "type": "int"},
+        "idle_node_count": {"key": "idleNodeCount", "type": "int"},
+        "running_node_count": {"key": "runningNodeCount", "type": "int"},
+        "preparing_node_count": {"key": "preparingNodeCount", "type": "int"},
+        "unusable_node_count": {"key": "unusableNodeCount", "type": "int"},
+        "leaving_node_count": {"key": "leavingNodeCount", "type": "int"},
+        "preempted_node_count": {"key": "preemptedNodeCount", "type": "int"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "location": {"key": "location", "type": "str"},
+        "provisioning_state": {"key": "provisioningState", "type": "str"},
+        "state": {"key": "state", "type": "str"},
+        "os_type": {"key": "osType", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "created_by_studio": {"key": "createdByStudio", "type": "bool"},
+        "is_gpu_type": {"key": "isGpuType", "type": "bool"},
+        "resource_id": {"key": "resourceId", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
     }
 
     def __init__(
@@ -17270,8 +18072,8 @@ class ExperimentInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
     }
 
     def __init__(
@@ -17304,9 +18106,9 @@ class ExportComponentMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_entity': {'key': 'moduleEntity', 'type': 'ModuleEntity'},
-        'module_version': {'key': 'moduleVersion', 'type': 'str'},
-        'is_anonymous': {'key': 'isAnonymous', 'type': 'bool'},
+        "module_entity": {"key": "moduleEntity", "type": "ModuleEntity"},
+        "module_version": {"key": "moduleVersion", "type": "str"},
+        "is_anonymous": {"key": "isAnonymous", "type": "bool"},
     }
 
     def __init__(
@@ -17339,14 +18141,11 @@ class ExportDataTask(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_transfer_sink': {'key': 'DataTransferSink', 'type': 'DataTransferSink'},
+        "data_transfer_sink": {"key": "DataTransferSink", "type": "DataTransferSink"},
     }
 
     def __init__(
-        self,
-        *,
-        data_transfer_sink: Optional["DataTransferSink"] = None,
-        **kwargs
+        self, *, data_transfer_sink: Optional["DataTransferSink"] = None, **kwargs
     ):
         """
         :keyword data_transfer_sink:
@@ -17377,13 +18176,16 @@ class FeaturizationSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'blocked_transformers': {'key': 'blockedTransformers', 'type': '[str]'},
-        'column_purposes': {'key': 'columnPurposes', 'type': '{str}'},
-        'drop_columns': {'key': 'dropColumns', 'type': '[str]'},
-        'transformer_params': {'key': 'transformerParams', 'type': '{[ColumnTransformer]}'},
-        'dataset_language': {'key': 'datasetLanguage', 'type': 'str'},
-        'enable_dnn_featurization': {'key': 'enableDnnFeaturization', 'type': 'bool'},
+        "mode": {"key": "mode", "type": "str"},
+        "blocked_transformers": {"key": "blockedTransformers", "type": "[str]"},
+        "column_purposes": {"key": "columnPurposes", "type": "{str}"},
+        "drop_columns": {"key": "dropColumns", "type": "[str]"},
+        "transformer_params": {
+            "key": "transformerParams",
+            "type": "{[ColumnTransformer]}",
+        },
+        "dataset_language": {"key": "datasetLanguage", "type": "str"},
+        "enable_dnn_featurization": {"key": "enableDnnFeaturization", "type": "bool"},
     }
 
     def __init__(
@@ -17445,13 +18247,22 @@ class FeedDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'sharing_scopes': {'key': 'sharingScopes', 'type': '[SharingScope]'},
-        'supported_asset_types': {'key': 'supportedAssetTypes', 'type': 'FeedDtoSupportedAssetTypes'},
-        'regional_workspace_storage': {'key': 'regionalWorkspaceStorage', 'type': '{[str]}'},
-        'intellectual_property_publisher': {'key': 'intellectualPropertyPublisher', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "sharing_scopes": {"key": "sharingScopes", "type": "[SharingScope]"},
+        "supported_asset_types": {
+            "key": "supportedAssetTypes",
+            "type": "FeedDtoSupportedAssetTypes",
+        },
+        "regional_workspace_storage": {
+            "key": "regionalWorkspaceStorage",
+            "type": "{[str]}",
+        },
+        "intellectual_property_publisher": {
+            "key": "intellectualPropertyPublisher",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -17520,17 +18331,17 @@ class FeedDtoSupportedAssetTypes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component': {'key': 'Component', 'type': 'AssetTypeMetaInfo'},
-        'model': {'key': 'Model', 'type': 'AssetTypeMetaInfo'},
-        'environment': {'key': 'Environment', 'type': 'AssetTypeMetaInfo'},
-        'dataset': {'key': 'Dataset', 'type': 'AssetTypeMetaInfo'},
-        'data_store': {'key': 'DataStore', 'type': 'AssetTypeMetaInfo'},
-        'sample_graph': {'key': 'SampleGraph', 'type': 'AssetTypeMetaInfo'},
-        'flow_tool': {'key': 'FlowTool', 'type': 'AssetTypeMetaInfo'},
-        'flow_tool_setting': {'key': 'FlowToolSetting', 'type': 'AssetTypeMetaInfo'},
-        'flow_connection': {'key': 'FlowConnection', 'type': 'AssetTypeMetaInfo'},
-        'flow_sample': {'key': 'FlowSample', 'type': 'AssetTypeMetaInfo'},
-        'flow_runtime_spec': {'key': 'FlowRuntimeSpec', 'type': 'AssetTypeMetaInfo'},
+        "component": {"key": "Component", "type": "AssetTypeMetaInfo"},
+        "model": {"key": "Model", "type": "AssetTypeMetaInfo"},
+        "environment": {"key": "Environment", "type": "AssetTypeMetaInfo"},
+        "dataset": {"key": "Dataset", "type": "AssetTypeMetaInfo"},
+        "data_store": {"key": "DataStore", "type": "AssetTypeMetaInfo"},
+        "sample_graph": {"key": "SampleGraph", "type": "AssetTypeMetaInfo"},
+        "flow_tool": {"key": "FlowTool", "type": "AssetTypeMetaInfo"},
+        "flow_tool_setting": {"key": "FlowToolSetting", "type": "AssetTypeMetaInfo"},
+        "flow_connection": {"key": "FlowConnection", "type": "AssetTypeMetaInfo"},
+        "flow_sample": {"key": "FlowSample", "type": "AssetTypeMetaInfo"},
+        "flow_runtime_spec": {"key": "FlowRuntimeSpec", "type": "AssetTypeMetaInfo"},
     }
 
     def __init__(
@@ -17597,16 +18408,12 @@ class FileSystem(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection': {'key': 'connection', 'type': 'str'},
-        'path': {'key': 'path', 'type': 'str'},
+        "connection": {"key": "connection", "type": "str"},
+        "path": {"key": "path", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        connection: Optional[str] = None,
-        path: Optional[str] = None,
-        **kwargs
+        self, *, connection: Optional[str] = None, path: Optional[str] = None, **kwargs
     ):
         """
         :keyword connection:
@@ -17637,12 +18444,12 @@ class Flow(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source_resource_id': {'key': 'sourceResourceId', 'type': 'str'},
-        'flow_graph': {'key': 'flowGraph', 'type': 'FlowGraph'},
-        'node_variants': {'key': 'nodeVariants', 'type': '{NodeVariant}'},
-        'flow_graph_layout': {'key': 'flowGraphLayout', 'type': 'FlowGraphLayout'},
-        'bulk_test_data': {'key': 'bulkTestData', 'type': '{str}'},
-        'evaluation_flows': {'key': 'evaluationFlows', 'type': '{FlowGraphReference}'},
+        "source_resource_id": {"key": "sourceResourceId", "type": "str"},
+        "flow_graph": {"key": "flowGraph", "type": "FlowGraph"},
+        "node_variants": {"key": "nodeVariants", "type": "{NodeVariant}"},
+        "flow_graph_layout": {"key": "flowGraphLayout", "type": "FlowGraphLayout"},
+        "bulk_test_data": {"key": "bulkTestData", "type": "{str}"},
+        "evaluation_flows": {"key": "evaluationFlows", "type": "{FlowGraphReference}"},
     }
 
     def __init__(
@@ -17707,17 +18514,17 @@ class FlowAnnotations(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'archived': {'key': 'archived', 'type': 'bool'},
-        'tags': {'key': 'tags', 'type': '{str}'},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "owner": {"key": "owner", "type": "SchemaContractsCreatedBy"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "archived": {"key": "archived", "type": "bool"},
+        "tags": {"key": "tags", "type": "{str}"},
     }
 
     def __init__(
@@ -17808,20 +18615,20 @@ class FlowBaseDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_id': {'key': 'flowId', 'type': 'str'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
-        'flow_resource_id': {'key': 'flowResourceId', 'type': 'str'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        "flow_id": {"key": "flowId", "type": "str"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "owner": {"key": "owner", "type": "SchemaContractsCreatedBy"},
+        "flow_resource_id": {"key": "flowResourceId", "type": "str"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
     }
 
     def __init__(
@@ -17934,25 +18741,25 @@ class FlowDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'timestamp': {'key': 'timestamp', 'type': 'iso-8601'},
-        'e_tag': {'key': 'eTag', 'type': 'object'},
-        'flow': {'key': 'flow', 'type': 'Flow'},
-        'flow_run_settings': {'key': 'flowRunSettings', 'type': 'FlowRunSettings'},
-        'flow_run_result': {'key': 'flowRunResult', 'type': 'FlowRunResult'},
-        'flow_id': {'key': 'flowId', 'type': 'str'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
-        'flow_resource_id': {'key': 'flowResourceId', 'type': 'str'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        "timestamp": {"key": "timestamp", "type": "iso-8601"},
+        "e_tag": {"key": "eTag", "type": "object"},
+        "flow": {"key": "flow", "type": "Flow"},
+        "flow_run_settings": {"key": "flowRunSettings", "type": "FlowRunSettings"},
+        "flow_run_result": {"key": "flowRunResult", "type": "FlowRunResult"},
+        "flow_id": {"key": "flowId", "type": "str"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "owner": {"key": "owner", "type": "SchemaContractsCreatedBy"},
+        "flow_resource_id": {"key": "flowResourceId", "type": "str"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
     }
 
     def __init__(
@@ -18051,8 +18858,8 @@ class FlowEnvironment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'image': {'key': 'image', 'type': 'str'},
-        'python_requirements_txt': {'key': 'python_requirements_txt', 'type': 'str'},
+        "image": {"key": "image", "type": "str"},
+        "python_requirements_txt": {"key": "python_requirements_txt", "type": "str"},
     }
 
     def __init__(
@@ -18089,11 +18896,11 @@ class FlowGraph(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'nodes': {'key': 'nodes', 'type': '[Node]'},
-        'tools': {'key': 'tools', 'type': '[Tool]'},
-        'codes': {'key': 'codes', 'type': '{str}'},
-        'inputs': {'key': 'inputs', 'type': '{FlowInputDefinition}'},
-        'outputs': {'key': 'outputs', 'type': '{FlowOutputDefinition}'},
+        "nodes": {"key": "nodes", "type": "[Node]"},
+        "tools": {"key": "tools", "type": "[Tool]"},
+        "codes": {"key": "codes", "type": "{str}"},
+        "inputs": {"key": "inputs", "type": "{FlowInputDefinition}"},
+        "outputs": {"key": "outputs", "type": "{FlowOutputDefinition}"},
     }
 
     def __init__(
@@ -18140,10 +18947,10 @@ class FlowGraphAnnotationNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'content': {'key': 'content', 'type': 'str'},
-        'mentioned_node_names': {'key': 'mentionedNodeNames', 'type': '[str]'},
-        'structured_content': {'key': 'structuredContent', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "content": {"key": "content", "type": "str"},
+        "mentioned_node_names": {"key": "mentionedNodeNames", "type": "[str]"},
+        "structured_content": {"key": "structuredContent", "type": "str"},
     }
 
     def __init__(
@@ -18186,10 +18993,13 @@ class FlowGraphLayout(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_layouts': {'key': 'nodeLayouts', 'type': '{FlowNodeLayout}'},
-        'extended_data': {'key': 'extendedData', 'type': 'str'},
-        'annotation_nodes': {'key': 'annotationNodes', 'type': '[FlowGraphAnnotationNode]'},
-        'orientation': {'key': 'orientation', 'type': 'str'},
+        "node_layouts": {"key": "nodeLayouts", "type": "{FlowNodeLayout}"},
+        "extended_data": {"key": "extendedData", "type": "str"},
+        "annotation_nodes": {
+            "key": "annotationNodes",
+            "type": "[FlowGraphAnnotationNode]",
+        },
+        "orientation": {"key": "orientation", "type": "str"},
     }
 
     def __init__(
@@ -18228,8 +19038,8 @@ class FlowGraphReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_graph': {'key': 'flowGraph', 'type': 'FlowGraph'},
-        'reference_resource_id': {'key': 'referenceResourceId', 'type': 'str'},
+        "flow_graph": {"key": "flowGraph", "type": "FlowGraph"},
+        "reference_resource_id": {"key": "referenceResourceId", "type": "str"},
     }
 
     def __init__(
@@ -18286,27 +19096,27 @@ class FlowIndexEntity(msrest.serialization.Model):
     """
 
     _validation = {
-        'version': {'readonly': True},
-        'entity_container_id': {'readonly': True},
-        'entity_object_id': {'readonly': True},
-        'resource_type': {'readonly': True},
+        "version": {"readonly": True},
+        "entity_container_id": {"readonly": True},
+        "entity_object_id": {"readonly": True},
+        "resource_type": {"readonly": True},
     }
 
     _attribute_map = {
-        'schema_id': {'key': 'schemaId', 'type': 'str'},
-        'entity_id': {'key': 'entityId', 'type': 'str'},
-        'kind': {'key': 'kind', 'type': 'str'},
-        'annotations': {'key': 'annotations', 'type': 'FlowAnnotations'},
-        'properties': {'key': 'properties', 'type': 'FlowProperties'},
-        'internal': {'key': 'internal', 'type': 'object'},
-        'update_sequence': {'key': 'updateSequence', 'type': 'long'},
-        'type': {'key': 'type', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'entity_container_id': {'key': 'entityContainerId', 'type': 'str'},
-        'entity_object_id': {'key': 'entityObjectId', 'type': 'str'},
-        'resource_type': {'key': 'resourceType', 'type': 'str'},
-        'relationships': {'key': 'relationships', 'type': '[Relationship]'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
+        "schema_id": {"key": "schemaId", "type": "str"},
+        "entity_id": {"key": "entityId", "type": "str"},
+        "kind": {"key": "kind", "type": "str"},
+        "annotations": {"key": "annotations", "type": "FlowAnnotations"},
+        "properties": {"key": "properties", "type": "FlowProperties"},
+        "internal": {"key": "internal", "type": "object"},
+        "update_sequence": {"key": "updateSequence", "type": "long"},
+        "type": {"key": "type", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "entity_container_id": {"key": "entityContainerId", "type": "str"},
+        "entity_object_id": {"key": "entityObjectId", "type": "str"},
+        "resource_type": {"key": "resourceType", "type": "str"},
+        "relationships": {"key": "relationships", "type": "[Relationship]"},
+        "asset_id": {"key": "assetId", "type": "str"},
     }
 
     def __init__(
@@ -18384,11 +19194,11 @@ class FlowInputDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'default': {'key': 'default', 'type': 'object'},
-        'description': {'key': 'description', 'type': 'str'},
-        'is_chat_input': {'key': 'is_chat_input', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "default": {"key": "default", "type": "object"},
+        "description": {"key": "description", "type": "str"},
+        "is_chat_input": {"key": "is_chat_input", "type": "bool"},
     }
 
     def __init__(
@@ -18454,17 +19264,17 @@ class FlowNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'source': {'key': 'source', 'type': 'NodeSource'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{object}'},
-        'api': {'key': 'api', 'type': 'str'},
-        'provider': {'key': 'provider', 'type': 'str'},
-        'connection': {'key': 'connection', 'type': 'str'},
-        'module': {'key': 'module', 'type': 'str'},
-        'aggregation': {'key': 'aggregation', 'type': 'bool'},
-        'use_variants': {'key': 'use_variants', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "source": {"key": "source", "type": "NodeSource"},
+        "comment": {"key": "comment", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{object}"},
+        "api": {"key": "api", "type": "str"},
+        "provider": {"key": "provider", "type": "str"},
+        "connection": {"key": "connection", "type": "str"},
+        "module": {"key": "module", "type": "str"},
+        "aggregation": {"key": "aggregation", "type": "bool"},
+        "use_variants": {"key": "use_variants", "type": "bool"},
     }
 
     def __init__(
@@ -18539,12 +19349,12 @@ class FlowNodeLayout(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'x': {'key': 'x', 'type': 'float'},
-        'y': {'key': 'y', 'type': 'float'},
-        'width': {'key': 'width', 'type': 'float'},
-        'height': {'key': 'height', 'type': 'float'},
-        'index': {'key': 'index', 'type': 'int'},
-        'extended_data': {'key': 'extendedData', 'type': 'str'},
+        "x": {"key": "x", "type": "float"},
+        "y": {"key": "y", "type": "float"},
+        "width": {"key": "width", "type": "float"},
+        "height": {"key": "height", "type": "float"},
+        "index": {"key": "index", "type": "int"},
+        "extended_data": {"key": "extendedData", "type": "str"},
     }
 
     def __init__(
@@ -18591,8 +19401,8 @@ class FlowNodeVariant(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'default_variant_id': {'key': 'default_variant_id', 'type': 'str'},
-        'variants': {'key': 'variants', 'type': '{FlowVariantNode}'},
+        "default_variant_id": {"key": "default_variant_id", "type": "str"},
+        "variants": {"key": "variants", "type": "{FlowVariantNode}"},
     }
 
     def __init__(
@@ -18636,12 +19446,12 @@ class FlowOutputDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'reference': {'key': 'reference', 'type': 'str'},
-        'evaluation_only': {'key': 'evaluation_only', 'type': 'bool'},
-        'is_chat_output': {'key': 'is_chat_output', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "reference": {"key": "reference", "type": "str"},
+        "evaluation_only": {"key": "evaluation_only", "type": "bool"},
+        "is_chat_output": {"key": "is_chat_output", "type": "bool"},
     }
 
     def __init__(
@@ -18699,11 +19509,11 @@ class FlowProperties(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_id': {'key': 'flowId', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'creation_context': {'key': 'creationContext', 'type': 'CreationContext'},
+        "flow_id": {"key": "flowId", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "creation_context": {"key": "creationContext", "type": "CreationContext"},
     }
 
     def __init__(
@@ -18775,22 +19585,25 @@ class FlowRunInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_graph': {'key': 'flowGraph', 'type': 'FlowGraph'},
-        'flow_graph_layout': {'key': 'flowGraphLayout', 'type': 'FlowGraphLayout'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'flow_run_resource_id': {'key': 'flowRunResourceId', 'type': 'str'},
-        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
-        'batch_inputs': {'key': 'batchInputs', 'type': '[{object}]'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
-        'flow_run_type': {'key': 'flowRunType', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'bulk_test_id': {'key': 'bulkTestId', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'SchemaContractsCreatedBy'},
-        'created_on': {'key': 'createdOn', 'type': 'iso-8601'},
-        'working_directory': {'key': 'workingDirectory', 'type': 'str'},
-        'flow_dag_file_relative_path': {'key': 'flowDagFileRelativePath', 'type': 'str'},
-        'flow_snapshot_id': {'key': 'flowSnapshotId', 'type': 'str'},
+        "flow_graph": {"key": "flowGraph", "type": "FlowGraph"},
+        "flow_graph_layout": {"key": "flowGraphLayout", "type": "FlowGraphLayout"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "flow_run_resource_id": {"key": "flowRunResourceId", "type": "str"},
+        "flow_run_display_name": {"key": "flowRunDisplayName", "type": "str"},
+        "batch_inputs": {"key": "batchInputs", "type": "[{object}]"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
+        "flow_run_type": {"key": "flowRunType", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
+        "bulk_test_id": {"key": "bulkTestId", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "SchemaContractsCreatedBy"},
+        "created_on": {"key": "createdOn", "type": "iso-8601"},
+        "working_directory": {"key": "workingDirectory", "type": "str"},
+        "flow_dag_file_relative_path": {
+            "key": "flowDagFileRelativePath",
+            "type": "str",
+        },
+        "flow_snapshot_id": {"key": "flowSnapshotId", "type": "str"},
     }
 
     def __init__(
@@ -18913,24 +19726,24 @@ class FlowRunRecordBaseInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'status': {'key': 'status', 'type': 'str'},
-        'flow_id': {'key': 'flowId', 'type': 'str'},
-        'flow_run_id': {'key': 'flowRunId', 'type': 'str'},
-        'root_flow_run_id': {'key': 'rootFlowRunId', 'type': 'str'},
-        'parent_flow_run_id': {'key': 'parentFlowRunId', 'type': 'str'},
-        'source_flow_run_id': {'key': 'sourceFlowRunId', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'created_on': {'key': 'createdOn', 'type': 'iso-8601'},
-        'flow_run_resource_id': {'key': 'flowRunResourceId', 'type': 'str'},
-        'bulk_test_id': {'key': 'bulkTestId', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'SchemaContractsCreatedBy'},
-        'flow_run_type': {'key': 'flowRunType', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "status": {"key": "status", "type": "str"},
+        "flow_id": {"key": "flowId", "type": "str"},
+        "flow_run_id": {"key": "flowRunId", "type": "str"},
+        "root_flow_run_id": {"key": "rootFlowRunId", "type": "str"},
+        "parent_flow_run_id": {"key": "parentFlowRunId", "type": "str"},
+        "source_flow_run_id": {"key": "sourceFlowRunId", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "created_on": {"key": "createdOn", "type": "iso-8601"},
+        "flow_run_resource_id": {"key": "flowRunResourceId", "type": "str"},
+        "bulk_test_id": {"key": "bulkTestId", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "SchemaContractsCreatedBy"},
+        "flow_run_type": {"key": "flowRunType", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
     }
 
     def __init__(
@@ -19069,28 +19882,31 @@ class FlowRunResult(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_runs': {'key': 'flow_runs', 'type': '[object]'},
-        'node_runs': {'key': 'node_runs', 'type': '[object]'},
-        'error_response': {'key': 'errorResponse', 'type': 'ErrorResponse'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
-        'flow_run_id': {'key': 'flowRunId', 'type': 'str'},
-        'flow_graph': {'key': 'flowGraph', 'type': 'FlowGraph'},
-        'flow_graph_layout': {'key': 'flowGraphLayout', 'type': 'FlowGraphLayout'},
-        'flow_run_resource_id': {'key': 'flowRunResourceId', 'type': 'str'},
-        'bulk_test_id': {'key': 'bulkTestId', 'type': 'str'},
-        'batch_inputs': {'key': 'batchInputs', 'type': '[{object}]'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
-        'created_by': {'key': 'createdBy', 'type': 'SchemaContractsCreatedBy'},
-        'created_on': {'key': 'createdOn', 'type': 'iso-8601'},
-        'flow_run_type': {'key': 'flowRunType', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
-        'flow_run_logs': {'key': 'flowRunLogs', 'type': '{str}'},
-        'working_directory': {'key': 'workingDirectory', 'type': 'str'},
-        'flow_dag_file_relative_path': {'key': 'flowDagFileRelativePath', 'type': 'str'},
-        'flow_snapshot_id': {'key': 'flowSnapshotId', 'type': 'str'},
+        "flow_runs": {"key": "flow_runs", "type": "[object]"},
+        "node_runs": {"key": "node_runs", "type": "[object]"},
+        "error_response": {"key": "errorResponse", "type": "ErrorResponse"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "flow_run_display_name": {"key": "flowRunDisplayName", "type": "str"},
+        "flow_run_id": {"key": "flowRunId", "type": "str"},
+        "flow_graph": {"key": "flowGraph", "type": "FlowGraph"},
+        "flow_graph_layout": {"key": "flowGraphLayout", "type": "FlowGraphLayout"},
+        "flow_run_resource_id": {"key": "flowRunResourceId", "type": "str"},
+        "bulk_test_id": {"key": "bulkTestId", "type": "str"},
+        "batch_inputs": {"key": "batchInputs", "type": "[{object}]"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
+        "created_by": {"key": "createdBy", "type": "SchemaContractsCreatedBy"},
+        "created_on": {"key": "createdOn", "type": "iso-8601"},
+        "flow_run_type": {"key": "flowRunType", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
+        "aml_compute_name": {"key": "amlComputeName", "type": "str"},
+        "flow_run_logs": {"key": "flowRunLogs", "type": "{str}"},
+        "working_directory": {"key": "workingDirectory", "type": "str"},
+        "flow_dag_file_relative_path": {
+            "key": "flowDagFileRelativePath",
+            "type": "str",
+        },
+        "flow_snapshot_id": {"key": "flowSnapshotId", "type": "str"},
     }
 
     def __init__(
@@ -19243,28 +20059,34 @@ class FlowRunSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'run_mode': {'key': 'runMode', 'type': 'str'},
-        'batch_inputs': {'key': 'batch_inputs', 'type': '[{object}]'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
-        'tuning_node_names': {'key': 'tuningNodeNames', 'type': '[str]'},
-        'tuning_node_settings': {'key': 'tuningNodeSettings', 'type': '{TuningNodeSetting}'},
-        'baseline_variant_id': {'key': 'baselineVariantId', 'type': 'str'},
-        'default_variant_id': {'key': 'defaultVariantId', 'type': 'str'},
-        'variants': {'key': 'variants', 'type': '{[Node]}'},
-        'variants_tools': {'key': 'variantsTools', 'type': '[Tool]'},
-        'variants_codes': {'key': 'variantsCodes', 'type': '{str}'},
-        'node_name': {'key': 'nodeName', 'type': 'str'},
-        'bulk_test_id': {'key': 'bulkTestId', 'type': 'str'},
-        'evaluation_flow_run_settings': {'key': 'evaluationFlowRunSettings', 'type': '{EvaluationFlowRunSettings}'},
-        'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
-        'data_inputs': {'key': 'dataInputs', 'type': '{str}'},
-        'bulk_test_flow_id': {'key': 'bulkTestFlowId', 'type': 'str'},
-        'bulk_test_flow_run_ids': {'key': 'bulkTestFlowRunIds', 'type': '[str]'},
-        'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        "flow_run_display_name": {"key": "flowRunDisplayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "run_mode": {"key": "runMode", "type": "str"},
+        "batch_inputs": {"key": "batch_inputs", "type": "[{object}]"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
+        "tuning_node_names": {"key": "tuningNodeNames", "type": "[str]"},
+        "tuning_node_settings": {
+            "key": "tuningNodeSettings",
+            "type": "{TuningNodeSetting}",
+        },
+        "baseline_variant_id": {"key": "baselineVariantId", "type": "str"},
+        "default_variant_id": {"key": "defaultVariantId", "type": "str"},
+        "variants": {"key": "variants", "type": "{[Node]}"},
+        "variants_tools": {"key": "variantsTools", "type": "[Tool]"},
+        "variants_codes": {"key": "variantsCodes", "type": "{str}"},
+        "node_name": {"key": "nodeName", "type": "str"},
+        "bulk_test_id": {"key": "bulkTestId", "type": "str"},
+        "evaluation_flow_run_settings": {
+            "key": "evaluationFlowRunSettings",
+            "type": "{EvaluationFlowRunSettings}",
+        },
+        "inputs_mapping": {"key": "inputsMapping", "type": "{str}"},
+        "data_inputs": {"key": "dataInputs", "type": "{str}"},
+        "bulk_test_flow_id": {"key": "bulkTestFlowId", "type": "str"},
+        "bulk_test_flow_run_ids": {"key": "bulkTestFlowRunIds", "type": "[str]"},
+        "aml_compute_name": {"key": "amlComputeName", "type": "str"},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
     }
 
     def __init__(
@@ -19285,7 +20107,9 @@ class FlowRunSettings(msrest.serialization.Model):
         variants_codes: Optional[Dict[str, str]] = None,
         node_name: Optional[str] = None,
         bulk_test_id: Optional[str] = None,
-        evaluation_flow_run_settings: Optional[Dict[str, "EvaluationFlowRunSettings"]] = None,
+        evaluation_flow_run_settings: Optional[
+            Dict[str, "EvaluationFlowRunSettings"]
+        ] = None,
         inputs_mapping: Optional[Dict[str, str]] = None,
         data_inputs: Optional[Dict[str, str]] = None,
         bulk_test_flow_id: Optional[str] = None,
@@ -19423,31 +20247,31 @@ class FlowRuntimeDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'runtime_description': {'key': 'runtimeDescription', 'type': 'str'},
-        'runtime_type': {'key': 'runtimeType', 'type': 'str'},
-        'environment': {'key': 'environment', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'status_message': {'key': 'statusMessage', 'type': 'str'},
-        'error': {'key': 'error', 'type': 'ErrorResponse'},
-        'from_existing_endpoint': {'key': 'fromExistingEndpoint', 'type': 'bool'},
-        'endpoint_name': {'key': 'endpointName', 'type': 'str'},
-        'from_existing_deployment': {'key': 'fromExistingDeployment', 'type': 'bool'},
-        'deployment_name': {'key': 'deploymentName', 'type': 'str'},
-        'identity': {'key': 'identity', 'type': 'ManagedServiceIdentity'},
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
-        'compute_instance_name': {'key': 'computeInstanceName', 'type': 'str'},
-        'docker_image': {'key': 'dockerImage', 'type': 'str'},
-        'published_port': {'key': 'publishedPort', 'type': 'int'},
-        'target_port': {'key': 'targetPort', 'type': 'int'},
-        'from_existing_custom_app': {'key': 'fromExistingCustomApp', 'type': 'bool'},
-        'custom_app_name': {'key': 'customAppName', 'type': 'str'},
-        'assigned_to': {'key': 'assignedTo', 'type': 'AssignedUser'},
-        'endpoint_url': {'key': 'endpointUrl', 'type': 'str'},
-        'created_on': {'key': 'createdOn', 'type': 'iso-8601'},
-        'modified_on': {'key': 'modifiedOn', 'type': 'iso-8601'},
-        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
+        "runtime_description": {"key": "runtimeDescription", "type": "str"},
+        "runtime_type": {"key": "runtimeType", "type": "str"},
+        "environment": {"key": "environment", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "status_message": {"key": "statusMessage", "type": "str"},
+        "error": {"key": "error", "type": "ErrorResponse"},
+        "from_existing_endpoint": {"key": "fromExistingEndpoint", "type": "bool"},
+        "endpoint_name": {"key": "endpointName", "type": "str"},
+        "from_existing_deployment": {"key": "fromExistingDeployment", "type": "bool"},
+        "deployment_name": {"key": "deploymentName", "type": "str"},
+        "identity": {"key": "identity", "type": "ManagedServiceIdentity"},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
+        "compute_instance_name": {"key": "computeInstanceName", "type": "str"},
+        "docker_image": {"key": "dockerImage", "type": "str"},
+        "published_port": {"key": "publishedPort", "type": "int"},
+        "target_port": {"key": "targetPort", "type": "int"},
+        "from_existing_custom_app": {"key": "fromExistingCustomApp", "type": "bool"},
+        "custom_app_name": {"key": "customAppName", "type": "str"},
+        "assigned_to": {"key": "assignedTo", "type": "AssignedUser"},
+        "endpoint_url": {"key": "endpointUrl", "type": "str"},
+        "created_on": {"key": "createdOn", "type": "iso-8601"},
+        "modified_on": {"key": "modifiedOn", "type": "iso-8601"},
+        "owner": {"key": "owner", "type": "SchemaContractsCreatedBy"},
     }
 
     def __init__(
@@ -19595,20 +20419,20 @@ class FlowSampleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'sample_resource_id': {'key': 'sampleResourceId', 'type': 'str'},
-        'section': {'key': 'section', 'type': 'str'},
-        'index_number': {'key': 'indexNumber', 'type': 'int'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'details': {'key': 'details', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'flow': {'key': 'flow', 'type': 'Flow'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'flow_run_settings': {'key': 'flowRunSettings', 'type': 'FlowRunSettings'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        "sample_resource_id": {"key": "sampleResourceId", "type": "str"},
+        "section": {"key": "section", "type": "str"},
+        "index_number": {"key": "indexNumber", "type": "int"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "details": {"key": "details", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "flow": {"key": "flow", "type": "Flow"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "flow_run_settings": {"key": "flowRunSettings", "type": "FlowRunSettings"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
     }
 
     def __init__(
@@ -19693,11 +20517,11 @@ class FlowSnapshot(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'inputs': {'key': 'inputs', 'type': '{FlowInputDefinition}'},
-        'outputs': {'key': 'outputs', 'type': '{FlowOutputDefinition}'},
-        'nodes': {'key': 'nodes', 'type': '[FlowNode]'},
-        'node_variants': {'key': 'node_variants', 'type': '{FlowNodeVariant}'},
-        'environment': {'key': 'environment', 'type': 'FlowEnvironment'},
+        "inputs": {"key": "inputs", "type": "{FlowInputDefinition}"},
+        "outputs": {"key": "outputs", "type": "{FlowOutputDefinition}"},
+        "nodes": {"key": "nodes", "type": "[FlowNode]"},
+        "node_variants": {"key": "node_variants", "type": "{FlowNodeVariant}"},
+        "environment": {"key": "environment", "type": "FlowEnvironment"},
     }
 
     def __init__(
@@ -19783,29 +20607,35 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_inputs': {'key': 'nodeInputs', 'type': '{object}'},
-        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'run_mode': {'key': 'runMode', 'type': 'str'},
-        'batch_inputs': {'key': 'batch_inputs', 'type': '[{object}]'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
-        'tuning_node_names': {'key': 'tuningNodeNames', 'type': '[str]'},
-        'tuning_node_settings': {'key': 'tuningNodeSettings', 'type': '{TuningNodeSetting}'},
-        'baseline_variant_id': {'key': 'baselineVariantId', 'type': 'str'},
-        'default_variant_id': {'key': 'defaultVariantId', 'type': 'str'},
-        'variants': {'key': 'variants', 'type': '{[Node]}'},
-        'variants_tools': {'key': 'variantsTools', 'type': '[Tool]'},
-        'variants_codes': {'key': 'variantsCodes', 'type': '{str}'},
-        'node_name': {'key': 'nodeName', 'type': 'str'},
-        'bulk_test_id': {'key': 'bulkTestId', 'type': 'str'},
-        'evaluation_flow_run_settings': {'key': 'evaluationFlowRunSettings', 'type': '{EvaluationFlowRunSettings}'},
-        'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
-        'data_inputs': {'key': 'dataInputs', 'type': '{str}'},
-        'bulk_test_flow_id': {'key': 'bulkTestFlowId', 'type': 'str'},
-        'bulk_test_flow_run_ids': {'key': 'bulkTestFlowRunIds', 'type': '[str]'},
-        'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        "node_inputs": {"key": "nodeInputs", "type": "{object}"},
+        "flow_run_display_name": {"key": "flowRunDisplayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "run_mode": {"key": "runMode", "type": "str"},
+        "batch_inputs": {"key": "batch_inputs", "type": "[{object}]"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
+        "tuning_node_names": {"key": "tuningNodeNames", "type": "[str]"},
+        "tuning_node_settings": {
+            "key": "tuningNodeSettings",
+            "type": "{TuningNodeSetting}",
+        },
+        "baseline_variant_id": {"key": "baselineVariantId", "type": "str"},
+        "default_variant_id": {"key": "defaultVariantId", "type": "str"},
+        "variants": {"key": "variants", "type": "{[Node]}"},
+        "variants_tools": {"key": "variantsTools", "type": "[Tool]"},
+        "variants_codes": {"key": "variantsCodes", "type": "{str}"},
+        "node_name": {"key": "nodeName", "type": "str"},
+        "bulk_test_id": {"key": "bulkTestId", "type": "str"},
+        "evaluation_flow_run_settings": {
+            "key": "evaluationFlowRunSettings",
+            "type": "{EvaluationFlowRunSettings}",
+        },
+        "inputs_mapping": {"key": "inputsMapping", "type": "{str}"},
+        "data_inputs": {"key": "dataInputs", "type": "{str}"},
+        "bulk_test_flow_id": {"key": "bulkTestFlowId", "type": "str"},
+        "bulk_test_flow_run_ids": {"key": "bulkTestFlowRunIds", "type": "[str]"},
+        "aml_compute_name": {"key": "amlComputeName", "type": "str"},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
     }
 
     def __init__(
@@ -19827,7 +20657,9 @@ class FlowSubmitRunSettings(msrest.serialization.Model):
         variants_codes: Optional[Dict[str, str]] = None,
         node_name: Optional[str] = None,
         bulk_test_id: Optional[str] = None,
-        evaluation_flow_run_settings: Optional[Dict[str, "EvaluationFlowRunSettings"]] = None,
+        evaluation_flow_run_settings: Optional[
+            Dict[str, "EvaluationFlowRunSettings"]
+        ] = None,
         inputs_mapping: Optional[Dict[str, str]] = None,
         data_inputs: Optional[Dict[str, str]] = None,
         bulk_test_flow_id: Optional[str] = None,
@@ -19923,9 +20755,9 @@ class FlowToolsDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'package': {'key': 'package', 'type': '{Tool}'},
-        'code': {'key': 'code', 'type': '{Tool}'},
-        'errors': {'key': 'errors', 'type': '{ErrorResponse}'},
+        "package": {"key": "package", "type": "{Tool}"},
+        "code": {"key": "code", "type": "{Tool}"},
+        "errors": {"key": "errors", "type": "{ErrorResponse}"},
     }
 
     def __init__(
@@ -19970,13 +20802,13 @@ class FlowToolSettingParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': '[str]'},
-        'default': {'key': 'default', 'type': 'str'},
-        'advanced': {'key': 'advanced', 'type': 'bool'},
-        'enum': {'key': 'enum', 'type': '[str]'},
-        'model_list': {'key': 'model_list', 'type': '[str]'},
-        'text_box_size': {'key': 'text_box_size', 'type': 'int'},
-        'capabilities': {'key': 'capabilities', 'type': 'AzureOpenAIModelCapabilities'},
+        "type": {"key": "type", "type": "[str]"},
+        "default": {"key": "default", "type": "str"},
+        "advanced": {"key": "advanced", "type": "bool"},
+        "enum": {"key": "enum", "type": "[str]"},
+        "model_list": {"key": "model_list", "type": "[str]"},
+        "text_box_size": {"key": "text_box_size", "type": "int"},
+        "capabilities": {"key": "capabilities", "type": "AzureOpenAIModelCapabilities"},
     }
 
     def __init__(
@@ -20027,8 +20859,8 @@ class FlowVariantNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node': {'key': 'node', 'type': 'FlowNode'},
-        'description': {'key': 'description', 'type': 'str'},
+        "node": {"key": "node", "type": "FlowNode"},
+        "description": {"key": "description", "type": "str"},
     }
 
     def __init__(
@@ -20059,8 +20891,8 @@ class ForecastHorizon(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -20113,19 +20945,31 @@ class ForecastingSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'country_or_region_for_holidays': {'key': 'countryOrRegionForHolidays', 'type': 'str'},
-        'time_column_name': {'key': 'timeColumnName', 'type': 'str'},
-        'target_lags': {'key': 'targetLags', 'type': 'TargetLags'},
-        'target_rolling_window_size': {'key': 'targetRollingWindowSize', 'type': 'TargetRollingWindowSize'},
-        'forecast_horizon': {'key': 'forecastHorizon', 'type': 'ForecastHorizon'},
-        'time_series_id_column_names': {'key': 'timeSeriesIdColumnNames', 'type': '[str]'},
-        'frequency': {'key': 'frequency', 'type': 'str'},
-        'feature_lags': {'key': 'featureLags', 'type': 'str'},
-        'seasonality': {'key': 'seasonality', 'type': 'Seasonality'},
-        'short_series_handling_config': {'key': 'shortSeriesHandlingConfig', 'type': 'str'},
-        'use_stl': {'key': 'useStl', 'type': 'str'},
-        'target_aggregate_function': {'key': 'targetAggregateFunction', 'type': 'str'},
-        'cv_step_size': {'key': 'cvStepSize', 'type': 'int'},
+        "country_or_region_for_holidays": {
+            "key": "countryOrRegionForHolidays",
+            "type": "str",
+        },
+        "time_column_name": {"key": "timeColumnName", "type": "str"},
+        "target_lags": {"key": "targetLags", "type": "TargetLags"},
+        "target_rolling_window_size": {
+            "key": "targetRollingWindowSize",
+            "type": "TargetRollingWindowSize",
+        },
+        "forecast_horizon": {"key": "forecastHorizon", "type": "ForecastHorizon"},
+        "time_series_id_column_names": {
+            "key": "timeSeriesIdColumnNames",
+            "type": "[str]",
+        },
+        "frequency": {"key": "frequency", "type": "str"},
+        "feature_lags": {"key": "featureLags", "type": "str"},
+        "seasonality": {"key": "seasonality", "type": "Seasonality"},
+        "short_series_handling_config": {
+            "key": "shortSeriesHandlingConfig",
+            "type": "str",
+        },
+        "use_stl": {"key": "useStl", "type": "str"},
+        "target_aggregate_function": {"key": "targetAggregateFunction", "type": "str"},
+        "cv_step_size": {"key": "cvStepSize", "type": "int"},
     }
 
     def __init__(
@@ -20140,9 +20984,13 @@ class ForecastingSettings(msrest.serialization.Model):
         frequency: Optional[str] = None,
         feature_lags: Optional[str] = None,
         seasonality: Optional["Seasonality"] = None,
-        short_series_handling_config: Optional[Union[str, "ShortSeriesHandlingConfiguration"]] = None,
+        short_series_handling_config: Optional[
+            Union[str, "ShortSeriesHandlingConfiguration"]
+        ] = None,
         use_stl: Optional[Union[str, "UseStl"]] = None,
-        target_aggregate_function: Optional[Union[str, "TargetAggregationFunction"]] = None,
+        target_aggregate_function: Optional[
+            Union[str, "TargetAggregationFunction"]
+        ] = None,
         cv_step_size: Optional[int] = None,
         **kwargs
     ):
@@ -20209,9 +21057,9 @@ class GeneralSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'primary_metric': {'key': 'primaryMetric', 'type': 'str'},
-        'task_type': {'key': 'taskType', 'type': 'str'},
-        'log_verbosity': {'key': 'logVerbosity', 'type': 'str'},
+        "primary_metric": {"key": "primaryMetric", "type": "str"},
+        "task_type": {"key": "taskType", "type": "str"},
+        "log_verbosity": {"key": "logVerbosity", "type": "str"},
     }
 
     def __init__(
@@ -20289,24 +21137,36 @@ class GeneratePipelineComponentRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'module_scope': {'key': 'moduleScope', 'type': 'str'},
-        'is_deterministic': {'key': 'isDeterministic', 'type': 'bool'},
-        'category': {'key': 'category', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'set_as_default_version': {'key': 'setAsDefaultVersion', 'type': 'bool'},
-        'registry_name': {'key': 'registryName', 'type': 'str'},
-        'graph': {'key': 'graph', 'type': 'GraphDraftEntity'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'dataset_access_modes': {'key': 'datasetAccessModes', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "module_scope": {"key": "moduleScope", "type": "str"},
+        "is_deterministic": {"key": "isDeterministic", "type": "bool"},
+        "category": {"key": "category", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "set_as_default_version": {"key": "setAsDefaultVersion", "type": "bool"},
+        "registry_name": {"key": "registryName", "type": "str"},
+        "graph": {"key": "graph", "type": "GraphDraftEntity"},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "description": {"key": "description", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "dataset_access_modes": {"key": "datasetAccessModes", "type": "str"},
     }
 
     def __init__(
@@ -20323,7 +21183,9 @@ class GeneratePipelineComponentRequest(msrest.serialization.Model):
         graph: Optional["GraphDraftEntity"] = None,
         pipeline_run_settings: Optional[List["RunSettingParameterAssignment"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         tags: Optional[Dict[str, str]] = None,
         continue_run_on_step_failure: Optional[bool] = None,
         description: Optional[str] = None,
@@ -20405,8 +21267,8 @@ class GenerateToolMetaRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'tools': {'key': 'tools', 'type': '{ToolSourceMeta}'},
-        'working_dir': {'key': 'working_dir', 'type': 'str'},
+        "tools": {"key": "tools", "type": "{ToolSourceMeta}"},
+        "working_dir": {"key": "working_dir", "type": "str"},
     }
 
     def __init__(
@@ -20455,24 +21317,26 @@ class GlobalJobDispatcherConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'vm_size': {'key': 'vmSize', 'type': '[str]'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'region': {'key': 'region', 'type': '[str]'},
-        'my_resource_only': {'key': 'myResourceOnly', 'type': 'bool'},
-        'redispatch_allowed': {'key': 'redispatchAllowed', 'type': 'bool'},
-        'low_priority_vm_tolerant': {'key': 'lowPriorityVMTolerant', 'type': 'bool'},
-        'vc_list': {'key': 'vcList', 'type': '[str]'},
-        'plan_id': {'key': 'planId', 'type': 'str'},
-        'plan_region_id': {'key': 'planRegionId', 'type': 'str'},
-        'vc_block_list': {'key': 'vcBlockList', 'type': '[str]'},
-        'cluster_block_list': {'key': 'clusterBlockList', 'type': '[str]'},
+        "vm_size": {"key": "vmSize", "type": "[str]"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "region": {"key": "region", "type": "[str]"},
+        "my_resource_only": {"key": "myResourceOnly", "type": "bool"},
+        "redispatch_allowed": {"key": "redispatchAllowed", "type": "bool"},
+        "low_priority_vm_tolerant": {"key": "lowPriorityVMTolerant", "type": "bool"},
+        "vc_list": {"key": "vcList", "type": "[str]"},
+        "plan_id": {"key": "planId", "type": "str"},
+        "plan_region_id": {"key": "planRegionId", "type": "str"},
+        "vc_block_list": {"key": "vcBlockList", "type": "[str]"},
+        "cluster_block_list": {"key": "clusterBlockList", "type": "[str]"},
     }
 
     def __init__(
         self,
         *,
         vm_size: Optional[List[str]] = None,
-        compute_type: Optional[Union[str, "GlobalJobDispatcherSupportedComputeType"]] = None,
+        compute_type: Optional[
+            Union[str, "GlobalJobDispatcherSupportedComputeType"]
+        ] = None,
         region: Optional[List[str]] = None,
         my_resource_only: Optional[bool] = None,
         redispatch_allowed: Optional[bool] = None,
@@ -20530,15 +21394,10 @@ class GlobsOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'glob_patterns': {'key': 'globPatterns', 'type': '[str]'},
+        "glob_patterns": {"key": "globPatterns", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        glob_patterns: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, glob_patterns: Optional[List[str]] = None, **kwargs):
         """
         :keyword glob_patterns:
         :paramtype glob_patterns: list[str]
@@ -20561,10 +21420,10 @@ class GraphAnnotationNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'content': {'key': 'content', 'type': 'str'},
-        'mentioned_node_names': {'key': 'mentionedNodeNames', 'type': '[str]'},
-        'structured_content': {'key': 'structuredContent', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "content": {"key": "content", "type": "str"},
+        "mentioned_node_names": {"key": "mentionedNodeNames", "type": "[str]"},
+        "structured_content": {"key": "structuredContent", "type": "str"},
     }
 
     def __init__(
@@ -20608,10 +21467,10 @@ class GraphControlNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'control_type': {'key': 'controlType', 'type': 'str'},
-        'control_parameter': {'key': 'controlParameter', 'type': 'ParameterAssignment'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "control_type": {"key": "controlType", "type": "str"},
+        "control_parameter": {"key": "controlParameter", "type": "ParameterAssignment"},
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -20663,14 +21522,20 @@ class GraphControlReferenceNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'control_flow_type': {'key': 'controlFlowType', 'type': 'str'},
-        'reference_node_id': {'key': 'referenceNodeId', 'type': 'str'},
-        'do_while_control_flow_info': {'key': 'doWhileControlFlowInfo', 'type': 'DoWhileControlFlowInfo'},
-        'parallel_for_control_flow_info': {'key': 'parallelForControlFlowInfo', 'type': 'ParallelForControlFlowInfo'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "control_flow_type": {"key": "controlFlowType", "type": "str"},
+        "reference_node_id": {"key": "referenceNodeId", "type": "str"},
+        "do_while_control_flow_info": {
+            "key": "doWhileControlFlowInfo",
+            "type": "DoWhileControlFlowInfo",
+        },
+        "parallel_for_control_flow_info": {
+            "key": "parallelForControlFlowInfo",
+            "type": "ParallelForControlFlowInfo",
+        },
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -20729,10 +21594,13 @@ class GraphDatasetNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'dataset_id': {'key': 'datasetId', 'type': 'str'},
-        'data_path_parameter_name': {'key': 'dataPathParameterName', 'type': 'str'},
-        'data_set_definition': {'key': 'dataSetDefinition', 'type': 'DataSetDefinition'},
+        "id": {"key": "id", "type": "str"},
+        "dataset_id": {"key": "datasetId", "type": "str"},
+        "data_path_parameter_name": {"key": "dataPathParameterName", "type": "str"},
+        "data_set_definition": {
+            "key": "dataSetDefinition",
+            "type": "DataSetDefinition",
+        },
     }
 
     def __init__(
@@ -20805,25 +21673,34 @@ class GraphDraftEntity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_nodes': {'key': 'moduleNodes', 'type': '[GraphModuleNode]'},
-        'dataset_nodes': {'key': 'datasetNodes', 'type': '[GraphDatasetNode]'},
-        'sub_graph_nodes': {'key': 'subGraphNodes', 'type': '[GraphReferenceNode]'},
-        'control_reference_nodes': {'key': 'controlReferenceNodes', 'type': '[GraphControlReferenceNode]'},
-        'control_nodes': {'key': 'controlNodes', 'type': '[GraphControlNode]'},
-        'edges': {'key': 'edges', 'type': '[GraphEdge]'},
-        'entity_interface': {'key': 'entityInterface', 'type': 'EntityInterface'},
-        'graph_layout': {'key': 'graphLayout', 'type': 'GraphLayout'},
-        'created_by': {'key': 'createdBy', 'type': 'CreatedBy'},
-        'last_updated_by': {'key': 'lastUpdatedBy', 'type': 'CreatedBy'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'ComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'DatastoreSetting'},
-        'default_cloud_priority': {'key': 'defaultCloudPriority', 'type': 'CloudPrioritySetting'},
-        'extended_properties': {'key': 'extendedProperties', 'type': '{str}'},
-        'parent_sub_graph_module_ids': {'key': 'parentSubGraphModuleIds', 'type': '[str]'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "module_nodes": {"key": "moduleNodes", "type": "[GraphModuleNode]"},
+        "dataset_nodes": {"key": "datasetNodes", "type": "[GraphDatasetNode]"},
+        "sub_graph_nodes": {"key": "subGraphNodes", "type": "[GraphReferenceNode]"},
+        "control_reference_nodes": {
+            "key": "controlReferenceNodes",
+            "type": "[GraphControlReferenceNode]",
+        },
+        "control_nodes": {"key": "controlNodes", "type": "[GraphControlNode]"},
+        "edges": {"key": "edges", "type": "[GraphEdge]"},
+        "entity_interface": {"key": "entityInterface", "type": "EntityInterface"},
+        "graph_layout": {"key": "graphLayout", "type": "GraphLayout"},
+        "created_by": {"key": "createdBy", "type": "CreatedBy"},
+        "last_updated_by": {"key": "lastUpdatedBy", "type": "CreatedBy"},
+        "default_compute": {"key": "defaultCompute", "type": "ComputeSetting"},
+        "default_datastore": {"key": "defaultDatastore", "type": "DatastoreSetting"},
+        "default_cloud_priority": {
+            "key": "defaultCloudPriority",
+            "type": "CloudPrioritySetting",
+        },
+        "extended_properties": {"key": "extendedProperties", "type": "{str}"},
+        "parent_sub_graph_module_ids": {
+            "key": "parentSubGraphModuleIds",
+            "type": "[str]",
+        },
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -20922,8 +21799,8 @@ class GraphEdge(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source_output_port': {'key': 'sourceOutputPort', 'type': 'PortInfo'},
-        'destination_input_port': {'key': 'destinationInputPort', 'type': 'PortInfo'},
+        "source_output_port": {"key": "sourceOutputPort", "type": "PortInfo"},
+        "destination_input_port": {"key": "destinationInputPort", "type": "PortInfo"},
     }
 
     def __init__(
@@ -20964,13 +21841,13 @@ class GraphLayout(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_layouts': {'key': 'nodeLayouts', 'type': '{NodeLayout}'},
-        'extended_data': {'key': 'extendedData', 'type': 'str'},
-        'annotation_nodes': {'key': 'annotationNodes', 'type': '[GraphAnnotationNode]'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "node_layouts": {"key": "nodeLayouts", "type": "{NodeLayout}"},
+        "extended_data": {"key": "extendedData", "type": "str"},
+        "annotation_nodes": {"key": "annotationNodes", "type": "[GraphAnnotationNode]"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -21023,9 +21900,9 @@ class GraphLayoutCreationInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_layouts': {'key': 'nodeLayouts', 'type': '{NodeLayout}'},
-        'extended_data': {'key': 'extendedData', 'type': 'str'},
-        'annotation_nodes': {'key': 'annotationNodes', 'type': '[GraphAnnotationNode]'},
+        "node_layouts": {"key": "nodeLayouts", "type": "{NodeLayout}"},
+        "extended_data": {"key": "extendedData", "type": "str"},
+        "annotation_nodes": {"key": "annotationNodes", "type": "[GraphAnnotationNode]"},
     }
 
     def __init__(
@@ -21090,23 +21967,38 @@ class GraphModuleNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_type': {'key': 'moduleType', 'type': 'str'},
-        'runconfig': {'key': 'runconfig', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'module_id': {'key': 'moduleId', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'module_parameters': {'key': 'moduleParameters', 'type': '[ParameterAssignment]'},
-        'module_metadata_parameters': {'key': 'moduleMetadataParameters', 'type': '[ParameterAssignment]'},
-        'module_output_settings': {'key': 'moduleOutputSettings', 'type': '[OutputSetting]'},
-        'module_input_settings': {'key': 'moduleInputSettings', 'type': '[InputSetting]'},
-        'use_graph_default_compute': {'key': 'useGraphDefaultCompute', 'type': 'bool'},
-        'use_graph_default_datastore': {'key': 'useGraphDefaultDatastore', 'type': 'bool'},
-        'regenerate_output': {'key': 'regenerateOutput', 'type': 'bool'},
-        'control_inputs': {'key': 'controlInputs', 'type': '[ControlInput]'},
-        'cloud_settings': {'key': 'cloudSettings', 'type': 'CloudSettings'},
-        'execution_phase': {'key': 'executionPhase', 'type': 'str'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "module_type": {"key": "moduleType", "type": "str"},
+        "runconfig": {"key": "runconfig", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "module_id": {"key": "moduleId", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "module_parameters": {
+            "key": "moduleParameters",
+            "type": "[ParameterAssignment]",
+        },
+        "module_metadata_parameters": {
+            "key": "moduleMetadataParameters",
+            "type": "[ParameterAssignment]",
+        },
+        "module_output_settings": {
+            "key": "moduleOutputSettings",
+            "type": "[OutputSetting]",
+        },
+        "module_input_settings": {
+            "key": "moduleInputSettings",
+            "type": "[InputSetting]",
+        },
+        "use_graph_default_compute": {"key": "useGraphDefaultCompute", "type": "bool"},
+        "use_graph_default_datastore": {
+            "key": "useGraphDefaultDatastore",
+            "type": "bool",
+        },
+        "regenerate_output": {"key": "regenerateOutput", "type": "bool"},
+        "control_inputs": {"key": "controlInputs", "type": "[ControlInput]"},
+        "cloud_settings": {"key": "cloudSettings", "type": "CloudSettings"},
+        "execution_phase": {"key": "executionPhase", "type": "str"},
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -21202,10 +22094,13 @@ class GraphModuleNodeRunSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'module_id': {'key': 'moduleId', 'type': 'str'},
-        'step_type': {'key': 'stepType', 'type': 'str'},
-        'run_settings': {'key': 'runSettings', 'type': '[RunSettingParameterAssignment]'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "module_id": {"key": "moduleId", "type": "str"},
+        "step_type": {"key": "stepType", "type": "str"},
+        "run_settings": {
+            "key": "runSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
     }
 
     def __init__(
@@ -21246,9 +22141,12 @@ class GraphModuleNodeUIInputSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'module_id': {'key': 'moduleId', 'type': 'str'},
-        'module_input_settings': {'key': 'moduleInputSettings', 'type': '[UIInputSetting]'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "module_id": {"key": "moduleId", "type": "str"},
+        "module_input_settings": {
+            "key": "moduleInputSettings",
+            "type": "[UIInputSetting]",
+        },
     }
 
     def __init__(
@@ -21335,32 +22233,35 @@ class GraphNodeStatusInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'status': {'key': 'status', 'type': 'str'},
-        'run_status': {'key': 'runStatus', 'type': 'str'},
-        'is_bypassed': {'key': 'isBypassed', 'type': 'bool'},
-        'has_failed_child_run': {'key': 'hasFailedChildRun', 'type': 'bool'},
-        'partially_executed': {'key': 'partiallyExecuted', 'type': 'bool'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'aether_start_time': {'key': 'aetherStartTime', 'type': 'iso-8601'},
-        'aether_end_time': {'key': 'aetherEndTime', 'type': 'iso-8601'},
-        'aether_creation_time': {'key': 'aetherCreationTime', 'type': 'iso-8601'},
-        'run_history_start_time': {'key': 'runHistoryStartTime', 'type': 'iso-8601'},
-        'run_history_end_time': {'key': 'runHistoryEndTime', 'type': 'iso-8601'},
-        'run_history_creation_time': {'key': 'runHistoryCreationTime', 'type': 'iso-8601'},
-        'reuse_info': {'key': 'reuseInfo', 'type': 'TaskReuseInfo'},
-        'control_flow_info': {'key': 'controlFlowInfo', 'type': 'TaskControlFlowInfo'},
-        'status_code': {'key': 'statusCode', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'creation_time': {'key': 'creationTime', 'type': 'iso-8601'},
-        'schedule_time': {'key': 'scheduleTime', 'type': 'iso-8601'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'request_id': {'key': 'requestId', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'data_container_id': {'key': 'dataContainerId', 'type': 'str'},
-        'real_time_log_path': {'key': 'realTimeLogPath', 'type': 'str'},
-        'has_warnings': {'key': 'hasWarnings', 'type': 'bool'},
-        'composite_node_id': {'key': 'compositeNodeId', 'type': 'str'},
+        "status": {"key": "status", "type": "str"},
+        "run_status": {"key": "runStatus", "type": "str"},
+        "is_bypassed": {"key": "isBypassed", "type": "bool"},
+        "has_failed_child_run": {"key": "hasFailedChildRun", "type": "bool"},
+        "partially_executed": {"key": "partiallyExecuted", "type": "bool"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "aether_start_time": {"key": "aetherStartTime", "type": "iso-8601"},
+        "aether_end_time": {"key": "aetherEndTime", "type": "iso-8601"},
+        "aether_creation_time": {"key": "aetherCreationTime", "type": "iso-8601"},
+        "run_history_start_time": {"key": "runHistoryStartTime", "type": "iso-8601"},
+        "run_history_end_time": {"key": "runHistoryEndTime", "type": "iso-8601"},
+        "run_history_creation_time": {
+            "key": "runHistoryCreationTime",
+            "type": "iso-8601",
+        },
+        "reuse_info": {"key": "reuseInfo", "type": "TaskReuseInfo"},
+        "control_flow_info": {"key": "controlFlowInfo", "type": "TaskControlFlowInfo"},
+        "status_code": {"key": "statusCode", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "creation_time": {"key": "creationTime", "type": "iso-8601"},
+        "schedule_time": {"key": "scheduleTime", "type": "iso-8601"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "request_id": {"key": "requestId", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "data_container_id": {"key": "dataContainerId", "type": "str"},
+        "real_time_log_path": {"key": "realTimeLogPath", "type": "str"},
+        "has_warnings": {"key": "hasWarnings", "type": "bool"},
+        "composite_node_id": {"key": "compositeNodeId", "type": "str"},
     }
 
     def __init__(
@@ -21523,24 +22424,39 @@ class GraphReferenceNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'ComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'DatastoreSetting'},
-        'id': {'key': 'id', 'type': 'str'},
-        'module_id': {'key': 'moduleId', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'module_parameters': {'key': 'moduleParameters', 'type': '[ParameterAssignment]'},
-        'module_metadata_parameters': {'key': 'moduleMetadataParameters', 'type': '[ParameterAssignment]'},
-        'module_output_settings': {'key': 'moduleOutputSettings', 'type': '[OutputSetting]'},
-        'module_input_settings': {'key': 'moduleInputSettings', 'type': '[InputSetting]'},
-        'use_graph_default_compute': {'key': 'useGraphDefaultCompute', 'type': 'bool'},
-        'use_graph_default_datastore': {'key': 'useGraphDefaultDatastore', 'type': 'bool'},
-        'regenerate_output': {'key': 'regenerateOutput', 'type': 'bool'},
-        'control_inputs': {'key': 'controlInputs', 'type': '[ControlInput]'},
-        'cloud_settings': {'key': 'cloudSettings', 'type': 'CloudSettings'},
-        'execution_phase': {'key': 'executionPhase', 'type': 'str'},
-        'run_attribution': {'key': 'runAttribution', 'type': 'str'},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "default_compute": {"key": "defaultCompute", "type": "ComputeSetting"},
+        "default_datastore": {"key": "defaultDatastore", "type": "DatastoreSetting"},
+        "id": {"key": "id", "type": "str"},
+        "module_id": {"key": "moduleId", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "module_parameters": {
+            "key": "moduleParameters",
+            "type": "[ParameterAssignment]",
+        },
+        "module_metadata_parameters": {
+            "key": "moduleMetadataParameters",
+            "type": "[ParameterAssignment]",
+        },
+        "module_output_settings": {
+            "key": "moduleOutputSettings",
+            "type": "[OutputSetting]",
+        },
+        "module_input_settings": {
+            "key": "moduleInputSettings",
+            "type": "[InputSetting]",
+        },
+        "use_graph_default_compute": {"key": "useGraphDefaultCompute", "type": "bool"},
+        "use_graph_default_datastore": {
+            "key": "useGraphDefaultDatastore",
+            "type": "bool",
+        },
+        "regenerate_output": {"key": "regenerateOutput", "type": "bool"},
+        "control_inputs": {"key": "controlInputs", "type": "[ControlInput]"},
+        "cloud_settings": {"key": "cloudSettings", "type": "CloudSettings"},
+        "execution_phase": {"key": "executionPhase", "type": "str"},
+        "run_attribution": {"key": "runAttribution", "type": "str"},
     }
 
     def __init__(
@@ -21636,8 +22552,8 @@ class HdfsReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -21672,10 +22588,10 @@ class HdiClusterComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'address': {'key': 'address', 'type': 'str'},
-        'username': {'key': 'username', 'type': 'str'},
-        'password': {'key': 'password', 'type': 'str'},
-        'private_key': {'key': 'privateKey', 'type': 'str'},
+        "address": {"key": "address", "type": "str"},
+        "username": {"key": "username", "type": "str"},
+        "password": {"key": "password", "type": "str"},
+        "private_key": {"key": "privateKey", "type": "str"},
     }
 
     def __init__(
@@ -21712,7 +22628,7 @@ class HdiConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'yarn_deploy_mode': {'key': 'yarnDeployMode', 'type': 'str'},
+        "yarn_deploy_mode": {"key": "yarnDeployMode", "type": "str"},
     }
 
     def __init__(
@@ -21765,21 +22681,21 @@ class HdiRunConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file': {'key': 'file', 'type': 'str'},
-        'class_name': {'key': 'className', 'type': 'str'},
-        'files': {'key': 'files', 'type': '[str]'},
-        'archives': {'key': 'archives', 'type': '[str]'},
-        'jars': {'key': 'jars', 'type': '[str]'},
-        'py_files': {'key': 'pyFiles', 'type': '[str]'},
-        'compute_name': {'key': 'computeName', 'type': 'str'},
-        'queue': {'key': 'queue', 'type': 'str'},
-        'driver_memory': {'key': 'driverMemory', 'type': 'str'},
-        'driver_cores': {'key': 'driverCores', 'type': 'int'},
-        'executor_memory': {'key': 'executorMemory', 'type': 'str'},
-        'executor_cores': {'key': 'executorCores', 'type': 'int'},
-        'number_executors': {'key': 'numberExecutors', 'type': 'int'},
-        'conf': {'key': 'conf', 'type': '{str}'},
-        'name': {'key': 'name', 'type': 'str'},
+        "file": {"key": "file", "type": "str"},
+        "class_name": {"key": "className", "type": "str"},
+        "files": {"key": "files", "type": "[str]"},
+        "archives": {"key": "archives", "type": "[str]"},
+        "jars": {"key": "jars", "type": "[str]"},
+        "py_files": {"key": "pyFiles", "type": "[str]"},
+        "compute_name": {"key": "computeName", "type": "str"},
+        "queue": {"key": "queue", "type": "str"},
+        "driver_memory": {"key": "driverMemory", "type": "str"},
+        "driver_cores": {"key": "driverCores", "type": "int"},
+        "executor_memory": {"key": "executorMemory", "type": "str"},
+        "executor_cores": {"key": "executorCores", "type": "int"},
+        "number_executors": {"key": "numberExecutors", "type": "int"},
+        "conf": {"key": "conf", "type": "{str}"},
+        "name": {"key": "name", "type": "str"},
     }
 
     def __init__(
@@ -21864,16 +22780,16 @@ class HistoryConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'output_collection': {'key': 'outputCollection', 'type': 'bool'},
-        'directories_to_watch': {'key': 'directoriesToWatch', 'type': '[str]'},
-        'enable_m_lflow_tracking': {'key': 'enableMLflowTracking', 'type': 'bool'},
+        "output_collection": {"key": "outputCollection", "type": "bool"},
+        "directories_to_watch": {"key": "directoriesToWatch", "type": "[str]"},
+        "enable_m_lflow_tracking": {"key": "enableMLflowTracking", "type": "bool"},
     }
 
     def __init__(
         self,
         *,
         output_collection: Optional[bool] = True,
-        directories_to_watch: Optional[List[str]] = ['logs'],
+        directories_to_watch: Optional[List[str]] = ["logs"],
         enable_m_lflow_tracking: Optional[bool] = True,
         **kwargs
     ):
@@ -21905,10 +22821,10 @@ class HyperDriveConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'hyper_drive_run_config': {'key': 'hyperDriveRunConfig', 'type': 'str'},
-        'primary_metric_goal': {'key': 'primaryMetricGoal', 'type': 'str'},
-        'primary_metric_name': {'key': 'primaryMetricName', 'type': 'str'},
-        'arguments': {'key': 'arguments', 'type': '[ArgumentAssignment]'},
+        "hyper_drive_run_config": {"key": "hyperDriveRunConfig", "type": "str"},
+        "primary_metric_goal": {"key": "primaryMetricGoal", "type": "str"},
+        "primary_metric_name": {"key": "primaryMetricName", "type": "str"},
+        "arguments": {"key": "arguments", "type": "[ArgumentAssignment]"},
     }
 
     def __init__(
@@ -21949,9 +22865,9 @@ class ICheckableLongRunningOperationResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'completion_result': {'key': 'completionResult', 'type': 'object'},
-        'location': {'key': 'location', 'type': 'str'},
-        'operation_result': {'key': 'operationResult', 'type': 'str'},
+        "completion_result": {"key": "completionResult", "type": "object"},
+        "location": {"key": "location", "type": "str"},
+        "operation_result": {"key": "operationResult", "type": "str"},
     }
 
     def __init__(
@@ -21988,9 +22904,9 @@ class IdentityConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'secret': {'key': 'secret', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "secret": {"key": "secret", "type": "str"},
     }
 
     def __init__(
@@ -22029,10 +22945,10 @@ class IdentitySetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'client_id': {'key': 'clientId', 'type': 'str'},
-        'object_id': {'key': 'objectId', 'type': 'str'},
-        'msi_resource_id': {'key': 'msiResourceId', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "client_id": {"key": "clientId", "type": "str"},
+        "object_id": {"key": "objectId", "type": "str"},
+        "msi_resource_id": {"key": "msiResourceId", "type": "str"},
     }
 
     def __init__(
@@ -22069,14 +22985,14 @@ class ImportDataTask(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_transfer_source': {'key': 'DataTransferSource', 'type': 'DataTransferSource'},
+        "data_transfer_source": {
+            "key": "DataTransferSource",
+            "type": "DataTransferSource",
+        },
     }
 
     def __init__(
-        self,
-        *,
-        data_transfer_source: Optional["DataTransferSource"] = None,
-        **kwargs
+        self, *, data_transfer_source: Optional["DataTransferSource"] = None, **kwargs
     ):
         """
         :keyword data_transfer_source:
@@ -22108,14 +23024,14 @@ class IndexedErrorResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'code': {'key': 'code', 'type': 'str'},
-        'error_code_hierarchy': {'key': 'errorCodeHierarchy', 'type': 'str'},
-        'message': {'key': 'message', 'type': 'str'},
-        'time': {'key': 'time', 'type': 'iso-8601'},
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'severity': {'key': 'severity', 'type': 'int'},
-        'details_uri': {'key': 'detailsUri', 'type': 'str'},
-        'reference_code': {'key': 'referenceCode', 'type': 'str'},
+        "code": {"key": "code", "type": "str"},
+        "error_code_hierarchy": {"key": "errorCodeHierarchy", "type": "str"},
+        "message": {"key": "message", "type": "str"},
+        "time": {"key": "time", "type": "iso-8601"},
+        "component_name": {"key": "componentName", "type": "str"},
+        "severity": {"key": "severity", "type": "int"},
+        "details_uri": {"key": "detailsUri", "type": "str"},
+        "reference_code": {"key": "referenceCode", "type": "str"},
     }
 
     def __init__(
@@ -22168,15 +23084,10 @@ class InitScriptInfoDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'dbfs': {'key': 'dbfs', 'type': 'DbfsStorageInfoDto'},
+        "dbfs": {"key": "dbfs", "type": "DbfsStorageInfoDto"},
     }
 
-    def __init__(
-        self,
-        *,
-        dbfs: Optional["DbfsStorageInfoDto"] = None,
-        **kwargs
-    ):
+    def __init__(self, *, dbfs: Optional["DbfsStorageInfoDto"] = None, **kwargs):
         """
         :keyword dbfs:
         :paramtype dbfs: ~flow.models.DbfsStorageInfoDto
@@ -22197,9 +23108,9 @@ class InnerErrorDetails(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'code': {'key': 'code', 'type': 'str'},
-        'message': {'key': 'message', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
+        "code": {"key": "code", "type": "str"},
+        "message": {"key": "message", "type": "str"},
+        "target": {"key": "target", "type": "str"},
     }
 
     def __init__(
@@ -22234,8 +23145,8 @@ class InnerErrorResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'code': {'key': 'code', 'type': 'str'},
-        'inner_error': {'key': 'innerError', 'type': 'InnerErrorResponse'},
+        "code": {"key": "code", "type": "str"},
+        "inner_error": {"key": "innerError", "type": "InnerErrorResponse"},
     }
 
     def __init__(
@@ -22274,12 +23185,12 @@ class InputAsset(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'asset': {'key': 'asset', 'type': 'Asset'},
-        'mechanism': {'key': 'mechanism', 'type': 'str'},
-        'environment_variable_name': {'key': 'environmentVariableName', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'options': {'key': 'options', 'type': '{str}'},
+        "asset": {"key": "asset", "type": "Asset"},
+        "mechanism": {"key": "mechanism", "type": "str"},
+        "environment_variable_name": {"key": "environmentVariableName", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "options": {"key": "options", "type": "{str}"},
     }
 
     def __init__(
@@ -22329,9 +23240,9 @@ class InputData(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'dataset_id': {'key': 'datasetId', 'type': 'str'},
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "dataset_id": {"key": "datasetId", "type": "str"},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -22381,14 +23292,14 @@ class InputDataBinding(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_id': {'key': 'dataId', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'mode': {'key': 'mode', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'MfeInternalUriReference'},
-        'value': {'key': 'value', 'type': 'str'},
-        'asset_uri': {'key': 'assetUri', 'type': 'str'},
-        'job_input_type': {'key': 'jobInputType', 'type': 'str'},
+        "data_id": {"key": "dataId", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "mode": {"key": "mode", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "uri": {"key": "uri", "type": "MfeInternalUriReference"},
+        "value": {"key": "value", "type": "str"},
+        "asset_uri": {"key": "assetUri", "type": "str"},
+        "job_input_type": {"key": "jobInputType", "type": "str"},
     }
 
     def __init__(
@@ -22459,15 +23370,15 @@ class InputDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': '[str]'},
-        'default': {'key': 'default', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'enum': {'key': 'enum', 'type': '[str]'},
-        'enabled_by': {'key': 'enabled_by', 'type': 'str'},
-        'enabled_by_type': {'key': 'enabled_by_type', 'type': '[str]'},
-        'model_list': {'key': 'model_list', 'type': '[str]'},
-        'capabilities': {'key': 'capabilities', 'type': 'AzureOpenAIModelCapabilities'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "[str]"},
+        "default": {"key": "default", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "enum": {"key": "enum", "type": "[str]"},
+        "enabled_by": {"key": "enabled_by", "type": "str"},
+        "enabled_by_type": {"key": "enabled_by_type", "type": "[str]"},
+        "model_list": {"key": "model_list", "type": "[str]"},
+        "capabilities": {"key": "capabilities", "type": "AzureOpenAIModelCapabilities"},
     }
 
     def __init__(
@@ -22534,15 +23445,15 @@ class InputOutputPortMetadata(msrest.serialization.Model):
     """
 
     _validation = {
-        'id': {'readonly': True},
+        "id": {"readonly": True},
     }
 
     _attribute_map = {
-        'graph_module_node_id': {'key': 'graphModuleNodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
-        'schema': {'key': 'schema', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
+        "graph_module_node_id": {"key": "graphModuleNodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
+        "schema": {"key": "schema", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "id": {"key": "id", "type": "str"},
     }
 
     def __init__(
@@ -22589,11 +23500,14 @@ class InputSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'options': {'key': 'options', 'type': '{str}'},
-        'additional_transformations': {'key': 'additionalTransformations', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "options": {"key": "options", "type": "{str}"},
+        "additional_transformations": {
+            "key": "additionalTransformations",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -22635,14 +23549,14 @@ class IntellectualPropertyPublisherInformation(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'intellectual_property_publisher': {'key': 'intellectualPropertyPublisher', 'type': 'str'},
+        "intellectual_property_publisher": {
+            "key": "intellectualPropertyPublisher",
+            "type": "str",
+        },
     }
 
     def __init__(
-        self,
-        *,
-        intellectual_property_publisher: Optional[str] = None,
-        **kwargs
+        self, *, intellectual_property_publisher: Optional[str] = None, **kwargs
     ):
         """
         :keyword intellectual_property_publisher:
@@ -22668,11 +23582,11 @@ class InteractiveConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'is_ssh_enabled': {'key': 'isSSHEnabled', 'type': 'bool'},
-        'ssh_public_key': {'key': 'sshPublicKey', 'type': 'str'},
-        'is_i_python_enabled': {'key': 'isIPythonEnabled', 'type': 'bool'},
-        'is_tensor_board_enabled': {'key': 'isTensorBoardEnabled', 'type': 'bool'},
-        'interactive_port': {'key': 'interactivePort', 'type': 'int'},
+        "is_ssh_enabled": {"key": "isSSHEnabled", "type": "bool"},
+        "ssh_public_key": {"key": "sshPublicKey", "type": "str"},
+        "is_i_python_enabled": {"key": "isIPythonEnabled", "type": "bool"},
+        "is_tensor_board_enabled": {"key": "isTensorBoardEnabled", "type": "bool"},
+        "interactive_port": {"key": "interactivePort", "type": "int"},
     }
 
     def __init__(
@@ -22721,11 +23635,11 @@ class InteractiveConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'is_ssh_enabled': {'key': 'isSSHEnabled', 'type': 'bool'},
-        'ssh_public_key': {'key': 'sshPublicKey', 'type': 'str'},
-        'is_i_python_enabled': {'key': 'isIPythonEnabled', 'type': 'bool'},
-        'is_tensor_board_enabled': {'key': 'isTensorBoardEnabled', 'type': 'bool'},
-        'interactive_port': {'key': 'interactivePort', 'type': 'int'},
+        "is_ssh_enabled": {"key": "isSSHEnabled", "type": "bool"},
+        "ssh_public_key": {"key": "sshPublicKey", "type": "str"},
+        "is_i_python_enabled": {"key": "isIPythonEnabled", "type": "bool"},
+        "is_tensor_board_enabled": {"key": "isTensorBoardEnabled", "type": "bool"},
+        "interactive_port": {"key": "interactivePort", "type": "int"},
     }
 
     def __init__(
@@ -22772,10 +23686,16 @@ class JobCost(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'charged_cpu_core_seconds': {'key': 'chargedCpuCoreSeconds', 'type': 'float'},
-        'charged_cpu_memory_megabyte_seconds': {'key': 'chargedCpuMemoryMegabyteSeconds', 'type': 'float'},
-        'charged_gpu_seconds': {'key': 'chargedGpuSeconds', 'type': 'float'},
-        'charged_node_utilization_seconds': {'key': 'chargedNodeUtilizationSeconds', 'type': 'float'},
+        "charged_cpu_core_seconds": {"key": "chargedCpuCoreSeconds", "type": "float"},
+        "charged_cpu_memory_megabyte_seconds": {
+            "key": "chargedCpuMemoryMegabyteSeconds",
+            "type": "float",
+        },
+        "charged_gpu_seconds": {"key": "chargedGpuSeconds", "type": "float"},
+        "charged_node_utilization_seconds": {
+            "key": "chargedNodeUtilizationSeconds",
+            "type": "float",
+        },
     }
 
     def __init__(
@@ -22824,13 +23744,13 @@ class JobEndpoint(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'port': {'key': 'port', 'type': 'int'},
-        'endpoint': {'key': 'endpoint', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'error_message': {'key': 'errorMessage', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'nodes': {'key': 'nodes', 'type': 'MfeInternalNodes'},
+        "type": {"key": "type", "type": "str"},
+        "port": {"key": "port", "type": "int"},
+        "endpoint": {"key": "endpoint", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "error_message": {"key": "errorMessage", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "nodes": {"key": "nodes", "type": "MfeInternalNodes"},
     }
 
     def __init__(
@@ -22884,12 +23804,12 @@ class JobInput(msrest.serialization.Model):
     """
 
     _validation = {
-        'job_input_type': {'required': True},
+        "job_input_type": {"required": True},
     }
 
     _attribute_map = {
-        'job_input_type': {'key': 'jobInputType', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
+        "job_input_type": {"key": "jobInputType", "type": "str"},
+        "description": {"key": "description", "type": "str"},
     }
 
     def __init__(
@@ -22926,13 +23846,16 @@ class JobOutput(msrest.serialization.Model):
     """
 
     _validation = {
-        'job_output_type': {'required': True},
+        "job_output_type": {"required": True},
     }
 
     _attribute_map = {
-        'job_output_type': {'key': 'jobOutputType', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'auto_delete_setting': {'key': 'autoDeleteSetting', 'type': 'AutoDeleteSetting'},
+        "job_output_type": {"key": "jobOutputType", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "auto_delete_setting": {
+            "key": "autoDeleteSetting",
+            "type": "AutoDeleteSetting",
+        },
     }
 
     def __init__(
@@ -22968,8 +23891,8 @@ class JobOutputArtifacts(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'datastore_id': {'key': 'datastoreId', 'type': 'str'},
-        'path': {'key': 'path', 'type': 'str'},
+        "datastore_id": {"key": "datastoreId", "type": "str"},
+        "path": {"key": "path", "type": "str"},
     }
 
     def __init__(
@@ -23021,18 +23944,18 @@ class JobScheduleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_type': {'key': 'jobType', 'type': 'str'},
-        'system_data': {'key': 'systemData', 'type': 'SystemData'},
-        'name': {'key': 'name', 'type': 'str'},
-        'job_definition_id': {'key': 'jobDefinitionId', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'trigger_type': {'key': 'triggerType', 'type': 'str'},
-        'recurrence': {'key': 'recurrence', 'type': 'Recurrence'},
-        'cron': {'key': 'cron', 'type': 'Cron'},
-        'status': {'key': 'status', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "job_type": {"key": "jobType", "type": "str"},
+        "system_data": {"key": "systemData", "type": "SystemData"},
+        "name": {"key": "name", "type": "str"},
+        "job_definition_id": {"key": "jobDefinitionId", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "trigger_type": {"key": "triggerType", "type": "str"},
+        "recurrence": {"key": "recurrence", "type": "Recurrence"},
+        "cron": {"key": "cron", "type": "Cron"},
+        "status": {"key": "status", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -23108,10 +24031,19 @@ class K8SConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_retry_count': {'key': 'maxRetryCount', 'type': 'int'},
-        'resource_configuration': {'key': 'resourceConfiguration', 'type': 'ResourceConfig'},
-        'priority_configuration': {'key': 'priorityConfiguration', 'type': 'PriorityConfig'},
-        'interactive_configuration': {'key': 'interactiveConfiguration', 'type': 'InteractiveConfig'},
+        "max_retry_count": {"key": "maxRetryCount", "type": "int"},
+        "resource_configuration": {
+            "key": "resourceConfiguration",
+            "type": "ResourceConfig",
+        },
+        "priority_configuration": {
+            "key": "priorityConfiguration",
+            "type": "PriorityConfig",
+        },
+        "interactive_configuration": {
+            "key": "interactiveConfiguration",
+            "type": "InteractiveConfig",
+        },
     }
 
     def __init__(
@@ -23150,8 +24082,8 @@ class KeyValuePairComponentNameMetaInfoErrorResponse(msrest.serialization.Model)
     """
 
     _attribute_map = {
-        'key': {'key': 'key', 'type': 'ComponentNameMetaInfo'},
-        'value': {'key': 'value', 'type': 'ErrorResponse'},
+        "key": {"key": "key", "type": "ComponentNameMetaInfo"},
+        "value": {"key": "value", "type": "ErrorResponse"},
     }
 
     def __init__(
@@ -23182,8 +24114,8 @@ class KeyValuePairComponentNameMetaInfoModuleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'key': {'key': 'key', 'type': 'ComponentNameMetaInfo'},
-        'value': {'key': 'value', 'type': 'ModuleDto'},
+        "key": {"key": "key", "type": "ComponentNameMetaInfo"},
+        "value": {"key": "value", "type": "ModuleDto"},
     }
 
     def __init__(
@@ -23214,16 +24146,12 @@ class KeyValuePairStringObject(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'key': {'key': 'key', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'object'},
+        "key": {"key": "key", "type": "str"},
+        "value": {"key": "value", "type": "object"},
     }
 
     def __init__(
-        self,
-        *,
-        key: Optional[str] = None,
-        value: Optional[Any] = None,
-        **kwargs
+        self, *, key: Optional[str] = None, value: Optional[Any] = None, **kwargs
     ):
         """
         :keyword key:
@@ -23244,15 +24172,10 @@ class KubernetesConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
+        "instance_type": {"key": "instanceType", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        instance_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, instance_type: Optional[str] = None, **kwargs):
         """
         :keyword instance_type:
         :paramtype instance_type: str
@@ -23271,16 +24194,12 @@ class Kwarg(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'key': {'key': 'key', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "key": {"key": "key", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        key: Optional[str] = None,
-        value: Optional[str] = None,
-        **kwargs
+        self, *, key: Optional[str] = None, value: Optional[str] = None, **kwargs
     ):
         """
         :keyword key:
@@ -23306,9 +24225,9 @@ class LegacyDataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
     }
 
     def __init__(
@@ -23354,13 +24273,13 @@ class LimitSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_trials': {'key': 'maxTrials', 'type': 'int'},
-        'timeout': {'key': 'timeout', 'type': 'str'},
-        'trial_timeout': {'key': 'trialTimeout', 'type': 'str'},
-        'max_concurrent_trials': {'key': 'maxConcurrentTrials', 'type': 'int'},
-        'max_cores_per_trial': {'key': 'maxCoresPerTrial', 'type': 'int'},
-        'exit_score': {'key': 'exitScore', 'type': 'float'},
-        'enable_early_termination': {'key': 'enableEarlyTermination', 'type': 'bool'},
+        "max_trials": {"key": "maxTrials", "type": "int"},
+        "timeout": {"key": "timeout", "type": "str"},
+        "trial_timeout": {"key": "trialTimeout", "type": "str"},
+        "max_concurrent_trials": {"key": "maxConcurrentTrials", "type": "int"},
+        "max_cores_per_trial": {"key": "maxCoresPerTrial", "type": "int"},
+        "exit_score": {"key": "exitScore", "type": "float"},
+        "enable_early_termination": {"key": "enableEarlyTermination", "type": "bool"},
     }
 
     def __init__(
@@ -23411,8 +24330,8 @@ class LinkedADBWorkspaceMetadata(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'workspace_id': {'key': 'workspaceId', 'type': 'str'},
-        'region': {'key': 'region', 'type': 'str'},
+        "workspace_id": {"key": "workspaceId", "type": "str"},
+        "region": {"key": "region", "type": "str"},
     }
 
     def __init__(
@@ -23452,12 +24371,12 @@ class LinkedPipelineInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'module_node_id': {'key': 'moduleNodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
-        'linked_pipeline_draft_id': {'key': 'linkedPipelineDraftId', 'type': 'str'},
-        'linked_pipeline_run_id': {'key': 'linkedPipelineRunId', 'type': 'str'},
-        'is_direct_link': {'key': 'isDirectLink', 'type': 'bool'},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "module_node_id": {"key": "moduleNodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
+        "linked_pipeline_draft_id": {"key": "linkedPipelineDraftId", "type": "str"},
+        "linked_pipeline_run_id": {"key": "linkedPipelineRunId", "type": "str"},
+        "is_direct_link": {"key": "isDirectLink", "type": "bool"},
     }
 
     def __init__(
@@ -23541,26 +24460,32 @@ class LoadFlowAsComponentRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'component_version': {'key': 'componentVersion', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'is_deterministic': {'key': 'isDeterministic', 'type': 'bool'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'flow_definition_resource_id': {'key': 'flowDefinitionResourceId', 'type': 'str'},
-        'flow_definition_data_store_name': {'key': 'flowDefinitionDataStoreName', 'type': 'str'},
-        'flow_definition_blob_path': {'key': 'flowDefinitionBlobPath', 'type': 'str'},
-        'flow_definition_data_uri': {'key': 'flowDefinitionDataUri', 'type': 'str'},
-        'node_variant': {'key': 'nodeVariant', 'type': 'str'},
-        'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
-        'connections': {'key': 'connections', 'type': '{{str}}'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'session_id': {'key': 'sessionId', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        "component_name": {"key": "componentName", "type": "str"},
+        "component_version": {"key": "componentVersion", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "is_deterministic": {"key": "isDeterministic", "type": "bool"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "flow_definition_resource_id": {
+            "key": "flowDefinitionResourceId",
+            "type": "str",
+        },
+        "flow_definition_data_store_name": {
+            "key": "flowDefinitionDataStoreName",
+            "type": "str",
+        },
+        "flow_definition_blob_path": {"key": "flowDefinitionBlobPath", "type": "str"},
+        "flow_definition_data_uri": {"key": "flowDefinitionDataUri", "type": "str"},
+        "node_variant": {"key": "nodeVariant", "type": "str"},
+        "inputs_mapping": {"key": "inputsMapping", "type": "{str}"},
+        "connections": {"key": "connections", "type": "{{str}}"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
+        "session_id": {"key": "sessionId", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
     }
 
     def __init__(
@@ -23663,8 +24588,8 @@ class LongRunningOperationUriResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'location': {'key': 'location', 'type': 'str'},
-        'operation_result': {'key': 'operationResult', 'type': 'str'},
+        "location": {"key": "location", "type": "str"},
+        "operation_result": {"key": "operationResult", "type": "str"},
     }
 
     def __init__(
@@ -23706,13 +24631,13 @@ class LongRunningUpdateRegistryComponentRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'registry_name': {'key': 'registryName', 'type': 'str'},
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'component_version': {'key': 'componentVersion', 'type': 'str'},
-        'update_type': {'key': 'updateType', 'type': 'str'},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "registry_name": {"key": "registryName", "type": "str"},
+        "component_name": {"key": "componentName", "type": "str"},
+        "component_version": {"key": "componentVersion", "type": "str"},
+        "update_type": {"key": "updateType", "type": "str"},
     }
 
     def __init__(
@@ -23771,14 +24696,17 @@ class ManagedServiceIdentity(msrest.serialization.Model):
     """
 
     _validation = {
-        'type': {'required': True},
+        "type": {"required": True},
     }
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'principal_id': {'key': 'principalId', 'type': 'str'},
-        'tenant_id': {'key': 'tenantId', 'type': 'str'},
-        'user_assigned_identities': {'key': 'userAssignedIdentities', 'type': '{UserAssignedIdentity}'},
+        "type": {"key": "type", "type": "str"},
+        "principal_id": {"key": "principalId", "type": "str"},
+        "tenant_id": {"key": "tenantId", "type": "str"},
+        "user_assigned_identities": {
+            "key": "userAssignedIdentities",
+            "type": "{UserAssignedIdentity}",
+        },
     }
 
     def __init__(
@@ -23820,9 +24748,9 @@ class MavenLibraryDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'coordinates': {'key': 'coordinates', 'type': 'str'},
-        'repo': {'key': 'repo', 'type': 'str'},
-        'exclusions': {'key': 'exclusions', 'type': '[str]'},
+        "coordinates": {"key": "coordinates", "type": "str"},
+        "repo": {"key": "repo", "type": "str"},
+        "exclusions": {"key": "exclusions", "type": "[str]"},
     }
 
     def __init__(
@@ -23855,15 +24783,10 @@ class MetricProperties(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'ux_metric_type': {'key': 'uxMetricType', 'type': 'str'},
+        "ux_metric_type": {"key": "uxMetricType", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        ux_metric_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, ux_metric_type: Optional[str] = None, **kwargs):
         """
         :keyword ux_metric_type:
         :paramtype ux_metric_type: str
@@ -23882,8 +24805,8 @@ class MetricSchemaDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'num_properties': {'key': 'numProperties', 'type': 'int'},
-        'properties': {'key': 'properties', 'type': '[MetricSchemaPropertyDto]'},
+        "num_properties": {"key": "numProperties", "type": "int"},
+        "properties": {"key": "properties", "type": "[MetricSchemaPropertyDto]"},
     }
 
     def __init__(
@@ -23916,9 +24839,9 @@ class MetricSchemaPropertyDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'property_id': {'key': 'propertyId', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "property_id": {"key": "propertyId", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
@@ -23969,15 +24892,15 @@ class MetricV2Dto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_container_id': {'key': 'dataContainerId', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'columns': {'key': 'columns', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': 'MetricProperties'},
-        'namespace': {'key': 'namespace', 'type': 'str'},
-        'standard_schema_id': {'key': 'standardSchemaId', 'type': 'str'},
-        'value': {'key': 'value', 'type': '[MetricV2Value]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "data_container_id": {"key": "dataContainerId", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "columns": {"key": "columns", "type": "{str}"},
+        "properties": {"key": "properties", "type": "MetricProperties"},
+        "namespace": {"key": "namespace", "type": "str"},
+        "standard_schema_id": {"key": "standardSchemaId", "type": "str"},
+        "value": {"key": "value", "type": "[MetricV2Value]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -24044,11 +24967,11 @@ class MetricV2Value(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'metric_id': {'key': 'metricId', 'type': 'str'},
-        'created_utc': {'key': 'createdUtc', 'type': 'iso-8601'},
-        'step': {'key': 'step', 'type': 'long'},
-        'data': {'key': 'data', 'type': '{object}'},
-        'sas_uri': {'key': 'sasUri', 'type': 'str'},
+        "metric_id": {"key": "metricId", "type": "str"},
+        "created_utc": {"key": "createdUtc", "type": "iso-8601"},
+        "step": {"key": "step", "type": "long"},
+        "data": {"key": "data", "type": "{object}"},
+        "sas_uri": {"key": "sasUri", "type": "str"},
     }
 
     def __init__(
@@ -24089,13 +25012,15 @@ class MfeInternalAutologgerSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mlflow_autologger': {'key': 'mlflowAutologger', 'type': 'str'},
+        "mlflow_autologger": {"key": "mlflowAutologger", "type": "str"},
     }
 
     def __init__(
         self,
         *,
-        mlflow_autologger: Optional[Union[str, "MfeInternalMLFlowAutologgerState"]] = None,
+        mlflow_autologger: Optional[
+            Union[str, "MfeInternalMLFlowAutologgerState"]
+        ] = None,
         **kwargs
     ):
         """
@@ -24114,7 +25039,7 @@ class MfeInternalIdentityConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identity_type': {'key': 'identityType', 'type': 'str'},
+        "identity_type": {"key": "identityType", "type": "str"},
     }
 
     def __init__(
@@ -24140,15 +25065,10 @@ class MfeInternalNodes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'nodes_value_type': {'key': 'nodesValueType', 'type': 'str'},
+        "nodes_value_type": {"key": "nodesValueType", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        nodes_value_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, nodes_value_type: Optional[str] = None, **kwargs):
         """
         :keyword nodes_value_type:  The only acceptable values to pass in are None and "All". The
          default value is None.
@@ -24173,10 +25093,10 @@ class MfeInternalOutputData(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'dataset_name': {'key': 'datasetName', 'type': 'str'},
-        'datastore': {'key': 'datastore', 'type': 'str'},
-        'datapath': {'key': 'datapath', 'type': 'str'},
-        'mode': {'key': 'mode', 'type': 'str'},
+        "dataset_name": {"key": "datasetName", "type": "str"},
+        "datastore": {"key": "datastore", "type": "str"},
+        "datapath": {"key": "datapath", "type": "str"},
+        "mode": {"key": "mode", "type": "str"},
     }
 
     def __init__(
@@ -24216,8 +25136,8 @@ class MfeInternalSecretConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'workspace_secret_name': {'key': 'workspaceSecretName', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
+        "workspace_secret_name": {"key": "workspaceSecretName", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
     }
 
     def __init__(
@@ -24248,16 +25168,12 @@ class MfeInternalUriReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file': {'key': 'file', 'type': 'str'},
-        'folder': {'key': 'folder', 'type': 'str'},
+        "file": {"key": "file", "type": "str"},
+        "folder": {"key": "folder", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        file: Optional[str] = None,
-        folder: Optional[str] = None,
-        **kwargs
+        self, *, file: Optional[str] = None, folder: Optional[str] = None, **kwargs
     ):
         """
         :keyword file:
@@ -24286,11 +25202,11 @@ class MfeInternalV20211001ComponentJob(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'compute_id': {'key': 'computeId', 'type': 'str'},
-        'component_id': {'key': 'componentId', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{JobInput}'},
-        'outputs': {'key': 'outputs', 'type': '{JobOutput}'},
-        'overrides': {'key': 'overrides', 'type': 'object'},
+        "compute_id": {"key": "computeId", "type": "str"},
+        "component_id": {"key": "componentId", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{JobInput}"},
+        "outputs": {"key": "outputs", "type": "{JobOutput}"},
+        "overrides": {"key": "overrides", "type": "object"},
     }
 
     def __init__(
@@ -24333,16 +25249,12 @@ class MinMaxParameterRule(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'min': {'key': 'min', 'type': 'float'},
-        'max': {'key': 'max', 'type': 'float'},
+        "min": {"key": "min", "type": "float"},
+        "max": {"key": "max", "type": "float"},
     }
 
     def __init__(
-        self,
-        *,
-        min: Optional[float] = None,
-        max: Optional[float] = None,
-        **kwargs
+        self, *, min: Optional[float] = None, max: Optional[float] = None, **kwargs
     ):
         """
         :keyword min:
@@ -24363,15 +25275,10 @@ class MlcComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mlc_compute_type': {'key': 'mlcComputeType', 'type': 'str'},
+        "mlc_compute_type": {"key": "mlcComputeType", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        mlc_compute_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, mlc_compute_type: Optional[str] = None, **kwargs):
         """
         :keyword mlc_compute_type:
         :paramtype mlc_compute_type: str
@@ -24406,16 +25313,16 @@ class ModelDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'aml_data_store_name': {'key': 'amlDataStoreName', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'system_data': {'key': 'systemData', 'type': 'SystemData'},
-        'arm_id': {'key': 'armId', 'type': 'str'},
-        'online_endpoint_yaml_str': {'key': 'onlineEndpointYamlStr', 'type': 'str'},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "aml_data_store_name": {"key": "amlDataStoreName", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "system_data": {"key": "systemData", "type": "SystemData"},
+        "arm_id": {"key": "armId", "type": "str"},
+        "online_endpoint_yaml_str": {"key": "onlineEndpointYamlStr", "type": "str"},
     }
 
     def __init__(
@@ -24486,12 +25393,12 @@ class ModelManagementErrorResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'code': {'key': 'code', 'type': 'str'},
-        'status_code': {'key': 'statusCode', 'type': 'int'},
-        'message': {'key': 'message', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'details': {'key': 'details', 'type': '[InnerErrorDetails]'},
-        'correlation': {'key': 'correlation', 'type': '{str}'},
+        "code": {"key": "code", "type": "str"},
+        "status_code": {"key": "statusCode", "type": "int"},
+        "message": {"key": "message", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "details": {"key": "details", "type": "[InnerErrorDetails]"},
+        "correlation": {"key": "correlation", "type": "{str}"},
     }
 
     def __init__(
@@ -24554,23 +25461,28 @@ class ModifyPipelineJobScheduleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'pipeline_job_name': {'key': 'pipelineJobName', 'type': 'str'},
-        'pipeline_job_runtime_settings': {'key': 'pipelineJobRuntimeSettings', 'type': 'PipelineJobRuntimeBasicSettings'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'trigger_type': {'key': 'triggerType', 'type': 'str'},
-        'recurrence': {'key': 'recurrence', 'type': 'Recurrence'},
-        'cron': {'key': 'cron', 'type': 'Cron'},
-        'status': {'key': 'status', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "pipeline_job_name": {"key": "pipelineJobName", "type": "str"},
+        "pipeline_job_runtime_settings": {
+            "key": "pipelineJobRuntimeSettings",
+            "type": "PipelineJobRuntimeBasicSettings",
+        },
+        "display_name": {"key": "displayName", "type": "str"},
+        "trigger_type": {"key": "triggerType", "type": "str"},
+        "recurrence": {"key": "recurrence", "type": "Recurrence"},
+        "cron": {"key": "cron", "type": "Cron"},
+        "status": {"key": "status", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
         self,
         *,
         pipeline_job_name: Optional[str] = None,
-        pipeline_job_runtime_settings: Optional["PipelineJobRuntimeBasicSettings"] = None,
+        pipeline_job_runtime_settings: Optional[
+            "PipelineJobRuntimeBasicSettings"
+        ] = None,
         display_name: Optional[str] = None,
         trigger_type: Optional[Union[str, "TriggerType"]] = None,
         recurrence: Optional["Recurrence"] = None,
@@ -24710,48 +25622,60 @@ class ModuleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'namespace': {'key': 'namespace', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '[str]'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'dict_tags': {'key': 'dictTags', 'type': '{str}'},
-        'module_version_id': {'key': 'moduleVersionId', 'type': 'str'},
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'registry_name': {'key': 'registryName', 'type': 'str'},
-        'module_name': {'key': 'moduleName', 'type': 'str'},
-        'module_version': {'key': 'moduleVersion', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'owner': {'key': 'owner', 'type': 'str'},
-        'job_type': {'key': 'jobType', 'type': 'str'},
-        'default_version': {'key': 'defaultVersion', 'type': 'str'},
-        'family_id': {'key': 'familyId', 'type': 'str'},
-        'help_document': {'key': 'helpDocument', 'type': 'str'},
-        'codegen_by': {'key': 'codegenBy', 'type': 'str'},
-        'arm_id': {'key': 'armId', 'type': 'str'},
-        'module_scope': {'key': 'moduleScope', 'type': 'str'},
-        'module_entity': {'key': 'moduleEntity', 'type': 'ModuleEntity'},
-        'input_types': {'key': 'inputTypes', 'type': '[str]'},
-        'output_types': {'key': 'outputTypes', 'type': '[str]'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'yaml_link': {'key': 'yamlLink', 'type': 'str'},
-        'yaml_link_with_commit_sha': {'key': 'yamlLinkWithCommitSha', 'type': 'str'},
-        'module_source_type': {'key': 'moduleSourceType', 'type': 'str'},
-        'registered_by': {'key': 'registeredBy', 'type': 'str'},
-        'versions': {'key': 'versions', 'type': '[AzureMLModuleVersionDescriptor]'},
-        'is_default_module_version': {'key': 'isDefaultModuleVersion', 'type': 'bool'},
-        'system_data': {'key': 'systemData', 'type': 'SystemData'},
-        'system_meta': {'key': 'systemMeta', 'type': 'SystemMeta'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
-        'entry': {'key': 'entry', 'type': 'str'},
-        'os_type': {'key': 'osType', 'type': 'str'},
-        'require_gpu': {'key': 'requireGpu', 'type': 'bool'},
-        'module_python_interface': {'key': 'modulePythonInterface', 'type': 'ModulePythonInterface'},
-        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
-        'run_setting_parameters': {'key': 'runSettingParameters', 'type': '[RunSettingParameter]'},
-        'supported_ui_input_data_delivery_modes': {'key': 'supportedUIInputDataDeliveryModes', 'type': '{[str]}'},
-        'output_setting_specs': {'key': 'outputSettingSpecs', 'type': '{OutputSettingSpec}'},
-        'yaml_str': {'key': 'yamlStr', 'type': 'str'},
+        "namespace": {"key": "namespace", "type": "str"},
+        "tags": {"key": "tags", "type": "[str]"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "dict_tags": {"key": "dictTags", "type": "{str}"},
+        "module_version_id": {"key": "moduleVersionId", "type": "str"},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "registry_name": {"key": "registryName", "type": "str"},
+        "module_name": {"key": "moduleName", "type": "str"},
+        "module_version": {"key": "moduleVersion", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "owner": {"key": "owner", "type": "str"},
+        "job_type": {"key": "jobType", "type": "str"},
+        "default_version": {"key": "defaultVersion", "type": "str"},
+        "family_id": {"key": "familyId", "type": "str"},
+        "help_document": {"key": "helpDocument", "type": "str"},
+        "codegen_by": {"key": "codegenBy", "type": "str"},
+        "arm_id": {"key": "armId", "type": "str"},
+        "module_scope": {"key": "moduleScope", "type": "str"},
+        "module_entity": {"key": "moduleEntity", "type": "ModuleEntity"},
+        "input_types": {"key": "inputTypes", "type": "[str]"},
+        "output_types": {"key": "outputTypes", "type": "[str]"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "yaml_link": {"key": "yamlLink", "type": "str"},
+        "yaml_link_with_commit_sha": {"key": "yamlLinkWithCommitSha", "type": "str"},
+        "module_source_type": {"key": "moduleSourceType", "type": "str"},
+        "registered_by": {"key": "registeredBy", "type": "str"},
+        "versions": {"key": "versions", "type": "[AzureMLModuleVersionDescriptor]"},
+        "is_default_module_version": {"key": "isDefaultModuleVersion", "type": "bool"},
+        "system_data": {"key": "systemData", "type": "SystemData"},
+        "system_meta": {"key": "systemMeta", "type": "SystemMeta"},
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
+        "entry": {"key": "entry", "type": "str"},
+        "os_type": {"key": "osType", "type": "str"},
+        "require_gpu": {"key": "requireGpu", "type": "bool"},
+        "module_python_interface": {
+            "key": "modulePythonInterface",
+            "type": "ModulePythonInterface",
+        },
+        "environment_asset_id": {"key": "environmentAssetId", "type": "str"},
+        "run_setting_parameters": {
+            "key": "runSettingParameters",
+            "type": "[RunSettingParameter]",
+        },
+        "supported_ui_input_data_delivery_modes": {
+            "key": "supportedUIInputDataDeliveryModes",
+            "type": "{[str]}",
+        },
+        "output_setting_specs": {
+            "key": "outputSettingSpecs",
+            "type": "{OutputSettingSpec}",
+        },
+        "yaml_str": {"key": "yamlStr", "type": "str"},
     }
 
     def __init__(
@@ -24796,7 +25720,9 @@ class ModuleDto(msrest.serialization.Model):
         module_python_interface: Optional["ModulePythonInterface"] = None,
         environment_asset_id: Optional[str] = None,
         run_setting_parameters: Optional[List["RunSettingParameter"]] = None,
-        supported_ui_input_data_delivery_modes: Optional[Dict[str, List[Union[str, "UIInputDataDeliveryMode"]]]] = None,
+        supported_ui_input_data_delivery_modes: Optional[
+            Dict[str, List[Union[str, "UIInputDataDeliveryMode"]]]
+        ] = None,
         output_setting_specs: Optional[Dict[str, "OutputSettingSpec"]] = None,
         yaml_str: Optional[str] = None,
         **kwargs
@@ -24931,7 +25857,9 @@ class ModuleDto(msrest.serialization.Model):
         self.module_python_interface = module_python_interface
         self.environment_asset_id = environment_asset_id
         self.run_setting_parameters = run_setting_parameters
-        self.supported_ui_input_data_delivery_modes = supported_ui_input_data_delivery_modes
+        self.supported_ui_input_data_delivery_modes = (
+            supported_ui_input_data_delivery_modes
+        )
         self.output_setting_specs = output_setting_specs
         self.yaml_str = yaml_str
 
@@ -24952,19 +25880,32 @@ class ModuleDtoWithErrors(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'version_id_to_module_dto': {'key': 'versionIdToModuleDto', 'type': '{ModuleDto}'},
-        'name_and_version_to_module_dto': {'key': 'nameAndVersionToModuleDto', 'type': '[KeyValuePairComponentNameMetaInfoModuleDto]'},
-        'version_id_to_error': {'key': 'versionIdToError', 'type': '{ErrorResponse}'},
-        'name_and_version_to_error': {'key': 'nameAndVersionToError', 'type': '[KeyValuePairComponentNameMetaInfoErrorResponse]'},
+        "version_id_to_module_dto": {
+            "key": "versionIdToModuleDto",
+            "type": "{ModuleDto}",
+        },
+        "name_and_version_to_module_dto": {
+            "key": "nameAndVersionToModuleDto",
+            "type": "[KeyValuePairComponentNameMetaInfoModuleDto]",
+        },
+        "version_id_to_error": {"key": "versionIdToError", "type": "{ErrorResponse}"},
+        "name_and_version_to_error": {
+            "key": "nameAndVersionToError",
+            "type": "[KeyValuePairComponentNameMetaInfoErrorResponse]",
+        },
     }
 
     def __init__(
         self,
         *,
         version_id_to_module_dto: Optional[Dict[str, "ModuleDto"]] = None,
-        name_and_version_to_module_dto: Optional[List["KeyValuePairComponentNameMetaInfoModuleDto"]] = None,
+        name_and_version_to_module_dto: Optional[
+            List["KeyValuePairComponentNameMetaInfoModuleDto"]
+        ] = None,
         version_id_to_error: Optional[Dict[str, "ErrorResponse"]] = None,
-        name_and_version_to_error: Optional[List["KeyValuePairComponentNameMetaInfoErrorResponse"]] = None,
+        name_and_version_to_error: Optional[
+            List["KeyValuePairComponentNameMetaInfoErrorResponse"]
+        ] = None,
         **kwargs
     ):
         """
@@ -25091,53 +26032,68 @@ class ModuleDtoWithValidateStatus(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'existing_module_entity': {'key': 'existingModuleEntity', 'type': 'ModuleEntity'},
-        'status': {'key': 'status', 'type': 'str'},
-        'status_details': {'key': 'statusDetails', 'type': 'str'},
-        'error_details': {'key': 'errorDetails', 'type': '[str]'},
-        'serialized_module_info': {'key': 'serializedModuleInfo', 'type': 'str'},
-        'namespace': {'key': 'namespace', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '[str]'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'dict_tags': {'key': 'dictTags', 'type': '{str}'},
-        'module_version_id': {'key': 'moduleVersionId', 'type': 'str'},
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'registry_name': {'key': 'registryName', 'type': 'str'},
-        'module_name': {'key': 'moduleName', 'type': 'str'},
-        'module_version': {'key': 'moduleVersion', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'owner': {'key': 'owner', 'type': 'str'},
-        'job_type': {'key': 'jobType', 'type': 'str'},
-        'default_version': {'key': 'defaultVersion', 'type': 'str'},
-        'family_id': {'key': 'familyId', 'type': 'str'},
-        'help_document': {'key': 'helpDocument', 'type': 'str'},
-        'codegen_by': {'key': 'codegenBy', 'type': 'str'},
-        'arm_id': {'key': 'armId', 'type': 'str'},
-        'module_scope': {'key': 'moduleScope', 'type': 'str'},
-        'module_entity': {'key': 'moduleEntity', 'type': 'ModuleEntity'},
-        'input_types': {'key': 'inputTypes', 'type': '[str]'},
-        'output_types': {'key': 'outputTypes', 'type': '[str]'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'yaml_link': {'key': 'yamlLink', 'type': 'str'},
-        'yaml_link_with_commit_sha': {'key': 'yamlLinkWithCommitSha', 'type': 'str'},
-        'module_source_type': {'key': 'moduleSourceType', 'type': 'str'},
-        'registered_by': {'key': 'registeredBy', 'type': 'str'},
-        'versions': {'key': 'versions', 'type': '[AzureMLModuleVersionDescriptor]'},
-        'is_default_module_version': {'key': 'isDefaultModuleVersion', 'type': 'bool'},
-        'system_data': {'key': 'systemData', 'type': 'SystemData'},
-        'system_meta': {'key': 'systemMeta', 'type': 'SystemMeta'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
-        'entry': {'key': 'entry', 'type': 'str'},
-        'os_type': {'key': 'osType', 'type': 'str'},
-        'require_gpu': {'key': 'requireGpu', 'type': 'bool'},
-        'module_python_interface': {'key': 'modulePythonInterface', 'type': 'ModulePythonInterface'},
-        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
-        'run_setting_parameters': {'key': 'runSettingParameters', 'type': '[RunSettingParameter]'},
-        'supported_ui_input_data_delivery_modes': {'key': 'supportedUIInputDataDeliveryModes', 'type': '{[str]}'},
-        'output_setting_specs': {'key': 'outputSettingSpecs', 'type': '{OutputSettingSpec}'},
-        'yaml_str': {'key': 'yamlStr', 'type': 'str'},
+        "existing_module_entity": {
+            "key": "existingModuleEntity",
+            "type": "ModuleEntity",
+        },
+        "status": {"key": "status", "type": "str"},
+        "status_details": {"key": "statusDetails", "type": "str"},
+        "error_details": {"key": "errorDetails", "type": "[str]"},
+        "serialized_module_info": {"key": "serializedModuleInfo", "type": "str"},
+        "namespace": {"key": "namespace", "type": "str"},
+        "tags": {"key": "tags", "type": "[str]"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "dict_tags": {"key": "dictTags", "type": "{str}"},
+        "module_version_id": {"key": "moduleVersionId", "type": "str"},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "registry_name": {"key": "registryName", "type": "str"},
+        "module_name": {"key": "moduleName", "type": "str"},
+        "module_version": {"key": "moduleVersion", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "owner": {"key": "owner", "type": "str"},
+        "job_type": {"key": "jobType", "type": "str"},
+        "default_version": {"key": "defaultVersion", "type": "str"},
+        "family_id": {"key": "familyId", "type": "str"},
+        "help_document": {"key": "helpDocument", "type": "str"},
+        "codegen_by": {"key": "codegenBy", "type": "str"},
+        "arm_id": {"key": "armId", "type": "str"},
+        "module_scope": {"key": "moduleScope", "type": "str"},
+        "module_entity": {"key": "moduleEntity", "type": "ModuleEntity"},
+        "input_types": {"key": "inputTypes", "type": "[str]"},
+        "output_types": {"key": "outputTypes", "type": "[str]"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "yaml_link": {"key": "yamlLink", "type": "str"},
+        "yaml_link_with_commit_sha": {"key": "yamlLinkWithCommitSha", "type": "str"},
+        "module_source_type": {"key": "moduleSourceType", "type": "str"},
+        "registered_by": {"key": "registeredBy", "type": "str"},
+        "versions": {"key": "versions", "type": "[AzureMLModuleVersionDescriptor]"},
+        "is_default_module_version": {"key": "isDefaultModuleVersion", "type": "bool"},
+        "system_data": {"key": "systemData", "type": "SystemData"},
+        "system_meta": {"key": "systemMeta", "type": "SystemMeta"},
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
+        "entry": {"key": "entry", "type": "str"},
+        "os_type": {"key": "osType", "type": "str"},
+        "require_gpu": {"key": "requireGpu", "type": "bool"},
+        "module_python_interface": {
+            "key": "modulePythonInterface",
+            "type": "ModulePythonInterface",
+        },
+        "environment_asset_id": {"key": "environmentAssetId", "type": "str"},
+        "run_setting_parameters": {
+            "key": "runSettingParameters",
+            "type": "[RunSettingParameter]",
+        },
+        "supported_ui_input_data_delivery_modes": {
+            "key": "supportedUIInputDataDeliveryModes",
+            "type": "{[str]}",
+        },
+        "output_setting_specs": {
+            "key": "outputSettingSpecs",
+            "type": "{OutputSettingSpec}",
+        },
+        "yaml_str": {"key": "yamlStr", "type": "str"},
     }
 
     def __init__(
@@ -25187,7 +26143,9 @@ class ModuleDtoWithValidateStatus(msrest.serialization.Model):
         module_python_interface: Optional["ModulePythonInterface"] = None,
         environment_asset_id: Optional[str] = None,
         run_setting_parameters: Optional[List["RunSettingParameter"]] = None,
-        supported_ui_input_data_delivery_modes: Optional[Dict[str, List[Union[str, "UIInputDataDeliveryMode"]]]] = None,
+        supported_ui_input_data_delivery_modes: Optional[
+            Dict[str, List[Union[str, "UIInputDataDeliveryMode"]]]
+        ] = None,
         output_setting_specs: Optional[Dict[str, "OutputSettingSpec"]] = None,
         yaml_str: Optional[str] = None,
         **kwargs
@@ -25338,7 +26296,9 @@ class ModuleDtoWithValidateStatus(msrest.serialization.Model):
         self.module_python_interface = module_python_interface
         self.environment_asset_id = environment_asset_id
         self.run_setting_parameters = run_setting_parameters
-        self.supported_ui_input_data_delivery_modes = supported_ui_input_data_delivery_modes
+        self.supported_ui_input_data_delivery_modes = (
+            supported_ui_input_data_delivery_modes
+        )
         self.output_setting_specs = output_setting_specs
         self.yaml_str = yaml_str
 
@@ -25403,33 +26363,36 @@ class ModuleEntity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'module_execution_type': {'key': 'moduleExecutionType', 'type': 'str'},
-        'module_type': {'key': 'moduleType', 'type': 'str'},
-        'module_type_version': {'key': 'moduleTypeVersion', 'type': 'str'},
-        'upload_state': {'key': 'uploadState', 'type': 'str'},
-        'is_deterministic': {'key': 'isDeterministic', 'type': 'bool'},
-        'structured_interface': {'key': 'structuredInterface', 'type': 'StructuredInterface'},
-        'data_location': {'key': 'dataLocation', 'type': 'DataLocation'},
-        'identifier_hash': {'key': 'identifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'identifierHashV2', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'created_by': {'key': 'createdBy', 'type': 'CreatedBy'},
-        'last_updated_by': {'key': 'lastUpdatedBy', 'type': 'CreatedBy'},
-        'runconfig': {'key': 'runconfig', 'type': 'str'},
-        'cloud_settings': {'key': 'cloudSettings', 'type': 'CloudSettings'},
-        'category': {'key': 'category', 'type': 'str'},
-        'step_type': {'key': 'stepType', 'type': 'str'},
-        'stage': {'key': 'stage', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'hash': {'key': 'hash', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "display_name": {"key": "displayName", "type": "str"},
+        "module_execution_type": {"key": "moduleExecutionType", "type": "str"},
+        "module_type": {"key": "moduleType", "type": "str"},
+        "module_type_version": {"key": "moduleTypeVersion", "type": "str"},
+        "upload_state": {"key": "uploadState", "type": "str"},
+        "is_deterministic": {"key": "isDeterministic", "type": "bool"},
+        "structured_interface": {
+            "key": "structuredInterface",
+            "type": "StructuredInterface",
+        },
+        "data_location": {"key": "dataLocation", "type": "DataLocation"},
+        "identifier_hash": {"key": "identifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "identifierHashV2", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "created_by": {"key": "createdBy", "type": "CreatedBy"},
+        "last_updated_by": {"key": "lastUpdatedBy", "type": "CreatedBy"},
+        "runconfig": {"key": "runconfig", "type": "str"},
+        "cloud_settings": {"key": "cloudSettings", "type": "CloudSettings"},
+        "category": {"key": "category", "type": "str"},
+        "step_type": {"key": "stepType", "type": "str"},
+        "stage": {"key": "stage", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "hash": {"key": "hash", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -25562,9 +26525,9 @@ class ModulePythonInterface(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'inputs': {'key': 'inputs', 'type': '[PythonInterfaceMapping]'},
-        'outputs': {'key': 'outputs', 'type': '[PythonInterfaceMapping]'},
-        'parameters': {'key': 'parameters', 'type': '[PythonInterfaceMapping]'},
+        "inputs": {"key": "inputs", "type": "[PythonInterfaceMapping]"},
+        "outputs": {"key": "outputs", "type": "[PythonInterfaceMapping]"},
+        "parameters": {"key": "parameters", "type": "[PythonInterfaceMapping]"},
     }
 
     def __init__(
@@ -25597,15 +26560,10 @@ class MpiConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'process_count_per_node': {'key': 'processCountPerNode', 'type': 'int'},
+        "process_count_per_node": {"key": "processCountPerNode", "type": "int"},
     }
 
-    def __init__(
-        self,
-        *,
-        process_count_per_node: Optional[int] = None,
-        **kwargs
-    ):
+    def __init__(self, *, process_count_per_node: Optional[int] = None, **kwargs):
         """
         :keyword process_count_per_node:
         :paramtype process_count_per_node: int
@@ -25624,8 +26582,8 @@ class NCrossValidations(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -25670,15 +26628,15 @@ class Node(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'tool': {'key': 'tool', 'type': 'str'},
-        'comment': {'key': 'comment', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{object}'},
-        'api': {'key': 'api', 'type': 'str'},
-        'provider': {'key': 'provider', 'type': 'str'},
-        'connection': {'key': 'connection', 'type': 'str'},
-        'module': {'key': 'module', 'type': 'str'},
-        'reduce': {'key': 'reduce', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "tool": {"key": "tool", "type": "str"},
+        "comment": {"key": "comment", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{object}"},
+        "api": {"key": "api", "type": "str"},
+        "provider": {"key": "provider", "type": "str"},
+        "connection": {"key": "connection", "type": "str"},
+        "module": {"key": "module", "type": "str"},
+        "reduce": {"key": "reduce", "type": "bool"},
     }
 
     def __init__(
@@ -25741,10 +26699,10 @@ class NodeInputPort(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'documentation': {'key': 'documentation', 'type': 'str'},
-        'data_types_ids': {'key': 'dataTypesIds', 'type': '[str]'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "documentation": {"key": "documentation", "type": "str"},
+        "data_types_ids": {"key": "dataTypesIds", "type": "[str]"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
     }
 
     def __init__(
@@ -25789,11 +26747,11 @@ class NodeLayout(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'x': {'key': 'x', 'type': 'float'},
-        'y': {'key': 'y', 'type': 'float'},
-        'width': {'key': 'width', 'type': 'float'},
-        'height': {'key': 'height', 'type': 'float'},
-        'extended_data': {'key': 'extendedData', 'type': 'str'},
+        "x": {"key": "x", "type": "float"},
+        "y": {"key": "y", "type": "float"},
+        "width": {"key": "width", "type": "float"},
+        "height": {"key": "height", "type": "float"},
+        "extended_data": {"key": "extendedData", "type": "str"},
     }
 
     def __init__(
@@ -25845,12 +26803,12 @@ class NodeOutputPort(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'documentation': {'key': 'documentation', 'type': 'str'},
-        'data_type_id': {'key': 'dataTypeId', 'type': 'str'},
-        'pass_through_input_name': {'key': 'passThroughInputName', 'type': 'str'},
-        'early_available': {'key': 'EarlyAvailable', 'type': 'bool'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "documentation": {"key": "documentation", "type": "str"},
+        "data_type_id": {"key": "dataTypeId", "type": "str"},
+        "pass_through_input_name": {"key": "passThroughInputName", "type": "str"},
+        "early_available": {"key": "EarlyAvailable", "type": "bool"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
     }
 
     def __init__(
@@ -25900,9 +26858,9 @@ class NodePortInterface(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'inputs': {'key': 'inputs', 'type': '[NodeInputPort]'},
-        'outputs': {'key': 'outputs', 'type': '[NodeOutputPort]'},
-        'control_outputs': {'key': 'controlOutputs', 'type': '[ControlOutput]'},
+        "inputs": {"key": "inputs", "type": "[NodeInputPort]"},
+        "outputs": {"key": "outputs", "type": "[NodeOutputPort]"},
+        "control_outputs": {"key": "controlOutputs", "type": "[ControlOutput]"},
     }
 
     def __init__(
@@ -25939,12 +26897,12 @@ class Nodes(msrest.serialization.Model):
     """
 
     _validation = {
-        'nodes_value_type': {'required': True},
+        "nodes_value_type": {"required": True},
     }
 
     _attribute_map = {
-        'nodes_value_type': {'key': 'nodes_value_type', 'type': 'str'},
-        'values': {'key': 'values', 'type': '[int]'},
+        "nodes_value_type": {"key": "nodes_value_type", "type": "str"},
+        "values": {"key": "values", "type": "[int]"},
     }
 
     def __init__(
@@ -25977,9 +26935,9 @@ class NodeSource(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'path': {'key': 'path', 'type': 'str'},
-        'tool': {'key': 'tool', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "path": {"key": "path", "type": "str"},
+        "tool": {"key": "tool", "type": "str"},
     }
 
     def __init__(
@@ -26024,13 +26982,13 @@ class NodeTelemetryMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'pipeline_run_id': {'key': 'pipelineRunId', 'type': 'str'},
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'version_id': {'key': 'versionId', 'type': 'str'},
-        'node_type': {'key': 'nodeType', 'type': 'str'},
-        'node_source': {'key': 'nodeSource', 'type': 'str'},
-        'is_anonymous': {'key': 'isAnonymous', 'type': 'bool'},
-        'is_pipeline_component': {'key': 'isPipelineComponent', 'type': 'bool'},
+        "pipeline_run_id": {"key": "pipelineRunId", "type": "str"},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "version_id": {"key": "versionId", "type": "str"},
+        "node_type": {"key": "nodeType", "type": "str"},
+        "node_source": {"key": "nodeSource", "type": "str"},
+        "is_anonymous": {"key": "isAnonymous", "type": "bool"},
+        "is_pipeline_component": {"key": "isPipelineComponent", "type": "bool"},
     }
 
     def __init__(
@@ -26081,8 +27039,8 @@ class NodeVariant(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'variants': {'key': 'variants', 'type': '{VariantNode}'},
-        'default_variant_id': {'key': 'defaultVariantId', 'type': 'str'},
+        "variants": {"key": "variants", "type": "{VariantNode}"},
+        "default_variant_id": {"key": "defaultVariantId", "type": "str"},
     }
 
     def __init__(
@@ -26113,8 +27071,8 @@ class NoteBookTaskDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'notebook_path': {'key': 'notebook_path', 'type': 'str'},
-        'base_parameters': {'key': 'base_parameters', 'type': '{str}'},
+        "notebook_path": {"key": "notebook_path", "type": "str"},
+        "base_parameters": {"key": "base_parameters", "type": "{str}"},
     }
 
     def __init__(
@@ -26147,9 +27105,9 @@ class NotificationSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'emails': {'key': 'emails', 'type': '[str]'},
-        'email_on': {'key': 'emailOn', 'type': '[str]'},
-        'webhooks': {'key': 'webhooks', 'type': '{Webhook}'},
+        "emails": {"key": "emails", "type": "[str]"},
+        "email_on": {"key": "emailOn", "type": "[str]"},
+        "webhooks": {"key": "webhooks", "type": "{Webhook}"},
     }
 
     def __init__(
@@ -26188,10 +27146,10 @@ class OutputData(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'output_location': {'key': 'outputLocation', 'type': 'ExecutionDataLocation'},
-        'mechanism': {'key': 'mechanism', 'type': 'str'},
-        'additional_options': {'key': 'additionalOptions', 'type': 'OutputOptions'},
-        'environment_variable_name': {'key': 'environmentVariableName', 'type': 'str'},
+        "output_location": {"key": "outputLocation", "type": "ExecutionDataLocation"},
+        "mechanism": {"key": "mechanism", "type": "str"},
+        "additional_options": {"key": "additionalOptions", "type": "OutputOptions"},
+        "environment_variable_name": {"key": "environmentVariableName", "type": "str"},
     }
 
     def __init__(
@@ -26252,18 +27210,21 @@ class OutputDataBinding(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'datastore_id': {'key': 'datastoreId', 'type': 'str'},
-        'path_on_datastore': {'key': 'pathOnDatastore', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'MfeInternalUriReference'},
-        'mode': {'key': 'mode', 'type': 'str'},
-        'asset_uri': {'key': 'assetUri', 'type': 'str'},
-        'is_asset_job_output': {'key': 'isAssetJobOutput', 'type': 'bool'},
-        'job_output_type': {'key': 'jobOutputType', 'type': 'str'},
-        'asset_name': {'key': 'assetName', 'type': 'str'},
-        'asset_version': {'key': 'assetVersion', 'type': 'str'},
-        'auto_delete_setting': {'key': 'autoDeleteSetting', 'type': 'AutoDeleteSetting'},
+        "datastore_id": {"key": "datastoreId", "type": "str"},
+        "path_on_datastore": {"key": "pathOnDatastore", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "uri": {"key": "uri", "type": "MfeInternalUriReference"},
+        "mode": {"key": "mode", "type": "str"},
+        "asset_uri": {"key": "assetUri", "type": "str"},
+        "is_asset_job_output": {"key": "isAssetJobOutput", "type": "bool"},
+        "job_output_type": {"key": "jobOutputType", "type": "str"},
+        "asset_name": {"key": "assetName", "type": "str"},
+        "asset_version": {"key": "assetVersion", "type": "str"},
+        "auto_delete_setting": {
+            "key": "autoDeleteSetting",
+            "type": "AutoDeleteSetting",
+        },
     }
 
     def __init__(
@@ -26338,9 +27299,9 @@ class OutputDatasetLineage(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier': {'key': 'identifier', 'type': 'DatasetIdentifier'},
-        'output_type': {'key': 'outputType', 'type': 'str'},
-        'output_details': {'key': 'outputDetails', 'type': 'DatasetOutputDetails'},
+        "identifier": {"key": "identifier", "type": "DatasetIdentifier"},
+        "output_type": {"key": "outputType", "type": "str"},
+        "output_details": {"key": "outputDetails", "type": "DatasetOutputDetails"},
     }
 
     def __init__(
@@ -26379,10 +27340,10 @@ class OutputDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': '[str]'},
-        'description': {'key': 'description', 'type': 'str'},
-        'is_property': {'key': 'isProperty', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "[str]"},
+        "description": {"key": "description", "type": "str"},
+        "is_property": {"key": "isProperty", "type": "bool"},
     }
 
     def __init__(
@@ -26425,10 +27386,13 @@ class OutputOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'registration_options': {'key': 'registrationOptions', 'type': 'RegistrationOptions'},
-        'upload_options': {'key': 'uploadOptions', 'type': 'UploadOptions'},
-        'mount_options': {'key': 'mountOptions', 'type': '{str}'},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "registration_options": {
+            "key": "registrationOptions",
+            "type": "RegistrationOptions",
+        },
+        "upload_options": {"key": "uploadOptions", "type": "UploadOptions"},
+        "mount_options": {"key": "mountOptions", "type": "{str}"},
     }
 
     def __init__(
@@ -26494,21 +27458,42 @@ class OutputSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_name_parameter_assignment': {'key': 'DataStoreNameParameterAssignment', 'type': 'ParameterAssignment'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'data_store_mode_parameter_assignment': {'key': 'DataStoreModeParameterAssignment', 'type': 'ParameterAssignment'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'path_on_compute_parameter_assignment': {'key': 'PathOnComputeParameterAssignment', 'type': 'ParameterAssignment'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'data_reference_name': {'key': 'dataReferenceName', 'type': 'str'},
-        'web_service_port': {'key': 'webServicePort', 'type': 'str'},
-        'dataset_registration': {'key': 'datasetRegistration', 'type': 'DatasetRegistration'},
-        'dataset_output_options': {'key': 'datasetOutputOptions', 'type': 'DatasetOutputOptions'},
-        'asset_output_settings': {'key': 'AssetOutputSettings', 'type': 'AssetOutputSettings'},
-        'parameter_name': {'key': 'parameterName', 'type': 'str'},
-        'asset_output_settings_parameter_name': {'key': 'AssetOutputSettingsParameterName', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_name_parameter_assignment": {
+            "key": "DataStoreNameParameterAssignment",
+            "type": "ParameterAssignment",
+        },
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "data_store_mode_parameter_assignment": {
+            "key": "DataStoreModeParameterAssignment",
+            "type": "ParameterAssignment",
+        },
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "path_on_compute_parameter_assignment": {
+            "key": "PathOnComputeParameterAssignment",
+            "type": "ParameterAssignment",
+        },
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "data_reference_name": {"key": "dataReferenceName", "type": "str"},
+        "web_service_port": {"key": "webServicePort", "type": "str"},
+        "dataset_registration": {
+            "key": "datasetRegistration",
+            "type": "DatasetRegistration",
+        },
+        "dataset_output_options": {
+            "key": "datasetOutputOptions",
+            "type": "DatasetOutputOptions",
+        },
+        "asset_output_settings": {
+            "key": "AssetOutputSettings",
+            "type": "AssetOutputSettings",
+        },
+        "parameter_name": {"key": "parameterName", "type": "str"},
+        "asset_output_settings_parameter_name": {
+            "key": "AssetOutputSettingsParameterName",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -26592,14 +27577,19 @@ class OutputSettingSpec(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'supported_data_store_modes': {'key': 'supportedDataStoreModes', 'type': '[str]'},
-        'default_asset_output_path': {'key': 'defaultAssetOutputPath', 'type': 'str'},
+        "supported_data_store_modes": {
+            "key": "supportedDataStoreModes",
+            "type": "[str]",
+        },
+        "default_asset_output_path": {"key": "defaultAssetOutputPath", "type": "str"},
     }
 
     def __init__(
         self,
         *,
-        supported_data_store_modes: Optional[List[Union[str, "AEVADataStoreMode"]]] = None,
+        supported_data_store_modes: Optional[
+            List[Union[str, "AEVADataStoreMode"]]
+        ] = None,
         default_asset_output_path: Optional[str] = None,
         **kwargs
     ):
@@ -26628,9 +27618,9 @@ class PaginatedDataInfoList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[DataInfo]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[DataInfo]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26671,9 +27661,9 @@ class PaginatedModelDtoList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[ModelDto]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[ModelDto]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26714,9 +27704,9 @@ class PaginatedModuleDtoList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[ModuleDto]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[ModuleDto]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26757,9 +27747,9 @@ class PaginatedPipelineDraftSummaryList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[PipelineDraftSummary]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[PipelineDraftSummary]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26800,9 +27790,9 @@ class PaginatedPipelineEndpointSummaryList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[PipelineEndpointSummary]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[PipelineEndpointSummary]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26843,9 +27833,9 @@ class PaginatedPipelineRunSummaryList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[PipelineRunSummary]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[PipelineRunSummary]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26886,9 +27876,9 @@ class PaginatedPublishedPipelineSummaryList(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[PublishedPipelineSummary]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[PublishedPipelineSummary]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -26923,7 +27913,10 @@ class ParallelForControlFlowInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'parallel_for_items_input': {'key': 'parallelForItemsInput', 'type': 'ParameterAssignment'},
+        "parallel_for_items_input": {
+            "key": "parallelForItemsInput",
+            "type": "ParameterAssignment",
+        },
     }
 
     def __init__(
@@ -26954,10 +27947,10 @@ class ParallelTaskConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_retries_per_worker': {'key': 'maxRetriesPerWorker', 'type': 'int'},
-        'worker_count_per_node': {'key': 'workerCountPerNode', 'type': 'int'},
-        'terminal_exit_codes': {'key': 'terminalExitCodes', 'type': '[int]'},
-        'configuration': {'key': 'configuration', 'type': '{str}'},
+        "max_retries_per_worker": {"key": "maxRetriesPerWorker", "type": "int"},
+        "worker_count_per_node": {"key": "workerCountPerNode", "type": "int"},
+        "terminal_exit_codes": {"key": "terminalExitCodes", "type": "[int]"},
+        "configuration": {"key": "configuration", "type": "{str}"},
     }
 
     def __init__(
@@ -27014,17 +28007,17 @@ class Parameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'documentation': {'key': 'documentation', 'type': 'str'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'min_max_rules': {'key': 'minMaxRules', 'type': '[MinMaxParameterRule]'},
-        'enum_rules': {'key': 'enumRules', 'type': '[EnumParameterRule]'},
-        'type': {'key': 'type', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'group_names': {'key': 'groupNames', 'type': '[str]'},
-        'argument_name': {'key': 'argumentName', 'type': 'str'},
-        'ui_hint': {'key': 'uiHint', 'type': 'UIParameterHint'},
+        "name": {"key": "name", "type": "str"},
+        "documentation": {"key": "documentation", "type": "str"},
+        "default_value": {"key": "defaultValue", "type": "str"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "min_max_rules": {"key": "minMaxRules", "type": "[MinMaxParameterRule]"},
+        "enum_rules": {"key": "enumRules", "type": "[EnumParameterRule]"},
+        "type": {"key": "type", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "group_names": {"key": "groupNames", "type": "[str]"},
+        "argument_name": {"key": "argumentName", "type": "str"},
+        "ui_hint": {"key": "uiHint", "type": "UIParameterHint"},
     }
 
     def __init__(
@@ -27100,12 +28093,18 @@ class ParameterAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value_type': {'key': 'valueType', 'type': 'str'},
-        'assignments_to_concatenate': {'key': 'assignmentsToConcatenate', 'type': '[ParameterAssignment]'},
-        'data_path_assignment': {'key': 'dataPathAssignment', 'type': 'LegacyDataPath'},
-        'data_set_definition_value_assignment': {'key': 'dataSetDefinitionValueAssignment', 'type': 'DataSetDefinitionValue'},
-        'name': {'key': 'name', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "value_type": {"key": "valueType", "type": "str"},
+        "assignments_to_concatenate": {
+            "key": "assignmentsToConcatenate",
+            "type": "[ParameterAssignment]",
+        },
+        "data_path_assignment": {"key": "dataPathAssignment", "type": "LegacyDataPath"},
+        "data_set_definition_value_assignment": {
+            "key": "dataSetDefinitionValueAssignment",
+            "type": "DataSetDefinitionValue",
+        },
+        "name": {"key": "name", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -27157,10 +28156,10 @@ class ParameterDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "value": {"key": "value", "type": "str"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
     }
 
     def __init__(
@@ -27200,14 +28199,16 @@ class PatchFlowRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_patch_operation_type': {'key': 'flowPatchOperationType', 'type': 'str'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
+        "flow_patch_operation_type": {"key": "flowPatchOperationType", "type": "str"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
     }
 
     def __init__(
         self,
         *,
-        flow_patch_operation_type: Optional[Union[str, "FlowPatchOperationType"]] = None,
+        flow_patch_operation_type: Optional[
+            Union[str, "FlowPatchOperationType"]
+        ] = None,
         flow_definition_file_path: Optional[str] = None,
         **kwargs
     ):
@@ -27241,12 +28242,15 @@ class Pipeline(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'default_datastore_name': {'key': 'defaultDatastoreName', 'type': 'str'},
-        'component_jobs': {'key': 'componentJobs', 'type': '{ComponentJob}'},
-        'inputs': {'key': 'inputs', 'type': '{PipelineInput}'},
-        'outputs': {'key': 'outputs', 'type': '{PipelineOutput}'},
+        "run_id": {"key": "runId", "type": "str"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "default_datastore_name": {"key": "defaultDatastoreName", "type": "str"},
+        "component_jobs": {"key": "componentJobs", "type": "{ComponentJob}"},
+        "inputs": {"key": "inputs", "type": "{PipelineInput}"},
+        "outputs": {"key": "outputs", "type": "{PipelineOutput}"},
     }
 
     def __init__(
@@ -27373,47 +28377,86 @@ class PipelineDraft(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph_draft_id': {'key': 'graphDraftId', 'type': 'str'},
-        'source_pipeline_run_id': {'key': 'sourcePipelineRunId', 'type': 'str'},
-        'latest_pipeline_run_id': {'key': 'latestPipelineRunId', 'type': 'str'},
-        'latest_run_experiment_name': {'key': 'latestRunExperimentName', 'type': 'str'},
-        'latest_run_experiment_id': {'key': 'latestRunExperimentId', 'type': 'str'},
-        'is_latest_run_experiment_archived': {'key': 'isLatestRunExperimentArchived', 'type': 'bool'},
-        'status': {'key': 'status', 'type': 'PipelineStatus'},
-        'graph_detail': {'key': 'graphDetail', 'type': 'PipelineRunGraphDetail'},
-        'real_time_endpoint_info': {'key': 'realTimeEndpointInfo', 'type': 'RealTimeEndpointInfo'},
-        'linked_pipelines_info': {'key': 'linkedPipelinesInfo', 'type': '[LinkedPipelineInfo]'},
-        'nodes_in_draft': {'key': 'nodesInDraft', 'type': '[str]'},
-        'studio_migration_info': {'key': 'studioMigrationInfo', 'type': 'StudioMigrationInfo'},
-        'flattened_sub_graphs': {'key': 'flattenedSubGraphs', 'type': '{PipelineSubDraft}'},
-        'pipeline_run_setting_parameters': {'key': 'pipelineRunSettingParameters', 'type': '[RunSettingParameter]'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'continue_run_on_failed_optional_input': {'key': 'continueRunOnFailedOptionalInput', 'type': 'bool'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'ComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'DatastoreSetting'},
-        'default_cloud_priority': {'key': 'defaultCloudPriority', 'type': 'CloudPrioritySetting'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'pipeline_timeout': {'key': 'pipelineTimeout', 'type': 'int'},
-        'identity_config': {'key': 'identityConfig', 'type': 'IdentitySetting'},
-        'graph_components_mode': {'key': 'graphComponentsMode', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'last_edited_by': {'key': 'lastEditedBy', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'pipeline_draft_mode': {'key': 'pipelineDraftMode', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "graph_draft_id": {"key": "graphDraftId", "type": "str"},
+        "source_pipeline_run_id": {"key": "sourcePipelineRunId", "type": "str"},
+        "latest_pipeline_run_id": {"key": "latestPipelineRunId", "type": "str"},
+        "latest_run_experiment_name": {"key": "latestRunExperimentName", "type": "str"},
+        "latest_run_experiment_id": {"key": "latestRunExperimentId", "type": "str"},
+        "is_latest_run_experiment_archived": {
+            "key": "isLatestRunExperimentArchived",
+            "type": "bool",
+        },
+        "status": {"key": "status", "type": "PipelineStatus"},
+        "graph_detail": {"key": "graphDetail", "type": "PipelineRunGraphDetail"},
+        "real_time_endpoint_info": {
+            "key": "realTimeEndpointInfo",
+            "type": "RealTimeEndpointInfo",
+        },
+        "linked_pipelines_info": {
+            "key": "linkedPipelinesInfo",
+            "type": "[LinkedPipelineInfo]",
+        },
+        "nodes_in_draft": {"key": "nodesInDraft", "type": "[str]"},
+        "studio_migration_info": {
+            "key": "studioMigrationInfo",
+            "type": "StudioMigrationInfo",
+        },
+        "flattened_sub_graphs": {
+            "key": "flattenedSubGraphs",
+            "type": "{PipelineSubDraft}",
+        },
+        "pipeline_run_setting_parameters": {
+            "key": "pipelineRunSettingParameters",
+            "type": "[RunSettingParameter]",
+        },
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "continue_run_on_failed_optional_input": {
+            "key": "continueRunOnFailedOptionalInput",
+            "type": "bool",
+        },
+        "default_compute": {"key": "defaultCompute", "type": "ComputeSetting"},
+        "default_datastore": {"key": "defaultDatastore", "type": "DatastoreSetting"},
+        "default_cloud_priority": {
+            "key": "defaultCloudPriority",
+            "type": "CloudPrioritySetting",
+        },
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "pipeline_timeout": {"key": "pipelineTimeout", "type": "int"},
+        "identity_config": {"key": "identityConfig", "type": "IdentitySetting"},
+        "graph_components_mode": {"key": "graphComponentsMode", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "last_edited_by": {"key": "lastEditedBy", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "pipeline_draft_mode": {"key": "pipelineDraftMode", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -27442,8 +28485,12 @@ class PipelineDraft(msrest.serialization.Model):
         enforce_rerun: Optional[bool] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         pipeline_timeout: Optional[int] = None,
         identity_config: Optional["IdentitySetting"] = None,
         graph_components_mode: Optional[Union[str, "GraphComponentsMode"]] = None,
@@ -27566,14 +28613,18 @@ class PipelineDraft(msrest.serialization.Model):
         self.pipeline_run_setting_parameters = pipeline_run_setting_parameters
         self.pipeline_run_settings = pipeline_run_settings
         self.continue_run_on_step_failure = continue_run_on_step_failure
-        self.continue_run_on_failed_optional_input = continue_run_on_failed_optional_input
+        self.continue_run_on_failed_optional_input = (
+            continue_run_on_failed_optional_input
+        )
         self.default_compute = default_compute
         self.default_datastore = default_datastore
         self.default_cloud_priority = default_cloud_priority
         self.enforce_rerun = enforce_rerun
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
         self.pipeline_timeout = pipeline_timeout
         self.identity_config = identity_config
@@ -27633,22 +28684,22 @@ class PipelineDraftStepDetails(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'is_reused': {'key': 'isReused', 'type': 'bool'},
-        'reused_run_id': {'key': 'reusedRunId', 'type': 'str'},
-        'reused_pipeline_run_id': {'key': 'reusedPipelineRunId', 'type': 'str'},
-        'logs': {'key': 'logs', 'type': '{str}'},
-        'output_log': {'key': 'outputLog', 'type': 'str'},
-        'run_configuration': {'key': 'runConfiguration', 'type': 'RunConfiguration'},
-        'outputs': {'key': 'outputs', 'type': '{str}'},
-        'port_outputs': {'key': 'portOutputs', 'type': '{PortOutputInfo}'},
-        'is_experiment_archived': {'key': 'isExperimentArchived', 'type': 'bool'},
+        "run_id": {"key": "runId", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "is_reused": {"key": "isReused", "type": "bool"},
+        "reused_run_id": {"key": "reusedRunId", "type": "str"},
+        "reused_pipeline_run_id": {"key": "reusedPipelineRunId", "type": "str"},
+        "logs": {"key": "logs", "type": "{str}"},
+        "output_log": {"key": "outputLog", "type": "str"},
+        "run_configuration": {"key": "runConfiguration", "type": "RunConfiguration"},
+        "outputs": {"key": "outputs", "type": "{str}"},
+        "port_outputs": {"key": "portOutputs", "type": "{PortOutputInfo}"},
+        "is_experiment_archived": {"key": "isExperimentArchived", "type": "bool"},
     }
 
     def __init__(
@@ -27760,19 +28811,19 @@ class PipelineDraftSummary(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'last_edited_by': {'key': 'lastEditedBy', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'pipeline_draft_mode': {'key': 'pipelineDraftMode', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "name": {"key": "name", "type": "str"},
+        "last_edited_by": {"key": "lastEditedBy", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "pipeline_draft_mode": {"key": "pipelineDraftMode", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -27887,27 +28938,30 @@ class PipelineEndpoint(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'default_version': {'key': 'defaultVersion', 'type': 'str'},
-        'default_pipeline_id': {'key': 'defaultPipelineId', 'type': 'str'},
-        'default_graph_id': {'key': 'defaultGraphId', 'type': 'str'},
-        'rest_endpoint': {'key': 'restEndpoint', 'type': 'str'},
-        'published_date': {'key': 'publishedDate', 'type': 'iso-8601'},
-        'published_by': {'key': 'publishedBy', 'type': 'str'},
-        'parameters': {'key': 'parameters', 'type': '{str}'},
-        'data_set_definition_value_assignment': {'key': 'dataSetDefinitionValueAssignment', 'type': '{DataSetDefinitionValue}'},
-        'default_pipeline_name': {'key': 'defaultPipelineName', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'updated_by': {'key': 'updatedBy', 'type': 'str'},
-        'swagger_url': {'key': 'swaggerUrl', 'type': 'str'},
-        'last_run_time': {'key': 'lastRunTime', 'type': 'iso-8601'},
-        'last_run_status': {'key': 'lastRunStatus', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "default_version": {"key": "defaultVersion", "type": "str"},
+        "default_pipeline_id": {"key": "defaultPipelineId", "type": "str"},
+        "default_graph_id": {"key": "defaultGraphId", "type": "str"},
+        "rest_endpoint": {"key": "restEndpoint", "type": "str"},
+        "published_date": {"key": "publishedDate", "type": "iso-8601"},
+        "published_by": {"key": "publishedBy", "type": "str"},
+        "parameters": {"key": "parameters", "type": "{str}"},
+        "data_set_definition_value_assignment": {
+            "key": "dataSetDefinitionValueAssignment",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "default_pipeline_name": {"key": "defaultPipelineName", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "updated_by": {"key": "updatedBy", "type": "str"},
+        "swagger_url": {"key": "swaggerUrl", "type": "str"},
+        "last_run_time": {"key": "lastRunTime", "type": "iso-8601"},
+        "last_run_status": {"key": "lastRunStatus", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -27920,7 +28974,9 @@ class PipelineEndpoint(msrest.serialization.Model):
         published_date: Optional[datetime.datetime] = None,
         published_by: Optional[str] = None,
         parameters: Optional[Dict[str, str]] = None,
-        data_set_definition_value_assignment: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
+        data_set_definition_value_assignment: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
         default_pipeline_name: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -28036,18 +29092,18 @@ class PipelineEndpointSummary(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'updated_by': {'key': 'updatedBy', 'type': 'str'},
-        'swagger_url': {'key': 'swaggerUrl', 'type': 'str'},
-        'last_run_time': {'key': 'lastRunTime', 'type': 'iso-8601'},
-        'last_run_status': {'key': 'lastRunStatus', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "updated_by": {"key": "updatedBy", "type": "str"},
+        "swagger_url": {"key": "swaggerUrl", "type": "str"},
+        "last_run_time": {"key": "lastRunTime", "type": "iso-8601"},
+        "last_run_status": {"key": "lastRunStatus", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -28180,38 +29236,65 @@ class PipelineGraph(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph_module_dtos': {'key': 'graphModuleDtos', 'type': '[ModuleDto]'},
-        'graph_data_sources': {'key': 'graphDataSources', 'type': '[DataInfo]'},
-        'graphs': {'key': 'graphs', 'type': '{PipelineGraph}'},
-        'graph_drafts': {'key': 'graphDrafts', 'type': '{PipelineGraph}'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'sub_pipelines_info': {'key': 'subPipelinesInfo', 'type': 'SubPipelinesInfo'},
-        'referenced_node_id': {'key': 'referencedNodeId', 'type': 'str'},
-        'pipeline_run_setting_parameters': {'key': 'pipelineRunSettingParameters', 'type': '[RunSettingParameter]'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'real_time_endpoint_info': {'key': 'realTimeEndpointInfo', 'type': 'RealTimeEndpointInfo'},
-        'node_telemetry_meta_infos': {'key': 'nodeTelemetryMetaInfos', 'type': '[NodeTelemetryMetaInfo]'},
-        'graph_components_mode': {'key': 'graphComponentsMode', 'type': 'str'},
-        'module_nodes': {'key': 'moduleNodes', 'type': '[GraphModuleNode]'},
-        'dataset_nodes': {'key': 'datasetNodes', 'type': '[GraphDatasetNode]'},
-        'sub_graph_nodes': {'key': 'subGraphNodes', 'type': '[GraphReferenceNode]'},
-        'control_reference_nodes': {'key': 'controlReferenceNodes', 'type': '[GraphControlReferenceNode]'},
-        'control_nodes': {'key': 'controlNodes', 'type': '[GraphControlNode]'},
-        'edges': {'key': 'edges', 'type': '[GraphEdge]'},
-        'entity_interface': {'key': 'entityInterface', 'type': 'EntityInterface'},
-        'graph_layout': {'key': 'graphLayout', 'type': 'GraphLayout'},
-        'created_by': {'key': 'createdBy', 'type': 'CreatedBy'},
-        'last_updated_by': {'key': 'lastUpdatedBy', 'type': 'CreatedBy'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'ComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'DatastoreSetting'},
-        'default_cloud_priority': {'key': 'defaultCloudPriority', 'type': 'CloudPrioritySetting'},
-        'extended_properties': {'key': 'extendedProperties', 'type': '{str}'},
-        'parent_sub_graph_module_ids': {'key': 'parentSubGraphModuleIds', 'type': '[str]'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "graph_module_dtos": {"key": "graphModuleDtos", "type": "[ModuleDto]"},
+        "graph_data_sources": {"key": "graphDataSources", "type": "[DataInfo]"},
+        "graphs": {"key": "graphs", "type": "{PipelineGraph}"},
+        "graph_drafts": {"key": "graphDrafts", "type": "{PipelineGraph}"},
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "sub_pipelines_info": {"key": "subPipelinesInfo", "type": "SubPipelinesInfo"},
+        "referenced_node_id": {"key": "referencedNodeId", "type": "str"},
+        "pipeline_run_setting_parameters": {
+            "key": "pipelineRunSettingParameters",
+            "type": "[RunSettingParameter]",
+        },
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "real_time_endpoint_info": {
+            "key": "realTimeEndpointInfo",
+            "type": "RealTimeEndpointInfo",
+        },
+        "node_telemetry_meta_infos": {
+            "key": "nodeTelemetryMetaInfos",
+            "type": "[NodeTelemetryMetaInfo]",
+        },
+        "graph_components_mode": {"key": "graphComponentsMode", "type": "str"},
+        "module_nodes": {"key": "moduleNodes", "type": "[GraphModuleNode]"},
+        "dataset_nodes": {"key": "datasetNodes", "type": "[GraphDatasetNode]"},
+        "sub_graph_nodes": {"key": "subGraphNodes", "type": "[GraphReferenceNode]"},
+        "control_reference_nodes": {
+            "key": "controlReferenceNodes",
+            "type": "[GraphControlReferenceNode]",
+        },
+        "control_nodes": {"key": "controlNodes", "type": "[GraphControlNode]"},
+        "edges": {"key": "edges", "type": "[GraphEdge]"},
+        "entity_interface": {"key": "entityInterface", "type": "EntityInterface"},
+        "graph_layout": {"key": "graphLayout", "type": "GraphLayout"},
+        "created_by": {"key": "createdBy", "type": "CreatedBy"},
+        "last_updated_by": {"key": "lastUpdatedBy", "type": "CreatedBy"},
+        "default_compute": {"key": "defaultCompute", "type": "ComputeSetting"},
+        "default_datastore": {"key": "defaultDatastore", "type": "DatastoreSetting"},
+        "default_cloud_priority": {
+            "key": "defaultCloudPriority",
+            "type": "CloudPrioritySetting",
+        },
+        "extended_properties": {"key": "extendedProperties", "type": "{str}"},
+        "parent_sub_graph_module_ids": {
+            "key": "parentSubGraphModuleIds",
+            "type": "[str]",
+        },
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -28222,7 +29305,9 @@ class PipelineGraph(msrest.serialization.Model):
         graphs: Optional[Dict[str, "PipelineGraph"]] = None,
         graph_drafts: Optional[Dict[str, "PipelineGraph"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         sub_pipelines_info: Optional["SubPipelinesInfo"] = None,
         referenced_node_id: Optional[str] = None,
         pipeline_run_setting_parameters: Optional[List["RunSettingParameter"]] = None,
@@ -28361,15 +29446,10 @@ class PipelineInput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data': {'key': 'data', 'type': 'InputData'},
+        "data": {"key": "data", "type": "InputData"},
     }
 
-    def __init__(
-        self,
-        *,
-        data: Optional["InputData"] = None,
-        **kwargs
-    ):
+    def __init__(self, *, data: Optional["InputData"] = None, **kwargs):
         """
         :keyword data:
         :paramtype data: ~flow.models.InputData
@@ -28453,38 +29533,50 @@ class PipelineJob(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_type': {'key': 'jobType', 'type': 'str'},
-        'pipeline_job_type': {'key': 'pipelineJobType', 'type': 'str'},
-        'pipeline': {'key': 'pipeline', 'type': 'Pipeline'},
-        'compute_id': {'key': 'computeId', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'settings': {'key': 'settings', 'type': 'object'},
-        'component_jobs': {'key': 'componentJobs', 'type': '{MfeInternalV20211001ComponentJob}'},
-        'inputs': {'key': 'inputs', 'type': '{JobInput}'},
-        'outputs': {'key': 'outputs', 'type': '{JobOutput}'},
-        'bindings': {'key': 'bindings', 'type': '[Binding]'},
-        'jobs': {'key': 'jobs', 'type': '{object}'},
-        'input_bindings': {'key': 'inputBindings', 'type': '{InputDataBinding}'},
-        'output_bindings': {'key': 'outputBindings', 'type': '{OutputDataBinding}'},
-        'source_job_id': {'key': 'sourceJobId', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'parent_job_name': {'key': 'parentJobName', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'interaction_endpoints': {'key': 'interactionEndpoints', 'type': '{JobEndpoint}'},
-        'identity': {'key': 'identity', 'type': 'MfeInternalIdentityConfiguration'},
-        'compute': {'key': 'compute', 'type': 'ComputeConfiguration'},
-        'priority': {'key': 'priority', 'type': 'int'},
-        'output': {'key': 'output', 'type': 'JobOutputArtifacts'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'schedule': {'key': 'schedule', 'type': 'ScheduleBase'},
-        'component_id': {'key': 'componentId', 'type': 'str'},
-        'notification_setting': {'key': 'notificationSetting', 'type': 'NotificationSetting'},
-        'secrets_configuration': {'key': 'secretsConfiguration', 'type': '{MfeInternalSecretConfiguration}'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "job_type": {"key": "jobType", "type": "str"},
+        "pipeline_job_type": {"key": "pipelineJobType", "type": "str"},
+        "pipeline": {"key": "pipeline", "type": "Pipeline"},
+        "compute_id": {"key": "computeId", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "settings": {"key": "settings", "type": "object"},
+        "component_jobs": {
+            "key": "componentJobs",
+            "type": "{MfeInternalV20211001ComponentJob}",
+        },
+        "inputs": {"key": "inputs", "type": "{JobInput}"},
+        "outputs": {"key": "outputs", "type": "{JobOutput}"},
+        "bindings": {"key": "bindings", "type": "[Binding]"},
+        "jobs": {"key": "jobs", "type": "{object}"},
+        "input_bindings": {"key": "inputBindings", "type": "{InputDataBinding}"},
+        "output_bindings": {"key": "outputBindings", "type": "{OutputDataBinding}"},
+        "source_job_id": {"key": "sourceJobId", "type": "str"},
+        "provisioning_state": {"key": "provisioningState", "type": "str"},
+        "parent_job_name": {"key": "parentJobName", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "interaction_endpoints": {
+            "key": "interactionEndpoints",
+            "type": "{JobEndpoint}",
+        },
+        "identity": {"key": "identity", "type": "MfeInternalIdentityConfiguration"},
+        "compute": {"key": "compute", "type": "ComputeConfiguration"},
+        "priority": {"key": "priority", "type": "int"},
+        "output": {"key": "output", "type": "JobOutputArtifacts"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "schedule": {"key": "schedule", "type": "ScheduleBase"},
+        "component_id": {"key": "componentId", "type": "str"},
+        "notification_setting": {
+            "key": "notificationSetting",
+            "type": "NotificationSetting",
+        },
+        "secrets_configuration": {
+            "key": "secretsConfiguration",
+            "type": "{MfeInternalSecretConfiguration}",
+        },
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -28518,7 +29610,9 @@ class PipelineJob(msrest.serialization.Model):
         schedule: Optional["ScheduleBase"] = None,
         component_id: Optional[str] = None,
         notification_setting: Optional["NotificationSetting"] = None,
-        secrets_configuration: Optional[Dict[str, "MfeInternalSecretConfiguration"]] = None,
+        secrets_configuration: Optional[
+            Dict[str, "MfeInternalSecretConfiguration"]
+        ] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         properties: Optional[Dict[str, str]] = None,
@@ -28658,17 +29752,29 @@ class PipelineJobRuntimeBasicSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'pipeline_job_name': {'key': 'pipelineJobName', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'trigger_time_string': {'key': 'triggerTimeString', 'type': 'str'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "pipeline_job_name": {"key": "pipelineJobName", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "trigger_time_string": {"key": "triggerTimeString", "type": "str"},
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
     }
 
     def __init__(
@@ -28683,8 +29789,12 @@ class PipelineJobRuntimeBasicSettings(msrest.serialization.Model):
         trigger_time_string: Optional[str] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         **kwargs
     ):
         """
@@ -28722,7 +29832,9 @@ class PipelineJobRuntimeBasicSettings(msrest.serialization.Model):
         self.trigger_time_string = trigger_time_string
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
 
 
@@ -28756,18 +29868,21 @@ class PipelineJobScheduleDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'system_data': {'key': 'systemData', 'type': 'SystemData'},
-        'name': {'key': 'name', 'type': 'str'},
-        'pipeline_job_name': {'key': 'pipelineJobName', 'type': 'str'},
-        'pipeline_job_runtime_settings': {'key': 'pipelineJobRuntimeSettings', 'type': 'PipelineJobRuntimeBasicSettings'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'trigger_type': {'key': 'triggerType', 'type': 'str'},
-        'recurrence': {'key': 'recurrence', 'type': 'Recurrence'},
-        'cron': {'key': 'cron', 'type': 'Cron'},
-        'status': {'key': 'status', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "system_data": {"key": "systemData", "type": "SystemData"},
+        "name": {"key": "name", "type": "str"},
+        "pipeline_job_name": {"key": "pipelineJobName", "type": "str"},
+        "pipeline_job_runtime_settings": {
+            "key": "pipelineJobRuntimeSettings",
+            "type": "PipelineJobRuntimeBasicSettings",
+        },
+        "display_name": {"key": "displayName", "type": "str"},
+        "trigger_type": {"key": "triggerType", "type": "str"},
+        "recurrence": {"key": "recurrence", "type": "Recurrence"},
+        "cron": {"key": "cron", "type": "Cron"},
+        "status": {"key": "status", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -28776,7 +29891,9 @@ class PipelineJobScheduleDto(msrest.serialization.Model):
         system_data: Optional["SystemData"] = None,
         name: Optional[str] = None,
         pipeline_job_name: Optional[str] = None,
-        pipeline_job_runtime_settings: Optional["PipelineJobRuntimeBasicSettings"] = None,
+        pipeline_job_runtime_settings: Optional[
+            "PipelineJobRuntimeBasicSettings"
+        ] = None,
         display_name: Optional[str] = None,
         trigger_type: Optional[Union[str, "TriggerType"]] = None,
         recurrence: Optional["Recurrence"] = None,
@@ -28836,15 +29953,10 @@ class PipelineOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data': {'key': 'data', 'type': 'MfeInternalOutputData'},
+        "data": {"key": "data", "type": "MfeInternalOutputData"},
     }
 
-    def __init__(
-        self,
-        *,
-        data: Optional["MfeInternalOutputData"] = None,
-        **kwargs
-    ):
+    def __init__(self, *, data: Optional["MfeInternalOutputData"] = None, **kwargs):
         """
         :keyword data:
         :paramtype data: ~flow.models.MfeInternalOutputData
@@ -28950,54 +30062,75 @@ class PipelineRun(msrest.serialization.Model):
     """
 
     _validation = {
-        'unique_child_run_compute_targets': {'unique': True},
+        "unique_child_run_compute_targets": {"unique": True},
     }
 
     _attribute_map = {
-        'pipeline_id': {'key': 'pipelineId', 'type': 'str'},
-        'run_source': {'key': 'runSource', 'type': 'str'},
-        'run_type': {'key': 'runType', 'type': 'str'},
-        'parameters': {'key': 'parameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignment': {'key': 'dataSetDefinitionValueAssignment', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'total_steps': {'key': 'totalSteps', 'type': 'int'},
-        'logs': {'key': 'logs', 'type': '{str}'},
-        'user_alias': {'key': 'userAlias', 'type': 'str'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'continue_run_on_failed_optional_input': {'key': 'continueRunOnFailedOptionalInput', 'type': 'bool'},
-        'default_compute': {'key': 'defaultCompute', 'type': 'ComputeSetting'},
-        'default_datastore': {'key': 'defaultDatastore', 'type': 'DatastoreSetting'},
-        'default_cloud_priority': {'key': 'defaultCloudPriority', 'type': 'CloudPrioritySetting'},
-        'pipeline_timeout_seconds': {'key': 'pipelineTimeoutSeconds', 'type': 'int'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'identity_config': {'key': 'identityConfig', 'type': 'IdentitySetting'},
-        'description': {'key': 'description', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'run_number': {'key': 'runNumber', 'type': 'int'},
-        'status_code': {'key': 'statusCode', 'type': 'str'},
-        'run_status': {'key': 'runStatus', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'is_experiment_archived': {'key': 'isExperimentArchived', 'type': 'bool'},
-        'submitted_by': {'key': 'submittedBy', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'step_tags': {'key': 'stepTags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'aether_start_time': {'key': 'aetherStartTime', 'type': 'iso-8601'},
-        'aether_end_time': {'key': 'aetherEndTime', 'type': 'iso-8601'},
-        'run_history_start_time': {'key': 'runHistoryStartTime', 'type': 'iso-8601'},
-        'run_history_end_time': {'key': 'runHistoryEndTime', 'type': 'iso-8601'},
-        'unique_child_run_compute_targets': {'key': 'uniqueChildRunComputeTargets', 'type': '[str]'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "pipeline_id": {"key": "pipelineId", "type": "str"},
+        "run_source": {"key": "runSource", "type": "str"},
+        "run_type": {"key": "runType", "type": "str"},
+        "parameters": {"key": "parameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignment": {
+            "key": "dataSetDefinitionValueAssignment",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "total_steps": {"key": "totalSteps", "type": "int"},
+        "logs": {"key": "logs", "type": "{str}"},
+        "user_alias": {"key": "userAlias", "type": "str"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "continue_run_on_failed_optional_input": {
+            "key": "continueRunOnFailedOptionalInput",
+            "type": "bool",
+        },
+        "default_compute": {"key": "defaultCompute", "type": "ComputeSetting"},
+        "default_datastore": {"key": "defaultDatastore", "type": "DatastoreSetting"},
+        "default_cloud_priority": {
+            "key": "defaultCloudPriority",
+            "type": "CloudPrioritySetting",
+        },
+        "pipeline_timeout_seconds": {"key": "pipelineTimeoutSeconds", "type": "int"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "identity_config": {"key": "identityConfig", "type": "IdentitySetting"},
+        "description": {"key": "description", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "run_number": {"key": "runNumber", "type": "int"},
+        "status_code": {"key": "statusCode", "type": "str"},
+        "run_status": {"key": "runStatus", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "is_experiment_archived": {"key": "isExperimentArchived", "type": "bool"},
+        "submitted_by": {"key": "submittedBy", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "step_tags": {"key": "stepTags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "aether_start_time": {"key": "aetherStartTime", "type": "iso-8601"},
+        "aether_end_time": {"key": "aetherEndTime", "type": "iso-8601"},
+        "run_history_start_time": {"key": "runHistoryStartTime", "type": "iso-8601"},
+        "run_history_end_time": {"key": "runHistoryEndTime", "type": "iso-8601"},
+        "unique_child_run_compute_targets": {
+            "key": "uniqueChildRunComputeTargets",
+            "type": "[str]",
+        },
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -29008,8 +30141,12 @@ class PipelineRun(msrest.serialization.Model):
         run_type: Optional[Union[str, "RunType"]] = None,
         parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignment: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignment: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         total_steps: Optional[int] = None,
         logs: Optional[Dict[str, str]] = None,
         user_alias: Optional[str] = None,
@@ -29154,7 +30291,9 @@ class PipelineRun(msrest.serialization.Model):
         self.logs = logs
         self.user_alias = user_alias
         self.enforce_rerun = enforce_rerun
-        self.continue_run_on_failed_optional_input = continue_run_on_failed_optional_input
+        self.continue_run_on_failed_optional_input = (
+            continue_run_on_failed_optional_input
+        )
         self.default_compute = default_compute
         self.default_datastore = default_datastore
         self.default_cloud_priority = default_cloud_priority
@@ -29199,8 +30338,11 @@ class PipelineRunGraphDetail(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph': {'key': 'graph', 'type': 'PipelineGraph'},
-        'graph_nodes_status': {'key': 'graphNodesStatus', 'type': '{GraphNodeStatusInfo}'},
+        "graph": {"key": "graph", "type": "PipelineGraph"},
+        "graph_nodes_status": {
+            "key": "graphNodesStatus",
+            "type": "{GraphNodeStatusInfo}",
+        },
     }
 
     def __init__(
@@ -29235,10 +30377,13 @@ class PipelineRunGraphStatus(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'status': {'key': 'status', 'type': 'PipelineStatus'},
-        'graph_nodes_status': {'key': 'graphNodesStatus', 'type': '{GraphNodeStatusInfo}'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'is_experiment_archived': {'key': 'isExperimentArchived', 'type': 'bool'},
+        "status": {"key": "status", "type": "PipelineStatus"},
+        "graph_nodes_status": {
+            "key": "graphNodesStatus",
+            "type": "{GraphNodeStatusInfo}",
+        },
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "is_experiment_archived": {"key": "isExperimentArchived", "type": "bool"},
     }
 
     def __init__(
@@ -29299,19 +30444,22 @@ class PipelineRunProfile(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'run_url': {'key': 'runUrl', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'PipelineRunStatus'},
-        'create_time': {'key': 'createTime', 'type': 'long'},
-        'start_time': {'key': 'startTime', 'type': 'long'},
-        'end_time': {'key': 'endTime', 'type': 'long'},
-        'profiling_time': {'key': 'profilingTime', 'type': 'long'},
-        'step_runs_profile': {'key': 'stepRunsProfile', 'type': '[StepRunProfile]'},
-        'sub_pipeline_run_profile': {'key': 'subPipelineRunProfile', 'type': '[PipelineRunProfile]'},
+        "run_id": {"key": "runId", "type": "str"},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "run_url": {"key": "runUrl", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "status": {"key": "status", "type": "PipelineRunStatus"},
+        "create_time": {"key": "createTime", "type": "long"},
+        "start_time": {"key": "startTime", "type": "long"},
+        "end_time": {"key": "endTime", "type": "long"},
+        "profiling_time": {"key": "profilingTime", "type": "long"},
+        "step_runs_profile": {"key": "stepRunsProfile", "type": "[StepRunProfile]"},
+        "sub_pipeline_run_profile": {
+            "key": "subPipelineRunProfile",
+            "type": "[PipelineRunProfile]",
+        },
     }
 
     def __init__(
@@ -29391,10 +30539,10 @@ class PipelineRunStatus(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'status_code': {'key': 'statusCode', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'creation_time': {'key': 'creationTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
+        "status_code": {"key": "statusCode", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "creation_time": {"key": "creationTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
     }
 
     def __init__(
@@ -29458,24 +30606,24 @@ class PipelineRunStepDetails(msrest.serialization.Model):
     """
 
     _validation = {
-        'input_datasets': {'unique': True},
-        'output_datasets': {'unique': True},
+        "input_datasets": {"unique": True},
+        "output_datasets": {"unique": True},
     }
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'is_reused': {'key': 'isReused', 'type': 'bool'},
-        'logs': {'key': 'logs', 'type': '{str}'},
-        'outputs': {'key': 'outputs', 'type': '{str}'},
-        'snapshot_info': {'key': 'snapshotInfo', 'type': 'SnapshotInfo'},
-        'input_datasets': {'key': 'inputDatasets', 'type': '[DatasetLineage]'},
-        'output_datasets': {'key': 'outputDatasets', 'type': '[OutputDatasetLineage]'},
+        "run_id": {"key": "runId", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "is_reused": {"key": "isReused", "type": "bool"},
+        "logs": {"key": "logs", "type": "{str}"},
+        "outputs": {"key": "outputs", "type": "{str}"},
+        "snapshot_info": {"key": "snapshotInfo", "type": "SnapshotInfo"},
+        "input_datasets": {"key": "inputDatasets", "type": "[DatasetLineage]"},
+        "output_datasets": {"key": "outputDatasets", "type": "[OutputDatasetLineage]"},
     }
 
     def __init__(
@@ -29603,36 +30751,39 @@ class PipelineRunSummary(msrest.serialization.Model):
     """
 
     _validation = {
-        'unique_child_run_compute_targets': {'unique': True},
+        "unique_child_run_compute_targets": {"unique": True},
     }
 
     _attribute_map = {
-        'description': {'key': 'description', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'run_number': {'key': 'runNumber', 'type': 'int'},
-        'status_code': {'key': 'statusCode', 'type': 'str'},
-        'run_status': {'key': 'runStatus', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'is_experiment_archived': {'key': 'isExperimentArchived', 'type': 'bool'},
-        'submitted_by': {'key': 'submittedBy', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'step_tags': {'key': 'stepTags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'aether_start_time': {'key': 'aetherStartTime', 'type': 'iso-8601'},
-        'aether_end_time': {'key': 'aetherEndTime', 'type': 'iso-8601'},
-        'run_history_start_time': {'key': 'runHistoryStartTime', 'type': 'iso-8601'},
-        'run_history_end_time': {'key': 'runHistoryEndTime', 'type': 'iso-8601'},
-        'unique_child_run_compute_targets': {'key': 'uniqueChildRunComputeTargets', 'type': '[str]'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "description": {"key": "description", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "run_number": {"key": "runNumber", "type": "int"},
+        "status_code": {"key": "statusCode", "type": "str"},
+        "run_status": {"key": "runStatus", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "is_experiment_archived": {"key": "isExperimentArchived", "type": "bool"},
+        "submitted_by": {"key": "submittedBy", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "step_tags": {"key": "stepTags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "aether_start_time": {"key": "aetherStartTime", "type": "iso-8601"},
+        "aether_end_time": {"key": "aetherEndTime", "type": "iso-8601"},
+        "run_history_start_time": {"key": "runHistoryStartTime", "type": "iso-8601"},
+        "run_history_end_time": {"key": "runHistoryEndTime", "type": "iso-8601"},
+        "unique_child_run_compute_targets": {
+            "key": "uniqueChildRunComputeTargets",
+            "type": "[str]",
+        },
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -29775,16 +30926,16 @@ class PipelineStatus(msrest.serialization.Model):
     """
 
     _validation = {
-        'is_terminal_state': {'readonly': True},
+        "is_terminal_state": {"readonly": True},
     }
 
     _attribute_map = {
-        'status_code': {'key': 'statusCode', 'type': 'str'},
-        'run_status': {'key': 'runStatus', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'is_terminal_state': {'key': 'isTerminalState', 'type': 'bool'},
+        "status_code": {"key": "statusCode", "type": "str"},
+        "run_status": {"key": "runStatus", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "is_terminal_state": {"key": "isTerminalState", "type": "bool"},
     }
 
     def __init__(
@@ -29855,19 +31006,19 @@ class PipelineStepRun(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'step_name': {'key': 'stepName', 'type': 'str'},
-        'run_number': {'key': 'runNumber', 'type': 'int'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'run_status': {'key': 'runStatus', 'type': 'str'},
-        'compute_target': {'key': 'computeTarget', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'run_type': {'key': 'runType', 'type': 'str'},
-        'step_type': {'key': 'stepType', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'is_reused': {'key': 'isReused', 'type': 'bool'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
+        "step_name": {"key": "stepName", "type": "str"},
+        "run_number": {"key": "runNumber", "type": "int"},
+        "run_id": {"key": "runId", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "run_status": {"key": "runStatus", "type": "str"},
+        "compute_target": {"key": "computeTarget", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "run_type": {"key": "runType", "type": "str"},
+        "step_type": {"key": "stepType", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "is_reused": {"key": "isReused", "type": "bool"},
+        "display_name": {"key": "displayName", "type": "str"},
     }
 
     def __init__(
@@ -29944,8 +31095,8 @@ class PipelineStepRunOutputs(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'outputs': {'key': 'outputs', 'type': '{str}'},
-        'port_outputs': {'key': 'portOutputs', 'type': '{PortOutputInfo}'},
+        "outputs": {"key": "outputs", "type": "{str}"},
+        "port_outputs": {"key": "portOutputs", "type": "{PortOutputInfo}"},
     }
 
     def __init__(
@@ -30007,23 +31158,23 @@ class PipelineSubDraft(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'parent_graph_draft_id': {'key': 'parentGraphDraftId', 'type': 'str'},
-        'parent_node_id': {'key': 'parentNodeId', 'type': 'str'},
-        'graph_detail': {'key': 'graphDetail', 'type': 'PipelineRunGraphDetail'},
-        'module_dto': {'key': 'moduleDto', 'type': 'ModuleDto'},
-        'name': {'key': 'name', 'type': 'str'},
-        'last_edited_by': {'key': 'lastEditedBy', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'pipeline_draft_mode': {'key': 'pipelineDraftMode', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "parent_graph_draft_id": {"key": "parentGraphDraftId", "type": "str"},
+        "parent_node_id": {"key": "parentNodeId", "type": "str"},
+        "graph_detail": {"key": "graphDetail", "type": "PipelineRunGraphDetail"},
+        "module_dto": {"key": "moduleDto", "type": "ModuleDto"},
+        "name": {"key": "name", "type": "str"},
+        "last_edited_by": {"key": "lastEditedBy", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "pipeline_draft_mode": {"key": "pipelineDraftMode", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -30118,9 +31269,12 @@ class PolicyValidationResponse(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'error_response': {'key': 'errorResponse', 'type': 'ErrorResponse'},
-        'next_action_interval_in_seconds': {'key': 'nextActionIntervalInSeconds', 'type': 'int'},
-        'action_type': {'key': 'actionType', 'type': 'str'},
+        "error_response": {"key": "errorResponse", "type": "ErrorResponse"},
+        "next_action_interval_in_seconds": {
+            "key": "nextActionIntervalInSeconds",
+            "type": "int",
+        },
+        "action_type": {"key": "actionType", "type": "str"},
     }
 
     def __init__(
@@ -30162,11 +31316,11 @@ class PortInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
-        'graph_port_name': {'key': 'graphPortName', 'type': 'str'},
-        'is_parameter': {'key': 'isParameter', 'type': 'bool'},
-        'web_service_port': {'key': 'webServicePort', 'type': 'str'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
+        "graph_port_name": {"key": "graphPortName", "type": "str"},
+        "is_parameter": {"key": "isParameter", "type": "bool"},
+        "web_service_port": {"key": "webServicePort", "type": "str"},
     }
 
     def __init__(
@@ -30223,14 +31377,14 @@ class PortOutputInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'container_uri': {'key': 'containerUri', 'type': 'str'},
-        'relative_path': {'key': 'relativePath', 'type': 'str'},
-        'preview_params': {'key': 'previewParams', 'type': 'str'},
-        'model_output_path': {'key': 'modelOutputPath', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_reference_type': {'key': 'dataReferenceType', 'type': 'str'},
-        'is_file': {'key': 'isFile', 'type': 'bool'},
-        'supported_actions': {'key': 'supportedActions', 'type': '[str]'},
+        "container_uri": {"key": "containerUri", "type": "str"},
+        "relative_path": {"key": "relativePath", "type": "str"},
+        "preview_params": {"key": "previewParams", "type": "str"},
+        "model_output_path": {"key": "modelOutputPath", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_reference_type": {"key": "dataReferenceType", "type": "str"},
+        "is_file": {"key": "isFile", "type": "bool"},
+        "supported_actions": {"key": "supportedActions", "type": "[str]"},
     }
 
     def __init__(
@@ -30291,10 +31445,10 @@ class PriorityConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_priority': {'key': 'jobPriority', 'type': 'int'},
-        'is_preemptible': {'key': 'isPreemptible', 'type': 'bool'},
-        'node_count_set': {'key': 'nodeCountSet', 'type': '[int]'},
-        'scale_interval': {'key': 'scaleInterval', 'type': 'int'},
+        "job_priority": {"key": "jobPriority", "type": "int"},
+        "is_preemptible": {"key": "isPreemptible", "type": "bool"},
+        "node_count_set": {"key": "nodeCountSet", "type": "[int]"},
+        "scale_interval": {"key": "scaleInterval", "type": "int"},
     }
 
     def __init__(
@@ -30333,8 +31487,8 @@ class PriorityConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'cloud_priority': {'key': 'cloudPriority', 'type': 'int'},
-        'string_type_priority': {'key': 'stringTypePriority', 'type': 'str'},
+        "cloud_priority": {"key": "cloudPriority", "type": "int"},
+        "string_type_priority": {"key": "stringTypePriority", "type": "str"},
     }
 
     def __init__(
@@ -30389,20 +31543,20 @@ class PromoteDataSetRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'module_node_id': {'key': 'moduleNodeId', 'type': 'str'},
-        'step_run_id': {'key': 'stepRunId', 'type': 'str'},
-        'output_port_name': {'key': 'outputPortName', 'type': 'str'},
-        'model_output_path': {'key': 'modelOutputPath', 'type': 'str'},
-        'data_type_id': {'key': 'dataTypeId', 'type': 'str'},
-        'dataset_type': {'key': 'datasetType', 'type': 'str'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'output_relative_path': {'key': 'outputRelativePath', 'type': 'str'},
-        'pipeline_run_id': {'key': 'pipelineRunId', 'type': 'str'},
-        'root_pipeline_run_id': {'key': 'rootPipelineRunId', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "module_node_id": {"key": "moduleNodeId", "type": "str"},
+        "step_run_id": {"key": "stepRunId", "type": "str"},
+        "output_port_name": {"key": "outputPortName", "type": "str"},
+        "model_output_path": {"key": "modelOutputPath", "type": "str"},
+        "data_type_id": {"key": "dataTypeId", "type": "str"},
+        "dataset_type": {"key": "datasetType", "type": "str"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "output_relative_path": {"key": "outputRelativePath", "type": "str"},
+        "pipeline_run_id": {"key": "pipelineRunId", "type": "str"},
+        "root_pipeline_run_id": {"key": "rootPipelineRunId", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
     }
 
     def __init__(
@@ -30485,10 +31639,10 @@ class ProviderEntity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'provider': {'key': 'provider', 'type': 'str'},
-        'module': {'key': 'module', 'type': 'str'},
-        'connection_type': {'key': 'connection_type', 'type': '[str]'},
-        'apis': {'key': 'apis', 'type': '[ApiAndParameters]'},
+        "provider": {"key": "provider", "type": "str"},
+        "module": {"key": "module", "type": "str"},
+        "connection_type": {"key": "connection_type", "type": "[str]"},
+        "apis": {"key": "apis", "type": "[ApiAndParameters]"},
     }
 
     def __init__(
@@ -30566,27 +31720,30 @@ class PublishedPipeline(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'total_run_steps': {'key': 'totalRunSteps', 'type': 'int'},
-        'total_runs': {'key': 'totalRuns', 'type': 'int'},
-        'parameters': {'key': 'parameters', 'type': '{str}'},
-        'data_set_definition_value_assignment': {'key': 'dataSetDefinitionValueAssignment', 'type': '{DataSetDefinitionValue}'},
-        'rest_endpoint': {'key': 'restEndpoint', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'published_date': {'key': 'publishedDate', 'type': 'iso-8601'},
-        'last_run_time': {'key': 'lastRunTime', 'type': 'iso-8601'},
-        'last_run_status': {'key': 'lastRunStatus', 'type': 'str'},
-        'published_by': {'key': 'publishedBy', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'version': {'key': 'version', 'type': 'str'},
-        'is_default': {'key': 'isDefault', 'type': 'bool'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "total_run_steps": {"key": "totalRunSteps", "type": "int"},
+        "total_runs": {"key": "totalRuns", "type": "int"},
+        "parameters": {"key": "parameters", "type": "{str}"},
+        "data_set_definition_value_assignment": {
+            "key": "dataSetDefinitionValueAssignment",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "rest_endpoint": {"key": "restEndpoint", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "published_date": {"key": "publishedDate", "type": "iso-8601"},
+        "last_run_time": {"key": "lastRunTime", "type": "iso-8601"},
+        "last_run_status": {"key": "lastRunStatus", "type": "str"},
+        "published_by": {"key": "publishedBy", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "version": {"key": "version", "type": "str"},
+        "is_default": {"key": "isDefault", "type": "bool"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -30595,7 +31752,9 @@ class PublishedPipeline(msrest.serialization.Model):
         total_run_steps: Optional[int] = None,
         total_runs: Optional[int] = None,
         parameters: Optional[Dict[str, str]] = None,
-        data_set_definition_value_assignment: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
+        data_set_definition_value_assignment: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
         rest_endpoint: Optional[str] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -30723,22 +31882,22 @@ class PublishedPipelineSummary(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'published_date': {'key': 'publishedDate', 'type': 'iso-8601'},
-        'last_run_time': {'key': 'lastRunTime', 'type': 'iso-8601'},
-        'last_run_status': {'key': 'lastRunStatus', 'type': 'str'},
-        'published_by': {'key': 'publishedBy', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'version': {'key': 'version', 'type': 'str'},
-        'is_default': {'key': 'isDefault', 'type': 'bool'},
-        'entity_status': {'key': 'entityStatus', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'etag': {'key': 'etag', 'type': 'str'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "published_date": {"key": "publishedDate", "type": "iso-8601"},
+        "last_run_time": {"key": "lastRunTime", "type": "iso-8601"},
+        "last_run_status": {"key": "lastRunStatus", "type": "str"},
+        "published_by": {"key": "publishedBy", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "version": {"key": "version", "type": "str"},
+        "is_default": {"key": "isDefault", "type": "bool"},
+        "entity_status": {"key": "entityStatus", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "etag": {"key": "etag", "type": "str"},
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
     }
 
     def __init__(
@@ -30830,10 +31989,10 @@ class PythonInterfaceMapping(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'name_in_yaml': {'key': 'nameInYaml', 'type': 'str'},
-        'argument_name': {'key': 'argumentName', 'type': 'str'},
-        'command_line_option': {'key': 'commandLineOption', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "name_in_yaml": {"key": "nameInYaml", "type": "str"},
+        "argument_name": {"key": "argumentName", "type": "str"},
+        "command_line_option": {"key": "commandLineOption", "type": "str"},
     }
 
     def __init__(
@@ -30872,16 +32031,12 @@ class PythonPyPiOrRCranLibraryDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'package': {'key': 'package', 'type': 'str'},
-        'repo': {'key': 'repo', 'type': 'str'},
+        "package": {"key": "package", "type": "str"},
+        "repo": {"key": "repo", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        package: Optional[str] = None,
-        repo: Optional[str] = None,
-        **kwargs
+        self, *, package: Optional[str] = None, repo: Optional[str] = None, **kwargs
     ):
         """
         :keyword package:
@@ -30908,10 +32063,10 @@ class PythonSection(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'interpreter_path': {'key': 'interpreterPath', 'type': 'str'},
-        'user_managed_dependencies': {'key': 'userManagedDependencies', 'type': 'bool'},
-        'conda_dependencies': {'key': 'condaDependencies', 'type': 'object'},
-        'base_conda_environment': {'key': 'baseCondaEnvironment', 'type': 'str'},
+        "interpreter_path": {"key": "interpreterPath", "type": "str"},
+        "user_managed_dependencies": {"key": "userManagedDependencies", "type": "bool"},
+        "conda_dependencies": {"key": "condaDependencies", "type": "object"},
+        "base_conda_environment": {"key": "baseCondaEnvironment", "type": "str"},
     }
 
     def __init__(
@@ -30950,8 +32105,8 @@ class PyTorchConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'communication_backend': {'key': 'communicationBackend', 'type': 'str'},
-        'process_count': {'key': 'processCount', 'type': 'int'},
+        "communication_backend": {"key": "communicationBackend", "type": "str"},
+        "process_count": {"key": "processCount", "type": "int"},
     }
 
     def __init__(
@@ -30984,9 +32139,9 @@ class QueueingInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'code': {'key': 'code', 'type': 'str'},
-        'message': {'key': 'message', 'type': 'str'},
-        'last_refresh_timestamp': {'key': 'lastRefreshTimestamp', 'type': 'iso-8601'},
+        "code": {"key": "code", "type": "str"},
+        "message": {"key": "message", "type": "str"},
+        "last_refresh_timestamp": {"key": "lastRefreshTimestamp", "type": "iso-8601"},
     }
 
     def __init__(
@@ -31063,29 +32218,32 @@ class RawComponentDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'component_schema': {'key': 'componentSchema', 'type': 'str'},
-        'is_anonymous': {'key': 'isAnonymous', 'type': 'bool'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'component_type_version': {'key': 'componentTypeVersion', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'is_deterministic': {'key': 'isDeterministic', 'type': 'bool'},
-        'successful_return_code': {'key': 'successfulReturnCode', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{ComponentInput}'},
-        'outputs': {'key': 'outputs', 'type': '{ComponentOutput}'},
-        'command': {'key': 'command', 'type': 'str'},
-        'environment_name': {'key': 'environmentName', 'type': 'str'},
-        'environment_version': {'key': 'environmentVersion', 'type': 'str'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
-        'created_by': {'key': 'createdBy', 'type': 'SchemaContractsCreatedBy'},
-        'last_modified_by': {'key': 'lastModifiedBy', 'type': 'SchemaContractsCreatedBy'},
-        'created_date': {'key': 'createdDate', 'type': 'iso-8601'},
-        'last_modified_date': {'key': 'lastModifiedDate', 'type': 'iso-8601'},
-        'component_internal_id': {'key': 'componentInternalId', 'type': 'str'},
+        "component_schema": {"key": "componentSchema", "type": "str"},
+        "is_anonymous": {"key": "isAnonymous", "type": "bool"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "component_type_version": {"key": "componentTypeVersion", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "is_deterministic": {"key": "isDeterministic", "type": "bool"},
+        "successful_return_code": {"key": "successfulReturnCode", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{ComponentInput}"},
+        "outputs": {"key": "outputs", "type": "{ComponentOutput}"},
+        "command": {"key": "command", "type": "str"},
+        "environment_name": {"key": "environmentName", "type": "str"},
+        "environment_version": {"key": "environmentVersion", "type": "str"},
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
+        "created_by": {"key": "createdBy", "type": "SchemaContractsCreatedBy"},
+        "last_modified_by": {
+            "key": "lastModifiedBy",
+            "type": "SchemaContractsCreatedBy",
+        },
+        "created_date": {"key": "createdDate", "type": "iso-8601"},
+        "last_modified_date": {"key": "lastModifiedDate", "type": "iso-8601"},
+        "component_internal_id": {"key": "componentInternalId", "type": "str"},
     }
 
     def __init__(
@@ -31208,12 +32366,15 @@ class RayConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'port': {'key': 'port', 'type': 'int'},
-        'address': {'key': 'address', 'type': 'str'},
-        'include_dashboard': {'key': 'includeDashboard', 'type': 'bool'},
-        'dashboard_port': {'key': 'dashboardPort', 'type': 'int'},
-        'head_node_additional_args': {'key': 'headNodeAdditionalArgs', 'type': 'str'},
-        'worker_node_additional_args': {'key': 'workerNodeAdditionalArgs', 'type': 'str'},
+        "port": {"key": "port", "type": "int"},
+        "address": {"key": "address", "type": "str"},
+        "include_dashboard": {"key": "includeDashboard", "type": "bool"},
+        "dashboard_port": {"key": "dashboardPort", "type": "int"},
+        "head_node_additional_args": {"key": "headNodeAdditionalArgs", "type": "str"},
+        "worker_node_additional_args": {
+            "key": "workerNodeAdditionalArgs",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -31262,9 +32423,9 @@ class RCranPackage(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'repository': {'key': 'repository', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "repository": {"key": "repository", "type": "str"},
     }
 
     def __init__(
@@ -31371,43 +32532,46 @@ class RealTimeEndpoint(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'created_by': {'key': 'createdBy', 'type': 'str'},
-        'kv_tags': {'key': 'kvTags', 'type': '{str}'},
-        'state': {'key': 'state', 'type': 'str'},
-        'error': {'key': 'error', 'type': 'ModelManagementErrorResponse'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'image_id': {'key': 'imageId', 'type': 'str'},
-        'cpu': {'key': 'cpu', 'type': 'float'},
-        'memory_in_gb': {'key': 'memoryInGB', 'type': 'float'},
-        'max_concurrent_requests_per_container': {'key': 'maxConcurrentRequestsPerContainer', 'type': 'int'},
-        'num_replicas': {'key': 'numReplicas', 'type': 'int'},
-        'event_hub_enabled': {'key': 'eventHubEnabled', 'type': 'bool'},
-        'storage_enabled': {'key': 'storageEnabled', 'type': 'bool'},
-        'app_insights_enabled': {'key': 'appInsightsEnabled', 'type': 'bool'},
-        'auto_scale_enabled': {'key': 'autoScaleEnabled', 'type': 'bool'},
-        'min_replicas': {'key': 'minReplicas', 'type': 'int'},
-        'max_replicas': {'key': 'maxReplicas', 'type': 'int'},
-        'target_utilization': {'key': 'targetUtilization', 'type': 'int'},
-        'refresh_period_in_seconds': {'key': 'refreshPeriodInSeconds', 'type': 'int'},
-        'scoring_uri': {'key': 'scoringUri', 'type': 'str'},
-        'deployment_status': {'key': 'deploymentStatus', 'type': 'AKSReplicaStatus'},
-        'scoring_timeout_ms': {'key': 'scoringTimeoutMs', 'type': 'int'},
-        'auth_enabled': {'key': 'authEnabled', 'type': 'bool'},
-        'aad_auth_enabled': {'key': 'aadAuthEnabled', 'type': 'bool'},
-        'region': {'key': 'region', 'type': 'str'},
-        'primary_key': {'key': 'primaryKey', 'type': 'str'},
-        'secondary_key': {'key': 'secondaryKey', 'type': 'str'},
-        'swagger_uri': {'key': 'swaggerUri', 'type': 'str'},
-        'linked_pipeline_draft_id': {'key': 'linkedPipelineDraftId', 'type': 'str'},
-        'linked_pipeline_run_id': {'key': 'linkedPipelineRunId', 'type': 'str'},
-        'warning': {'key': 'warning', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'created_time': {'key': 'createdTime', 'type': 'iso-8601'},
-        'updated_time': {'key': 'updatedTime', 'type': 'iso-8601'},
-        'compute_name': {'key': 'computeName', 'type': 'str'},
-        'updated_by': {'key': 'updatedBy', 'type': 'str'},
+        "created_by": {"key": "createdBy", "type": "str"},
+        "kv_tags": {"key": "kvTags", "type": "{str}"},
+        "state": {"key": "state", "type": "str"},
+        "error": {"key": "error", "type": "ModelManagementErrorResponse"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "image_id": {"key": "imageId", "type": "str"},
+        "cpu": {"key": "cpu", "type": "float"},
+        "memory_in_gb": {"key": "memoryInGB", "type": "float"},
+        "max_concurrent_requests_per_container": {
+            "key": "maxConcurrentRequestsPerContainer",
+            "type": "int",
+        },
+        "num_replicas": {"key": "numReplicas", "type": "int"},
+        "event_hub_enabled": {"key": "eventHubEnabled", "type": "bool"},
+        "storage_enabled": {"key": "storageEnabled", "type": "bool"},
+        "app_insights_enabled": {"key": "appInsightsEnabled", "type": "bool"},
+        "auto_scale_enabled": {"key": "autoScaleEnabled", "type": "bool"},
+        "min_replicas": {"key": "minReplicas", "type": "int"},
+        "max_replicas": {"key": "maxReplicas", "type": "int"},
+        "target_utilization": {"key": "targetUtilization", "type": "int"},
+        "refresh_period_in_seconds": {"key": "refreshPeriodInSeconds", "type": "int"},
+        "scoring_uri": {"key": "scoringUri", "type": "str"},
+        "deployment_status": {"key": "deploymentStatus", "type": "AKSReplicaStatus"},
+        "scoring_timeout_ms": {"key": "scoringTimeoutMs", "type": "int"},
+        "auth_enabled": {"key": "authEnabled", "type": "bool"},
+        "aad_auth_enabled": {"key": "aadAuthEnabled", "type": "bool"},
+        "region": {"key": "region", "type": "str"},
+        "primary_key": {"key": "primaryKey", "type": "str"},
+        "secondary_key": {"key": "secondaryKey", "type": "str"},
+        "swagger_uri": {"key": "swaggerUri", "type": "str"},
+        "linked_pipeline_draft_id": {"key": "linkedPipelineDraftId", "type": "str"},
+        "linked_pipeline_run_id": {"key": "linkedPipelineRunId", "type": "str"},
+        "warning": {"key": "warning", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "created_time": {"key": "createdTime", "type": "iso-8601"},
+        "updated_time": {"key": "updatedTime", "type": "iso-8601"},
+        "compute_name": {"key": "computeName", "type": "str"},
+        "updated_by": {"key": "updatedBy", "type": "str"},
     }
 
     def __init__(
@@ -31540,7 +32704,9 @@ class RealTimeEndpoint(msrest.serialization.Model):
         self.image_id = image_id
         self.cpu = cpu
         self.memory_in_gb = memory_in_gb
-        self.max_concurrent_requests_per_container = max_concurrent_requests_per_container
+        self.max_concurrent_requests_per_container = (
+            max_concurrent_requests_per_container
+        )
         self.num_replicas = num_replicas
         self.event_hub_enabled = event_hub_enabled
         self.storage_enabled = storage_enabled
@@ -31583,9 +32749,9 @@ class RealTimeEndpointInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'web_service_inputs': {'key': 'webServiceInputs', 'type': '[WebServicePort]'},
-        'web_service_outputs': {'key': 'webServiceOutputs', 'type': '[WebServicePort]'},
-        'deployments_info': {'key': 'deploymentsInfo', 'type': '[DeploymentInfo]'},
+        "web_service_inputs": {"key": "webServiceInputs", "type": "[WebServicePort]"},
+        "web_service_outputs": {"key": "webServiceOutputs", "type": "[WebServicePort]"},
+        "deployments_info": {"key": "deploymentsInfo", "type": "[DeploymentInfo]"},
     }
 
     def __init__(
@@ -31634,20 +32800,22 @@ class RealTimeEndpointStatus(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'last_operation': {'key': 'lastOperation', 'type': 'str'},
-        'last_operation_status': {'key': 'lastOperationStatus', 'type': 'str'},
-        'internal_step': {'key': 'internalStep', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'deployment_state': {'key': 'deploymentState', 'type': 'str'},
-        'service_id': {'key': 'serviceId', 'type': 'str'},
-        'linked_pipeline_draft_id': {'key': 'linkedPipelineDraftId', 'type': 'str'},
+        "last_operation": {"key": "lastOperation", "type": "str"},
+        "last_operation_status": {"key": "lastOperationStatus", "type": "str"},
+        "internal_step": {"key": "internalStep", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "deployment_state": {"key": "deploymentState", "type": "str"},
+        "service_id": {"key": "serviceId", "type": "str"},
+        "linked_pipeline_draft_id": {"key": "linkedPipelineDraftId", "type": "str"},
     }
 
     def __init__(
         self,
         *,
         last_operation: Optional[Union[str, "RealTimeEndpointOpCode"]] = None,
-        last_operation_status: Optional[Union[str, "RealTimeEndpointOpStatusCode"]] = None,
+        last_operation_status: Optional[
+            Union[str, "RealTimeEndpointOpStatusCode"]
+        ] = None,
         internal_step: Optional[Union[str, "RealTimeEndpointInternalStepCode"]] = None,
         status_detail: Optional[str] = None,
         deployment_state: Optional[str] = None,
@@ -31708,14 +32876,14 @@ class RealTimeEndpointSummary(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'created_time': {'key': 'createdTime', 'type': 'iso-8601'},
-        'updated_time': {'key': 'updatedTime', 'type': 'iso-8601'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'compute_name': {'key': 'computeName', 'type': 'str'},
-        'updated_by': {'key': 'updatedBy', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "created_time": {"key": "createdTime", "type": "iso-8601"},
+        "updated_time": {"key": "updatedTime", "type": "iso-8601"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "compute_name": {"key": "computeName", "type": "str"},
+        "updated_by": {"key": "updatedBy", "type": "str"},
     }
 
     def __init__(
@@ -31774,9 +32942,9 @@ class RealTimeEndpointTestRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'end_point': {'key': 'endPoint', 'type': 'str'},
-        'auth_key': {'key': 'authKey', 'type': 'str'},
-        'payload': {'key': 'payload', 'type': 'str'},
+        "end_point": {"key": "endPoint", "type": "str"},
+        "auth_key": {"key": "authKey", "type": "str"},
+        "payload": {"key": "payload", "type": "str"},
     }
 
     def __init__(
@@ -31819,12 +32987,12 @@ class Recurrence(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'frequency': {'key': 'frequency', 'type': 'str'},
-        'interval': {'key': 'interval', 'type': 'int'},
-        'schedule': {'key': 'schedule', 'type': 'RecurrenceSchedule'},
-        'end_time': {'key': 'endTime', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'str'},
-        'time_zone': {'key': 'timeZone', 'type': 'str'},
+        "frequency": {"key": "frequency", "type": "str"},
+        "interval": {"key": "interval", "type": "int"},
+        "schedule": {"key": "schedule", "type": "RecurrenceSchedule"},
+        "end_time": {"key": "endTime", "type": "str"},
+        "start_time": {"key": "startTime", "type": "str"},
+        "time_zone": {"key": "timeZone", "type": "str"},
     }
 
     def __init__(
@@ -31873,9 +33041,9 @@ class RecurrencePattern(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'hours': {'key': 'hours', 'type': '[int]'},
-        'minutes': {'key': 'minutes', 'type': '[int]'},
-        'weekdays': {'key': 'weekdays', 'type': '[str]'},
+        "hours": {"key": "hours", "type": "[int]"},
+        "minutes": {"key": "minutes", "type": "[int]"},
+        "weekdays": {"key": "weekdays", "type": "[str]"},
     }
 
     def __init__(
@@ -31914,10 +33082,10 @@ class RecurrenceSchedule(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'hours': {'key': 'hours', 'type': '[int]'},
-        'minutes': {'key': 'minutes', 'type': '[int]'},
-        'week_days': {'key': 'weekDays', 'type': '[str]'},
-        'month_days': {'key': 'monthDays', 'type': '[int]'},
+        "hours": {"key": "hours", "type": "[int]"},
+        "minutes": {"key": "minutes", "type": "[int]"},
+        "week_days": {"key": "weekDays", "type": "[str]"},
+        "month_days": {"key": "monthDays", "type": "[int]"},
     }
 
     def __init__(
@@ -31956,8 +33124,8 @@ class RegenerateServiceKeysRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'key_type': {'key': 'keyType', 'type': 'str'},
-        'key_value': {'key': 'keyValue', 'type': 'str'},
+        "key_type": {"key": "keyType", "type": "str"},
+        "key_value": {"key": "keyValue", "type": "str"},
     }
 
     def __init__(
@@ -32047,36 +33215,69 @@ class RegisterComponentMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'aml_module_name': {'key': 'amlModuleName', 'type': 'str'},
-        'name_only_display_info': {'key': 'nameOnlyDisplayInfo', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'module_version_id': {'key': 'moduleVersionId', 'type': 'str'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
-        'component_registration_type': {'key': 'componentRegistrationType', 'type': 'str'},
-        'module_entity_from_yaml': {'key': 'moduleEntityFromYaml', 'type': 'ModuleEntity'},
-        'set_as_default_version': {'key': 'setAsDefaultVersion', 'type': 'bool'},
-        'data_types_from_yaml': {'key': 'dataTypesFromYaml', 'type': '[DataTypeCreationInfo]'},
-        'data_type_mechanism': {'key': 'dataTypeMechanism', 'type': 'str'},
-        'identifier_hash': {'key': 'identifierHash', 'type': 'str'},
-        'identifier_hashes': {'key': 'identifierHashes', 'type': 'RegisterComponentMetaInfoIdentifierHashes'},
-        'content_hash': {'key': 'contentHash', 'type': 'str'},
-        'extra_hash': {'key': 'extraHash', 'type': 'str'},
-        'extra_hashes': {'key': 'extraHashes', 'type': 'RegisterComponentMetaInfoExtraHashes'},
-        'registration': {'key': 'registration', 'type': 'bool'},
-        'validate_only': {'key': 'validateOnly', 'type': 'bool'},
-        'skip_workspace_related_check': {'key': 'skipWorkspaceRelatedCheck', 'type': 'bool'},
-        'intellectual_property_protected_workspace_component_registration_allowed_publisher': {'key': 'intellectualPropertyProtectedWorkspaceComponentRegistrationAllowedPublisher', 'type': '[str]'},
-        'system_managed_registration': {'key': 'systemManagedRegistration', 'type': 'bool'},
-        'allow_dup_name_between_input_and_ouput_port': {'key': 'allowDupNameBetweenInputAndOuputPort', 'type': 'bool'},
-        'module_source': {'key': 'moduleSource', 'type': 'str'},
-        'module_scope': {'key': 'moduleScope', 'type': 'str'},
-        'module_additional_includes_count': {'key': 'moduleAdditionalIncludesCount', 'type': 'int'},
-        'module_os_type': {'key': 'moduleOSType', 'type': 'str'},
-        'module_codegen_by': {'key': 'moduleCodegenBy', 'type': 'str'},
-        'module_client_source': {'key': 'moduleClientSource', 'type': 'str'},
-        'module_is_builtin': {'key': 'moduleIsBuiltin', 'type': 'bool'},
-        'module_register_event_extension_fields': {'key': 'moduleRegisterEventExtensionFields', 'type': '{str}'},
+        "aml_module_name": {"key": "amlModuleName", "type": "str"},
+        "name_only_display_info": {"key": "nameOnlyDisplayInfo", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "module_version_id": {"key": "moduleVersionId", "type": "str"},
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
+        "component_registration_type": {
+            "key": "componentRegistrationType",
+            "type": "str",
+        },
+        "module_entity_from_yaml": {
+            "key": "moduleEntityFromYaml",
+            "type": "ModuleEntity",
+        },
+        "set_as_default_version": {"key": "setAsDefaultVersion", "type": "bool"},
+        "data_types_from_yaml": {
+            "key": "dataTypesFromYaml",
+            "type": "[DataTypeCreationInfo]",
+        },
+        "data_type_mechanism": {"key": "dataTypeMechanism", "type": "str"},
+        "identifier_hash": {"key": "identifierHash", "type": "str"},
+        "identifier_hashes": {
+            "key": "identifierHashes",
+            "type": "RegisterComponentMetaInfoIdentifierHashes",
+        },
+        "content_hash": {"key": "contentHash", "type": "str"},
+        "extra_hash": {"key": "extraHash", "type": "str"},
+        "extra_hashes": {
+            "key": "extraHashes",
+            "type": "RegisterComponentMetaInfoExtraHashes",
+        },
+        "registration": {"key": "registration", "type": "bool"},
+        "validate_only": {"key": "validateOnly", "type": "bool"},
+        "skip_workspace_related_check": {
+            "key": "skipWorkspaceRelatedCheck",
+            "type": "bool",
+        },
+        "intellectual_property_protected_workspace_component_registration_allowed_publisher": {
+            "key": "intellectualPropertyProtectedWorkspaceComponentRegistrationAllowedPublisher",
+            "type": "[str]",
+        },
+        "system_managed_registration": {
+            "key": "systemManagedRegistration",
+            "type": "bool",
+        },
+        "allow_dup_name_between_input_and_ouput_port": {
+            "key": "allowDupNameBetweenInputAndOuputPort",
+            "type": "bool",
+        },
+        "module_source": {"key": "moduleSource", "type": "str"},
+        "module_scope": {"key": "moduleScope", "type": "str"},
+        "module_additional_includes_count": {
+            "key": "moduleAdditionalIncludesCount",
+            "type": "int",
+        },
+        "module_os_type": {"key": "moduleOSType", "type": "str"},
+        "module_codegen_by": {"key": "moduleCodegenBy", "type": "str"},
+        "module_client_source": {"key": "moduleClientSource", "type": "str"},
+        "module_is_builtin": {"key": "moduleIsBuiltin", "type": "bool"},
+        "module_register_event_extension_fields": {
+            "key": "moduleRegisterEventExtensionFields",
+            "type": "{str}",
+        },
     }
 
     def __init__(
@@ -32088,7 +33289,9 @@ class RegisterComponentMetaInfo(msrest.serialization.Model):
         version: Optional[str] = None,
         module_version_id: Optional[str] = None,
         snapshot_id: Optional[str] = None,
-        component_registration_type: Optional[Union[str, "ComponentRegistrationTypeEnum"]] = None,
+        component_registration_type: Optional[
+            Union[str, "ComponentRegistrationTypeEnum"]
+        ] = None,
         module_entity_from_yaml: Optional["ModuleEntity"] = None,
         set_as_default_version: Optional[bool] = None,
         data_types_from_yaml: Optional[List["DataTypeCreationInfo"]] = None,
@@ -32101,7 +33304,9 @@ class RegisterComponentMetaInfo(msrest.serialization.Model):
         registration: Optional[bool] = None,
         validate_only: Optional[bool] = None,
         skip_workspace_related_check: Optional[bool] = None,
-        intellectual_property_protected_workspace_component_registration_allowed_publisher: Optional[List[str]] = None,
+        intellectual_property_protected_workspace_component_registration_allowed_publisher: Optional[
+            List[str]
+        ] = None,
         system_managed_registration: Optional[bool] = None,
         allow_dup_name_between_input_and_ouput_port: Optional[bool] = None,
         module_source: Optional[str] = None,
@@ -32201,7 +33406,9 @@ class RegisterComponentMetaInfo(msrest.serialization.Model):
         self.skip_workspace_related_check = skip_workspace_related_check
         self.intellectual_property_protected_workspace_component_registration_allowed_publisher = intellectual_property_protected_workspace_component_registration_allowed_publisher
         self.system_managed_registration = system_managed_registration
-        self.allow_dup_name_between_input_and_ouput_port = allow_dup_name_between_input_and_ouput_port
+        self.allow_dup_name_between_input_and_ouput_port = (
+            allow_dup_name_between_input_and_ouput_port
+        )
         self.module_source = module_source
         self.module_scope = module_scope
         self.module_additional_includes_count = module_additional_includes_count
@@ -32209,7 +33416,9 @@ class RegisterComponentMetaInfo(msrest.serialization.Model):
         self.module_codegen_by = module_codegen_by
         self.module_client_source = module_client_source
         self.module_is_builtin = module_is_builtin
-        self.module_register_event_extension_fields = module_register_event_extension_fields
+        self.module_register_event_extension_fields = (
+            module_register_event_extension_fields
+        )
 
 
 class RegisterComponentMetaInfoExtraHashes(msrest.serialization.Model):
@@ -32222,8 +33431,8 @@ class RegisterComponentMetaInfoExtraHashes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'IdentifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'IdentifierHashV2', 'type': 'str'},
+        "identifier_hash": {"key": "IdentifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "IdentifierHashV2", "type": "str"},
     }
 
     def __init__(
@@ -32254,8 +33463,8 @@ class RegisterComponentMetaInfoIdentifierHashes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'IdentifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'IdentifierHashV2', 'type': 'str'},
+        "identifier_hash": {"key": "IdentifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "IdentifierHashV2", "type": "str"},
     }
 
     def __init__(
@@ -32288,9 +33497,9 @@ class RegisteredDataSetReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -32391,46 +33600,87 @@ class RegisterRegistryComponentMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'registry_name': {'key': 'registryName', 'type': 'str'},
-        'intellectual_property_publisher_information': {'key': 'intellectualPropertyPublisherInformation', 'type': 'IntellectualPropertyPublisherInformation'},
-        'blob_reference_data': {'key': 'blobReferenceData', 'type': '{RegistryBlobReferenceData}'},
-        'aml_module_name': {'key': 'amlModuleName', 'type': 'str'},
-        'name_only_display_info': {'key': 'nameOnlyDisplayInfo', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'module_version_id': {'key': 'moduleVersionId', 'type': 'str'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
-        'component_registration_type': {'key': 'componentRegistrationType', 'type': 'str'},
-        'module_entity_from_yaml': {'key': 'moduleEntityFromYaml', 'type': 'ModuleEntity'},
-        'set_as_default_version': {'key': 'setAsDefaultVersion', 'type': 'bool'},
-        'data_types_from_yaml': {'key': 'dataTypesFromYaml', 'type': '[DataTypeCreationInfo]'},
-        'data_type_mechanism': {'key': 'dataTypeMechanism', 'type': 'str'},
-        'identifier_hash': {'key': 'identifierHash', 'type': 'str'},
-        'identifier_hashes': {'key': 'identifierHashes', 'type': 'RegisterRegistryComponentMetaInfoIdentifierHashes'},
-        'content_hash': {'key': 'contentHash', 'type': 'str'},
-        'extra_hash': {'key': 'extraHash', 'type': 'str'},
-        'extra_hashes': {'key': 'extraHashes', 'type': 'RegisterRegistryComponentMetaInfoExtraHashes'},
-        'registration': {'key': 'registration', 'type': 'bool'},
-        'validate_only': {'key': 'validateOnly', 'type': 'bool'},
-        'skip_workspace_related_check': {'key': 'skipWorkspaceRelatedCheck', 'type': 'bool'},
-        'intellectual_property_protected_workspace_component_registration_allowed_publisher': {'key': 'intellectualPropertyProtectedWorkspaceComponentRegistrationAllowedPublisher', 'type': '[str]'},
-        'system_managed_registration': {'key': 'systemManagedRegistration', 'type': 'bool'},
-        'allow_dup_name_between_input_and_ouput_port': {'key': 'allowDupNameBetweenInputAndOuputPort', 'type': 'bool'},
-        'module_source': {'key': 'moduleSource', 'type': 'str'},
-        'module_scope': {'key': 'moduleScope', 'type': 'str'},
-        'module_additional_includes_count': {'key': 'moduleAdditionalIncludesCount', 'type': 'int'},
-        'module_os_type': {'key': 'moduleOSType', 'type': 'str'},
-        'module_codegen_by': {'key': 'moduleCodegenBy', 'type': 'str'},
-        'module_client_source': {'key': 'moduleClientSource', 'type': 'str'},
-        'module_is_builtin': {'key': 'moduleIsBuiltin', 'type': 'bool'},
-        'module_register_event_extension_fields': {'key': 'moduleRegisterEventExtensionFields', 'type': '{str}'},
+        "registry_name": {"key": "registryName", "type": "str"},
+        "intellectual_property_publisher_information": {
+            "key": "intellectualPropertyPublisherInformation",
+            "type": "IntellectualPropertyPublisherInformation",
+        },
+        "blob_reference_data": {
+            "key": "blobReferenceData",
+            "type": "{RegistryBlobReferenceData}",
+        },
+        "aml_module_name": {"key": "amlModuleName", "type": "str"},
+        "name_only_display_info": {"key": "nameOnlyDisplayInfo", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "module_version_id": {"key": "moduleVersionId", "type": "str"},
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
+        "component_registration_type": {
+            "key": "componentRegistrationType",
+            "type": "str",
+        },
+        "module_entity_from_yaml": {
+            "key": "moduleEntityFromYaml",
+            "type": "ModuleEntity",
+        },
+        "set_as_default_version": {"key": "setAsDefaultVersion", "type": "bool"},
+        "data_types_from_yaml": {
+            "key": "dataTypesFromYaml",
+            "type": "[DataTypeCreationInfo]",
+        },
+        "data_type_mechanism": {"key": "dataTypeMechanism", "type": "str"},
+        "identifier_hash": {"key": "identifierHash", "type": "str"},
+        "identifier_hashes": {
+            "key": "identifierHashes",
+            "type": "RegisterRegistryComponentMetaInfoIdentifierHashes",
+        },
+        "content_hash": {"key": "contentHash", "type": "str"},
+        "extra_hash": {"key": "extraHash", "type": "str"},
+        "extra_hashes": {
+            "key": "extraHashes",
+            "type": "RegisterRegistryComponentMetaInfoExtraHashes",
+        },
+        "registration": {"key": "registration", "type": "bool"},
+        "validate_only": {"key": "validateOnly", "type": "bool"},
+        "skip_workspace_related_check": {
+            "key": "skipWorkspaceRelatedCheck",
+            "type": "bool",
+        },
+        "intellectual_property_protected_workspace_component_registration_allowed_publisher": {
+            "key": "intellectualPropertyProtectedWorkspaceComponentRegistrationAllowedPublisher",
+            "type": "[str]",
+        },
+        "system_managed_registration": {
+            "key": "systemManagedRegistration",
+            "type": "bool",
+        },
+        "allow_dup_name_between_input_and_ouput_port": {
+            "key": "allowDupNameBetweenInputAndOuputPort",
+            "type": "bool",
+        },
+        "module_source": {"key": "moduleSource", "type": "str"},
+        "module_scope": {"key": "moduleScope", "type": "str"},
+        "module_additional_includes_count": {
+            "key": "moduleAdditionalIncludesCount",
+            "type": "int",
+        },
+        "module_os_type": {"key": "moduleOSType", "type": "str"},
+        "module_codegen_by": {"key": "moduleCodegenBy", "type": "str"},
+        "module_client_source": {"key": "moduleClientSource", "type": "str"},
+        "module_is_builtin": {"key": "moduleIsBuiltin", "type": "bool"},
+        "module_register_event_extension_fields": {
+            "key": "moduleRegisterEventExtensionFields",
+            "type": "{str}",
+        },
     }
 
     def __init__(
         self,
         *,
         registry_name: Optional[str] = None,
-        intellectual_property_publisher_information: Optional["IntellectualPropertyPublisherInformation"] = None,
+        intellectual_property_publisher_information: Optional[
+            "IntellectualPropertyPublisherInformation"
+        ] = None,
         blob_reference_data: Optional[Dict[str, "RegistryBlobReferenceData"]] = None,
         aml_module_name: Optional[str] = None,
         name_only_display_info: Optional[str] = None,
@@ -32438,20 +33688,26 @@ class RegisterRegistryComponentMetaInfo(msrest.serialization.Model):
         version: Optional[str] = None,
         module_version_id: Optional[str] = None,
         snapshot_id: Optional[str] = None,
-        component_registration_type: Optional[Union[str, "ComponentRegistrationTypeEnum"]] = None,
+        component_registration_type: Optional[
+            Union[str, "ComponentRegistrationTypeEnum"]
+        ] = None,
         module_entity_from_yaml: Optional["ModuleEntity"] = None,
         set_as_default_version: Optional[bool] = None,
         data_types_from_yaml: Optional[List["DataTypeCreationInfo"]] = None,
         data_type_mechanism: Optional[Union[str, "DataTypeMechanism"]] = None,
         identifier_hash: Optional[str] = None,
-        identifier_hashes: Optional["RegisterRegistryComponentMetaInfoIdentifierHashes"] = None,
+        identifier_hashes: Optional[
+            "RegisterRegistryComponentMetaInfoIdentifierHashes"
+        ] = None,
         content_hash: Optional[str] = None,
         extra_hash: Optional[str] = None,
         extra_hashes: Optional["RegisterRegistryComponentMetaInfoExtraHashes"] = None,
         registration: Optional[bool] = None,
         validate_only: Optional[bool] = None,
         skip_workspace_related_check: Optional[bool] = None,
-        intellectual_property_protected_workspace_component_registration_allowed_publisher: Optional[List[str]] = None,
+        intellectual_property_protected_workspace_component_registration_allowed_publisher: Optional[
+            List[str]
+        ] = None,
         system_managed_registration: Optional[bool] = None,
         allow_dup_name_between_input_and_ouput_port: Optional[bool] = None,
         module_source: Optional[str] = None,
@@ -32538,7 +33794,9 @@ class RegisterRegistryComponentMetaInfo(msrest.serialization.Model):
         """
         super(RegisterRegistryComponentMetaInfo, self).__init__(**kwargs)
         self.registry_name = registry_name
-        self.intellectual_property_publisher_information = intellectual_property_publisher_information
+        self.intellectual_property_publisher_information = (
+            intellectual_property_publisher_information
+        )
         self.blob_reference_data = blob_reference_data
         self.aml_module_name = aml_module_name
         self.name_only_display_info = name_only_display_info
@@ -32561,7 +33819,9 @@ class RegisterRegistryComponentMetaInfo(msrest.serialization.Model):
         self.skip_workspace_related_check = skip_workspace_related_check
         self.intellectual_property_protected_workspace_component_registration_allowed_publisher = intellectual_property_protected_workspace_component_registration_allowed_publisher
         self.system_managed_registration = system_managed_registration
-        self.allow_dup_name_between_input_and_ouput_port = allow_dup_name_between_input_and_ouput_port
+        self.allow_dup_name_between_input_and_ouput_port = (
+            allow_dup_name_between_input_and_ouput_port
+        )
         self.module_source = module_source
         self.module_scope = module_scope
         self.module_additional_includes_count = module_additional_includes_count
@@ -32569,7 +33829,9 @@ class RegisterRegistryComponentMetaInfo(msrest.serialization.Model):
         self.module_codegen_by = module_codegen_by
         self.module_client_source = module_client_source
         self.module_is_builtin = module_is_builtin
-        self.module_register_event_extension_fields = module_register_event_extension_fields
+        self.module_register_event_extension_fields = (
+            module_register_event_extension_fields
+        )
 
 
 class RegisterRegistryComponentMetaInfoExtraHashes(msrest.serialization.Model):
@@ -32582,8 +33844,8 @@ class RegisterRegistryComponentMetaInfoExtraHashes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'IdentifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'IdentifierHashV2', 'type': 'str'},
+        "identifier_hash": {"key": "IdentifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "IdentifierHashV2", "type": "str"},
     }
 
     def __init__(
@@ -32614,8 +33876,8 @@ class RegisterRegistryComponentMetaInfoIdentifierHashes(msrest.serialization.Mod
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'IdentifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'IdentifierHashV2', 'type': 'str'},
+        "identifier_hash": {"key": "IdentifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "IdentifierHashV2", "type": "str"},
     }
 
     def __init__(
@@ -32631,7 +33893,9 @@ class RegisterRegistryComponentMetaInfoIdentifierHashes(msrest.serialization.Mod
         :keyword identifier_hash_v2:
         :paramtype identifier_hash_v2: str
         """
-        super(RegisterRegistryComponentMetaInfoIdentifierHashes, self).__init__(**kwargs)
+        super(RegisterRegistryComponentMetaInfoIdentifierHashes, self).__init__(
+            **kwargs
+        )
         self.identifier_hash = identifier_hash
         self.identifier_hash_v2 = identifier_hash_v2
 
@@ -32654,12 +33918,15 @@ class RegistrationOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'dataset_registration_options': {'key': 'datasetRegistrationOptions', 'type': 'DatasetRegistrationOptions'},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "dataset_registration_options": {
+            "key": "datasetRegistrationOptions",
+            "type": "DatasetRegistrationOptions",
+        },
     }
 
     def __init__(
@@ -32706,8 +33973,8 @@ class RegistryBlobReferenceData(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_reference_id': {'key': 'dataReferenceId', 'type': 'str'},
-        'data': {'key': 'data', 'type': 'str'},
+        "data_reference_id": {"key": "dataReferenceId", "type": "str"},
+        "data": {"key": "data", "type": "str"},
     }
 
     def __init__(
@@ -32738,8 +34005,8 @@ class RegistryIdentity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'resource_id': {'key': 'resourceId', 'type': 'str'},
-        'client_id': {'key': 'clientId', 'type': 'str'},
+        "resource_id": {"key": "resourceId", "type": "str"},
+        "client_id": {"key": "clientId", "type": "str"},
     }
 
     def __init__(
@@ -32780,17 +34047,17 @@ class Relationship(msrest.serialization.Model):
     """
 
     _validation = {
-        'entity_type': {'readonly': True},
-        'entity_container_id': {'readonly': True},
+        "entity_type": {"readonly": True},
+        "entity_container_id": {"readonly": True},
     }
 
     _attribute_map = {
-        'relation_type': {'key': 'relationType', 'type': 'str'},
-        'target_entity_id': {'key': 'targetEntityId', 'type': 'str'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'entity_type': {'key': 'entityType', 'type': 'str'},
-        'direction': {'key': 'direction', 'type': 'str'},
-        'entity_container_id': {'key': 'entityContainerId', 'type': 'str'},
+        "relation_type": {"key": "relationType", "type": "str"},
+        "target_entity_id": {"key": "targetEntityId", "type": "str"},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "entity_type": {"key": "entityType", "type": "str"},
+        "direction": {"key": "direction", "type": "str"},
+        "entity_container_id": {"key": "entityContainerId", "type": "str"},
     }
 
     def __init__(
@@ -32835,10 +34102,10 @@ class RemoteDockerComputeInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'address': {'key': 'address', 'type': 'str'},
-        'username': {'key': 'username', 'type': 'str'},
-        'password': {'key': 'password', 'type': 'str'},
-        'private_key': {'key': 'privateKey', 'type': 'str'},
+        "address": {"key": "address", "type": "str"},
+        "username": {"key": "username", "type": "str"},
+        "password": {"key": "password", "type": "str"},
+        "private_key": {"key": "privateKey", "type": "str"},
     }
 
     def __init__(
@@ -32879,9 +34146,9 @@ class ResourceConfig(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'gpu_count': {'key': 'gpuCount', 'type': 'int'},
-        'cpu_count': {'key': 'cpuCount', 'type': 'int'},
-        'memory_request_in_gb': {'key': 'memoryRequestInGB', 'type': 'int'},
+        "gpu_count": {"key": "gpuCount", "type": "int"},
+        "cpu_count": {"key": "cpuCount", "type": "int"},
+        "memory_request_in_gb": {"key": "memoryRequestInGB", "type": "int"},
     }
 
     def __init__(
@@ -32918,9 +34185,9 @@ class ResourceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'gpu_count': {'key': 'gpuCount', 'type': 'int'},
-        'cpu_count': {'key': 'cpuCount', 'type': 'int'},
-        'memory_request_in_gb': {'key': 'memoryRequestInGB', 'type': 'int'},
+        "gpu_count": {"key": "gpuCount", "type": "int"},
+        "cpu_count": {"key": "cpuCount", "type": "int"},
+        "memory_request_in_gb": {"key": "memoryRequestInGB", "type": "int"},
     }
 
     def __init__(
@@ -32955,8 +34222,8 @@ class ResourcesSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_size': {'key': 'instanceSize', 'type': 'str'},
-        'spark_version': {'key': 'sparkVersion', 'type': 'str'},
+        "instance_size": {"key": "instanceSize", "type": "str"},
+        "spark_version": {"key": "sparkVersion", "type": "str"},
     }
 
     def __init__(
@@ -32985,15 +34252,10 @@ class RetryConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_retry_count': {'key': 'maxRetryCount', 'type': 'int'},
+        "max_retry_count": {"key": "maxRetryCount", "type": "int"},
     }
 
-    def __init__(
-        self,
-        *,
-        max_retry_count: Optional[int] = None,
-        **kwargs
-    ):
+    def __init__(self, *, max_retry_count: Optional[int] = None, **kwargs):
         """
         :keyword max_retry_count:
         :paramtype max_retry_count: int
@@ -33012,8 +34274,8 @@ class RGitHubPackage(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'repository': {'key': 'repository', 'type': 'str'},
-        'auth_token': {'key': 'authToken', 'type': 'str'},
+        "repository": {"key": "repository", "type": "str"},
+        "auth_token": {"key": "authToken", "type": "str"},
     }
 
     def __init__(
@@ -33065,17 +34327,17 @@ class RootError(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'code': {'key': 'code', 'type': 'str'},
-        'severity': {'key': 'severity', 'type': 'int'},
-        'message': {'key': 'message', 'type': 'str'},
-        'message_format': {'key': 'messageFormat', 'type': 'str'},
-        'message_parameters': {'key': 'messageParameters', 'type': '{str}'},
-        'reference_code': {'key': 'referenceCode', 'type': 'str'},
-        'details_uri': {'key': 'detailsUri', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'details': {'key': 'details', 'type': '[RootError]'},
-        'inner_error': {'key': 'innerError', 'type': 'InnerErrorResponse'},
-        'additional_info': {'key': 'additionalInfo', 'type': '[ErrorAdditionalInfo]'},
+        "code": {"key": "code", "type": "str"},
+        "severity": {"key": "severity", "type": "int"},
+        "message": {"key": "message", "type": "str"},
+        "message_format": {"key": "messageFormat", "type": "str"},
+        "message_parameters": {"key": "messageParameters", "type": "{str}"},
+        "reference_code": {"key": "referenceCode", "type": "str"},
+        "details_uri": {"key": "detailsUri", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "details": {"key": "details", "type": "[RootError]"},
+        "inner_error": {"key": "innerError", "type": "InnerErrorResponse"},
+        "additional_info": {"key": "additionalInfo", "type": "[ErrorAdditionalInfo]"},
     }
 
     def __init__(
@@ -33158,14 +34420,14 @@ class RSection(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'r_version': {'key': 'rVersion', 'type': 'str'},
-        'user_managed': {'key': 'userManaged', 'type': 'bool'},
-        'rscript_path': {'key': 'rscriptPath', 'type': 'str'},
-        'snapshot_date': {'key': 'snapshotDate', 'type': 'str'},
-        'cran_packages': {'key': 'cranPackages', 'type': '[RCranPackage]'},
-        'git_hub_packages': {'key': 'gitHubPackages', 'type': '[RGitHubPackage]'},
-        'custom_url_packages': {'key': 'customUrlPackages', 'type': '[str]'},
-        'bio_conductor_packages': {'key': 'bioConductorPackages', 'type': '[str]'},
+        "r_version": {"key": "rVersion", "type": "str"},
+        "user_managed": {"key": "userManaged", "type": "bool"},
+        "rscript_path": {"key": "rscriptPath", "type": "str"},
+        "snapshot_date": {"key": "snapshotDate", "type": "str"},
+        "cran_packages": {"key": "cranPackages", "type": "[RCranPackage]"},
+        "git_hub_packages": {"key": "gitHubPackages", "type": "[RGitHubPackage]"},
+        "custom_url_packages": {"key": "customUrlPackages", "type": "[str]"},
+        "bio_conductor_packages": {"key": "bioConductorPackages", "type": "[str]"},
     }
 
     def __init__(
@@ -33256,26 +34518,41 @@ class RunAnnotations(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'primary_metric_name': {'key': 'primaryMetricName', 'type': 'str'},
-        'estimated_cost': {'key': 'estimatedCost', 'type': 'float'},
-        'primary_metric_summary': {'key': 'primaryMetricSummary', 'type': 'RunIndexMetricSummary'},
-        'metrics': {'key': 'metrics', 'type': '{RunIndexMetricSummarySystemObject}'},
-        'parameters': {'key': 'parameters', 'type': '{object}'},
-        'settings': {'key': 'settings', 'type': '{str}'},
-        'modified_time': {'key': 'modifiedTime', 'type': 'iso-8601'},
-        'retain_for_lifetime_of_workspace': {'key': 'retainForLifetimeOfWorkspace', 'type': 'bool'},
-        'error': {'key': 'error', 'type': 'IndexedErrorResponse'},
-        'resource_metric_summary': {'key': 'resourceMetricSummary', 'type': 'RunIndexResourceMetricSummary'},
-        'job_cost': {'key': 'jobCost', 'type': 'JobCost'},
-        'compute_duration': {'key': 'computeDuration', 'type': 'str'},
-        'compute_duration_milliseconds': {'key': 'computeDurationMilliseconds', 'type': 'float'},
-        'effective_start_time_utc': {'key': 'effectiveStartTimeUtc', 'type': 'iso-8601'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'archived': {'key': 'archived', 'type': 'bool'},
-        'tags': {'key': 'tags', 'type': '{str}'},
+        "display_name": {"key": "displayName", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "primary_metric_name": {"key": "primaryMetricName", "type": "str"},
+        "estimated_cost": {"key": "estimatedCost", "type": "float"},
+        "primary_metric_summary": {
+            "key": "primaryMetricSummary",
+            "type": "RunIndexMetricSummary",
+        },
+        "metrics": {"key": "metrics", "type": "{RunIndexMetricSummarySystemObject}"},
+        "parameters": {"key": "parameters", "type": "{object}"},
+        "settings": {"key": "settings", "type": "{str}"},
+        "modified_time": {"key": "modifiedTime", "type": "iso-8601"},
+        "retain_for_lifetime_of_workspace": {
+            "key": "retainForLifetimeOfWorkspace",
+            "type": "bool",
+        },
+        "error": {"key": "error", "type": "IndexedErrorResponse"},
+        "resource_metric_summary": {
+            "key": "resourceMetricSummary",
+            "type": "RunIndexResourceMetricSummary",
+        },
+        "job_cost": {"key": "jobCost", "type": "JobCost"},
+        "compute_duration": {"key": "computeDuration", "type": "str"},
+        "compute_duration_milliseconds": {
+            "key": "computeDurationMilliseconds",
+            "type": "float",
+        },
+        "effective_start_time_utc": {
+            "key": "effectiveStartTimeUtc",
+            "type": "iso-8601",
+        },
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "archived": {"key": "archived", "type": "bool"},
+        "tags": {"key": "tags", "type": "{str}"},
     }
 
     def __init__(
@@ -33456,46 +34733,67 @@ class RunConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'script': {'key': 'script', 'type': 'str'},
-        'script_type': {'key': 'scriptType', 'type': 'str'},
-        'command': {'key': 'command', 'type': 'str'},
-        'use_absolute_path': {'key': 'useAbsolutePath', 'type': 'bool'},
-        'arguments': {'key': 'arguments', 'type': '[str]'},
-        'framework': {'key': 'framework', 'type': 'str'},
-        'communicator': {'key': 'communicator', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'auto_cluster_compute_specification': {'key': 'autoClusterComputeSpecification', 'type': 'AutoClusterComputeSpecification'},
-        'data_references': {'key': 'dataReferences', 'type': '{DataReferenceConfiguration}'},
-        'data': {'key': 'data', 'type': '{Data}'},
-        'input_assets': {'key': 'inputAssets', 'type': '{InputAsset}'},
-        'output_data': {'key': 'outputData', 'type': '{OutputData}'},
-        'datacaches': {'key': 'datacaches', 'type': '[DatacacheConfiguration]'},
-        'job_name': {'key': 'jobName', 'type': 'str'},
-        'max_run_duration_seconds': {'key': 'maxRunDurationSeconds', 'type': 'long'},
-        'node_count': {'key': 'nodeCount', 'type': 'int'},
-        'max_node_count': {'key': 'maxNodeCount', 'type': 'int'},
-        'instance_types': {'key': 'instanceTypes', 'type': '[str]'},
-        'priority': {'key': 'priority', 'type': 'int'},
-        'credential_passthrough': {'key': 'credentialPassthrough', 'type': 'bool'},
-        'identity': {'key': 'identity', 'type': 'IdentityConfiguration'},
-        'environment': {'key': 'environment', 'type': 'EnvironmentDefinition'},
-        'history': {'key': 'history', 'type': 'HistoryConfiguration'},
-        'spark': {'key': 'spark', 'type': 'SparkConfiguration'},
-        'parallel_task': {'key': 'parallelTask', 'type': 'ParallelTaskConfiguration'},
-        'tensorflow': {'key': 'tensorflow', 'type': 'TensorflowConfiguration'},
-        'mpi': {'key': 'mpi', 'type': 'MpiConfiguration'},
-        'py_torch': {'key': 'pyTorch', 'type': 'PyTorchConfiguration'},
-        'ray': {'key': 'ray', 'type': 'RayConfiguration'},
-        'hdi': {'key': 'hdi', 'type': 'HdiConfiguration'},
-        'docker': {'key': 'docker', 'type': 'DockerConfiguration'},
-        'command_return_code_config': {'key': 'commandReturnCodeConfig', 'type': 'CommandReturnCodeConfig'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'application_endpoints': {'key': 'applicationEndpoints', 'type': '{ApplicationEndpointConfiguration}'},
-        'parameters': {'key': 'parameters', 'type': '[ParameterDefinition]'},
-        'autologger_settings': {'key': 'autologgerSettings', 'type': 'AutologgerSettings'},
-        'data_bricks': {'key': 'dataBricks', 'type': 'DatabricksConfiguration'},
-        'training_diagnostic_config': {'key': 'trainingDiagnosticConfig', 'type': 'TrainingDiagnosticConfiguration'},
-        'secrets_configuration': {'key': 'secretsConfiguration', 'type': '{SecretConfiguration}'},
+        "script": {"key": "script", "type": "str"},
+        "script_type": {"key": "scriptType", "type": "str"},
+        "command": {"key": "command", "type": "str"},
+        "use_absolute_path": {"key": "useAbsolutePath", "type": "bool"},
+        "arguments": {"key": "arguments", "type": "[str]"},
+        "framework": {"key": "framework", "type": "str"},
+        "communicator": {"key": "communicator", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "auto_cluster_compute_specification": {
+            "key": "autoClusterComputeSpecification",
+            "type": "AutoClusterComputeSpecification",
+        },
+        "data_references": {
+            "key": "dataReferences",
+            "type": "{DataReferenceConfiguration}",
+        },
+        "data": {"key": "data", "type": "{Data}"},
+        "input_assets": {"key": "inputAssets", "type": "{InputAsset}"},
+        "output_data": {"key": "outputData", "type": "{OutputData}"},
+        "datacaches": {"key": "datacaches", "type": "[DatacacheConfiguration]"},
+        "job_name": {"key": "jobName", "type": "str"},
+        "max_run_duration_seconds": {"key": "maxRunDurationSeconds", "type": "long"},
+        "node_count": {"key": "nodeCount", "type": "int"},
+        "max_node_count": {"key": "maxNodeCount", "type": "int"},
+        "instance_types": {"key": "instanceTypes", "type": "[str]"},
+        "priority": {"key": "priority", "type": "int"},
+        "credential_passthrough": {"key": "credentialPassthrough", "type": "bool"},
+        "identity": {"key": "identity", "type": "IdentityConfiguration"},
+        "environment": {"key": "environment", "type": "EnvironmentDefinition"},
+        "history": {"key": "history", "type": "HistoryConfiguration"},
+        "spark": {"key": "spark", "type": "SparkConfiguration"},
+        "parallel_task": {"key": "parallelTask", "type": "ParallelTaskConfiguration"},
+        "tensorflow": {"key": "tensorflow", "type": "TensorflowConfiguration"},
+        "mpi": {"key": "mpi", "type": "MpiConfiguration"},
+        "py_torch": {"key": "pyTorch", "type": "PyTorchConfiguration"},
+        "ray": {"key": "ray", "type": "RayConfiguration"},
+        "hdi": {"key": "hdi", "type": "HdiConfiguration"},
+        "docker": {"key": "docker", "type": "DockerConfiguration"},
+        "command_return_code_config": {
+            "key": "commandReturnCodeConfig",
+            "type": "CommandReturnCodeConfig",
+        },
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "application_endpoints": {
+            "key": "applicationEndpoints",
+            "type": "{ApplicationEndpointConfiguration}",
+        },
+        "parameters": {"key": "parameters", "type": "[ParameterDefinition]"},
+        "autologger_settings": {
+            "key": "autologgerSettings",
+            "type": "AutologgerSettings",
+        },
+        "data_bricks": {"key": "dataBricks", "type": "DatabricksConfiguration"},
+        "training_diagnostic_config": {
+            "key": "trainingDiagnosticConfig",
+            "type": "TrainingDiagnosticConfiguration",
+        },
+        "secrets_configuration": {
+            "key": "secretsConfiguration",
+            "type": "{SecretConfiguration}",
+        },
     }
 
     def __init__(
@@ -33509,7 +34807,9 @@ class RunConfiguration(msrest.serialization.Model):
         framework: Optional[Union[str, "Framework"]] = None,
         communicator: Optional[Union[str, "Communicator"]] = None,
         target: Optional[str] = None,
-        auto_cluster_compute_specification: Optional["AutoClusterComputeSpecification"] = None,
+        auto_cluster_compute_specification: Optional[
+            "AutoClusterComputeSpecification"
+        ] = None,
         data_references: Optional[Dict[str, "DataReferenceConfiguration"]] = None,
         data: Optional[Dict[str, "Data"]] = None,
         input_assets: Optional[Dict[str, "InputAsset"]] = None,
@@ -33535,7 +34835,9 @@ class RunConfiguration(msrest.serialization.Model):
         docker: Optional["DockerConfiguration"] = None,
         command_return_code_config: Optional["CommandReturnCodeConfig"] = None,
         environment_variables: Optional[Dict[str, str]] = None,
-        application_endpoints: Optional[Dict[str, "ApplicationEndpointConfiguration"]] = None,
+        application_endpoints: Optional[
+            Dict[str, "ApplicationEndpointConfiguration"]
+        ] = None,
         parameters: Optional[List["ParameterDefinition"]] = None,
         autologger_settings: Optional["AutologgerSettings"] = None,
         data_bricks: Optional["DatabricksConfiguration"] = None,
@@ -33682,9 +34984,9 @@ class RunDatasetReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -33739,18 +35041,18 @@ class RunDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'configuration': {'key': 'configuration', 'type': 'RunConfiguration'},
-        'snapshot_id': {'key': 'snapshotId', 'type': 'str'},
-        'snapshots': {'key': 'snapshots', 'type': '[Snapshot]'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'run_type': {'key': 'runType', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'environment_asset_id': {'key': 'environmentAssetId', 'type': 'str'},
-        'primary_metric_name': {'key': 'primaryMetricName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'cancel_reason': {'key': 'cancelReason', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'tags': {'key': 'tags', 'type': '{str}'},
+        "configuration": {"key": "configuration", "type": "RunConfiguration"},
+        "snapshot_id": {"key": "snapshotId", "type": "str"},
+        "snapshots": {"key": "snapshots", "type": "[Snapshot]"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "run_type": {"key": "runType", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "environment_asset_id": {"key": "environmentAssetId", "type": "str"},
+        "primary_metric_name": {"key": "primaryMetricName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "cancel_reason": {"key": "cancelReason", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "tags": {"key": "tags", "type": "{str}"},
     }
 
     def __init__(
@@ -33901,53 +35203,56 @@ class RunDetailsDto(msrest.serialization.Model):
     """
 
     _validation = {
-        'input_datasets': {'unique': True},
-        'output_datasets': {'unique': True},
+        "input_datasets": {"unique": True},
+        "output_datasets": {"unique": True},
     }
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'run_uuid': {'key': 'runUuid', 'type': 'str'},
-        'parent_run_uuid': {'key': 'parentRunUuid', 'type': 'str'},
-        'root_run_uuid': {'key': 'rootRunUuid', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'data_container_id': {'key': 'dataContainerId', 'type': 'str'},
-        'created_time_utc': {'key': 'createdTimeUtc', 'type': 'iso-8601'},
-        'start_time_utc': {'key': 'startTimeUtc', 'type': 'iso-8601'},
-        'end_time_utc': {'key': 'endTimeUtc', 'type': 'iso-8601'},
-        'error': {'key': 'error', 'type': 'ErrorResponse'},
-        'warnings': {'key': 'warnings', 'type': '[RunDetailsWarningDto]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'parameters': {'key': 'parameters', 'type': '{object}'},
-        'services': {'key': 'services', 'type': '{EndpointSetting}'},
-        'input_datasets': {'key': 'inputDatasets', 'type': '[DatasetLineage]'},
-        'output_datasets': {'key': 'outputDatasets', 'type': '[OutputDatasetLineage]'},
-        'run_definition': {'key': 'runDefinition', 'type': 'object'},
-        'log_files': {'key': 'logFiles', 'type': '{str}'},
-        'job_cost': {'key': 'jobCost', 'type': 'JobCost'},
-        'revision': {'key': 'revision', 'type': 'long'},
-        'run_type_v2': {'key': 'runTypeV2', 'type': 'RunTypeV2'},
-        'settings': {'key': 'settings', 'type': '{str}'},
-        'compute_request': {'key': 'computeRequest', 'type': 'ComputeRequest'},
-        'compute': {'key': 'compute', 'type': 'Compute'},
-        'created_by': {'key': 'createdBy', 'type': 'User'},
-        'compute_duration': {'key': 'computeDuration', 'type': 'str'},
-        'effective_start_time_utc': {'key': 'effectiveStartTimeUtc', 'type': 'iso-8601'},
-        'run_number': {'key': 'runNumber', 'type': 'int'},
-        'root_run_id': {'key': 'rootRunId', 'type': 'str'},
-        'user_id': {'key': 'userId', 'type': 'str'},
-        'status_revision': {'key': 'statusRevision', 'type': 'long'},
-        'current_compute_time': {'key': 'currentComputeTime', 'type': 'str'},
-        'last_start_time_utc': {'key': 'lastStartTimeUtc', 'type': 'iso-8601'},
-        'last_modified_by': {'key': 'lastModifiedBy', 'type': 'User'},
-        'last_modified_utc': {'key': 'lastModifiedUtc', 'type': 'iso-8601'},
-        'duration': {'key': 'duration', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{TypedAssetReference}'},
-        'outputs': {'key': 'outputs', 'type': '{TypedAssetReference}'},
-        'current_attempt_id': {'key': 'currentAttemptId', 'type': 'int'},
+        "run_id": {"key": "runId", "type": "str"},
+        "run_uuid": {"key": "runUuid", "type": "str"},
+        "parent_run_uuid": {"key": "parentRunUuid", "type": "str"},
+        "root_run_uuid": {"key": "rootRunUuid", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "data_container_id": {"key": "dataContainerId", "type": "str"},
+        "created_time_utc": {"key": "createdTimeUtc", "type": "iso-8601"},
+        "start_time_utc": {"key": "startTimeUtc", "type": "iso-8601"},
+        "end_time_utc": {"key": "endTimeUtc", "type": "iso-8601"},
+        "error": {"key": "error", "type": "ErrorResponse"},
+        "warnings": {"key": "warnings", "type": "[RunDetailsWarningDto]"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "parameters": {"key": "parameters", "type": "{object}"},
+        "services": {"key": "services", "type": "{EndpointSetting}"},
+        "input_datasets": {"key": "inputDatasets", "type": "[DatasetLineage]"},
+        "output_datasets": {"key": "outputDatasets", "type": "[OutputDatasetLineage]"},
+        "run_definition": {"key": "runDefinition", "type": "object"},
+        "log_files": {"key": "logFiles", "type": "{str}"},
+        "job_cost": {"key": "jobCost", "type": "JobCost"},
+        "revision": {"key": "revision", "type": "long"},
+        "run_type_v2": {"key": "runTypeV2", "type": "RunTypeV2"},
+        "settings": {"key": "settings", "type": "{str}"},
+        "compute_request": {"key": "computeRequest", "type": "ComputeRequest"},
+        "compute": {"key": "compute", "type": "Compute"},
+        "created_by": {"key": "createdBy", "type": "User"},
+        "compute_duration": {"key": "computeDuration", "type": "str"},
+        "effective_start_time_utc": {
+            "key": "effectiveStartTimeUtc",
+            "type": "iso-8601",
+        },
+        "run_number": {"key": "runNumber", "type": "int"},
+        "root_run_id": {"key": "rootRunId", "type": "str"},
+        "user_id": {"key": "userId", "type": "str"},
+        "status_revision": {"key": "statusRevision", "type": "long"},
+        "current_compute_time": {"key": "currentComputeTime", "type": "str"},
+        "last_start_time_utc": {"key": "lastStartTimeUtc", "type": "iso-8601"},
+        "last_modified_by": {"key": "lastModifiedBy", "type": "User"},
+        "last_modified_utc": {"key": "lastModifiedUtc", "type": "iso-8601"},
+        "duration": {"key": "duration", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{TypedAssetReference}"},
+        "outputs": {"key": "outputs", "type": "{TypedAssetReference}"},
+        "current_attempt_id": {"key": "currentAttemptId", "type": "int"},
     }
 
     def __init__(
@@ -34138,16 +35443,12 @@ class RunDetailsWarningDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'source': {'key': 'source', 'type': 'str'},
-        'message': {'key': 'message', 'type': 'str'},
+        "source": {"key": "source", "type": "str"},
+        "message": {"key": "message", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        source: Optional[str] = None,
-        message: Optional[str] = None,
-        **kwargs
+        self, *, source: Optional[str] = None, message: Optional[str] = None, **kwargs
     ):
         """
         :keyword source:
@@ -34288,73 +35589,82 @@ class RunDto(msrest.serialization.Model):
     """
 
     _validation = {
-        'unique_child_run_compute_targets': {'unique': True},
-        'input_datasets': {'unique': True},
-        'output_datasets': {'unique': True},
+        "unique_child_run_compute_targets": {"unique": True},
+        "input_datasets": {"unique": True},
+        "output_datasets": {"unique": True},
     }
 
     _attribute_map = {
-        'run_number': {'key': 'runNumber', 'type': 'int'},
-        'root_run_id': {'key': 'rootRunId', 'type': 'str'},
-        'created_utc': {'key': 'createdUtc', 'type': 'iso-8601'},
-        'created_by': {'key': 'createdBy', 'type': 'User'},
-        'user_id': {'key': 'userId', 'type': 'str'},
-        'token': {'key': 'token', 'type': 'str'},
-        'token_expiry_time_utc': {'key': 'tokenExpiryTimeUtc', 'type': 'iso-8601'},
-        'error': {'key': 'error', 'type': 'ErrorResponse'},
-        'warnings': {'key': 'warnings', 'type': '[RunDetailsWarningDto]'},
-        'revision': {'key': 'revision', 'type': 'long'},
-        'status_revision': {'key': 'statusRevision', 'type': 'long'},
-        'run_uuid': {'key': 'runUuid', 'type': 'str'},
-        'parent_run_uuid': {'key': 'parentRunUuid', 'type': 'str'},
-        'root_run_uuid': {'key': 'rootRunUuid', 'type': 'str'},
-        'last_start_time_utc': {'key': 'lastStartTimeUtc', 'type': 'iso-8601'},
-        'current_compute_time': {'key': 'currentComputeTime', 'type': 'str'},
-        'compute_duration': {'key': 'computeDuration', 'type': 'str'},
-        'effective_start_time_utc': {'key': 'effectiveStartTimeUtc', 'type': 'iso-8601'},
-        'last_modified_by': {'key': 'lastModifiedBy', 'type': 'User'},
-        'last_modified_utc': {'key': 'lastModifiedUtc', 'type': 'iso-8601'},
-        'duration': {'key': 'duration', 'type': 'str'},
-        'cancelation_reason': {'key': 'cancelationReason', 'type': 'str'},
-        'current_attempt_id': {'key': 'currentAttemptId', 'type': 'int'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'start_time_utc': {'key': 'startTimeUtc', 'type': 'iso-8601'},
-        'end_time_utc': {'key': 'endTimeUtc', 'type': 'iso-8601'},
-        'schedule_id': {'key': 'scheduleId', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'data_container_id': {'key': 'dataContainerId', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'hidden': {'key': 'hidden', 'type': 'bool'},
-        'run_type': {'key': 'runType', 'type': 'str'},
-        'run_type_v2': {'key': 'runTypeV2', 'type': 'RunTypeV2'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'parameters': {'key': 'parameters', 'type': '{object}'},
-        'action_uris': {'key': 'actionUris', 'type': '{str}'},
-        'script_name': {'key': 'scriptName', 'type': 'str'},
-        'target': {'key': 'target', 'type': 'str'},
-        'unique_child_run_compute_targets': {'key': 'uniqueChildRunComputeTargets', 'type': '[str]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'settings': {'key': 'settings', 'type': '{str}'},
-        'services': {'key': 'services', 'type': '{EndpointSetting}'},
-        'input_datasets': {'key': 'inputDatasets', 'type': '[DatasetLineage]'},
-        'output_datasets': {'key': 'outputDatasets', 'type': '[OutputDatasetLineage]'},
-        'run_definition': {'key': 'runDefinition', 'type': 'object'},
-        'job_specification': {'key': 'jobSpecification', 'type': 'object'},
-        'primary_metric_name': {'key': 'primaryMetricName', 'type': 'str'},
-        'created_from': {'key': 'createdFrom', 'type': 'CreatedFromDto'},
-        'cancel_uri': {'key': 'cancelUri', 'type': 'str'},
-        'complete_uri': {'key': 'completeUri', 'type': 'str'},
-        'diagnostics_uri': {'key': 'diagnosticsUri', 'type': 'str'},
-        'compute_request': {'key': 'computeRequest', 'type': 'ComputeRequest'},
-        'compute': {'key': 'compute', 'type': 'Compute'},
-        'retain_for_lifetime_of_workspace': {'key': 'retainForLifetimeOfWorkspace', 'type': 'bool'},
-        'queueing_info': {'key': 'queueingInfo', 'type': 'QueueingInfo'},
-        'inputs': {'key': 'inputs', 'type': '{TypedAssetReference}'},
-        'outputs': {'key': 'outputs', 'type': '{TypedAssetReference}'},
+        "run_number": {"key": "runNumber", "type": "int"},
+        "root_run_id": {"key": "rootRunId", "type": "str"},
+        "created_utc": {"key": "createdUtc", "type": "iso-8601"},
+        "created_by": {"key": "createdBy", "type": "User"},
+        "user_id": {"key": "userId", "type": "str"},
+        "token": {"key": "token", "type": "str"},
+        "token_expiry_time_utc": {"key": "tokenExpiryTimeUtc", "type": "iso-8601"},
+        "error": {"key": "error", "type": "ErrorResponse"},
+        "warnings": {"key": "warnings", "type": "[RunDetailsWarningDto]"},
+        "revision": {"key": "revision", "type": "long"},
+        "status_revision": {"key": "statusRevision", "type": "long"},
+        "run_uuid": {"key": "runUuid", "type": "str"},
+        "parent_run_uuid": {"key": "parentRunUuid", "type": "str"},
+        "root_run_uuid": {"key": "rootRunUuid", "type": "str"},
+        "last_start_time_utc": {"key": "lastStartTimeUtc", "type": "iso-8601"},
+        "current_compute_time": {"key": "currentComputeTime", "type": "str"},
+        "compute_duration": {"key": "computeDuration", "type": "str"},
+        "effective_start_time_utc": {
+            "key": "effectiveStartTimeUtc",
+            "type": "iso-8601",
+        },
+        "last_modified_by": {"key": "lastModifiedBy", "type": "User"},
+        "last_modified_utc": {"key": "lastModifiedUtc", "type": "iso-8601"},
+        "duration": {"key": "duration", "type": "str"},
+        "cancelation_reason": {"key": "cancelationReason", "type": "str"},
+        "current_attempt_id": {"key": "currentAttemptId", "type": "int"},
+        "run_id": {"key": "runId", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "start_time_utc": {"key": "startTimeUtc", "type": "iso-8601"},
+        "end_time_utc": {"key": "endTimeUtc", "type": "iso-8601"},
+        "schedule_id": {"key": "scheduleId", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "data_container_id": {"key": "dataContainerId", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "hidden": {"key": "hidden", "type": "bool"},
+        "run_type": {"key": "runType", "type": "str"},
+        "run_type_v2": {"key": "runTypeV2", "type": "RunTypeV2"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "parameters": {"key": "parameters", "type": "{object}"},
+        "action_uris": {"key": "actionUris", "type": "{str}"},
+        "script_name": {"key": "scriptName", "type": "str"},
+        "target": {"key": "target", "type": "str"},
+        "unique_child_run_compute_targets": {
+            "key": "uniqueChildRunComputeTargets",
+            "type": "[str]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "settings": {"key": "settings", "type": "{str}"},
+        "services": {"key": "services", "type": "{EndpointSetting}"},
+        "input_datasets": {"key": "inputDatasets", "type": "[DatasetLineage]"},
+        "output_datasets": {"key": "outputDatasets", "type": "[OutputDatasetLineage]"},
+        "run_definition": {"key": "runDefinition", "type": "object"},
+        "job_specification": {"key": "jobSpecification", "type": "object"},
+        "primary_metric_name": {"key": "primaryMetricName", "type": "str"},
+        "created_from": {"key": "createdFrom", "type": "CreatedFromDto"},
+        "cancel_uri": {"key": "cancelUri", "type": "str"},
+        "complete_uri": {"key": "completeUri", "type": "str"},
+        "diagnostics_uri": {"key": "diagnosticsUri", "type": "str"},
+        "compute_request": {"key": "computeRequest", "type": "ComputeRequest"},
+        "compute": {"key": "compute", "type": "Compute"},
+        "retain_for_lifetime_of_workspace": {
+            "key": "retainForLifetimeOfWorkspace",
+            "type": "bool",
+        },
+        "queueing_info": {"key": "queueingInfo", "type": "QueueingInfo"},
+        "inputs": {"key": "inputs", "type": "{TypedAssetReference}"},
+        "outputs": {"key": "outputs", "type": "{TypedAssetReference}"},
     }
 
     def __init__(
@@ -34647,27 +35957,27 @@ class RunIndexEntity(msrest.serialization.Model):
     """
 
     _validation = {
-        'version': {'readonly': True},
-        'entity_container_id': {'readonly': True},
-        'entity_object_id': {'readonly': True},
-        'resource_type': {'readonly': True},
+        "version": {"readonly": True},
+        "entity_container_id": {"readonly": True},
+        "entity_object_id": {"readonly": True},
+        "resource_type": {"readonly": True},
     }
 
     _attribute_map = {
-        'schema_id': {'key': 'schemaId', 'type': 'str'},
-        'entity_id': {'key': 'entityId', 'type': 'str'},
-        'kind': {'key': 'kind', 'type': 'str'},
-        'annotations': {'key': 'annotations', 'type': 'RunAnnotations'},
-        'properties': {'key': 'properties', 'type': 'RunProperties'},
-        'internal': {'key': 'internal', 'type': 'object'},
-        'update_sequence': {'key': 'updateSequence', 'type': 'long'},
-        'type': {'key': 'type', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
-        'entity_container_id': {'key': 'entityContainerId', 'type': 'str'},
-        'entity_object_id': {'key': 'entityObjectId', 'type': 'str'},
-        'resource_type': {'key': 'resourceType', 'type': 'str'},
-        'relationships': {'key': 'relationships', 'type': '[Relationship]'},
-        'asset_id': {'key': 'assetId', 'type': 'str'},
+        "schema_id": {"key": "schemaId", "type": "str"},
+        "entity_id": {"key": "entityId", "type": "str"},
+        "kind": {"key": "kind", "type": "str"},
+        "annotations": {"key": "annotations", "type": "RunAnnotations"},
+        "properties": {"key": "properties", "type": "RunProperties"},
+        "internal": {"key": "internal", "type": "object"},
+        "update_sequence": {"key": "updateSequence", "type": "long"},
+        "type": {"key": "type", "type": "str"},
+        "version": {"key": "version", "type": "str"},
+        "entity_container_id": {"key": "entityContainerId", "type": "str"},
+        "entity_object_id": {"key": "entityObjectId", "type": "str"},
+        "resource_type": {"key": "resourceType", "type": "str"},
+        "relationships": {"key": "relationships", "type": "[Relationship]"},
+        "asset_id": {"key": "assetId", "type": "str"},
     }
 
     def __init__(
@@ -34740,11 +36050,11 @@ class RunIndexMetricSummary(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'count': {'key': 'count', 'type': 'long'},
-        'last_value': {'key': 'lastValue', 'type': 'object'},
-        'minimum_value': {'key': 'minimumValue', 'type': 'object'},
-        'maximum_value': {'key': 'maximumValue', 'type': 'object'},
-        'metric_type': {'key': 'metricType', 'type': 'str'},
+        "count": {"key": "count", "type": "long"},
+        "last_value": {"key": "lastValue", "type": "object"},
+        "minimum_value": {"key": "minimumValue", "type": "object"},
+        "maximum_value": {"key": "maximumValue", "type": "object"},
+        "metric_type": {"key": "metricType", "type": "str"},
     }
 
     def __init__(
@@ -34793,11 +36103,11 @@ class RunIndexMetricSummarySystemObject(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'count': {'key': 'count', 'type': 'long'},
-        'last_value': {'key': 'lastValue', 'type': 'object'},
-        'minimum_value': {'key': 'minimumValue', 'type': 'object'},
-        'maximum_value': {'key': 'maximumValue', 'type': 'object'},
-        'metric_type': {'key': 'metricType', 'type': 'str'},
+        "count": {"key": "count", "type": "long"},
+        "last_value": {"key": "lastValue", "type": "object"},
+        "minimum_value": {"key": "minimumValue", "type": "object"},
+        "maximum_value": {"key": "maximumValue", "type": "object"},
+        "metric_type": {"key": "metricType", "type": "str"},
     }
 
     def __init__(
@@ -34844,10 +36154,16 @@ class RunIndexResourceMetricSummary(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'gpu_utilization_percent_last_hour': {'key': 'gpuUtilizationPercentLastHour', 'type': 'float'},
-        'gpu_memory_utilization_percent_last_hour': {'key': 'gpuMemoryUtilizationPercentLastHour', 'type': 'float'},
-        'gpu_energy_joules': {'key': 'gpuEnergyJoules', 'type': 'float'},
-        'resource_metric_names': {'key': 'resourceMetricNames', 'type': '[str]'},
+        "gpu_utilization_percent_last_hour": {
+            "key": "gpuUtilizationPercentLastHour",
+            "type": "float",
+        },
+        "gpu_memory_utilization_percent_last_hour": {
+            "key": "gpuMemoryUtilizationPercentLastHour",
+            "type": "float",
+        },
+        "gpu_energy_joules": {"key": "gpuEnergyJoules", "type": "float"},
+        "resource_metric_names": {"key": "resourceMetricNames", "type": "[str]"},
     }
 
     def __init__(
@@ -34871,7 +36187,9 @@ class RunIndexResourceMetricSummary(msrest.serialization.Model):
         """
         super(RunIndexResourceMetricSummary, self).__init__(**kwargs)
         self.gpu_utilization_percent_last_hour = gpu_utilization_percent_last_hour
-        self.gpu_memory_utilization_percent_last_hour = gpu_memory_utilization_percent_last_hour
+        self.gpu_memory_utilization_percent_last_hour = (
+            gpu_memory_utilization_percent_last_hour
+        )
         self.gpu_energy_joules = gpu_energy_joules
         self.resource_metric_names = resource_metric_names
 
@@ -34906,18 +36224,18 @@ class RunMetricDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'metric_id': {'key': 'metricId', 'type': 'str'},
-        'data_container_id': {'key': 'dataContainerId', 'type': 'str'},
-        'metric_type': {'key': 'metricType', 'type': 'str'},
-        'created_utc': {'key': 'createdUtc', 'type': 'iso-8601'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'num_cells': {'key': 'numCells', 'type': 'int'},
-        'data_location': {'key': 'dataLocation', 'type': 'str'},
-        'cells': {'key': 'cells', 'type': '[{object}]'},
-        'schema': {'key': 'schema', 'type': 'MetricSchemaDto'},
+        "run_id": {"key": "runId", "type": "str"},
+        "metric_id": {"key": "metricId", "type": "str"},
+        "data_container_id": {"key": "dataContainerId", "type": "str"},
+        "metric_type": {"key": "metricType", "type": "str"},
+        "created_utc": {"key": "createdUtc", "type": "iso-8601"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "num_cells": {"key": "numCells", "type": "int"},
+        "data_location": {"key": "dataLocation", "type": "str"},
+        "cells": {"key": "cells", "type": "[{object}]"},
+        "schema": {"key": "schema", "type": "MetricSchemaDto"},
     }
 
     def __init__(
@@ -34988,16 +36306,12 @@ class RunMetricsTypesDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        name: Optional[str] = None,
-        type: Optional[str] = None,
-        **kwargs
+        self, *, name: Optional[str] = None, type: Optional[str] = None, **kwargs
     ):
         """
         :keyword name:
@@ -35062,29 +36376,29 @@ class RunProperties(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_container_id': {'key': 'dataContainerId', 'type': 'str'},
-        'target_name': {'key': 'targetName', 'type': 'str'},
-        'run_name': {'key': 'runName', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'root_run_id': {'key': 'rootRunId', 'type': 'str'},
-        'run_type': {'key': 'runType', 'type': 'str'},
-        'run_type_v2': {'key': 'runTypeV2', 'type': 'RunTypeV2Index'},
-        'script_name': {'key': 'scriptName', 'type': 'str'},
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'run_uuid': {'key': 'runUuid', 'type': 'str'},
-        'parent_run_uuid': {'key': 'parentRunUuid', 'type': 'str'},
-        'run_number': {'key': 'runNumber', 'type': 'int'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'compute_request': {'key': 'computeRequest', 'type': 'ComputeRequest'},
-        'compute': {'key': 'compute', 'type': 'Compute'},
-        'user_properties': {'key': 'userProperties', 'type': '{str}'},
-        'action_uris': {'key': 'actionUris', 'type': '{str}'},
-        'duration': {'key': 'duration', 'type': 'str'},
-        'duration_milliseconds': {'key': 'durationMilliseconds', 'type': 'float'},
-        'creation_context': {'key': 'creationContext', 'type': 'CreationContext'},
+        "data_container_id": {"key": "dataContainerId", "type": "str"},
+        "target_name": {"key": "targetName", "type": "str"},
+        "run_name": {"key": "runName", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "root_run_id": {"key": "rootRunId", "type": "str"},
+        "run_type": {"key": "runType", "type": "str"},
+        "run_type_v2": {"key": "runTypeV2", "type": "RunTypeV2Index"},
+        "script_name": {"key": "scriptName", "type": "str"},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "run_uuid": {"key": "runUuid", "type": "str"},
+        "parent_run_uuid": {"key": "parentRunUuid", "type": "str"},
+        "run_number": {"key": "runNumber", "type": "int"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "compute_request": {"key": "computeRequest", "type": "ComputeRequest"},
+        "compute": {"key": "compute", "type": "Compute"},
+        "user_properties": {"key": "userProperties", "type": "{str}"},
+        "action_uris": {"key": "actionUris", "type": "{str}"},
+        "duration": {"key": "duration", "type": "str"},
+        "duration_milliseconds": {"key": "durationMilliseconds", "type": "float"},
+        "creation_context": {"key": "creationContext", "type": "CreationContext"},
     }
 
     def __init__(
@@ -35243,29 +36557,41 @@ class RunSettingParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'parameter_type': {'key': 'parameterType', 'type': 'str'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
-        'lower_bound': {'key': 'lowerBound', 'type': 'str'},
-        'upper_bound': {'key': 'upperBound', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'run_setting_ui_hint': {'key': 'runSettingUIHint', 'type': 'RunSettingUIParameterHint'},
-        'argument_name': {'key': 'argumentName', 'type': 'str'},
-        'section_name': {'key': 'sectionName', 'type': 'str'},
-        'section_description': {'key': 'sectionDescription', 'type': 'str'},
-        'section_argument_name': {'key': 'sectionArgumentName', 'type': 'str'},
-        'examples': {'key': 'examples', 'type': '[str]'},
-        'enum_values': {'key': 'enumValues', 'type': '[str]'},
-        'enum_values_to_argument_strings': {'key': 'enumValuesToArgumentStrings', 'type': '{str}'},
-        'enabled_by_parameter_name': {'key': 'enabledByParameterName', 'type': 'str'},
-        'enabled_by_parameter_values': {'key': 'enabledByParameterValues', 'type': '[str]'},
-        'disabled_by_parameters': {'key': 'disabledByParameters', 'type': '[str]'},
-        'module_run_setting_type': {'key': 'moduleRunSettingType', 'type': 'str'},
-        'linked_parameter_default_value_mapping': {'key': 'linkedParameterDefaultValueMapping', 'type': '{str}'},
-        'linked_parameter_key_name': {'key': 'linkedParameterKeyName', 'type': 'str'},
-        'support_link_setting': {'key': 'supportLinkSetting', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "parameter_type": {"key": "parameterType", "type": "str"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "default_value": {"key": "defaultValue", "type": "str"},
+        "lower_bound": {"key": "lowerBound", "type": "str"},
+        "upper_bound": {"key": "upperBound", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "run_setting_ui_hint": {
+            "key": "runSettingUIHint",
+            "type": "RunSettingUIParameterHint",
+        },
+        "argument_name": {"key": "argumentName", "type": "str"},
+        "section_name": {"key": "sectionName", "type": "str"},
+        "section_description": {"key": "sectionDescription", "type": "str"},
+        "section_argument_name": {"key": "sectionArgumentName", "type": "str"},
+        "examples": {"key": "examples", "type": "[str]"},
+        "enum_values": {"key": "enumValues", "type": "[str]"},
+        "enum_values_to_argument_strings": {
+            "key": "enumValuesToArgumentStrings",
+            "type": "{str}",
+        },
+        "enabled_by_parameter_name": {"key": "enabledByParameterName", "type": "str"},
+        "enabled_by_parameter_values": {
+            "key": "enabledByParameterValues",
+            "type": "[str]",
+        },
+        "disabled_by_parameters": {"key": "disabledByParameters", "type": "[str]"},
+        "module_run_setting_type": {"key": "moduleRunSettingType", "type": "str"},
+        "linked_parameter_default_value_mapping": {
+            "key": "linkedParameterDefaultValueMapping",
+            "type": "{str}",
+        },
+        "linked_parameter_key_name": {"key": "linkedParameterKeyName", "type": "str"},
+        "support_link_setting": {"key": "supportLinkSetting", "type": "bool"},
     }
 
     def __init__(
@@ -35367,7 +36693,9 @@ class RunSettingParameter(msrest.serialization.Model):
         self.enabled_by_parameter_values = enabled_by_parameter_values
         self.disabled_by_parameters = disabled_by_parameters
         self.module_run_setting_type = module_run_setting_type
-        self.linked_parameter_default_value_mapping = linked_parameter_default_value_mapping
+        self.linked_parameter_default_value_mapping = (
+            linked_parameter_default_value_mapping
+        )
         self.linked_parameter_key_name = linked_parameter_key_name
         self.support_link_setting = support_link_setting
 
@@ -35399,16 +36727,25 @@ class RunSettingParameterAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'use_graph_default_compute': {'key': 'useGraphDefaultCompute', 'type': 'bool'},
-        'mlc_compute_type': {'key': 'mlcComputeType', 'type': 'str'},
-        'compute_run_settings': {'key': 'computeRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'linked_parameter_name': {'key': 'linkedParameterName', 'type': 'str'},
-        'value_type': {'key': 'valueType', 'type': 'str'},
-        'assignments_to_concatenate': {'key': 'assignmentsToConcatenate', 'type': '[ParameterAssignment]'},
-        'data_path_assignment': {'key': 'dataPathAssignment', 'type': 'LegacyDataPath'},
-        'data_set_definition_value_assignment': {'key': 'dataSetDefinitionValueAssignment', 'type': 'DataSetDefinitionValue'},
-        'name': {'key': 'name', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
+        "use_graph_default_compute": {"key": "useGraphDefaultCompute", "type": "bool"},
+        "mlc_compute_type": {"key": "mlcComputeType", "type": "str"},
+        "compute_run_settings": {
+            "key": "computeRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "linked_parameter_name": {"key": "linkedParameterName", "type": "str"},
+        "value_type": {"key": "valueType", "type": "str"},
+        "assignments_to_concatenate": {
+            "key": "assignmentsToConcatenate",
+            "type": "[ParameterAssignment]",
+        },
+        "data_path_assignment": {"key": "dataPathAssignment", "type": "LegacyDataPath"},
+        "data_set_definition_value_assignment": {
+            "key": "dataSetDefinitionValueAssignment",
+            "type": "DataSetDefinitionValue",
+        },
+        "name": {"key": "name", "type": "str"},
+        "value": {"key": "value", "type": "str"},
     }
 
     def __init__(
@@ -35487,14 +36824,17 @@ class RunSettingUIParameterHint(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'ui_widget_type': {'key': 'uiWidgetType', 'type': 'str'},
-        'json_editor': {'key': 'jsonEditor', 'type': 'UIJsonEditor'},
-        'yaml_editor': {'key': 'yamlEditor', 'type': 'UIYamlEditor'},
-        'compute_selection': {'key': 'computeSelection', 'type': 'UIComputeSelection'},
-        'hyperparameter_configuration': {'key': 'hyperparameterConfiguration', 'type': 'UIHyperparameterConfiguration'},
-        'ux_ignore': {'key': 'uxIgnore', 'type': 'bool'},
-        'anonymous': {'key': 'anonymous', 'type': 'bool'},
-        'support_reset': {'key': 'supportReset', 'type': 'bool'},
+        "ui_widget_type": {"key": "uiWidgetType", "type": "str"},
+        "json_editor": {"key": "jsonEditor", "type": "UIJsonEditor"},
+        "yaml_editor": {"key": "yamlEditor", "type": "UIYamlEditor"},
+        "compute_selection": {"key": "computeSelection", "type": "UIComputeSelection"},
+        "hyperparameter_configuration": {
+            "key": "hyperparameterConfiguration",
+            "type": "UIHyperparameterConfiguration",
+        },
+        "ux_ignore": {"key": "uxIgnore", "type": "bool"},
+        "anonymous": {"key": "anonymous", "type": "bool"},
+        "support_reset": {"key": "supportReset", "type": "bool"},
     }
 
     def __init__(
@@ -35558,10 +36898,10 @@ class RunStatusPeriod(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'status': {'key': 'status', 'type': 'str'},
-        'sub_periods': {'key': 'subPeriods', 'type': '[SubStatusPeriod]'},
-        'start': {'key': 'start', 'type': 'long'},
-        'end': {'key': 'end', 'type': 'long'},
+        "status": {"key": "status", "type": "str"},
+        "sub_periods": {"key": "subPeriods", "type": "[SubStatusPeriod]"},
+        "start": {"key": "start", "type": "long"},
+        "end": {"key": "end", "type": "long"},
     }
 
     def __init__(
@@ -35606,14 +36946,14 @@ class RunTypeV2(msrest.serialization.Model):
     """
 
     _validation = {
-        'traits': {'unique': True},
+        "traits": {"unique": True},
     }
 
     _attribute_map = {
-        'orchestrator': {'key': 'orchestrator', 'type': 'str'},
-        'traits': {'key': 'traits', 'type': '[str]'},
-        'attribution': {'key': 'attribution', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
+        "orchestrator": {"key": "orchestrator", "type": "str"},
+        "traits": {"key": "traits", "type": "[str]"},
+        "attribution": {"key": "attribution", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
     }
 
     def __init__(
@@ -35656,10 +36996,10 @@ class RunTypeV2Index(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'orchestrator': {'key': 'orchestrator', 'type': 'str'},
-        'traits': {'key': 'traits', 'type': '{str}'},
-        'attribution': {'key': 'attribution', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
+        "orchestrator": {"key": "orchestrator", "type": "str"},
+        "traits": {"key": "traits", "type": "{str}"},
+        "attribution": {"key": "attribution", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
     }
 
     def __init__(
@@ -35716,17 +37056,17 @@ class SampleMeta(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'image': {'key': 'image', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'doc_link': {'key': 'docLink', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '[str]'},
-        'created_at': {'key': 'createdAt', 'type': 'iso-8601'},
-        'updated_at': {'key': 'updatedAt', 'type': 'iso-8601'},
-        'feed_name': {'key': 'feedName', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "image": {"key": "image", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "doc_link": {"key": "docLink", "type": "str"},
+        "tags": {"key": "tags", "type": "[str]"},
+        "created_at": {"key": "createdAt", "type": "iso-8601"},
+        "updated_at": {"key": "updatedAt", "type": "iso-8601"},
+        "feed_name": {"key": "feedName", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -35791,15 +37131,10 @@ class SavedDataSetReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        id: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, id: Optional[str] = None, **kwargs):
         """
         :keyword id:
         :paramtype id: str
@@ -35867,30 +37202,57 @@ class SavePipelineDraftRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'ui_widget_meta_infos': {'key': 'uiWidgetMetaInfos', 'type': '[UIWidgetMetaInfo]'},
-        'web_service_inputs': {'key': 'webServiceInputs', 'type': '[WebServicePort]'},
-        'web_service_outputs': {'key': 'webServiceOutputs', 'type': '[WebServicePort]'},
-        'nodes_in_draft': {'key': 'nodesInDraft', 'type': '[str]'},
-        'name': {'key': 'name', 'type': 'str'},
-        'pipeline_type': {'key': 'pipelineType', 'type': 'str'},
-        'pipeline_draft_mode': {'key': 'pipelineDraftMode', 'type': 'str'},
-        'graph_components_mode': {'key': 'graphComponentsMode', 'type': 'str'},
-        'sub_pipelines_info': {'key': 'subPipelinesInfo', 'type': 'SubPipelinesInfo'},
-        'flattened_sub_graphs': {'key': 'flattenedSubGraphs', 'type': '{PipelineSubDraft}'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'graph': {'key': 'graph', 'type': 'GraphDraftEntity'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'dataset_access_modes': {'key': 'datasetAccessModes', 'type': 'str'},
+        "ui_widget_meta_infos": {
+            "key": "uiWidgetMetaInfos",
+            "type": "[UIWidgetMetaInfo]",
+        },
+        "web_service_inputs": {"key": "webServiceInputs", "type": "[WebServicePort]"},
+        "web_service_outputs": {"key": "webServiceOutputs", "type": "[WebServicePort]"},
+        "nodes_in_draft": {"key": "nodesInDraft", "type": "[str]"},
+        "name": {"key": "name", "type": "str"},
+        "pipeline_type": {"key": "pipelineType", "type": "str"},
+        "pipeline_draft_mode": {"key": "pipelineDraftMode", "type": "str"},
+        "graph_components_mode": {"key": "graphComponentsMode", "type": "str"},
+        "sub_pipelines_info": {"key": "subPipelinesInfo", "type": "SubPipelinesInfo"},
+        "flattened_sub_graphs": {
+            "key": "flattenedSubGraphs",
+            "type": "{PipelineSubDraft}",
+        },
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "graph": {"key": "graph", "type": "GraphDraftEntity"},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "description": {"key": "description", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "dataset_access_modes": {"key": "datasetAccessModes", "type": "str"},
     }
 
     def __init__(
@@ -35908,12 +37270,18 @@ class SavePipelineDraftRequest(msrest.serialization.Model):
         flattened_sub_graphs: Optional[Dict[str, "PipelineSubDraft"]] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         graph: Optional["GraphDraftEntity"] = None,
         pipeline_run_settings: Optional[List["RunSettingParameterAssignment"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         tags: Optional[Dict[str, str]] = None,
         continue_run_on_step_failure: Optional[bool] = None,
         description: Optional[str] = None,
@@ -35991,7 +37359,9 @@ class SavePipelineDraftRequest(msrest.serialization.Model):
         self.flattened_sub_graphs = flattened_sub_graphs
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
         self.graph = graph
         self.pipeline_run_settings = pipeline_run_settings
@@ -36029,15 +37399,15 @@ class ScheduleBase(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'schedule_status': {'key': 'scheduleStatus', 'type': 'str'},
-        'schedule_type': {'key': 'scheduleType', 'type': 'str'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'time_zone': {'key': 'timeZone', 'type': 'str'},
-        'expression': {'key': 'expression', 'type': 'str'},
-        'frequency': {'key': 'frequency', 'type': 'str'},
-        'interval': {'key': 'interval', 'type': 'int'},
-        'pattern': {'key': 'pattern', 'type': 'RecurrencePattern'},
+        "schedule_status": {"key": "scheduleStatus", "type": "str"},
+        "schedule_type": {"key": "scheduleType", "type": "str"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "time_zone": {"key": "timeZone", "type": "str"},
+        "expression": {"key": "expression", "type": "str"},
+        "frequency": {"key": "frequency", "type": "str"},
+        "interval": {"key": "interval", "type": "int"},
+        "pattern": {"key": "pattern", "type": "RecurrencePattern"},
     }
 
     def __init__(
@@ -36098,9 +37468,9 @@ class SchemaContractsCreatedBy(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'user_object_id': {'key': 'userObjectId', 'type': 'str'},
-        'user_tenant_id': {'key': 'userTenantId', 'type': 'str'},
-        'user_name': {'key': 'userName', 'type': 'str'},
+        "user_object_id": {"key": "userObjectId", "type": "str"},
+        "user_tenant_id": {"key": "userTenantId", "type": "str"},
+        "user_name": {"key": "userName", "type": "str"},
     }
 
     def __init__(
@@ -36143,12 +37513,18 @@ class ScopeCloudConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'input_path_suffixes': {'key': 'inputPathSuffixes', 'type': '{ArgumentAssignment}'},
-        'output_path_suffixes': {'key': 'outputPathSuffixes', 'type': '{ArgumentAssignment}'},
-        'user_alias': {'key': 'userAlias', 'type': 'str'},
-        'tokens': {'key': 'tokens', 'type': 'int'},
-        'auto_token': {'key': 'autoToken', 'type': 'int'},
-        'vcp': {'key': 'vcp', 'type': 'float'},
+        "input_path_suffixes": {
+            "key": "inputPathSuffixes",
+            "type": "{ArgumentAssignment}",
+        },
+        "output_path_suffixes": {
+            "key": "outputPathSuffixes",
+            "type": "{ArgumentAssignment}",
+        },
+        "user_alias": {"key": "userAlias", "type": "str"},
+        "tokens": {"key": "tokens", "type": "int"},
+        "auto_token": {"key": "autoToken", "type": "int"},
+        "vcp": {"key": "vcp", "type": "float"},
     }
 
     def __init__(
@@ -36195,8 +37571,8 @@ class Seasonality(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -36227,8 +37603,8 @@ class SecretConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'workspace_secret_name': {'key': 'workspaceSecretName', 'type': 'str'},
-        'uri': {'key': 'uri', 'type': 'str'},
+        "workspace_secret_name": {"key": "workspaceSecretName", "type": "str"},
+        "uri": {"key": "uri", "type": "str"},
     }
 
     def __init__(
@@ -36263,10 +37639,10 @@ class SegmentedResult1(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'value': {'key': 'value', 'type': '[FlowIndexEntity]'},
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'count': {'key': 'count', 'type': 'int'},
-        'next_link': {'key': 'nextLink', 'type': 'str'},
+        "value": {"key": "value", "type": "[FlowIndexEntity]"},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "count": {"key": "count", "type": "int"},
+        "next_link": {"key": "nextLink", "type": "str"},
     }
 
     def __init__(
@@ -36306,8 +37682,8 @@ class SharingScope(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'type': {'key': 'type', 'type': 'str'},
-        'identifier': {'key': 'identifier', 'type': 'str'},
+        "type": {"key": "type", "type": "str"},
+        "identifier": {"key": "identifier", "type": "str"},
     }
 
     def __init__(
@@ -36343,10 +37719,10 @@ class Snapshot(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'directory_name': {'key': 'directoryName', 'type': 'str'},
-        'snapshot_asset_id': {'key': 'snapshotAssetId', 'type': 'str'},
-        'snapshot_entity_id': {'key': 'snapshotEntityId', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "directory_name": {"key": "directoryName", "type": "str"},
+        "snapshot_asset_id": {"key": "snapshotAssetId", "type": "str"},
+        "snapshot_entity_id": {"key": "snapshotEntityId", "type": "str"},
     }
 
     def __init__(
@@ -36385,8 +37761,8 @@ class SnapshotInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'root_download_url': {'key': 'rootDownloadUrl', 'type': 'str'},
-        'snapshots': {'key': 'snapshots', 'type': '{DownloadResourceInfo}'},
+        "root_download_url": {"key": "rootDownloadUrl", "type": "str"},
+        "snapshots": {"key": "snapshots", "type": "{DownloadResourceInfo}"},
     }
 
     def __init__(
@@ -36417,8 +37793,8 @@ class SourceCodeDataReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'path': {'key': 'path', 'type': 'str'},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "path": {"key": "path", "type": "str"},
     }
 
     def __init__(
@@ -36457,12 +37833,12 @@ class SparkConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'configuration': {'key': 'configuration', 'type': '{str}'},
-        'files': {'key': 'files', 'type': '[str]'},
-        'archives': {'key': 'archives', 'type': '[str]'},
-        'jars': {'key': 'jars', 'type': '[str]'},
-        'py_files': {'key': 'pyFiles', 'type': '[str]'},
-        'spark_pool_resource_id': {'key': 'sparkPoolResourceId', 'type': 'str'},
+        "configuration": {"key": "configuration", "type": "{str}"},
+        "files": {"key": "files", "type": "[str]"},
+        "archives": {"key": "archives", "type": "[str]"},
+        "jars": {"key": "jars", "type": "[str]"},
+        "py_files": {"key": "pyFiles", "type": "[str]"},
+        "spark_pool_resource_id": {"key": "sparkPoolResourceId", "type": "str"},
     }
 
     def __init__(
@@ -36509,8 +37885,8 @@ class SparkJarTaskDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'main_class_name': {'key': 'main_class_name', 'type': 'str'},
-        'parameters': {'key': 'parameters', 'type': '[str]'},
+        "main_class_name": {"key": "main_class_name", "type": "str"},
+        "parameters": {"key": "parameters", "type": "[str]"},
     }
 
     def __init__(
@@ -36603,37 +37979,52 @@ class SparkJob(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_type': {'key': 'jobType', 'type': 'str'},
-        'resources': {'key': 'resources', 'type': 'SparkResourceConfiguration'},
-        'args': {'key': 'args', 'type': 'str'},
-        'code_id': {'key': 'codeId', 'type': 'str'},
-        'entry': {'key': 'entry', 'type': 'SparkJobEntry'},
-        'py_files': {'key': 'pyFiles', 'type': '[str]'},
-        'jars': {'key': 'jars', 'type': '[str]'},
-        'files': {'key': 'files', 'type': '[str]'},
-        'archives': {'key': 'archives', 'type': '[str]'},
-        'environment_id': {'key': 'environmentId', 'type': 'str'},
-        'input_data_bindings': {'key': 'inputDataBindings', 'type': '{InputDataBinding}'},
-        'output_data_bindings': {'key': 'outputDataBindings', 'type': '{OutputDataBinding}'},
-        'conf': {'key': 'conf', 'type': '{str}'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'parent_job_name': {'key': 'parentJobName', 'type': 'str'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'status': {'key': 'status', 'type': 'str'},
-        'interaction_endpoints': {'key': 'interactionEndpoints', 'type': '{JobEndpoint}'},
-        'identity': {'key': 'identity', 'type': 'MfeInternalIdentityConfiguration'},
-        'compute': {'key': 'compute', 'type': 'ComputeConfiguration'},
-        'priority': {'key': 'priority', 'type': 'int'},
-        'output': {'key': 'output', 'type': 'JobOutputArtifacts'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'schedule': {'key': 'schedule', 'type': 'ScheduleBase'},
-        'component_id': {'key': 'componentId', 'type': 'str'},
-        'notification_setting': {'key': 'notificationSetting', 'type': 'NotificationSetting'},
-        'secrets_configuration': {'key': 'secretsConfiguration', 'type': '{MfeInternalSecretConfiguration}'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'properties': {'key': 'properties', 'type': '{str}'},
+        "job_type": {"key": "jobType", "type": "str"},
+        "resources": {"key": "resources", "type": "SparkResourceConfiguration"},
+        "args": {"key": "args", "type": "str"},
+        "code_id": {"key": "codeId", "type": "str"},
+        "entry": {"key": "entry", "type": "SparkJobEntry"},
+        "py_files": {"key": "pyFiles", "type": "[str]"},
+        "jars": {"key": "jars", "type": "[str]"},
+        "files": {"key": "files", "type": "[str]"},
+        "archives": {"key": "archives", "type": "[str]"},
+        "environment_id": {"key": "environmentId", "type": "str"},
+        "input_data_bindings": {
+            "key": "inputDataBindings",
+            "type": "{InputDataBinding}",
+        },
+        "output_data_bindings": {
+            "key": "outputDataBindings",
+            "type": "{OutputDataBinding}",
+        },
+        "conf": {"key": "conf", "type": "{str}"},
+        "provisioning_state": {"key": "provisioningState", "type": "str"},
+        "parent_job_name": {"key": "parentJobName", "type": "str"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "status": {"key": "status", "type": "str"},
+        "interaction_endpoints": {
+            "key": "interactionEndpoints",
+            "type": "{JobEndpoint}",
+        },
+        "identity": {"key": "identity", "type": "MfeInternalIdentityConfiguration"},
+        "compute": {"key": "compute", "type": "ComputeConfiguration"},
+        "priority": {"key": "priority", "type": "int"},
+        "output": {"key": "output", "type": "JobOutputArtifacts"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "schedule": {"key": "schedule", "type": "ScheduleBase"},
+        "component_id": {"key": "componentId", "type": "str"},
+        "notification_setting": {
+            "key": "notificationSetting",
+            "type": "NotificationSetting",
+        },
+        "secrets_configuration": {
+            "key": "secretsConfiguration",
+            "type": "{MfeInternalSecretConfiguration}",
+        },
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "properties": {"key": "properties", "type": "{str}"},
     }
 
     def __init__(
@@ -36666,7 +38057,9 @@ class SparkJob(msrest.serialization.Model):
         schedule: Optional["ScheduleBase"] = None,
         component_id: Optional[str] = None,
         notification_setting: Optional["NotificationSetting"] = None,
-        secrets_configuration: Optional[Dict[str, "MfeInternalSecretConfiguration"]] = None,
+        secrets_configuration: Optional[
+            Dict[str, "MfeInternalSecretConfiguration"]
+        ] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         properties: Optional[Dict[str, str]] = None,
@@ -36784,16 +38177,12 @@ class SparkJobEntry(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'file': {'key': 'file', 'type': 'str'},
-        'class_name': {'key': 'className', 'type': 'str'},
+        "file": {"key": "file", "type": "str"},
+        "class_name": {"key": "className", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        file: Optional[str] = None,
-        class_name: Optional[str] = None,
-        **kwargs
+        self, *, file: Optional[str] = None, class_name: Optional[str] = None, **kwargs
     ):
         """
         :keyword file:
@@ -36818,9 +38207,9 @@ class SparkMavenPackage(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'group': {'key': 'group', 'type': 'str'},
-        'artifact': {'key': 'artifact', 'type': 'str'},
-        'version': {'key': 'version', 'type': 'str'},
+        "group": {"key": "group", "type": "str"},
+        "artifact": {"key": "artifact", "type": "str"},
+        "version": {"key": "version", "type": "str"},
     }
 
     def __init__(
@@ -36855,8 +38244,8 @@ class SparkPythonTaskDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'python_file': {'key': 'python_file', 'type': 'str'},
-        'parameters': {'key': 'parameters', 'type': '[str]'},
+        "python_file": {"key": "python_file", "type": "str"},
+        "parameters": {"key": "parameters", "type": "[str]"},
     }
 
     def __init__(
@@ -36887,8 +38276,8 @@ class SparkResourceConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'instance_type': {'key': 'instanceType', 'type': 'str'},
-        'runtime_version': {'key': 'runtimeVersion', 'type': 'str'},
+        "instance_type": {"key": "instanceType", "type": "str"},
+        "runtime_version": {"key": "runtimeVersion", "type": "str"},
     }
 
     def __init__(
@@ -36921,9 +38310,9 @@ class SparkSection(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'repositories': {'key': 'repositories', 'type': '[str]'},
-        'packages': {'key': 'packages', 'type': '[SparkMavenPackage]'},
-        'precache_packages': {'key': 'precachePackages', 'type': 'bool'},
+        "repositories": {"key": "repositories", "type": "[str]"},
+        "packages": {"key": "packages", "type": "[SparkMavenPackage]"},
+        "precache_packages": {"key": "precachePackages", "type": "bool"},
     }
 
     def __init__(
@@ -36956,15 +38345,10 @@ class SparkSubmitTaskDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'parameters': {'key': 'parameters', 'type': '[str]'},
+        "parameters": {"key": "parameters", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        parameters: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, parameters: Optional[List[str]] = None, **kwargs):
         """
         :keyword parameters:
         :paramtype parameters: list[str]
@@ -36987,10 +38371,13 @@ class SqlDataPath(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'sql_table_name': {'key': 'sqlTableName', 'type': 'str'},
-        'sql_query': {'key': 'sqlQuery', 'type': 'str'},
-        'sql_stored_procedure_name': {'key': 'sqlStoredProcedureName', 'type': 'str'},
-        'sql_stored_procedure_params': {'key': 'sqlStoredProcedureParams', 'type': '[StoredProcedureParameter]'},
+        "sql_table_name": {"key": "sqlTableName", "type": "str"},
+        "sql_query": {"key": "sqlQuery", "type": "str"},
+        "sql_stored_procedure_name": {"key": "sqlStoredProcedureName", "type": "str"},
+        "sql_stored_procedure_params": {
+            "key": "sqlStoredProcedureParams",
+            "type": "[StoredProcedureParameter]",
+        },
     }
 
     def __init__(
@@ -37033,9 +38420,15 @@ class StackEnsembleSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'stack_meta_learner_type': {'key': 'stackMetaLearnerType', 'type': 'str'},
-        'stack_meta_learner_train_percentage': {'key': 'stackMetaLearnerTrainPercentage', 'type': 'float'},
-        'stack_meta_learner_k_wargs': {'key': 'stackMetaLearnerKWargs', 'type': 'object'},
+        "stack_meta_learner_type": {"key": "stackMetaLearnerType", "type": "str"},
+        "stack_meta_learner_train_percentage": {
+            "key": "stackMetaLearnerTrainPercentage",
+            "type": "float",
+        },
+        "stack_meta_learner_k_wargs": {
+            "key": "stackMetaLearnerKWargs",
+            "type": "object",
+        },
     }
 
     def __init__(
@@ -37072,19 +38465,14 @@ class StartRunResult(msrest.serialization.Model):
     """
 
     _validation = {
-        'run_id': {'required': True, 'min_length': 1},
+        "run_id": {"required": True, "min_length": 1},
     }
 
     _attribute_map = {
-        'run_id': {'key': 'runId', 'type': 'str'},
+        "run_id": {"key": "runId", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        run_id: str,
-        **kwargs
-    ):
+    def __init__(self, *, run_id: str, **kwargs):
         """
         :keyword run_id: Required.
         :paramtype run_id: str
@@ -37137,24 +38525,24 @@ class StepRunProfile(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'step_run_id': {'key': 'stepRunId', 'type': 'str'},
-        'step_run_number': {'key': 'stepRunNumber', 'type': 'int'},
-        'run_url': {'key': 'runUrl', 'type': 'str'},
-        'compute_target': {'key': 'computeTarget', 'type': 'str'},
-        'compute_target_url': {'key': 'computeTargetUrl', 'type': 'str'},
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'node_name': {'key': 'nodeName', 'type': 'str'},
-        'step_name': {'key': 'stepName', 'type': 'str'},
-        'create_time': {'key': 'createTime', 'type': 'long'},
-        'start_time': {'key': 'startTime', 'type': 'long'},
-        'end_time': {'key': 'endTime', 'type': 'long'},
-        'status': {'key': 'status', 'type': 'str'},
-        'status_detail': {'key': 'statusDetail', 'type': 'str'},
-        'is_reused': {'key': 'isReused', 'type': 'bool'},
-        'reused_pipeline_run_id': {'key': 'reusedPipelineRunId', 'type': 'str'},
-        'reused_step_run_id': {'key': 'reusedStepRunId', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'status_timeline': {'key': 'statusTimeline', 'type': '[RunStatusPeriod]'},
+        "step_run_id": {"key": "stepRunId", "type": "str"},
+        "step_run_number": {"key": "stepRunNumber", "type": "int"},
+        "run_url": {"key": "runUrl", "type": "str"},
+        "compute_target": {"key": "computeTarget", "type": "str"},
+        "compute_target_url": {"key": "computeTargetUrl", "type": "str"},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "node_name": {"key": "nodeName", "type": "str"},
+        "step_name": {"key": "stepName", "type": "str"},
+        "create_time": {"key": "createTime", "type": "long"},
+        "start_time": {"key": "startTime", "type": "long"},
+        "end_time": {"key": "endTime", "type": "long"},
+        "status": {"key": "status", "type": "str"},
+        "status_detail": {"key": "statusDetail", "type": "str"},
+        "is_reused": {"key": "isReused", "type": "bool"},
+        "reused_pipeline_run_id": {"key": "reusedPipelineRunId", "type": "str"},
+        "reused_step_run_id": {"key": "reusedStepRunId", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "status_timeline": {"key": "statusTimeline", "type": "[RunStatusPeriod]"},
     }
 
     def __init__(
@@ -37255,10 +38643,10 @@ class StorageInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'storage_auth_type': {'key': 'storageAuthType', 'type': 'str'},
-        'connection_string': {'key': 'connectionString', 'type': 'str'},
-        'sas_token': {'key': 'sasToken', 'type': 'str'},
-        'account_name': {'key': 'accountName', 'type': 'str'},
+        "storage_auth_type": {"key": "storageAuthType", "type": "str"},
+        "connection_string": {"key": "connectionString", "type": "str"},
+        "sas_token": {"key": "sasToken", "type": "str"},
+        "account_name": {"key": "accountName", "type": "str"},
     }
 
     def __init__(
@@ -37299,9 +38687,9 @@ class StoredProcedureParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "value": {"key": "value", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
@@ -37350,22 +38738,22 @@ class Stream(msrest.serialization.Model):
     """
 
     _validation = {
-        'can_read': {'readonly': True},
-        'can_write': {'readonly': True},
-        'can_seek': {'readonly': True},
-        'can_timeout': {'readonly': True},
-        'length': {'readonly': True},
+        "can_read": {"readonly": True},
+        "can_write": {"readonly": True},
+        "can_seek": {"readonly": True},
+        "can_timeout": {"readonly": True},
+        "length": {"readonly": True},
     }
 
     _attribute_map = {
-        'can_read': {'key': 'canRead', 'type': 'bool'},
-        'can_write': {'key': 'canWrite', 'type': 'bool'},
-        'can_seek': {'key': 'canSeek', 'type': 'bool'},
-        'can_timeout': {'key': 'canTimeout', 'type': 'bool'},
-        'length': {'key': 'length', 'type': 'long'},
-        'position': {'key': 'position', 'type': 'long'},
-        'read_timeout': {'key': 'readTimeout', 'type': 'int'},
-        'write_timeout': {'key': 'writeTimeout', 'type': 'int'},
+        "can_read": {"key": "canRead", "type": "bool"},
+        "can_write": {"key": "canWrite", "type": "bool"},
+        "can_seek": {"key": "canSeek", "type": "bool"},
+        "can_timeout": {"key": "canTimeout", "type": "bool"},
+        "length": {"key": "length", "type": "long"},
+        "position": {"key": "position", "type": "long"},
+        "read_timeout": {"key": "readTimeout", "type": "int"},
+        "write_timeout": {"key": "writeTimeout", "type": "int"},
     }
 
     def __init__(
@@ -37415,13 +38803,16 @@ class StructuredInterface(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'command_line_pattern': {'key': 'commandLinePattern', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '[StructuredInterfaceInput]'},
-        'outputs': {'key': 'outputs', 'type': '[StructuredInterfaceOutput]'},
-        'control_outputs': {'key': 'controlOutputs', 'type': '[ControlOutput]'},
-        'parameters': {'key': 'parameters', 'type': '[StructuredInterfaceParameter]'},
-        'metadata_parameters': {'key': 'metadataParameters', 'type': '[StructuredInterfaceParameter]'},
-        'arguments': {'key': 'arguments', 'type': '[ArgumentAssignment]'},
+        "command_line_pattern": {"key": "commandLinePattern", "type": "str"},
+        "inputs": {"key": "inputs", "type": "[StructuredInterfaceInput]"},
+        "outputs": {"key": "outputs", "type": "[StructuredInterfaceOutput]"},
+        "control_outputs": {"key": "controlOutputs", "type": "[ControlOutput]"},
+        "parameters": {"key": "parameters", "type": "[StructuredInterfaceParameter]"},
+        "metadata_parameters": {
+            "key": "metadataParameters",
+            "type": "[StructuredInterfaceParameter]",
+        },
+        "arguments": {"key": "arguments", "type": "[ArgumentAssignment]"},
     }
 
     def __init__(
@@ -37493,22 +38884,22 @@ class StructuredInterfaceInput(msrest.serialization.Model):
     """
 
     _validation = {
-        'dataset_types': {'unique': True},
+        "dataset_types": {"unique": True},
     }
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'data_type_ids_list': {'key': 'dataTypeIdsList', 'type': '[str]'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'skip_processing': {'key': 'skipProcessing', 'type': 'bool'},
-        'is_resource': {'key': 'isResource', 'type': 'bool'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'data_reference_name': {'key': 'dataReferenceName', 'type': 'str'},
-        'dataset_types': {'key': 'datasetTypes', 'type': '[str]'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "data_type_ids_list": {"key": "dataTypeIdsList", "type": "[str]"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "description": {"key": "description", "type": "str"},
+        "skip_processing": {"key": "skipProcessing", "type": "bool"},
+        "is_resource": {"key": "isResource", "type": "bool"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "data_reference_name": {"key": "dataReferenceName", "type": "str"},
+        "dataset_types": {"key": "datasetTypes", "type": "[str]"},
     }
 
     def __init__(
@@ -37609,22 +39000,28 @@ class StructuredInterfaceOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'data_type_id': {'key': 'dataTypeId', 'type': 'str'},
-        'pass_through_data_type_input_name': {'key': 'passThroughDataTypeInputName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'skip_processing': {'key': 'skipProcessing', 'type': 'bool'},
-        'is_artifact': {'key': 'IsArtifact', 'type': 'bool'},
-        'data_store_name': {'key': 'dataStoreName', 'type': 'str'},
-        'data_store_mode': {'key': 'dataStoreMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'data_reference_name': {'key': 'dataReferenceName', 'type': 'str'},
-        'training_output': {'key': 'trainingOutput', 'type': 'TrainingOutput'},
-        'dataset_output': {'key': 'datasetOutput', 'type': 'DatasetOutput'},
-        'asset_output_settings': {'key': 'AssetOutputSettings', 'type': 'AssetOutputSettings'},
-        'early_available': {'key': 'EarlyAvailable', 'type': 'bool'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "data_type_id": {"key": "dataTypeId", "type": "str"},
+        "pass_through_data_type_input_name": {
+            "key": "passThroughDataTypeInputName",
+            "type": "str",
+        },
+        "description": {"key": "description", "type": "str"},
+        "skip_processing": {"key": "skipProcessing", "type": "bool"},
+        "is_artifact": {"key": "IsArtifact", "type": "bool"},
+        "data_store_name": {"key": "dataStoreName", "type": "str"},
+        "data_store_mode": {"key": "dataStoreMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "data_reference_name": {"key": "dataReferenceName", "type": "str"},
+        "training_output": {"key": "trainingOutput", "type": "TrainingOutput"},
+        "dataset_output": {"key": "datasetOutput", "type": "DatasetOutput"},
+        "asset_output_settings": {
+            "key": "AssetOutputSettings",
+            "type": "AssetOutputSettings",
+        },
+        "early_available": {"key": "EarlyAvailable", "type": "bool"},
     }
 
     def __init__(
@@ -37742,23 +39139,32 @@ class StructuredInterfaceParameter(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'label': {'key': 'label', 'type': 'str'},
-        'parameter_type': {'key': 'parameterType', 'type': 'str'},
-        'is_optional': {'key': 'isOptional', 'type': 'bool'},
-        'default_value': {'key': 'defaultValue', 'type': 'str'},
-        'lower_bound': {'key': 'lowerBound', 'type': 'str'},
-        'upper_bound': {'key': 'upperBound', 'type': 'str'},
-        'enum_values': {'key': 'enumValues', 'type': '[str]'},
-        'enum_values_to_argument_strings': {'key': 'enumValuesToArgumentStrings', 'type': '{str}'},
-        'description': {'key': 'description', 'type': 'str'},
-        'set_environment_variable': {'key': 'setEnvironmentVariable', 'type': 'bool'},
-        'environment_variable_override': {'key': 'environmentVariableOverride', 'type': 'str'},
-        'enabled_by_parameter_name': {'key': 'enabledByParameterName', 'type': 'str'},
-        'enabled_by_parameter_values': {'key': 'enabledByParameterValues', 'type': '[str]'},
-        'ui_hint': {'key': 'uiHint', 'type': 'UIParameterHint'},
-        'group_names': {'key': 'groupNames', 'type': '[str]'},
-        'argument_name': {'key': 'argumentName', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "label": {"key": "label", "type": "str"},
+        "parameter_type": {"key": "parameterType", "type": "str"},
+        "is_optional": {"key": "isOptional", "type": "bool"},
+        "default_value": {"key": "defaultValue", "type": "str"},
+        "lower_bound": {"key": "lowerBound", "type": "str"},
+        "upper_bound": {"key": "upperBound", "type": "str"},
+        "enum_values": {"key": "enumValues", "type": "[str]"},
+        "enum_values_to_argument_strings": {
+            "key": "enumValuesToArgumentStrings",
+            "type": "{str}",
+        },
+        "description": {"key": "description", "type": "str"},
+        "set_environment_variable": {"key": "setEnvironmentVariable", "type": "bool"},
+        "environment_variable_override": {
+            "key": "environmentVariableOverride",
+            "type": "str",
+        },
+        "enabled_by_parameter_name": {"key": "enabledByParameterName", "type": "str"},
+        "enabled_by_parameter_values": {
+            "key": "enabledByParameterValues",
+            "type": "[str]",
+        },
+        "ui_hint": {"key": "uiHint", "type": "UIParameterHint"},
+        "group_names": {"key": "groupNames", "type": "[str]"},
+        "argument_name": {"key": "argumentName", "type": "str"},
     }
 
     def __init__(
@@ -37858,15 +39264,15 @@ class StudioMigrationInfo(msrest.serialization.Model):
     """
 
     _validation = {
-        'error_message': {'readonly': True},
+        "error_message": {"readonly": True},
     }
 
     _attribute_map = {
-        'source_workspace_id': {'key': 'sourceWorkspaceId', 'type': 'str'},
-        'source_experiment_id': {'key': 'sourceExperimentId', 'type': 'str'},
-        'source_experiment_link': {'key': 'sourceExperimentLink', 'type': 'str'},
-        'failed_node_id_list': {'key': 'failedNodeIdList', 'type': '[str]'},
-        'error_message': {'key': 'errorMessage', 'type': 'str'},
+        "source_workspace_id": {"key": "sourceWorkspaceId", "type": "str"},
+        "source_experiment_id": {"key": "sourceExperimentId", "type": "str"},
+        "source_experiment_link": {"key": "sourceExperimentLink", "type": "str"},
+        "failed_node_id_list": {"key": "failedNodeIdList", "type": "[str]"},
+        "error_message": {"key": "errorMessage", "type": "str"},
     }
 
     def __init__(
@@ -37906,8 +39312,14 @@ class SubGraphConcatenateAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'concatenate_parameter': {'key': 'concatenateParameter', 'type': '[ParameterAssignment]'},
-        'parameter_assignments': {'key': 'parameterAssignments', 'type': 'SubPipelineParameterAssignment'},
+        "concatenate_parameter": {
+            "key": "concatenateParameter",
+            "type": "[ParameterAssignment]",
+        },
+        "parameter_assignments": {
+            "key": "parameterAssignments",
+            "type": "SubPipelineParameterAssignment",
+        },
     }
 
     def __init__(
@@ -37942,10 +39354,13 @@ class SubGraphConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'graph_id': {'key': 'graphId', 'type': 'str'},
-        'graph_draft_id': {'key': 'graphDraftId', 'type': 'str'},
-        'default_cloud_priority': {'key': 'DefaultCloudPriority', 'type': 'CloudPrioritySetting'},
-        'is_dynamic': {'key': 'IsDynamic', 'type': 'bool'},
+        "graph_id": {"key": "graphId", "type": "str"},
+        "graph_draft_id": {"key": "graphDraftId", "type": "str"},
+        "default_cloud_priority": {
+            "key": "DefaultCloudPriority",
+            "type": "CloudPrioritySetting",
+        },
+        "is_dynamic": {"key": "IsDynamic", "type": "bool"},
     }
 
     def __init__(
@@ -37984,8 +39399,8 @@ class SubGraphConnectionInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
     }
 
     def __init__(
@@ -38016,8 +39431,14 @@ class SubGraphDataPathParameterAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'data_set_path_parameter': {'key': 'dataSetPathParameter', 'type': 'DataSetPathParameter'},
-        'data_set_path_parameter_assignments': {'key': 'dataSetPathParameterAssignments', 'type': '[str]'},
+        "data_set_path_parameter": {
+            "key": "dataSetPathParameter",
+            "type": "DataSetPathParameter",
+        },
+        "data_set_path_parameter_assignments": {
+            "key": "dataSetPathParameterAssignments",
+            "type": "[str]",
+        },
     }
 
     def __init__(
@@ -38073,20 +39494,38 @@ class SubGraphInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'default_compute_target': {'key': 'defaultComputeTarget', 'type': 'ComputeSetting'},
-        'default_data_store': {'key': 'defaultDataStore', 'type': 'DatastoreSetting'},
-        'id': {'key': 'id', 'type': 'str'},
-        'parent_graph_id': {'key': 'parentGraphId', 'type': 'str'},
-        'pipeline_definition_id': {'key': 'pipelineDefinitionId', 'type': 'str'},
-        'sub_graph_parameter_assignment': {'key': 'subGraphParameterAssignment', 'type': '[SubGraphParameterAssignment]'},
-        'sub_graph_concatenate_assignment': {'key': 'subGraphConcatenateAssignment', 'type': '[SubGraphConcatenateAssignment]'},
-        'sub_graph_data_path_parameter_assignment': {'key': 'subGraphDataPathParameterAssignment', 'type': '[SubGraphDataPathParameterAssignment]'},
-        'sub_graph_default_compute_target_nodes': {'key': 'subGraphDefaultComputeTargetNodes', 'type': '[str]'},
-        'sub_graph_default_data_store_nodes': {'key': 'subGraphDefaultDataStoreNodes', 'type': '[str]'},
-        'inputs': {'key': 'inputs', 'type': '[SubGraphPortInfo]'},
-        'outputs': {'key': 'outputs', 'type': '[SubGraphPortInfo]'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "default_compute_target": {
+            "key": "defaultComputeTarget",
+            "type": "ComputeSetting",
+        },
+        "default_data_store": {"key": "defaultDataStore", "type": "DatastoreSetting"},
+        "id": {"key": "id", "type": "str"},
+        "parent_graph_id": {"key": "parentGraphId", "type": "str"},
+        "pipeline_definition_id": {"key": "pipelineDefinitionId", "type": "str"},
+        "sub_graph_parameter_assignment": {
+            "key": "subGraphParameterAssignment",
+            "type": "[SubGraphParameterAssignment]",
+        },
+        "sub_graph_concatenate_assignment": {
+            "key": "subGraphConcatenateAssignment",
+            "type": "[SubGraphConcatenateAssignment]",
+        },
+        "sub_graph_data_path_parameter_assignment": {
+            "key": "subGraphDataPathParameterAssignment",
+            "type": "[SubGraphDataPathParameterAssignment]",
+        },
+        "sub_graph_default_compute_target_nodes": {
+            "key": "subGraphDefaultComputeTargetNodes",
+            "type": "[str]",
+        },
+        "sub_graph_default_data_store_nodes": {
+            "key": "subGraphDefaultDataStoreNodes",
+            "type": "[str]",
+        },
+        "inputs": {"key": "inputs", "type": "[SubGraphPortInfo]"},
+        "outputs": {"key": "outputs", "type": "[SubGraphPortInfo]"},
     }
 
     def __init__(
@@ -38099,9 +39538,15 @@ class SubGraphInfo(msrest.serialization.Model):
         id: Optional[str] = None,
         parent_graph_id: Optional[str] = None,
         pipeline_definition_id: Optional[str] = None,
-        sub_graph_parameter_assignment: Optional[List["SubGraphParameterAssignment"]] = None,
-        sub_graph_concatenate_assignment: Optional[List["SubGraphConcatenateAssignment"]] = None,
-        sub_graph_data_path_parameter_assignment: Optional[List["SubGraphDataPathParameterAssignment"]] = None,
+        sub_graph_parameter_assignment: Optional[
+            List["SubGraphParameterAssignment"]
+        ] = None,
+        sub_graph_concatenate_assignment: Optional[
+            List["SubGraphConcatenateAssignment"]
+        ] = None,
+        sub_graph_data_path_parameter_assignment: Optional[
+            List["SubGraphDataPathParameterAssignment"]
+        ] = None,
         sub_graph_default_compute_target_nodes: Optional[List[str]] = None,
         sub_graph_default_data_store_nodes: Optional[List[str]] = None,
         inputs: Optional[List["SubGraphPortInfo"]] = None,
@@ -38149,8 +39594,12 @@ class SubGraphInfo(msrest.serialization.Model):
         self.pipeline_definition_id = pipeline_definition_id
         self.sub_graph_parameter_assignment = sub_graph_parameter_assignment
         self.sub_graph_concatenate_assignment = sub_graph_concatenate_assignment
-        self.sub_graph_data_path_parameter_assignment = sub_graph_data_path_parameter_assignment
-        self.sub_graph_default_compute_target_nodes = sub_graph_default_compute_target_nodes
+        self.sub_graph_data_path_parameter_assignment = (
+            sub_graph_data_path_parameter_assignment
+        )
+        self.sub_graph_default_compute_target_nodes = (
+            sub_graph_default_compute_target_nodes
+        )
         self.sub_graph_default_data_store_nodes = sub_graph_default_data_store_nodes
         self.inputs = inputs
         self.outputs = outputs
@@ -38166,8 +39615,11 @@ class SubGraphParameterAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'parameter': {'key': 'parameter', 'type': 'Parameter'},
-        'parameter_assignments': {'key': 'parameterAssignments', 'type': '[SubPipelineParameterAssignment]'},
+        "parameter": {"key": "parameter", "type": "Parameter"},
+        "parameter_assignments": {
+            "key": "parameterAssignments",
+            "type": "[SubPipelineParameterAssignment]",
+        },
     }
 
     def __init__(
@@ -38200,9 +39652,9 @@ class SubGraphPortInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'internal': {'key': 'internal', 'type': '[SubGraphConnectionInfo]'},
-        'external': {'key': 'external', 'type': '[SubGraphConnectionInfo]'},
+        "name": {"key": "name", "type": "str"},
+        "internal": {"key": "internal", "type": "[SubGraphConnectionInfo]"},
+        "external": {"key": "external", "type": "[SubGraphConnectionInfo]"},
     }
 
     def __init__(
@@ -38279,29 +39731,35 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'flow_definition_resource_id': {'key': 'flowDefinitionResourceId', 'type': 'str'},
-        'flow_definition_data_store_name': {'key': 'flowDefinitionDataStoreName', 'type': 'str'},
-        'flow_definition_blob_path': {'key': 'flowDefinitionBlobPath', 'type': 'str'},
-        'flow_definition_data_uri': {'key': 'flowDefinitionDataUri', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'run_display_name': {'key': 'runDisplayName', 'type': 'str'},
-        'run_experiment_name': {'key': 'runExperimentName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'node_variant': {'key': 'nodeVariant', 'type': 'str'},
-        'variant_run_id': {'key': 'variantRunId', 'type': 'str'},
-        'baseline_run_id': {'key': 'baselineRunId', 'type': 'str'},
-        'batch_data_input': {'key': 'batchDataInput', 'type': 'BatchDataInput'},
-        'inputs_mapping': {'key': 'inputsMapping', 'type': '{str}'},
-        'connections': {'key': 'connections', 'type': '{{str}}'},
-        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
-        'aml_compute_name': {'key': 'amlComputeName', 'type': 'str'},
-        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
-        'session_id': {'key': 'sessionId', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
-        'output_data_store': {'key': 'outputDataStore', 'type': 'str'},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "flow_definition_resource_id": {
+            "key": "flowDefinitionResourceId",
+            "type": "str",
+        },
+        "flow_definition_data_store_name": {
+            "key": "flowDefinitionDataStoreName",
+            "type": "str",
+        },
+        "flow_definition_blob_path": {"key": "flowDefinitionBlobPath", "type": "str"},
+        "flow_definition_data_uri": {"key": "flowDefinitionDataUri", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "run_display_name": {"key": "runDisplayName", "type": "str"},
+        "run_experiment_name": {"key": "runExperimentName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "node_variant": {"key": "nodeVariant", "type": "str"},
+        "variant_run_id": {"key": "variantRunId", "type": "str"},
+        "baseline_run_id": {"key": "baselineRunId", "type": "str"},
+        "batch_data_input": {"key": "batchDataInput", "type": "BatchDataInput"},
+        "inputs_mapping": {"key": "inputsMapping", "type": "{str}"},
+        "connections": {"key": "connections", "type": "{{str}}"},
+        "environment_variables": {"key": "environmentVariables", "type": "{str}"},
+        "aml_compute_name": {"key": "amlComputeName", "type": "str"},
+        "runtime_name": {"key": "runtimeName", "type": "str"},
+        "session_id": {"key": "sessionId", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
+        "output_data_store": {"key": "outputDataStore", "type": "str"},
     }
 
     def __init__(
@@ -38433,16 +39891,25 @@ class SubmitFlowRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_run_id': {'key': 'flowRunId', 'type': 'str'},
-        'flow_run_display_name': {'key': 'flowRunDisplayName', 'type': 'str'},
-        'flow_id': {'key': 'flowId', 'type': 'str'},
-        'flow': {'key': 'flow', 'type': 'Flow'},
-        'flow_submit_run_settings': {'key': 'flowSubmitRunSettings', 'type': 'FlowSubmitRunSettings'},
-        'async_submission': {'key': 'asyncSubmission', 'type': 'bool'},
-        'use_workspace_connection': {'key': 'useWorkspaceConnection', 'type': 'bool'},
-        'use_flow_snapshot_to_submit': {'key': 'useFlowSnapshotToSubmit', 'type': 'bool'},
-        'enable_blob_run_artifacts': {'key': 'enableBlobRunArtifacts', 'type': 'bool'},
-        'flow_runtime_submission_api_version': {'key': 'flowRuntimeSubmissionApiVersion', 'type': 'str'},
+        "flow_run_id": {"key": "flowRunId", "type": "str"},
+        "flow_run_display_name": {"key": "flowRunDisplayName", "type": "str"},
+        "flow_id": {"key": "flowId", "type": "str"},
+        "flow": {"key": "flow", "type": "Flow"},
+        "flow_submit_run_settings": {
+            "key": "flowSubmitRunSettings",
+            "type": "FlowSubmitRunSettings",
+        },
+        "async_submission": {"key": "asyncSubmission", "type": "bool"},
+        "use_workspace_connection": {"key": "useWorkspaceConnection", "type": "bool"},
+        "use_flow_snapshot_to_submit": {
+            "key": "useFlowSnapshotToSubmit",
+            "type": "bool",
+        },
+        "enable_blob_run_artifacts": {"key": "enableBlobRunArtifacts", "type": "bool"},
+        "flow_runtime_submission_api_version": {
+            "key": "flowRuntimeSubmissionApiVersion",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -38457,7 +39924,9 @@ class SubmitFlowRequest(msrest.serialization.Model):
         use_workspace_connection: Optional[bool] = None,
         use_flow_snapshot_to_submit: Optional[bool] = None,
         enable_blob_run_artifacts: Optional[bool] = None,
-        flow_runtime_submission_api_version: Optional[Union[str, "FlowRuntimeSubmissionApiVersion"]] = None,
+        flow_runtime_submission_api_version: Optional[
+            Union[str, "FlowRuntimeSubmissionApiVersion"]
+        ] = None,
         **kwargs
     ):
         """
@@ -38551,29 +40020,53 @@ class SubmitPipelineRunRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'compute_target': {'key': 'computeTarget', 'type': 'str'},
-        'flattened_sub_graphs': {'key': 'flattenedSubGraphs', 'type': '{PipelineSubDraft}'},
-        'step_tags': {'key': 'stepTags', 'type': '{str}'},
-        'experiment_name': {'key': 'experimentName', 'type': 'str'},
-        'pipeline_parameters': {'key': 'pipelineParameters', 'type': '{str}'},
-        'data_path_assignments': {'key': 'dataPathAssignments', 'type': '{LegacyDataPath}'},
-        'data_set_definition_value_assignments': {'key': 'dataSetDefinitionValueAssignments', 'type': '{DataSetDefinitionValue}'},
-        'asset_output_settings_assignments': {'key': 'assetOutputSettingsAssignments', 'type': '{AssetOutputSettings}'},
-        'enable_notification': {'key': 'enableNotification', 'type': 'bool'},
-        'sub_pipelines_info': {'key': 'subPipelinesInfo', 'type': 'SubPipelinesInfo'},
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'parent_run_id': {'key': 'parentRunId', 'type': 'str'},
-        'graph': {'key': 'graph', 'type': 'GraphDraftEntity'},
-        'pipeline_run_settings': {'key': 'pipelineRunSettings', 'type': '[RunSettingParameterAssignment]'},
-        'module_node_run_settings': {'key': 'moduleNodeRunSettings', 'type': '[GraphModuleNodeRunSetting]'},
-        'module_node_ui_input_settings': {'key': 'moduleNodeUIInputSettings', 'type': '[GraphModuleNodeUIInputSetting]'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'continue_run_on_step_failure': {'key': 'continueRunOnStepFailure', 'type': 'bool'},
-        'description': {'key': 'description', 'type': 'str'},
-        'properties': {'key': 'properties', 'type': '{str}'},
-        'enforce_rerun': {'key': 'enforceRerun', 'type': 'bool'},
-        'dataset_access_modes': {'key': 'datasetAccessModes', 'type': 'str'},
+        "compute_target": {"key": "computeTarget", "type": "str"},
+        "flattened_sub_graphs": {
+            "key": "flattenedSubGraphs",
+            "type": "{PipelineSubDraft}",
+        },
+        "step_tags": {"key": "stepTags", "type": "{str}"},
+        "experiment_name": {"key": "experimentName", "type": "str"},
+        "pipeline_parameters": {"key": "pipelineParameters", "type": "{str}"},
+        "data_path_assignments": {
+            "key": "dataPathAssignments",
+            "type": "{LegacyDataPath}",
+        },
+        "data_set_definition_value_assignments": {
+            "key": "dataSetDefinitionValueAssignments",
+            "type": "{DataSetDefinitionValue}",
+        },
+        "asset_output_settings_assignments": {
+            "key": "assetOutputSettingsAssignments",
+            "type": "{AssetOutputSettings}",
+        },
+        "enable_notification": {"key": "enableNotification", "type": "bool"},
+        "sub_pipelines_info": {"key": "subPipelinesInfo", "type": "SubPipelinesInfo"},
+        "display_name": {"key": "displayName", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "parent_run_id": {"key": "parentRunId", "type": "str"},
+        "graph": {"key": "graph", "type": "GraphDraftEntity"},
+        "pipeline_run_settings": {
+            "key": "pipelineRunSettings",
+            "type": "[RunSettingParameterAssignment]",
+        },
+        "module_node_run_settings": {
+            "key": "moduleNodeRunSettings",
+            "type": "[GraphModuleNodeRunSetting]",
+        },
+        "module_node_ui_input_settings": {
+            "key": "moduleNodeUIInputSettings",
+            "type": "[GraphModuleNodeUIInputSetting]",
+        },
+        "tags": {"key": "tags", "type": "{str}"},
+        "continue_run_on_step_failure": {
+            "key": "continueRunOnStepFailure",
+            "type": "bool",
+        },
+        "description": {"key": "description", "type": "str"},
+        "properties": {"key": "properties", "type": "{str}"},
+        "enforce_rerun": {"key": "enforceRerun", "type": "bool"},
+        "dataset_access_modes": {"key": "datasetAccessModes", "type": "str"},
     }
 
     def __init__(
@@ -38585,8 +40078,12 @@ class SubmitPipelineRunRequest(msrest.serialization.Model):
         experiment_name: Optional[str] = None,
         pipeline_parameters: Optional[Dict[str, str]] = None,
         data_path_assignments: Optional[Dict[str, "LegacyDataPath"]] = None,
-        data_set_definition_value_assignments: Optional[Dict[str, "DataSetDefinitionValue"]] = None,
-        asset_output_settings_assignments: Optional[Dict[str, "AssetOutputSettings"]] = None,
+        data_set_definition_value_assignments: Optional[
+            Dict[str, "DataSetDefinitionValue"]
+        ] = None,
+        asset_output_settings_assignments: Optional[
+            Dict[str, "AssetOutputSettings"]
+        ] = None,
         enable_notification: Optional[bool] = None,
         sub_pipelines_info: Optional["SubPipelinesInfo"] = None,
         display_name: Optional[str] = None,
@@ -38595,7 +40092,9 @@ class SubmitPipelineRunRequest(msrest.serialization.Model):
         graph: Optional["GraphDraftEntity"] = None,
         pipeline_run_settings: Optional[List["RunSettingParameterAssignment"]] = None,
         module_node_run_settings: Optional[List["GraphModuleNodeRunSetting"]] = None,
-        module_node_ui_input_settings: Optional[List["GraphModuleNodeUIInputSetting"]] = None,
+        module_node_ui_input_settings: Optional[
+            List["GraphModuleNodeUIInputSetting"]
+        ] = None,
         tags: Optional[Dict[str, str]] = None,
         continue_run_on_step_failure: Optional[bool] = None,
         description: Optional[str] = None,
@@ -38663,7 +40162,9 @@ class SubmitPipelineRunRequest(msrest.serialization.Model):
         self.experiment_name = experiment_name
         self.pipeline_parameters = pipeline_parameters
         self.data_path_assignments = data_path_assignments
-        self.data_set_definition_value_assignments = data_set_definition_value_assignments
+        self.data_set_definition_value_assignments = (
+            data_set_definition_value_assignments
+        )
         self.asset_output_settings_assignments = asset_output_settings_assignments
         self.enable_notification = enable_notification
         self.sub_pipelines_info = sub_pipelines_info
@@ -38706,15 +40207,18 @@ class SubPipelineDefinition(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'default_compute_target': {'key': 'defaultComputeTarget', 'type': 'ComputeSetting'},
-        'default_data_store': {'key': 'defaultDataStore', 'type': 'DatastoreSetting'},
-        'pipeline_function_name': {'key': 'pipelineFunctionName', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'parent_definition_id': {'key': 'parentDefinitionId', 'type': 'str'},
-        'from_module_name': {'key': 'fromModuleName', 'type': 'str'},
-        'parameter_list': {'key': 'parameterList', 'type': '[Kwarg]'},
+        "name": {"key": "name", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "default_compute_target": {
+            "key": "defaultComputeTarget",
+            "type": "ComputeSetting",
+        },
+        "default_data_store": {"key": "defaultDataStore", "type": "DatastoreSetting"},
+        "pipeline_function_name": {"key": "pipelineFunctionName", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "parent_definition_id": {"key": "parentDefinitionId", "type": "str"},
+        "from_module_name": {"key": "fromModuleName", "type": "str"},
+        "parameter_list": {"key": "parameterList", "type": "[Kwarg]"},
     }
 
     def __init__(
@@ -38773,8 +40277,8 @@ class SubPipelineParameterAssignment(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'parameter_name': {'key': 'parameterName', 'type': 'str'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "parameter_name": {"key": "parameterName", "type": "str"},
     }
 
     def __init__(
@@ -38807,9 +40311,15 @@ class SubPipelinesInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'sub_graph_info': {'key': 'subGraphInfo', 'type': '[SubGraphInfo]'},
-        'node_id_to_sub_graph_id_mapping': {'key': 'nodeIdToSubGraphIdMapping', 'type': '{str}'},
-        'sub_pipeline_definition': {'key': 'subPipelineDefinition', 'type': '[SubPipelineDefinition]'},
+        "sub_graph_info": {"key": "subGraphInfo", "type": "[SubGraphInfo]"},
+        "node_id_to_sub_graph_id_mapping": {
+            "key": "nodeIdToSubGraphIdMapping",
+            "type": "{str}",
+        },
+        "sub_pipeline_definition": {
+            "key": "subPipelineDefinition",
+            "type": "[SubPipelineDefinition]",
+        },
     }
 
     def __init__(
@@ -38848,10 +40358,10 @@ class SubStatusPeriod(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'sub_periods': {'key': 'subPeriods', 'type': '[SubStatusPeriod]'},
-        'start': {'key': 'start', 'type': 'long'},
-        'end': {'key': 'end', 'type': 'long'},
+        "name": {"key": "name", "type": "str"},
+        "sub_periods": {"key": "subPeriods", "type": "[SubStatusPeriod]"},
+        "start": {"key": "start", "type": "long"},
+        "end": {"key": "end", "type": "long"},
     }
 
     def __init__(
@@ -38898,12 +40408,12 @@ class SweepEarlyTerminationPolicy(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'policy_type': {'key': 'policyType', 'type': 'str'},
-        'evaluation_interval': {'key': 'evaluationInterval', 'type': 'int'},
-        'delay_evaluation': {'key': 'delayEvaluation', 'type': 'int'},
-        'slack_factor': {'key': 'slackFactor', 'type': 'float'},
-        'slack_amount': {'key': 'slackAmount', 'type': 'float'},
-        'truncation_percentage': {'key': 'truncationPercentage', 'type': 'int'},
+        "policy_type": {"key": "policyType", "type": "str"},
+        "evaluation_interval": {"key": "evaluationInterval", "type": "int"},
+        "delay_evaluation": {"key": "delayEvaluation", "type": "int"},
+        "slack_factor": {"key": "slackFactor", "type": "float"},
+        "slack_amount": {"key": "slackAmount", "type": "float"},
+        "truncation_percentage": {"key": "truncationPercentage", "type": "int"},
     }
 
     def __init__(
@@ -38955,10 +40465,13 @@ class SweepSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'limits': {'key': 'limits', 'type': 'SweepSettingsLimits'},
-        'search_space': {'key': 'searchSpace', 'type': '[{str}]'},
-        'sampling_algorithm': {'key': 'samplingAlgorithm', 'type': 'str'},
-        'early_termination': {'key': 'earlyTermination', 'type': 'SweepEarlyTerminationPolicy'},
+        "limits": {"key": "limits", "type": "SweepSettingsLimits"},
+        "search_space": {"key": "searchSpace", "type": "[{str}]"},
+        "sampling_algorithm": {"key": "samplingAlgorithm", "type": "str"},
+        "early_termination": {
+            "key": "earlyTermination",
+            "type": "SweepEarlyTerminationPolicy",
+        },
     }
 
     def __init__(
@@ -38997,8 +40510,8 @@ class SweepSettingsLimits(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'max_total_trials': {'key': 'maxTotalTrials', 'type': 'int'},
-        'max_concurrent_trials': {'key': 'maxConcurrentTrials', 'type': 'int'},
+        "max_total_trials": {"key": "maxTotalTrials", "type": "int"},
+        "max_concurrent_trials": {"key": "maxConcurrentTrials", "type": "int"},
     }
 
     def __init__(
@@ -39039,12 +40552,12 @@ class SystemData(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'created_at': {'key': 'createdAt', 'type': 'iso-8601'},
-        'created_by': {'key': 'createdBy', 'type': 'str'},
-        'created_by_type': {'key': 'createdByType', 'type': 'str'},
-        'last_modified_at': {'key': 'lastModifiedAt', 'type': 'iso-8601'},
-        'last_modified_by': {'key': 'lastModifiedBy', 'type': 'str'},
-        'last_modified_by_type': {'key': 'lastModifiedByType', 'type': 'str'},
+        "created_at": {"key": "createdAt", "type": "iso-8601"},
+        "created_by": {"key": "createdBy", "type": "str"},
+        "created_by_type": {"key": "createdByType", "type": "str"},
+        "last_modified_at": {"key": "lastModifiedAt", "type": "iso-8601"},
+        "last_modified_by": {"key": "lastModifiedBy", "type": "str"},
+        "last_modified_by_type": {"key": "lastModifiedByType", "type": "str"},
     }
 
     def __init__(
@@ -39099,11 +40612,14 @@ class SystemMeta(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'identifierHash', 'type': 'str'},
-        'extra_hash': {'key': 'extraHash', 'type': 'str'},
-        'content_hash': {'key': 'contentHash', 'type': 'str'},
-        'identifier_hashes': {'key': 'identifierHashes', 'type': 'SystemMetaIdentifierHashes'},
-        'extra_hashes': {'key': 'extraHashes', 'type': 'SystemMetaExtraHashes'},
+        "identifier_hash": {"key": "identifierHash", "type": "str"},
+        "extra_hash": {"key": "extraHash", "type": "str"},
+        "content_hash": {"key": "contentHash", "type": "str"},
+        "identifier_hashes": {
+            "key": "identifierHashes",
+            "type": "SystemMetaIdentifierHashes",
+        },
+        "extra_hashes": {"key": "extraHashes", "type": "SystemMetaExtraHashes"},
     }
 
     def __init__(
@@ -39146,8 +40662,8 @@ class SystemMetaExtraHashes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'IdentifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'IdentifierHashV2', 'type': 'str'},
+        "identifier_hash": {"key": "IdentifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "IdentifierHashV2", "type": "str"},
     }
 
     def __init__(
@@ -39178,8 +40694,8 @@ class SystemMetaIdentifierHashes(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'identifier_hash': {'key': 'IdentifierHash', 'type': 'str'},
-        'identifier_hash_v2': {'key': 'IdentifierHashV2', 'type': 'str'},
+        "identifier_hash": {"key": "IdentifierHash", "type": "str"},
+        "identifier_hash_v2": {"key": "IdentifierHashV2", "type": "str"},
     }
 
     def __init__(
@@ -39210,8 +40726,8 @@ class TargetLags(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'values': {'key': 'values', 'type': '[int]'},
+        "mode": {"key": "mode", "type": "str"},
+        "values": {"key": "values", "type": "[int]"},
     }
 
     def __init__(
@@ -39242,8 +40758,8 @@ class TargetRollingWindowSize(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'mode': {'key': 'mode', 'type': 'str'},
-        'value': {'key': 'value', 'type': 'int'},
+        "mode": {"key": "mode", "type": "str"},
+        "value": {"key": "value", "type": "int"},
     }
 
     def __init__(
@@ -39292,17 +40808,17 @@ class TargetSelectorConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'low_priority_vm_tolerant': {'key': 'lowPriorityVMTolerant', 'type': 'bool'},
-        'cluster_block_list': {'key': 'clusterBlockList', 'type': '[str]'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
-        'instance_type': {'key': 'instanceType', 'type': '[str]'},
-        'instance_types': {'key': 'instanceTypes', 'type': '[str]'},
-        'my_resource_only': {'key': 'myResourceOnly', 'type': 'bool'},
-        'plan_id': {'key': 'planId', 'type': 'str'},
-        'plan_region_id': {'key': 'planRegionId', 'type': 'str'},
-        'region': {'key': 'region', 'type': '[str]'},
-        'regions': {'key': 'regions', 'type': '[str]'},
-        'vc_block_list': {'key': 'vcBlockList', 'type': '[str]'},
+        "low_priority_vm_tolerant": {"key": "lowPriorityVMTolerant", "type": "bool"},
+        "cluster_block_list": {"key": "clusterBlockList", "type": "[str]"},
+        "compute_type": {"key": "computeType", "type": "str"},
+        "instance_type": {"key": "instanceType", "type": "[str]"},
+        "instance_types": {"key": "instanceTypes", "type": "[str]"},
+        "my_resource_only": {"key": "myResourceOnly", "type": "bool"},
+        "plan_id": {"key": "planId", "type": "str"},
+        "plan_region_id": {"key": "planRegionId", "type": "str"},
+        "region": {"key": "region", "type": "[str]"},
+        "regions": {"key": "regions", "type": "[str]"},
+        "vc_block_list": {"key": "vcBlockList", "type": "[str]"},
     }
 
     def __init__(
@@ -39375,11 +40891,11 @@ class TaskControlFlowInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'control_flow_type': {'key': 'controlFlowType', 'type': 'str'},
-        'iteration_index': {'key': 'iterationIndex', 'type': 'int'},
-        'item_name': {'key': 'itemName', 'type': 'str'},
-        'parameters_overwritten': {'key': 'parametersOverwritten', 'type': '{str}'},
-        'is_reused': {'key': 'isReused', 'type': 'bool'},
+        "control_flow_type": {"key": "controlFlowType", "type": "str"},
+        "iteration_index": {"key": "iterationIndex", "type": "int"},
+        "item_name": {"key": "itemName", "type": "str"},
+        "parameters_overwritten": {"key": "parametersOverwritten", "type": "{str}"},
+        "is_reused": {"key": "isReused", "type": "bool"},
     }
 
     def __init__(
@@ -39432,13 +40948,13 @@ class TaskReuseInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'experiment_id': {'key': 'experimentId', 'type': 'str'},
-        'pipeline_run_id': {'key': 'pipelineRunId', 'type': 'str'},
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'request_id': {'key': 'requestId', 'type': 'str'},
-        'run_id': {'key': 'runId', 'type': 'str'},
-        'node_start_time': {'key': 'nodeStartTime', 'type': 'iso-8601'},
-        'node_end_time': {'key': 'nodeEndTime', 'type': 'iso-8601'},
+        "experiment_id": {"key": "experimentId", "type": "str"},
+        "pipeline_run_id": {"key": "pipelineRunId", "type": "str"},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "request_id": {"key": "requestId", "type": "str"},
+        "run_id": {"key": "runId", "type": "str"},
+        "node_start_time": {"key": "nodeStartTime", "type": "iso-8601"},
+        "node_end_time": {"key": "nodeEndTime", "type": "iso-8601"},
     }
 
     def __init__(
@@ -39489,8 +41005,8 @@ class TensorflowConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'worker_count': {'key': 'workerCount', 'type': 'int'},
-        'parameter_server_count': {'key': 'parameterServerCount', 'type': 'int'},
+        "worker_count": {"key": "workerCount", "type": "int"},
+        "parameter_server_count": {"key": "parameterServerCount", "type": "int"},
     }
 
     def __init__(
@@ -39519,15 +41035,10 @@ class TestDataSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'test_data_size': {'key': 'testDataSize', 'type': 'float'},
+        "test_data_size": {"key": "testDataSize", "type": "float"},
     }
 
-    def __init__(
-        self,
-        *,
-        test_data_size: Optional[float] = None,
-        **kwargs
-    ):
+    def __init__(self, *, test_data_size: Optional[float] = None, **kwargs):
         """
         :keyword test_data_size:
         :paramtype test_data_size: float
@@ -39578,24 +41089,24 @@ class Tool(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
-        'inputs': {'key': 'inputs', 'type': '{InputDefinition}'},
-        'outputs': {'key': 'outputs', 'type': '{OutputDefinition}'},
-        'description': {'key': 'description', 'type': 'str'},
-        'connection_type': {'key': 'connection_type', 'type': '[str]'},
-        'module': {'key': 'module', 'type': 'str'},
-        'class_name': {'key': 'class_name', 'type': 'str'},
-        'source': {'key': 'source', 'type': 'str'},
-        'lkg_code': {'key': 'lkgCode', 'type': 'str'},
-        'code': {'key': 'code', 'type': 'str'},
-        'function': {'key': 'function', 'type': 'str'},
-        'action_type': {'key': 'action_type', 'type': 'str'},
-        'provider_config': {'key': 'provider_config', 'type': '{InputDefinition}'},
-        'function_config': {'key': 'function_config', 'type': '{InputDefinition}'},
-        'is_builtin': {'key': 'is_builtin', 'type': 'bool'},
-        'package': {'key': 'package', 'type': 'str'},
-        'package_version': {'key': 'package_version', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "type": {"key": "type", "type": "str"},
+        "inputs": {"key": "inputs", "type": "{InputDefinition}"},
+        "outputs": {"key": "outputs", "type": "{OutputDefinition}"},
+        "description": {"key": "description", "type": "str"},
+        "connection_type": {"key": "connection_type", "type": "[str]"},
+        "module": {"key": "module", "type": "str"},
+        "class_name": {"key": "class_name", "type": "str"},
+        "source": {"key": "source", "type": "str"},
+        "lkg_code": {"key": "lkgCode", "type": "str"},
+        "code": {"key": "code", "type": "str"},
+        "function": {"key": "function", "type": "str"},
+        "action_type": {"key": "action_type", "type": "str"},
+        "provider_config": {"key": "provider_config", "type": "{InputDefinition}"},
+        "function_config": {"key": "function_config", "type": "{InputDefinition}"},
+        "is_builtin": {"key": "is_builtin", "type": "bool"},
+        "package": {"key": "package", "type": "str"},
+        "package_version": {"key": "package_version", "type": "str"},
     }
 
     def __init__(
@@ -39690,8 +41201,8 @@ class ToolMetaDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'tools': {'key': 'tools', 'type': '{Tool}'},
-        'errors': {'key': 'errors', 'type': '{ErrorResponse}'},
+        "tools": {"key": "tools", "type": "{Tool}"},
+        "errors": {"key": "errors", "type": "{ErrorResponse}"},
     }
 
     def __init__(
@@ -39720,15 +41231,10 @@ class ToolSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'providers': {'key': 'providers', 'type': '[ProviderEntity]'},
+        "providers": {"key": "providers", "type": "[ProviderEntity]"},
     }
 
-    def __init__(
-        self,
-        *,
-        providers: Optional[List["ProviderEntity"]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, providers: Optional[List["ProviderEntity"]] = None, **kwargs):
         """
         :keyword providers:
         :paramtype providers: list[~flow.models.ProviderEntity]
@@ -39745,15 +41251,10 @@ class ToolSourceMeta(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'tool_type': {'key': 'tool_type', 'type': 'str'},
+        "tool_type": {"key": "tool_type", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        tool_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, tool_type: Optional[str] = None, **kwargs):
         """
         :keyword tool_type:
         :paramtype tool_type: str
@@ -39770,15 +41271,10 @@ class TorchDistributedConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'process_count_per_node': {'key': 'processCountPerNode', 'type': 'int'},
+        "process_count_per_node": {"key": "processCountPerNode", "type": "int"},
     }
 
-    def __init__(
-        self,
-        *,
-        process_count_per_node: Optional[int] = None,
-        **kwargs
-    ):
+    def __init__(self, *, process_count_per_node: Optional[int] = None, **kwargs):
         """
         :keyword process_count_per_node:
         :paramtype process_count_per_node: int
@@ -39795,14 +41291,14 @@ class TrainingDiagnosticConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'job_heart_beat_timeout_seconds': {'key': 'jobHeartBeatTimeoutSeconds', 'type': 'int'},
+        "job_heart_beat_timeout_seconds": {
+            "key": "jobHeartBeatTimeoutSeconds",
+            "type": "int",
+        },
     }
 
     def __init__(
-        self,
-        *,
-        job_heart_beat_timeout_seconds: Optional[int] = None,
-        **kwargs
+        self, *, job_heart_beat_timeout_seconds: Optional[int] = None, **kwargs
     ):
         """
         :keyword job_heart_beat_timeout_seconds:
@@ -39826,10 +41322,10 @@ class TrainingOutput(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'training_output_type': {'key': 'trainingOutputType', 'type': 'str'},
-        'iteration': {'key': 'iteration', 'type': 'int'},
-        'metric': {'key': 'metric', 'type': 'str'},
-        'model_file': {'key': 'modelFile', 'type': 'str'},
+        "training_output_type": {"key": "trainingOutputType", "type": "str"},
+        "iteration": {"key": "iteration", "type": "int"},
+        "metric": {"key": "metric", "type": "str"},
+        "model_file": {"key": "modelFile", "type": "str"},
     }
 
     def __init__(
@@ -39882,15 +41378,27 @@ class TrainingSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'block_list_models': {'key': 'blockListModels', 'type': '[str]'},
-        'allow_list_models': {'key': 'allowListModels', 'type': '[str]'},
-        'enable_dnn_training': {'key': 'enableDnnTraining', 'type': 'bool'},
-        'enable_onnx_compatible_models': {'key': 'enableOnnxCompatibleModels', 'type': 'bool'},
-        'stack_ensemble_settings': {'key': 'stackEnsembleSettings', 'type': 'StackEnsembleSettings'},
-        'enable_stack_ensemble': {'key': 'enableStackEnsemble', 'type': 'bool'},
-        'enable_vote_ensemble': {'key': 'enableVoteEnsemble', 'type': 'bool'},
-        'ensemble_model_download_timeout': {'key': 'ensembleModelDownloadTimeout', 'type': 'str'},
-        'enable_model_explainability': {'key': 'enableModelExplainability', 'type': 'bool'},
+        "block_list_models": {"key": "blockListModels", "type": "[str]"},
+        "allow_list_models": {"key": "allowListModels", "type": "[str]"},
+        "enable_dnn_training": {"key": "enableDnnTraining", "type": "bool"},
+        "enable_onnx_compatible_models": {
+            "key": "enableOnnxCompatibleModels",
+            "type": "bool",
+        },
+        "stack_ensemble_settings": {
+            "key": "stackEnsembleSettings",
+            "type": "StackEnsembleSettings",
+        },
+        "enable_stack_ensemble": {"key": "enableStackEnsemble", "type": "bool"},
+        "enable_vote_ensemble": {"key": "enableVoteEnsemble", "type": "bool"},
+        "ensemble_model_download_timeout": {
+            "key": "ensembleModelDownloadTimeout",
+            "type": "str",
+        },
+        "enable_model_explainability": {
+            "key": "enableModelExplainability",
+            "type": "bool",
+        },
     }
 
     def __init__(
@@ -39973,13 +41481,13 @@ class TriggerAsyncOperationStatus(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'id': {'key': 'id', 'type': 'str'},
-        'operation_type': {'key': 'operationType', 'type': 'str'},
-        'provisioning_status': {'key': 'provisioningStatus', 'type': 'str'},
-        'created_time': {'key': 'createdTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
-        'error': {'key': 'error', 'type': 'ErrorResponse'},
-        'status_code': {'key': 'statusCode', 'type': 'str'},
+        "id": {"key": "id", "type": "str"},
+        "operation_type": {"key": "operationType", "type": "str"},
+        "provisioning_status": {"key": "provisioningStatus", "type": "str"},
+        "created_time": {"key": "createdTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
+        "error": {"key": "error", "type": "ErrorResponse"},
+        "status_code": {"key": "statusCode", "type": "str"},
     }
 
     def __init__(
@@ -40043,15 +41551,10 @@ class TuningNodeSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'variant_ids': {'key': 'variantIds', 'type': '[str]'},
+        "variant_ids": {"key": "variantIds", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        variant_ids: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, variant_ids: Optional[List[str]] = None, **kwargs):
         """
         :keyword variant_ids:
         :paramtype variant_ids: list[str]
@@ -40070,16 +41573,12 @@ class TypedAssetReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'asset_id': {'key': 'assetId', 'type': 'str'},
-        'type': {'key': 'type', 'type': 'str'},
+        "asset_id": {"key": "assetId", "type": "str"},
+        "type": {"key": "type", "type": "str"},
     }
 
     def __init__(
-        self,
-        *,
-        asset_id: Optional[str] = None,
-        type: Optional[str] = None,
-        **kwargs
+        self, *, asset_id: Optional[str] = None, type: Optional[str] = None, **kwargs
     ):
         """
         :keyword asset_id:
@@ -40100,7 +41599,10 @@ class UIAzureOpenAIDeploymentNameSelector(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'capabilities': {'key': 'Capabilities', 'type': 'UIAzureOpenAIModelCapabilities'},
+        "capabilities": {
+            "key": "Capabilities",
+            "type": "UIAzureOpenAIModelCapabilities",
+        },
     }
 
     def __init__(
@@ -40129,9 +41631,9 @@ class UIAzureOpenAIModelCapabilities(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'completion': {'key': 'Completion', 'type': 'bool'},
-        'chat_completion': {'key': 'ChatCompletion', 'type': 'bool'},
-        'embeddings': {'key': 'Embeddings', 'type': 'bool'},
+        "completion": {"key": "Completion", "type": "bool"},
+        "chat_completion": {"key": "ChatCompletion", "type": "bool"},
+        "embeddings": {"key": "Embeddings", "type": "bool"},
     }
 
     def __init__(
@@ -40168,9 +41670,12 @@ class UIColumnPicker(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'column_picker_for': {'key': 'columnPickerFor', 'type': 'str'},
-        'column_selection_categories': {'key': 'columnSelectionCategories', 'type': '[str]'},
-        'single_column_selection': {'key': 'singleColumnSelection', 'type': 'bool'},
+        "column_picker_for": {"key": "columnPickerFor", "type": "str"},
+        "column_selection_categories": {
+            "key": "columnSelectionCategories",
+            "type": "[str]",
+        },
+        "single_column_selection": {"key": "singleColumnSelection", "type": "bool"},
     }
 
     def __init__(
@@ -40212,11 +41717,14 @@ class UIComputeSelection(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'compute_types': {'key': 'computeTypes', 'type': '[str]'},
-        'require_gpu': {'key': 'requireGpu', 'type': 'bool'},
-        'os_types': {'key': 'osTypes', 'type': '[str]'},
-        'support_serverless': {'key': 'supportServerless', 'type': 'bool'},
-        'compute_run_settings_mapping': {'key': 'computeRunSettingsMapping', 'type': '{[RunSettingParameter]}'},
+        "compute_types": {"key": "computeTypes", "type": "[str]"},
+        "require_gpu": {"key": "requireGpu", "type": "bool"},
+        "os_types": {"key": "osTypes", "type": "[str]"},
+        "support_serverless": {"key": "supportServerless", "type": "bool"},
+        "compute_run_settings_mapping": {
+            "key": "computeRunSettingsMapping",
+            "type": "{[RunSettingParameter]}",
+        },
     }
 
     def __init__(
@@ -40226,7 +41734,9 @@ class UIComputeSelection(msrest.serialization.Model):
         require_gpu: Optional[bool] = None,
         os_types: Optional[List[str]] = None,
         support_serverless: Optional[bool] = None,
-        compute_run_settings_mapping: Optional[Dict[str, List["RunSettingParameter"]]] = None,
+        compute_run_settings_mapping: Optional[
+            Dict[str, List["RunSettingParameter"]]
+        ] = None,
         **kwargs
     ):
         """
@@ -40265,16 +41775,26 @@ class UIHyperparameterConfiguration(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'model_name_to_hyper_parameter_and_distribution_mapping': {'key': 'modelNameToHyperParameterAndDistributionMapping', 'type': '{{[str]}}'},
-        'distribution_parameters_mapping': {'key': 'distributionParametersMapping', 'type': '{[DistributionParameter]}'},
-        'json_schema': {'key': 'jsonSchema', 'type': 'str'},
+        "model_name_to_hyper_parameter_and_distribution_mapping": {
+            "key": "modelNameToHyperParameterAndDistributionMapping",
+            "type": "{{[str]}}",
+        },
+        "distribution_parameters_mapping": {
+            "key": "distributionParametersMapping",
+            "type": "{[DistributionParameter]}",
+        },
+        "json_schema": {"key": "jsonSchema", "type": "str"},
     }
 
     def __init__(
         self,
         *,
-        model_name_to_hyper_parameter_and_distribution_mapping: Optional[Dict[str, Dict[str, List[str]]]] = None,
-        distribution_parameters_mapping: Optional[Dict[str, List["DistributionParameter"]]] = None,
+        model_name_to_hyper_parameter_and_distribution_mapping: Optional[
+            Dict[str, Dict[str, List[str]]]
+        ] = None,
+        distribution_parameters_mapping: Optional[
+            Dict[str, List["DistributionParameter"]]
+        ] = None,
         json_schema: Optional[str] = None,
         **kwargs
     ):
@@ -40290,7 +41810,9 @@ class UIHyperparameterConfiguration(msrest.serialization.Model):
         :paramtype json_schema: str
         """
         super(UIHyperparameterConfiguration, self).__init__(**kwargs)
-        self.model_name_to_hyper_parameter_and_distribution_mapping = model_name_to_hyper_parameter_and_distribution_mapping
+        self.model_name_to_hyper_parameter_and_distribution_mapping = (
+            model_name_to_hyper_parameter_and_distribution_mapping
+        )
         self.distribution_parameters_mapping = distribution_parameters_mapping
         self.json_schema = json_schema
 
@@ -40308,9 +41830,9 @@ class UIInputSetting(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'name': {'key': 'name', 'type': 'str'},
-        'data_delivery_mode': {'key': 'dataDeliveryMode', 'type': 'str'},
-        'path_on_compute': {'key': 'pathOnCompute', 'type': 'str'},
+        "name": {"key": "name", "type": "str"},
+        "data_delivery_mode": {"key": "dataDeliveryMode", "type": "str"},
+        "path_on_compute": {"key": "pathOnCompute", "type": "str"},
     }
 
     def __init__(
@@ -40344,15 +41866,10 @@ class UIJsonEditor(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'json_schema': {'key': 'jsonSchema', 'type': 'str'},
+        "json_schema": {"key": "jsonSchema", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        json_schema: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, json_schema: Optional[str] = None, **kwargs):
         """
         :keyword json_schema:
         :paramtype json_schema: str
@@ -40387,14 +41904,20 @@ class UIParameterHint(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'ui_widget_type': {'key': 'uiWidgetType', 'type': 'str'},
-        'column_picker': {'key': 'columnPicker', 'type': 'UIColumnPicker'},
-        'ui_script_language': {'key': 'uiScriptLanguage', 'type': 'str'},
-        'json_editor': {'key': 'jsonEditor', 'type': 'UIJsonEditor'},
-        'prompt_flow_connection_selector': {'key': 'PromptFlowConnectionSelector', 'type': 'UIPromptFlowConnectionSelector'},
-        'azure_open_ai_deployment_name_selector': {'key': 'AzureOpenAIDeploymentNameSelector', 'type': 'UIAzureOpenAIDeploymentNameSelector'},
-        'ux_ignore': {'key': 'UxIgnore', 'type': 'bool'},
-        'anonymous': {'key': 'Anonymous', 'type': 'bool'},
+        "ui_widget_type": {"key": "uiWidgetType", "type": "str"},
+        "column_picker": {"key": "columnPicker", "type": "UIColumnPicker"},
+        "ui_script_language": {"key": "uiScriptLanguage", "type": "str"},
+        "json_editor": {"key": "jsonEditor", "type": "UIJsonEditor"},
+        "prompt_flow_connection_selector": {
+            "key": "PromptFlowConnectionSelector",
+            "type": "UIPromptFlowConnectionSelector",
+        },
+        "azure_open_ai_deployment_name_selector": {
+            "key": "AzureOpenAIDeploymentNameSelector",
+            "type": "UIAzureOpenAIDeploymentNameSelector",
+        },
+        "ux_ignore": {"key": "UxIgnore", "type": "bool"},
+        "anonymous": {"key": "Anonymous", "type": "bool"},
     }
 
     def __init__(
@@ -40404,8 +41927,12 @@ class UIParameterHint(msrest.serialization.Model):
         column_picker: Optional["UIColumnPicker"] = None,
         ui_script_language: Optional[Union[str, "UIScriptLanguageEnum"]] = None,
         json_editor: Optional["UIJsonEditor"] = None,
-        prompt_flow_connection_selector: Optional["UIPromptFlowConnectionSelector"] = None,
-        azure_open_ai_deployment_name_selector: Optional["UIAzureOpenAIDeploymentNameSelector"] = None,
+        prompt_flow_connection_selector: Optional[
+            "UIPromptFlowConnectionSelector"
+        ] = None,
+        azure_open_ai_deployment_name_selector: Optional[
+            "UIAzureOpenAIDeploymentNameSelector"
+        ] = None,
         ux_ignore: Optional[bool] = None,
         anonymous: Optional[bool] = None,
         **kwargs
@@ -40439,7 +41966,9 @@ class UIParameterHint(msrest.serialization.Model):
         self.ui_script_language = ui_script_language
         self.json_editor = json_editor
         self.prompt_flow_connection_selector = prompt_flow_connection_selector
-        self.azure_open_ai_deployment_name_selector = azure_open_ai_deployment_name_selector
+        self.azure_open_ai_deployment_name_selector = (
+            azure_open_ai_deployment_name_selector
+        )
         self.ux_ignore = ux_ignore
         self.anonymous = anonymous
 
@@ -40452,15 +41981,13 @@ class UIPromptFlowConnectionSelector(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'prompt_flow_connection_type': {'key': 'PromptFlowConnectionType', 'type': 'str'},
+        "prompt_flow_connection_type": {
+            "key": "PromptFlowConnectionType",
+            "type": "str",
+        },
     }
 
-    def __init__(
-        self,
-        *,
-        prompt_flow_connection_type: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, prompt_flow_connection_type: Optional[str] = None, **kwargs):
         """
         :keyword prompt_flow_connection_type:
         :paramtype prompt_flow_connection_type: str
@@ -40486,10 +42013,10 @@ class UIWidgetMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'module_node_id': {'key': 'moduleNodeId', 'type': 'str'},
-        'meta_module_id': {'key': 'metaModuleId', 'type': 'str'},
-        'parameter_name': {'key': 'parameterName', 'type': 'str'},
-        'ui_widget_type': {'key': 'uiWidgetType', 'type': 'str'},
+        "module_node_id": {"key": "moduleNodeId", "type": "str"},
+        "meta_module_id": {"key": "metaModuleId", "type": "str"},
+        "parameter_name": {"key": "parameterName", "type": "str"},
+        "ui_widget_type": {"key": "uiWidgetType", "type": "str"},
     }
 
     def __init__(
@@ -40530,15 +42057,10 @@ class UIYamlEditor(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'json_schema': {'key': 'jsonSchema', 'type': 'str'},
+        "json_schema": {"key": "jsonSchema", "type": "str"},
     }
 
-    def __init__(
-        self,
-        *,
-        json_schema: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, *, json_schema: Optional[str] = None, **kwargs):
         """
         :keyword json_schema:
         :paramtype json_schema: str
@@ -40555,15 +42077,10 @@ class UnversionedEntityRequestDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'unversioned_entity_ids': {'key': 'unversionedEntityIds', 'type': '[str]'},
+        "unversioned_entity_ids": {"key": "unversionedEntityIds", "type": "[str]"},
     }
 
-    def __init__(
-        self,
-        *,
-        unversioned_entity_ids: Optional[List[str]] = None,
-        **kwargs
-    ):
+    def __init__(self, *, unversioned_entity_ids: Optional[List[str]] = None, **kwargs):
         """
         :keyword unversioned_entity_ids:
         :paramtype unversioned_entity_ids: list[str]
@@ -40586,10 +42103,22 @@ class UnversionedEntityResponseDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'unversioned_entities': {'key': 'unversionedEntities', 'type': '[FlowIndexEntity]'},
-        'unversioned_entity_json_schema': {'key': 'unversionedEntityJsonSchema', 'type': 'object'},
-        'normalized_request_charge': {'key': 'normalizedRequestCharge', 'type': 'float'},
-        'normalized_request_charge_period': {'key': 'normalizedRequestChargePeriod', 'type': 'str'},
+        "unversioned_entities": {
+            "key": "unversionedEntities",
+            "type": "[FlowIndexEntity]",
+        },
+        "unversioned_entity_json_schema": {
+            "key": "unversionedEntityJsonSchema",
+            "type": "object",
+        },
+        "normalized_request_charge": {
+            "key": "normalizedRequestCharge",
+            "type": "float",
+        },
+        "normalized_request_charge_period": {
+            "key": "normalizedRequestChargePeriod",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -40642,15 +42171,15 @@ class UnversionedRebuildIndexDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'continuation_token': {'key': 'continuationToken', 'type': 'str'},
-        'entity_count': {'key': 'entityCount', 'type': 'int'},
-        'entity_container_type': {'key': 'entityContainerType', 'type': 'str'},
-        'entity_type': {'key': 'entityType', 'type': 'str'},
-        'resource_id': {'key': 'resourceId', 'type': 'str'},
-        'workspace_id': {'key': 'workspaceId', 'type': 'str'},
-        'immutable_resource_id': {'key': 'immutableResourceId', 'type': 'str'},
-        'start_time': {'key': 'startTime', 'type': 'iso-8601'},
-        'end_time': {'key': 'endTime', 'type': 'iso-8601'},
+        "continuation_token": {"key": "continuationToken", "type": "str"},
+        "entity_count": {"key": "entityCount", "type": "int"},
+        "entity_container_type": {"key": "entityContainerType", "type": "str"},
+        "entity_type": {"key": "entityType", "type": "str"},
+        "resource_id": {"key": "resourceId", "type": "str"},
+        "workspace_id": {"key": "workspaceId", "type": "str"},
+        "immutable_resource_id": {"key": "immutableResourceId", "type": "str"},
+        "start_time": {"key": "startTime", "type": "iso-8601"},
+        "end_time": {"key": "endTime", "type": "iso-8601"},
     }
 
     def __init__(
@@ -40713,10 +42242,19 @@ class UnversionedRebuildResponseDto(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'entities': {'key': 'entities', 'type': 'SegmentedResult1'},
-        'unversioned_entity_schema': {'key': 'unversionedEntitySchema', 'type': 'object'},
-        'normalized_request_charge': {'key': 'normalizedRequestCharge', 'type': 'float'},
-        'normalized_request_charge_period': {'key': 'normalizedRequestChargePeriod', 'type': 'str'},
+        "entities": {"key": "entities", "type": "SegmentedResult1"},
+        "unversioned_entity_schema": {
+            "key": "unversionedEntitySchema",
+            "type": "object",
+        },
+        "normalized_request_charge": {
+            "key": "normalizedRequestCharge",
+            "type": "float",
+        },
+        "normalized_request_charge_period": {
+            "key": "normalizedRequestChargePeriod",
+            "type": "str",
+        },
     }
 
     def __init__(
@@ -40762,11 +42300,14 @@ class UpdateComponentRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'display_name': {'key': 'displayName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'module_update_operation_type': {'key': 'moduleUpdateOperationType', 'type': 'str'},
-        'module_version': {'key': 'moduleVersion', 'type': 'str'},
+        "display_name": {"key": "displayName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "module_update_operation_type": {
+            "key": "moduleUpdateOperationType",
+            "type": "str",
+        },
+        "module_version": {"key": "moduleVersion", "type": "str"},
     }
 
     def __init__(
@@ -40775,7 +42316,9 @@ class UpdateComponentRequest(msrest.serialization.Model):
         display_name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        module_update_operation_type: Optional[Union[str, "ModuleUpdateOperationType"]] = None,
+        module_update_operation_type: Optional[
+            Union[str, "ModuleUpdateOperationType"]
+        ] = None,
         module_version: Optional[str] = None,
         **kwargs
     ):
@@ -40830,18 +42373,18 @@ class UpdateFlowRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'flow_run_result': {'key': 'flowRunResult', 'type': 'FlowRunResult'},
-        'flow_name': {'key': 'flowName', 'type': 'str'},
-        'description': {'key': 'description', 'type': 'str'},
-        'details': {'key': 'details', 'type': 'str'},
-        'tags': {'key': 'tags', 'type': '{str}'},
-        'flow': {'key': 'flow', 'type': 'Flow'},
-        'flow_definition_file_path': {'key': 'flowDefinitionFilePath', 'type': 'str'},
-        'flow_type': {'key': 'flowType', 'type': 'str'},
-        'flow_run_settings': {'key': 'flowRunSettings', 'type': 'FlowRunSettings'},
-        'is_archived': {'key': 'isArchived', 'type': 'bool'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        "flow_run_result": {"key": "flowRunResult", "type": "FlowRunResult"},
+        "flow_name": {"key": "flowName", "type": "str"},
+        "description": {"key": "description", "type": "str"},
+        "details": {"key": "details", "type": "str"},
+        "tags": {"key": "tags", "type": "{str}"},
+        "flow": {"key": "flow", "type": "Flow"},
+        "flow_definition_file_path": {"key": "flowDefinitionFilePath", "type": "str"},
+        "flow_type": {"key": "flowType", "type": "str"},
+        "flow_run_settings": {"key": "flowRunSettings", "type": "FlowRunSettings"},
+        "is_archived": {"key": "isArchived", "type": "bool"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "max_idle_time_seconds": {"key": "maxIdleTimeSeconds", "type": "long"},
     }
 
     def __init__(
@@ -40914,9 +42457,9 @@ class UpdateFlowRuntimeRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'runtime_description': {'key': 'runtimeDescription', 'type': 'str'},
-        'environment': {'key': 'environment', 'type': 'str'},
-        'instance_count': {'key': 'instanceCount', 'type': 'int'},
+        "runtime_description": {"key": "runtimeDescription", "type": "str"},
+        "environment": {"key": "environment", "type": "str"},
+        "instance_count": {"key": "instanceCount", "type": "int"},
     }
 
     def __init__(
@@ -40956,10 +42499,10 @@ class UpdateRegistryComponentRequest(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'registry_name': {'key': 'registryName', 'type': 'str'},
-        'component_name': {'key': 'componentName', 'type': 'str'},
-        'component_version': {'key': 'componentVersion', 'type': 'str'},
-        'update_type': {'key': 'updateType', 'type': 'str'},
+        "registry_name": {"key": "registryName", "type": "str"},
+        "component_name": {"key": "componentName", "type": "str"},
+        "component_version": {"key": "componentVersion", "type": "str"},
+        "update_type": {"key": "updateType", "type": "str"},
     }
 
     def __init__(
@@ -40999,8 +42542,8 @@ class UploadOptions(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'overwrite': {'key': 'overwrite', 'type': 'bool'},
-        'source_globs': {'key': 'sourceGlobs', 'type': 'ExecutionGlobsOptions'},
+        "overwrite": {"key": "overwrite", "type": "bool"},
+        "source_globs": {"key": "sourceGlobs", "type": "ExecutionGlobsOptions"},
     }
 
     def __init__(
@@ -41031,16 +42574,12 @@ class UriReference(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'path': {'key': 'path', 'type': 'str'},
-        'is_file': {'key': 'isFile', 'type': 'bool'},
+        "path": {"key": "path", "type": "str"},
+        "is_file": {"key": "isFile", "type": "bool"},
     }
 
     def __init__(
-        self,
-        *,
-        path: Optional[str] = None,
-        is_file: Optional[bool] = None,
-        **kwargs
+        self, *, path: Optional[str] = None, is_file: Optional[bool] = None, **kwargs
     ):
         """
         :keyword path:
@@ -41083,14 +42622,14 @@ class User(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'user_object_id': {'key': 'userObjectId', 'type': 'str'},
-        'user_pu_id': {'key': 'userPuId', 'type': 'str'},
-        'user_idp': {'key': 'userIdp', 'type': 'str'},
-        'user_alt_sec_id': {'key': 'userAltSecId', 'type': 'str'},
-        'user_iss': {'key': 'userIss', 'type': 'str'},
-        'user_tenant_id': {'key': 'userTenantId', 'type': 'str'},
-        'user_name': {'key': 'userName', 'type': 'str'},
-        'upn': {'key': 'upn', 'type': 'str'},
+        "user_object_id": {"key": "userObjectId", "type": "str"},
+        "user_pu_id": {"key": "userPuId", "type": "str"},
+        "user_idp": {"key": "userIdp", "type": "str"},
+        "user_alt_sec_id": {"key": "userAltSecId", "type": "str"},
+        "user_iss": {"key": "userIss", "type": "str"},
+        "user_tenant_id": {"key": "userTenantId", "type": "str"},
+        "user_name": {"key": "userName", "type": "str"},
+        "upn": {"key": "upn", "type": "str"},
     }
 
     def __init__(
@@ -41153,8 +42692,8 @@ class UserAssignedIdentity(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'principal_id': {'key': 'principalId', 'type': 'str'},
-        'client_id': {'key': 'clientId', 'type': 'str'},
+        "principal_id": {"key": "principalId", "type": "str"},
+        "client_id": {"key": "clientId", "type": "str"},
     }
 
     def __init__(
@@ -41189,10 +42728,13 @@ class ValidationDataSettings(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'n_cross_validations': {'key': 'nCrossValidations', 'type': 'NCrossValidations'},
-        'validation_data_size': {'key': 'validationDataSize', 'type': 'float'},
-        'cv_split_column_names': {'key': 'cvSplitColumnNames', 'type': '[str]'},
-        'validation_type': {'key': 'validationType', 'type': 'str'},
+        "n_cross_validations": {
+            "key": "nCrossValidations",
+            "type": "NCrossValidations",
+        },
+        "validation_data_size": {"key": "validationDataSize", "type": "float"},
+        "cv_split_column_names": {"key": "cvSplitColumnNames", "type": "[str]"},
+        "validation_type": {"key": "validationType", "type": "str"},
     }
 
     def __init__(
@@ -41231,8 +42773,8 @@ class VariantNode(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node': {'key': 'node', 'type': 'Node'},
-        'description': {'key': 'description', 'type': 'str'},
+        "node": {"key": "node", "type": "Node"},
+        "description": {"key": "description", "type": "str"},
     }
 
     def __init__(
@@ -41264,8 +42806,8 @@ class Webhook(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'webhook_type': {'key': 'webhookType', 'type': 'str'},
-        'event_type': {'key': 'eventType', 'type': 'str'},
+        "webhook_type": {"key": "webhookType", "type": "str"},
+        "event_type": {"key": "eventType", "type": "str"},
     }
 
     def __init__(
@@ -41325,22 +42867,22 @@ class WebServiceComputeMetaInfo(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_count': {'key': 'nodeCount', 'type': 'int'},
-        'is_ssl_enabled': {'key': 'isSslEnabled', 'type': 'bool'},
-        'aks_not_found': {'key': 'aksNotFound', 'type': 'bool'},
-        'cluster_purpose': {'key': 'clusterPurpose', 'type': 'str'},
-        'public_ip_address': {'key': 'publicIpAddress', 'type': 'str'},
-        'vm_size': {'key': 'vmSize', 'type': 'str'},
-        'location': {'key': 'location', 'type': 'str'},
-        'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
-        'state': {'key': 'state', 'type': 'str'},
-        'os_type': {'key': 'osType', 'type': 'str'},
-        'id': {'key': 'id', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
-        'created_by_studio': {'key': 'createdByStudio', 'type': 'bool'},
-        'is_gpu_type': {'key': 'isGpuType', 'type': 'bool'},
-        'resource_id': {'key': 'resourceId', 'type': 'str'},
-        'compute_type': {'key': 'computeType', 'type': 'str'},
+        "node_count": {"key": "nodeCount", "type": "int"},
+        "is_ssl_enabled": {"key": "isSslEnabled", "type": "bool"},
+        "aks_not_found": {"key": "aksNotFound", "type": "bool"},
+        "cluster_purpose": {"key": "clusterPurpose", "type": "str"},
+        "public_ip_address": {"key": "publicIpAddress", "type": "str"},
+        "vm_size": {"key": "vmSize", "type": "str"},
+        "location": {"key": "location", "type": "str"},
+        "provisioning_state": {"key": "provisioningState", "type": "str"},
+        "state": {"key": "state", "type": "str"},
+        "os_type": {"key": "osType", "type": "str"},
+        "id": {"key": "id", "type": "str"},
+        "name": {"key": "name", "type": "str"},
+        "created_by_studio": {"key": "createdByStudio", "type": "bool"},
+        "is_gpu_type": {"key": "isGpuType", "type": "bool"},
+        "resource_id": {"key": "resourceId", "type": "str"},
+        "compute_type": {"key": "computeType", "type": "str"},
     }
 
     def __init__(
@@ -41429,9 +42971,9 @@ class WebServicePort(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'node_id': {'key': 'nodeId', 'type': 'str'},
-        'port_name': {'key': 'portName', 'type': 'str'},
-        'name': {'key': 'name', 'type': 'str'},
+        "node_id": {"key": "nodeId", "type": "str"},
+        "port_name": {"key": "portName", "type": "str"},
+        "name": {"key": "name", "type": "str"},
     }
 
     def __init__(
@@ -41484,12 +43026,15 @@ class WorkspaceConnectionSpec(msrest.serialization.Model):
     """
 
     _attribute_map = {
-        'connection_category': {'key': 'connectionCategory', 'type': 'str'},
-        'flow_value_type': {'key': 'flowValueType', 'type': 'str'},
-        'connection_type': {'key': 'connectionType', 'type': 'str'},
-        'connection_type_display_name': {'key': 'connectionTypeDisplayName', 'type': 'str'},
-        'config_specs': {'key': 'configSpecs', 'type': '[ConnectionConfigSpec]'},
-        'module': {'key': 'module', 'type': 'str'},
+        "connection_category": {"key": "connectionCategory", "type": "str"},
+        "flow_value_type": {"key": "flowValueType", "type": "str"},
+        "connection_type": {"key": "connectionType", "type": "str"},
+        "connection_type_display_name": {
+            "key": "connectionTypeDisplayName",
+            "type": "str",
+        },
+        "config_specs": {"key": "configSpecs", "type": "[ConnectionConfigSpec]"},
+        "module": {"key": "module", "type": "str"},
     }
 
     def __init__(

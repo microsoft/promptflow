@@ -23,7 +23,9 @@ def run_pf_command(*args, cwd=None):
 
 
 @pytest.fixture
-def operation_scope_args(default_subscription_id, default_resource_group, default_workspace):
+def operation_scope_args(
+    default_subscription_id, default_resource_group, default_workspace
+):
     return [
         "--subscription",
         default_subscription_id,
