@@ -58,7 +58,7 @@ pf flow test --flow . --inputs question="What is the name of the new language re
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # run with multiline data, --name is optional
-pf run create --flow . --data ./data/bert-paper-qna.jsonl --stream --name $run_name
+pf run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --name $run_name
 
 # visualize run output details
 pf run visualize --name $run_name
