@@ -1,0 +1,59 @@
+inputs:
+  chat_history:
+    type: list
+    default: []
+  pdf_url:
+    type: string
+    default: https://arxiv.org/pdf/1810.04805.pdf
+  question:
+    type: string
+    is_chat_input: true
+    default: what NLP tasks does it perform well?
+outputs:
+  answer:
+    type: string
+    is_chat_output: true
+    reference: ${qna_tool.output.answer}
+  context:
+    type: string
+    reference: ${qna_tool.output.context}
+nodes:
+- name: setup_env
+  type: python
+  source:
+    type: code
+    path: setup_env.py
+  inputs:
+    conn: my_custom_connection
+- name: download_tool
+  type: python
+  source:
+    type: code
+    path: download_tool.py
+  inputs:
+    url: ${inputs.pdf_url}
+    env_ready_signal: ${setup_env.output}
+- name: build_index_tool
+  type: python
+  source:
+    type: code
+    path: build_index_tool.py
+  inputs:
+    pdf_path: ${download_tool.output}
+- name: qna_tool
+  type: python
+  source:
+    type: code
+    path: qna_tool.py
+  inputs:
+    question: ${rewrite_question_tool.output}
+    index_path: ${build_index_tool.output}
+    history: ${inputs.chat_history}
+- name: rewrite_question_tool
+  type: python
+  source:
+    type: code
+    path: rewrite_question_tool.py
+  inputs:
+    question: ${inputs.question}
+    history: ${inputs.chat_history}

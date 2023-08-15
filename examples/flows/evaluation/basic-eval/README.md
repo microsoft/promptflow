@@ -16,7 +16,7 @@ pip install -r requirements.txt
 In this flow, you will learn
 - how to compose a point based evaluation flow, where you can calculate point-wise metrics.
 - the way to log metrics. use `from promptflow import log_metric`
-    - see file [aggregate](aggregate.py). TODO.
+    - see file [aggregate](aggregate.py).
 
 ### 1. Test flow with single line data
 
