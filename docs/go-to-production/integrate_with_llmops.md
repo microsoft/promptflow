@@ -154,6 +154,18 @@ connections:
     deployment_name: <deployment_name>
 ```
 
+You can specify the connection and deployment name for each tool in the flow. If you don't specify the connection and deployment name, it will use the one connection and deployment on the `flow.dag.yaml` file. For format of connections part is:
+
+```yaml
+...
+connections:
+  <node_name>:
+    connection: <connection_name>
+      deployment_name: <deployment_name>
+...
+
+```
+
 ```sh
 pfazure run create --file run.yml
 ```
