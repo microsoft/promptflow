@@ -1,0 +1,684 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+import copy
+import json
+import logging
+import os
+import re
+import sys
+import time
+from dataclasses import asdict
+from functools import cached_property
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import pandas as pd
+import requests
+from azure.ai.ml._scope_dependent_operations import (
+    OperationConfig,
+    OperationsContainer,
+    OperationScope,
+    _ScopeDependentOperations,
+)
+from azure.ai.ml.constants._common import AzureMLResourceType
+from azure.ai.ml.operations import DataOperations, WorkspaceOperations
+from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
+from pandas import DataFrame
+
+from promptflow._sdk._constants import (
+    AZUREML_PF_RUN_PROPERTIES_LINEAGE,
+    LOGGER_NAME,
+    AzureRunTypes,
+    ListViewType,
+    RunDataKeys,
+    RunStatus,
+)
+from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
+from promptflow._sdk._visualize_functions import dump_html, generate_html_string
+from promptflow._sdk.entities import Run
+from promptflow.azure._constants._flow import CHILD_RUNS_PAGE_SIZE, NODE_RUNS_PAGE_SIZE
+from promptflow.azure._load_functions import load_flow
+from promptflow.azure._restclient.flow.models import FlowRunInfo
+from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
+from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.contracts.run_management import RunDetail, RunMetadata, RunVisualization
+
+RUNNING_STATUSES = RunStatus.get_running_statuses()
+
+logger = logging.getLogger(LOGGER_NAME)
+
+
+class RunRequestException(Exception):
+    """RunRequestException."""
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class RunOperations(_ScopeDependentOperations):
+    """FlowRunOperations.
+
+    You should not instantiate this class directly. Instead, you should
+    create an PFClient instance that instantiates it for you and
+    attaches it as an attribute.
+    """
+
+    DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
+    ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
+
+    def __init__(
+        self,
+        operation_scope: OperationScope,
+        operation_config: OperationConfig,
+        all_operations: OperationsContainer,
+        flow_operations: FlowOperations,
+        credential,
+        **kwargs: Dict,
+    ):
+        super().__init__(operation_scope, operation_config)
+        self._all_operations = all_operations
+        workspace = self._workspace_operations.get(name=operation_scope.workspace_name)
+        self._service_caller = FlowServiceCaller(workspace, credential, **kwargs)
+        self._credential = credential
+        self._flow_operations = flow_operations
+        self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
+        self._workspace_default_datastore = self._datastore_operations.get_default().name
+
+    @property
+    def _workspace_operations(self) -> WorkspaceOperations:
+        return self._all_operations.get_operation(
+            AzureMLResourceType.WORKSPACE, lambda x: isinstance(x, WorkspaceOperations)
+        )
+
+    @property
+    def _data_operations(self):
+        return self._all_operations.get_operation(AzureMLResourceType.DATA, lambda x: isinstance(x, DataOperations))
+
+    @property
+    def _datastore_operations(self) -> "DatastoreOperations":
+        return self._all_operations.all_operations[AzureMLResourceType.DATASTORE]
+
+    @cached_property
+    def _common_azure_url_pattern(self):
+        operation_scope = self._operation_scope
+        url = (
+            f"/subscriptions/{operation_scope.subscription_id}"
+            f"/resourceGroups/{operation_scope.resource_group_name}"
+            f"/providers/Microsoft.MachineLearningServices"
+            f"/workspaces/{operation_scope.workspace_name}"
+        )
+        return url
+
+    @cached_property
+    def _run_history_endpoint_url(self):
+        """Get the endpoint url for the workspace."""
+        endpoint = self._service_caller._service_endpoint
+        return endpoint + "history/v1.0" + self._common_azure_url_pattern
+
+    def _get_run_portal_url(self, run_id: str):
+        """Get the portal url for the run."""
+        url = (
+            f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid="
+            f"{self._common_azure_url_pattern}&flight=promptfilestorage,PFSourceRun=false"
+        )
+        return url
+
+    def _get_input_portal_url_from_input_uri(self, input_uri):
+        """Get the portal url for the data input."""
+        error_msg = f"Failed to get portal url: Input uri {input_uri!r} is not a valid azureml input uri."
+        if not input_uri:
+            return None
+        if input_uri.startswith("azureml://"):
+            # input uri is a datastore path
+            match = self.DATASTORE_PATH_PATTERN.match(input_uri)
+            if not match or len(match.groups()) != 2:
+                logger.warning(error_msg)
+                return None
+            datastore, path = match.groups()
+            return (
+                f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
+                f"&activeFilePath={path}#browseTab"
+            )
+        elif input_uri.startswith("azureml:/"):
+            # when input uri is an asset id, leverage the asset id pattern to get the portal url
+            return self._get_portal_url_from_asset_id(input_uri)
+        elif input_uri.startswith("azureml:"):
+            # named asset id
+            name, version = input_uri.split(":")[1:]
+            return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+        else:
+            logger.warning(error_msg)
+            return None
+
+    def _get_portal_url_from_asset_id(self, output_uri):
+        """Get the portal url for the data output."""
+        error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
+        if not output_uri:
+            return None
+        match = self.ASSET_ID_PATTERN.match(output_uri)
+        if not match or len(match.groups()) != 2:
+            logger.warning(error_msg)
+            return None
+        name, version = match.groups()
+        return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
+
+    def _get_headers(self):
+        token = self._credential.get_token("https://management.azure.com/.default").token
+        custom_header = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        return custom_header
+
+    def create_or_update(self, run: Run, **kwargs) -> Run:
+        stream = kwargs.pop("stream", False)
+
+        flow_path = run.flow
+        self._resolve_data_to_asset_id(run=run)
+        self._resolve_flow(run=run)
+        runtime = run._runtime
+        runtime = runtime or kwargs.get("runtime", None)
+
+        rest_obj = run._to_rest_object()
+        if runtime:
+            if not isinstance(runtime, str):
+                raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
+            rest_obj.runtime_name = runtime
+            if runtime == "None":
+                # HARD CODE for office scenario, use workspace default runtime when specified None
+                rest_obj.runtime_name = None
+        else:
+            logger.warning(
+                f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
+                "it may take a while to build run time and request may fail with timeout "
+                "error and run will stuck with status 'Not started' due to current system limitation. "
+                "Wait a while and resubmit same flow can successfully start the run."
+            )
+            rest_obj.runtime_name = "automatic"
+            rest_obj.session_id = self._get_session_id(flow=flow_path)
+            if run._resources is not None:
+                if not isinstance(run._resources, dict):
+                    raise TypeError(f"resources should be a dict, got {type(run._resources)} for {run._resources}")
+                rest_obj.vm_size = run._resources.get("instance_type", None)
+                rest_obj.max_idle_time_seconds = run._resources.get("idle_time_before_shutdown_minutes", None)
+        self._service_caller.submit_bulk_run(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            body=rest_obj,
+        )
+        if in_jupyter_notebook():
+            print(f"Portal url: {self._get_run_portal_url(run_id=run.name)}")
+        if stream:
+            self.stream(run=run.name)
+        return self.get(run=run.name)
+
+    def list(self, max_results, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs):
+        """List runs in the workspace with index service call."""
+        headers = self._get_headers()
+        filter_archived = []
+        if list_view_type == ListViewType.ACTIVE_ONLY:
+            filter_archived = ["false"]
+        elif list_view_type == ListViewType.ARCHIVED_ONLY:
+            filter_archived = ["true"]
+        elif list_view_type == ListViewType.ALL:
+            filter_archived = ["true", "false"]
+
+        pay_load = {
+            "filters": [
+                {"field": "type", "operator": "eq", "values": ["runs"]},
+                {"field": "annotations/archived", "operator": "eq", "values": filter_archived},
+                {
+                    "field": "properties/runType",
+                    "operator": "contains",
+                    "values": [
+                        AzureRunTypes.BATCH,
+                        AzureRunTypes.EVALUATION,
+                        AzureRunTypes.PAIRWISE_EVALUATE,
+                    ],
+                },
+            ],
+            "freeTextSearch": "",
+            "order": [{"direction": "Desc", "field": "properties/creationContext/createdTime"}],
+            # index service can return 100 results at most
+            "pageSize": min(max_results, 100),
+            "skip": 0,
+            "includeTotalResultCount": True,
+            "searchBuilder": "AppendPrefix",
+        }
+
+        endpoint = self._run_history_endpoint_url.replace("/history", "/index")
+        url = endpoint + "/entities"
+        response = requests.post(url, headers=headers, json=pay_load)
+
+        if response.status_code == 200:
+            entities = json.loads(response.text)
+            runs = entities["value"]
+        else:
+            raise RunRequestException(
+                f"Failed to get runs from service. Code: {response.status_code}, text: {response.text}"
+            )
+        refined_runs = []
+        for run in runs:
+            run_id = run["properties"]["runId"]
+            run[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_id)
+            refined_runs.append(Run._from_index_service_entity(run))
+        return refined_runs
+
+    def get_metrics(self, run: Union[str, Run], **kwargs) -> dict:
+        """Get the metrics from the run.
+
+        :param run: The run
+        :type run: str
+        :return: The metrics
+        :rtype: dict
+        """
+        run = run.name if isinstance(run, Run) else run
+        self._check_cloud_run_completed(run_name=run)
+        metrics = self._get_metrics_from_metric_service(run)
+        return metrics
+
+    def get_details(self, run: Union[str, Run], **kwargs) -> DataFrame:
+        """Get the details from the run.
+
+        :param run: The run
+        :type run: str
+        :return: The details
+        :rtype: pandas.DataFrame
+        """
+        run = run.name if isinstance(run, Run) else run
+        self._check_cloud_run_completed(run_name=run)
+        child_runs = self._get_child_runs_from_pfs(run)
+        inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
+        data = {}
+        columns = []
+        for k in inputs:
+            new_k = f"inputs.{k}"
+            data[new_k] = copy.deepcopy(inputs[k])
+            columns.append(new_k)
+        for k in outputs:
+            new_k = f"outputs.{k}"
+            data[new_k] = copy.deepcopy(outputs[k])
+            columns.append(new_k)
+        df = pd.DataFrame(data).reindex(columns=columns)
+        return df
+
+    def _check_cloud_run_completed(self, run_name: str) -> bool:
+        """Check if the cloud run is completed."""
+        run = self.get(run=run_name)
+        run._check_run_status_is_completed()
+
+    def _extract_metrics_from_metric_service_response(self, values) -> dict:
+        """Get metrics from the metric service response."""
+        refined_metrics = {}
+        metric_list = values.get("value", [])
+        if not metric_list:
+            return refined_metrics
+
+        for metric in metric_list:
+            metric_name = metric["name"]
+            if self._is_system_metric(metric_name):
+                continue
+            refined_metrics[metric_name] = metric["value"][0]["data"][metric_name]
+        return refined_metrics
+
+    def _get_metrics_from_metric_service(self, run_id) -> dict:
+        """Get the metrics from metric service."""
+        headers = self._get_headers()
+        # refer to MetricController: https://msdata.visualstudio.com/Vienna/_git/vienna?path=/src/azureml-api/src/Metric/EntryPoints/Api/Controllers/MetricController.cs&version=GBmaster  # noqa: E501
+        endpoint = self._run_history_endpoint_url.replace("/history/v1.0", "/metric/v2.0")
+        url = endpoint + f"/runs/{run_id}/lastvalues"
+        response = requests.post(url, headers=headers, json={})
+        if response.status_code == 200:
+            values = response.json()
+            return self._extract_metrics_from_metric_service_response(values)
+        else:
+            raise RunRequestException(
+                f"Failed to get metrics from service. Code: {response.status_code}, text: {response.text}"
+            )
+
+    @staticmethod
+    def _is_system_metric(metric: str) -> bool:
+        """Check if the metric is system metric.
+
+        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.failed, __pf__.nodes.xx.completed
+        """
+        return metric.endswith(".completed") or metric.endswith(".failed") or metric.endswith(".is_completed")
+
+    def get(self, run: str, **kwargs) -> Run:
+        """Get a run.
+
+        :param run: The run name
+        :type run: str
+        :return: The run
+        :rtype: Run
+        """
+        return self._get_run_from_run_history(flow_run_id=run, **kwargs)
+
+    def _get_run_from_run_history(self, flow_run_id, **kwargs):
+        """Get run info from run history"""
+        headers = self._get_headers()
+        url = self._run_history_endpoint_url + "/rundata"
+
+        payload = {
+            "runId": flow_run_id,
+            "selectRunMetadata": True,
+            "selectRunDefinition": True,
+            "selectJobSpecification": True,
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code == 200:
+            run = response.json()
+            run_data = self._refine_run_data_from_run_history(run)
+            run = Run._from_run_history_entity(run_data)
+            return run
+        else:
+            raise RunRequestException(
+                f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
+            )
+
+    def _refine_run_data_from_run_history(self, run_data: dict) -> dict:
+        """Refine the run data from run history.
+
+        Generate the portal url, input and output value from run history data.
+        """
+        run_data = run_data["runMetadata"]
+        # add cloud run url
+        run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_data["runId"])
+
+        # get input and output value
+        # TODO: Unify below values to the same pattern - azureml://xx
+        properties = run_data["properties"]
+        input_data = properties.pop("azureml.promptflow.input_data", None)
+        input_run_id = properties.pop("azureml.promptflow.input_run_id", None)
+        output_data = run_data["outputs"]
+        if output_data:
+            output_data = output_data.get("flow_outputs", {}).get("assetId", None)
+        run_data[RunDataKeys.DATA] = input_data
+        run_data[RunDataKeys.RUN] = input_run_id
+        run_data[RunDataKeys.OUTPUT] = output_data
+
+        # get portal urls
+        run_data[RunDataKeys.DATA_PORTAL_URL] = self._get_input_portal_url_from_input_uri(input_data)
+        run_data[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._get_run_portal_url(run_id=input_run_id)
+        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data)
+        return run_data
+
+    def _get_run_from_index_service(self, flow_run_id, **kwargs):
+        """Get run info from index service"""
+        headers = self._get_headers()
+        payload = {
+            "filters": [
+                {"field": "type", "operator": "eq", "values": ["runs"]},
+                {"field": "annotations/archived", "operator": "eq", "values": ["false"]},
+                {"field": "properties/runId", "operator": "eq", "values": [flow_run_id]},
+            ],
+            "order": [{"direction": "Desc", "field": "properties/startTime"}],
+            "pageSize": 50,
+        }
+        endpoint = self._run_history_endpoint_url.replace("/history", "/index")
+        url = endpoint + "/entities"
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            runs = response.json().get("value", None)
+            if not runs:
+                raise RunRequestException(
+                    f"Could not found run with run id {flow_run_id!r}, please double check the run id and try again."
+                )
+            run = runs[0]
+            run_id = run["properties"]["runId"]
+            run[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_id)
+            return Run._from_index_service_entity(run)
+        else:
+            raise RunRequestException(
+                f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
+            )
+
+    def archive(self, run_name):
+        pass
+
+    def restore(self, run_name):
+        pass
+
+    def _get_log(self, flow_run_id: str) -> str:
+        return self._service_caller.caller.bulk_runs.get_flow_run_log_content(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            flow_run_id=flow_run_id,
+            headers=self._get_headers(),
+        )
+
+    def stream(self, run: Union[str, Run]) -> Run:
+        """Stream the logs of a run."""
+        run = run.name if isinstance(run, Run) else run
+        # TODO: maybe we need to make this configurable
+        file_handler = sys.stdout
+        # different from Azure ML job, flow job can run very fast, so it might not print anything;
+        # use below variable to track this behavior, and at least print something to the user.
+        try:
+            printed = 0
+            run = self.get(run=run)
+            while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
+                file_handler.flush()
+                available_logs = self._get_log(flow_run_id=run.name)
+                printed = incremental_print(available_logs, printed, file_handler)
+                time.sleep(10)
+                run = self.get(run=run.name)
+            # ensure all logs are printed
+            file_handler.flush()
+            available_logs = self._get_log(flow_run_id=run.name)
+            incremental_print(available_logs, printed, file_handler)
+
+            file_handler.write("======= Run Summary =======\n")
+            duration = None
+            if run._start_time and run._end_time:
+                duration = str(run._end_time - run._start_time)
+            file_handler.write(
+                f'Run name: "{run.name}"\n'
+                f'Run status: "{run.status}"\n'
+                f'Start time: "{run._start_time}"\n'
+                f'Duration: "{duration}"\n'
+                f'Run url: "{self._get_run_portal_url(run_id=run.name)}"'
+            )
+            # won't print error here, put it in run dict
+        except KeyboardInterrupt:
+            error_message = (
+                "The output streaming for the flow run was interrupted.\n"
+                "But the run is still executing on the cloud.\n"
+            )
+            print(error_message)
+        finally:
+            return run
+
+    def _resolve_data_to_asset_id(self, run: Run):
+        from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
+        from azure.ai.ml.constants._common import AssetTypes
+
+        # Skip if no data provided
+        if run.data is None:
+            return
+        test_data = run.data
+
+        def _get_data_type(_data):
+            if os.path.isdir(_data):
+                return AssetTypes.URI_FOLDER
+            else:
+                return AssetTypes.URI_FILE
+
+        if is_remote_uri(test_data):
+            # Pass through ARM id or remote url
+            run.data = test_data
+            return
+
+        if os.path.exists(test_data):  # absolute local path, upload, transform to remote url
+            data_type = _get_data_type(test_data)
+            test_data = _upload_and_generate_remote_uri(
+                self._operation_scope,
+                self._datastore_operations,
+                test_data,
+                datastore_name=self._workspace_default_datastore,
+                show_progress=self._show_progress,
+            )
+            if data_type == AssetTypes.URI_FOLDER and test_data and not test_data.endswith("/"):
+                test_data = test_data + "/"
+        else:
+            raise ValueError(
+                f"Local path {test_data!r} not exist. "
+                "If it's remote data, only data with azureml prefix or remote url is supported."
+            )
+        run.data = test_data
+
+    def _resolve_flow(self, run: Run):
+        flow = load_flow(run.flow)
+        self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow)
+        run.flow = flow.path
+
+    def _get_session_id(self, flow):
+        flow = load_flow(flow)
+        try:
+            user_alias = get_user_alias_from_credential(self._credential)
+        except Exception:
+            # fall back to unknown user when failed to get credential.
+            user_alias = "unknown_user"
+        return f"{user_alias}_{Path(flow.code).name}"
+
+    def _get_child_runs_from_pfs(self, run_id: str):
+        """Get the child runs from the PFS."""
+        headers = self._get_headers()
+        endpoint_url = self._run_history_endpoint_url.replace("/history/v1.0", "/flow/api")
+        url = endpoint_url + f"/BulkRuns/{run_id}/childRuns"
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            runs = response.json()
+            return runs
+        else:
+            raise RunRequestException(
+                f"Failed to get child runs from service. Code: {response.status_code}, text: {response.text}"
+            )
+
+    def _get_inputs_outputs_from_child_runs(self, runs: List[Dict[str, Any]]):
+        """Get the inputs and outputs from the child runs."""
+        inputs = {}
+        outputs = {}
+        for run in runs:
+            run_inputs, run_outputs = run["inputs"], run["output"]
+            if isinstance(run_inputs, dict):
+                for k, v in run_inputs.items():
+                    if k not in inputs:
+                        inputs[k] = []
+                    inputs[k].append(v)
+            if isinstance(run_outputs, dict):
+                for k, v in run_outputs.items():
+                    if k not in outputs:
+                        outputs[k] = []
+                    outputs[k].append(v)
+        return inputs, outputs
+
+    def _get_flow_runs_pagination(self, name: str) -> List[dict]:
+        # call childRuns API with pagination to avoid PFS OOM
+        # different from UX, run status should be completed here
+        flow_runs = []
+        start_index, end_index = 0, CHILD_RUNS_PAGE_SIZE - 1
+        while True:
+            current_flow_runs = self._service_caller.get_child_runs(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=name,
+                start_index=start_index,
+                end_index=end_index,
+            )
+            # no data in current page
+            if len(current_flow_runs) == 0:
+                break
+            start_index, end_index = start_index + CHILD_RUNS_PAGE_SIZE, end_index + CHILD_RUNS_PAGE_SIZE
+            flow_runs += current_flow_runs
+        return flow_runs
+
+    def _get_node_runs_pagination(self, name: str, node_name: str) -> List[dict]:
+        # same as `_get_flow_runs_pagination`, call nodeRuns with pagination
+        node_runs = []
+        start_index, end_index = 0, NODE_RUNS_PAGE_SIZE - 1
+        while True:
+            current_node_runs = self._service_caller.get_node_runs(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=name,
+                node_name=node_name,
+                start_index=start_index,
+                end_index=end_index,
+                aggregation=False,
+            )
+            # no data in current page
+            if len(current_node_runs) == 0:
+                break
+            start_index, end_index = start_index + NODE_RUNS_PAGE_SIZE, end_index + NODE_RUNS_PAGE_SIZE
+            node_runs += current_node_runs
+        return node_runs
+
+    def _build_detail(self, name: str, run_from_pfs: FlowRunInfo) -> RunDetail:
+        # flow runs - call childRuns
+        logger.debug("Retrieving line runs info...")
+        flow_runs = self._get_flow_runs_pagination(name)
+        # node runs - call nodeRuns/{nodeName}
+        node_runs = []
+        for node in run_from_pfs.flow_graph.nodes:
+            logger.debug(f"Retrieving node runs info for node {node.name!r}...")
+            node_runs += self._get_node_runs_pagination(name, node.name)
+        return RunDetail(flow_runs=flow_runs, node_runs=node_runs)
+
+    def _build_metadata(self, run_from_rh: Run) -> RunMetadata:
+        metadata = RunMetadata(
+            name=run_from_rh.name,
+            display_name=run_from_rh.display_name,
+            tags=run_from_rh.tags,
+            lineage=run_from_rh.properties.get(AZUREML_PF_RUN_PROPERTIES_LINEAGE),
+        )
+        return metadata
+
+    def _visualize(self, names: List[str], html_path: Optional[str] = None) -> None:
+        details, metadatas = [], []
+        print("Preparing data...")
+        for name in names:
+            # as the network request can be very time consuming, add some prints to be more friendly
+            print(f"Trying to retrieve data for run {name!r}...")
+            # check run status first; not use `_check_cloud_run_completed` to reuse run from RH
+            logger.debug("Retrieving run metadata...")
+            run_from_rh = self.get(run=name)
+            run_from_rh._check_run_status_is_completed()
+
+            run_from_pfs = self._service_caller.get_bulk_run(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=name,
+            )
+            detail = self._build_detail(name, run_from_pfs)
+            metadata = self._build_metadata(run_from_rh)
+            details.append(asdict(detail))
+            metadatas.append(asdict(metadata))
+        data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
+        html_string = generate_html_string(asdict(data_for_visualize))
+        # if html_path is specified, not open it in webbrowser(as it comes from VSC)
+        dump_html(html_string, html_path, open_html=html_path is None)
+
+    def visualize(self, names: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
+        """Visualize run(s).
+
+        :param names: Names of the runs, or list of run objects.
+        :type names: Union[str, ~promptflow.sdk.entities.Run, List[str], List[~promptflow.sdk.entities.Run]]
+        """
+        if not isinstance(names, list):
+            names = [names]
+        if isinstance(names[0], Run):
+            names = [run.name for run in names]
+        html_path = kwargs.pop("html_path", None)
+        try:
+            self._visualize(names, html_path=html_path)
+        except Exception as e:  # pylint: disable=broad-except
+            raise e

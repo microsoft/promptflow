@@ -1,0 +1,23 @@
+[tool.black]
+line-length = 120
+
+[tool.pytest.ini_options]
+markers = [
+    "sdk_test",
+    "cli_test",
+    "unittest",
+    "e2etest",
+    "flaky",
+    "endpointtest",
+    "mt_endpointtest",
+]
+
+[tool.coverage.run]
+omit = [
+    # omit anything in a _restclient directory anywhere
+    "*/_restclient/*",
+    # omit anything in promptflow.azure temporarily
+    "*/promptflow/azure/*",
+    "*/promptflow/_cli/*",
+    "*/promptflow/sdk/_orm/*",
+]
