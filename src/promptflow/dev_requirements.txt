@@ -1,0 +1,21 @@
+pre-commit
+nox
+mock
+pytest-cov
+coverage==6.0.1
+pytest-forked
+pytest-xdist
+pytest-timeout
+pytest-mock
+pytest-nunit
+pytest
+pydash
+wheel
+azure-mgmt-storage==21.0.0
+# Note: This is possibly-insecure, do not add this to setup.
+keyrings.alt
+
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+prompt-flow-tools==0.0.6
+
+beautifulsoup4==4.12.2

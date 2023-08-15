@@ -1,0 +1,11 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: classification_accuracy_eval
+display_name: Classification Accuracy Evaluation
+type: evaluate
+path: azureml://datastores/workspaceworkingdirectory/paths/Users/wanhan/a/flow.dag.yaml
+description: Measuring the performance of a classification system by comparing its outputs to groundtruth.
+properties:
+  promptflow.stage: prod
+  promptflow.details.type: markdown
+  promptflow.details.source: README.md
+  promptflow.batch_inputs: samples.json

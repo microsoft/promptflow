@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  promptflow:
+    image: promptflow-serve
+    ports:
+      - "8080:8080"
+    secrets:
+      - MIGRATION_SECRET
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+secrets:
+  MIGRATION_SECRET:
+    external: true

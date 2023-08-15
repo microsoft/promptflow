@@ -1,0 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/latest/flow.schema.json
+name: classification_accuracy_eval
+type: evaluate
+path: azureml://datastores/workspaceworkingdirectory/paths/Users/wanhan/my_flow_snapshot/flow.dag.yaml
