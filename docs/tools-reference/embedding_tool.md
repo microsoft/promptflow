@@ -30,7 +30,7 @@ Setup connections to provide resources in embedding tool.
 |  Name                  | Type        | Description                                                           | Required |
 |------------------------|-------------|-----------------------------------------------------------------------|----------|
 | input                  | string      | the input text to embed                                               | Yes      |
-| connection             | string      | the connection of the embedding tool use to provide resources         | Yes      |
+| connection             | string      | the connection for the embedding tool use to provide resources         | Yes      |
 | model, deployment_name | string      | instance of the text-embedding engine to use, model is for OpenAi connection, deployment_name is for AzureOpenAi connection               | Yes      |
 
 
@@ -46,7 +46,7 @@ The following is an example response returned by the embedding tool:
 <details>
   <summary>Output</summary>
   
-```json
+```
 [-0.005744616035372019,
 -0.007096089422702789,
 -0.00563855143263936,
