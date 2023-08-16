@@ -22,17 +22,31 @@ def get_notebook_readme_description(notebook) -> str:
         return ""
 
 
-def get_readme_title(readme) -> str:
+def get_readme_description_first_sentence(readme) -> str:
     """
-    Get Each readme first line
+    Get Each readme first sentence of first paragraph
     """
     try:
         with open(readme, "r", encoding="utf-8") as f:
             # read first line
-            first_line = f.readline()
-            title = first_line.replace("#", "").strip()
-            return title
+            line = f.readline()
+            sentence = ""
+            while True:
+                previous_line = line
+                line = f.readline()
+                if line.strip() == "" and sentence != "":
+                    break
+                elif "." in line:
+                    sentence += " " + line.split(".")[0].strip()
+                    break
+                else:
+                    if sentence == "":
+                        sentence += line.strip()
+                    elif line.strip() != "":
+                        sentence += line.strip()
+            return sentence
     except Exception:
+        print(f"Error reading {readme}")
         return ""
 
 
@@ -61,8 +75,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         if gh_working_dir.startswith("examples/flows/standard"):
             flows.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -71,8 +85,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif gh_working_dir.startswith("examples/connections"):
             connections.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -81,8 +95,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif gh_working_dir.startswith("examples/flows/evaluation"):
             evaluations.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -91,8 +105,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif gh_working_dir.startswith("examples/tutorials"):
             tutorials.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -101,8 +115,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif gh_working_dir.startswith("examples/flows/chat"):
             chats.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -118,14 +132,16 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         )
         pipeline_name = readme_telemetry.workflow_name
         yaml_name = f"{readme_telemetry.workflow_name}.yml"
-        description = get_readme_title(readme_telemetry.readme_folder + "/README.md")
+        description = get_readme_description_first_sentence(
+            readme_telemetry.readme_folder + "/README.md"
+        )
         readme_folder = readme_telemetry.readme_folder
 
         if readme_folder.startswith("examples/flows/standard"):
             flows.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -134,7 +150,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif readme_folder.startswith("examples/connections"):
             connections.append(
                 {
-                    "notebook_path": notebook_path,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -143,8 +159,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif readme_folder.startswith("examples/flows/evaluation"):
             evaluations.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -153,8 +169,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif readme_folder.startswith("examples/tutorials"):
             tutorials.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
@@ -163,8 +179,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         elif readme_folder.startswith("examples/flows/chat"):
             chats.append(
                 {
-                    "notebook_name": notebook_name,
-                    "notebook_path": notebook_path,
+                    "name": notebook_name,
+                    "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
                     "description": description,
