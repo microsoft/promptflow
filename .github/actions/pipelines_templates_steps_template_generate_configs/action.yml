@@ -1,0 +1,29 @@
+name: pipelines_templates_steps_template_generate_connections
+inputs:
+  targetFolder:
+    required: false
+    default: "."
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Generate the connections config file
+    if: parameters['generateConnections'] == true
+    run: |-
+      set -xe
+      exit_code=0
+      echo "Generating connection config file..."
+      python3 ./scripts/building/generate_connection_config.py \
+          --tenant_id ${{ secrets.TENANT_ID }} \
+          --client_id ${{ secrets.CLIENT_ID }} \
+          --client_secret ${{ secrets.CLIENT_SECRET }}
+          --target_folder ${{ inputs.targetFolder }}
+      if [ -f "${{ inputs.targetFolder }}/connections.json" ]
+      then
+          echo "Config file generated."
+          exit 0
+      else
+          echo "Failed to generate the connection file, please check your script and parameters."
+          exit 1
+      fi
+    shell: bash

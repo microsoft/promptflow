@@ -29,3 +29,8 @@ jobs:
       uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
     - name: Conda Setup
       uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    - name: Generate Configs
+      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+      with:
+        generateEndpointConfig: "true"
+        targetFolder: ${{ env.PYTHONPATH }}

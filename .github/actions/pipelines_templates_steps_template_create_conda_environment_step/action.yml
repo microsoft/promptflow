@@ -2,11 +2,7 @@ name: pipelines_templates_steps_template_create_conda_environment_step
 inputs:
   condaEnvironmentFilePath:
     required: false
-    default: "./pipelines/configs/release-env.yaml"
-    type: string
-  condaEnvironmentName:
-    required: false
-    default: "$(Build.BuildId)"
+    default: "scripts/building/release-env.yml"
     type: string
 runs:
   using: composite
@@ -15,7 +11,7 @@ runs:
     uses: conda-incubator/setup-miniconda@v2
     with:
       activate-environment: release-env
-      environment-file: scripts/building/release-env.yml
+      environment-file: ${{ inputs.condaEnvironmentFilePath }}
       python-version: 3.9
       condarc-file: scripts/building/example-condarc.yml
       auto-activate-base: false
