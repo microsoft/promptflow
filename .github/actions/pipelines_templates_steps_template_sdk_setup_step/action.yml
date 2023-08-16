@@ -14,6 +14,7 @@ runs:
   - name: Clean up installed packages
     working-directory: ${{ inputs.scriptPath }}
     continue-on-error: true
+    shell: bash -el {0}
     run: pip uninstall -y promptflow promptflow-sdk
   - name: 'Build and install: promptflow with extra'
     if: inputs.setupType == 'promptflow_new_extra'
