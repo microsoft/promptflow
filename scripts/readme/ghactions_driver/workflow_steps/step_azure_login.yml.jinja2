@@ -1,0 +1,4 @@
+- name: {{ step_name }}
+  uses: azure/login@v1
+  with:
+    creds: ${{ '{{' }} secrets.AZURE_CREDENTIALS }}

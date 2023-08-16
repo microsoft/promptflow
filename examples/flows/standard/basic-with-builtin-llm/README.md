@@ -18,6 +18,8 @@ pip install -r requirements.txt
 ## Setup connection
 Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 
+Note in this example, we are using [chat api](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chatgpt?pivots=programming-language-chat-completions), please use `gpt-35-turbo` or `gpt-4` model deployment.
+
 Ensure you have created `azure_open_ai_connection` connection before.
 ```bash
 pf connection show -n azure_open_ai_connection
@@ -39,7 +41,7 @@ pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<
 pf flow test --flow .
 
 # test with inputs
-pf flow test --flow . --inputs text="Hello World!"
+pf flow test --flow . --inputs text="Python Hello World!"
 ```
 
 ### run with multiple lines data
@@ -54,13 +56,16 @@ pf run create --flow . --data ./data.jsonl --stream
 # list created run
 pf run list
 
+# get a sample run name
+name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_with_builtin_llm")) | .name'| head -n 1 | tr -d '"')
+
 # show specific run detail
-pf run show --name "basic_with_builtin_llm_default_20230724_160639_803018"
+pf run show --name $name
 
 # show output
-pf run show-details --name "basic_with_builtin_llm_default_20230724_160639_803018"
+pf run show-details --name $name
 
 # visualize run in browser
-pf run visualize --name "basic_with_builtin_llm_default_20230724_160639_803018"
+pf run visualize --name $name
 ```
 

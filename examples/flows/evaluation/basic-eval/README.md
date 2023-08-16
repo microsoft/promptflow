@@ -4,12 +4,19 @@ This example shows how to create a basic evaluation flow.
 Tools used in this flow：
 - `python` tool
 
+## Prerequisites
+
+Install promptflow sdk and other dependencies in this folder:
+```bash
+pip install -r requirements.txt
+```
+
 ## What you will learn
 
 In this flow, you will learn
 - how to compose a point based evaluation flow, where you can calculate point-wise metrics.
 - the way to log metrics. use `from promptflow import log_metric`
-    - see file [aggregate](aggregate.py). TODO.
+    - see file [aggregate](aggregate.py).
 
 ### 1. Test flow with single line data
 

@@ -2,6 +2,8 @@
 ipython_genutils
 ipykernel
 papermill
-pyyaml
 keyrings.alt
 black-nb
+pypandoc # for markdown reader
+pypandoc_binary # pypandoc pandoc backend
+panflute # for pandoc filters

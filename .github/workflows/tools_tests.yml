@@ -44,7 +44,7 @@ jobs:
       - name: Generate configs
         if: steps.check_changes.outputs.run_tests == 'true'
         run: |
-          python ./scripts/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
+          python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
 
       - name: Run tests
         if: steps.check_changes.outputs.run_tests == 'true'

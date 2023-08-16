@@ -85,7 +85,8 @@ class AzureOpenAI(ToolProvider):
         if stream:
             def generator():
                 for chunk in response:
-                    yield chunk.choices[0].text
+                    if chunk.choices:
+                        yield getattr(chunk.choices[0], "text", "")
 
             # We must return the generator object, not using yield directly here.
             # Otherwise, the function itself will become a generator, despite whether stream is True or False.
