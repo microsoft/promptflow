@@ -15,8 +15,7 @@ runs:
       python-version: 3.9
       condarc-file: scripts/building/example-condarc.yml
       auto-activate-base: false
-  - name: Test conda environment
-    run: |
-      conda activate release-env
+      auto-update-conda: true
+  - run: |
+      conda info
       conda list
-    shell: bash
