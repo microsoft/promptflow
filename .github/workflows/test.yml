@@ -27,7 +27,9 @@ jobs:
 
       - name: Generate release notes
         id: release-notes
-        uses: ffurrer2/extract-release-notes@v1
+        uses: peter-evans/release-changelog-generator@v1.4.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Zip folder
         run: |
@@ -42,7 +44,7 @@ jobs:
         with:
           tag_name: ${{ inputs.TagVersion }}
           release_name: ${{ inputs.ReleaseName }}
-          body: ${{ steps.extract-release-notes.outputs.release_notes }}
+          body: ${{ steps.release-notes.outputs.changelog }}
           draft: false
           prerelease: ${{ inputs.PreRelease }}
 
