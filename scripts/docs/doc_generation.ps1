@@ -41,7 +41,7 @@ if (-not $SkipInstall){
 
 function ProcessFiles {
     # Exclude files not mean to be in doc site
-    $exclude_files = "README.md", "dev", "code-samples"
+    $exclude_files = "README.md", "dev"
     foreach ($f in $exclude_files)
     {
         $full_path = [System.IO.Path]::Combine($TempDocPath, $f)

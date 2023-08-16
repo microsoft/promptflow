@@ -59,7 +59,7 @@ hello-world-proj/
 1. **hello-world-proj**: This is the source directory. All of your project's source code should be placed in this directory.
 2. **hello-world/tools**: This directory contains the individual tools for your project. You tool package can contain either one tool or many tools. When adding a new tool, you should create another *_tool.py under the `tools` folder.
 3. **hello-world/tools/hello_world_tool.py**: Develop your tool within the def function. Use the `@tool` decorator to identify the function as a tool.
-    > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/microsoft/promptflow/blob/main/docs/code-samples/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
+    > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/microsoft/promptflow/blob/main/examples/code-samples/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
 4. **hello-world/tools/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
     > [!Note] There's no need to create your own list method if you maintain the existing folder structure. You can simply use the auto-generated list method provided in the `utils.py` file.
 5. **hello_world/yamls/hello_world_tool.yaml**: Tool YAMLs defines the metadata of the tool. The tool list method, as outlined in the `utils.py`, fetches these tool YAMLs.
@@ -198,7 +198,7 @@ Step3: Change flow based on your requirements and run flow in the selected runti
 ## FAQ
 ### Why is my custom tool not showing up in the UI?
 * Ensure that you've set the UI flight to `&flight=PFPackageTools`.
-* Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/docs/code-samples/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/docs/code-samples/tool-package-quickstart/setup.py).
+* Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/code-samples/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/code-samples/tool-package-quickstart/setup.py).
 Alternatively, you can test your tool package using the script below to ensure that you've packaged your tool YAML files and configured the package tool entry point correctly.
 
   1. Make sure to install the tool package in your conda environment before executing this script.
