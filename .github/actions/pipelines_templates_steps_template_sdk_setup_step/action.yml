@@ -17,6 +17,7 @@ runs:
     run: pip uninstall -y promptflow promptflow-sdk
   - name: 'Build and install: promptflow with extra'
     if: inputs.setupType == 'promptflow_new_extra'
+    shell: bash -el {0}
     run: |-
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
@@ -28,6 +29,7 @@ runs:
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow'
     if: "!(inputs.setupType == 'promptflow_new_extra')"
+    shell: bash -el {0}
     run: |-
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
@@ -39,6 +41,7 @@ runs:
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow-sdk'
     if: inputs.setupType == 'promptflow_dev'
+    shell: bash -el {0}
     run: |-
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
@@ -48,6 +51,7 @@ runs:
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow-sdk with extra deps'
     if: inputs.setupType == 'promptflow_dev_extra'
+    shell: bash -el {0}
     run: |-
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel

@@ -19,3 +19,4 @@ runs:
   - run: |
       conda info
       conda list
+    shell: bash -el {0}

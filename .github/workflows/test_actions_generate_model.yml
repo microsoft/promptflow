@@ -22,9 +22,6 @@ jobs:
   run_feature_tests:
     name: Geneate Model
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -el {0}
     steps:
     - name: checkout
       uses: actions/checkout@v3
