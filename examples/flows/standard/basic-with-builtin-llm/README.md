@@ -1,4 +1,4 @@
-# Basic
+# Basic flow with builtin llm tool
 A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
 
 Tools used in this flow：

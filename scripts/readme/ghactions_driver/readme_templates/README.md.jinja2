@@ -1,0 +1,64 @@
+# Promptflow examples
+
+[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
+
+## Prerequisites
+
+- Bootstrap your python env. 
+  - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
+  - install required packages in python environment : `pip install -r requirements.txt`
+    - show installed sdk: `pip show promptflow`
+
+
+## Examples available
+
+### Tutorials ([tutorials](tutorials))
+| path | status | description |
+------|--------|-------------
+{% for tutorial in tutorials %}| [{{ tutorial.notebook_name }}]({{ tutorial.notebook_path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
+{% endfor %}| [deploy.md](tutorials/flow-deploy/deploy.md) | [![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml) | deploy flow as endpoint
+
+
+### Flows ([flows](flows))
+
+#### [Standard flows](flows/standard/) 
+
+| path | status | description |
+------|--------|-------------
+{% for flow in flows %}| [{{ flow.notebook_name }}]({{ flow.notebook_path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
+{% endfor %}
+
+#### [Evaluation flows](flows/evaluation/) 
+
+| path | status | description |
+------|--------|-------------
+{% for evaluation in evaluations %}| [{{ evaluation.notebook_name }}]({{ evaluation.notebook_path }}) | [![{{evaluation.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}) | {{ evaluation.description }} |
+{% endfor %}
+
+#### [Chat flows](flows/chat/)
+
+| path | status | description |
+------|--------|-------------
+{% for chat in chats %}| [{{ chat.notebook_name }}]({{ chat.notebook_path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
+{% endfor %}
+
+### Connections ([connections](connections))
+
+| path | status | description |
+------|--------|-------------
+{% for connection in connections %}| [{{ connection.notebook_name }}]({{ connection.notebook_path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
+{% endfor %}
+
+## Contributing
+
+We welcome contributions and suggestions! Please see the [contributing guidelines](../CONTRIBUTING.md) for details.
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). Please see the [code of conduct](../CODE_OF_CONDUCT.md) for details.
+
+## Reference
+
+* [Promptflow public documentation](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2)
+* [Promptflow internal documentation](https://promptflow.azurewebsites.net/)

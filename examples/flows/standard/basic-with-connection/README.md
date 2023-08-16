@@ -1,4 +1,4 @@
-# Basic
+# Basic flow with custom connection
 A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
 
 Tools used in this flow：
