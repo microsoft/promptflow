@@ -25,11 +25,37 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Generate release notes
+        id: release_notes
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const { data } = await github.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const latestRelease = data[0];
+            const previousRelease = data[1];
+            const commits = await github.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base: previousRelease.tag_name,
+              head: latestRelease.tag_name,
+            });
+            let releaseNotes = '';
+            commits.data.commits.forEach((commit) => {
+              if (commit.filename.includes('./src/promptflow-tools/')) {
+                releaseNotes += `- ${commit.commit.message}\n`;
+              }
+            });
+            console.log(releaseNotes);
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Zip folder
         run: |
           cd src
           zip -r promptflow-tools.zip promptflow-tools
-
+    
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
