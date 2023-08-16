@@ -51,7 +51,7 @@ exclude_patterns = [
 linkcheck_ignore = [
     r"https://(ms\.)?portal\.azure\.com/",
     r"https://aka\.ms/acs-doc",
-    r"https://github\.com/microsoft/promptflow/",
+    r"https://github\.com/microsoft/promptflow",
     r"https://platform\.openai\.com/",
 ]
 
