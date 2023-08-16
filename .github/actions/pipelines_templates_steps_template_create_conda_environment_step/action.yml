@@ -17,5 +17,6 @@ runs:
       auto-activate-base: false
   - name: Test conda environment
     run: |
+      conda activate release-env
       conda list
     shell: bash
