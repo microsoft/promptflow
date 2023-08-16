@@ -3,7 +3,8 @@
 Script to build doc site
 
 .EXAMPLE 
-PS> .\doc_generation.ps1 -SkipInstall # skip pip install
+PS> ./doc_generation.ps1 -SkipInstall # skip pip install
+PS> ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true -SkipInstall
 
 #>
 [CmdletBinding()]

@@ -167,7 +167,7 @@ You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtim
    3.2 Create runtime on CI with customized environment.
     ![CreateRuntimeOnCI](../media/how-to-verify-customer-tool/create_runtime_on_CI.png)
 
-4. Create runtime with MIR using the customized environment created in step 2. Please refer to [this guidance](how-to-create-manage-runtime.md) for the details how to create a runtime with MIR.
+4. Create runtime with MIR using the customized environment created in step 2. Please refer to [this guidance](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-create-manage-runtime?view=azureml-api-2) for the details how to create a runtime with MIR.
     ![CreateRuntimeOnMIR](../media/how-to-verify-customer-tool/create_runtime_on_mir.png)
 
 ## Test from promptflow UI

@@ -24,4 +24,4 @@ By utilizing different variants of prompts and settings, you can explore how the
 
 ## Next steps
 
-- [Tune prompts with variants](../how-to-guides/how-to-tune-prompts-using-variants.md)
+- [Tune prompts with variants](../how-to-guides/tune-prompts-with-variants.md)

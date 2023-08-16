@@ -5,45 +5,42 @@ myst:
 html_theme.sidebar_secondary.remove: true
 ---
 
-# Prompt flow Doc
+# Prompt flow
 
-Simple and short articles grouped by topics, each introduces a core feature of prompt flow and how you can use it to address your specific use cases.
+[**Prompt flow**](https://github.com/microsoft/promptflow)  is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality. 
+
+With prompt flow, you will be able to: 
+
+- Create executable workflows that link LLMs, prompts, Python code and other tools together. 
+- Debug and iterate your flows, especially the interaction with LLMs with ease.
+- Evaluate your flow's quality and performance with larger datasets.
+- Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
+- Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
+- (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+
+> Welcome to join us to make Prompt flow better by
+> participating [discussions](https://github.com/microsoft/promptflow/discussions),
+> opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
+> or submitting [PRs](https://github.com/microsoft/promptflow/pulls).
+
+This documentation site contains guides for prompt flow sdk, cli and vscode extension users.
 
 ```{gallery-grid}
 :grid-columns: 1 2 2 2
 - header: "🚀 Quick Start"
   content: "
     An overview and quick guide of how to developing and running your first prompt flow.<br/><br/>
-    - [What is prompt flow](overview-what-is-prompt-flow.md)<br/>
-    - [Start your prompt flow journey](quick-start.md)<br/>
+    - [What is prompt flow](overview.md)<br/>
+    - [Start your prompt flow journey](how-to-guides/quick-start.md)<br/>
   "
 
 - header: "📒 How-to Guides"
   content: "
     Articles guide different user roles to done a specific task in prompt flow.<br/><br/>
-    - [Develop a standard flow](how-to-guides/how-to-develop-a-standard-flow.md)<br/>
-    - [Develop an evaluation flow](how-to-guides/how-to-develop-an-evaluation-flow.md)<br/>
-    - [Develop a chat flow](how-to-guides/how-to-develop-a-chat-flow.md)<br/>
-  "
-```
-Guides for prompt flow sdk, cli and vscode extension users.
-
-```{gallery-grid}
-:grid-columns: 1 2 2 2
-- header: "📂 Local"
-  content: "
-    How to develop, run and deploy a flow from local with prompt flow community version.<br/><br/>
-    - [Quick start](community/local/quick-start.md)<br/>
-    - [Run and evaluate a flow](community/local/run-and-evaluate-a-flow.md)<br/>
-    - [Deploy and export a flow](community/local/deploy-and-export-a-flow.md)<br/>
-  "
-
-- header: "☁️ Cloud"
-  content: "
-    Move a flow from local to cloud and leverage Azure Machine Learning features.<br/><br/>
-    - [Local to cloud](community/cloud/local-to-cloud.md)<br/>
-    - [Flow in pipeline](community/cloud/flow-in-pipeline.md)<br/>
-    - [CLI reference: pfazure](community/cloud/cli-command-reference.md)<br/>
+    - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow.md)<br/>
+    - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
+    - [Deploy and export a flow](how-to-guides/deploy-and-export-a-flow.md)<br/>
+    - [Local to cloud](cloud/azureml/local-to-cloud.md)<br/>
   "
 ```
 
@@ -53,10 +50,9 @@ Reach more details about concepts and tools of prompt flow.
 - header: "📑 Concepts"
   content: "
     Introduction of key concepts of the core features of prompt flow.<br/><br/>
-    - [Tools](concepts/concept-tools.md)<br/>
     - [Flows](concepts/concept-flows.md)<br/>
+    - [Tools](concepts/concept-tools.md)<br/>
     - [Connections](concepts/concept-connections.md)<br/>
-    - [Runtimes](concepts/concept-runtime.md)<br/>
   "
 
 
@@ -73,13 +69,7 @@ Reach more details about concepts and tools of prompt flow.
 ```{toctree}
 :hidden:
 :maxdepth: 1
-overview-what-is-prompt-flow
-```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-quick-start
+overview
 ```
 
 ```{toctree}
@@ -97,11 +87,23 @@ how-to-guides/index
 ```{toctree}
 :hidden:
 :maxdepth: 1
-community/index
+tutorials/index
 ```
 
 ```{toctree}
 :hidden:
 :maxdepth: 1
 tools-reference/index
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+cloud/index
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+changelog/index
 ```

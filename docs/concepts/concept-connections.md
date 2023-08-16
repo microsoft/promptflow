@@ -21,4 +21,4 @@ By leveraging connections in prompt flow, users can easily establish and manage 
 
 ## Next steps
 
-- [Create connections](../quick-start.md)
+- [Create connections](../how-to-guides/manage-connections.md)

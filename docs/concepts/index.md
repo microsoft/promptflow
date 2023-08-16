@@ -5,9 +5,8 @@ In this section, you will learn the basic concepts of Azure Machine Learning pro
 ```{toctree}
 :maxdepth: 1
 
-concept-connections
 concept-flows
-concept-runtime
 concept-tools
 concept-variants
+concept-connections
 ```
