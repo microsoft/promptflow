@@ -27,7 +27,7 @@ jobs:
 
       - name: Generate release notes
         id: release-notes
-        uses: release-drafter/release-drafter@v7.0.0
+        uses: release-drafter/release-drafter@v7.3.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-path: .github/release-drafter.yml
@@ -45,7 +45,7 @@ jobs:
         with:
           tag_name: ${{ inputs.TagVersion }}
           release_name: ${{ inputs.ReleaseName }}
-          body: ${{ steps.release_notes.outputs.result }}
+          body: ${{ steps.release_notes.outputs.changes }}
           draft: false
           prerelease: ${{ inputs.PreRelease }}
 
