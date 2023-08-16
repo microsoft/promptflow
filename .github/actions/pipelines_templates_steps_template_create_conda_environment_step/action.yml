@@ -14,9 +14,10 @@ runs:
   - name: Setup Miniconda
     uses: conda-incubator/setup-miniconda@v2
     with:
-      activate-environment: anaconda-client-env
-      environment-file: ${{ github.workspace }}/scripts/building/release-env.yml
+      activate-environment: release-env
+      environment-file: scripts/building/release-env.yml
       python-version: 3.9
+      condarc-file: scripts/building/example-condarc.yml
       auto-activate-base: false
   - name: Test conda environment
     run: |
