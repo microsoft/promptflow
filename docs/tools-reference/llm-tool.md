@@ -6,7 +6,6 @@ Prompt flow LLM tool enables you to leverage widely used large language models l
 Prompt flow provides a few different LLM APIs:
 - **[Completion](https://platform.openai.com/docs/api-reference/completions)**: OpenAI's completion models generate text based on provided prompts.
 - **[Chat](https://platform.openai.com/docs/api-reference/chat)**: OpenAI's chat models facilitate interactive conversations with text-based inputs and responses.
-- **[Embedding](https://platform.openai.com/docs/api-reference/embeddings)**: OpenAI's embedding models convert text into dense vector representations for various NLP tasks.
 
 
 ## Prerequisite
@@ -68,14 +67,6 @@ Setup connections to provisioned resources in prompt flow.
 | logit\_bias            | dictionary  | the logit bias for the language model. Default is empty dictionary.                            | No       |
 
 
-### Embedding
-
-|  Name                  | Type        | Description                                                           | Required |
-|------------------------|-------------|-----------------------------------------------------------------------|----------|
-| input                  | string      | the input text to embed                                               | Yes      |
-| model, deployment_name | string      | instance of the text-embedding engine to use                          | Yes      |
-
-
 
 ## Outputs
 
@@ -83,7 +74,6 @@ Setup connections to provisioned resources in prompt flow.
 |------------|-------------|------------------------------------------|
 | Completion | string      | The text of one predicted completion     |
 | Chat       | string      | The text of one response of conversation |
-| Embedding  | list        | The vector representations for inputs    |
 
 
 ## How to use LLM Tool?
