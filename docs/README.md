@@ -14,7 +14,7 @@ This folder contains the private preview documents for prompt flow.
 |How-to guides|[How to tune prompts using variants](./how-to-guides/tune-prompts-with-variants.md)|
 |How-to guides|[How to deploy and export a flow](./how-to-guides/deploy-and-export-a-flow.md)|
 |How-to guides|[How to create and use your own tool package](./how-to-guides/how-to-create-and-use-your-own-tool-package.md)|
-|Tools reference|[LLM tool](./tools-reference/llm-tool.md)<br> [Prompt tool](./tools-reference/prompt-tool.md)<br> [Python tool](./tools-reference/python-tool.md)<br> [SERP API tool](./tools-reference/serp-api-tool.md)<br> [Content safety (text) tool](./tools-reference/content-safety-text-tool.md)<br> [Azure language detector tool](./tools-reference/azure_language_detector_tool.md) <br> [Azure translator tool](./tools-reference/azure_translator_tool.md) <br> [DB Coplit tool](./tools-reference/db_copilot_tool.md)|
+|Tools reference|[LLM tool](./tools-reference/llm-tool.md)<br> [Prompt tool](./tools-reference/prompt-tool.md)<br> [Python tool](./tools-reference/python-tool.md)<br> [SERP API tool](./tools-reference/serp-api-tool.md)<br> [Embedding tool](./tools-reference/embedding_tool.md)||
 
 ## How to get support
 
