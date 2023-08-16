@@ -34,6 +34,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
+            console.log(data)
             const latestRelease = data[0];
             const previousRelease = data[1];
             const commits = await github.repos.compareCommits({
