@@ -21,5 +21,5 @@ runs:
       auto-activate-base: false
   - name: Test conda environment
     run: |
-      conda list >> $GITHUB_OUTPUT
+      conda list
     shell: bash
