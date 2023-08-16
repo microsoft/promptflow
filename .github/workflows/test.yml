@@ -34,7 +34,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
-            console.log(data)
+            # console.log(data)
             const latestRelease = data[0];
             const previousRelease = data[1];
             const commits = await github.repos.compareCommits({
@@ -46,9 +46,9 @@ jobs:
             let releaseNotes = '';
             commits.data.commits.forEach((commit) => {
               console.log(commit)
-              if (commit.filename.includes('./src/promptflow-tools/')) {
-                releaseNotes += `- ${commit.commit.message}\n`;
-              }
+              # if (commit.filename.includes('./src/promptflow-tools/')) {
+              #   releaseNotes += `- ${commit.commit.message}\n`;
+              # }
             });
             console.log(releaseNotes);
           token: ${{ secrets.GITHUB_TOKEN }}
