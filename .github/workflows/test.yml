@@ -43,6 +43,7 @@ jobs:
               base: previousRelease.tag_name,
               head: latestRelease.tag_name,
             });
+            console.log(commits)
             let releaseNotes = '';
             commits.data.commits.forEach((commit) => {
               if (commit.filename.includes('./src/promptflow-tools/')) {
@@ -65,7 +66,7 @@ jobs:
         with:
           tag_name: ${{ inputs.TagVersion }}
           release_name: ${{ inputs.ReleaseName }}
-          body: Description of the release
+          body: ${{ steps.release_notes.outputs.result }}
           draft: false
           prerelease: ${{ inputs.PreRelease }}
 
