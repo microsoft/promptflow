@@ -118,18 +118,10 @@ hello-world-proj/
 ![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
 
 ## Use your tool from promptflow UI
->[!Note] Currently you need to append flight `PFPackageTools` after studio url.
-
-Step1: Create a standard flow.
-
-Step2: Select the correct runtime ("my-tool-runtime") and add your tools.![AddTool](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step1.png)
-
-Step3: Change flow based on your requirements and run flow in the selected runtime.![Runflow](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step2.png)
-
-## Prepare runtime
+### Prepare runtime
 You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtime). CI is the recommended way.
 
-### Create customized environment
+#### Create customized environment
 1. Create a customized environment with docker context.
 
    Create a customized environment in Azure Machine Learning Studio.
@@ -183,7 +175,7 @@ You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtim
    az ml environment create --subscription <sub-id> -g <resource-group> -w <workspace> -f env.yaml
    ```
 
-### Prepare runtime with CI or MIR
+#### Prepare runtime with CI or MIR
 3. Create runtime with CI using the customized environment created in step 2.
    
    3.1 Create a new compute instance. Existing compute instance created long time ago may hit unexpected issue.
@@ -193,6 +185,14 @@ You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtim
 
 4. Create runtime with MIR using the customized environment created in step 2. Please refer to [this guidance](how-to-create-manage-runtime.md) for the details how to create a runtime with MIR.
     ![CreateRuntimeOnMIR](../media/how-to-verify-customer-tool/create_runtime_on_mir.png)
+### Run flow with your tool 
+>[!Note] Currently you need to append flight `PFPackageTools` after studio url.
+
+Step1: Create a standard flow.
+
+Step2: Select the correct runtime ("my-tool-runtime") and add your tools.![AddTool](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step1.png)
+
+Step3: Change flow based on your requirements and run flow in the selected runtime.![Runflow](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step2.png)
 
 ## FAQ
 ### Why is my custom tool not showing up in the UI?
