@@ -27,10 +27,7 @@ jobs:
 
       - name: Generate release notes
         id: release-notes
-        uses: github-tools/github-release-notes@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
+        uses: ffurrer2/extract-release-notes@v1
 
       - name: Zip folder
         run: |
@@ -45,7 +42,7 @@ jobs:
         with:
           tag_name: ${{ inputs.TagVersion }}
           release_name: ${{ inputs.ReleaseName }}
-          body: ${{ steps.release-notes.outputs.changelog }}
+          body: ${{ steps.extract-release-notes.outputs.release_notes }}
           draft: false
           prerelease: ${{ inputs.PreRelease }}
 
