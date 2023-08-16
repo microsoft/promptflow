@@ -27,7 +27,7 @@ jobs:
 
       - name: Generate release notes
         id: release-notes
-        uses: github-tools/github-release-notes@v1.0.0
+        uses: github-tools/github-release-notes@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
