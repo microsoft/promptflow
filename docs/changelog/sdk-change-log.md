@@ -11,7 +11,7 @@ In this article, learn about Promptflow features releases.
 [![PyPI version](https://badge.fury.io/py/promptflow-tools.svg)](https://badge.fury.io/py/promptflow-tools)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow-tools)](https://pypi.org/project/promptflow-tools/)
 
-## [promptflow: v0.1.0b2](https://pypi.org/project/promptflow/0.1.0b2/) (2022.08.25)
+## promptflow: v0.1.0b2 (2022.08.25)
 
 **New Features:**
 - Local Features
