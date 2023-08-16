@@ -27,10 +27,10 @@ jobs:
 
       - name: Generate release notes
         id: release-notes
-        uses: release-drafter/release-drafter@v5
+        uses: github-tools/github-release-notes@v1.0.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          config-path: .github/release-drafter.yml
+          tag: ${{ github.ref }}
 
       - name: Zip folder
         run: |
@@ -45,7 +45,7 @@ jobs:
         with:
           tag_name: ${{ inputs.TagVersion }}
           release_name: ${{ inputs.ReleaseName }}
-          body: ${{ steps.release_notes.outputs.changes }}
+          body: ${{ steps.release-notes.outputs.changelog }}
           draft: false
           prerelease: ${{ inputs.PreRelease }}
 
