@@ -43,9 +43,9 @@ jobs:
               base: previousRelease.tag_name,
               head: latestRelease.tag_name,
             });
-            console.log(commits)
             let releaseNotes = '';
             commits.data.commits.forEach((commit) => {
+              console.log(commit)
               if (commit.filename.includes('./src/promptflow-tools/')) {
                 releaseNotes += `- ${commit.commit.message}\n`;
               }
