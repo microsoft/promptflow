@@ -19,6 +19,7 @@ def get_notebook_readme_description(notebook) -> str:
             data = json.load(f)
         return data["metadata"]["description"]
     except Exception:
+        print(f"{notebook} metadata description not set")
         return ""
 
 
@@ -32,7 +33,6 @@ def get_readme_description_first_sentence(readme) -> str:
             line = f.readline()
             sentence = ""
             while True:
-                previous_line = line
                 line = f.readline()
                 if line.strip() == "" and sentence != "":
                     break
@@ -46,7 +46,7 @@ def get_readme_description_first_sentence(readme) -> str:
                         sentence += line.strip()
             return sentence
     except Exception:
-        print(f"Error reading {readme}")
+        print(f"Error during reading {readme}")
         return ""
 
 
