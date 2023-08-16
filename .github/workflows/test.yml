@@ -26,28 +26,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Generate release notes
-        id: release_notes
-        uses: actions/github-script@v4
+        id: release-notes
+        uses: release-drafter/release-drafter@v7.0.0
         with:
-          script: |
-            const { data } = await github.repos.listReleases({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            const latestRelease = data[0];
-            const previousRelease = data[1];
-            const commits = await github.repos.compareCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              base: previousRelease.tag_name,
-              head: latestRelease.tag_name,
-            });
-            let releaseNotes = '';
-            commits.data.commits.forEach((commit) => {
-              console.log(commit)
-            });
-            console.log(releaseNotes);
           token: ${{ secrets.GITHUB_TOKEN }}
+          config-path: .github/release-drafter.yml
 
       - name: Zip folder
         run: |
