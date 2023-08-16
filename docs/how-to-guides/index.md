@@ -1,18 +1,19 @@
 # How-to Guides
 
+Simple and short articles grouped by topics, each introduces a core feature of prompt flow and how you can use it to address your specific use cases.
+
 ```{toctree}
 :maxdepth: 1
 
-how-to-create-manage-runtime
-how-to-develop-a-standard-flow
-how-to-develop-a-chat-flow
-how-to-develop-an-evaluation-flow
-how-to-deploy-for-real-time-inference
-how-to-enable-streaming-mode
-how-to-bulk-test-evaluate-flow
-how-to-tune-prompts-using-variants
-how-to-integrate-with-langchain
-how-to-customize-environment-runtime
+quick-start
+init-and-test-a-flow
+run-and-evaluate-a-flow
+tune-prompts-with-variants
+deploy-and-export-a-flow
+manage-connections
+manage-runs
 how-to-create-and-use-your-own-tool-package
+cli-command-reference
+
 ```
 

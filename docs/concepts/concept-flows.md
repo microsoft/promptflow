@@ -20,7 +20,7 @@ Azure Machine Learning prompt flow offers three different flow types to cater to
 
 ## Next steps
 
-- [Quick start](../quick-start.md)
-- [Create standard flows](../how-to-guides/how-to-develop-a-standard-flow.md)
-- [Create chat flows](../how-to-guides/how-to-develop-a-chat-flow.md)
-- [Create evaluation flows](../how-to-guides/how-to-develop-an-evaluation-flow.md)
+- [Quick start](../how-to-guides/quick-start.md)
+- [Initialize and test a flow](../how-to-guides/init-and-test-a-flow.md)
+- [Run and evaluate a flow](../how-to-guides/run-and-evaluate-a-flow.md)
+- [Tune prompts using variants](../how-to-guides/tune-prompts-with-variants.md)
