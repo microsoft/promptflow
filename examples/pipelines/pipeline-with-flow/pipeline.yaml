@@ -1,0 +1,21 @@
+type: pipeline
+
+name: simplePipelineJobWithFlow
+description: The hello world pipeline job with flow
+
+compute: "azureml:cpu-cluster"
+
+inputs:
+  job_data:
+    type: uri_file
+    path: "../../flows/standard/standard-flow/data.jsonl"
+
+outputs:
+  anonymous_command_output: ${{parent.jobs.anonymous_command_flow.outputs.output_data}}
+
+jobs:
+  anonymous_parallel_flow:
+    type: parallel
+    component: ../../flows/standard-flow/flow.dag.yaml
+    inputs:
+      data: ${{parent.inputs.job_data}}
