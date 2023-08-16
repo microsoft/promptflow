@@ -4,4 +4,3 @@ runs:
   steps:
   - name: Display Environment Variables
     run: env | sort >> $GITHUB_OUTPUT
-    shell: bash

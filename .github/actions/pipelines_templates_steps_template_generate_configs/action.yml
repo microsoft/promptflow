@@ -17,7 +17,7 @@ runs:
   using: composite
   steps:
   - name: Generate the connections config file
-    run: |-
+    run: |
       set -xe
       exit_code=0
       echo "Generating connection config file..."
@@ -34,4 +34,3 @@ runs:
           echo "Failed to generate the connection file, please check your script and parameters."
           exit 1
       fi
-    shell: bash
