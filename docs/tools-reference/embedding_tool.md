@@ -47,8 +47,7 @@ The following is an example response returned by the embedding tool:
   <summary>Output</summary>
   
 ```json
-"output": [
--0.005744616035372019,
+[-0.005744616035372019,
 -0.007096089422702789,
 -0.00563855143263936,
 -0.005272455979138613,
@@ -58,7 +57,6 @@ The following is an example response returned by the embedding tool:
 -0.011810848489403725,
 -0.023170066997408867,
 -0.014739611186087132,
-...
-]
+...]
 ```
 </details>
