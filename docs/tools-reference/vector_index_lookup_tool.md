@@ -3,7 +3,7 @@
 Vector Index Lookup is a tool tailored for querying within a Azure ML Vector Index. It empowers users to extract contextually relevant information from a domain knowledge base.
 
 ## Requirements
-- promptflow-vectordb --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+- promptflow-vectordb[azure] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
 
 ## Prerequisites
 - Please follow the instructions from sample flow `Bring your own Data QnA` to prepare a Vector Index as an input.

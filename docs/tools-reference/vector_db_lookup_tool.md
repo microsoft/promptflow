@@ -11,7 +11,7 @@ Vector DB Lookup is a vector search tool that allows users to search top k simil
 This tool will add support for more vector databases.
 
 ## Requirements
-- promptflow-vectordb --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+- promptflow-vectordb[azure] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
 
 
 ## Prerequisites
