@@ -114,7 +114,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
     for readme_telemetry in readme_telemetrys:
         notebook_name = readme_telemetry.readme_folder.split("/")[-1]
         notebook_path = (
-            readme_telemetry.readme_folder.replace("examples/", "") + "/flow.dag.yaml"
+            readme_telemetry.readme_folder.replace("examples/", "") + "/README.md"
         )
         pipeline_name = readme_telemetry.workflow_name
         yaml_name = f"{readme_telemetry.workflow_name}.yml"
