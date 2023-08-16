@@ -31,7 +31,7 @@ Setup connections to provide resources in embedding tool.
 |------------------------|-------------|-----------------------------------------------------------------------|----------|
 | input                  | string      | the input text to embed                                               | Yes      |
 | connection             | string      | the connection for the embedding tool use to provide resources         | Yes      |
-| model, deployment_name | string      | instance of the text-embedding engine to use, model is for OpenAi connection, deployment_name is for AzureOpenAi connection               | Yes      |
+| model/deployment_name  | string      | instance of the text-embedding engine to use. Fill in model name if you use OpenAI connection, or deployment name if use Azure OpenAI connection.    | Yes      |
 
 
 
