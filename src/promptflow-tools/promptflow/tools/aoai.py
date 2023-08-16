@@ -93,6 +93,7 @@ class AzureOpenAI(ToolProvider):
             return generator()
         else:
             # get first element because prompt is single.
+            print("test commit.")
             return response.choices[0].text
 
     @tool
