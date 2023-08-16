@@ -1,0 +1,25 @@
+name: pipelines_templates_steps_template_create_conda_environment_step
+inputs:
+  condaEnvironmentFilePath:
+    required: false
+    default: "./pipelines/configs/release-env.yaml"
+    type: string
+  condaEnvironmentName:
+    required: false
+    default: "$(Build.BuildId)"
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Setup Miniconda
+    uses: conda-incubator/setup-miniconda@v2
+    with:
+      activate-environment: anaconda-client-env
+      environment-file: ${{ github.workspace }}/scripts/building/release-env.yaml
+      python-version: 3.9
+      condarc-file: ${{ github.workspace }}/scripts/building/example-condarc.yaml
+      auto-activate-base: false
+  - name: Test conda environment
+    run: |
+      conda list >> $GITHUB_OUTPUT
+    shell: bash

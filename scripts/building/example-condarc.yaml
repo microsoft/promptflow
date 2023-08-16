@@ -1,0 +1,5 @@
+# Show channel URLs when displaying what is going to be downloaded
+# and in 'conda list'. The default is False.
+show_channel_urls: True
+# For more information about this file see:
+# https://conda.io/docs/user-guide/configuration/use-condarc.html
