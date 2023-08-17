@@ -40,7 +40,7 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          log=$(git log --since ${{ steps.latest_tag.outputs.result }} --pretty=oneline -- ./src/promptflow-tools/*)
+          log=$(git log --since ${{ steps.latest_tag.outputs.result }} --pretty=oneline)
           echo "::set-output name=log::$log"
   
       - name: Zip folder
