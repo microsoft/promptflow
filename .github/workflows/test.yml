@@ -54,7 +54,7 @@ jobs:
       - name: Get log 2
         id: git_log
         run: |
-          echo ::set-output name=log_name::$(git log v1.0.0..HEAD --pretty=oneline -- ./src/promptflow-tools/)
+          echo ::set-output name=log_name::$(git log --oneline)
           
       - name: Use log 2
         run: |
