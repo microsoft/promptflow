@@ -25,8 +25,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Output latest tag
-        run: echo "Latest tag is ${{ github.event.release.tag_name }}"
+      - name: Latest tag
+        id: latest_tag
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const { data } = await github.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const latestRelease = data[0];
+            console.log(latestRelease)
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get git log
         id: git-log
