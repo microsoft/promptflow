@@ -54,7 +54,7 @@ jobs:
       - name: Get log 2
         id: git_log
         run: |
-          echo ::set-output name=log_name::$$(git log ${{ steps.latest_tag.outputs.result }.. --pretty=oneline -- ./src/promptflow-tools/)
+          echo ::set-output name=log_name::$(git log ${{ steps.latest_tag.outputs.result }.. --pretty=oneline -- ./src/promptflow-tools/)
           
       - name: Use log 2
         run: |
