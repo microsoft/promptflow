@@ -53,7 +53,7 @@ jobs:
         tenantId: ${{ secrets.TENANT_ID }}
         clientId: ${{ secrets.CLIENT_ID }}
         clientSecret: ${{ secrets.CLIENT_SECRET }}
-        targetFolder: ${{ env.PYTHONPATH }}
+        targetFolder: src/promptflow
     - name: Azure Login
       uses: azure/login@v1
       with:

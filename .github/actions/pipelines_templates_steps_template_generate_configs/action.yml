@@ -17,6 +17,7 @@ runs:
   using: composite
   steps:
   - name: Generate the connections config file
+    working-directory: ${{ github.workspace }}
     shell: bash -el {0}
     run: |
       set -xe
