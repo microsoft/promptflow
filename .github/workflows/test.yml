@@ -36,14 +36,29 @@ jobs:
             });
             return data[0].tag_name
           token: ${{ secrets.GITHUB_TOKEN }}
+          
       - name: Get tag name
+        id: git_tag
         run: |
           git fetch --tags
           echo ::set-output name=tag_name::$(git tag | tail -1)
-          
-      - name: Use tag name
+
+      - name: Use tag name 1
         run: |
-          echo ${{ steps.get_tag.outputs.tag_name }}
+          echo ${{ steps.git_tag.outputs.tag_name }}
+          
+      - name: Use tag name 2
+        run: |
+          echo ${{ steps.latest_tag.outputs.result }}
+
+      - name: Get log 2
+        id: git_log
+        run: |
+          echo ::set-output name=log_name::$$(git log ${{ steps.latest_tag.outputs.result }.. --pretty=oneline -- ./src/promptflow-tools/)
+          
+      - name: Use log 2
+        run: |
+          echo ${{ steps.git_log.outputs.log_name }}
           
       - name: Get git log
         id: git-log
