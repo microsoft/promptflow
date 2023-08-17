@@ -42,5 +42,5 @@ pf connection update -n custom_connection --set configs.key1='<your_new_key>' se
 
 - To delete a connection:
 ```bash
-pf connection delete -n custom_connection -y
+pf connection delete -n custom_connection
 ```
