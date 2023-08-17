@@ -21,6 +21,7 @@ runs:
     run: |
       set -xe
       exit_code=0
+      conda activate release-env
       echo "Generating connection config file..."
       python3 ./scripts/building/generate_connection_config.py \
           --tenant_id ${{ inputs.TENANT_ID }} \

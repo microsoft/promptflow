@@ -47,7 +47,8 @@ jobs:
         echo "List files in 'dist'"
         ls dist
         pip freeze
-    - uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+    - name: Generate Configs
+      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
       with:
         tenantId: ${{ secrets.TENANT_ID }}
         clientId: ${{ secrets.CLIENT_ID }}
@@ -57,4 +58,19 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Run Coverage Test
+      run: |-
+        set -x -e
+        export IS_IN_CI_PIPELINE="true"
+        az account show
+        conda activate release-env
+        python "scripts/building/run_coverage_tests.py" \
+          -p promptflow \
+          -t "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test" \
+          -l eastus \
+          -m "unittest or e2etest" \
+          -n "2"
+      shell: bash -l {0}
+      working-directory: "src/promptflow"
+  
 
