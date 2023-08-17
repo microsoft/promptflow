@@ -1,0 +1,2 @@
+class Telemetry(object):
+    pass

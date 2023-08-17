@@ -1,6 +1,6 @@
 # Chat With Wikipedia
 
-This is a companion flow to "Ask Wikipedia". It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+This flow demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
 
 Tools used in this flow：
 - `llm` tool
