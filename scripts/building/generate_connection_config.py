@@ -53,7 +53,7 @@ if __name__ == "__main__":
         open(CONNECTION_TPL_FILE_PATH.resolve().absolute(), "r").read()
     )
     file_path = (
-        (Path('.') / args.target_folder / CONNECTION_FILE_NAME).resolve().absolute().as_posix()
+        (Path('.') / "src/promptflow" / CONNECTION_FILE_NAME).resolve().absolute().as_posix()
     )
     print(f"file_path: {file_path}")
 
