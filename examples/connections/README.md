@@ -13,6 +13,7 @@ pip install -r requirements.txt
 ```bash
 # Override keys with --set to avoid yaml file changes
 pf connection create -f custom.yml --set configs.key1='abc'
+pf connection create -f azure_openai.yml --set api_key='abc'
 ```
 
 - To create a custom connection using an `.env` file, execute following command:
@@ -34,12 +35,12 @@ pf connection show --name custom_connection
 ```bash
 # Update an existing connection with --set to override values
 # Update an azure open ai connection with a new api base
-pf connection update -n basic_custom_connection --set api_base='new_value'
+pf connection update -n azure_open_ai_connection --set api_base='new_value'
 # Update a custom connection
 pf connection update -n custom_connection --set configs.key1='abc' secrets.key2='xyz'
 ```
 
 - To delete a connection:
 ```bash
-pf connection delete -n custom_connection
+pf connection delete -n custom_connection -y
 ```

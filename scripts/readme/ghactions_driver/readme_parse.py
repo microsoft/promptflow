@@ -15,7 +15,9 @@ def strip_comments(code):
     splits_no_interactive = [
         split
         for split in splits
-        if "interactive" not in split and "pf flow serve" not in split
+        if "interactive" not in split
+        and "pf flow serve" not in split
+        and "pf connection delete" not in split
     ]  # remove --interactive and pf flow serve and pf export docker
     text = "\n".join([ll.rstrip() for ll in splits_no_interactive])
     # replacements
