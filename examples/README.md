@@ -24,10 +24,7 @@ table th:nth-of-type(3) {
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
 
-
-## Examples available
-
-### Getting started notebooks
+## Getting started notebooks
 
 | path | status | description |
 ------|--------|-------------
@@ -35,11 +32,11 @@ table th:nth-of-type(3) {
 | [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | get started - Azure AI |
 
 
+## CLI Examples
+
 ### Flows ([flows](flows))
 
 #### [Standard flows](flows/standard/) 
-
-* Readmes
 
 | path | status | description |
 ------|--------|-------------
@@ -53,10 +50,7 @@ table th:nth-of-type(3) {
 | [web-classification](flows/standard/web-classification/README.md) | [![samples_flows_standard_web_classification](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_web_classification.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_web_classification.yml) |  This is a flow demonstrating multi-class classification with LLM |
 
 
-
 #### [Evaluation flows](flows/evaluation/)
-
-* Readmes
 
 | path | status | description |
 ------|--------|-------------
@@ -64,10 +58,7 @@ table th:nth-of-type(3) {
 | [classification-accuracy-eval](flows/evaluation/classification-accuracy-eval/README.md) | [![samples_flows_evaluation_classification_accuracy_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_classification_accuracy_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_classification_accuracy_eval.yml) |  This is a flow illustrating how to evaluate the performance of a classification system |
 
 
-
 #### [Chat flows](flows/chat/)
-
-* Readmes
 
 | path | status | description |
 ------|--------|-------------
@@ -76,38 +67,28 @@ table th:nth-of-type(3) {
 | [chat-with-wikipedia](flows/chat/chat-with-wikipedia/README.md) | [![samples_flows_chat_chat_with_wikipedia](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_wikipedia.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_wikipedia.yml) |  This is a companion flow to "Ask Wikipedia" |
 
 
-* Notebooks
-
-| path | status | description |
-------|--------|-------------
-| [chat-with-pdf.ipynb](flows/chat/chat-with-pdf) | [![samples_flows_chat_chatwithpdf_chatwithpdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml) | chat with pdf example |
-
-
-
 ### Connections ([connections](connections))
-
-* Readmes
 
 | path | status | description |
 ------|--------|-------------
 | [connections](connections/README.md) | [![samples_connections](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml) |  This repository contains example `YAML` files for creating `connection` using prompt-flow cli |
 
 
-* Notebooks
+### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
 
 | path | status | description |
 ------|--------|-------------
-| [connection.ipynb](connections) | [![samples_connections_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml) | connections sdk experience |
+| [deploy.md](tutorials/flow-deploy/deploy.md) | [![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml) | deploy flow as endpoint
 
-
-
-### Tutorials ([tutorials](tutorials))
+## SDK examples
 
 | path | status | description |
 ------|--------|-------------
 | [pipeline.ipynb](tutorials/flow-in-pipeline) | [![samples_flowinpipeline_pipeline](https://github.com/microsoft/promptflow/actions/workflows/samples_flowinpipeline_pipeline.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flowinpipeline_pipeline.yml) | flow as component in pipeline |
 | [cloud-run-management.ipynb](tutorials/run-management) | [![samples_runmanagement_cloudrunmanagement](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml) | advanced flow run management |
-| [deploy.md](tutorials/flow-deploy/deploy.md) | [![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml) | deploy flow as endpoint
+| [connection.ipynb](connections) | [![samples_connections_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml) | connections sdk experience |
+| [chat-with-pdf.ipynb](flows/chat/chat-with-pdf) | [![samples_flows_chat_chatwithpdf_chatwithpdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml) | chat with pdf example |
+
 
 ## Contributing
 
