@@ -42,7 +42,7 @@ jobs:
         run: |
           tag=$(git tag | tail -1)
           echo "$tag"
-          log = $(git log $tag.. --pretty=oneline -- ./src/promptflow-tools/)
+          log=$(git log $tag.. --pretty=oneline -- ./src/promptflow-tools/)
           echo "$log"
           # echo "::set-output name=log::$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
           # echo "$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
