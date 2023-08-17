@@ -40,9 +40,11 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          echo "::set-output name=log::$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
-          echo "$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
-          echo "$(git tag | tail -1)"
+          git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/ > logs.txt
+          cat gitlog.txt
+          # echo "::set-output name=log::$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
+          # echo "$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
+          # echo "$(git tag | tail -1)"
   
       - name: Zip folder
         run: |
