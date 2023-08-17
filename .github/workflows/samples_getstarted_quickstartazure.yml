@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  quickstart-azure:
+  samples_notebook_ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
