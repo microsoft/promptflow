@@ -30,12 +30,13 @@ def generate_docstring(divided: list[str]):
         try:
             docstring = llm.query(docstring_prompt(item))
         except PromptException as e:
-            logging.error(e.message)
+            logging.warning(e.message + ', will divide the code into two parts.')
             divided_tmp = Divider.divide_half(item)
             if len(divided_tmp) > 1:
                 divided.extend(list(reversed(divided_tmp)))
                 continue
             else:
+                logging.warning('The code is too short and divide fail, will not generate docstring.')
                 docstring = ''
         res_code.append(Divider.merge_doc2code(docstring, item))
     return res_code
@@ -54,6 +55,7 @@ def execute_pipeline(*pipelines, args=None):
 
 
 code_str = """class PipelineComponentBuilder:
+    \"\"\"PipelineComponentBuilder is a class that helps build a PipelineComponent object.\"\"\"
     # map from python built-in type to component type
     # pylint: disable=too-many-instance-attributes
     DEFAULT_DATA_TYPE_MAPPING = {
@@ -410,7 +412,7 @@ code_str = """class PipelineComponentBuilder:
 _definition_builder_stack = _PipelineComponentBuilderStack()
 """
 if __name__ == "__main__":
-    # load_dotenv()
+    load_dotenv()
     # res = execute_pipeline(
     #     load_code,
     #     divide_code,
@@ -419,10 +421,10 @@ if __name__ == "__main__":
     #     args='./demo_code.py'
     # )
     # print(res)
-    divided_tmp = Divider.get_functions(code_str)
-    for item in divided_tmp:
-        print(item)
-        print('========next============')
-    # generate_docstring([code_str])
+    # divided_tmp = Divider.divide_half(code_str)
+    # print(len(divided_tmp))
+    # for item in divided_tmp:
+    #     print(item, end='')
+    print(combine_code(generate_docstring([code_str])))
 
     # print(divide_code(load_code('./demo_code.py')))

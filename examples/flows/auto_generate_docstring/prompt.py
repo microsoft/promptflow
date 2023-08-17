@@ -21,7 +21,7 @@ class PromptException(Exception):
         return self.__class__.__name__
 
 
-def docstring_prompt(code: str, module: str='') -> str:
-    functions = Divider.get_functions(code)
+def docstring_prompt(code: str, module: str = '') -> str:
+    functions, _ = Divider.get_functions_and_pos(code)
     with open('doc_format.jinja2') as file:
         return render_jinja_template(prompt=file.read(), module=module, code=code, functions=functions)

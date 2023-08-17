@@ -9,7 +9,7 @@ class Settings:
         "py": r"\n(def|class)",
     }
     matchs = {
-        "py": r" *(class|def)\s+(\w+)\s*(\([^)]*\))?\s*(->\s*\w+:|:)"
+        "py": r"((\n {,6})|^)(class|def)\s+(\w+)\s*(\([^)]*\))?\s*(->\s*\w+:|:) *"
     }
 
 
@@ -42,24 +42,22 @@ class Divider:
         """
         Divide the content into two parts, but ensure that the function body is not split.
         """
-        matches = re.finditer(Settings.matchs[Divider.language], text)
-        indexes = []
-        for match in matches:
-            indexes.append((match.start(), match.end()))
-
-        if len(indexes) > 1:
-            i = len(indexes) // 2
-            return [text[0:indexes[i][0]], text[indexes[i][0]:]]
+        _, pos = Divider.get_functions_and_pos(text)
+        if len(pos) > 1:
+            i = len(pos) // 2
+            return [text[0:pos[i][0]], text[pos[i][0]:]]
         return text
 
     @classmethod
-    def get_functions(cls, text) -> list[str]:
+    def get_functions_and_pos(cls, text):
         matches = re.finditer(Settings.matchs[Divider.language], text)
         functions = []
+        pos = []
         for match in matches:
-            matched_text = match.group().strip()
-            functions.append(re.sub(r'\s+', ' ', matched_text.replace('\n', '')).replace(', )', ')'))
-        return functions
+            matched_text = match.group().replace('\n', '')
+            functions.append(re.sub(r'( +)', ' ', matched_text).replace(', )', ')').strip())
+            pos.append((match.start(), match.end()))
+        return functions, pos
 
     @classmethod
     def combine(cls, divided: list[str]):
@@ -67,43 +65,25 @@ class Divider:
 
     @classmethod
     def merge_doc2code(cls, docstring: str, origin_code: str) -> str:
-        regexpes = re.finditer(r"\==(.+?)\==", docstring)
-        indexes = []
-
-        while True:
+        funcs1, pos1 = Divider.get_functions_and_pos(docstring)
+        funcs2, pos2 = Divider.get_functions_and_pos(origin_code)
+        pattern = r'""".*?"""'
+        code = ""
+        pos1.append((pos1[-1][0] + 1, pos1[-1][0] + 1))  # avoid index out of range
+        pos2.append((pos2[-1][0] + 1, pos2[-1][0] + 1))  # avoid index out of range
+        for i2 in range(len(funcs2)):  # add docstring for each function in origin_code
             try:
-                match = next(regexpes)
-                start = match.start()
-                end = match.end()
-                indexes.append((start, end))
-            except:
-                break
-
-        names = []
-        comments = []
-        for i in range(len(indexes)):
-            names.append(docstring[indexes[i][0] + 2:indexes[i][1] - 2])
-            if i < len(indexes) - 1:
-                doc = docstring[indexes[i][1] + 1: indexes[i + 1][0]]
-                comments.append(doc.rstrip())
-            elif docstring[indexes[i][1]:] != "==end==":
-                comments.append(docstring[indexes[i][1]:])
-
-        code = origin_code
-        for i in range(len(names)):
-            try:
-                index = code.index(names[i])
+                i1 = funcs1.index(funcs2[i2])
+                new_doc =re.findall(pattern, docstring[pos1[i1][1]:pos1[i1+1][0]], re.DOTALL)
+                if new_doc:
+                    code_doc = re.findall(pattern, origin_code[pos2[i2][1]:pos2[i2+1][0]], re.DOTALL)
+                    if code_doc:
+                        code += origin_code[pos2[i2][0]:pos2[i2+1][0]].replace(code_doc[0], new_doc[0])
+                    else:
+                        line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
+                        space = (len(line) - len(line.lstrip()) + 4) * ' '
+                        code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + space + new_doc[0] + '\n' + \
+                                origin_code[pos2[i2][1]:pos2[i2+1][0]]
             except ValueError:
                 continue
-            split_start = code[index:]
-            doubledot = index + split_start.index(":\n") + 1
-            tabs = re.search(r":\n(.*?)[a-zA-Z]", split_start).span()
-            tabs_count = tabs[1] - tabs[0]
-            tab = (tabs_count - 3) * " "
-            replace_text = code[index:doubledot]
-            new_replace_text = comments[i].replace("\n", f"\n{tab}")
-            code = code.replace(
-                replace_text,
-                f'{replace_text}\n{tab}"""\n{tab}{new_replace_text}\n{tab}"""',
-            )
         return code

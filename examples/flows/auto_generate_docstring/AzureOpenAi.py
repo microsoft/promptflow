@@ -97,54 +97,62 @@ class ChatLLM(AOAI):
         self.unique_convo_id = None
 
     def query_with_nostream(self, text, **kwargs):
-        convo_id = kwargs.pop('conversation', self.get_unique_convo_id())
-        if convo_id not in self.conversation:
-            self.reset(convo_id=convo_id, system_prompt=self.system_prompt)
-        self.add_to_conversation(text, "user", convo_id=convo_id)
-        self.validate_tokens(convo_id=convo_id)
-        temperature = kwargs.pop("temperature", 0.1)
-        response = openai.ChatCompletion.create(
-            engine=self.engine,
-            messages=self.conversation[convo_id],
-            temperature=temperature,
-            max_tokens=self.max_tokens,
-            stream=False,
-            **kwargs,
-        )
-        response_role = response["choices"][0]["message"]["role"]
-        full_response = response["choices"][0]["message"]["content"]
-        self.add_to_conversation(full_response, response_role, convo_id=convo_id)
-        self.del_conversation(convo_id=self.unique_convo_id)
-        return full_response
+        try:
+            convo_id = kwargs.pop('conversation', self.get_unique_convo_id())
+            if convo_id not in self.conversation:
+                self.reset(convo_id=convo_id, system_prompt=self.system_prompt)
+            self.add_to_conversation(text, "user", convo_id=convo_id)
+            self.validate_tokens(convo_id=convo_id)
+            temperature = kwargs.pop("temperature", 0.1)
+            response = openai.ChatCompletion.create(
+                engine=self.engine,
+                messages=self.conversation[convo_id],
+                temperature=temperature,
+                max_tokens=self.max_tokens,
+                stream=False,
+                **kwargs,
+            )
+            response_role = response["choices"][0]["message"]["role"]
+            full_response = response["choices"][0]["message"]["content"]
+            self.add_to_conversation(full_response, response_role, convo_id=convo_id)
+            return full_response
+        except Exception as e:
+            raise e
+        finally:
+            self.del_conversation(convo_id=self.unique_convo_id)
 
     def query_with_stream(self, text, **kwargs):
-        convo_id = kwargs.pop('conversation', self.get_unique_convo_id())
-        if convo_id not in self.conversation:
-            self.reset(convo_id=convo_id, system_prompt=self.system_prompt)
-        self.add_to_conversation(text, "user", convo_id=convo_id)
-        self.validate_tokens(convo_id=convo_id)
-        temperature = kwargs.pop("temperature", 0.1)
-        response = openai.ChatCompletion.create(
-            engine=self.engine,
-            messages=self.conversation[convo_id],
-            temperature=temperature,
-            max_tokens=self.max_tokens,
-            stream=True,
-            **kwargs,
-        )
+        try:
+            convo_id = kwargs.pop('conversation', self.get_unique_convo_id())
+            if convo_id not in self.conversation:
+                self.reset(convo_id=convo_id, system_prompt=self.system_prompt)
+            self.add_to_conversation(text, "user", convo_id=convo_id)
+            self.validate_tokens(convo_id=convo_id)
+            temperature = kwargs.pop("temperature", 0.1)
+            response = openai.ChatCompletion.create(
+                engine=self.engine,
+                messages=self.conversation[convo_id],
+                temperature=temperature,
+                max_tokens=self.max_tokens,
+                stream=True,
+                **kwargs,
+            )
 
-        response_role = None
-        full_response = ""
-        for chunk in response:
-            delta = chunk["choices"][0]["delta"]
-            if "role" in delta:
-                response_role = delta["role"]
-            if "content" in delta:
-                content = delta["content"]
-                full_response += content
-                yield content
-        self.add_to_conversation(full_response, response_role, convo_id=convo_id)
-        self.del_conversation(convo_id=self.unique_convo_id)
+            response_role = None
+            full_response = ""
+            for chunk in response:
+                delta = chunk["choices"][0]["delta"]
+                if "role" in delta:
+                    response_role = delta["role"]
+                if "content" in delta:
+                    content = delta["content"]
+                    full_response += content
+                    yield content
+            self.add_to_conversation(full_response, response_role, convo_id=convo_id)
+        except Exception as e:
+            raise e
+        finally:
+            self.del_conversation(convo_id=self.unique_convo_id)
 
     def get_unique_convo_id(self):
         self.unique_convo_id = str(uuid.uuid4()).replace('-', '')
