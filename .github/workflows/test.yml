@@ -41,7 +41,7 @@ jobs:
         id: git-log
         run: |
           git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/ > logs.txt
-          cat gitlog.txt
+          cat log.txt
           # echo "::set-output name=log::$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
           # echo "$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
           # echo "$(git tag | tail -1)"
