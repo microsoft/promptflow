@@ -1,21 +1,15 @@
-<style>
-table {
-    width: 100%;
-}
-table th:first-of-type {
-    width: 10%;
-}
-table th:nth-of-type(2) {
-    width: 40%;
-}
-table th:nth-of-type(3) {
-    width: 50%;
-}
-</style>
+<style> .foo table { width: 100%; } .foo table th:first-of-type { width: 10%; } .foo table th:nth-of-type(2) { width: 40%; } .foo table th:nth-of-type(3) { width: 50%; }</style>
 # Promptflow examples
 
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
+
+## Please try there notebooks to get started!
+
+| path | status | description |
+------|--------|-------------
+{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
+{% endfor %}
 
 ## Prerequisites
 
@@ -24,12 +18,7 @@ table th:nth-of-type(3) {
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
 
-## Getting started
-
-| path | status | description |
-------|--------|-------------
-{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
-{% endfor %}
+<div class="foo">
 
 ## CLI Examples
 
@@ -73,6 +62,8 @@ table th:nth-of-type(3) {
 
 | path | status | description |
 ------|--------|-------------
+{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
+{% endfor %}
 {% for tutorial in tutorials.notebooks %}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
 {% endfor %}
 {%- if connections.notebooks|length > 0 -%}{% for connection in connections.notebooks %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
@@ -83,6 +74,8 @@ table th:nth-of-type(3) {
 {% endfor %}{% endif %}
 {%- if flows.notebooks|length > 0 -%}{% for flow in flows.notebooks %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
 {% endfor %}{% endif %}
+
+</div>
 
 ## Contributing
 
