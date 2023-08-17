@@ -1,9 +1,10 @@
 from pathlib import Path
 
 from .readme_step import ReadmeStepsManage, ReadmeSteps
+from ghactions_driver.telemetry_obj import Telemetry
 
 
-def write_readme_workflow(readme_path):
+def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     relative_path = Path(readme_path).relative_to(
         Path(ReadmeStepsManage.git_base_dir())
     )
@@ -38,5 +39,7 @@ def write_readme_workflow(readme_path):
     else:
         ReadmeSteps.extract_steps_and_run()
 
-    ReadmeStepsManage.write_workflow(workflow_name, "auto_generated_steps")
+    ReadmeStepsManage.write_workflow(
+        workflow_name, "auto_generated_steps", output_telemetry
+    )
     ReadmeSteps.cleanup()
