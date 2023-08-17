@@ -1,21 +1,16 @@
-<style>
-table {
-    width: 100%;
-}
-table th:first-of-type {
-    width: 10%;
-}
-table th:nth-of-type(2) {
-    width: 40%;
-}
-table th:nth-of-type(3) {
-    width: 50%;
-}
-</style>
+<style> .foo table { width: 100%; } .foo table th:first-of-type { width: 10%; } .foo table th:nth-of-type(2) { width: 40%; } .foo table th:nth-of-type(3) { width: 50%; }</style>
 # Promptflow examples
 
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
+
+## Please try there notebooks to get started!
+
+| path | status | description |
+------|--------|-------------
+| [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | get started |
+| [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | get started - Azure AI |
+
 
 ## Prerequisites
 
@@ -24,13 +19,7 @@ table th:nth-of-type(3) {
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
 
-## Getting started
-
-| path | status | description |
-------|--------|-------------
-| [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | get started |
-| [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | get started - Azure AI |
-
+<div class="foo">
 
 ## CLI Examples
 
@@ -84,11 +73,16 @@ table th:nth-of-type(3) {
 
 | path | status | description |
 ------|--------|-------------
+| [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | get started |
+| [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | get started - Azure AI |
+
 | [pipeline.ipynb](tutorials/flow-in-pipeline) | [![samples_flowinpipeline_pipeline](https://github.com/microsoft/promptflow/actions/workflows/samples_flowinpipeline_pipeline.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flowinpipeline_pipeline.yml) | flow as component in pipeline |
 | [cloud-run-management.ipynb](tutorials/run-management) | [![samples_runmanagement_cloudrunmanagement](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml) | advanced flow run management |
 | [connection.ipynb](connections) | [![samples_connections_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml) | connections sdk experience |
 | [chat-with-pdf.ipynb](flows/chat/chat-with-pdf) | [![samples_flows_chat_chatwithpdf_chatwithpdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml) | chat with pdf example |
 
+
+</div>
 
 ## Contributing
 
