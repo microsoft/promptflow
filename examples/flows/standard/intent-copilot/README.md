@@ -1,5 +1,6 @@
 # Intent-copilot
-This example shows how to create a flow from existing langchain [code](./intent.py). 
+This example shows how to create a flow from existing langchain code.
+Reference [code](./intent.py). 
 
 ## Prerequisites
 
