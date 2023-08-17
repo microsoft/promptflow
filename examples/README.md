@@ -24,7 +24,7 @@ table th:nth-of-type(3) {
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
 
-## Getting started notebooks
+## Getting started
 
 | path | status | description |
 ------|--------|-------------
