@@ -27,7 +27,7 @@ runs:
       python3 ./scripts/building/generate_connection_config.py \
           --tenant_id ${{ inputs.tenantId }} \
           --client_id ${{ inputs.clientId }} \
-          --client_secret ${{ inputs.clientSecret }}
+          --client_secret ${{ inputs.clientSecret }} \
           --target_folder ${{ inputs.targetFolder }}
       if [ -f "${{ inputs.targetFolder }}/connections.json" ]
       then
