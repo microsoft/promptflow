@@ -24,9 +24,9 @@ runs:
       conda activate release-env
       echo "Generating connection config file..."
       python3 ./scripts/building/generate_connection_config.py \
-          --tenant_id ${{ inputs.TENANT_ID }} \
-          --client_id ${{ inputs.CLIENT_ID }} \
-          --client_secret ${{ inputs.CLIENT_SECRET }}
+          --tenant_id ${{ inputs.tenantId }} \
+          --client_id ${{ inputs.clientId }} \
+          --client_secret ${{ inputs.clientSecret }}
           --target_folder ${{ inputs.targetFolder }}
       if [ -f "${{ inputs.targetFolder }}/connections.json" ]
       then
