@@ -33,24 +33,13 @@ def output(input: Input, import_node: Import, startHnd=1, endHnd=None, uuids=Non
     :return: The Output object.
     :rtype: ~azure.ai.ml.entities._inputs_outputs.Output
     """
-    pass
-
 
 Add a docstring to the following class/functions, following the sphinx style and refer above function docstring example:
 {{module}}
 {{code}}
 
-Please output docstring using the following format:
-==class/def {Name}==
-docstring context
-==class/def {Name}==
-docstring context
-...
-==end==
-
-Example:
-==class Splitter==
-...
-==def __init__==
-...
-==end==
+Please output docstring using the following format, no need for function body:
+{% for func in functions %}
+{{func}}
+{docstring context}
+{% endfor %}
