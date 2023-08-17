@@ -1,14 +1,11 @@
-<style> .foo table { width: 100%; } .foo table th:first-of-type { width: 10%; } .foo table th:nth-of-type(2) { width: 40%; } .foo table th:nth-of-type(3) { width: 50%; }</style>
 # Promptflow examples
 
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
 
-<div class="foo">
-
 ## Please try there notebooks to get started!
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 {% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
 {% endfor %}
@@ -26,41 +23,41 @@
 
 #### [Standard flows](flows/standard/) 
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 {% for flow in flows.readmes %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
 {% endfor %}
 
 #### [Evaluation flows](flows/evaluation/)
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 {% for evaluation in evaluations.readmes %}| [{{ evaluation.name }}]({{ evaluation.path }}) | [![{{evaluation.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}) | {{ evaluation.description }} |
 {% endfor %}
 
 #### [Chat flows](flows/chat/)
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 {% for chat in chats.readmes %}| [{{ chat.name }}]({{ chat.path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
 {% endfor %}
 
 ### Connections ([connections](connections))
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 {% for connection in connections.readmes %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
 {% endfor %}
 
 ### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [deploy.md](tutorials/flow-deploy/deploy.md) | [![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml) | deploy flow as endpoint
 
 ## SDK examples
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 {% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
 {% endfor %}
@@ -74,8 +71,6 @@
 {% endfor %}{% endif %}
 {%- if flows.notebooks|length > 0 -%}{% for flow in flows.notebooks %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
 {% endfor %}{% endif %}
-
-</div>
 
 ## Contributing
 

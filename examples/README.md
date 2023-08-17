@@ -1,14 +1,11 @@
-<style> .foo table { width: 100%; } .foo table th:first-of-type { width: 10%; } .foo table th:nth-of-type(2) { width: 40%; } .foo table th:nth-of-type(3) { width: 50%; }</style>
 # Promptflow examples
 
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
 
-<div class="foo">
-
 ## Please try there notebooks to get started!
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | get started |
 | [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | get started - Azure AI |
@@ -27,7 +24,7 @@
 
 #### [Standard flows](flows/standard/) 
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [basic](flows/standard/basic/README.md) | [![samples_flows_standard_basic](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic.yml) |  A basic standard flow using custom python tool that calls Azure OpenAI with connection info stored in environment variables |
 | [basic-with-builtin-llm](flows/standard/basic-with-builtin-llm/README.md) | [![samples_flows_standard_basic_with_builtin_llm](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic_with_builtin_llm.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic_with_builtin_llm.yml) |  A basic standard flow that calls Azure OpenAI with builtin llm tool |
@@ -41,7 +38,7 @@
 
 #### [Evaluation flows](flows/evaluation/)
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [basic-eval](flows/evaluation/basic-eval/README.md) | [![samples_flows_evaluation_basic_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_basic_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_basic_eval.yml) |  This example shows how to create a basic evaluation flow |
 | [classification-accuracy-eval](flows/evaluation/classification-accuracy-eval/README.md) | [![samples_flows_evaluation_classification_accuracy_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_classification_accuracy_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_classification_accuracy_eval.yml) |  This is a flow illustrating how to evaluate the performance of a classification system |
@@ -49,7 +46,7 @@
 
 #### [Chat flows](flows/chat/)
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [basic-chat](flows/chat/basic-chat/README.md) | [![samples_flows_chat_basic_chat](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_basic_chat.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_basic_chat.yml) |  This example shows how to create a basic chat flow |
 | [chat-with-pdf](flows/chat/chat-with-pdf/README.md) | [![samples_flows_chat_chat_with_pdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_pdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chat_with_pdf.yml) |  This is a simple flow that allow you to ask questions about the content of a PDF file and get answers |
@@ -58,20 +55,20 @@
 
 ### Connections ([connections](connections))
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [connections](connections/README.md) | [![samples_connections](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml) |  This folder contains example `YAML` files for creating `connection` using `pf` cli |
 
 
 ### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [deploy.md](tutorials/flow-deploy/deploy.md) | [![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml) | deploy flow as endpoint
 
 ## SDK examples
 
-| path | status | description |
+| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
 ------|--------|-------------
 | [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | get started |
 | [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | get started - Azure AI |
@@ -81,8 +78,6 @@
 | [connection.ipynb](connections) | [![samples_connections_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml) | connections sdk experience |
 | [chat-with-pdf.ipynb](flows/chat/chat-with-pdf) | [![samples_flows_chat_chatwithpdf_chatwithpdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml) | chat with pdf example |
 
-
-</div>
 
 ## Contributing
 
