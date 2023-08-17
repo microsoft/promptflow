@@ -5,6 +5,7 @@ import workflow_generator
 import readme_generator
 from jinja2 import Environment, FileSystemLoader
 from ghactions_driver.readme_step import ReadmeStepsManage
+from operator import itemgetter
 
 BRANCH = "main"
 
@@ -56,11 +57,30 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
     ReadmeStepsManage.git_base_dir()
     readme_file = Path(ReadmeStepsManage.git_base_dir()) / "examples/README.md"
 
-    tutorials = []
-    flows = []
-    evaluations = []
-    chats = []
-    connections = []
+    quickstarts = {
+        "readmes": [],
+        "notebooks": [],
+    }
+    tutorials = {
+        "readmes": [],
+        "notebooks": [],
+    }
+    flows = {
+        "readmes": [],
+        "notebooks": [],
+    }
+    evaluations = {
+        "readmes": [],
+        "notebooks": [],
+    }
+    chats = {
+        "readmes": [],
+        "notebooks": [],
+    }
+    connections = {
+        "readmes": [],
+        "notebooks": [],
+    }
 
     for workflow_telemetry in workflow_telemetrys:
         notebook_name = f"{workflow_telemetry.name}.ipynb"
@@ -73,7 +93,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         description = get_notebook_readme_description(workflow_telemetry.notebook)
         notebook_path = gh_working_dir.replace("examples/", "")
         if gh_working_dir.startswith("examples/flows/standard"):
-            flows.append(
+            flows["notebooks"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -83,7 +103,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
                 }
             )
         elif gh_working_dir.startswith("examples/connections"):
-            connections.append(
+            connections["notebooks"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -93,7 +113,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
                 }
             )
         elif gh_working_dir.startswith("examples/flows/evaluation"):
-            evaluations.append(
+            evaluations["notebooks"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -103,17 +123,28 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
                 }
             )
         elif gh_working_dir.startswith("examples/tutorials"):
-            tutorials.append(
-                {
-                    "name": notebook_name,
-                    "path": notebook_path,
-                    "pipeline_name": pipeline_name,
-                    "yaml_name": yaml_name,
-                    "description": description,
-                }
-            )
+            if "quickstart" in notebook_name:
+                quickstarts["notebooks"].append(
+                    {
+                        "name": notebook_name,
+                        "path": notebook_path,
+                        "pipeline_name": pipeline_name,
+                        "yaml_name": yaml_name,
+                        "description": description,
+                    }
+                )
+            else:
+                tutorials["notebooks"].append(
+                    {
+                        "name": notebook_name,
+                        "path": notebook_path,
+                        "pipeline_name": pipeline_name,
+                        "yaml_name": yaml_name,
+                        "description": description,
+                    }
+                )
         elif gh_working_dir.startswith("examples/flows/chat"):
-            chats.append(
+            chats["notebooks"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -124,6 +155,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
             )
         else:
             print(f"Unknown workflow type: {gh_working_dir}")
+
+    # Adjust tutorial names:
 
     for readme_telemetry in readme_telemetrys:
         notebook_name = readme_telemetry.readme_folder.split("/")[-1]
@@ -138,7 +171,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         readme_folder = readme_telemetry.readme_folder
 
         if readme_folder.startswith("examples/flows/standard"):
-            flows.append(
+            flows["readmes"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -148,8 +181,9 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
                 }
             )
         elif readme_folder.startswith("examples/connections"):
-            connections.append(
+            connections["readmes"].append(
                 {
+                    "name": notebook_name,
                     "path": notebook_path,
                     "pipeline_name": pipeline_name,
                     "yaml_name": yaml_name,
@@ -157,7 +191,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
                 }
             )
         elif readme_folder.startswith("examples/flows/evaluation"):
-            evaluations.append(
+            evaluations["readmes"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -167,17 +201,28 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
                 }
             )
         elif readme_folder.startswith("examples/tutorials"):
-            tutorials.append(
-                {
-                    "name": notebook_name,
-                    "path": notebook_path,
-                    "pipeline_name": pipeline_name,
-                    "yaml_name": yaml_name,
-                    "description": description,
-                }
-            )
+            if "quickstart" in notebook_name:
+                quickstarts["readmes"].append(
+                    {
+                        "name": notebook_name,
+                        "path": notebook_path,
+                        "pipeline_name": pipeline_name,
+                        "yaml_name": yaml_name,
+                        "description": description,
+                    }
+                )
+            else:
+                tutorials["readmes"].append(
+                    {
+                        "name": notebook_name,
+                        "path": notebook_path,
+                        "pipeline_name": pipeline_name,
+                        "yaml_name": yaml_name,
+                        "description": description,
+                    }
+                )
         elif readme_folder.startswith("examples/flows/chat"):
-            chats.append(
+            chats["readmes"].append(
                 {
                     "name": notebook_name,
                     "path": notebook_path,
@@ -189,6 +234,11 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         else:
             print(f"Unknown workflow type: {readme_folder}")
 
+    quickstarts["notebooks"] = sorted(
+        quickstarts["notebooks"],
+        key=itemgetter("name"),
+        reverse=True,
+    )
     replacement = {
         "branch": BRANCH,
         "tutorials": tutorials,
@@ -196,6 +246,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         "evaluations": evaluations,
         "chats": chats,
         "connections": connections,
+        "quickstarts": quickstarts,
     }
 
     print("writing README.md...")
@@ -216,7 +267,10 @@ if __name__ == "__main__":
     workflow_telemetrys = []
     workflow_generator.main(input_glob, workflow_telemetrys)
 
-    input_glob_readme = ["examples/flows/**/README.md"]
+    input_glob_readme = [
+        "examples/flows/**/README.md",
+        "examples/connections/**/README.md",
+    ]
     readme_telemetrys = []
     readme_generator.main(input_glob_readme, readme_telemetrys)
 
