@@ -27,13 +27,45 @@ jobs:
       uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
     - name: Conda Setup
       uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
-    - name: Setup Requirements
-      uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
+    - name: Set up conda environment
+      uses: conda-incubator/setup-miniconda@v2
       with:
-        packageSetupType: 'promptflow_new_extra'
-        scriptPath: ${{ env.PYTHONPATH }}
-    - name: Generate Configs
-      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+        miniconda-version: "latest"
+        activate-environment: release-env
+        environment-file: scripts/building/release-env.yml
+        auto-update-conda: true
+        auto-activate-base: false
+    - name: Show conda info
+      shell: bash -l {0}
+      run: |
+        conda activate release-env
+        conda info
+        conda list
+        conda config --show-sources
+        conda config --show
+        python --version
+    - name: Delete existing packages in the 'dist' folder
+      working-directory: src/promptflow/
+      shell: bash
+      run: |
+        echo "Delete existing packages in the 'dist' directory of 'promptflow/'"
+        rm -f ./dist/*
+        if [ $? != 0 ]; then
+            echo "Failed to delete existing dist folder for 'promptflow/'"
+            exit 1
+        fi
+    - name: Build wheel
+      working-directory: src/promptflow/
+      shell: bash -l {0}
+      run: |
+        conda activate release-env
+        echo "Build wheel for 'promptflow/'"
+        python setup.py bdist_wheel -b bdist
+        echo "List files in 'dist'"
+        cd dist
+        pwd
+        ls
+    - uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
       with:
         tenantId: ${{ secrets.TENANT_ID }}
         clientId: ${{ secrets.CLIENT_ID }}
