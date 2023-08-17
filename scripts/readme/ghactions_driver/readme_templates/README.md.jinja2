@@ -37,31 +37,31 @@
 
 #### [Chat flows](flows/chat/)
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
+| path | status | description |
 ------|--------|-------------
 {% for chat in chats.readmes %}| [{{ chat.name }}]({{ chat.path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
 {% endfor %}
 
 ### Connections ([connections](connections))
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
+| path | status | description |
 ------|--------|-------------
 {% for connection in connections.readmes %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
 {% endfor %}
 
 ### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
+| path | status | description |
 ------|--------|-------------
 | [deploy.md](tutorials/flow-deploy/deploy.md) | [![batch-score-rest](https://github.com/Azure/azureml-examples/workflows/cli-scripts-batch-score-rest/badge.svg?branch=main)](https://github.com/Azure/azureml-examples/actions/workflows/cli-scripts-batch-score-rest.yml) | deploy flow as endpoint
 
 ## SDK examples
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
+| path | status | description |
 ------|--------|-------------
 {% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
 {% endfor %}
-{% for tutorial in tutorials.notebooks %}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
+{%- for tutorial in tutorials.notebooks -%}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
 {% endfor %}
 {%- if connections.notebooks|length > 0 -%}{% for connection in connections.notebooks %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
 {% endfor %}{% endif %}
@@ -71,6 +71,7 @@
 {% endfor %}{% endif %}
 {%- if flows.notebooks|length > 0 -%}{% for flow in flows.notebooks %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
 {% endfor %}{% endif %}
+
 
 ## Contributing
 
