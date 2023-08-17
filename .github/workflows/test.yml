@@ -39,7 +39,7 @@ jobs:
       - name: Get tag name
         run: |
           git fetch --tags
-          echo ::set-output name=tag_name::$(git describe --tags --abbrev=0)
+          echo ::set-output name=tag_name::$(git tag | tail -1)
           
       - name: Use tag name
         run: |
