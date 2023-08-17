@@ -24,18 +24,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Get latest tag
-        id: latest_tag
-        run: echo "::set-output name=tag::$(git describe --tags --abbrev=0)"
-
+        
       - name: Output latest tag
-        run: echo "Latest tag is ${{ steps.latest_tag.outputs.tag }}"
+        run: echo "Latest tag is ${{ ${{ github.event.release.tag_name }} }}"
 
       - name: Get git log
         id: git-log
         run: |
-          log=$(git log --since ${{ steps.latest_tag.outputs.tag }})
+          log=$(git log}})
           echo "::set-output name=log::$log"
   
       - name: Zip folder
