@@ -29,6 +29,7 @@ jobs:
         id: git-log
         run: |
           log=$(git log --pretty=oneline)
+          echo "::set-output name=log::$log"
   
       - name: Zip folder
         run: |
