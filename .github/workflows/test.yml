@@ -36,7 +36,15 @@ jobs:
             });
             return data[0].tag_name
           token: ${{ secrets.GITHUB_TOKEN }}
-
+      - name: Get tag name
+        run: |
+          git fetch --tags
+          echo ::set-output name=tag_name::$(git describe --tags --abbrev=0)
+          
+      - name: Use tag name
+        run: |
+          echo ${{ steps.get_tag.outputs.tag_name }}
+          
       - name: Get git log
         id: git-log
         run: |
