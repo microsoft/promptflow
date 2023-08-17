@@ -41,8 +41,8 @@ jobs:
         id: git-log
         run: |
           tag=$(git tag | tail -1)
-          echo "tag=$tag" >> $TAG
-          echo "$TAG"
+          echo "tag=$tag" >> $GITHUB_TAG
+          echo ${{ env.GITHUB_TAG }}
           log=$(git log $tag.. --pretty=oneline -- ./src/promptflow-tools/)
           echo "$log"
           # echo "::set-output name=log::$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
