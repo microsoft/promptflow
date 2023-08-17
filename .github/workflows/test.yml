@@ -40,8 +40,10 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/ > logs.txt
-          cat log.txt
+          tag = $(git tag | tail -1)
+          echo "$tag"
+          log = $(git log $tag.. --pretty=oneline -- ./src/promptflow-tools/)
+          echo "$log"
           # echo "::set-output name=log::$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
           # echo "$(git log $(git tag | tail -1).. --pretty=oneline -- ./src/promptflow-tools/)"
           # echo "$(git tag | tail -1)"
