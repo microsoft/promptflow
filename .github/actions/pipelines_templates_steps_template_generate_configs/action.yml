@@ -18,10 +18,9 @@ runs:
   steps:
   - name: Generate the connections config file
     working-directory: ${{ github.workspace }}
-    shell: bash -el {0}
+    shell: bash -l {0}
     run: |
       set -xe
-      exit_code=0
       conda activate release-env
       echo "Generating connection config file..."
       python3 ./scripts/building/generate_connection_config.py \
@@ -29,11 +28,3 @@ runs:
           --client_id ${{ inputs.clientId }} \
           --client_secret ${{ inputs.clientSecret }} \
           --target_folder ${{ inputs.targetFolder }}
-      if [ -f "${{ inputs.targetFolder }}/connections.json" ]
-      then
-          echo "Config file generated."
-          exit 0
-      else
-          echo "Failed to generate the connection file, please check your script and parameters."
-          exit 1
-      fi
