@@ -1,5 +1,5 @@
 # Working with Connection
-This repository contains example `YAML` files for creating `connection` using prompt-flow cli. Learn more on all the [connections types](https://promptflow.azurewebsites.net/concepts/concept-connections.html).
+This folder contains example `YAML` files for creating `connection` using `pf` cli. Learn more on all the [connections types](https://promptflow.azurewebsites.net/concepts/concept-connections.html).
 
 ## Prerequisites
 - Install promptflow sdk and other dependencies:

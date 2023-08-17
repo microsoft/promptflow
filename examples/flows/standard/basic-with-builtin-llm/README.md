@@ -1,5 +1,5 @@
 # Basic flow with builtin llm tool
-A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
+A basic standard flow that calls Azure OpenAI with builtin llm tool. 
 
 Tools used in this flow：
 - `prompt` tool
