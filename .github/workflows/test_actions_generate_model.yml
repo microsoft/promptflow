@@ -11,9 +11,7 @@ env:
   aoai-api-endpoint: ${{ secrets.AOAI_API_ENDPOINT_TEST }}
   coverageThreshold: 75
   deployPath: "${{ github.workspace }}/deploy"
-  linuxImage: Ubuntu-latest
   promptflowRepoLocation: "${{ github.workspace }}"
-  pythonVersion: 3.8
   scriptPath: "${{ github.workspace }}/scripts"
   srcPath: "${{ github.workspace }}/src"
   subscriptionId: ${{ secrets.TEST_WORKSPACE_SUB_ID }}

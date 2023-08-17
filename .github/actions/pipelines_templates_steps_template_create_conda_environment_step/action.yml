@@ -19,4 +19,5 @@ runs:
   - run: |
       conda info
       conda list
+      python --version
     shell: bash -el {0}

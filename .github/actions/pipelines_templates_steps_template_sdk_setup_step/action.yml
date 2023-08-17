@@ -15,11 +15,14 @@ runs:
     working-directory: ${{ inputs.scriptPath }}
     continue-on-error: true
     shell: bash -el {0}
-    run: pip uninstall -y promptflow promptflow-sdk
+    run: 
+      conda activate release-env
+      pip uninstall -y promptflow promptflow-sdk
   - name: 'Build and install: promptflow with extra'
     if: inputs.setupType == 'promptflow_new_extra'
     shell: bash -el {0}
     run: |-
+      conda activate release-env
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
@@ -32,6 +35,7 @@ runs:
     if: "!(inputs.setupType == 'promptflow_new_extra')"
     shell: bash -el {0}
     run: |-
+      conda activate release-env
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
@@ -44,6 +48,7 @@ runs:
     if: inputs.setupType == 'promptflow_dev'
     shell: bash -el {0}
     run: |-
+      conda activate release-env
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
       pip install ./dist/promptflow_sdk-0.0.1-py3-none-any.whl
@@ -54,6 +59,7 @@ runs:
     if: inputs.setupType == 'promptflow_dev_extra'
     shell: bash -el {0}
     run: |-
+      conda activate release-env
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
       pip install './dist/promptflow_sdk-0.0.1-py3-none-any.whl[azure]'
