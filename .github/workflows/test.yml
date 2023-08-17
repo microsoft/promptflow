@@ -40,7 +40,7 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          tag = $(git tag | tail -1)
+          tag=$(git tag | tail -1)
           echo "$tag"
           log = $(git log $tag.. --pretty=oneline -- ./src/promptflow-tools/)
           echo "$log"
