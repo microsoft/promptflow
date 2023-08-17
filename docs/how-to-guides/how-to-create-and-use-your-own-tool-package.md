@@ -59,7 +59,7 @@ hello-world-proj/
 1. **hello-world-proj**: This is the source directory. All of your project's source code should be placed in this directory.
 2. **hello-world/tools**: This directory contains the individual tools for your project. You tool package can contain either one tool or many tools. When adding a new tool, you should create another *_tool.py under the `tools` folder.
 3. **hello-world/tools/hello_world_tool.py**: Develop your tool within the def function. Use the `@tool` decorator to identify the function as a tool.
-    > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/microsoft/promptflow/blob/main/docs/code-samples/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
+    > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
 4. **hello-world/tools/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
     > [!Note] There's no need to create your own list method if you maintain the existing folder structure. You can simply use the auto-generated list method provided in the `utils.py` file.
 5. **hello_world/yamls/hello_world_tool.yaml**: Tool YAMLs defines the metadata of the tool. The tool list method, as outlined in the `utils.py`, fetches these tool YAMLs.
@@ -89,7 +89,7 @@ hello-world-proj/
     ```
     > [!Note] There's no need to update this file if you maintain the existing folder structure.
 
-### Build and share the tool package
+## Build and share the tool package
   Execute the following command in the tool package root directory to build your tool package:
   ```
   python setup.py sdist bdist_wheel
@@ -102,10 +102,26 @@ hello-world-proj/
 
   If you only want to put it on Test PyPI, upload your package by running `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`. Once your package is uploaded to Test PyPI, others can install it using pip by running `pip install --index-url https://test.pypi.org/simple/ your-package-name`.
 
-## Prepare runtime
+## Use your tool from VSCode Extension
+* Step1: Download the latest version [Prompt flow extension](https://aka.ms/promptflow/vsc). In the future, the extension will be available in the marketplace and you can skip this step.
+
+* Step2: Install the extension in VSCode via "Install from VSIX":
+![install-vsix](../media/contributing/install-vsix.png)
+
+* Step3: Go to terminal and install your tool package in conda environment of the extension. By default, the conda env name is `prompt-flow`.
+   ```
+   (local_test) PS D:\projects\promptflow\tool-package-quickstart> conda activate prompt-flow
+   (prompt-flow) PS D:\projects\promptflow\tool-package-quickstart> pip install .\dist\my_tools_package-0.0.1-py3-none-any.whl
+   ``` 
+
+* Step4: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
+![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
+
+## Use your tool from promptflow UI
+### Prepare runtime
 You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtime). CI is the recommended way.
 
-### Create customized environment
+#### Create customized environment
 1. Create a customized environment with docker context.
 
    Create a customized environment in Azure Machine Learning Studio.
@@ -159,7 +175,7 @@ You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtim
    az ml environment create --subscription <sub-id> -g <resource-group> -w <workspace> -f env.yaml
    ```
 
-### Prepare runtime with CI or MIR
+#### Prepare runtime with CI or MIR
 3. Create runtime with CI using the customized environment created in step 2.
    
    3.1 Create a new compute instance. Existing compute instance created long time ago may hit unexpected issue.
@@ -169,8 +185,7 @@ You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtim
 
 4. Create runtime with MIR using the customized environment created in step 2. Please refer to [this guidance](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-create-manage-runtime?view=azureml-api-2) for the details how to create a runtime with MIR.
     ![CreateRuntimeOnMIR](../media/how-to-verify-customer-tool/create_runtime_on_mir.png)
-
-## Test from promptflow UI
+### Run flow with your tool 
 >[!Note] Currently you need to append flight `PFPackageTools` after studio url.
 
 Step1: Create a standard flow.
@@ -179,26 +194,10 @@ Step2: Select the correct runtime ("my-tool-runtime") and add your tools.![AddTo
 
 Step3: Change flow based on your requirements and run flow in the selected runtime.![Runflow](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step2.png)
 
-## Test from VSCode Extension
-* Step1: Download the latest version [Prompt flow extension](https://ms.portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F96aede12-2f73-41cb-b983-6d11a904839b%2Fresourcegroups%2Fpromptflow%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fpfvscextension/path/pf-vscode-extension/etag/%220x8DB7169BD91D29C%22/defaultEncryptionScope/%24account-encryption-key/denyEncryptionScopeOverride~/false/defaultId//publicAccessVal/None). In the future, the extension will be available in the marketplace and you can skip this step.
-
-* Step2: Install the extension in VSCode via "Install from VSIX":
-![install-vsix](../media/contributing/install-vsix.png)
-
-* Step3: Go to terminal and install your tool package in conda environment of the extension. By default, the conda env name is `prompt-flow`.
-   ```
-   (local_test) PS D:\projects\promptflow\tool-package-quickstart> conda activate prompt-flow
-   (prompt-flow) PS D:\projects\promptflow\tool-package-quickstart> pip install .\dist\my_tools_package-0.0.1-py3-none-any.whl
-   ``` 
-
-* Step4: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
-![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
-
-
 ## FAQ
 ### Why is my custom tool not showing up in the UI?
 * Ensure that you've set the UI flight to `&flight=PFPackageTools`.
-* Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/docs/code-samples/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/docs/code-samples/tool-package-quickstart/setup.py).
+* Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/setup.py).
 Alternatively, you can test your tool package using the script below to ensure that you've packaged your tool YAML files and configured the package tool entry point correctly.
 
   1. Make sure to install the tool package in your conda environment before executing this script.
