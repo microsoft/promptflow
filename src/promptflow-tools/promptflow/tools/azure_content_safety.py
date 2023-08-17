@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 import requests
 
-from promptflow.core.tool import ToolProvider, tool
+from promptflow._internal import ToolProvider, tool
 from promptflow.core.tools_manager import register_builtin_method, register_builtins
 from promptflow.connections import AzureContentSafetyConnection
 

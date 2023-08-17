@@ -5,7 +5,7 @@ from typing import Union
 import openai
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
-from promptflow.core.tool import tool
+from promptflow._internal import tool
 from promptflow.core.tools_manager import register_builtin_method
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import InvalidConnectionType

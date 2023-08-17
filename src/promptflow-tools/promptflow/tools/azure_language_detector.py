@@ -1,7 +1,7 @@
 import traceback
 
 from promptflow.connections import CustomConnection
-from promptflow.core.tool import tool
+from promptflow._internal import tool
 from promptflow.core.tools_manager import register_builtin_method
 
 debug = False

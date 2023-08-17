@@ -3,7 +3,7 @@ import unittest
 
 import pytest
 
-from promptflow.core.connection_manager import ConnectionManager
+from promptflow._internal import ConnectionManager
 from promptflow.tools.azure_content_safety import AzureContentSafety, TextCategorySensitivity
 from promptflow.connections import AzureContentSafetyConnection
 
