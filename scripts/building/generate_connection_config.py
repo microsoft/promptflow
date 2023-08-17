@@ -14,7 +14,7 @@ def get_secret_client(
     tenant_id: str, client_id: str, client_secret: str
 ) -> SecretClient:
     credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-    client = SecretClient(vault_url="https://promptflow-api-keys.vault.azure.net/", credential=credential)
+    client = SecretClient(vault_url="https://github-promptflow.vault.azure.net/", credential=credential)
 
     return client
 
