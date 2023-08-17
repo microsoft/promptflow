@@ -7,7 +7,7 @@ from azure.identity import ClientSecretCredential
 
 
 CONNECTION_FILE_NAME = "connections.json"
-CONNECTION_TPL_FILE_PATH = Path('.') / "src/promptflow-tool" / "connections.json.example"
+CONNECTION_TPL_FILE_PATH = Path('.') / "src/promptflow-tools" / "connections.json.example"
 
 
 def get_secret_client(
