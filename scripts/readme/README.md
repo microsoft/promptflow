@@ -1,4 +1,4 @@
-# Default Usage
+# Readme Workflow Generator
 
 These tools is used to generate workflows from README.md and python notebook files in the [examples](../../examples/) folder.
 * Generated workflows will be placed in [.github/workflows/samples_*](../../.github/workflows/) folder.
