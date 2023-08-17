@@ -103,7 +103,7 @@ hello-world-proj/
   If you only want to put it on Test PyPI, upload your package by running `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`. Once your package is uploaded to Test PyPI, others can install it using pip by running `pip install --index-url https://test.pypi.org/simple/ your-package-name`.
 
 ## Use your tool from VSCode Extension
-* Step1: Download the latest version [Prompt flow extension](https://ms.portal.azure.com/#view/Microsoft_Azure_Storage/ContainerMenuBlade/~/overview/storageAccountId/%2Fsubscriptions%2F96aede12-2f73-41cb-b983-6d11a904839b%2Fresourcegroups%2Fpromptflow%2Fproviders%2FMicrosoft.Storage%2FstorageAccounts%2Fpfvscextension/path/pf-vscode-extension/etag/%220x8DB7169BD91D29C%22/defaultEncryptionScope/%24account-encryption-key/denyEncryptionScopeOverride~/false/defaultId//publicAccessVal/None). In the future, the extension will be available in the marketplace and you can skip this step.
+* Step1: Download the latest version [Prompt flow extension](https://aka.ms/promptflow/vsc). In the future, the extension will be available in the marketplace and you can skip this step.
 
 * Step2: Install the extension in VSCode via "Install from VSIX":
 ![install-vsix](../media/contributing/install-vsix.png)
