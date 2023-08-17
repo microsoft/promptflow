@@ -31,7 +31,7 @@ def generate_docstring(divided: list[str]):
             docstring = llm.query(docstring_prompt(item))
         except PromptException as e:
             logging.error(e.message)
-            divided_tmp = Divider.divide_func(item)
+            divided_tmp = Divider.divide_half(item)
             if len(divided_tmp) > 1:
                 divided.extend(list(reversed(divided_tmp)))
                 continue
@@ -53,8 +53,7 @@ def execute_pipeline(*pipelines, args=None):
     return args
 
 
-code_str = """
-class PipelineComponentBuilder:
+code_str = """class PipelineComponentBuilder:
     # map from python built-in type to component type
     # pylint: disable=too-many-instance-attributes
     DEFAULT_DATA_TYPE_MAPPING = {
@@ -76,7 +75,7 @@ class PipelineComponentBuilder:
         tags=None,
         source_path=None,
         non_pipeline_inputs=None,
-    ) - >None:
+    ) -> None:
         self.func = func
         name = name if name else func.__name__
         display_name = display_name if display_name else name
@@ -420,8 +419,10 @@ if __name__ == "__main__":
     #     args='./demo_code.py'
     # )
     # print(res)
-    divided_tmp = Divider.divide_func(code_str)
-    print(len(divided_tmp))
+    divided_tmp = Divider.get_functions(code_str)
     for item in divided_tmp:
         print(item)
-        print('====================')
+        print('========next============')
+    # generate_docstring([code_str])
+
+    # print(divide_code(load_code('./demo_code.py')))

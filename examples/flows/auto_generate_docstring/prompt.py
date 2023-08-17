@@ -1,5 +1,6 @@
 import sys
 from promptflow.tools.common import render_jinja_template
+from divider import Divider
 
 
 class PromptException(Exception):
@@ -21,5 +22,6 @@ class PromptException(Exception):
 
 
 def docstring_prompt(code: str, module: str='') -> str:
+    functions = Divider.get_functions(code)
     with open('doc_format.jinja2') as file:
-        return render_jinja_template(prompt=file.read(), code=code, module=module)
+        return render_jinja_template(prompt=file.read(), module=module, code=code, functions=functions)

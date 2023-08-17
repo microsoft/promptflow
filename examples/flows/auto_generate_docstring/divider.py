@@ -8,6 +8,9 @@ class Settings:
     divide_end = {
         "py": r"\n(def|class)",
     }
+    matchs = {
+        "py": r" *(class|def)\s+(\w+)\s*(\([^)]*\))?\s*(->\s*\w+:|:)"
+    }
 
 
 class Divider:
@@ -35,23 +38,28 @@ class Divider:
         return splitted_content
 
     @classmethod
-    def divide_func(cls, text) -> list[str]:
-        pattern = r"(class [A-Za-z0-9_]+\([^)]*\):)|(def [A-Za-z0-9_]+\([^)]*\):)"
-        # pattern = r'(class|def)\s+([A-Za-z0-9_]\w*)\s*\(([^)]*)\)(\s*->\s*([^:]+):)?[:\(]'
-        splitted_content = []
-
-        matches = re.finditer(pattern, text)
+    def divide_half(cls, text) -> list[str]:
+        """
+        Divide the content into two parts, but ensure that the function body is not split.
+        """
+        matches = re.finditer(Settings.matchs[Divider.language], text)
+        indexes = []
         for match in matches:
-            matched_text = match.group()
-            start_pos = match.start()
-            end_pos = match.end()
+            indexes.append((match.start(), match.end()))
 
-            print("Matched Text:\n", matched_text)
-            print("Start Position:", start_pos, ' ', text[start_pos])
-            print("End Position:", end_pos, ' ', text[end_pos-1])
-            print()
+        if len(indexes) > 1:
+            i = len(indexes) // 2
+            return [text[0:indexes[i][0]], text[indexes[i][0]:]]
+        return text
 
-        return splitted_content
+    @classmethod
+    def get_functions(cls, text) -> list[str]:
+        matches = re.finditer(Settings.matchs[Divider.language], text)
+        functions = []
+        for match in matches:
+            matched_text = match.group().strip()
+            functions.append(re.sub(r'\s+', ' ', matched_text.replace('\n', '')).replace(', )', ')'))
+        return functions
 
     @classmethod
     def combine(cls, divided: list[str]):
