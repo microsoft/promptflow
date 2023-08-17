@@ -3,34 +3,36 @@
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
 
-## Please try these notebooks to get started!
+## Get started
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
-------|--------|-------------
-{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
-{% endfor %}
+**Install dependencies**
 
-## Prerequisites
-
-- Bootstrap your python env. 
+- Bootstrap your python environment. 
   - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
 
-## CLI Examples
+**Quick start**
+
+| path | status | description |
+------|--------|-------------
+{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
+{% endfor %}
+
+## CLI examples
 
 ### Flows ([flows](flows))
 
 #### [Standard flows](flows/standard/) 
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
+| path | status | description |
 ------|--------|-------------
 {% for flow in flows.readmes %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
 {% endfor %}
 
 #### [Evaluation flows](flows/evaluation/)
 
-| path &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; | description |
+| path | status | description |
 ------|--------|-------------
 {% for evaluation in evaluations.readmes %}| [{{ evaluation.name }}]({{ evaluation.path }}) | [![{{evaluation.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}) | {{ evaluation.description }} |
 {% endfor %}
@@ -83,5 +85,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Reference
 
-* [Promptflow public documentation](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2)
-* [Promptflow internal documentation](https://promptflow.azurewebsites.net/)
+* [Promptflow documentation](https://microsoft.github.io/promptflow)
