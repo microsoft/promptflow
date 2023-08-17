@@ -28,7 +28,9 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          log=$(git log --pretty=oneline)
+          tag=$(git describe --tags --abbrev=0)
+          echo tag
+          log=$(git log --since tag)
           echo "::set-output name=log::$log"
   
       - name: Zip folder
