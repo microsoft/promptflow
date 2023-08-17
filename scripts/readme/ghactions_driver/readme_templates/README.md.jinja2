@@ -1,3 +1,17 @@
+<style>
+table {
+    width: 100%;
+}
+table th:first-of-type {
+    width: 10%;
+}
+table th:nth-of-type(2) {
+    width: 40%;
+}
+table th:nth-of-type(3) {
+    width: 50%;
+}
+</style>
 # Promptflow examples
 
 [![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
