@@ -23,3 +23,5 @@ nodes:
     prompt: ${hello_prompt.output}
     deployment_name: text-davinci-003
     max_tokens: "120"
+environment:
+    python_requirements_txt: requirements.txt
