@@ -40,8 +40,7 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          git log --since ${{ steps.latest_tag.outputs.result }} --pretty=oneline -- ./src/promptflow-tools/
-          log=$(git log --since ${{ steps.latest_tag.outputs.result }} --pretty=oneline)
+          log=$(git log ${{ steps.latest_tag.outputs.result }}..HEAD --pretty=oneline -- ./src/promptflow-tools/)
           echo "::set-output name=log::$log"
           echo "$log"
   
