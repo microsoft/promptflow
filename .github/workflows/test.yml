@@ -40,7 +40,7 @@ jobs:
       - name: Get git log
         id: git-log
         run: |
-          log=$(git log --merges --grep='Merge pull request' --oneline --since ${{ steps.latest_tag.outputs.result }})
+          log=$(git log --merges --grep='Merge pull request' --pretty=short --since ${{ steps.latest_tag.outputs.result }})
           echo "::set-output name=log::$log"
   
       - name: Zip folder
