@@ -34,14 +34,14 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
-            const latestRelease = data[0];
-            console.log(latestRelease)
+            const latestTagName = data[0].tag_name;
+            console.log(latestTagName)
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get git log
         id: git-log
         run: |
-          log=$(git log}})
+          log=$(git log --since ${{ steps.latest_tag.outputs.result }}}})
           echo "::set-output name=log::$log"
   
       - name: Zip folder
