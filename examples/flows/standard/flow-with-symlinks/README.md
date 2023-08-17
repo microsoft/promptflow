@@ -1,7 +1,6 @@
 # Flow with symlinks
 
-User sometimes need to reference some common files or folders on other top level folders.  
-In this case, user can use symlink to facilitate development.
+User sometimes need to reference some common files or folders, this sample demos how to solve the problem using symlinks. 
 But it has the following limitations. It is recommended to use **additional include**. 
 Learn more: [flow-with-additional-includes](../flow-with-additional-includes/README.md)
 

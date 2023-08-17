@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 import hashlib
 from jinja2 import Environment, FileSystemLoader, Template
+from .telemetry_obj import Telemetry
 
 
 class Step:
@@ -269,7 +270,9 @@ class ReadmeStepsManage:
         return ReadmeStepsManage.repo_base_dir
 
     @staticmethod
-    def write_workflow(workflow_name: str, pipeline_name: str) -> None:
+    def write_workflow(
+        workflow_name: str, pipeline_name: str, output_telemetry=Telemetry()
+    ) -> None:
         # Schedule notebooks at different times to reduce maximum quota usage.
         name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
         schedule_minute = name_hash % 60
@@ -277,7 +280,7 @@ class ReadmeStepsManage:
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
-            "name": pipeline_name,
+            "ci_name": pipeline_name,
             "path_filter": "[ examples/** ]",
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
             "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
@@ -302,3 +305,6 @@ class ReadmeStepsManage:
         with open(target_path.resolve(), "w", encoding="utf-8") as f:
             f.write(content)
         print(f"Write readme workflow: {target_path.resolve()}")
+        output_telemetry.workflow_name = workflow_name
+        output_telemetry.target_path = target_path
+        output_telemetry.readme_folder = ReadmeSteps.working_dir

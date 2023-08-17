@@ -8,6 +8,7 @@ import hashlib
 import json
 from jinja2 import Environment, FileSystemLoader
 from ghactions_driver.readme_step import ReadmeStepsManage
+from ghactions_driver.telemetry_obj import Telemetry
 
 
 def format_ipynb(notebooks):
@@ -28,7 +29,7 @@ def _get_paths(paths_list):
     return paths_list
 
 
-def write_notebook_workflow(notebook, name):
+def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     temp_name_list = re.split(r"/|\.", notebook)
     temp_name_list = [
         x
@@ -61,6 +62,7 @@ def write_notebook_workflow(notebook, name):
         content = template_pdf.render(
             {
                 "workflow_name": workflow_name,
+                "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
                 "path_filter": "[ examples/** ]",
@@ -72,6 +74,7 @@ def write_notebook_workflow(notebook, name):
         content = template.render(
             {
                 "workflow_name": workflow_name,
+                "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
                 "path_filter": "[ examples/** ]",
@@ -85,17 +88,23 @@ def write_notebook_workflow(notebook, name):
     with open(place_to_write.resolve(), "w") as f:
         f.write(content)
     print(f"Write workflow: {place_to_write.resolve()}")
+    output_telemetry.workflow_name = workflow_name
+    output_telemetry.name = name
+    output_telemetry.gh_working_dir = gh_working_dir
 
 
-def write_workflows(notebooks):
+def write_workflows(notebooks, output_telemetrys=[]):
     # process notebooks
     for notebook in notebooks:
         # get notebook name
+        output_telemetry = Telemetry()
         nb_path = Path(notebook)
         name, _ = os.path.splitext(nb_path.parts[-1])
 
         # write workflow file
-        write_notebook_workflow(notebook, name)
+        write_notebook_workflow(notebook, name, output_telemetry)
+        output_telemetry.notebook = nb_path
+        output_telemetrys.append(output_telemetry)
 
 
 def local_filter(callback, array):
@@ -126,7 +135,7 @@ def no_readme_generation_filter(item, index, array) -> bool:
         return False  # generate readme
 
 
-def main(input_glob):
+def main(input_glob, output_files=[]):
     # get list of workflows
 
     notebooks = _get_paths(
@@ -140,7 +149,7 @@ def main(input_glob):
     format_ipynb(notebooks)
 
     # write workflows
-    write_workflows(notebooks)
+    write_workflows(notebooks, output_files)
 
 
 # run functions
