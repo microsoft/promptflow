@@ -34,8 +34,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
             });
-            const latestTagName = data[0].tag_name;
-            console.log(latestTagName)
+            return data[0].tag_name
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get git log
