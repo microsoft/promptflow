@@ -40,6 +40,6 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
         ReadmeSteps.extract_steps_and_run()
 
     ReadmeStepsManage.write_workflow(
-        workflow_name, "auto_generated_steps", output_telemetry
+        workflow_name, "samples_readme_ci", output_telemetry
     )
     ReadmeSteps.cleanup()

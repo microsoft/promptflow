@@ -280,7 +280,7 @@ class ReadmeStepsManage:
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
-            "name": pipeline_name,
+            "ci_name": pipeline_name,
             "path_filter": "[ examples/** ]",
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
             "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
