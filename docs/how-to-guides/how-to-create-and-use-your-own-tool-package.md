@@ -117,87 +117,10 @@ hello-world-proj/
 * Step4: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
 ![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
 
-## Use your tool from promptflow UI
-### Prepare runtime
-You can create runtime with CI(Compute Instance) or MIR(Managed Inference Runtime). CI is the recommended way.
-
-#### Create customized environment
-1. Create a customized environment with docker context.
-
-   Create a customized environment in Azure Machine Learning Studio.
-   Currently we support creating environment with "Create a new docker context" environment source. "Use existing docker image with optional conda file" has known [limitation](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-environments-v2?view=azureml-api-2&tabs=cli#create-an-environment-from-a-conda-specification) and is not supported now.
-
-    ![create aml env](../media/how-to-verify-customer-tool/create_customized_env_step1.png)
-
-   Replace the text in Dockerfile:
-   ```
-   FROM mcr.microsoft.com/azureml/promptflow/promptflow-runtime:latest
-   RUN pip install -i https://test.pypi.org/simple/ my-tools-package==0.0.1
-   ```
-
-    ![define docker](../media/how-to-verify-customer-tool/create_customized_env_step2.png)
-
-   It will take several minutes to create the environment. After it succeeded, you can copy the ACR from environment detail page for the next step.
-
-2. Create another environment with inference config. This is to support create MIR runtime with the customized environment and deployment scenario.
-   >[!Note] This step can only be done through CLI, AML studio UI doesn't support creating environment with inference_config today.
-
-   Create env.yaml file like below example:
-   >[!Note] Remember to replace the ACR in the 'image' field.
-
-   ```yaml
-   $schema: https://azuremlschemas.azureedge.net/latest/environment.schema.json
-   name: my-tool-env-with-inference
-
-   # Once the image build succeed in last step, you will see ACR from environment detail page, replace the ACR path here.
-   image: a0e352e5655546debe782dc5cb4a52df.azurecr.io/azureml/azureml_39b1850f1ec09f5500365d2b3be13b96
-
-   description: promptflow enrivonment with custom tool packages
-
-   # make sure the inference_config is specified in yaml, otherwise the endpoint deployment won't work
-   inference_config:
-      liveness_route:
-         port: 8080
-         path: /health
-      readiness_route:
-         port: 8080
-         path: /health
-      scoring_route:
-         port: 8080
-         path: /score
-   ```
-   Run AML CLI to create environment:
-   ```
-   # optional
-   az login
-
-   # create your environment in workspace
-   az ml environment create --subscription <sub-id> -g <resource-group> -w <workspace> -f env.yaml
-   ```
-
-#### Prepare runtime with CI or MIR
-3. Create runtime with CI using the customized environment created in step 2.
-   
-   3.1 Create a new compute instance. Existing compute instance created long time ago may hit unexpected issue.
-   
-   3.2 Create runtime on CI with customized environment.
-    ![CreateRuntimeOnCI](../media/how-to-verify-customer-tool/create_runtime_on_CI.png)
-
-4. Create runtime with MIR using the customized environment created in step 2. Please refer to [this guidance](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-create-manage-runtime?view=azureml-api-2) for the details how to create a runtime with MIR.
-    ![CreateRuntimeOnMIR](../media/how-to-verify-customer-tool/create_runtime_on_mir.png)
-### Run flow with your tool 
->[!Note] Currently you need to append flight `PFPackageTools` after studio url.
-
-Step1: Create a standard flow.
-
-Step2: Select the correct runtime ("my-tool-runtime") and add your tools.![AddTool](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step1.png)
-
-Step3: Change flow based on your requirements and run flow in the selected runtime.![Runflow](../media/how-to-verify-customer-tool/test_customer_tool_on_UI_step2.png)
 
 ## FAQ
 ### Why is my custom tool not showing up in the UI?
-* Ensure that you've set the UI flight to `&flight=PFPackageTools`.
-* Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/setup.py).
+Confirm that the tool YAML files are included in your custom tool package. You can add the YAML files to [MANIFEST.in](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/MANIFEST.in) and include the package data in [setup.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/setup.py).
 Alternatively, you can test your tool package using the script below to ensure that you've packaged your tool YAML files and configured the package tool entry point correctly.
 
   1. Make sure to install the tool package in your conda environment before executing this script.
@@ -212,7 +135,6 @@ Alternatively, you can test your tool package using the script below to ensure t
           test()
       ```
   3. Run this script in your conda environment. This will return the metadata of all tools installed in your local environment, and you should verify that your tools are listed.
-* If you are using runtime with CI, try to restart your container with command `docker restart <container_name_or_id>` to see if the issue can be resolved.
 
 ### Why am I unable to upload package to PyPI?
 * Make sure that the entered username and password of your PyPI account are accurate.
