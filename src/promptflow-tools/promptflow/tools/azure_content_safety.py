@@ -5,8 +5,7 @@ from typing import Dict, List, Union
 
 import requests
 
-from promptflow.core.tool import ToolProvider, tool
-from promptflow.core.tools_manager import register_builtin_method, register_builtins
+from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureContentSafetyConnection
 
 
@@ -60,9 +59,6 @@ class AzureContentSafety(ToolProvider):
         return convert_decision_to_json(decision_result)
 
 
-register_builtins(AzureContentSafety)
-
-
 @tool
 def analyze_text(
     connection: AzureContentSafetyConnection,
@@ -79,9 +75,6 @@ def analyze_text(
         self_harm_category=self_harm_category,
         violence_category=violence_category,
     )
-
-
-register_builtin_method(analyze_text)
 
 
 def switch_category_threshold(sensitivity: TextCategorySensitivity) -> int:

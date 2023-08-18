@@ -2,7 +2,7 @@ import json
 import pytest
 
 from promptflow.connections import CustomConnection
-from promptflow.core.connection_manager import ConnectionManager
+from promptflow._internal import ConnectionManager
 from promptflow.tools import get_translation
 
 import tests.utils as utils

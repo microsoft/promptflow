@@ -1,4 +1,4 @@
-from promptflow.core.tool import tool
+from promptflow._internal import tool
 from promptflow.tools.common import render_jinja_template
 
 
