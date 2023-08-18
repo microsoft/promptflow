@@ -86,15 +86,18 @@ class Divider:
                     code += origin_code[pos2[i2][0]:pos2[i2 + 1][0]].replace(code_doc[0], new_doc[0])
                 else:
                     line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
-                    space = (len(line) - len(line.lstrip()) + 4) * ' '
+                    lspace_num = (len(line) - len(line.lstrip()) + 4)
                     code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + \
-                            Divider.add_indentation(new_doc[0], space) + '\n' + \
+                            Divider.format_indentation(new_doc[0], lspace_num) + '\n' + \
                             origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
         return code
 
     @classmethod
-    def add_indentation(cls, text, space):
+    def format_indentation(cls, text, lspace_num):
         lines = text.split('\n')
-        indented_lines = [space + line.strip() for line in lines]
+        last_line_space_num = len(lines[-1]) - len(lines[-1].lstrip())
+        need_add_space = max(lspace_num - last_line_space_num, 0) * ' '
+        lines[0] = last_line_space_num * ' ' + lines[0].lstrip()  # Align the first row to the last row
+        indented_lines = [need_add_space + line.rstrip() for line in lines]
         indented_string = '\n'.join(indented_lines)
         return indented_string

@@ -54,7 +54,8 @@ def execute_pipeline(*pipelines, args=None):
     return args
 
 
-code_str = """class PipelineComponentBuilder:
+code_str = """
+class PipelineComponentBuilder:
     \"\"\"PipelineComponentBuilder is a class that helps build a PipelineComponent object.\"\"\"
     # map from python built-in type to component type
     # pylint: disable=too-many-instance-attributes
@@ -110,6 +111,12 @@ code_str = """class PipelineComponentBuilder:
     def build(
         self, *, user_provided_kwargs=None, non_pipeline_inputs_dict=None, non_pipeline_inputs=None
     ) -> PipelineComponent:
+        \"\"\"Build a pipeline component from current pipeline builder.
+
+        :param user_provided_kwargs: The kwargs user provided to dsl pipeline function. None if not provided.
+        :param non_pipeline_inputs_dict: The non-pipeline input provided key-value. None if not exist.
+        :param non_pipeline_inputs: List of non-pipeline input name. None if not exist.
+        \"\"\"
         if user_provided_kwargs is None:
             user_provided_kwargs = {}
         # Clear nodes as we may call build multiple times.
@@ -413,18 +420,13 @@ _definition_builder_stack = _PipelineComponentBuilderStack()
 """
 if __name__ == "__main__":
     load_dotenv()
-    # res = execute_pipeline(
-    #     load_code,
-    #     divide_code,
-    #     generate_docstring,
-    #     combine_code,
-    #     args='./demo_code.py'
-    # )
-    # print(res)
-    # divided_tmp = Divider.divide_half(code_str)
-    # print(len(divided_tmp))
-    # for item in divided_tmp:
-    #     print(item, end='')
-    print(combine_code(generate_docstring([code_str])))
-
-    # print(divide_code(load_code('./demo_code.py')))
+    res = execute_pipeline(
+        load_code,
+        divide_code,
+        generate_docstring,
+        combine_code,
+        args='./demo_code.py'
+    )
+    # functions, pos = Divider.get_functions_and_pos(code_str)
+    # for func in functions:
+    #     print(func)
