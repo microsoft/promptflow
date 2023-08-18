@@ -38,7 +38,7 @@ if __name__ == "__main__":
         # Currently, the "attachments" feature is only supported for nunit and VisualStudioTest(trx).
         # We choose nunit for our case. See the following link for more details:
         # https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-test-results-v2?view=azure-pipelines&tabs=nunit3%2Cnunit3attachments%2Cyaml#attachments-support
-        ["pytest", "--nunit-xml=test-results.xml"]
+        ["pytest", "--junit-xml=test-results.xml"]
         + test_paths_list  # noqa: W503
         + cov_path_list  # noqa: W503
         + [  # noqa: W503
