@@ -25,5 +25,5 @@ Learn more:  [Try out more promptflow examples.](https://github.com/microsoft/pr
 |Local|[quickstart.ipynb](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)| A quickstart tutorial to run a flow locally and evaluate it.
 |Local|[connection.ipynb](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb)| Manage various types of connections using sdk
 |Cloud|[quickstart-azure.ipynb](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart-azure.ipynb)| A quickstart tutorial to run a flow in Azure AI and evaluate it.
-|Cloud|[cloud-run-management.ipynb](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/cloud-run-management.ipynb)| flow run management in azure AI
+|Cloud|[cloud-run-management.ipynb](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/cloud-run-management.ipynb)| Flow run management in azure AI
 

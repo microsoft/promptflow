@@ -20,8 +20,8 @@ Below is a table of important doc pages.
 ## Contribute Guidelines
 
 ### Writing tips
-0. Reach the doc repository by clicking `Edit this page` on any page.
-   ![Find doc repository](./media/edit_this_page.jpg)
+0. Reach the doc source repository by clicking `Edit this page` on any page.
+   ![Edit this page](./media/edit-this-page.png)
 1. Please use :::{admonition} for experimental feature or notes, and admonition with dropdown for the Limitation Part.
 2. Please use ::::{tab-set} to group your sdk/cli example, and put the cli at first. Use :sync: to sync multiple tables . 
 3. If you are unclear with the above lines, refer to [get started](./how-to-guides/quick-start.md) to see the usage.
@@ -33,24 +33,22 @@ Below is a table of important doc pages.
 
 **Local build**: We suggest using local build at the beginning, as it's fast and efficiency. 
 ```powershell
-cd .\scripts\build
+cd .\scripts\docs
 
-./doc_generation.ps1 -WarningAsError:$true # Install requirements and build doc, skip warning as some page will be removed when build public site
-# .\doc_generation.ps1 -SkipInstall # Skip install and build doc
+./doc_generation.ps1 # Install requirements and build doc
+# .\doc_generation.ps1 -SkipInstall # Skip install dependencies and build doc
 
-start .\_build\index.html # See the homepage in browser
+start .\_build\index.html # See the homepage in your browser
 ```
 
 
 ## FAQ
 ### Adding image in doc
-I added image with html tags `<img>` in my markdown, it seems ok from github but can't show from build one, why?
-
-   Please use markdown syntax `![img desc](img link)` to reference image, because the relative path of image will be changed after sphinx build, and image placed in html tags can not be referenced when build. 
+Please use markdown syntax `![img desc](img link)` to reference image, because the relative path of image will be changed after sphinx build, and image placed in html tags can not be referenced when build. 
 
 ### Draw flow chart in doc 
-   - We are using the mermaid, learn more from the [mermaid syntax doc](https://mermaid-js.github.io/mermaid/#/./flowchart?id=flowcharts-basic-syntax)
-   - Recommend to install [vscode extension](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) to preview graph in vscode.
+We recommend using the mermaid, learn more from the [mermaid syntax doc](https://mermaid-js.github.io/mermaid/#/./flowchart?id=flowcharts-basic-syntax)
+- Recommend to install [vscode extension](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) to preview graph in vscode.
 
 ## Reference
 - [md-and-rst](https://coderefinery.github.io/sphinx-lesson/md-and-rst/)
