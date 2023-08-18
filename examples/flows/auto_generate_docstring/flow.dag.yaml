@@ -3,7 +3,7 @@ inputs:
     type: string
     default: ./demo_code.py
 outputs:
-  output_prompt:
+  code:
     type: string
     reference: ${combine_code.output}
 nodes:
