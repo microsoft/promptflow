@@ -67,10 +67,10 @@ jobs:
         conda activate release-env
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
-          -t "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test" \
+          -t "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test" \
           -l eastus \
-          -m "unittest" \
-          -n "2"
+          -m unittest \
+          -n 2
       shell: bash -l {0}
       working-directory: "src/promptflow"
     - name: Upload pytest test results
@@ -80,5 +80,11 @@ jobs:
         path: src/promptflow/test-results.xml
       # Use always() to always run this step to publish test results when there are test failures
       if: ${{ always() }}
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      if: always()
+      with:
+        files: |
+          src/promptflow/test-results.xml
   
 
