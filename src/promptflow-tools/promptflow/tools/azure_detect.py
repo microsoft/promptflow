@@ -3,7 +3,7 @@
 # Probably around Aug 15.
 import traceback
 
-from promptflow._internal import ToolProvider, tool, register_builtins
+from promptflow._internal import ToolProvider, tool
 from promptflow.connections import CustomConnection
 
 debug = False
@@ -58,6 +58,3 @@ class AzureDetect(ToolProvider):
         except Exception:
             error_msg = traceback.format_exc()
             return f"{traceId} Exception {error_msg}"
-
-
-register_builtins(AzureDetect)

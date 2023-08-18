@@ -1,7 +1,7 @@
 import traceback
 
 from promptflow.connections import CustomConnection
-from promptflow._internal import tool, ToolProvider, register_builtins
+from promptflow._internal import tool, ToolProvider
 
 debug = False
 
@@ -99,6 +99,3 @@ class AzureTranslator(ToolProvider):
         except Exception:
             error_msg = traceback.format_exc()
             return f"{traceId} Exception {error_msg}"
-
-
-register_builtins(AzureTranslator)

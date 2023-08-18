@@ -4,7 +4,7 @@ from enum import Enum
 
 import requests
 
-from promptflow._internal import ToolProvider, tool, register_builtins
+from promptflow._internal import ToolProvider, tool
 from promptflow.connections import SerpConnection
 from promptflow.exceptions import PromptflowException
 from promptflow.tools.exception import SerpAPIUserError, SerpAPISystemError
@@ -114,9 +114,6 @@ class SerpAPI(ToolProvider):
                 error_message = f"SerpAPI search request failed: {type(e).__name__}: {str(e)}"
                 raise SerpAPISystemError(message=error_message)
             raise
-
-
-register_builtins(SerpAPI)
 
 
 @tool

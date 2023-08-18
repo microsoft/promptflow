@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 import requests
 
-from promptflow._internal import ToolProvider, tool, register_builtins
+from promptflow._internal import ToolProvider, tool
 from promptflow.connections import AzureContentSafetyConnection
 
 
@@ -57,9 +57,6 @@ class AzureContentSafety(ToolProvider):
         decision_result = content_safety.make_decision(detection_result, reject_thresholds)
 
         return convert_decision_to_json(decision_result)
-
-
-register_builtins(AzureContentSafety)
 
 
 @tool
