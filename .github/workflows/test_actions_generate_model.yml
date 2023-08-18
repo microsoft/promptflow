@@ -43,10 +43,10 @@ jobs:
       run: |
         conda activate release-env
         echo "Build wheel for 'promptflow/'"
-        python setup.py bdist_wheel -b bdist
+        python ./setup.py bdist_wheel
         echo "List files in 'dist'"
         ls dist
-        pip install -r ./dev_requirements.txt
+        pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
     - name: Generate Configs
       uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
       with:
