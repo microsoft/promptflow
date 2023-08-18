@@ -18,6 +18,6 @@ Prompt flow provides different kinds of tools:
 
 For more information on the tools and their usage, visit the following resources:
 
-- [Prompt tool](../tools-reference/prompt-tool.md)
-- [LLM tool](../tools-reference/llm-tool.md)
-- [Python tool](../tools-reference/python-tool.md)
+- [Prompt tool](../reference/tools-reference/prompt-tool.md)
+- [LLM tool](../reference/tools-reference/llm-tool.md)
+- [Python tool](../reference/tools-reference/python-tool.md)

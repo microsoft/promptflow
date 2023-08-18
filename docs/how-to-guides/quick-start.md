@@ -63,7 +63,7 @@ Then we can use CLI command to create the connection.
 pf connection create -f connection.yaml
 ```
 
-More command details can be found in [CLI reference](./cli-command-reference.md)
+More command details can be found in [CLI reference](../reference/pf-command-reference.md)
 
 :::
 :::{tab-item} SDK

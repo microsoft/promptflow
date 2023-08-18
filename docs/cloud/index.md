@@ -6,5 +6,4 @@ You can develope your flow locally and seamlessly move the experience to azure c
 :caption: AzureAI
 :maxdepth: 1
 azureai/quick-start
-azureai/cli-command-reference
 ```
