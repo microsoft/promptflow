@@ -43,6 +43,7 @@ jobs:
       run: |
         conda activate release-env
         echo "Build wheel for 'promptflow/'"
+        pip install -r dev_requirements.txt
         python ./setup.py bdist_wheel
         echo "List files in 'dist'"
         ls dist
