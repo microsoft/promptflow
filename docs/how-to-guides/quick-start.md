@@ -254,8 +254,6 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ::::
 
-
-
 ## Next steps
 
 Learn more about:
@@ -264,4 +262,4 @@ Learn more about:
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
 - [Tune prompts with variants](./tune-prompts-with-variants.md)
 - [Deploy and export a flow](./deploy-and-export-a-flow.md)
-- [Local to cloud](../cloud/azureml/local-to-cloud.md)
+- [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)

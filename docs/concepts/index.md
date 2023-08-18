@@ -1,6 +1,6 @@
 # Concepts
 
-In this section, you will learn the basic concepts of Azure Machine Learning prompt flow.
+In this section, you will learn the basic concepts of prompt flow.
 
 ```{toctree}
 :maxdepth: 1

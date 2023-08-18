@@ -7,7 +7,7 @@ html_theme.sidebar_secondary.remove: true
 
 # Prompt flow
 
-[**Prompt flow**](https://github.com/microsoft/promptflow)  is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality. 
+[**Prompt flow**](https://github.com/microsoft/promptflow) is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality. 
 
 With prompt flow, you will be able to: 
 
@@ -21,7 +21,8 @@ With prompt flow, you will be able to:
 > Welcome to join us to make Prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
-> or submitting [PRs](https://github.com/microsoft/promptflow/pulls).
+> submitting [PRs](https://github.com/microsoft/promptflow/pulls),
+> and learn our recent [changes](./changelog/sdk-change-log.md).
 
 This documentation site contains guides for prompt flow sdk, cli and vscode extension users.
 
@@ -29,18 +30,18 @@ This documentation site contains guides for prompt flow sdk, cli and vscode exte
 :grid-columns: 1 2 2 2
 - header: "🚀 Quick Start"
   content: "
-    An overview and quick guide of how to developing and running your first prompt flow.<br/><br/>
-    - [What is prompt flow](overview.md)<br/>
+    A quick guide of how to developing and running your first prompt flow.<br/><br/>
     - [Start your prompt flow journey](how-to-guides/quick-start.md)<br/>
+    - [Run prompt flow in Azure AI](cloud/azureai/quick-start.md)<br/>
   "
 
 - header: "📒 How-to Guides"
   content: "
     Articles guide different user roles to done a specific task in prompt flow.<br/><br/>
+    - [Initialize and test a flow](how-to-guides/init-and-test-a-flow.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow.md)<br/>
     - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
     - [Deploy and export a flow](how-to-guides/deploy-and-export-a-flow.md)<br/>
-    - [Local to cloud](cloud/azureml/local-to-cloud.md)<br/>
   "
 ```
 
@@ -64,12 +65,6 @@ Reach more details about concepts and tools of prompt flow.
     - [Prompt Tool](tools-reference/prompt-tool.md)<br/>
 
   "
-```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-overview
 ```
 
 ```{toctree}

@@ -111,4 +111,4 @@ After the variant run is created, you can evaluate the variant run with a evalua
 Learn more about:
 - [Run and evluate a flow](./run-and-evaluate-a-flow.md)
 - [Deploy and export a flow](./deploy-and-export-a-flow.md)
-- [Local to cloud](../cloud/azureml/local-to-cloud.md)
+- [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)
