@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pytest_mock import MockerFixture  # noqa: E402
 
-from promptflow.core.connection_manager import ConnectionManager
+from promptflow._internal import ConnectionManager
 from promptflow.tools.aoai import AzureOpenAI
 
 PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
