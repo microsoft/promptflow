@@ -170,6 +170,9 @@ connection.json
 .azureml
 # secrets
 **/connections.json
+
+# doc build
+scripts/docs/_build/
 **/bash_script.sh
 
 .index
