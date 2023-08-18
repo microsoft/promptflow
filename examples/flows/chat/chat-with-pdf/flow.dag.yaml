@@ -53,3 +53,5 @@ nodes:
     pdf_url: ${inputs.pdf_url}
     question: ${inputs.question}
     ready: ${setup_env.output}
+environment:
+    python_requirements_txt: requirements.txt

@@ -68,5 +68,5 @@ nodes:
   provider: AzureOpenAI
   connection: azure_open_ai_connection
   api: chat
-id: chat_with_wikipedia
-name: Chat With Wikipedia
+environment:
+    python_requirements_txt: requirements.txt
