@@ -58,7 +58,7 @@ Promptflow CLI can generate the yaml definitions needed for prompt flow from the
 pf flow init --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-tempate>
 ```
 
-For example, using promptflow CLI initialize [intent-copilot](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/intent-copilot)
+Take [intent-copilot](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/intent-copilot) for example, which demonstrating how to convert a langchain code into a prompt flow.
 
 ![init_output](../media/how-to-guides/init-and-test-a-flow/flow_init_output.png)
 

@@ -1,19 +1,23 @@
-# Local to cloud
+# Run Prompt flow in Azure AI
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
 
-Assuming you have learned how to create and run a flow following [Quick start](../../how-to-guides/quick-start.md). This guide will walk you through the main process of how to submit a promptflow run to the cloud - Azure Machine Learning workspace.
+Assuming you have learned how to create and run a flow following [Quick start](../../how-to-guides/quick-start.md). This guide will walk you through the main process of how to submit a promptflow run to [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+
+Benefits of use Azure AI comparison to just run locally:
+- **Designed for team collaboration**: Portal UI is a better fix for sharing & presentation your flow and runs. And workspace can better orgnize team shared resources like connections.
+- **Enterprise Readiness Solutions**: prompt flow leverages Azure AI's robust enterprise readiness solutions, providing a secure, scalable, and reliable foundation for the development, experimentation, and deployment of flows.
 
 ## Prerequisites
 
 1. An Azure account with an active subscription - [Create an account for free](https://azure.microsoft.com/free/?WT.mc_id=A261C142F)
-2. An Azure ML workspace - [Create workspace resources you need to get started with Azure Machine Learning](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources).
+2. An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources).
 3. A python environment, `python=3.9` is recommended.
-4. Install `promptflow-sdk` with extra dependencies and `prompt-flow-tools`.
+4. Install `promptflow` with extra dependencies and `promptflow-tools`.
 ```sh
-pip install promptflow-sdk[azure] prompt-flow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow[azure] promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 ```
 5. Get the sample flows. 
    - Get access to the flow sample repository.

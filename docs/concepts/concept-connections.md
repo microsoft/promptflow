@@ -1,10 +1,11 @@
-In Azure Machine Learning prompt flow, you can utilize connections to effectively manage credentials or secrets for APIs and data sources.
+In prompt flow, you can utilize connections to effectively manage credentials or secrets for APIs and data sources.
 
 # Connections
 
 Connections in prompt flow play a crucial role in establishing connections to remote APIs or data sources. They encapsulate essential information such as endpoints and secrets, ensuring secure and reliable communication.
 
-In the Azure Machine Learning workspace, connections can be configured to be shared across the entire workspace or limited to the creator. Secrets associated with connections are securely persisted in the corresponding Azure Key Vault, adhering to robust security and compliance standards.
+- In local, the connections secret are store in keyring or your local machine.
+- In Azure AI, connections can be configured to be shared across the entire workspace. Secrets associated with connections are securely persisted in the corresponding Azure Key Vault, adhering to robust security and compliance standards.
 
 Prompt flow provides a variety of pre-built connections, including Azure Open AI, Open AI, and Azure Content Safety. These pre-built connections enable seamless integration with these resources within the built-in tools. Additionally, users have the flexibility to create custom connection types using key-value pairs, empowering them to tailor the connections to their specific requirements, particularly in Python tools.
 

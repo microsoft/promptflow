@@ -56,7 +56,7 @@ Local path to the flow directory.
 
 `--data`
 
-Local path to the data file.
+Local path to the data file or remote data. e.g. azureml:name:version.
 
 `--column-mapping`
 

@@ -1,4 +1,4 @@
-Tools are the fundamental building blocks of a flow in Azure Machine Learning prompt flow.
+Tools are the fundamental building blocks of a [flow](./concept-flows.md).
 
 Each tool is a simple, executable unit with a specific function, allowing users to perform various tasks.
 By combining different tools, users can create a flow that accomplishes a wide range of goals.
