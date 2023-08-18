@@ -7,7 +7,7 @@ This is an experimental feature, and may change at any time. Learn [more](https:
 Assuming you have learned how to create and run a flow following [Quick start](../../how-to-guides/quick-start.md). This guide will walk you through the main process of how to submit a promptflow run to [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
 Benefits of use Azure AI comparison to just run locally:
-- **Designed for team collaboration**: Portal UI is a better fix for sharing & presentation your flow and runs. And workspace can better orgnize team shared resources like connections.
+- **Designed for team collaboration**: Portal UI is a better fix for sharing & presentation your flow and runs. And workspace can better organize team shared resources like connections.
 - **Enterprise Readiness Solutions**: prompt flow leverages Azure AI's robust enterprise readiness solutions, providing a secure, scalable, and reliable foundation for the development, experimentation, and deployment of flows.
 
 ## Prerequisites
@@ -116,7 +116,6 @@ ml_client = MLClient(
     resource_group_name="<RESOURCE_GROUP>",
     workspace_name="<AML_WORKSPACE_NAME>",
 )
-# configure global setting pointing to workpsace ml_client
 pf = PFClient(ml_client)
 ```
 

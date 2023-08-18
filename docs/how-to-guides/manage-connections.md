@@ -98,7 +98,7 @@ print(result)
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
-The commands below show how to update exisiting connections with new values:
+The commands below show how to update existing connections with new values:
 ```bash
 # Update an azure open ai connection with a new api base
 pf connection update -n my_azure_open_ai_connection --set api_base='new_value'
@@ -110,7 +110,7 @@ pf connection update -n my_custom_connection --set configs.other_config='new_val
 
 :::{tab-item} SDK
 :sync: SDK
-The code snippet below shows how to update exisiting connections with new values:
+The code snippet below shows how to update existing connections with new values:
 ```python
 # Update an azure open ai connection with a new api base
 connection = pf.connections.get(name="my_azure_open_ai_connection")
