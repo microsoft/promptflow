@@ -7,7 +7,7 @@ Connections in prompt flow play a crucial role in establishing connections to re
 - In local, the connections secret are encrypted persisted in your local machine.
 - In Azure AI, connections can be configured to be shared across the entire workspace. Secrets associated with connections are securely persisted in the corresponding Azure Key Vault, adhering to robust security and compliance standards.
 
-Prompt flow provides a variety of pre-built connections, including Azure Open AI, Open AI, and Azure Content Safety. These pre-built connections enable seamless integration with these resources within the built-in tools. Additionally, users have the flexibility to create custom connection types using key-value pairs, empowering them to tailor the connections to their specific requirements, particularly in Python tools.
+Prompt flow provides a variety of pre-built connections, including Azure Open AI, Open AI, etc. These pre-built connections enable seamless integration with these resources within the built-in tools. Additionally, users have the flexibility to create custom connection types using key-value pairs, empowering them to tailor the connections to their specific requirements, particularly in Python tools.
 
 | Connection type                                              | Built-in tools                  |
 | ------------------------------------------------------------ | ------------------------------- |
