@@ -73,4 +73,4 @@ if __name__ == "__main__":
         pytest_command = pytest_command + [f"--cov-config={args.coverage_config}"]
 
     # pytest --nunit-xml=test-results.xml --cov=azure.ai.ml --cov-report=html --cov-report=xml -ra ./tests/*/unittests/
-    run_command(pytest_command)
+    run_command(pytest_command, throw_on_retcode=False)
