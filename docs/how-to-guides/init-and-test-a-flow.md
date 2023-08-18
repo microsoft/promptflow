@@ -83,7 +83,7 @@ Customer can use CLI or VS Code extension to test the flow locally.
 pf flow test --flow <flow-name>
 
 # Test flow with specified variant
-pf flow test --flow <flow-name> --variant ${<node-name>.<variant-name>}
+pf flow test --flow <flow-name> --variant '${<node-name>.<variant-name>}'
 ```
 
 The log and result of flow test will be displayed in the terminal.

@@ -113,7 +113,7 @@ pf flow test --flow <path-to-flow-directory> --inputs data_key1=data_val1 data_k
 Test the flow with specified variant node.
 
 ```bash
-pf flow test --flow <path-to-flow-directory> --variant ${node_name。variant_name}
+pf flow test --flow <path-to-flow-directory> --variant '${node_name.variant_name}'
 ```
 
 Test the single node in the flow.
@@ -379,7 +379,7 @@ pf run create -f <yaml-filename>
 Create a run from flow directory and reference a run.
 
 ```bash
-pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run <run-name> --variant "${summarize_text_content.variant_0}" --stream
+pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant '${summarize_text_content.variant_0}' --stream
 ```
 
 #### Optional Parameters
