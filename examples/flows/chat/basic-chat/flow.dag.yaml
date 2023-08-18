@@ -27,3 +27,5 @@ nodes:
   provider: AzureOpenAI
   connection: azure_open_ai_connection
 node_variants: {}
+environment:
+    python_requirements_txt: requirements.txt

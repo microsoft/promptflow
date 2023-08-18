@@ -81,3 +81,5 @@ node_variants:
           api: chat
           module: promptflow.tools.aoai
     default_variant_id: variant_0
+environment:
+    python_requirements_txt: requirements.txt
