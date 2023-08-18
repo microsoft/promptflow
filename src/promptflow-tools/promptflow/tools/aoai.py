@@ -239,4 +239,3 @@ def chat(
         functions=functions,
         **kwargs,
     )
-
