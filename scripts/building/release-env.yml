@@ -14,6 +14,5 @@ dependencies:
     - pytest-xdist
     - pytest-sugar
     - pytest-timeout
-    - pytest-mock
     - azure-keyvault
     - azure-identity

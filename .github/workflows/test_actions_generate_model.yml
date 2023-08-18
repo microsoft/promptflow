@@ -46,7 +46,7 @@ jobs:
         python setup.py bdist_wheel -b bdist
         echo "List files in 'dist'"
         ls dist
-        pip freeze
+        pip install -r ./dev_requirements.txt
     - name: Generate Configs
       uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
       with:
