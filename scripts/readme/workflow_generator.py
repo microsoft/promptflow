@@ -62,6 +62,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
         content = template_pdf.render(
             {
                 "workflow_name": workflow_name,
+                "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
                 "path_filter": "[ examples/** ]",
@@ -73,6 +74,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
         content = template.render(
             {
                 "workflow_name": workflow_name,
+                "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
                 "path_filter": "[ examples/** ]",
