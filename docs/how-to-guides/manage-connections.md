@@ -7,7 +7,7 @@ This is an experimental feature, and may change at any time. Learn [more](https:
 [Connection](../../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM (Large Language Models) and other external tools, for example, Azure Content Safety.
 
 ## Connection types
-There are multiple types of connections supported in promptflow, which can be simply categorized into **strong type connection** and **custom connection**. The strong type connection includes AzureOpenAIConnection, OpenAIConnection, AzureContentSafetyConnection, etc. The custom connection is a generic connection type that can be used to store custom defined credentials.
+There are multiple types of connections supported in promptflow, which can be simply categorized into **strong type connection** and **custom connection**. The strong type connection includes AzureOpenAIConnection, OpenAIConnection, etc. The custom connection is a generic connection type that can be used to store custom defined credentials.
 
 We are going to use AzureOpenAIConnection as an example for strong type connection, and CustomConnection to show how to manage connections.
 
