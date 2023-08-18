@@ -48,4 +48,3 @@ def get_language(connection: CustomConnection, input_text: str):
     except Exception:
         error_msg = traceback.format_exc()
         return f"{traceId} Exception {error_msg}"
-
