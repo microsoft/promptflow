@@ -1,5 +1,5 @@
-# Basic
-A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
+# Basic flow with custom connection
+A basic standard flow that using custom python tool calls Azure OpenAI with connection info stored in custom connection. 
 
 Tools used in this flow：
 - `prompt` tool

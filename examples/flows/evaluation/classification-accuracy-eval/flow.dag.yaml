@@ -30,3 +30,5 @@ nodes:
   inputs:
     grades: ${grade.output}
   aggregation: true
+environment:
+    python_requirements_txt: requirements.txt

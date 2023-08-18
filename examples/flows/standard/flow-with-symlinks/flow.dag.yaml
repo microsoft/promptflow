@@ -81,3 +81,5 @@ node_variants:
           connection: azure_open_ai_connection
           api: chat
           module: promptflow.tools.aoai
+environment:
+    python_requirements_txt: requirements.txt
