@@ -1,0 +1,49 @@
+name: Promptflow Tools Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      ReleaseType:
+        description: 'manual test'
+        required: true
+        default: "Test"
+        type: string
+      UploadAsLatest:
+        description: 'True to upload the distribution as latest'
+        required: true
+        default: "False"
+        type: string
+      SourceFolderName:
+        description: 'The source folder of the distribution'
+        required: true
+        default: "promptflow-tools"
+        type: string
+
+jobs:
+  manual_release:
+    uses: ./.github/workflows/wheel_distributing.yml
+    name: Manual release
+    with:
+      ReleaseType: ${{ inputs.ReleaseType }}
+      UploadAsLatest: ${{ inputs.UploadAsLatest }}
+      SourceFolderName: ${{ inputs.SourceFolderName }}
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
+  
+  get_timestamp:
+    needs: manual_release
+    name: Get Timestamp
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Get Timestamp
+      id: timestamp_step
+      run: echo "::set-output name=timestamp::$(date +%s)"
+
+  deploy_runtime_with_updated_tools_package:
+    needs: get_timestamp
+    uses: ./.github/workflows/deploy_runtime.yml
+    name: Deploy runtime
+    with:
+      ToolsPackageVersion: ${{ needs.get_timestamp.outputs.timestamp }}
+    secrets: inherit
