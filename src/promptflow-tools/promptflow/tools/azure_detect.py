@@ -3,9 +3,8 @@
 # Probably around Aug 15.
 import traceback
 
-from promptflow._internal import ToolProvider, tool
+from promptflow._internal import ToolProvider, tool, register_builtins
 from promptflow.connections import CustomConnection
-from promptflow.core.tools_manager import register_builtins
 
 debug = False
 

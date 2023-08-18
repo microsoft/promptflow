@@ -2,7 +2,6 @@ import traceback
 
 from promptflow.connections import CustomConnection
 from promptflow._internal import tool
-from promptflow.core.tools_manager import register_builtin_method
 
 debug = False
 
@@ -50,5 +49,3 @@ def get_language(connection: CustomConnection, input_text: str):
         error_msg = traceback.format_exc()
         return f"{traceId} Exception {error_msg}"
 
-
-register_builtin_method(get_language)

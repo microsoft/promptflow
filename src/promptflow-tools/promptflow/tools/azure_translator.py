@@ -1,8 +1,7 @@
 import traceback
 
 from promptflow.connections import CustomConnection
-from promptflow._internal import tool, ToolProvider
-from promptflow.core.tools_manager import register_builtin_method, register_builtins
+from promptflow._internal import tool, ToolProvider, register_builtins
 
 debug = False
 
@@ -51,8 +50,6 @@ def get_translation(connection: CustomConnection, input_text: str, source_langua
         error_msg = traceback.format_exc()
         return f"{traceId} Exception {error_msg}"
 
-
-register_builtin_method(get_translation)
 
 
 # TODO: previous contract tool meta is not updated as the same time of tool code changes.
