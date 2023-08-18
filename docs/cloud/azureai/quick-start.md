@@ -81,7 +81,7 @@ pfazure run show-details -n my_first_cloud_run
 pfazure run visualize -n my_first_cloud_run
 ```
 
-More details can be found in [CLI reference: pfazure](./cli-command-reference.md)
+More details can be found in [CLI reference: pfazure](../../reference/pfazure-command-reference.md)
 
 :::
 
@@ -162,4 +162,4 @@ At the end of stream logs, you can find the `portal_url` of the submitted run, c
 ## Next steps
 
 Learn more about:
-- [CLI reference: pfazure](./cli-command-reference.md)
+- [CLI reference: pfazure](../../reference/pfazure-command-reference.md)

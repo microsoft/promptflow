@@ -13,7 +13,6 @@ deploy-and-export-a-flow
 manage-connections
 manage-runs
 how-to-create-and-use-your-own-tool-package
-cli-command-reference
 
 ```
 

@@ -57,13 +57,11 @@ Reach more details about concepts and tools of prompt flow.
   "
 
 
-- header: "🔍 Tool Reference"
+- header: "🔍 Reference"
   content: "
-    Useful resources & reference link of tools.<br/><br/>
-    - [LLM Tool](tools-reference/llm-tool.md)<br/>
-    - [Python Tool](tools-reference/python-tool.md)<br/>
-    - [Prompt Tool](tools-reference/prompt-tool.md)<br/>
-
+    Useful resources & reference link.<br/><br/>
+    - Command line Interface reference: [pf](reference/pf-command-reference.md)<br/>
+    - Tool reference: [LLM Tool](reference/tools-reference/llm-tool.md), [Python Tool](reference/tools-reference/python-tool.md), [Prompt Tool](reference/tools-reference/prompt-tool.md)<br/>
   "
 ```
 
@@ -88,7 +86,7 @@ tutorials/index
 ```{toctree}
 :hidden:
 :maxdepth: 1
-tools-reference/index
+reference/index
 ```
 
 ```{toctree}
