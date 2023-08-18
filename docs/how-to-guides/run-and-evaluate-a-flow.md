@@ -38,7 +38,7 @@ After the run is finished, you can evaluate the run with below command, compared
 - `run`: The run name of the flow run to be evaluated.
 
 ```sh
-pf run create --flow evaluation/classification-accuracy-eval --data standard/web-classification/data.jsonl --column-mapping "groundtruth=${data.answer},prediction=${run.outputs.category}" --run my_first_run --stream
+pf run create --flow evaluation/classification-accuracy-eval --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
 ```
 
 Same as the previous run, you can specify the evaluation run name with `--name my_first_eval_run` in above command.
