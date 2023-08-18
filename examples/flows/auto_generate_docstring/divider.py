@@ -56,7 +56,8 @@ class Divider:
         pos = []
         for match in matches:
             matched_text = match.group().replace('\n', '')
-            functions.append(re.sub(r'( +)', ' ', matched_text).replace(', )', ')').strip())
+            func = re.sub(r' +', ' ', matched_text)
+            functions.append(re.sub(r'[\s,]+\)', ')', func).strip())
             pos.append((match.start(), match.end()))
         return functions, pos
 
@@ -73,23 +74,23 @@ class Divider:
         pos1.append((len(docstring), len(docstring)))  # avoid index out of range
         pos2.append((len(origin_code), len(origin_code)))  # avoid index out of range
         for i2 in range(len(funcs2)):  # add docstring for each function in origin_code
+            part_full_code = origin_code[pos2[i2][0]:pos2[i2 + 1][0]]
             try:
                 i1 = funcs1.index(funcs2[i2])
             except ValueError:
-                logging.warning(f"No docstring found for {funcs2[i2]}.")
-                code += origin_code[pos2[i2][0]:pos2[i2][1]]
+                logging.warning(f"No docstring found for {funcs2[i2]}")
+                code += part_full_code
                 continue
             new_doc = re.findall(pattern, docstring[pos1[i1][1]:pos1[i1 + 1][0]], re.DOTALL)
             if new_doc:
+                line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
+                lspace_num = (len(line) - len(line.lstrip()) + 4)
                 code_doc = re.findall(pattern, origin_code[pos2[i2][1]:pos2[i2 + 1][0]], re.DOTALL)
+                format_new_doc = Divider.format_indentation(new_doc[0], lspace_num)
                 if code_doc:
-                    code += origin_code[pos2[i2][0]:pos2[i2 + 1][0]].replace(code_doc[0], new_doc[0])
+                    code += part_full_code.replace(code_doc[0], format_new_doc.strip(), 1)
                 else:
-                    line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
-                    lspace_num = (len(line) - len(line.lstrip()) + 4)
-                    code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + \
-                            Divider.format_indentation(new_doc[0], lspace_num) + '\n' + \
-                            origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
+                    code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + format_new_doc + '\n' + origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
         return code
 
     @classmethod
@@ -98,6 +99,6 @@ class Divider:
         last_line_space_num = len(lines[-1]) - len(lines[-1].lstrip())
         need_add_space = max(lspace_num - last_line_space_num, 0) * ' '
         lines[0] = last_line_space_num * ' ' + lines[0].lstrip()  # Align the first row to the last row
-        indented_lines = [need_add_space + line.rstrip() for line in lines]
+        indented_lines = [(need_add_space + line).rstrip() for line in lines]
         indented_string = '\n'.join(indented_lines)
         return indented_string

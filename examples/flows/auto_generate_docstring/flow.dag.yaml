@@ -1,26 +1,41 @@
 inputs:
   code_path:
     type: string
+    default: ./demo_code.py
 outputs:
   output_prompt:
     type: string
-    reference: ${echo_my_prompt.output}
+    reference: ${combine_code.output}
 nodes:
-- name: hello_prompt
-  type: prompt
-  source:
-    type: code
-    path: hello.jinja2
-  inputs:
-    text: ${inputs.text}
-- name: echo_my_prompt
+- name: load_code
   type: python
   source:
     type: code
-    path: hello.py
+    path: main.py
   inputs:
-    input1: ${hello_prompt.output}
-id: template_standard_flow
-name: Template Standard Flow
+    code_path: ${inputs.code_path}
+- name: divide_code
+  type: python
+  source:
+    type: code
+    path: main.py
+  inputs:
+    file_content: ${load_code.output}
+- name: generate_docstring
+  type: python
+  source:
+    type: code
+    path: main.py
+  inputs:
+    divided: ${divide_code.output}
+- name: combine_code
+  type: python
+  source:
+    type: code
+    path: main.py
+  inputs:
+    divided: ${generate_docstring.output}
+id: auto_generate_docstring_flow
+name: Auto Generate Docstring Flow
 environment:
   python_requirements_txt: requirements.txt
