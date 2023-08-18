@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 
 from azure.keyvault.secrets import SecretClient
-from azure.identity import ClientSecretCredential
+from azure.identity import ClientSecretCredential, DefaultAzureCredential
 
 
 CONNECTION_FILE_NAME = "connections.json"
@@ -13,8 +13,15 @@ CONNECTION_TPL_FILE_PATH = Path('.') / "src/promptflow-tools" / "connections.jso
 def get_secret_client(
     tenant_id: str, client_id: str, client_secret: str
 ) -> SecretClient:
-    credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-    client = SecretClient(vault_url="https://github-promptflow.vault.azure.net/", credential=credential)
+    try:
+        if (tenant_id is None) or (client_id is None) or (client_secret is None):
+            credential = DefaultAzureCredential()
+            client = SecretClient(vault_url="https://promptflow-api-keys.vault.azure.net/", credential=credential)
+        else:
+            credential = ClientSecretCredential(tenant_id, client_id, client_secret)
+            client = SecretClient(vault_url="https://github-promptflow.vault.azure.net/", credential=credential)
+    except Exception as e:
+        print(e)
 
     return client
 

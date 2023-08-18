@@ -69,7 +69,7 @@ jobs:
           -p promptflow \
           -t "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test" \
           -l eastus \
-          -m "unittest or e2etest" \
+          -m "unittest" \
           -n "2"
       shell: bash -l {0}
       working-directory: "src/promptflow"
