@@ -57,3 +57,5 @@ nodes:
     path: generate_goal.py
   inputs:
     items: ${inputs.goals}
+environment:
+    python_requirements_txt: requirements.txt

@@ -27,3 +27,5 @@ nodes:
   connection: azure_open_ai_connection
   api: chat
 node_variants: {}
+environment:
+    python_requirements_txt: requirements.txt
