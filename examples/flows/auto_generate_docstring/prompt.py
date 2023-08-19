@@ -3,7 +3,7 @@ from promptflow.tools.common import render_jinja_template
 from divider import Divider
 
 
-class PromptException(Exception):
+class PromptLimitException(Exception):
     def __init__(self, message="", **kwargs):
         super().__init__(message, **kwargs)
         self._message = str(message)

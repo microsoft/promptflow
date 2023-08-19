@@ -1,4 +1,5 @@
 import logging
+import math
 import re
 
 
@@ -22,6 +23,7 @@ class Divider:
         starts = re.finditer(Settings.divide_start[Divider.language], text)
         ends = re.finditer(Settings.divide_end[Divider.language], text)
         splitted_content = []
+        min_pos = math.inf
 
         while True:
             start = None
@@ -30,12 +32,15 @@ class Divider:
                 end = next(ends).start()
                 if end < start:
                     end = next(ends).start()
+                min_pos = min(min_pos, start)
                 splitted_content.append(text[start:end])
             except:
                 if start != None:
+                    min_pos = min(min_pos, start)
                     splitted_content.append(text[start:])
                 break
-
+        if min_pos != 0:
+            splitted_content.insert(0, text[0:min_pos])
         return splitted_content
 
     @classmethod
@@ -70,7 +75,7 @@ class Divider:
         funcs1, pos1 = Divider.get_functions_and_pos(docstring)
         funcs2, pos2 = Divider.get_functions_and_pos(origin_code)
         pattern = r'""".*?"""'
-        code = ""
+        code = origin_code if len(funcs2) == 0 else origin_code[0:pos2[0][0]]
         pos1.append((len(docstring), len(docstring)))  # avoid index out of range
         pos2.append((len(origin_code), len(origin_code)))  # avoid index out of range
         for i2 in range(len(funcs2)):  # add docstring for each function in origin_code
@@ -95,10 +100,15 @@ class Divider:
 
     @classmethod
     def format_indentation(cls, text, lspace_num):
-        lines = text.split('\n')
+        lines = text.splitlines()
         last_line_space_num = len(lines[-1]) - len(lines[-1].lstrip())
         need_add_space = max(lspace_num - last_line_space_num, 0) * ' '
         lines[0] = last_line_space_num * ' ' + lines[0].lstrip()  # Align the first row to the last row
         indented_lines = [(need_add_space + line).rstrip() for line in lines]
         indented_string = '\n'.join(indented_lines)
         return indented_string
+
+    @classmethod
+    def has_class_or_func(self, text):
+        funcs2, _ = Divider.get_functions_and_pos(text)
+        return len(funcs2) > 0

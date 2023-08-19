@@ -141,7 +141,7 @@ class TestHandleOpenAIError:
                     ServiceUnavailableError("Something went wrong"),
                     APIError("Something went wrong"),
                     Timeout("Something went wrong"),
-                    APIConnectionError("('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))")
+                    APIConnectionError("('Connection aborted.', ConnectionResetError(104, 'Connection reset_conversation by peer'))")
                 ]
             ),
         ],
@@ -179,7 +179,7 @@ class TestHandleOpenAIError:
                     ServiceUnavailableError("Something went wrong", headers={"Retry-After": "0.3"}),
                     APIError("Something went wrong", headers={"Retry-After": "0.3"}),
                     Timeout("Something went wrong", headers={"Retry-After": "0.3"}),
-                    APIConnectionError("('Connection aborted.', ConnectionResetError(104, 'Connection reset by peer'))",
+                    APIConnectionError("('Connection aborted.', ConnectionResetError(104, 'Connection reset_conversation by peer'))",
                                        headers={"Retry-After": "0.3"})
                 ]
             ),
