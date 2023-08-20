@@ -11,28 +11,28 @@ nodes:
   type: python
   source:
     type: code
-    path: main.py
+    path: load_code_tool.py
   inputs:
     code_path: ${inputs.code_path}
 - name: divide_code
   type: python
   source:
     type: code
-    path: main.py
+    path: divide_code_tool.py
   inputs:
     file_content: ${load_code.output}
 - name: generate_docstring
   type: python
   source:
     type: code
-    path: main.py
+    path: generate_docstring_tool.py
   inputs:
     divided: ${divide_code.output}
 - name: combine_code
   type: python
   source:
     type: code
-    path: main.py
+    path: combine_code_tool.py
   inputs:
     divided: ${generate_docstring.output}
 id: auto_generate_docstring_flow
