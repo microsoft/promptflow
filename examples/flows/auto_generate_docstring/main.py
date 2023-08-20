@@ -1,3 +1,4 @@
+import argparse
 import ast
 import asyncio
 import logging
@@ -30,7 +31,7 @@ def get_imports(content):
 @tool
 def load_code(code_path: str):
     file = File(code_path)
-    return file.content()
+    return file.content
 
 
 @tool
@@ -108,8 +109,12 @@ def execute_pipeline(*pipelines, args=None):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="The code path of code that need to generate docstring.")
+    parser.add_argument("--file", help="Path for the code file", default='./demo_code.py')
+    args = parser.parse_args()
+
     load_dotenv()
-    code_path = './demo_code.py'
+    code_path = args.file
     res = execute_pipeline(
         load_code,
         divide_code,
@@ -117,4 +122,5 @@ if __name__ == "__main__":
         combine_code,
         args=code_path
     )
-    show_diff(load_code(code_path), res)
+
+    show_diff(load_code(code_path), res, File(code_path).filename)

@@ -3,21 +3,42 @@ import os
 
 class File:
     def __init__(self, path: str):
-        self.__path = os.path.normpath(os.path.abspath(path))
-        self.__dirname = os.path.dirname(self.__path)
-        self.__basename = os.path.basename(self.__path).split(".")[0]
-        self.__language = os.path.basename(self.__path).split(".")[1]
+        self._path = os.path.normpath(os.path.abspath(path))
+        self._dirname = os.path.dirname(self._path)
+        self._filename = os.path.basename(self._path).split(".")[0]
+        self._language = os.path.basename(self._path).split(".")[1]
 
+    @property
     def content(self) -> str:
-        self.__text = open(self.__path, "r").read()
-        return self.__text
+        if not hasattr(self, "_text"):
+            self._text = open(self._path, "r").read()
+        return self._text
 
+    @property
     def language(self) -> str:
-        return self.__language
+        return self._language
 
-    def create_doc_file(self, content: str) -> None:
+    @property
+    def filename(self) -> str:
+        return self._filename
+
+    @property
+    def dirname(self) -> str:
+        return self._dirname
+
+    @property
+    def path(self) -> str:
+        return self._path
+
+    def override_origin_file(self, content: str) -> None:
+        with open(self.path, "w") as f:
+            # self._text = content
+            f.write(content)
+
+    def create_new_file(self, content: str) -> None:
         path = os.path.join(
-            self.__dirname,
-            self.__basename + f"_doc.{self.__language}",
+            self.dirname,
+            self.filename + f"_doc.{self.language}",
         )
-        open(path, "w").write(content)
+        with open(path, "w") as f:
+            f.write(content)
