@@ -1,14 +1,15 @@
 import asyncio
 import logging
-import time
+import sys
 
 from dotenv import load_dotenv
 from file import File
 from promptflow import tool
 from divider import Divider
-from AzureOpenAi import ChatLLM, LLM
+from AzureOpenAi import ChatLLM
 from prompt import PromptLimitException, docstring_prompt
 from diff import show_diff
+import platform
 
 
 @tool
@@ -25,7 +26,7 @@ def divide_code(file_content: str):
 
 
 async def agenerate_docstring(divided: list[str]):
-    llm = LLM(module="gpt-35-turbo")
+    llm = ChatLLM(module="gpt-35-turbo")
     divided = list(reversed(divided))
     all_divided = []
 
@@ -49,8 +50,11 @@ async def agenerate_docstring(divided: list[str]):
     tasks = []
     new_code = []
     for item in all_divided:
-        tasks.append(llm.aquery(docstring_prompt(item)))
-    res_doc = await asyncio.gather(*tasks, return_exceptions=True)
+        if Divider.has_class_or_func(item):
+            tasks.append(llm.aquery(docstring_prompt(item)))
+        else:  # If the code has not function or class, no need to generate docstring.
+            tasks.append(asyncio.sleep(0))
+    res_doc = await asyncio.gather(*tasks)
     for i in range(len(all_divided)):
         if type(res_doc[i]) == str:
             new_code.append(Divider.merge_doc2code(res_doc[i], all_divided[i]))
@@ -62,6 +66,8 @@ async def agenerate_docstring(divided: list[str]):
 
 @tool
 def generate_docstring(divided: list[str]):
+    if sys.platform.startswith("win"):
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     return asyncio.run(agenerate_docstring(divided))
 
 
@@ -79,18 +85,20 @@ def execute_pipeline(*pipelines, args=None):
 
 if __name__ == "__main__":
     load_dotenv()
-    # res = execute_pipeline(
-    #     load_code,
-    #     divide_code,
-    #     generate_docstring,
-    #     combine_code,
-    #     args='./demo_code.py'
-    # )
-    # print(res)
-    code = open('./test.txt', "r").read()
+    code_path = './demo_code.py'
+    res = execute_pipeline(
+        load_code,
+        divide_code,
+        generate_docstring,
+        combine_code,
+        args=code_path
+    )
+    show_diff(load_code(code_path), res)
+    # code = open('./test.txt', "r").read()
     # doc = open('./test2.txt', "r").read()
     # print(Divider.merge_doc2code(doc, code))
-    print(combine_code(generate_docstring([code])))
+    # new_code = generate_docstring([code])
+    # print(new_code)
     # functions, pos = Divider.get_functions_and_pos(text)
     # for func in functions:
     #     print(func)

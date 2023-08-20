@@ -145,107 +145,98 @@ class ChatLLM(AOAI):
         self.engine = self.engine or self.default_engine
         self.system_prompt = "You are a Python engineer."
         self.conversation = dict()
-        self.unique_convo_id = None
 
     def query_with_nostream(self, text, **kwargs):
-        try:
-            convo_id = kwargs.pop('conversation', None)
-            messages = self.create_prompt(text, convo_id)
-            self.validate_tokens(messages)
-            temperature = kwargs.pop("temperature", 0.1)
-            response = openai.ChatCompletion.create(
-                engine=self.engine,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=self.max_tokens,
-                stream=False,
-                **kwargs,
-            )
-            response_role = response["choices"][0]["message"]["role"]
-            full_response = response["choices"][0]["message"]["content"]
-            self.add_to_conversation(full_response, response_role, convo_id=convo_id)
-            return full_response
-        except Exception as e:
-            raise e
+        convo_id = kwargs.pop('conversation', None)
+        messages = self.create_prompt(text, convo_id)
+        self.validate_tokens(messages)
+        temperature = kwargs.pop("temperature", 0.1)
+        response = openai.ChatCompletion.create(
+            engine=self.engine,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=self.max_tokens,
+            stream=False,
+            **kwargs,
+        )
+        response_role = response["choices"][0]["message"]["role"]
+        full_response = response["choices"][0]["message"]["content"]
+        self.add_to_conversation(text, "user", convo_id=convo_id)
+        self.add_to_conversation(full_response, response_role, convo_id=convo_id)
+        return full_response
 
     def query_with_stream(self, text, **kwargs):
-        try:
-            convo_id = kwargs.pop('conversation', None)
-            messages = self.create_prompt(text, convo_id)
-            self.validate_tokens(messages)
-            temperature = kwargs.pop("temperature", 0.1)
-            response = openai.ChatCompletion.create(
-                engine=self.engine,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=self.max_tokens,
-                stream=True,
-                **kwargs,
-            )
+        convo_id = kwargs.pop('conversation', None)
+        messages = self.create_prompt(text, convo_id)
+        self.validate_tokens(messages)
+        temperature = kwargs.pop("temperature", 0.1)
+        response = openai.ChatCompletion.create(
+            engine=self.engine,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=self.max_tokens,
+            stream=True,
+            **kwargs,
+        )
 
-            response_role = None
-            full_response = ""
-            for chunk in response:
-                delta = chunk["choices"][0]["delta"]
-                if "role" in delta:
-                    response_role = delta["role"]
-                if "content" in delta:
-                    content = delta["content"]
-                    full_response += content
-                    yield content
-            self.add_to_conversation(full_response, response_role, convo_id=convo_id)
-        except Exception as e:
-            raise e
+        response_role = None
+        full_response = ""
+        for chunk in response:
+            delta = chunk["choices"][0]["delta"]
+            if "role" in delta:
+                response_role = delta["role"]
+            if "content" in delta:
+                content = delta["content"]
+                full_response += content
+                yield content
+        self.add_to_conversation(text, "user", convo_id=convo_id)
+        self.add_to_conversation(full_response, response_role, convo_id=convo_id)
 
     async def aquery_with_nostream(self, text, **kwargs):
-        try:
-            convo_id = kwargs.pop('conversation', None)
-            messages = self.create_prompt(text, convo_id)
-            self.validate_tokens(messages)
-            temperature = kwargs.pop("temperature", 0.1)
-            response = await openai.ChatCompletion.acreate(
-                engine=self.engine,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=self.max_tokens,
-                stream=False,
-                **kwargs,
-            )
-            response_role = response["choices"][0]["message"]["role"]
-            full_response = response["choices"][0]["message"]["content"]
-            self.add_to_conversation(full_response, response_role, convo_id=convo_id)
-            return full_response
-        except Exception as e:
-            raise e
+        convo_id = kwargs.pop('conversation', None)
+        messages = self.create_prompt(text, convo_id)
+        self.validate_tokens(messages)
+        temperature = kwargs.pop("temperature", 0.1)
+        response = await openai.ChatCompletion.acreate(
+            engine=self.engine,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=self.max_tokens,
+            stream=False,
+            **kwargs,
+        )
+        response_role = response["choices"][0]["message"]["role"]
+        full_response = response["choices"][0]["message"]["content"]
+        self.add_to_conversation(text, "user", convo_id=convo_id)
+        self.add_to_conversation(full_response, response_role, convo_id=convo_id)
+        return full_response
 
     async def aquery_with_stream(self, text, **kwargs):
-        try:
-            convo_id = kwargs.pop('conversation', None)
-            messages = self.create_prompt(text, convo_id)
-            self.validate_tokens(messages)
-            temperature = kwargs.pop("temperature", 0.1)
-            response = await openai.ChatCompletion.acreate(
-                engine=self.engine,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=self.max_tokens,
-                stream=True,
-                **kwargs,
-            )
+        convo_id = kwargs.pop('conversation', None)
+        messages = self.create_prompt(text, convo_id)
+        self.validate_tokens(messages)
+        temperature = kwargs.pop("temperature", 0.1)
+        response = await openai.ChatCompletion.acreate(
+            engine=self.engine,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=self.max_tokens,
+            stream=True,
+            **kwargs,
+        )
 
-            response_role = None
-            full_response = ""
-            for chunk in response:
-                delta = chunk["choices"][0]["delta"]
-                if "role" in delta:
-                    response_role = delta["role"]
-                if "content" in delta:
-                    content = delta["content"]
-                    full_response += content
-                    yield content
-            self.add_to_conversation(full_response, response_role, convo_id=convo_id)
-        except Exception as e:
-            raise e
+        response_role = None
+        full_response = ""
+        for chunk in response:
+            delta = chunk["choices"][0]["delta"]
+            if "role" in delta:
+                response_role = delta["role"]
+            if "content" in delta:
+                content = delta["content"]
+                full_response += content
+                yield content
+        self.add_to_conversation(text, "user", convo_id=convo_id)
+        self.add_to_conversation(full_response, response_role, convo_id=convo_id)
 
     def get_unique_convo_id(self):
         return str(uuid.uuid4()).replace('-', '')
@@ -254,17 +245,19 @@ class ChatLLM(AOAI):
         """
         Add a message to the conversation
         """
-        self.conversation[convo_id].append({"role": role, "content": message})
+        if type(convo_id) is str:
+            self.conversation[convo_id].append({"role": role, "content": message})
 
     def del_conversation(self, convo_id: str) -> None:
         if convo_id in self.conversation:
             del self.conversation[convo_id]
 
-    def reset_conversation(self, convo_id: str, system_prompt) -> None:
+    def init_conversation(self, convo_id: str, system_prompt) -> None:
         """
-        Reset the conversation
+        Init a new conversation
         """
-        self.conversation[convo_id] = [{"role": "system", "content": system_prompt}]
+        if type(convo_id) is str:
+            self.conversation[convo_id] = [{"role": "system", "content": system_prompt}]
 
     def get_tokens_count(self, messages: list[dict]) -> int:
         """
@@ -292,16 +285,17 @@ class ChatLLM(AOAI):
         unique_convo_id = self.get_unique_convo_id()
         convo_id = convo_id or unique_convo_id
         if convo_id not in self.conversation:
-            self.reset_conversation(convo_id=convo_id, system_prompt=self.system_prompt)
-        self.add_to_conversation(text, "user", convo_id=convo_id)
+            self.init_conversation(convo_id=convo_id, system_prompt=self.system_prompt)
 
-        while self.get_tokens_count(self.conversation[convo_id]) > self.tokens_limit \
-                and len(self.conversation[convo_id]) > 2:
-            self.conversation[convo_id].pop(1)
+        _conversation = self.conversation[convo_id] + [{"role": "user", "content": text}]
+
+        while self.get_tokens_count(_conversation) > self.tokens_limit and len(_conversation) > 2:
+            _conversation.pop(1)
 
         if unique_convo_id == convo_id:
-            self.del_conversation(convo_id=self.unique_convo_id)
-        return self.conversation[convo_id]
+            self.del_conversation(convo_id=unique_convo_id)
+
+        return _conversation
 
 
 if __name__ == "__main__":

@@ -109,6 +109,6 @@ class Divider:
         return indented_string
 
     @classmethod
-    def has_class_or_func(self, text):
-        funcs2, _ = Divider.get_functions_and_pos(text)
-        return len(funcs2) > 0
+    def has_class_or_func(cls, text):
+        funcs, _ = Divider.get_functions_and_pos(text)
+        return len(funcs) > 0
