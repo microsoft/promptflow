@@ -1,7 +1,7 @@
+import ast
 import asyncio
 import logging
 import sys
-
 from dotenv import load_dotenv
 from file import File
 from promptflow import tool
@@ -9,7 +9,22 @@ from divider import Divider
 from AzureOpenAi import ChatLLM
 from prompt import PromptLimitException, docstring_prompt
 from diff import show_diff
-import platform
+
+
+def get_imports(content):
+    tree = ast.parse(content)
+    import_statements = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for n in node.names:
+                import_statements.append(f"import {n.name}")
+        elif isinstance(node, ast.ImportFrom):
+            module_name = node.module
+            for n in node.names:
+                import_statements.append(f"from {module_name} import {n.name}")
+
+    return import_statements
 
 
 @tool
@@ -30,11 +45,20 @@ async def agenerate_docstring(divided: list[str]):
     divided = list(reversed(divided))
     all_divided = []
 
+    # If too many imports result in tokens exceeding the limit, please set an empty string.
+    modules = ''  # '\n'.join(get_imports(divided[-1]))
+    modules_tokens = llm.count_tokens(modules)
+    if modules_tokens > 300:
+        logging.warning(f'Too many imports, the number of tokens is {modules_tokens}')
+    if modules_tokens > 500:
+        logging.warning(f'Too many imports, the number of tokens is {modules_tokens}, will set an empty string.')
+        modules = ''
+
     # Divide the code into two parts if the global class/function is too long.
     while len(divided):
         item = divided.pop()
         try:
-            llm.validate_tokens(llm.create_prompt(docstring_prompt(item)))
+            llm.validate_tokens(llm.create_prompt(docstring_prompt(item, module=modules)))
         except PromptLimitException as e:
             logging.warning(e.message + ', will divide the code into two parts.')
             divided_tmp = Divider.divide_half(item)
@@ -48,13 +72,13 @@ async def agenerate_docstring(divided: list[str]):
         all_divided.append(item)
 
     tasks = []
-    new_code = []
     for item in all_divided:
         if Divider.has_class_or_func(item):
-            tasks.append(llm.aquery(docstring_prompt(item)))
+            tasks.append(llm.aquery(docstring_prompt(item, module=modules)))
         else:  # If the code has not function or class, no need to generate docstring.
             tasks.append(asyncio.sleep(0))
     res_doc = await asyncio.gather(*tasks)
+    new_code = []
     for i in range(len(all_divided)):
         if type(res_doc[i]) == str:
             new_code.append(Divider.merge_doc2code(res_doc[i], all_divided[i]))
@@ -94,11 +118,3 @@ if __name__ == "__main__":
         args=code_path
     )
     show_diff(load_code(code_path), res)
-    # code = open('./test.txt', "r").read()
-    # doc = open('./test2.txt', "r").read()
-    # print(Divider.merge_doc2code(doc, code))
-    # new_code = generate_docstring([code])
-    # print(new_code)
-    # functions, pos = Divider.get_functions_and_pos(text)
-    # for func in functions:
-    #     print(func)
