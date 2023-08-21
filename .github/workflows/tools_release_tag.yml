@@ -1,4 +1,4 @@
-name: Create Tools Release Tag
+name: Promptflow Tools Release Tag
 on:
   workflow_dispatch:
     inputs:
@@ -13,7 +13,7 @@ on:
         default: 'v1.0.0'
         type: string
       PreRelease:
-        description: 'If it is a pre-release'
+        description: 'Whether it is a pre-release'
         required: true
         default: true
         type: boolean
