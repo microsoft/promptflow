@@ -48,7 +48,7 @@ def create_remote_branch_in_ADO_with_new_tool_pkg_version(
     # Change directory to the repo directory
     os.chdir(repo_dir)
     # Pull the devs/test branch
-    subprocess.run(["git", "reset_conversation", "."])
+    subprocess.run(["git", "reset", "."])
     subprocess.run(["git", "checkout", "."])
     subprocess.run(["git", "clean", "-f", "."])
     subprocess.run(["git", "checkout", "main"])
