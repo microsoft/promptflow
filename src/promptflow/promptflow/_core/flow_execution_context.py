@@ -11,6 +11,7 @@ from logging import WARNING
 from typing import Callable, List
 
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
+from promptflow._core.errors import ToolExecutionError
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.tool import parse_all_args
 from promptflow._utils.logger_utils import flow_logger, logger
@@ -18,7 +19,7 @@ from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
 from promptflow.contracts.flow import Node
 from promptflow.contracts.run_info import RunInfo
-from promptflow.exceptions import PromptflowException, ToolExecutionError
+from promptflow.exceptions import PromptflowException
 
 from .openai_injector import Tracer
 from .run_tracker import RunTracker
@@ -51,6 +52,17 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._variant_id = variant_id
         #  TODO: use context var qu save the current node to enable multi-threading
         self._current_node: Node = None
+
+    def copy(self):
+        return FlowExecutionContext(
+            name=self._name,
+            run_tracker=self._run_tracker,
+            cache_manager=self._cache_manager,
+            run_id=self._run_id,
+            flow_id=self._flow_id,
+            line_number=self._line_number,
+            variant_id=self._variant_id,
+        )
 
     def update_operation_context(self):
         flow_context_info = {"flow-id": self._flow_id, "root-run-id": self._run_id}
@@ -176,7 +188,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
     def _generate_current_node_run_id(self) -> str:
         node = self._current_node
-        if node.reduce:
+        if node.aggregation:
             # For reduce node, the id should be constructed by the flow run info run id
             return f"{self._run_id}_{node.name}_reduce"
         if self._line_number is None:

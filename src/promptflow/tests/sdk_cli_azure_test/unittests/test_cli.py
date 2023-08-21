@@ -57,7 +57,7 @@ class TestAzureCli:
     def test_run_show_details(self, mocker: MockFixture, operation_scope_args):
         mocked = mocker.patch.object(RunOperations, "get_details")
         # show_run_details will print details, so we need to mock the return value
-        mocked.return_value = pd.DataFrame([["input", "output"]])
+        mocked.return_value = pd.DataFrame([{"input": "input_value", "output": "output_value"}])
         run_pf_command(
             "run",
             "show-details",
@@ -96,4 +96,14 @@ class TestAzureCli:
             "--include-archived",
             *operation_scope_args,
         )
-        mocked.assert_called_once()
+        run_pf_command(
+            "run",
+            "list",
+            "--max-results",
+            "10",
+            "--include-archived",
+            "--output",
+            "table",
+            *operation_scope_args,
+        )
+        assert mocked.call_count == 2

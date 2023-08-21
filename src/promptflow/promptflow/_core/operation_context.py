@@ -103,9 +103,9 @@ class OperationContext(Dict):
         """
 
         def parts():
-            yield f"promptflow/{VERSION}"
             if "user_agent" in self:
                 yield self.get("user_agent")
+            yield f"promptflow/{VERSION}"
 
         return " ".join(parts())
 
@@ -119,7 +119,8 @@ class OperationContext(Dict):
             user_agent (str): The user agent information to append.
         """
         if "user_agent" in self:
-            self.user_agent = f"{self.user_agent} {user_agent}"
+            if user_agent not in self.user_agent:
+                self.user_agent = f"{self.user_agent} {user_agent}"
         else:
             self.user_agent = user_agent
 

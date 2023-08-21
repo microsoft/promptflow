@@ -1,13 +1,14 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import concurrent
 import copy
 import json
-import logging
 import os
 import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from functools import cached_property
 from pathlib import Path
@@ -15,6 +16,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import requests
+import yaml
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
     OperationsContainer,
@@ -34,20 +36,27 @@ from promptflow._sdk._constants import (
     RunDataKeys,
     RunStatus,
 )
+from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError
+from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
-from promptflow.azure._constants._flow import CHILD_RUNS_PAGE_SIZE, NODE_RUNS_PAGE_SIZE
+from promptflow.azure._constants._flow import (
+    BASE_IMAGE,
+    CHILD_RUNS_PAGE_SIZE,
+    NODE_RUNS_PAGE_SIZE,
+    PYTHON_REQUIREMENTS_TXT,
+)
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import FlowRunInfo
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
 from promptflow.azure.operations._flow_opearations import FlowOperations
-from promptflow.contracts.run_management import RunDetail, RunMetadata, RunVisualization
+from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = logging.getLogger(LOGGER_NAME)
+logger = LoggerFactory.get_logger(name=LOGGER_NAME)
 
 
 class RunRequestException(Exception):
@@ -175,34 +184,8 @@ class RunOperations(_ScopeDependentOperations):
     def create_or_update(self, run: Run, **kwargs) -> Run:
         stream = kwargs.pop("stream", False)
 
-        flow_path = run.flow
-        self._resolve_data_to_asset_id(run=run)
-        self._resolve_flow(run=run)
-        runtime = run._runtime
-        runtime = runtime or kwargs.get("runtime", None)
+        rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"))
 
-        rest_obj = run._to_rest_object()
-        if runtime:
-            if not isinstance(runtime, str):
-                raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-            rest_obj.runtime_name = runtime
-            if runtime == "None":
-                # HARD CODE for office scenario, use workspace default runtime when specified None
-                rest_obj.runtime_name = None
-        else:
-            logger.warning(
-                f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
-                "it may take a while to build run time and request may fail with timeout "
-                "error and run will stuck with status 'Not started' due to current system limitation. "
-                "Wait a while and resubmit same flow can successfully start the run."
-            )
-            rest_obj.runtime_name = "automatic"
-            rest_obj.session_id = self._get_session_id(flow=flow_path)
-            if run._resources is not None:
-                if not isinstance(run._resources, dict):
-                    raise TypeError(f"resources should be a dict, got {type(run._resources)} for {run._resources}")
-                rest_obj.vm_size = run._resources.get("instance_type", None)
-                rest_obj.max_idle_time_seconds = run._resources.get("idle_time_before_shutdown_minutes", None)
         self._service_caller.submit_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
@@ -275,7 +258,7 @@ class RunOperations(_ScopeDependentOperations):
         :return: The metrics
         :rtype: dict
         """
-        run = run.name if isinstance(run, Run) else run
+        run = Run._validate_and_return_run_name(run)
         self._check_cloud_run_completed(run_name=run)
         metrics = self._get_metrics_from_metric_service(run)
         return metrics
@@ -288,7 +271,7 @@ class RunOperations(_ScopeDependentOperations):
         :return: The details
         :rtype: pandas.DataFrame
         """
-        run = run.name if isinstance(run, Run) else run
+        run = Run._validate_and_return_run_name(run)
         self._check_cloud_run_completed(run_name=run)
         child_runs = self._get_child_runs_from_pfs(run)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
@@ -355,6 +338,7 @@ class RunOperations(_ScopeDependentOperations):
         :return: The run
         :rtype: Run
         """
+        run = Run._validate_and_return_run_name(run)
         return self._get_run_from_run_history(flow_run_id=run, **kwargs)
 
     def _get_run_from_run_history(self, flow_run_id, **kwargs):
@@ -375,6 +359,8 @@ class RunOperations(_ScopeDependentOperations):
             run_data = self._refine_run_data_from_run_history(run)
             run = Run._from_run_history_entity(run_data)
             return run
+        elif response.status_code == 404:
+            raise RunNotFoundError(f"Run {flow_run_id!r} not found.")
         else:
             raise RunRequestException(
                 f"Failed to get run from service. Code: {response.status_code}, text: {response.text}"
@@ -454,16 +440,33 @@ class RunOperations(_ScopeDependentOperations):
 
     def stream(self, run: Union[str, Run]) -> Run:
         """Stream the logs of a run."""
-        run = run.name if isinstance(run, Run) else run
+        run = self.get(run=run)
         # TODO: maybe we need to make this configurable
         file_handler = sys.stdout
         # different from Azure ML job, flow job can run very fast, so it might not print anything;
         # use below variable to track this behavior, and at least print something to the user.
         try:
             printed = 0
-            run = self.get(run=run)
+            stream_count = 0
+            start = time.time()
             while run.status in RUNNING_STATUSES or run.status == RunStatus.FINALIZING:
                 file_handler.flush()
+                stream_count += 1
+                # print prompt every 3 times, in case there is no log printed
+                if stream_count % 3 == 0:
+                    # print prompt every 3 times
+                    file_handler.write(f"(Run status is {run.status!r}, continue streaming...)\n")
+
+                # if the run is not started for 5 minutes, print an error message and break the loop
+                if run.status == RunStatus.NOT_STARTED:
+                    current = time.time()
+                    if current - start > 300:
+                        file_handler.write(
+                            f"The run {run.name!r} is in status 'NotStarted' for 5 minutes, streaming is stopped."
+                            "Please make sure you are using the latest runtime.\n"
+                        )
+                        break
+
                 available_logs = self._get_log(flow_run_id=run.name)
                 printed = incremental_print(available_logs, printed, file_handler)
                 time.sleep(10)
@@ -491,8 +494,7 @@ class RunOperations(_ScopeDependentOperations):
                 "But the run is still executing on the cloud.\n"
             )
             print(error_message)
-        finally:
-            return run
+        return run
 
     def _resolve_data_to_asset_id(self, run: Run):
         from azure.ai.ml._artifacts._artifact_utilities import _upload_and_generate_remote_uri
@@ -511,8 +513,7 @@ class RunOperations(_ScopeDependentOperations):
 
         if is_remote_uri(test_data):
             # Pass through ARM id or remote url
-            run.data = test_data
-            return
+            return test_data
 
         if os.path.exists(test_data):  # absolute local path, upload, transform to remote url
             data_type = _get_data_type(test_data)
@@ -530,12 +531,12 @@ class RunOperations(_ScopeDependentOperations):
                 f"Local path {test_data!r} not exist. "
                 "If it's remote data, only data with azureml prefix or remote url is supported."
             )
-        run.data = test_data
+        return test_data
 
     def _resolve_flow(self, run: Run):
         flow = load_flow(run.flow)
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow)
-        run.flow = flow.path
+        return flow.path
 
     def _get_session_id(self, flow):
         flow = load_flow(flow)
@@ -663,22 +664,133 @@ class RunOperations(_ScopeDependentOperations):
             details.append(asdict(detail))
             metadatas.append(asdict(metadata))
         data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
-        html_string = generate_html_string(asdict(data_for_visualize))
+        html_string = generate_html_string(asdict(data_for_visualize), is_cloud=True)
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path, open_html=html_path is None)
 
-    def visualize(self, names: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
+    def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
         """Visualize run(s).
 
-        :param names: Names of the runs, or list of run objects.
-        :type names: Union[str, ~promptflow.sdk.entities.Run, List[str], List[~promptflow.sdk.entities.Run]]
+        :param runs: Names of the runs, or list of run objects.
+        :type runs: Union[str, ~promptflow.sdk.entities.Run, List[str], List[~promptflow.sdk.entities.Run]]
         """
-        if not isinstance(names, list):
-            names = [names]
-        if isinstance(names[0], Run):
-            names = [run.name for run in names]
+        if not isinstance(runs, list):
+            runs = [runs]
+
+        validated_runs = []
+        for run in runs:
+            run_name = Run._validate_and_return_run_name(run)
+            validated_runs.append(run_name)
+
         html_path = kwargs.pop("html_path", None)
         try:
-            self._visualize(names, html_path=html_path)
+            self._visualize(validated_runs, html_path=html_path)
+        except InvalidRunStatusError as e:
+            error_message = f"Cannot visualize non-completed run. {str(e)}"
+            logger.error(error_message)
         except Exception as e:  # pylint: disable=broad-except
             raise e
+
+    def _resolve_environment(self, run):
+        from promptflow._sdk._constants import DAG_FILE_NAME
+        from promptflow.azure._constants._flow import PYTHON_REQUIREMENTS_TXT
+
+        flow = run.flow
+        if os.path.isdir(flow):
+            flow = os.path.join(flow, DAG_FILE_NAME)
+        with open(flow, "r") as f:
+            flow_dict = yaml.safe_load(f)
+        environment = flow_dict.get("environment", {})
+
+        if not isinstance(environment, dict):
+            raise TypeError(f"environment should be a dict, got {type(environment)} for {environment}")
+        if PYTHON_REQUIREMENTS_TXT in environment:
+            req_path = os.path.join(os.path.dirname(flow), environment[PYTHON_REQUIREMENTS_TXT])
+            if not os.path.exists(req_path):
+                raise FileNotFoundError(
+                    f"File {environment[PYTHON_REQUIREMENTS_TXT]} in environment for flow {flow} not found."
+                )
+            with open(req_path, "r") as f:
+                requirements = f.read().splitlines()
+            environment[PYTHON_REQUIREMENTS_TXT] = requirements
+        return environment
+
+    def _resolve_session(self, run, session_id):
+        from promptflow.azure._restclient.flow.models import CreateFlowSessionRequest
+
+        if run._resources is not None:
+            if not isinstance(run._resources, dict):
+                raise TypeError(f"resources should be a dict, got {type(run._resources)} for {run._resources}")
+            vm_size = run._resources.get("instance_type", None)
+            max_idle_time_minutes = run._resources.get("idle_time_before_shutdown_minutes", None)
+            # change to seconds
+            max_idle_time_seconds = max_idle_time_minutes * 60 if max_idle_time_minutes else None
+        else:
+            vm_size = None
+            max_idle_time_seconds = None
+        environment = self._resolve_environment(run)
+        if environment is not None:
+            pip_requirements = environment.get(PYTHON_REQUIREMENTS_TXT, None)
+            base_image = environment.get(BASE_IMAGE, None)
+        else:
+            pip_requirements = None
+            base_image = None
+        request = CreateFlowSessionRequest(
+            vm_size=vm_size,
+            max_idle_time_seconds=max_idle_time_seconds,
+            python_pip_requirements=pip_requirements,
+            base_image=base_image,
+        )
+        self._service_caller.create_flow_session(
+            subscription_id=self._operation_scope.subscription_id,
+            resource_group_name=self._operation_scope.resource_group_name,
+            workspace_name=self._operation_scope.workspace_name,
+            session_id=session_id,
+            body=request,
+        )
+
+    def _resolve_automatic_runtime(self, run, flow_path):
+        logger.warning(
+            f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
+            "it may take a while to build run time and request may fail with timeout error. "
+            "Wait a while and resubmit same flow can successfully start the run."
+        )
+        runtime_name = "automatic"
+        session_id = self._get_session_id(flow=flow_path)
+        self._resolve_session(run=run, session_id=session_id)
+        return runtime_name, session_id
+
+    def _resolve_runtime(self, run, flow_path, runtime):
+        runtime = run._runtime or runtime
+
+        if runtime:
+            if not isinstance(runtime, str):
+                raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
+            return runtime, None
+        else:
+            return self._resolve_automatic_runtime(run=run, flow_path=flow_path)
+
+    def _resolve_dependencies_in_parallel(self, run, runtime):
+        flow_path = run.flow
+        with ThreadPoolExecutor() as pool:
+            tasks = [
+                pool.submit(self._resolve_data_to_asset_id, run=run),
+                pool.submit(self._resolve_flow, run=run),
+                pool.submit(self._resolve_runtime, run=run, flow_path=flow_path, runtime=runtime),
+            ]
+            concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
+            task_results = [task.result() for task in tasks]
+
+        run.data = task_results[0]
+        run.flow = task_results[1]
+        runtime, session_id = task_results[2]
+
+        rest_obj = run._to_rest_object()
+        rest_obj.runtime_name = runtime
+        rest_obj.session_id = session_id
+
+        if runtime == "None":
+            # HARD CODE for office scenario, use workspace default runtime when specified None
+            rest_obj.runtime_name = None
+
+        return rest_obj

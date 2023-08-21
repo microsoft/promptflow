@@ -26,11 +26,11 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
     pip install -r /flow/{{env.python_requirements_txt}} && \
 {% else %}
 {% if env.sdk_version %}
-    pip install promptflow-sdk[builtins]=={{env.sdk_version}} \
+    pip install promptflow=={{env.sdk_version}} \
 {% else %}
-    pip install promptflow-sdk[builtins]==0.0.99252944 \
+    pip install promptflow \
 {% endif %}
-    prompt-flow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/ && \
+    promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/ && \
 {% endif %}
     conda run -n {{env.conda_env_name}} pip install keyrings.alt && \
     conda run -n {{env.conda_env_name}} pip cache purge && \
@@ -42,7 +42,6 @@ RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
 
 EXPOSE 8080
 
-COPY ./connections.sqlite /
-COPY ./connections_setup.py /
+COPY ./connections/* /connections/
 COPY ./start.sh /
-CMD ./start.sh
+CMD ["bash", "./start.sh"]

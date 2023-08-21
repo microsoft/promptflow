@@ -1,0 +1,18 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${custom_llm_tool_with_duplicated_inputs.output}
+nodes:
+- name: custom_llm_tool_with_duplicated_inputs
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: custom_llm_tool.TestCustomLLMTool.call
+    path: ./prompt_with_duplicated_inputs.jinja2
+  inputs:
+    connection: azure_open_ai_connection
+    api: completion
+    text: ${inputs.text}

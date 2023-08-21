@@ -26,6 +26,7 @@ from promptflow._sdk._constants import (
     VARIANTS,
     ConnectionFields,
 )
+from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import (
     _get_additional_includes,
@@ -36,9 +37,9 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
-from promptflow._sdk.exceptions import InvalidFlowError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.load_data import load_data
 from promptflow._utils.utils import reverse_transpose
 from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -191,7 +192,8 @@ class SubmitterHelper:
 
     @staticmethod
     def resolve_connections(flow: Flow):
-        executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
+        with _change_working_dir(flow.code):
+            executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
         return Flow._get_local_connections(executable=executable)
@@ -230,16 +232,6 @@ class RunSubmitter:
         self._run_bulk(run=run, stream=stream, **kwargs)
         return self.run_operations.get(name=run.name)
 
-    @classmethod
-    def _dump_executor_result(cls, local_storage, flow: Flow, executor_result: dict) -> None:
-        """Dump executor return to local storage."""
-        local_storage.dump_snapshot(flow=flow)
-        local_storage.dump_inputs(inputs=executor_result["inputs"])
-        local_storage.dump_outputs(outputs=executor_result["outputs"])
-        local_storage.dump_detail(detail=executor_result["details"])
-        local_storage.dump_metrics(metrics=executor_result["metrics"])
-        local_storage.dump_exception(exception=executor_result["exception"])
-
     def _run_bulk(self, run: Run, stream=False, **kwargs):
         # validate & resolve variant
         if run.variant:
@@ -264,7 +256,7 @@ class RunSubmitter:
             with local_storage.logger.setup_logger(stream=stream):
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
-    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage) -> dict:
+    def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
         connections = SubmitterHelper.resolve_connections(flow=flow)
         inputs_mapping = run.column_mapping
@@ -276,7 +268,7 @@ class RunSubmitter:
             flow.path,
             connections,
             flow.code,
-            storage=None,  # TODO(2582819): Use local storage to support live update
+            storage=local_storage,
         )
         # prepare data
         input_dicts = self._resolve_data(run)
@@ -284,9 +276,9 @@ class RunSubmitter:
         bulk_result = None
         status = Status.Failed.value
         exception = None
+        # create run to db when fully prepared to run in executor, otherwise won't create it
+        run._dump()  # pylint: disable=protected-access
         try:
-            # create run to db when fully prepared to run in executor, otherwise won't create it
-            run._dump()  # pylint: disable=protected-access
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
             status = Status.Completed.value
         except Exception as e:
@@ -299,16 +291,15 @@ class RunSubmitter:
                 raise e
             # won't raise the exception since it's already included in run object.
         finally:
-            result = {
-                "outputs": bulk_result.outputs if bulk_result else None,
-                "metrics": bulk_result.metrics if bulk_result else None,
-                #  TODO(2582829): Use bulk_result to get the final results instead of private _run_tracker
-                "details": flow_executor._run_tracker.collect_all_run_infos_as_dicts(),
-                "inputs": mapped_inputs if mapped_inputs else None,
-                "status": status,
-                "exception": exception,
-            }
-            self._dump_executor_result(local_storage=local_storage, flow=flow, executor_result=result)
+            # persist snapshot and result
+            # snapshot: flow directory and (mapped) inputs
+            local_storage.dump_snapshot(flow)
+            local_storage.dump_inputs(mapped_inputs)
+            # result: outputs and metrics
+            # TODO: retrieve root run system metrics from executor return, we might store it in db
+            local_storage.persist_result(bulk_result)
+            local_storage.dump_exception(exception)
+
             self.run_operations.update(
                 name=run.name,
                 status=status,

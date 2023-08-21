@@ -222,20 +222,9 @@ def add_parser_export(parent_parser, entity_name: str):
         help=description,
     )
     add_param_source(parser)
-    parser.add_argument("--output", "-o", type=str, help="The destination folder path for exported.")
-    parser.add_argument("--format", "-f", type=str, help="The format to export in.", choices=["docker", "package"])
+    parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path for exported.")
     parser.add_argument(
-        "--migration-secret",
-        type=str,
-        help="The secret to encrypt connections data during migration. Need to be provided when "
-        "deploying exported docker or package. If not provided, an interactive prompt will "
-        "be shown to ask for the secret.",
-    )
-    parser.add_argument(
-        "--migration-secret-file",
-        type=str,
-        help="Provide migration secret via file to avoid passing it as a command argument. Won't take effect if "
-        "--migration-secret is provided.",
+        "--format", "-f", required=True, type=str, help="The format to export in.", choices=["docker", "package"]
     )
     parser.set_defaults(sub_action="export")
 

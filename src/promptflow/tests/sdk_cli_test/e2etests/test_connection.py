@@ -69,7 +69,7 @@ class TestConnection:
         with pytest.raises(Exception) as e:
             result._secrets = {}
             _client.connections.create_or_update(result)
-        assert "secrets 'api_key' value invalid, please fill it" in str(e.value)
+        assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
     def test_custom_connection_get_and_update(self):
         # Test api key not updated
@@ -88,7 +88,7 @@ class TestConnection:
         with pytest.raises(Exception) as e:
             result._secrets = {}
             _client.connections.create_or_update(result)
-        assert "secrets 'api_key' value invalid, please fill it" in str(e.value)
+        assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
     @pytest.mark.parametrize(
         "file_name, expected_updated_item, expected_secret_item",

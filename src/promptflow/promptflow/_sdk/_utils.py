@@ -4,14 +4,17 @@
 
 import collections
 import json
+import logging
+import multiprocessing
 import os
 import re
 import shutil
 import tempfile
 from contextlib import contextmanager
+from enum import Enum
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, Optional, Tuple, Union
+from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
 
 import keyring
 import yaml
@@ -22,19 +25,33 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
+from promptflow._internal import generate_tool_meta_dict_by_file
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
+    DEFAULT_ENCODING,
+    FLOW_TOOLS_JSON,
+    FLOW_TOOLS_JSON_GEN_TIMEOUT,
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
+    LOGGER_NAME,
+    NODE,
+    NODE_VARIANTS,
+    NODES,
+    PROMPT_FLOW_DIR_NAME,
+    USE_VARIANTS,
+    VARIANTS,
     CommonYamlFields,
 )
-from promptflow._sdk._vendor import IgnoreFile, get_ignore_file
-from promptflow._sdk.exceptions import (
+from promptflow._sdk._errors import (
     DecryptConnectionError,
+    GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
     UnsecureConnectionError,
 )
+from promptflow._sdk._vendor import IgnoreFile, get_ignore_file
+from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
+from promptflow.contracts.tool import ToolType
 
 
 def snake_to_camel(name):
@@ -268,6 +285,29 @@ def update_environment_variables_with_connections(built_connections):
     return update_dict_value_with_connections(built_connections, os.environ)
 
 
+def _match_env_reference(val: str):
+    val = val.strip()
+    m = re.match(r"^\$\{env:(.+)}$", val)
+    if not m:
+        return None
+    name = m.groups()[0]
+    return name
+
+
+def resolve_connections_environment_variable_reference(connections: Dict[str, dict]):
+    """The function will resolve connection secrets env var reference like api_key: ${env:KEY}"""
+    for connection in connections.values():
+        values = connection.get("value", {})
+        for key, val in values.items():
+            if not _match_env_reference(val):
+                continue
+            env_name = _match_env_reference(val)
+            if env_name not in os.environ:
+                raise Exception(f"Environment variable {env_name} is not found.")
+            values[key] = os.environ[env_name]
+    return connections
+
+
 def update_dict_value_with_connections(built_connections, connection_dict: dict):
     for key, val in connection_dict.items():
         connection_name, connection_key = _match_reference(val)
@@ -397,7 +437,7 @@ def get_promptflow_sdk_version() -> str:
 class PromptflowIgnoreFile(IgnoreFile):
 
     # TODO add more files to this list.
-    IGNORE_FILE = [".runs"]
+    IGNORE_FILE = [".runs", "__pycache__"]
 
     def __init__(self, prompt_flow_path: Union[Path, str]):
         super(PromptflowIgnoreFile, self).__init__(prompt_flow_path)
@@ -414,3 +454,138 @@ class PromptflowIgnoreFile(IgnoreFile):
 
         base_ignore = get_ignore_file(self.base_path)
         return self.IGNORE_FILE + base_ignore._get_ignore_list()
+
+
+def _generate_metas_from_files(
+    tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
+) -> None:
+    with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
+        for source, tool_type in tools:
+            try:
+                tools_dict[source] = generate_tool_meta_dict_by_file(source, ToolType(tool_type))
+            except Exception as e:
+                exception_dict[source] = str(e)
+
+
+def _generate_tool_meta(
+    flow_directory: Path,
+    tools: List[Tuple[str, str]],
+    raise_error: bool,
+    timeout: int,
+) -> Dict[str, dict]:
+    logger = logging.getLogger(LOGGER_NAME)
+    # use multi process generate to avoid system path disturb
+    manager = multiprocessing.Manager()
+    tools_dict = manager.dict()
+    exception_dict = manager.dict()
+    p = multiprocessing.Process(
+        target=_generate_metas_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
+    )
+    p.start()
+    p.join(timeout=timeout)
+    if p.is_alive():
+        p.terminate()
+        p.join()
+    res = {source: tool for source, tool in tools_dict.items()}
+
+    for source in res:
+        # remove name in tool meta
+        res[source].pop("name")
+        # convert string Enum to string
+        if isinstance(res[source]["type"], Enum):
+            res[source]["type"] = res[source]["type"].value
+        # not all tools have inputs, so check first
+        if "inputs" in res[source]:
+            for tool_input in res[source]["inputs"]:
+                tool_input_type = res[source]["inputs"][tool_input]["type"]
+                for i in range(len(tool_input_type)):
+                    if isinstance(tool_input_type[i], Enum):
+                        tool_input_type[i] = tool_input_type[i].value
+
+    # collect errors and print warnings
+    errors = {
+        source: exception for source, exception in exception_dict.items()
+    }  # for not processed tools, regard as timeout error
+    for source, _ in tools:
+        if source not in res and source not in errors:
+            errors[source] = f"Generate meta timeout for source {source!r}."
+    for source in errors:
+        logger.warning(f"Generate meta for source {source!r} failed: {errors[source]}.")
+    if raise_error and len(errors) > 0:
+        error_message = "Generate meta failed, detail error(s):\n" + json.dumps(errors, indent=4)
+        raise GenerateFlowToolsJsonError(error_message)
+    return res
+
+
+def _generate_package_tools() -> dict:
+    import imp
+
+    import pkg_resources
+
+    imp.reload(pkg_resources)
+
+    from promptflow._internal import collect_package_tools
+
+    return collect_package_tools()
+
+
+def generate_flow_tools_json(
+    flow_directory: Union[str, Path],
+    dump: bool = True,
+    raise_error: bool = True,
+    timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
+) -> dict:
+    """Generate flow.tools.json for a flow directory.
+
+    :param flow_directory: path to flow directory.
+    :param dump: whether to dump to .promptflow/flow.tools.json, default value is True.
+    :param raise_error: whether to raise the error, default value is True.
+    :param timeout: timeout for generation, default value is 60 seconds.
+    """
+    flow_directory = Path(flow_directory).resolve()
+    # parse flow DAG
+    with open(flow_directory / DAG_FILE_NAME, "r") as f:
+        data = yaml.safe_load(f)
+    tools = []  # List[Tuple[source_file, tool_type]]
+    for node in data[NODES]:
+        if "source" in node:
+            if node["source"]["type"] != "code":
+                continue
+            if not (flow_directory / node["source"]["path"]).exists():
+                continue
+            tools.append((node["source"]["path"], node["type"].lower()))
+        # understand DAG to parse variants
+        elif node.get(USE_VARIANTS) is True:
+            node_variants = data[NODE_VARIANTS][node["name"]]
+            for variant_id in node_variants[VARIANTS]:
+                current_node = node_variants[VARIANTS][variant_id][NODE]
+                if current_node["source"]["type"] != "code":
+                    continue
+                if not (flow_directory / current_node["source"]["path"]).exists():
+                    continue
+                tools.append((current_node["source"]["path"], current_node["type"].lower()))
+
+    # generate content
+    flow_tools = {
+        "package": _generate_package_tools(),
+        "code": _generate_tool_meta(flow_directory, tools, raise_error=raise_error, timeout=timeout),
+    }
+
+    if dump:
+        # dump as flow.tools.json
+        promptflow_folder = flow_directory / PROMPT_FLOW_DIR_NAME
+        promptflow_folder.mkdir(exist_ok=True)
+        with open(promptflow_folder / FLOW_TOOLS_JSON, mode="w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(flow_tools, f, indent=4)
+
+    return flow_tools
+
+
+def setup_user_agent_to_operation_context(user_agent):
+    from promptflow._core.operation_context import OperationContext
+
+    if "USER_AGENT" in os.environ:
+        # Append vscode or other user agent from env
+        OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+    # Append user agent
+    OperationContext.get_instance().append_user_agent(user_agent)

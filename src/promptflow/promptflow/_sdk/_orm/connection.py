@@ -10,7 +10,7 @@ from sqlalchemy.orm import declarative_base
 from promptflow._sdk._constants import CONNECTION_TABLE_NAME
 from promptflow._sdk._orm.retry import sqlite_retry
 
-from ..exceptions import ConnectionNotFoundError
+from .._errors import ConnectionNotFoundError
 from .session import mgmt_db_session
 
 Base = declarative_base()

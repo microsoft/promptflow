@@ -6,15 +6,24 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
-from promptflow.exceptions import ConnectionNotFound, UserErrorException
+from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
+from promptflow.executor._errors import ConnectionNotFound, InputTypeError
 from promptflow.executor.flow_executor import BulkResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
-from ..utils import get_flow_expected_metrics, get_flow_sample_inputs, get_yaml_file
+from ..utils import (
+    FLOW_ROOT,
+    get_flow_expected_metrics,
+    get_flow_expected_status_summary,
+    get_flow_sample_inputs,
+    get_yaml_file,
+)
 
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
+SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
+SAMPLE_FLOW_WITH_LANGCHAIN_TRACES = "flow_with_langchain_traces"
 
 
 class MemoryRunStorage(AbstractRunStorage):
@@ -41,12 +50,16 @@ class TestExecutor:
             "text": "some_text",
         }
 
-    def get_bulk_inputs(self, nlinee=4, flow_folder=""):
+    def get_bulk_inputs(self, nlinee=4, flow_folder="", sample_inputs_file="", return_dict=False):
         if flow_folder:
-            inputs = get_flow_sample_inputs(flow_folder)
+            if not sample_inputs_file:
+                sample_inputs_file = "samples.json"
+            inputs = get_flow_sample_inputs(flow_folder, sample_inputs_file=sample_inputs_file)
             if isinstance(inputs, list) and len(inputs) > 0:
                 return inputs
             elif isinstance(inputs, dict):
+                if return_dict:
+                    return inputs
                 return [inputs]
             else:
                 raise Exception(f"Invalid type of bulk input: {inputs}")
@@ -55,7 +68,8 @@ class TestExecutor:
     def skip_serp(self, flow_folder, dev_connections):
         serp_required_flows = ["package_tools"]
         #  Real key is usually more than 32 chars
-        if flow_folder in serp_required_flows and len(dev_connections.get("serp_connection", "test")) < 32:
+        serp_key = dev_connections.get("serp_connection", {"value": {"api_key": ""}})["value"]["api_key"]
+        if flow_folder in serp_required_flows and len(serp_key) < 32:
             pytest.skip("serp_connection is not prepared")
 
     def test_executor_storage(self, dev_connections):
@@ -139,6 +153,44 @@ class TestExecutor:
         assert isinstance(bulk_results, BulkResult)
         assert isinstance(bulk_results.metrics, dict)
         assert bulk_results.metrics == get_flow_expected_metrics(flow_folder)
+        status_summary = bulk_results.get_status_summary()
+        assert status_summary == get_flow_expected_status_summary(flow_folder)
+
+    def test_executor_exec_bulk_with_partial_failure(self, dev_connections):
+        flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=False)
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
+        bulk_results = executor.exec_bulk(bulk_inputs, run_id)
+        assert isinstance(bulk_results, BulkResult)
+        status_summary = bulk_results.get_status_summary()
+        assert status_summary == get_flow_expected_status_summary(flow_folder)
+
+    def test_executor_exec_bulk_with_line_number(self, dev_connections):
+        flow_folder = SAMPLE_FLOW_WITH_PARTIAL_FAILURE
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=False)
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder, sample_inputs_file="inputs.json", return_dict=True)
+        bulk_inputs_mapping = self.get_bulk_inputs(
+            flow_folder=flow_folder, sample_inputs_file="inputs_mapping.json", return_dict=True
+        )
+        bulk_results = executor.exec_bulk_with_inputs_mapping(bulk_inputs, bulk_inputs_mapping, run_id)
+        assert isinstance(bulk_results, BulkResult)
+        assert len(bulk_results.outputs) == 2
+        assert bulk_results.outputs == [
+            {"line_number": 0, "output": 1},
+            {"line_number": 6, "output": 7},
+        ]
+
+    # TODO: Add test for flow with langchain traces
+    def test_executor_exec_bulk_with_openai_metrics(self, dev_connections):
+        classification_executor = FlowExecutor.create(get_yaml_file(SAMPLE_FLOW), dev_connections, raise_ex=True)
+        bulk_inputs = self.get_bulk_inputs()
+        bulk_results = classification_executor.exec_bulk(bulk_inputs)
+        assert len(bulk_results.outputs) == len(bulk_inputs)
+        openai_metrics = bulk_results.get_openai_metrics()
+        assert "total_tokens" in openai_metrics
+        assert openai_metrics["total_tokens"] > 0
 
     @pytest.mark.parametrize(
         "flow_folder",
@@ -155,6 +207,8 @@ class TestExecutor:
         self.skip_serp(flow_folder, dev_connections)
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
+        assert not executor._run_tracker._flow_runs, "Flow runs in run tracker should be empty."
+        assert not executor._run_tracker._node_runs, "Node runs in run tracker should be empty."
         assert isinstance(flow_result.output, dict)
         assert flow_result.run_info.status == Status.Completed
         node_count = len(executor._flow.nodes)
@@ -217,3 +271,37 @@ class TestExecutor:
                 raise_ex=True,
             )
         assert "Connection 'dummy_connection' not found" in str(e.value)
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            "no_inputs_outputs",
+        ],
+    )
+    def test_flow_with_no_inputs_and_output(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
+        flow_result = executor.exec_line({})
+        assert flow_result.output == {}
+        assert flow_result.run_info.status == Status.Completed
+        node_count = len(executor._flow.nodes)
+        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == node_count
+        assert len(flow_result.node_run_infos) == node_count
+        for node, node_run_info in flow_result.node_run_infos.items():
+            assert node_run_info.status == Status.Completed
+            assert node_run_info.node == node
+            assert isinstance(node_run_info.api_calls, list)  # api calls is set
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            "simple_flow_with_python_tool",
+        ],
+    )
+    def test_convert_flow_input_types(self, flow_folder, dev_connections) -> None:
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
+        ret = executor.convert_flow_input_types(inputs={"num": "11"})
+        assert ret == {"num": 11}
+        ret = executor.convert_flow_input_types(inputs={"text": "12", "num": "11"})
+        assert ret == {"text": "12", "num": 11}
+        with pytest.raises(InputTypeError):
+            ret = executor.convert_flow_input_types(inputs={"num": "hello"})

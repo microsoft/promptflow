@@ -20,7 +20,6 @@ RUN conda run -n promptflow-serve sh /flow/setup.sh
 
 EXPOSE 8080
 
-COPY ./connections.sqlite /
-COPY ./connections_setup.py /
+COPY ./connections/* /connections/
 COPY ./start.sh /
-CMD ./start.sh
+CMD ["bash", "./start.sh"]

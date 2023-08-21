@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import argparse
-import os
 import sys
 
 from promptflow._cli._pf._connection import add_connection_parser, dispatch_connection_commands
@@ -12,7 +11,7 @@ from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import get_promptflow_sdk_version
+from promptflow._sdk._utils import get_promptflow_sdk_version, setup_user_agent_to_operation_context
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME)
@@ -48,23 +47,12 @@ def entry(argv):
         dispatch_run_commands(args)
 
 
-def setup_user_agent():
-    from promptflow._core.operation_context import OperationContext
-
-    if "USER_AGENT" in os.environ:
-        # Append vscode user agent
-        OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
-    # Append CLI user agent
-    OperationContext.get_instance().append_user_agent(USER_AGENT)
-    logger.debug(f"Update the user agent to {OperationContext.get_instance().get_user_agent()}")
-
-
 def main():
     """Entrance of pf CLI."""
     command_args = sys.argv[1:]
     if len(command_args) == 0:
         command_args.append("-h")
-    setup_user_agent()
+    setup_user_agent_to_operation_context(USER_AGENT)
     entry(command_args)
 
 

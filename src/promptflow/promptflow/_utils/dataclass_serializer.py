@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import json
 from dataclasses import _MISSING_TYPE, fields, is_dataclass
 from datetime import datetime
 from enum import Enum
@@ -125,15 +124,3 @@ def assertEqual(a: dict, b: dict, path: str = ""):
             assertEqual(a[i], b[i], path + f"[{i}]")
     else:
         assert a == b, f"{path}: {a} != {b}"
-
-
-if __name__ == "__main__":
-    from promptflow.contracts.flow import BatchFlowRequest
-
-    with open("contracts_sample/request.json", "r") as f:
-        s = f.read()
-        data = json.loads(s)
-    graph = BatchFlowRequest.deserialize(data)
-    graph_dict = serialize(graph)
-    print(json.dumps(graph_dict, indent=2))
-    assertEqual(data, graph_dict)

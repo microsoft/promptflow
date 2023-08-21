@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 from enum import Enum
 from functools import cached_property
-from traceback import TracebackException
+from traceback import TracebackException, format_tb
 
 from promptflow._constants import ERROR_RESPONSE_COMPONENT_NAME
 
@@ -187,10 +187,7 @@ class ExceptionPresenter:
 
     @property
     def debug_info(self):
-        return {
-            "type": self._ex.__class__.__qualname__,
-            "stackTrace": self.formatted_traceback,
-        }
+        return build_debug_info(self._ex)
 
     def to_dict(self, *, include_debug_info=False):
         """Return a dict representation of the exception.
@@ -278,6 +275,33 @@ def get_arguments_from_message_format(message_format):
 
     # Use set to remove duplicates
     return set(iter_field_name())
+
+
+_cause_message = "\nThe above exception was the direct cause of the following exception:\n\n"
+
+_context_message = "\nDuring handling of the above exception, another exception occurred:\n\n"
+
+_traceback_message = "Traceback (most recent call last):\n"
+
+
+def build_debug_info(ex: Exception):
+    innerException: dict = None
+    stackTrace = _traceback_message + "".join(format_tb(ex.__traceback__))
+
+    if ex.__cause__ is not None:
+        innerException = build_debug_info(ex.__cause__)
+        stackTrace = _cause_message + stackTrace
+
+    elif ex.__context__ is not None and not ex.__suppress_context__:
+        innerException = build_debug_info(ex.__context__)
+        stackTrace = _context_message + stackTrace
+
+    return {
+        "type": ex.__class__.__qualname__,
+        "message": str(ex),
+        "stackTrace": stackTrace,
+        "innerException": innerException,
+    }
 
 
 class PromptflowException(Exception):
@@ -456,10 +480,7 @@ class PromptflowException(Exception):
     @property
     def debug_info(self):
         """The debug info of this exception that can be sent back to api users."""
-        return {
-            "type": self.__class__.__qualname__,
-            "stackTrace": self.formatted_traceback,
-        }
+        return build_debug_info(self)
 
     def to_dict(self, *, include_debug_info=False):
         """Return a dict representation of the exception.
@@ -518,214 +539,4 @@ class SystemErrorException(PromptflowException):
 
 
 class ValidationException(UserErrorException):
-    pass
-
-
-class ToolExecutionError(UserErrorException):
-    """Exception raised when tool execution failed."""
-
-    def __init__(self, *, node_name: str, module: str = None):
-        self._node_name = node_name
-        super().__init__(target=ErrorTarget.TOOL, module=module)
-
-    @property
-    def message_format(self):
-        if self.inner_exception:
-            return "Execution failure in '{node_name}': {error_type_and_message}"
-        else:
-            return "Execution failure in '{node_name}'."
-
-    @property
-    def message_parameters(self):
-        error_type_and_message = None
-        if self.inner_exception:
-            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
-
-        return {
-            "node_name": self._node_name,
-            "error_type_and_message": error_type_and_message,
-        }
-
-    @property
-    def tool_last_frame_info(self):
-        """Return the line number inside the tool where the error occurred."""
-        if self.inner_exception:
-            tb = TracebackException.from_exception(self.inner_exception)
-            last_frame = tb.stack[-1] if tb.stack else None
-            if last_frame:
-                return {
-                    "filename": last_frame.filename,
-                    "lineno": last_frame.lineno,
-                    "name": last_frame.name,
-                }
-
-        return {}
-
-    @property
-    def tool_traceback(self):
-        """Return the traceback inside the tool's source code scope.
-
-        The traceback inside the promptflow's internal code will be taken off.
-        """
-        exc = self.inner_exception
-        if exc and exc.__traceback__ is not None:
-            # The first frame is always the code in flow.py who invokes the tool.
-            # We do not want to dump it to user code's traceback.
-            # So, just skip it by looking up for `tb_next` here.
-            tb = exc.__traceback__.tb_next
-            if tb is not None:
-                # We don't use traceback.format_exception since its interface differs between 3.8 and 3.10.
-                # Use this internal class to adapt to different python versions.
-                te = TracebackException(type(exc), exc, tb)
-                formatted_tb = "".join(te.format())
-
-                # For inline scripts that are not saved into a file,
-                # The traceback will show "<string>" as the file name.
-                # For these cases, replace with the node name for better understanding.
-                #
-                # Here is a default traceback for example:
-                #   File "<string>", line 1, in <module>
-                #
-                # It will be updated to something like this:
-                #   In "my_node", line 1, in <module>
-                if self._node_name:
-                    # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=79670
-                    formatted_tb = formatted_tb.replace('File "<string>"', 'In "{}"'.format(self._node_name))
-
-                return formatted_tb
-
-        return None
-
-    @property
-    def additional_info(self):
-        """Set the tool exception details as additional info."""
-        if not self.inner_exception:
-            # Only populate additional info when inner exception is present.
-            return None
-
-        info = {
-            "type": self.inner_exception.__class__.__name__,
-            "message": str(self.inner_exception),
-            "traceback": self.tool_traceback,
-        }
-        info.update(self.tool_last_frame_info)
-
-        return {
-            ADDITIONAL_INFO_USER_EXECUTION_ERROR: info,
-        }
-
-
-class RunStorageError(SystemErrorException):
-    """Exception raised for error in storage"""
-
-    def __init__(self, message, target: ErrorTarget, storage_type: type):
-        msg = f"Error of {storage_type.__qualname__!r}: {message}."
-        super().__init__(message=msg, target=target)
-
-
-class RunInfoNotFoundInStorageError(RunStorageError):
-    """Exception raised when run info can not be found in storage"""
-
-    def __init__(self, message: str, target: ErrorTarget, storage_type: type):
-        super().__init__(message=message, target=target, storage_type=storage_type)
-
-
-class AzureStorageOperationError(SystemErrorException):
-    """Exception raised when Azure storage operation failed."""
-
-    pass
-
-
-class FlowExecutionError(SystemErrorException):
-    """Base System Exceptions for flow execution"""
-
-    pass
-
-
-class AccessDeniedError(UserErrorException):
-    """Exception raised when run info can not be found in storage"""
-
-    def __init__(self, operation: str, target: ErrorTarget):
-        super().__init__(message=f"Access is denied to perform operation {operation!r}", target=target)
-
-
-class FlowRunTimeoutError(UserErrorException):
-    """Exception raised when sync submission flow run timeout"""
-
-    def __init__(self, timeout):
-        super().__init__(message=f"Flow run timeout for exceeding {timeout} seconds", target=ErrorTarget.RUNTIME)
-
-
-class ConnectionNotSet(ValidationException):
-    pass
-
-
-class ConnectionNotFound(ValidationException):
-    pass
-
-
-class ValueTypeUnresolved(ValidationException):
-    pass
-
-
-class ResolveConnectionForFlowError(ValidationException):
-    pass
-
-
-class LoadToolError(ValidationException):
-    pass
-
-
-class MissingRequiredInputs(LoadToolError):
-    pass
-
-
-class UserAuthenticationError(UserErrorException):
-    """Exception raised when user authentication failed"""
-
-    pass
-
-
-class StorageAuthenticationError(UserAuthenticationError):
-    """Exception raised when storage authentication failed"""
-
-    pass
-
-
-class PackageToolNotFoundError(ValidationException):
-    """Exception raised when package tool is not found in the current runtime environment."""
-
-    pass
-
-
-class FailedToImportModule(UserErrorException):
-    pass
-
-
-class BulkRunException(PromptflowException):
-    """Exception raised when bulk run failed."""
-
-    def __init__(self, *, failed_lines: int, total_lines: int, module: str = None, **kwargs):
-        self.failed_lines = failed_lines
-        self.total_lines = total_lines
-        super().__init__(target=ErrorTarget.RUNTIME, module=module, **kwargs)
-
-    def to_dict(self, *, include_debug_info=False):
-        result = super().to_dict(include_debug_info=include_debug_info)
-        result["failed_lines"] = f"{self.failed_lines}/{self.total_lines}"
-        return result
-
-
-class GenerateMetaUserError(UserErrorException):
-    """Base exception raised when failed to validate tool."""
-
-    def __init__(self, **kwargs):
-        super().__init__(target=ErrorTarget.EXECUTOR, **kwargs)
-
-
-class MetaFileNotFound(GenerateMetaUserError):
-    pass
-
-
-class MetaFileReadError(GenerateMetaUserError):
     pass

@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import logging
 import os
 import os.path
 import shutil
@@ -9,12 +10,15 @@ import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
+from unittest.mock import patch
 
 import pytest
 import yaml
 
 from promptflow._cli._pf.entry import main
-from promptflow._sdk._constants import SCRUBBED_VALUE
+from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 
 FLOWS_DIR = "./tests/test_configs/flows"
@@ -128,7 +132,7 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
-    def test_submit_batch_variant(self):
+    def test_submit_batch_variant(self, local_client):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -142,10 +146,10 @@ class TestCli:
             "--variant",
             "${summarize_text_content.variant_0}",
         )
-        detail_path = Path.home() / ".promptflow/.runs" / run_id / "detail.json"
-        with open(detail_path) as f:
-            details = json.load(f)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        run = local_client.runs.get(name=run_id)
+        local_storage = LocalStorageOperations(run)
+        detail = local_storage.load_detail()
+        tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used variant_0 config, defaults using variant_1
         assert tuning_node["inputs"]["temperature"] == 0.2
 
@@ -597,7 +601,7 @@ class TestCli:
             assert ignore_file_path.exists()
             ignore_file_path.unlink()
             # TODO remove variant_id & line_number in evaluate template
-            run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "variant_id=mock_id", "line_number=0")
+            run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
     def test_init_chat_flow(self):
@@ -616,7 +620,7 @@ class TestCli:
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
             assert ignore_file_path.exists()
             ignore_file_path.unlink()
-            run_pf_command("flow", "test", "--flow", flow_name)
+            run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
     def test_flow_init(self, capsys):
@@ -636,7 +640,7 @@ class TestCli:
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
             assert ignore_file_path.exists()
             ignore_file_path.unlink()
-            run_pf_command("flow", "test", "--flow", flow_name)
+            run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "text=value")
 
             jinja_name = "input1"
             run_pf_command(
@@ -720,6 +724,16 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
+        # Validate terminal output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--interactive", "--verbose")
+        outerr = capsys.readouterr()
+        # Check node output
+        assert "chat_node:" in outerr.out
+        assert "show_answer:" in outerr.out
+        # TODO Checkout user code stdout
+        # assert "print:" in outerr.out
+
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
             run_pf_command(
@@ -735,6 +749,102 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_flow_test_inputs(self, capsys, caplog):
+        # Flow test missing required inputs
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/print_env_var",
+                "--environment-variables",
+                "API_BASE=${azure_open_ai_connection.api_base}",
+            )
+        stdout, _ = capsys.readouterr()
+        assert "Required input(s) ['key'] are missing for \"flow\"." in stdout
+
+        # Node test missing required inputs
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/print_env_var",
+                "--node",
+                "print_env",
+                "--environment-variables",
+                "API_BASE=${azure_open_ai_connection.api_base}",
+            )
+        stdout, _ = capsys.readouterr()
+        assert "Required input(s) ['key'] are missing for \"print_env\"" in stdout
+
+        # Flow test with unknown inputs
+        logger = logging.getLogger(LOGGER_NAME)
+        logger.propagate = True
+
+        def validate_log(log_msg, prefix, expect_dict):
+            log_inputs = json.loads(log_msg[len(prefix) :].replace("'", '"'))
+            assert prefix in log_msg
+            assert expect_dict == log_inputs
+
+        with caplog.at_level(level=logging.INFO, logger=LOGGER_NAME):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "answer=Channel",
+                "evidence=Url",
+            )
+            unknown_input_log = caplog.records[-2]
+            expect_inputs = {"answer": "Channel", "evidence": "Url"}
+            validate_log(
+                prefix="Unknown input(s) of flow: ", log_msg=unknown_input_log.message, expect_dict=expect_inputs
+            )
+
+            flow_input_log = caplog.records[-1]
+            expect_inputs = {
+                "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "answer": "Channel",
+                "evidence": "Url",
+            }
+            validate_log(prefix="flow input(s): ", log_msg=flow_input_log.message, expect_dict=expect_inputs)
+
+            # Node test with unknown inputs
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--inputs",
+                "inputs.url="
+                "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+                "unknown_input=unknown_val",
+                "--node",
+                "fetch_text_content_from_url",
+            )
+            unknown_input_log = caplog.records[-2]
+            expect_inputs = {"unknown_input": "unknown_val"}
+            validate_log(
+                prefix="Unknown input(s) of fetch_text_content_from_url: ",
+                log_msg=unknown_input_log.message,
+                expect_dict=expect_inputs,
+            )
+
+            node_input_log = caplog.records[-1]
+            expect_inputs = {
+                "fetch_url": "https://www.microsoft.com/en-us/d/"
+                "xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+                "unknown_input": "unknown_val",
+            }
+            validate_log(
+                prefix="fetch_text_content_from_url input(s): ",
+                log_msg=node_input_log.message,
+                expect_dict=expect_inputs,
+            )
 
     @pytest.mark.skip(reason="TODO: fix this test")
     def test_flow_export(self):
@@ -809,3 +919,21 @@ class TestCli:
         )
         outputs = pf.runs._get_outputs(run=run_id)
         assert "dict" in outputs["output"][0]
+
+    def test_visualize_ignore_space(self) -> None:
+        names = ["a,b,c,d", "a, b, c, d", "a, b , c,  d"]
+        groundtruth = ["a", "b", "c", "d"]
+
+        def mocked_visualize(*args, **kwargs):
+            runs = args[0]
+            assert runs == groundtruth
+
+        with patch.object(RunOperations, "visualize") as mock_visualize:
+            mock_visualize.side_effect = mocked_visualize
+            for name in names:
+                run_pf_command(
+                    "run",
+                    "visualize",
+                    "--names",
+                    name,
+                )

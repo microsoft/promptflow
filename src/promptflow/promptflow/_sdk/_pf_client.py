@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Union
 
 import pandas as pd
 
+from ._user_agent import USER_AGENT
+from ._utils import setup_user_agent_to_operation_context
 from .entities import Run
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
@@ -26,6 +28,7 @@ class PFClient:
         self._runs = RunOperations()
         self._connections = ConnectionOperations()
         self._flows = FlowOperations()
+        setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
         self,

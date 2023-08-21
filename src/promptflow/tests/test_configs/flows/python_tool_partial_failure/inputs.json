@@ -1,0 +1,20 @@
+{
+    "data": [
+        {"mod": 2, "mod_2": 5},
+        {"mod": 2, "mod_2": 5},
+        {"mod": 2, "mod_2": 5},
+        {"mod": 2, "mod_2": 5},
+        {"mod": 2, "mod_2": 5},
+        {"mod": 2, "mod_2": 5},
+        {"mod": 2, "mod_2": 5}
+    ],
+    "output": [
+        {"idx": 1, "line_number": 0},
+        {"idx": 2, "line_number": 1},
+        {"idx": 4, "line_number": 3},
+        {"idx": 5, "line_number": 4},
+        {"idx": 7, "line_number": 6},
+        {"idx": 8, "line_number": 7},
+        {"idx": 10, "line_number": 9}
+    ]
+}

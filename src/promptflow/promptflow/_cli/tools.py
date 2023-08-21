@@ -8,8 +8,8 @@ import os
 import sys
 from pathlib import Path
 
+from promptflow._core.tool_meta_generator import generate_prompt_meta_dict, generate_python_meta_dict
 from promptflow._core.tools_manager import collect_package_tools
-from promptflow._utils.generate_tool_meta_utils import generate_prompt_meta_dict, generate_python_meta_dict
 
 
 def infer_tool_type_by_file(f: Path, tool_type):

@@ -3,10 +3,10 @@
 # ---------------------------------------------------------
 
 import abc
-import base64
-import hashlib
+import json
 import logging
 import shutil
+import uuid
 from os import PathLike
 from pathlib import Path
 from typing import Union
@@ -17,9 +17,9 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .._constants import DAG_FILE_NAME, LOCAL_MGMT_DB_PATH
-from .._utils import PromptflowIgnoreFile, render_jinja_template
+from .._errors import ConnectionNotFoundError
+from .._utils import PromptflowIgnoreFile, dump_yaml, render_jinja_template
 from .._vendor import get_upload_files_from_folder
-from ..exceptions import ConnectionNotFoundError
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -128,10 +128,13 @@ class FlowProtected(Flow):
         #   setup_sh: xxx
         # TODO: deserialize dag with structured class here to avoid using so many magic strings
         env_obj = flow_info.get("environment", {})
-        from promptflow import __version__
 
+        from importlib.metadata import version
+
+        env_obj["sdk_version"] = version("promptflow")
         # version 0.0.1 is the dev version of promptflow
-        env_obj["sdk_version"] = __version__ if __version__ != "0.0.1" else None
+        if env_obj["sdk_version"] == "0.0.1":
+            del env_obj["sdk_version"]
 
         if not env_obj.get("python_requirements_txt", None) and (Path(self.code) / "requirements.txt").is_file():
             env_obj["python_requirements_txt"] = "requirements.txt"
@@ -163,34 +166,58 @@ class FlowProtected(Flow):
                     render_jinja_template(source_path, **render_context)
                 )
 
-    def _migrate_connections(self, output_dir: Path, encryption_key: str):
-        executable = self._init_executable()
-        connections = self._get_local_connections(executable)
-        for connection_name in executable.get_connection_names():
-            if connection_name not in connections:
-                logger.info(
-                    f"Connection {connection_name} is not found in local, skip migration. "
-                    f"Service call will fail before it has been manually created inside docker "
-                    f"container via `pf connection create`."
-                )
+    @classmethod
+    def _dump_connection(cls, connection, output_path: Path):
+        # connection yaml should be a dict instead of ordered dict
+        connection_dict = connection._to_dict()
+        # TODO: @Brynn, please help confirm this
+        connection_yaml = {
+            "$schema": f"https://azuremlschemas.azureedge.net/promptflow/"
+            f"latest/{connection.__class__.__name__}.schema.json",
+        }
+        for key in ["type", "name", "configs", "secrets", "module"]:
+            if key in connection_dict:
+                connection_yaml[key] = connection_dict[key]
 
-        # TODO: refactor this
-        # Important: this operation is very dangerous and won't support multiprocess,
-        # we should only enable this on cli for now
-        from promptflow._sdk._orm.session import mgmt_db_rebase
+        secret_env_vars = [f"{connection.name}_{secret_key}".upper() for secret_key in connection.secrets]
+        for secret_key, secret_env in zip(connection.secrets, secret_env_vars):
+            connection_yaml["secrets"][secret_key] = "${env:" + secret_env + "}"
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(dump_yaml(connection_yaml, sort_keys=False))
+        return secret_env_vars
+
+    def _migrate_connections(self, output_dir: Path):
         from promptflow._sdk._pf_client import PFClient
-        from promptflow._sdk.entities._connection import _Connection
 
-        with mgmt_db_rebase((output_dir / "connections.sqlite").resolve(), customized_encryption_key=encryption_key):
-            local_client = PFClient()
-            for connection_name, connection_execution_dict in connections.items():
-                local_client.connections.create_or_update(
-                    _Connection.from_execution_connection_dict(name=connection_name, data=connection_execution_dict),
-                    encryption_key=encryption_key,
-                )
+        output_dir.mkdir(parents=True, exist_ok=True)
+        executable = self._init_executable()
+        connection_names = executable.get_connection_names()
+        local_client = PFClient()
+        connection_paths, secret_env_vars = [], {}
+        for connection_name in connection_names:
+            connection = local_client.connections.get(name=connection_name, with_secrets=True)
+            connection_paths.append(output_dir / f"{connection_name}.yaml")
+            for secret_env_var in self._dump_connection(
+                connection,
+                connection_paths[-1],
+            ):
+                if secret_env_var in secret_env_vars:
+                    raise RuntimeError(
+                        f"environment variable name conflict: connection {connection_name} and "
+                        f"{secret_env_vars[secret_env_var]} on {secret_env_var}"
+                    )
+                secret_env_vars[secret_env_var] = connection_name
 
-    def _export_to_docker(self, output_dir: Path, migration_secret: str):
+        return connection_paths, list(secret_env_vars.keys())
+
+    def _export_to_docker(self, output_dir: Path):
         environment_config = self._build_environment_config()
+        connection_paths, secret_env_vars = self._migrate_connections(output_dir / "connections")
+        (output_dir / "settings.json").write_text(
+            data=json.dumps({secret_env_var: "" for secret_env_var in secret_env_vars}, indent=2),
+            encoding="utf-8",
+        )
 
         # TODO: make below strings constants
         self._copy_tree(
@@ -198,24 +225,20 @@ class FlowProtected(Flow):
             target=output_dir,
             render_context={
                 "env": environment_config,
+                "flow_name": self.code.stem + str(uuid.uuid4())[:6],
                 "local_db_rel_path": LOCAL_MGMT_DB_PATH.relative_to(Path.home()).as_posix(),
+                "connection_yaml_paths": list(map(lambda x: x.relative_to(output_dir).as_posix(), connection_paths)),
             },
         )
 
         flow_copy_target = output_dir / "flow"
         flow_copy_target.mkdir(parents=True, exist_ok=True)
         self._copy_tree(self.code, flow_copy_target)
-        self._migrate_connections(
-            output_dir,
-            encryption_key=base64.urlsafe_b64encode(hashlib.sha256(migration_secret.encode("utf-8")).digest()).decode(
-                "utf-8"
-            ),
-        )
 
-    def export(self, output: Union[str, PathLike], migration_secret: str, format="docker"):
+    def export(self, output: Union[str, PathLike], format="docker", **kwargs):
         output = Path(output)
         output.mkdir(parents=True, exist_ok=True)
         if format == "docker":
-            self._export_to_docker(output, migration_secret)
+            self._export_to_docker(output)
         else:
             raise ValueError(f"Unsupported export format: {format}")

@@ -18,7 +18,7 @@ class NodeInfo:
         self.line_number = line_number
 
     def __str__(self) -> str:
-        return f"{self.node_name} in line {self.line_number}"
+        return f"{self.node_name} in line {self.line_number} (index starts from 0)"
 
 
 class NodeLogManager:

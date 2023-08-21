@@ -1,4 +1,8 @@
+from pathlib import Path
 from promptflow import tool
+
+if not Path("summarize_text_content.jinja2").exists():
+    raise Exception("Cannot find summarize_text_content.jinja2")
 
 
 @tool

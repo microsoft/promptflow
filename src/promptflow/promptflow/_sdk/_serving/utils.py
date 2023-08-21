@@ -6,7 +6,7 @@ import os
 
 from flask import jsonify, request
 
-from promptflow._sdk._serving.error_codes import (
+from promptflow._sdk._serving._errors import (
     JsonPayloadRequiredForMultipleInputFields,
     MissingRequiredFlowInput,
     NotAcceptable,
