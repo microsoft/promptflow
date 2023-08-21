@@ -234,7 +234,7 @@ def process_function_call(function_call):
             param = json.loads(function_call)
         except json.JSONDecodeError:
             raise ChatAPIInvalidFunctions(
-                message=f"function_call parameter '{function_call}' is an invaild json. {common_tsg}")
+                message=f"function_call parameter '{function_call}' is an invalid json. {common_tsg}")
         except TypeError:
             raise ChatAPIInvalidFunctions(
                 message=f"function_call parameter '{function_call}' must be str, bytes or bytearray"
