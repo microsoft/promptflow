@@ -42,5 +42,5 @@ jobs:
     uses: ./.github/workflows/deploy_runtime.yml
     name: Deploy runtime
     with:
-      ToolsPackageVersion: ${{ needs.get_timestamp.outputs.version }}
+      ToolsPackageVersion: "0.0.1692599304"
     secrets: inherit
