@@ -2,6 +2,9 @@ name: promptflow-executor-unit-test
 on:
   pull_request:
     branches: [ main ]
+    paths:
+      - src/promptflow/**
+      - scripts/**
   workflow_dispatch:
 env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
@@ -10,33 +13,8 @@ env:
   packageSetupType: promptflow_open_source
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
-  paths-filter:
-    runs-on: ubuntu-latest
-    outputs:
-      output1: ${{ steps.filter.outputs.workflows }}
-    steps:
-    - uses: actions/checkout@v3
-    - uses: dorny/paths-filter@v2
-      id: filter
-      with:
-        filters: |
-          workflows:
-            - 'src/promptflow/**'
-            - 'scripts/**'
-    # run only if 'workflows' files were changed
-    - name: workflow tests
-      if: steps.filter.outputs.workflows == 'true'
-      run: echo "Execute SDK CLI tests"
-
-    # run only if not 'workflows' files were changed
-    - name: not workflow tests
-      if: steps.filter.outputs.workflows != 'true'
-      run: echo "Pass"
-  
   executor_unit_tests:
     runs-on: ubuntu-latest
-    needs: paths-filter
-    if: needs.paths-filter.outputs.output1 == 'true'
     steps:
     - name: checkout
       uses: actions/checkout@v3
