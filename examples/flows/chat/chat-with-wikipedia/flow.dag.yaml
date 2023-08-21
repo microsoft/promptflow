@@ -6,6 +6,11 @@ inputs:
     type: string
     default: What is ChatGPT?
     is_chat_input: true
+  config:
+    type: object
+    default:
+      a: 1
+      b: 2
 outputs:
   answer:
     type: string
@@ -39,6 +44,7 @@ nodes:
   inputs:
     entity: ${extract_query_from_question.output}
     count: '2'
+    config: ${inputs.config}
 - name: search_result_from_url
   type: python
   source:

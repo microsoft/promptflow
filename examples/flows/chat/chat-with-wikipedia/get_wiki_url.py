@@ -18,7 +18,11 @@ def remove_nested_parentheses(string):
 
 
 @tool
-def get_wiki_url(entity: str, count=2):
+def get_wiki_url(entity: str, count=2, config: dict={}):
+
+    assert config["a"] is not None
+    print(config)
+
     # Send a request to the URL
     url = f"https://en.wikipedia.org/w/index.php?search={entity}"
     url_list = []
