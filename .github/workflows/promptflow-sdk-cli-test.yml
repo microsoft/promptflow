@@ -35,7 +35,7 @@ jobs:
     with:
       pytestMarker: unittest or e2etest
       packageSetupType: promptflow_new_extra
-      testWorkingDirectory: /src/promptflow
+      testWorkingDirectory: src/promptflow
       coveragePath: promptflow
       coverage: false
       testPath: "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test"
