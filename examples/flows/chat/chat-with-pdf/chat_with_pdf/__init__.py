@@ -1,1 +1,4 @@
-__path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
