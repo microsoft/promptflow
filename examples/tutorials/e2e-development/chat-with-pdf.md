@@ -234,14 +234,14 @@ NOTE: the run property in eval_run.yaml is the run name of batch_run.yaml
 **CLI:**
 ```bash
 eval_run_name="eval_groundedness_"$(openssl rand -hex 12)
-pf run create --file eval_run.yaml --run $eval_run_name
+pf run create --file eval_run.yaml --run $run_name --name eval_run_name
 ```
 
 After the run completes you can use below commands to get detail of the runs:
 ```bash
 pf run show-details --name $eval_run_name
 pf run show-metrics --name $eval_run_name
-pf run visualize --name $run_name
+pf run visualize --name $eval_run_name
 ```
 
 ## Integrate prompt flow into your CI/CD workflow
