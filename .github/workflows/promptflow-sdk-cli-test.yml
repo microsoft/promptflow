@@ -79,7 +79,7 @@ jobs:
         conda activate release-env
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
-          -t "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test" \
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
           -l eastus \
           -m "unittest or e2etest" \
           -n 2
