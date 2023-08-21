@@ -1,8 +1,6 @@
 name: Promptflow Tools Pre Manual Release
 
 on:
-  pull_request:
-
   workflow_dispatch:
     inputs:
       ReleaseType:
