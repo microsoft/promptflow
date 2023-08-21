@@ -1,0 +1,41 @@
+name: promptflow-sdk-cli-test
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  paths-filter:
+    runs-on: ubuntu-latest
+    outputs:
+      output1: ${{ steps.filter.outputs.workflows }}
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dorny/paths-filter@v2
+      id: filter
+      with:
+        filters: |
+          workflows:
+            - 'src/promptflow/**'
+            - 'scripts/**'
+    # run only if 'workflows' files were changed
+    - name: workflow tests
+      if: steps.filter.outputs.workflows == 'true'
+      run: echo "Execute SDK CLI tests"
+
+    # run only if not 'workflows' files were changed
+    - name: not workflow tests
+      if: steps.filter.outputs.workflows != 'true'
+      run: echo "Pass"
+  
+  run_tests:
+    name: run_tests
+    needs: paths-filter
+    if: needs.paths-filter.outputs.output1 == 'true'
+    uses: "./.github/workflows/pipelines_templates_template_run_tests.yml"
+    with:
+      pytestMarker: unittest or e2etest
+      packageSetupType: promptflow_new_extra
+      testWorkingDirectory: /src/promptflow
+      coveragePath: promptflow
+      coverage: false
+      testPath: "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test"

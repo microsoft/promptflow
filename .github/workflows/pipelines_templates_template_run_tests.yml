@@ -1,0 +1,107 @@
+# Environment variables defined in a calling workflow are not accessible to this reusable workflow. Refer to the documentation for further details on this limitation.
+name: pipelines_templates_template_run_tests
+on:
+  workflow_call:
+    inputs:
+      pytestMarker:
+        required: false
+        default: all
+        type: string
+      packageSetupType:
+        required: false
+        type: string
+      testWorkingDirectory:
+        required: false
+        type: string
+      coveragePath:
+        required: false
+        type: string
+      coverage:
+        required: false
+        default: true
+        type: boolean
+      testPath:
+        required: false
+        type: string
+      numPytestProcesses:
+        required: false
+        default: 5
+        type: number
+jobs:
+  run_feature_tests:
+    name: Run Feature Tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display Env
+      uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
+    - name: Conda Setup
+      uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    - name: Delete existing packages in the 'dist' folder
+      working-directory: ${{ inputs.testWorkingDirectory }}
+      shell: bash
+      run: |
+        echo "Delete existing packages in the 'dist' directory of 'promptflow/'"
+        rm -f ./dist/*
+        if [ $? != 0 ]; then
+            echo "Failed to delete existing dist folder for 'promptflow/'"
+            exit 1
+        fi
+    - name: Build wheel
+      uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
+      with:
+        packageSetupType: ${{ inputs.packageSetupType }}
+        workingDirectory: ${{ inputs.testWorkingDirectory }}
+    - name: Generate Configs
+      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+      with:
+        tenantId: ${{ secrets.TENANT_ID }}
+        clientId: ${{ secrets.CLIENT_ID }}
+        clientSecret: ${{ secrets.CLIENT_SECRET }}
+        targetFolder: ${{ inputs.testWorkingDirectory }}
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Run Coverage Test
+      shell: bash -l {0}
+      working-directory: ${{ inputs.testWorkingDirectory }}
+      run: |-
+        set -x -e
+        export IS_IN_CI_PIPELINE="true"
+        az account show
+        conda activate release-env
+        python "../../scripts/building/run_coverage_tests.py" \
+          -p promptflow \
+          -t "${{ inputs.testPath }}" \
+          -l eastus \
+          -m ${{ inputs.pytestMarker }} \
+          -n ${{ inputs.numPytestProcesses }}
+    - name: Upload pytest test results
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: pytest-results
+        path: ${{ inputs.testWorkingDirectory }}/test-results.xml
+      # Use always() to always run this step to publish test results when there are test failures
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      with:
+        files: |
+          ${{ inputs.testWorkingDirectory }}/test-results.xml
+    - name: Generate Coverage Report
+      if: inputs.coverage == true && (success() || failure())
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.1.19
+      continue-on-error: false
+      with:
+        reports: "${{ inputs.testWorkingDirectory }}/coverage.xml"
+        targetdir: coveragereport_${{ github.run_number }}
+        reporttypes: HtmlInline
+    - name: Upload CoverageReport
+      if: inputs.coverage == true && (success() || failure())
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: CoverageReport
+        path: coveragereport_${{ github.run_number }}
