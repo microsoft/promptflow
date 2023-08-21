@@ -23,10 +23,10 @@ from promptflow._sdk._constants import (
     RunTypes,
     get_run_output_path,
 )
+from promptflow._sdk._errors import InvalidRunError, InvalidRunStatusError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
-from promptflow._sdk.exceptions import InvalidRunStatusError
 from promptflow._sdk.schemas._run import RunSchema
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
@@ -164,6 +164,7 @@ class Run(YAMLTranslatableMixin):
             start_time=datetime.datetime.fromisoformat(str(obj.start_time)) if obj.start_time else None,
             end_time=datetime.datetime.fromisoformat(str(obj.end_time)) if obj.end_time else None,
             status=str(obj.status),
+            data=Path(obj.data).resolve().absolute().as_posix() if obj.data else None,
         )
 
     @classmethod
@@ -252,6 +253,7 @@ class Run(YAMLTranslatableMixin):
             description=self.description,
             tags=json.dumps(self.tags) if self.tags else None,
             properties=json.dumps(self.properties),
+            data=Path(self.data).resolve().absolute().as_posix() if self.data else None,
         )
 
     def _dump(self) -> None:
@@ -265,6 +267,7 @@ class Run(YAMLTranslatableMixin):
     def _to_dict(self):
         from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 
+        properties = self.properties
         result = {
             "name": self.name,
             "created_on": self.created_on,
@@ -272,14 +275,22 @@ class Run(YAMLTranslatableMixin):
             "display_name": self.display_name,
             "description": self.description,
             "tags": self.tags,
-            "properties": self.properties,
+            "properties": properties,
         }
 
         if self._run_source == RunInfoSources.LOCAL:
             result["flow_name"] = Path(str(self.flow)).resolve().name
-            result["output_path"] = Path(self._output_path).as_posix()
-            # add exception part if any
             local_storage = LocalStorageOperations(run=self)
+            result[RunDataKeys.DATA] = (
+                local_storage._data_path.resolve().absolute().as_posix()
+                if local_storage._data_path is not None
+                else None
+            )
+            result[RunDataKeys.OUTPUT] = local_storage._outputs_path.as_posix()
+            if self.run:
+                run_name = self.run.name if isinstance(self.run, Run) else self.run
+                result[RunDataKeys.RUN] = properties.pop(FlowRunProperties.RUN, run_name)
+            # add exception part if any
             exception_dict = local_storage.load_exception()
             if exception_dict:
                 result["error"] = exception_dict
@@ -373,6 +384,9 @@ class Run(YAMLTranslatableMixin):
         if not variant and not self.data:
             raise ValueError("Either run or data should be provided")
 
+        # sanitize flow_dir to avoid invalid experiment name
+        run_experiment_name = _sanitize_python_variable_name(self._flow_dir)
+
         if str(self.flow).startswith("azureml://"):
             # upload via _check_and_upload_path
             # submit with params FlowDefinitionDataStoreName and FlowDefinitionBlobPath
@@ -390,7 +404,7 @@ class Run(YAMLTranslatableMixin):
                     data_uri=self.data,
                 ),
                 inputs_mapping=self.column_mapping,
-                run_experiment_name=self._flow_dir,
+                run_experiment_name=run_experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
             )
@@ -409,7 +423,7 @@ class Run(YAMLTranslatableMixin):
                     data_uri=self.data,
                 ),
                 inputs_mapping=self.column_mapping,
-                run_experiment_name=self._flow_dir,
+                run_experiment_name=run_experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
             )
@@ -420,3 +434,12 @@ class Run(YAMLTranslatableMixin):
             if self.status != RunStatus.FAILED:
                 error_message += " Please wait for its completion, or select other completed run(s)."
             raise InvalidRunStatusError(error_message)
+
+    @staticmethod
+    def _validate_and_return_run_name(run: Union[str, "Run"]) -> str:
+        """Check if run name is valid."""
+        if isinstance(run, Run):
+            return run.name
+        elif isinstance(run, str):
+            return run
+        raise InvalidRunError(f"Invalid run {run!r}, expected 'str' or 'Run' object but got {type(run)!r}.")

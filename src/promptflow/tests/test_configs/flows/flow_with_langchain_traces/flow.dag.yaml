@@ -1,0 +1,16 @@
+inputs:
+  question:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${my_python_tool.output}
+nodes:
+- name: my_python_tool
+  type: python
+  source:
+    type: code
+    path: my_python_tool.py
+  inputs:
+    question: ${inputs.question}
+    conn: azure_open_ai_connection

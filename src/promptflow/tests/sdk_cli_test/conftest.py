@@ -78,6 +78,7 @@ def setup_local_connection(local_client):
 def flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
     app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
     app.init_executor_if_not_exist()
     app.config.update(

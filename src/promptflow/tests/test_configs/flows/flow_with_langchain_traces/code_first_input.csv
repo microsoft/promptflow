@@ -1,0 +1,3 @@
+question
+Action: the action to take must be one of [llm-math]  Action Input: What is 2 to the 10th power?  Observation: the result of the action  Result: [your response here]
+Action: the action to take must be one of [llm-math]  Action Input: What is the sum of 2 and 2?  Observation: the result of the action  Result: [your response here]

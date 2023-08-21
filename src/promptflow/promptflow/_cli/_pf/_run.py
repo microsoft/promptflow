@@ -4,7 +4,10 @@
 
 import argparse
 import json
+import logging
 from typing import Callable, Dict, List, Optional, Tuple
+
+import pandas as pd
 
 from promptflow._cli._params import (
     add_param_columns_mapping,
@@ -15,12 +18,17 @@ from promptflow._cli._params import (
 )
 from promptflow._cli._utils import (
     exception_handler,
-    get_migration_secret_from_args,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
 )
-from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS, MAX_SHOW_DETAILS_RESULTS, get_list_view_type
+from promptflow._sdk._constants import (
+    LOGGER_NAME,
+    MAX_LIST_CLI_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
+    CLIListOutputFormat,
+    get_list_view_type,
+)
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
@@ -45,7 +53,7 @@ def add_run_parser(subparsers):
     run_parser.set_defaults(action="run")
 
 
-def add_run_create(subparsers):
+def add_run_create_common(subparsers, add_param_data):
     create_parser = subparsers.add_parser(
         "create", help="Create a run.", epilog="pf run create --file <local-path-to-yaml> [--stream]"
     )
@@ -68,7 +76,7 @@ def add_run_create(subparsers):
     # pf run create --type batch --flow ./flow_dir --data xx.jsonl \
     #   --inputs_mapping "xx=yy,aa=bb" --node_variant "${node_name.variant1}" --name "run1"
     create_parser.add_argument("--flow", type=str, help="Local path to the flow directory.")
-    create_parser.add_argument("--data", type=str, help="Local path to the data file.")
+    add_param_data(create_parser)
     add_param_columns_mapping(create_parser)
     create_parser.add_argument(
         "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
@@ -86,6 +94,14 @@ def add_run_create(subparsers):
     add_param_set(create_parser)
     create_parser.set_defaults(sub_action="create")
     return create_parser
+
+
+def add_run_create(subparsers):
+    # data for pf has different help doc than pfazure
+    def add_param_data(parser):
+        parser.add_argument("--data", type=str, help="Local path to the data file.")
+
+    add_run_create_common(subparsers, add_param_data)
 
 
 def add_run_cancel(subparsers):
@@ -147,6 +163,14 @@ def add_run_list(subparsers):
         dest="include_archived",
         default=False,
         help="List archived runs and active runs.",
+    )
+    list_parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        type=str,
+        default=CLIListOutputFormat.JSON,
+        help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
     )
     list_parser.set_defaults(sub_action="list")
 
@@ -217,6 +241,7 @@ def dispatch_run_commands(args: argparse.Namespace):
             all_results=args.all_results,
             archived_only=args.archived_only,
             include_archived=args.include_archived,
+            output=args.output,
         )
     elif args.sub_action == "show":
         show_run(name=args.name)
@@ -281,11 +306,13 @@ def stream_run(name: str) -> None:
     print(json.dumps(run._to_dict(), indent=4))
 
 
+@exception_handler("List runs")
 def list_runs(
     max_results: int,
     all_results: bool,
     archived_only: bool,
     include_archived: bool,
+    output,
 ) -> None:
     pf_client = PFClient()
     # aligned behaviour with v2 SDK, all_results will overwrite max_results
@@ -296,7 +323,19 @@ def list_runs(
         list_view_type=get_list_view_type(archived_only=archived_only, include_archived=include_archived),
     )
     json_list = [run._to_dict() for run in runs]
-    print(json.dumps(json_list, indent=4))
+    if output == CLIListOutputFormat.TABLE:
+        df = pd.DataFrame(json_list)
+        df.fillna("", inplace=True)
+        pretty_print_dataframe_as_table(df)
+    elif output == CLIListOutputFormat.JSON:
+        print(json.dumps(json_list, indent=4))
+    else:
+        logger = logging.getLogger(LOGGER_NAME)
+        warning_message = (
+            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
+        )
+        logger.warning(warning_message)
+        print(json.dumps(json_list, indent=4))
 
 
 @exception_handler("Show run")
@@ -322,7 +361,7 @@ def show_run_metrics(name: str) -> None:
 
 @exception_handler("Visualize run")
 def visualize_run(names: str, html_path: Optional[str] = None) -> None:
-    run_names = names.split(",")
+    run_names = [name.strip() for name in names.split(",")]
     pf_client = PFClient()
     pf_client.runs.visualize(run_names, html_path=html_path)
 
@@ -417,5 +456,4 @@ def create_run(create_func: Callable, args):
 
 
 def export_run(args):
-    _ = get_migration_secret_from_args(args)
     raise NotImplementedError()

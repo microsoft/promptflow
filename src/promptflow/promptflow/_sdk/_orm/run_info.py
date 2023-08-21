@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
 from promptflow._sdk._constants import RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, ListViewType
-from promptflow._sdk.exceptions import RunExistsError, RunNotFoundError
+from promptflow._sdk._errors import RunExistsError, RunNotFoundError
 
 from .retry import sqlite_retry
 from .session import mgmt_db_session
@@ -31,7 +31,7 @@ class RunInfo(Base):
     description = Column(TEXT)  # updated by users
     tags = Column(TEXT)  # updated by users, json(list of jsons) string
     # properties: flow path, output path..., json string
-    # as we can parse and get all informations from parsing the YAML in memory,
+    # as we can parse and get all information from parsing the YAML in memory,
     # we don't need to store any extra information in the database at all;
     # however, if there is any hot fields, we can store them here additionally.
     properties = Column(TEXT)
@@ -40,10 +40,11 @@ class RunInfo(Base):
     #       also don't forget to update `__pf_schema_version__` when you change the schema
     start_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     end_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
+    data = Column(TEXT)  # local path of original run data, string
 
     __table_args__ = (Index(RUN_INFO_CREATED_ON_INDEX_NAME, "created_on"),)
-    # schema version
-    __pf_schema_version__ = "1"
+    # schema version, increase the version number when you change the schema
+    __pf_schema_version__ = "2"
 
     @sqlite_retry
     def dump(self) -> None:

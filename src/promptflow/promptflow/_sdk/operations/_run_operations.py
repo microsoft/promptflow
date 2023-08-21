@@ -3,25 +3,26 @@
 # ---------------------------------------------------------
 
 import copy
-import json
+import logging
 import sys
 import time
 from dataclasses import asdict
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
-from promptflow._sdk._constants import MAX_RUN_LIST_RESULTS, ListViewType, LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import LOGGER_NAME, MAX_RUN_LIST_RESULTS, ListViewType, RunStatus
+from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import incremental_print, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
-from promptflow._sdk.exceptions import RunExistsError, RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-from promptflow.contracts.run_management import RunMetadata, RunVisualization
+from promptflow.contracts._run_management import RunMetadata, RunVisualization
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
+
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class RunOperations:
@@ -61,6 +62,7 @@ class RunOperations:
         :return: run object retrieved from the database.
         :rtype: ~promptflow.entities.Run
         """
+        name = Run._validate_and_return_run_name(name)
         try:
             return Run._from_orm_object(ORMRun.get(name))
         except RunNotFoundError as e:
@@ -105,7 +107,8 @@ class RunOperations:
         :return: Run object.
         :rtype: ~promptflow.entities.Run
         """
-        run = name if isinstance(name, Run) else self.get(name=name)
+        name = Run._validate_and_return_run_name(name)
+        run = self.get(name=name)
         local_storage = LocalStorageOperations(run=run)
 
         file_handler = sys.stdout
@@ -127,10 +130,9 @@ class RunOperations:
         except KeyboardInterrupt:
             error_message = "The output streaming for the run was interrupted, but the run is still executing."
             print(error_message)
-        finally:
-            return run
+        return run
 
-    def archive(self, name: str) -> Run:
+    def archive(self, name: Union[str, Run]) -> Run:
         """Archive a run.
 
         :param name: Name of the run.
@@ -138,10 +140,11 @@ class RunOperations:
         :return: archived run object.
         :rtype: ~promptflow._sdk.entities._run.Run
         """
+        name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).archive()
         return self.get(name)
 
-    def restore(self, name: str) -> Run:
+    def restore(self, name: Union[str, Run]) -> Run:
         """Restore a run.
 
         :param name: Name of the run.
@@ -149,12 +152,13 @@ class RunOperations:
         :return: restored run object.
         :rtype: ~promptflow._sdk.entities._run.Run
         """
+        name = Run._validate_and_return_run_name(name)
         ORMRun.get(name).restore()
         return self.get(name)
 
     def update(
         self,
-        name: str,
+        name: Union[str, Run],
         display_name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -170,12 +174,14 @@ class RunOperations:
         :return: updated run object
         :rtype: ~promptflow._sdk.entities._run.Run
         """
+        name = Run._validate_and_return_run_name(name)
         # the kwargs is to support update run status scenario but keep it private
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
     def get_details(self, name: Union[str, Run]) -> pd.DataFrame:
-        run = name if isinstance(name, Run) else self.get(name=name)
+        name = Run._validate_and_return_run_name(name)
+        run = self.get(name=name)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
         inputs = local_storage.load_inputs()
@@ -194,7 +200,8 @@ class RunOperations:
         return df
 
     def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
-        run = name if isinstance(name, Run) else self.get(name=name)
+        name = Run._validate_and_return_run_name(name)
+        run = self.get(name=name)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
         return local_storage.load_metrics()
@@ -209,11 +216,19 @@ class RunOperations:
 
             local_storage = LocalStorageOperations(run)
             detail = local_storage.load_detail()
-            metadata = RunMetadata(name=run.name, display_name=run.display_name, tags=run.tags, lineage=run.run)
+            metadata = RunMetadata(
+                name=run.name,
+                display_name=run.display_name,
+                tags=run.tags,
+                lineage=run.run,
+                metrics=self.get_metrics(name=run.name),
+                dag=local_storage.load_dag_as_string(),
+                flow_tools_json=local_storage.load_flow_tools_json(),
+            )
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
         data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
-        html_string = generate_html_string(asdict(data_for_visualize))
+        html_string = generate_html_string(asdict(data_for_visualize), is_cloud=False)
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)
 
@@ -225,10 +240,18 @@ class RunOperations:
         """
         if not isinstance(runs, list):
             runs = [runs]
-        if not isinstance(runs[0], Run):
-            runs = [self.get(name) for name in runs]
+
+        validated_runs = []
+        for run in runs:
+            run_name = Run._validate_and_return_run_name(run)
+            validated_runs.append(self.get(name=run_name))
+
         html_path = kwargs.pop("html_path", None)
-        self._visualize(runs, html_path=html_path)
+        try:
+            self._visualize(validated_runs, html_path=html_path)
+        except InvalidRunStatusError as e:
+            error_message = f"Cannot visualize non-completed run. {str(e)}"
+            logger.error(error_message)
 
     @classmethod
     def _get_outputs(cls, run: Union[str, Run]) -> List[Dict[str, Any]]:
@@ -245,11 +268,3 @@ class RunOperations:
             run = cls.get(name=run)
         local_storage = LocalStorageOperations(run)
         return local_storage.load_inputs()
-
-    @classmethod
-    def _get_details(cls, run: Run) -> Any:
-        try:
-            with open(Path(run._output_path) / LocalStorageFilenames.DETAIL, "r") as f:
-                return json.load(f)
-        except Exception as e:
-            raise Exception(f"Failed to load details for run {run}") from e

@@ -8,13 +8,25 @@ import json
 import logging
 from typing import Optional
 
+import pandas as pd
+
 from promptflow._cli._params import add_param_debug, add_param_verbose
-from promptflow._cli._pf._run import add_run_create, create_run
+from promptflow._cli._pf._run import add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
-from promptflow._cli._utils import _set_workspace_argument_for_subparsers, pretty_print_dataframe_as_table
-from promptflow._sdk._constants import LOGGER_NAME, MAX_LIST_CLI_RESULTS, MAX_SHOW_DETAILS_RESULTS, ListViewType
+from promptflow._cli._utils import (
+    _set_workspace_argument_for_subparsers,
+    exception_handler,
+    pretty_print_dataframe_as_table,
+)
+from promptflow._sdk._constants import (
+    LOGGER_NAME,
+    MAX_LIST_CLI_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
+    CLIListOutputFormat,
+    ListViewType,
+)
+from promptflow._sdk._errors import InvalidRunStatusError
 from promptflow._sdk._utils import print_red_error
-from promptflow._sdk.exceptions import InvalidRunStatusError
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 
 
@@ -40,7 +52,13 @@ def add_parser_run(subparsers):
 
 
 def add_run_create_cloud(subparsers):
-    parser = add_run_create(subparsers)
+    def add_param_data(parser):
+        # cloud pf can also accept remote data
+        parser.add_argument(
+            "--data", type=str, help="Local path to the data file or remote data. e.g. azureml:name:version."
+        )
+
+    parser = add_run_create_common(subparsers, add_param_data)
     _set_workspace_argument_for_subparsers(parser)
     parser.add_argument("--runtime", type=str, help=argparse.SUPPRESS)
     add_param_debug(parser)
@@ -69,6 +87,14 @@ def add_parser_run_list(subparsers):
         "--include-archived",
         action="store_true",
         help="List archived runs and active runs.",
+    )
+    run_list_parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        type=str,
+        default=CLIListOutputFormat.JSON,
+        help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
     )
     run_list_parser.set_defaults(sub_action="list")
 
@@ -192,6 +218,7 @@ def dispatch_run_commands(args: argparse.Namespace):
             args.max_results,
             args.archived_only,
             args.include_archived,
+            args.output,
         )
     elif args.sub_action == "show":
         show_run(args.subscription, args.resource_group, args.workspace_name, args.name)
@@ -214,7 +241,16 @@ def dispatch_run_commands(args: argparse.Namespace):
         )
 
 
-def list_runs(subscription_id, resource_group, workspace_name, max_results, archived_only, include_archived):
+@exception_handler("List runs")
+def list_runs(
+    subscription_id,
+    resource_group,
+    workspace_name,
+    max_results,
+    archived_only,
+    include_archived,
+    output,
+):
     """List all runs from cloud."""
     if max_results < 1:
         raise ValueError(f"'max_results' must be a positive integer, got {max_results!r}")
@@ -231,10 +267,23 @@ def list_runs(subscription_id, resource_group, workspace_name, max_results, arch
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
     runs = pf.runs.list(max_results=max_results, list_view_type=list_view_type)
     run_list = [run._to_dict() for run in runs]
-    print(json.dumps(run_list, indent=4))
+    if output == CLIListOutputFormat.TABLE:
+        df = pd.DataFrame(run_list)
+        df.fillna("", inplace=True)
+        pretty_print_dataframe_as_table(df)
+    elif output == CLIListOutputFormat.JSON:
+        print(json.dumps(run_list, indent=4))
+    else:
+        logger = logging.getLogger(LOGGER_NAME)
+        warning_message = (
+            f"Unknown output format {output!r}, accepted values are 'json' and 'table';" "will print using 'json'."
+        )
+        logger.warning(warning_message)
+        print(json.dumps(run_list, indent=4))
     return runs
 
 
+@exception_handler("Show run")
 def show_run(subscription_id, resource_group, workspace_name, flow_run_id):
     """Show a run from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
@@ -242,6 +291,7 @@ def show_run(subscription_id, resource_group, workspace_name, flow_run_id):
     print(json.dumps(run._to_dict(), indent=4))
 
 
+@exception_handler("Show run details")
 def show_run_details(subscription_id, resource_group, workspace_name, flow_run_id, max_results, debug=False):
     """Show a run details from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
@@ -249,6 +299,7 @@ def show_run_details(subscription_id, resource_group, workspace_name, flow_run_i
     pretty_print_dataframe_as_table(details.head(max_results))
 
 
+@exception_handler("Show run metrics")
 def show_metrics(subscription_id, resource_group, workspace_name, flow_run_id):
     """Show run metrics from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
@@ -256,6 +307,7 @@ def show_metrics(subscription_id, resource_group, workspace_name, flow_run_id):
     print(json.dumps(metrics, indent=4))
 
 
+@exception_handler("Stream run")
 def stream_run(subscription_id, resource_group, workspace_name, flow_run_id, debug=False):
     """Stream run logs from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
@@ -264,6 +316,7 @@ def stream_run(subscription_id, resource_group, workspace_name, flow_run_id, deb
     print(json.dumps(run._to_dict(), indent=4))
 
 
+@exception_handler("Visualize run")
 def visualize(
     subscription_id: str,
     resource_group: str,
@@ -272,7 +325,7 @@ def visualize(
     html_path: Optional[str] = None,
     debug: bool = False,
 ):
-    run_names = names.split(",")
+    run_names = [name.strip() for name in names.split(",")]
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
     try:
         pf.runs.visualize(run_names, html_path=html_path)

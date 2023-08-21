@@ -3,6 +3,8 @@ import os
 
 import pytest
 
+from promptflow._core.operation_context import OperationContext
+
 
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
 @pytest.mark.e2etest
@@ -47,6 +49,14 @@ def test_swagger(flow_serving_client):
         },
         "security": [{"bearerAuth": []}],
     }
+
+
+@pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
+@pytest.mark.e2etest
+def test_user_agent(flow_serving_client):
+    operation_context = OperationContext.get_instance()
+    assert "test-user-agent" in operation_context.get_user_agent()
+    assert "promptflow-local-serving" in operation_context.get_user_agent()
 
 
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")

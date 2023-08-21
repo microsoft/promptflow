@@ -14,6 +14,7 @@ from dataset.types import Types
 from sqlalchemy.exc import IntegrityError
 
 from promptflow._utils.retry_utils import retry
+from promptflow.storage._errors import DuplicatedPrimaryKeyException, NotFoundException
 
 PRIMARY_KEY = "PrimaryKey"
 INDEX = "INDEX"
@@ -32,14 +33,6 @@ def _get_type(t: type):
         return Types.float
     else:
         raise ValueError(f"No mapping defined from type {t} to sqlite db type.")
-
-
-class DuplicatedPrimaryKeyException(Exception):
-    pass
-
-
-class NotFoundException(Exception):
-    pass
 
 
 class TableInfo:

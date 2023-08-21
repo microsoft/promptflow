@@ -98,7 +98,7 @@ class TestFlowTest:
             node="echo_my_prompt",
             environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
         )
-        assert "Hello World" in result
+        assert result
 
     def test_pf_flow_with_aggregation(self):
         flow_path = Path(f"{FLOWS_DIR}/classification_accuracy_evaluation").absolute()

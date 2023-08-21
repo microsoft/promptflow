@@ -22,7 +22,11 @@ from promptflow._sdk._serving.utils import (
     streaming_response_required,
     validate_request_data,
 )
-from promptflow._sdk._utils import update_environment_variables_with_connections
+from promptflow._sdk._utils import (
+    resolve_connections_environment_variable_reference,
+    setup_user_agent_to_operation_context,
+    update_environment_variables_with_connections,
+)
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._run_submitter import variant_overwrite_context
 from promptflow._version import VERSION
@@ -32,6 +36,7 @@ from .swagger import generate_swagger
 
 logger = logging.getLogger(LOGGER_NAME)
 DEFAULT_STATIC_PATH = Path(__file__).parent / "static"
+USER_AGENT = f"promptflow-local-serving/{VERSION}"
 
 
 class PromptflowServingApp(Flask):
@@ -53,6 +58,7 @@ class PromptflowServingApp(Flask):
             # ensure response has the correct content type
             mimetypes.add_type("application/javascript", ".js")
             mimetypes.add_type("text/css", ".css")
+            setup_user_agent_to_operation_context(USER_AGENT)
 
     def init_executor_if_not_exist(self):
         if self.executor:
@@ -61,6 +67,7 @@ class PromptflowServingApp(Flask):
         # try get the connections
         logger.info("Promptflow serving app start getting connections from local...")
         connections = Flow._get_local_connections(executable=self.flow_entity._init_executable())
+        resolve_connections_environment_variable_reference(connections)
         update_environment_variables_with_connections(connections)
         logger.info(f"Promptflow serving app get connections successfully. keys: {connections.keys()}")
         with variant_overwrite_context(self.flow_entity.code, None, None) as flow:

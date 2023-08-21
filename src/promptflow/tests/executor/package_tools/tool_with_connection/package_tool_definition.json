@@ -1,0 +1,11 @@
+{
+    "tool_with_connection": {
+        "function": "tool_with_test_conn",
+        "inputs": {
+            "conn": {"type": ["TestConnection"]}
+        },
+        "module": "tool_with_connection",
+        "name": "Test Tool with Connection",
+        "type": "python"
+    }
+}

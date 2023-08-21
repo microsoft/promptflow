@@ -6,15 +6,16 @@ import pandas as pd
 import pytest
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import RunStatus
+from promptflow._sdk._constants import LocalStorageFilenames, RunStatus
+from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
-from promptflow._sdk.exceptions import InvalidFlowError, InvalidRunStatusError, RunNotFoundError
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
-from promptflow.executor.error_codes import InputNotFoundInInputsMapping
+from promptflow.executor._errors import InputNotFoundInInputsMapping
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -24,6 +25,27 @@ CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+def create_run_against_multi_line_data(client) -> Run:
+    return client.run(
+        flow=f"{FLOWS_DIR}/web_classification",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        column_mapping={"url": "${data.url}"},
+    )
+
+
+def create_run_against_run(client, run: Run) -> Run:
+    return client.run(
+        flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+        data=f"{DATAS_DIR}/webClassification3.jsonl",
+        run=run.name,
+        column_mapping={
+            "groundtruth": "${data.answer}",
+            "prediction": "${run.outputs.category}",
+            "variant_id": "${data.variant_id}",
+        },
+    )
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
@@ -49,8 +71,9 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
         )
-        details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        local_storage = LocalStorageOperations(result)
+        detail = local_storage.load_detail()
+        tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used default variant config
         assert tuning_node["inputs"]["temperature"] == 0.3
         assert "default" in result.name
@@ -67,8 +90,9 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
         )
-        details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        local_storage = LocalStorageOperations(result)
+        detail = local_storage.load_detail()
+        tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         assert "variant_0" in result.name
 
         # used variant_0 config
@@ -79,8 +103,9 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_1}",
         )
-        details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        local_storage = LocalStorageOperations(result)
+        detail = local_storage.load_detail()
+        tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         assert "variant_1" in result.name
         # used variant_1 config
         assert tuning_node["inputs"]["temperature"] == 0.3
@@ -134,7 +159,8 @@ class TestFlowRun:
                 "groundtruth": "${data.answer}",
                 "prediction": "${run.outputs.category}",
                 # evaluation reference run.inputs
-                "variant_id": "${data.variant_id}",
+                # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                "variant_id": "${run.inputs.url}",
             },
         )
         assert local_client.runs.get(eval_result.name).status == "Completed"
@@ -185,8 +211,9 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
         )
-        details = local_client.runs._get_details(run=result)
-        tuning_node = next((x for x in details["node_runs"] if x["node"] == "summarize_text_content"), None)
+        local_storage = LocalStorageOperations(result)
+        detail = local_storage.load_detail()
+        tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used default variant config
         assert tuning_node["inputs"]["temperature"] == 0.3
 
@@ -419,13 +446,25 @@ class TestFlowRun:
         )
         pf.visualize([run1, run2])
 
-    def test_incomplete_run_visualize(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
-        # modify status in memory
-        run._status = RunStatus.FAILED
-        with pytest.raises(InvalidRunStatusError):
-            pf.visualize(run)
+    def test_incomplete_run_visualize(self, azure_open_ai_connection: AzureOpenAIConnection, pf, capfd) -> None:
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+        failed_run._status = RunStatus.FAILED
+
+        # patch logger.error to print, so that we can capture the error message using capfd
+        from promptflow.azure.operations import _run_operations
+
+        _run_operations.logger.error = print
+
+        pf.visualize(failed_run)
+        captured = capfd.readouterr()
+        expected_error_message = (
+            f"Cannot visualize non-completed run. Run {failed_run.name!r} is not completed, the status is 'Failed'."
+        )
+        assert expected_error_message in captured.out
 
     def test_flow_bulk_run_with_additional_includes(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -465,3 +504,64 @@ class TestFlowRun:
         )
         outputs = pf.runs._get_outputs(run=run)
         assert "dict" in outputs["output"][0]
+
+    def test_run_exist_error(self, pf):
+        name = str(uuid.uuid4())
+        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+
+        pf.run(
+            name=name,
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=data_path,
+            column_mapping={"key": {"value": "1"}},
+        )
+
+        # create a new run won't affect original run
+        with pytest.raises(RunExistsError):
+            pf.run(
+                name=name,
+                flow=f"{FLOWS_DIR}/flow_with_dict_input",
+                data=data_path,
+                column_mapping={"key": {"value": "1"}},
+            )
+        run = pf.runs.get(name)
+        assert run.status == RunStatus.COMPLETED
+        assert not os.path.exists(run._output_path / LocalStorageFilenames.EXCEPTION)
+
+    def test_run_local_storage_structure(self, local_client, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
+        run_output_path = local_storage.path
+        assert (Path(run_output_path) / "flow_outputs").is_dir()
+        assert (Path(run_output_path) / "flow_outputs" / "output.jsonl").is_file()
+        assert (Path(run_output_path) / "flow_artifacts").is_dir()
+        # 3 line runs for webClassification3.jsonl
+        assert len([_ for _ in (Path(run_output_path) / "flow_artifacts").iterdir()]) == 3
+        assert (Path(run_output_path) / "node_artifacts").is_dir()
+        # 5 nodes web classification flow DAG
+        assert len([_ for _ in (Path(run_output_path) / "node_artifacts").iterdir()]) == 5
+
+    def test_get_metrics_format(self, local_client, pf) -> None:
+        run1 = create_run_against_multi_line_data(pf)
+        run2 = create_run_against_run(pf, run1)
+        # ensure the result is a flatten dict
+        assert local_client.runs.get_metrics(run2.name).keys() == {"accuracy"}
+
+    def test_get_detail_format(self, local_client, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        # data is a jsonl file, so we can know the number of line runs
+        with open(f"{DATAS_DIR}/webClassification3.jsonl", "r") as f:
+            data = f.readlines()
+        number_of_lines = len(data)
+
+        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
+        detail = local_storage.load_detail()
+
+        assert isinstance(detail, dict)
+        # flow runs
+        assert "flow_runs" in detail
+        assert isinstance(detail["flow_runs"], list)
+        assert len(detail["flow_runs"]) == number_of_lines
+        # node runs
+        assert "node_runs" in detail
+        assert isinstance(detail["node_runs"], list)

@@ -30,7 +30,6 @@ REQUIRES = [
     "tabulate>=0.9.0,<1.0.0",  # control plane sdk requirements, to print table in console
     "filelock>=3.4.0,<4.0.0",  # control plane sdk requirements, to lock for multiprocessing
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
-    "typing_extensions>=4.5.0,<5.0.0",  # promptflow.core.langchain_handler
     "marshmallow>=3.5,<4.0.0",
     "pyyaml>=5.1.0,<7.0.0",
 ]
