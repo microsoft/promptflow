@@ -53,9 +53,9 @@ jobs:
     - name: Generate Configs
       uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
       with:
-        tenantId: ${{ secrets.TENANT_ID }}
-        clientId: ${{ secrets.CLIENT_ID }}
-        clientSecret: ${{ secrets.CLIENT_SECRET }}
+        tenantId: ${{ env.TENANT_ID }}
+        clientId: ${{ env.CLIENT_ID }}
+        clientSecret: ${{ env.CLIENT_SECRET }}
         targetFolder: ${{ inputs.testWorkingDirectory }}
     - name: Azure Login
       uses: azure/login@v1
