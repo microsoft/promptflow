@@ -66,13 +66,13 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Run Coverage Test
       shell: bash -l {0}
-      working-directory: ${{ env.testWorkingDirectory }}
+      working-directory: ${{ github.workspace }}
       run: |-
         set -x -e
         export IS_IN_CI_PIPELINE="true"
         az account show
         conda activate release-env
-        python "../../scripts/building/run_coverage_tests.py" \
+        python scripts/building/run_coverage_tests.py \
           -p ${{ github.workspace }}/src/promptflow/promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
           -l eastus \
@@ -84,26 +84,21 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results
-        path: ${{ env.testWorkingDirectory }}/test-results.xml
+        path: 
+          ${{ github.workspace }}/*.xml
       # Use always() to always run this step to publish test results when there are test failures
     - name: Publish Test Results
       if: always()
       uses: EnricoMi/publish-unit-test-result-action/composite@v2
       with:
         files: |
-          ${{ env.testWorkingDirectory }}/test-results.xml
+          ${{ github.workspace }}/test-results.xml
     - name: Generate Coverage Report
       if: (success() || failure())
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.1.19
-      continue-on-error: false
+      uses: orgoro/coverage@v3.1
       with:
-        reports: "${{ env.testWorkingDirectory }}/coverage.xml"
-        targetdir: coveragereport_${{ github.run_number }}
-        reporttypes: HtmlInline
-    - name: Upload CoverageReport
-      if: (success() || failure())
-      uses: actions/upload-artifact@v3.1.1
-      with:
-        name: CoverageReport
-        path: coveragereport_${{ github.run_number }}
+        coverageFile: ${{ github.workspace }}/coverage.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        thresholdAll: 0.3
+
     
