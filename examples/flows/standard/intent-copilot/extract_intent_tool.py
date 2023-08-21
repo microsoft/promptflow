@@ -7,9 +7,7 @@ from intent import extract_intent
 
 
 @tool
-def extract_intent_tool(
-    chat_prompt,
-    connection: CustomConnection) -> str:
+def extract_intent_tool(chat_prompt, connection: CustomConnection) -> str:
 
     # set environment variables
     for key, value in connection.items():
