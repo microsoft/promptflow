@@ -18,9 +18,16 @@ class TestChatWithPDF(BaseTest):
                 "chat_history": [],
                 "pdf_url": "https://arxiv.org/pdf/1810.04805.pdf",
                 "question": "BERT stands for?",
-                "config": self.config_2k_context})
+                "config": self.config_2k_context,
+            },
+        )
         print(result)
-        self.assertTrue(result["answer"].find("Bidirectional Encoder Representations from Transformers") != -1)
+        self.assertTrue(
+            result["answer"].find(
+                "Bidirectional Encoder Representations from Transformers"
+            )
+            != -1
+        )
 
     def test_bulk_run_chat_with_pdf(self):
         run = self.create_chat_run()
@@ -41,8 +48,9 @@ class TestChatWithPDF(BaseTest):
             {
                 "question": "${run.inputs.question}",
                 "answer": "${run.outputs.answer}",
-                "context": "${run.outputs.context}"
-            })
+                "context": "${run.outputs.context}",
+            },
+        )
         self.pf.stream(eval)  # wait for completion
         self.assertEqual(eval.status, "Completed")
 
@@ -58,8 +66,9 @@ class TestChatWithPDF(BaseTest):
             {
                 "question": "${run.inputs.question}",
                 "answer": "${run.outputs.answer}",
-                "context": "${run.outputs.context}"
-            })
+                "context": "${run.outputs.context}",
+            },
+        )
         self.pf.stream(eval)  # wait for completion
         self.assertEqual(eval.status, "Completed")
 
@@ -75,7 +84,9 @@ class TestChatWithPDF(BaseTest):
                 "question": "${data.question}",
                 "pdf_url": "${data.pdf_url}",
                 "chat_history": "${data.chat_history}",
-                "config": self.config_2k_context})
+                "config": self.config_2k_context,
+            }
+        )
         self.pf.stream(run)  # wait for completion
 
         self.assertEqual(run.status, "Completed")
@@ -86,7 +97,9 @@ class TestChatWithPDF(BaseTest):
         run = self.create_chat_run(
             column_mapping={
                 "question": "${data.question}",
-                "pdf_url": "${data.pdf_url}"})
+                "pdf_url": "${data.pdf_url}",
+            }
+        )
         self.pf.stream(run)  # wait for completion
 
         self.assertEqual(run.status, "Failed")
@@ -98,7 +111,9 @@ class TestChatWithPDF(BaseTest):
             column_mapping={
                 "question": "${data.question_not_exist}",
                 "pdf_url": "${data.pdf_url}",
-                "chat_history": "${data.chat_history}"})
+                "chat_history": "${data.chat_history}",
+            }
+        )
         self.pf.stream(run)  # wait for completion
 
         self.assertEqual(run.status, "Failed")
@@ -106,5 +121,5 @@ class TestChatWithPDF(BaseTest):
             print(self.pf.get_details(run))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

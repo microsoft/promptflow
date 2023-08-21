@@ -18,8 +18,8 @@ class SearchResultEntity:
     metadata: dict = None
 
 
-INDEX_FILE_NAME = 'index.faiss'
-DATA_FILE_NAME = 'index.pkl'
+INDEX_FILE_NAME = "index.faiss"
+DATA_FILE_NAME = "index.pkl"
 
 
 class FAISSIndex:
@@ -28,7 +28,9 @@ class FAISSIndex:
         self.docs = {}  # id -> doc, doc is (text, metadata)
         self.embedding = embedding
 
-    def insert_batch(self, texts: Iterable[str], metadatas: Optional[List[dict]] = None) -> None:
+    def insert_batch(
+        self, texts: Iterable[str], metadatas: Optional[List[dict]] = None
+    ) -> None:
         documents = []
         vectors = []
         for i, text in enumerate(texts):
@@ -38,7 +40,9 @@ class FAISSIndex:
             vectors.append(vector)
 
         self.index.add(np.array(vectors, dtype=np.float32))
-        self.docs.update({i: doc for i, doc in enumerate(documents, start=len(self.docs))})
+        self.docs.update(
+            {i: doc for i, doc in enumerate(documents, start=len(self.docs))}
+        )
 
         pass
 
@@ -50,18 +54,20 @@ class FAISSIndex:
             if i == -1:  # This happens when not enough docs are returned.
                 continue
             doc = self.docs[i]
-            docs.append(SearchResultEntity(text=doc[0], metadata=doc[1], score=scores[0][j]))
+            docs.append(
+                SearchResultEntity(text=doc[0], metadata=doc[1], score=scores[0][j])
+            )
         return docs
 
     def save(self, path: str) -> None:
         faiss.write_index(self.index, os.path.join(path, INDEX_FILE_NAME))
         # dump docs to pickle file
-        with open(os.path.join(path, DATA_FILE_NAME), 'wb') as f:
+        with open(os.path.join(path, DATA_FILE_NAME), "wb") as f:
             pickle.dump(self.docs, f)
         pass
 
     def load(self, path: str) -> None:
         self.index = faiss.read_index(os.path.join(path, INDEX_FILE_NAME))
-        with open(os.path.join(path, DATA_FILE_NAME), 'rb') as f:
+        with open(os.path.join(path, DATA_FILE_NAME), "rb") as f:
             self.docs = pickle.load(f)
         pass

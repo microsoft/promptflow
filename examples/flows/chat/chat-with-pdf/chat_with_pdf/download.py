@@ -8,7 +8,7 @@ from utils.logging import log
 
 # Download a pdf file from a url and return the path to the file
 def download(url: str) -> str:
-    path = '.pdfs/' + normalize_filename(url) + ".pdf"
+    path = ".pdfs/" + normalize_filename(url) + ".pdf"
     lock_path = path + ".lock"
 
     with acquire_lock(lock_path):
@@ -19,7 +19,7 @@ def download(url: str) -> str:
         log("Downloading pdf from " + url)
         response = requests.get(url)
 
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             f.write(response.content)
 
         return path
@@ -27,4 +27,4 @@ def download(url: str) -> str:
 
 def normalize_filename(filename):
     # Replace any invalid characters with an underscore
-    return re.sub(r'[^\w\-_. ]', '_', filename)
+    return re.sub(r"[^\w\-_. ]", "_", filename)

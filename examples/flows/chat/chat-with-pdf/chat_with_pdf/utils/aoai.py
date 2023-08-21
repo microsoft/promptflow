@@ -4,13 +4,17 @@ import os
 import tiktoken
 from jinja2 import Template
 
-from .retry import retry_and_handle_exceptions, retry_and_handle_exceptions_for_generator
+from .retry import (
+    retry_and_handle_exceptions,
+    retry_and_handle_exceptions_for_generator,
+)
 from .logging import log
 
 
 def extract_delay_from_rate_limit_error_msg(text):
     import re
-    pattern = r'retry after (\d+)'
+
+    pattern = r"retry after (\d+)"
     match = re.search(pattern, text)
     if match:
         retry_time_from_message = match.group(1)
@@ -28,22 +32,38 @@ class AOAI:
 
 
 class AOAIChat(AOAI):
-    @retry_and_handle_exceptions(exception_to_check=(openai.error.RateLimitError, openai.error.APIError, KeyError),
-                                 max_retries=5,
-                                 extract_delay_from_error_message=extract_delay_from_rate_limit_error_msg)
+    @retry_and_handle_exceptions(
+        exception_to_check=(
+            openai.error.RateLimitError,
+            openai.error.APIError,
+            KeyError,
+        ),
+        max_retries=5,
+        extract_delay_from_error_message=extract_delay_from_rate_limit_error_msg,
+    )
     def generate(self, messages: list, **kwargs) -> List[float]:
         return openai.ChatCompletion.create(
-            engine=os.environ.get('CHAT_MODEL_DEPLOYMENT_NAME'),
-            messages=messages, **kwargs)["choices"][0]["message"]['content']
+            engine=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
+            messages=messages,
+            **kwargs,
+        )["choices"][0]["message"]["content"]
 
     @retry_and_handle_exceptions_for_generator(
-            exception_to_check=(openai.error.RateLimitError, openai.error.APIError, KeyError),
-            max_retries=5,
-            extract_delay_from_error_message=extract_delay_from_rate_limit_error_msg)
+        exception_to_check=(
+            openai.error.RateLimitError,
+            openai.error.APIError,
+            KeyError,
+        ),
+        max_retries=5,
+        extract_delay_from_error_message=extract_delay_from_rate_limit_error_msg,
+    )
     def stream(self, messages: list, **kwargs):
         response = openai.ChatCompletion.create(
-            engine=os.environ.get('CHAT_MODEL_DEPLOYMENT_NAME'),
-            messages=messages, stream=True, **kwargs)
+            engine=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
+            messages=messages,
+            stream=True,
+            **kwargs,
+        )
 
         for chunk in response:
             delta = chunk["choices"][0]["delta"]
@@ -52,17 +72,19 @@ class AOAIChat(AOAI):
 
 
 class AOAIEmbedding(AOAI):
-    @retry_and_handle_exceptions(exception_to_check=openai.error.RateLimitError,
-                                 max_retries=5,
-                                 extract_delay_from_error_message=extract_delay_from_rate_limit_error_msg)
+    @retry_and_handle_exceptions(
+        exception_to_check=openai.error.RateLimitError,
+        max_retries=5,
+        extract_delay_from_error_message=extract_delay_from_rate_limit_error_msg,
+    )
     def generate(self, text: str) -> List[float]:
         return openai.Embedding.create(
-            input=text,
-            engine=os.environ.get('EMBEDDING_MODEL_DEPLOYMENT_NAME'))["data"][0]["embedding"]
+            input=text, engine=os.environ.get("EMBEDDING_MODEL_DEPLOYMENT_NAME")
+        )["data"][0]["embedding"]
 
 
 def count_token(text: str) -> int:
-    encoding = tiktoken.get_encoding('cl100k_base')
+    encoding = tiktoken.get_encoding("cl100k_base")
     return len(encoding.encode(text))
 
 

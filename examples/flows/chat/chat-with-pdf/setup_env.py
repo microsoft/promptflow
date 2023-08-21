@@ -15,11 +15,11 @@ def setup_env(aoai_connection: AzureOpenAIConnection, config: dict):
     os.environ["OPENAI_API_VERSION"] = aoai_connection.api_version
     for key in config:
         os.environ[key] = str(config[key])
-      
+
     with acquire_lock("create_folder.lock"):
-      if not os.path.exists(".pdfs"):
-          os.mkdir(".pdfs")
-      if not os.path.exists(".index/.pdfs"):
-          os.makedirs(".index/.pdfs")
+        if not os.path.exists(".pdfs"):
+            os.mkdir(".pdfs")
+        if not os.path.exists(".index/.pdfs"):
+            os.makedirs(".index/.pdfs")
 
     return "Ready"

@@ -16,7 +16,7 @@ def qna_tool(prompt: str, history: list):
 def convert_chat_history_to_chatml_messages(history):
     messages = []
     for item in history:
-        messages.append({"role": "user", "content": item['inputs']['question']})
-        messages.append({"role": "assistant", "content": item['outputs']['answer']})
+        messages.append({"role": "user", "content": item["inputs"]["question"]})
+        messages.append({"role": "assistant", "content": item["outputs"]["answer"]})
 
     return messages

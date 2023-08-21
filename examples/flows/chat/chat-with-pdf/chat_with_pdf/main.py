@@ -29,7 +29,7 @@ def chat_with_pdf(question: str, pdf_url: str, history: list):
 def print_stream_and_return_full_answer(stream):
     answer = ""
     for str in stream:
-        print(str, end='', flush=True)
+        print(str, end="", flush=True)
         answer = answer + str + ""
     print(flush=True)
 
@@ -47,9 +47,12 @@ def main_loop(url: str):
 
         stream, context = chat_with_pdf(question, url, history)
 
-        print("\033[92m" + "$Bot: " + "\033[0m", end=' ', flush=True)
+        print("\033[92m" + "$Bot: " + "\033[0m", end=" ", flush=True)
         answer = print_stream_and_return_full_answer(stream)
-        history = history + [{"role": "user", "content": question}, {"role": "assistant", "content": answer}]
+        history = history + [
+            {"role": "user", "content": question},
+            {"role": "assistant", "content": answer},
+        ]
 
 
 def main():
