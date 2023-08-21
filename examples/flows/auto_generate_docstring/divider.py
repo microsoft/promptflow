@@ -96,6 +96,8 @@ class Divider:
                     code += part_full_code.replace(code_doc[0], format_new_doc.strip(), 1)
                 else:
                     code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + format_new_doc + '\n' + origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
+            else:
+                code += part_full_code
         return code
 
     @classmethod
