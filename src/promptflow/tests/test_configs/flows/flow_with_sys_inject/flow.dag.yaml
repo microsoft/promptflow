@@ -1,0 +1,15 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_prompt:
+    type: string
+    reference: ${echo_my_prompt.output}
+nodes:
+- inputs:
+    input1: ${inputs.text}
+  name: echo_my_prompt
+  type: python
+  source:
+    type: code
+    path: hello.py

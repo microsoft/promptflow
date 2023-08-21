@@ -28,14 +28,14 @@ class RunTracker(ThreadLocalSingleton):
     def init_dummy() -> "RunTracker":
         return RunTracker(DummyRunStorage())
 
-    def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Flow):
+    def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Flow, node_log_manager=None):
         self._node_runs: Dict[str, RunInfo] = {}
         self._flow_runs: Dict[str, FlowRunInfo] = {}
         self._current_run_id = ""
         self._run_context = ContextVar(self.RUN_CONTEXT_NAME, default="")
         self._storage = run_storage
         self._debug = True  # TODO: Make this configurable
-        self.node_log_manager = NodeLogManager()
+        self.node_log_manager = node_log_manager or NodeLogManager()
         self._has_failed_root_run = False
         self._run_mode = run_mode
         self._allow_generator_types = False

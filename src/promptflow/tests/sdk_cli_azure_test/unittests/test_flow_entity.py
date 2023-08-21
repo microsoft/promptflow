@@ -87,7 +87,6 @@ class TestFlow:
                 )
 
             flow_files = list(sorted([item[1] for item in upload_paths]))
-            # TODO: should we ignore __pycache__ by default?
             # assert that .runs/mock.file are ignored
             assert flow_files == [
                 ".promptflow/flow.tools.json",

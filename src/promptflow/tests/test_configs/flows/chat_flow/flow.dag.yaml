@@ -8,7 +8,7 @@ inputs:
 outputs:
   answer:
     type: string
-    reference: ${chat.output}
+    reference: ${show_answer.output}
     is_chat_output: true
 nodes:
 - inputs:
@@ -17,7 +17,7 @@ nodes:
     temperature: "0.7"
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
-  name: chat
+  name: chat_node
   type: llm
   source:
     type: code
@@ -25,4 +25,11 @@ nodes:
   api: chat
   provider: AzureOpenAI
   connection: azure_open_ai_connection
+- name: show_answer
+  type: python
+  source:
+    type: code
+    path: show_answer.py
+  inputs:
+    chat_answer: ${chat_node.output}
 node_variants: {}

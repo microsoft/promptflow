@@ -37,6 +37,11 @@ class TestExecutorLogs:
         executor = FlowExecutor.create(get_yaml_file(folder_name), {})
         content = "line_text"
         flow_result = executor.exec_line({"text": content})
+        node_run_ids = [node_run_info.run_id for node_run_info in flow_result.node_run_infos.values()]
+        for node_run_id in node_run_ids:
+            logs = executor._run_tracker.node_log_manager.get_logs(node_run_id)
+            assert logs["stderr"] is None and logs["stdout"] is None, f"Logs for node {node_run_id} is cleared."
+
         self.assert_flow_result(flow_result, content)
 
         bulk_inputs = [{"text": f"text_{idx}"} for idx in range(10)]
@@ -115,6 +120,7 @@ class TestExecutorLogs:
             lines = fin.readlines()
         lines = [line for line in lines if line.strip()]
         target_texts = [
+            "INFO     Start to run 1 nodes with concurrency level 16.",
             "INFO     Executing node long_run_node.",
             "WARNING  long_run_node in line 0 has been running for 60 seconds, stacktrace of thread",
             ", line 16, in long_run_func",

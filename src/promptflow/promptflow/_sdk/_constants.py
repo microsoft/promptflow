@@ -16,8 +16,10 @@ INPUTS = "inputs"
 USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
+FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 
-HOME_PROMPT_FLOW_DIR = (Path.home() / ".promptflow").resolve()
+PROMPT_FLOW_DIR_NAME = ".promptflow"
+HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
 if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
 
@@ -33,7 +35,10 @@ FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
 KEYRING_ENCRYPTION_KEY_NAME = "encryption_key"
 KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").resolve()
+# Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = "******"
+SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
+SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 CHAT_HISTORY = "chat_history"
 
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
@@ -43,6 +48,7 @@ LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
 
 DEFAULT_ENCODING = "utf-8"
+LOCAL_STORAGE_BATCH_SIZE = 1
 
 
 class RunTypes:
@@ -156,20 +162,27 @@ MAX_RUN_LIST_RESULTS = 50  # run list
 MAX_SHOW_DETAILS_RESULTS = 100  # show details
 
 
+class CLIListOutputFormat:
+    JSON = "json"
+    TABLE = "table"
+
+
 def get_run_output_path(run) -> Path:
     # store the run outputs to user's local dir
-    return (Path.home() / ".promptflow/.runs" / str(run.name)).resolve()
+    return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
 
 
 class LocalStorageFilenames:
     SNAPSHOT_FOLDER = "snapshot"
     DAG = DAG_FILE_NAME
+    FLOW_TOOLS_JSON = FLOW_TOOLS_JSON
     INPUTS = "inputs.jsonl"
     OUTPUTS = "outputs.jsonl"
     DETAIL = "detail.json"
     METRICS = "metrics.json"
     LOG = "logs.txt"
     EXCEPTION = "error.json"
+    META = "meta.json"
 
 
 class ListViewType(str, Enum):
@@ -191,10 +204,10 @@ def get_list_view_type(archived_only: bool, include_archived: bool) -> ListViewT
 
 # run visualize constants
 VISUALIZE_HTML_TEMPLATE = Path(__file__).parent / "data" / "visualize.j2"
-CDN_LINK = "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/{filename}?version=1"
-VISUALIZE_VERSION = "0.0.24"
+CDN_LINK = "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/{filename}"
+VISUALIZE_LOCAL_VERSION = "0.0.26"
+VISUALIZE_CLOUD_VERSION = "0.0.24"
 JS_FILENAME = "bulkTestDetails.min.js"
-CSS_FILENAME = "style.css"
 
 
 class RunInfoSources(str, Enum):

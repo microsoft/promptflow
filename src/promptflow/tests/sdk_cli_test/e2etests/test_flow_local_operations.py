@@ -21,45 +21,16 @@ def e2e_test_docker_build_and_run(output_path):
     This function is for adhoc local test and need to run on a dev machine with docker installed.
     """
     import subprocess
-    import tempfile
 
     subprocess.check_output(["docker", "build", ".", "-t", "test"], cwd=output_path)
     subprocess.check_output(["docker", "tag", "test", "elliotz/promptflow-export-result:latest"], cwd=output_path)
 
-    migration_secret_name = "MIGRATION_SECRET"
-    subprocess.call(["docker", "swarm", "init"], cwd=output_path)
-
-    service_name = "test_service"
-    subprocess.call(["docker", "service", "rm", service_name], cwd=output_path)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        secret_file = Path(temp_dir) / "secret.txt"
-        secret_file.write_text("123")
-        subprocess.call(
-            ["docker", "secret", "create", migration_secret_name, secret_file.as_posix()],
-            cwd=output_path,
-        )
-    subprocess.call(
-        [
-            "docker",
-            "secret",
-            "create",
-            migration_secret_name,
-            os.path.join(output_path, migration_secret_name),
-        ],
-        cwd=output_path,
-    )
     subprocess.check_output(
         [
             "docker",
-            "service",
-            "create",
-            "--secret",
-            migration_secret_name,
-            "--name",
-            service_name,
-            "--publish",
-            "8080:8080",
-            "elliotz/promptflow-export-result:latest",
+            "run",
+            "-e",
+            "CUSTOM_CONNECTION_AZURE_OPENAI_API_KEY='xxx'" "elliotz/promptflow-export-result:latest",
         ],
         cwd=output_path,
     )
@@ -102,7 +73,6 @@ class TestFlowLocalOperations:
         from promptflow._sdk.entities._flow import FlowProtected
 
         flow.__class__ = FlowProtected
-        dummy_migration_secret = "123"
 
         (Path(source) / ".runs").mkdir(exist_ok=True)
         (Path(source) / ".runs" / "dummy_run_file").touch()
@@ -110,7 +80,6 @@ class TestFlowLocalOperations:
         flow.export(
             output=output_path,
             format="docker",
-            migration_secret=dummy_migration_secret,
         )
 
         # check if .amlignore works
@@ -124,50 +93,3 @@ class TestFlowLocalOperations:
         assert not (Path(output_path) / "flow" / ".runs" / "dummy_run_file").exists()
 
         # e2e_test_docker_build_and_run(output_path)
-
-    def test_get_metrics_format(self, local_client, pf) -> None:
-        # create run with metrics
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        run1 = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=data_path,
-            column_mapping={"url": "${data.url}"},
-        )
-        run2 = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-            data=data_path,
-            run=run1.name,
-            column_mapping={
-                "groundtruth": "${data.answer}",
-                "prediction": "${run.outputs.category}",
-                "variant_id": "${data.variant_id}",
-            },
-        )
-        # ensure the result is a flatten dict
-        assert local_client.runs.get_metrics(run2.name).keys() == {"accuracy"}
-
-    def test_get_detail_format(self, local_client, pf) -> None:
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        run = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=data_path,
-            column_mapping={"url": "${data.url}"},
-        )
-        # data is a jsonl file, so we can know the number of line runs
-        with open(data_path, "r") as f:
-            data = f.readlines()
-        number_of_lines = len(data)
-
-        from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
-
-        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
-        detail = local_storage.load_detail()
-
-        assert isinstance(detail, dict)
-        # flow runs
-        assert "flow_runs" in detail
-        assert isinstance(detail["flow_runs"], list)
-        assert len(detail["flow_runs"]) == number_of_lines
-        # node runs
-        assert "node_runs" in detail
-        assert isinstance(detail["node_runs"], list)

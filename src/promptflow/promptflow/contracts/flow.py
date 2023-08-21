@@ -2,20 +2,20 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import copy
 import logging
 import sys
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
-from promptflow.exceptions import ErrorTarget, FailedToImportModule
+from promptflow.exceptions import ErrorTarget
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
+from ._errors import FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -103,6 +103,7 @@ class FlowInputAssignment(InputAssignment):
 class ToolSourceType(str, Enum):
     Code = "code"
     Package = "package"
+    PackageWithPrompt = "package_with_prompt"
 
 
 @dataclass
@@ -147,7 +148,7 @@ class Node:
     provider: str = None
     module: str = None  # The module of provider to import
     connection: str = None
-    reduce: bool = False
+    aggregation: bool = False
     enable_cache: bool = False
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
@@ -157,8 +158,9 @@ class Node:
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v})
         self.inputs = self.inputs or {}
         data.update({"inputs": {name: i.serialize() for name, i in self.inputs.items()}})
-        if self.reduce:
-            data["reduce"] = True
+        if self.aggregation:
+            data["aggregation"] = True
+            data["reduce"] = True  # TODO: Remove this fallback.
         return data
 
     @staticmethod
@@ -172,8 +174,7 @@ class Node:
             provider=data.get("provider", None),
             module=data.get("module", None),
             connection=data.get("connection", None),
-            # TODO: Rename reduce to aggregation
-            reduce=data.get("reduce", False) or data.get("aggregation", False),
+            aggregation=data.get("aggregation", False) or data.get("reduce", False),  # TODO: Remove this fallback.
             enable_cache=data.get("enable_cache", False),
         )
         if "source" in data:
@@ -289,16 +290,18 @@ class Flow:
 
     @staticmethod
     def deserialize(data: dict) -> "Flow":
-        tools = [Tool.deserialize(t) for t in data.get("tools", [])]
-        nodes = [Node.deserialize(n) for n in data.get("nodes", [])]
+        tools = [Tool.deserialize(t) for t in data.get("tools") or []]
+        nodes = [Node.deserialize(n) for n in data.get("nodes") or []]
         Flow.import_requisites(tools, nodes)
+        inputs = data.get("inputs") or {}
+        outputs = data.get("outputs") or {}
         return Flow(
             # TODO: Remove this fallback.
             data.get("id", data.get("name", "default_flow_id")),
             data.get("name", "default_flow"),
             nodes,
-            {name: FlowInputDefinition.deserialize(i) for name, i in data.get("inputs", {}).items()},
-            {name: FlowOutputDefinition.deserialize(o) for name, o in data.get("outputs", {}).items()},
+            {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
+            {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
         )
 
@@ -356,7 +359,7 @@ class Flow:
         return self
 
     def has_aggregation_node(self):
-        return any(n.reduce for n in self.nodes)
+        return any(n.aggregation for n in self.nodes)
 
     def get_node(self, node_name):
         return next((n for n in self.nodes if n.name == node_name), None)
@@ -366,11 +369,11 @@ class Flow:
 
     def is_reduce_node(self, node_name):
         node = next((n for n in self.nodes if n.name == node_name), None)
-        return node is not None and node.reduce
+        return node is not None and node.aggregation
 
     def is_normal_node(self, node_name):
         node = next((n for n in self.nodes if n.name == node_name), None)
-        return node is not None and not node.reduce
+        return node is not None and not node.aggregation
 
     def is_llm_node(self, node):
         """Given a node, return whether it uses LLM tool."""
@@ -467,131 +470,3 @@ class Flow:
                 self.nodes[index] = variant_node
                 break
         self.tools = self.tools + variant_tools
-
-
-@dataclass
-class BaseFlowRequest:
-    flow: Optional[Flow]
-    connections: Dict[str, Dict[str, str]]
-
-
-BASELINE_VARIANT_ID = "variant0"
-
-
-@dataclass
-class BatchFlowRequest(BaseFlowRequest):
-    batch_inputs: List[Dict[str, Any]]
-    name: str = ""
-    description: str = ""
-    tags: Mapping[str, str] = None
-
-    baseline_variant_id: str = ""
-    variants: Dict[str, List[Node]] = None
-    variants_tools: List[Tool] = None
-    variants_codes: Dict[str, str] = None
-    variants_runs: Dict[str, str] = None
-
-    bulk_test_id: Optional[str] = None
-
-    eval_flow: Optional[Flow] = None
-    eval_flow_run_id: Optional[str] = None
-    eval_flow_inputs_mapping: Optional[Mapping[str, str]] = None
-
-    @staticmethod
-    def deserialize(data: dict) -> "BatchFlowRequest":
-        return BatchFlowRequest(
-            flow=Flow.deserialize(data["flow"]) if "flow" in data else None,
-            connections=data.get("connections", {}),
-            batch_inputs=data.get("batch_inputs", []),
-            name=data.get("name", ""),
-            description=data.get("description", ""),
-            tags=data.get("tags", {}),
-            baseline_variant_id=data.get("baseline_variant_id", ""),
-            variants={
-                variant_id: [Node.deserialize(node) for node in nodes]
-                for variant_id, nodes in data.get("variants", {}).items()
-            },
-            variants_tools=[Tool.deserialize(t) for t in data.get("variants_tools", [])],
-            variants_runs=data.get("variants_runs", {}),
-            variants_codes=data.get("variants_codes", {}),
-            bulk_test_id=data.get("bulk_test_id", None),
-            eval_flow=Flow.deserialize(data["eval_flow"]) if data.get("eval_flow", None) else None,
-            eval_flow_run_id=data.get("eval_flow_run_id"),
-            eval_flow_inputs_mapping=data.get("eval_flow_inputs_mapping", {}),
-        )
-
-
-@dataclass
-class NodesRequest(BaseFlowRequest):
-    node_name: str
-    node_inputs: Dict[str, Any]
-    variants: Dict[str, List[Node]] = None
-    variants_tools: List[Tool] = None
-    variants_codes: Dict[str, str] = None
-
-    @staticmethod
-    def deserialize(data: dict) -> "NodesRequest":
-        return NodesRequest(
-            Flow.deserialize(data["flow"]) if "flow" in data else None,
-            data.get("connections", {}),
-            data["node_name"],
-            data["node_inputs"],
-            variants={
-                variant_id: [Node.deserialize(node) for node in nodes]
-                for variant_id, nodes in data.get("variants", {}).items()
-            },
-            variants_tools=[Tool.deserialize(t) for t in data.get("variants_tools", [])],
-            variants_codes=data.get("variants_codes", {}),
-        )
-
-    @staticmethod
-    def get_node_name_from_node_inputs_key(k: str) -> str:
-        """
-        Node input keys might have the format: {node name}.output
-        Strip .output and return node name in this case.
-        """
-        if k.endswith(".output"):
-            return k[: -len(".output")]
-        return k
-
-    def get_node_connection_names(self, run_mode):
-        # Get the connection name from node_input(Python) and connection field(LLM) for current node.
-        node = next((n for n in self.flow.nodes if n.name == self.node_name), None)
-        if node is None:
-            raise ValueError(f"Node name {self.node_name} not found in flow nodes.")
-        # Create a new flow, leave node to execute only and update the inputs.
-        new_flow = copy.deepcopy(self.flow)
-        node_idx, node = next(
-            ((_idx, n) for _idx, n in enumerate(new_flow.nodes) if n.name == self.node_name), (None, None)
-        )
-        from .run_mode import RunMode
-
-        # If run_mode is SingleNode, only keep the node to execute, if is FromNode then nodes after it.
-        if run_mode == RunMode.SingleNode:
-            new_flow.nodes = [node]
-        elif run_mode == RunMode.FromNode:
-            new_flow.nodes = new_flow.nodes[node_idx:]
-        else:
-            raise NotImplementedError(f"Run mode {run_mode} is not supported in current version.")
-        return new_flow.get_connection_names()
-
-
-@dataclass
-class EvalRequest(BaseFlowRequest):
-    bulk_test_inputs: List[Mapping[str, Any]]
-    bulk_test_flow_run_ids: List[str]
-    bulk_test_flow_id: str
-    bulk_test_id: str
-    inputs_mapping: Optional[Mapping[str, str]] = None
-
-    @staticmethod
-    def deserialize(data: dict) -> "EvalRequest":
-        return EvalRequest(
-            Flow.deserialize(data["flow"]) if "flow" in data else None,
-            connections=data.get("connections", {}),
-            bulk_test_inputs=data.get("bulk_test_inputs", []),
-            bulk_test_flow_run_ids=data["bulk_test_flow_run_ids"],
-            bulk_test_flow_id=data["bulk_test_flow_id"],
-            bulk_test_id=data["bulk_test_id"],
-            inputs_mapping=data.get("inputs_mapping"),
-        )

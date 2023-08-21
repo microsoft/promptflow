@@ -2,12 +2,16 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import shutil
 import uuid
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from promptflow._sdk._constants import RunStatus
+from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
@@ -56,7 +60,8 @@ class TestFlowRun:
             runtime=runtime,
         )
         assert isinstance(run, Run)
-        remote_client.runs.stream(run=run.name)
+        run = remote_client.runs.stream(run=run.name)
+        assert run.status == RunStatus.COMPLETED
 
         eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
@@ -200,8 +205,13 @@ class TestFlowRun:
         }
 
     def test_stream_run_logs(self, remote_client, pf):
+        # test get invalid run name
+        non_exist_run = str(uuid.uuid4())
+        with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
+            pf.runs.stream(run=non_exist_run)
+
         run = remote_client.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
-        assert run.status == "Completed"
+        assert run.status == RunStatus.COMPLETED
 
     def test_stream_failed_run_logs(self, remote_client, pf, capfd):
         run = remote_client.runs.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
@@ -211,6 +221,7 @@ class TestFlowRun:
         # error info will store in run dict
         assert "error" in run._to_dict()
 
+    @pytest.mark.skip(reason="visualize for cloud run will be deprecated, skip it for now.")
     def test_visualize(self, remote_client, pf, runtime) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run1 = pf.run(
@@ -240,7 +251,7 @@ class TestFlowRun:
             runtime=runtime,
         )
         run = remote_client.runs.stream(run=run.name)
-        assert run.status == "Completed"
+        assert run.status == RunStatus.COMPLETED
 
         # Test additional includes don't exist
         with pytest.raises(ValueError) as e:
@@ -339,6 +350,25 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+    def test_automatic_runtime_with_environment(self, pf):
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+
+        def submit(*args, **kwargs):
+            body = kwargs.get("body", None)
+            assert body.base_image == "python:3.8-slim"
+            assert body.python_pip_requirements == ["# Add your python packages here", "a", "b", "c"]
+            return body
+
+        with patch.object(FlowServiceCaller, "submit_bulk_run"), patch.object(
+            FlowServiceCaller, "create_flow_session"
+        ) as mock_session_create, patch.object(RunOperations, "get"):
+            mock_session_create.side_effect = submit
+            # no runtime provided, will use automatic runtime
+            pf.run(
+                flow=f"{FLOWS_DIR}/flow_with_environment",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+            )
+
     def test_run_data_not_provided(self, pf):
         with pytest.raises(ValueError) as e:
             pf.run(
@@ -347,8 +377,8 @@ class TestFlowRun:
         assert "at least one of data or run must be provided" in str(e)
 
     def test_run_without_dump(self, remote_client: PFClient, pf, runtime: str) -> None:
+        from promptflow._sdk._errors import RunNotFoundError
         from promptflow._sdk._orm.run_info import RunInfo
-        from promptflow._sdk.exceptions import RunNotFoundError
 
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -370,3 +400,68 @@ class TestFlowRun:
             column_mapping={"key": {"value": "1"}},
             runtime=runtime,
         )
+
+    def test_get_invalid_run_cases(self, pf):
+        # test get invalid run type
+        with pytest.raises(InvalidRunError, match="expected 'str' or 'Run' object"):
+            pf.runs.get(run=object())
+
+        # test get invalid run name
+        non_exist_run = str(uuid.uuid4())
+        with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
+            pf.runs.get(run=non_exist_run)
+
+    def test_exp_id(self):
+        with TemporaryDirectory() as tmp_dir:
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_dict_input", f"{tmp_dir}/flow dir with space")
+            run = Run(
+                flow=Path(f"{tmp_dir}/flow dir with space"),
+                data=f"{DATAS_DIR}/webClassification3.jsonl",
+            )
+            rest_run = run._to_rest_object()
+            assert rest_run.run_experiment_name == "flow_dir_with_space"
+
+            shutil.copytree(f"{FLOWS_DIR}/flow_with_dict_input", f"{tmp_dir}/flow-dir-with-dash")
+            run = Run(
+                flow=Path(f"{tmp_dir}/flow-dir-with-dash"),
+                data=f"{DATAS_DIR}/webClassification3.jsonl",
+            )
+            rest_run = run._to_rest_object()
+            assert rest_run.run_experiment_name == "flow_dir_with_dash"
+
+    def test_automatic_runtime_creation_user_aml_token(self, pf):
+        from azure.core.pipeline import Pipeline
+
+        def submit(*args, **kwargs):
+            assert "aml-user-token" in args[0].headers
+
+            fake_response = MagicMock()
+            fake_response.http_response.status_code = 200
+            return fake_response
+
+        with patch.object(Pipeline, "run") as mock_session_create:
+            mock_session_create.side_effect = submit
+            pf.runs._resolve_runtime(
+                run=Run(
+                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                ),
+                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                runtime=None,
+            )
+
+    def test_submit_run_user_aml_token(self, pf, runtime):
+        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
+
+        def submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            assert "aml-user-token" in headers
+
+        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+            mock_submit.side_effect = submit
+            pf.run(
+                flow=f"{FLOWS_DIR}/flow_with_dict_input",
+                data=f"{DATAS_DIR}/webClassification3.jsonl",
+                column_mapping={"key": {"value": "1"}},
+                runtime=runtime,
+            )

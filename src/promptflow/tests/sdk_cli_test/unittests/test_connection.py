@@ -240,7 +240,50 @@ secrets:
         }
 
     def test_validate_and_interactive_get_secrets(self):
-        connection = CustomConnection(name="test_connection", secrets={"key1": SCRUBBED_VALUE, "key2": ""})
+        # Path 1: Create
+        connection = CustomConnection(
+            name="test_connection",
+            secrets={"key1": SCRUBBED_VALUE, "key2": "", "key3": "<no-change>", "key4": "<user-input>", "key5": "**"},
+        )
         with patch("getpass.getpass", new=lambda prompt: "test_value"):
-            validate_and_interactive_get_secrets(connection)
-        assert connection.secrets == {"key1": "test_value", "key2": "test_value"}
+            validate_and_interactive_get_secrets(connection, is_update=False)
+        assert connection.secrets == {
+            "key1": "test_value",
+            "key2": "test_value",
+            "key3": "test_value",
+            "key4": "test_value",
+            "key5": "test_value",
+        }
+        # Path 2: Update
+        # Scrubbed value will be filled in _validate_and_encrypt_secrets for update, so no changes here.
+        connection = CustomConnection(
+            name="test_connection",
+            secrets={"key1": SCRUBBED_VALUE, "key2": "", "key3": "<no-change>", "key4": "<user-input>", "key5": "**"},
+        )
+        with patch("getpass.getpass", new=lambda prompt: "test_value"):
+            validate_and_interactive_get_secrets(connection, is_update=True)
+        assert connection.secrets == {
+            "key1": SCRUBBED_VALUE,
+            "key2": "",
+            "key3": "<no-change>",
+            "key4": "test_value",
+            "key5": "**",
+        }
+
+    def test_validate_and_encrypt_secrets(self):
+        # Path 1: Create
+        connection = CustomConnection(
+            name="test_connection",
+            secrets={"key1": SCRUBBED_VALUE, "key2": "", "key3": "<no-change>", "key4": "<user-input>", "key5": "**"},
+        )
+        with pytest.raises(Exception) as e:
+            connection._validate_and_encrypt_secrets()
+        assert "secrets ['key1', 'key2', 'key3', 'key4', 'key5'] value invalid, please fill them" in str(e.value)
+        # Path 2: Update
+        connection._secrets = {"key1": "val1", "key2": "val2", "key4": "val4", "key5": "*"}
+        # raise error for key3 as original value missing.
+        # raise error for key5 as original value still scrubbed.
+        # raise error for key4 even if it was in _secrets, because it requires <user-input>.
+        with pytest.raises(Exception) as e:
+            connection._validate_and_encrypt_secrets()
+        assert "secrets ['key3', 'key4', 'key5'] value invalid, please fill them" in str(e.value)

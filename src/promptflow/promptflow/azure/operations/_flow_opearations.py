@@ -3,12 +3,10 @@
 # ---------------------------------------------------------
 # pylint: disable=protected-access
 
-import json
 import re
 from pathlib import Path
 from typing import Any, Dict
 
-import yaml
 from azure.ai.ml._artifacts._artifact_utilities import _check_and_upload_path
 from azure.ai.ml._scope_dependent_operations import (
     OperationConfig,
@@ -24,25 +22,14 @@ from azure.ai.ml.operations._code_operations import CodeOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
-from promptflow._sdk._constants import (
-    DAG_FILE_NAME,
-    FLOW_TOOLS_JSON,
-    NODE,
-    NODE_VARIANTS,
-    NODES,
-    USE_VARIANTS,
-    VARIANTS,
-    WORKSPACE_LINKED_DATASTORE_NAME,
-)
-from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
-from promptflow._utils.generate_tool_meta_utils import generate_prompt_meta, generate_python_meta
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME, WORKSPACE_LINKED_DATASTORE_NAME
+from promptflow._sdk._utils import generate_flow_tools_json
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._ml import Component
 from promptflow.azure._restclient.flow.models import FlowRunMode, LoadFlowAsComponentRequest
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils import is_arm_id
-from promptflow.contracts.tool import ToolType
 
 
 class FlowOperations(_ScopeDependentOperations):
@@ -267,8 +254,8 @@ class FlowOperations(_ScopeDependentOperations):
                 return
 
             # TODO(2567532): backend does not fully support generate flow.tools.json from blob storage yet
-            if not (Path(code.path) / ".promptflow" / FLOW_TOOLS_JSON).exists():
-                cls._generate_flow_tools_json(code.path)
+            if not (Path(code.path) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON).exists():
+                generate_flow_tools_json(code.path)
 
             code.datastore = WORKSPACE_LINKED_DATASTORE_NAME
             # NOTE: For flow directory upload, we prefer to upload it to the workspace linked datastore,
@@ -306,54 +293,3 @@ class FlowOperations(_ScopeDependentOperations):
                 else:
                     raise
             flow._code_uploaded = True
-
-    @staticmethod
-    def _generate_flow_tools_json(flow_directory) -> None:
-        flow_directory = Path(flow_directory)
-        # Copy logic from PFS and runtime.
-        # PFS - GetGenerateToolMetaRequestToRuntime
-        with open(flow_directory / DAG_FILE_NAME, "r") as f:
-            data = yaml.safe_load(f)
-        tools = []
-        for node in data[NODES]:
-            if "source" in node:
-                if node["source"]["type"] != "code":
-                    continue
-                if not (flow_directory / node["source"]["path"]).exists():
-                    continue
-                tools.append((node["source"]["path"], node["type"].lower()))
-            # understand DAG to parse variants
-            elif node.get(USE_VARIANTS) is True:
-                node_variants = data[NODE_VARIANTS][node["name"]]
-                for variant_id in node_variants[VARIANTS]:
-                    current_node = node_variants[VARIANTS][variant_id][NODE]
-                    if current_node["source"]["type"] != "code":
-                        continue
-                    if not (flow_directory / current_node["source"]["path"]).exists():
-                        continue
-                    tools.append((current_node["source"]["path"], current_node["type"].lower()))
-        # runtime - meta_v2
-        tools_dict = {}
-        for tool_path, node_type in tools:
-            with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
-                tool_file = flow_directory / tool_path
-                content = tool_file.read_text()
-                if node_type == ToolType.LLM:
-                    result = generate_prompt_meta(tool_path, content, source=tool_path)
-                elif node_type == ToolType.PROMPT:
-                    result = generate_prompt_meta(tool_path, content, prompt_only=True, source=tool_path)
-                else:
-                    result = generate_python_meta(tool_path, content, source=tool_path)
-                tools_dict[tool_path] = json.loads(result)
-        # PFS - DownloadSnapshotAndGenTools
-        flow_tools = {
-            # TODO(zhengfeiwang): we might need to copy PFS/runtime logic for package too
-            "package": {},
-            "code": tools_dict,
-        }
-        # dump flow.tools.json
-        promptflow_folder = flow_directory / ".promptflow"
-        promptflow_folder.mkdir(exist_ok=True)
-        with open(promptflow_folder / FLOW_TOOLS_JSON, "w") as f:
-            json.dump(flow_tools, f, indent=4)
-        return

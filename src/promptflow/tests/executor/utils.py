@@ -7,9 +7,9 @@ FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 
 
-def get_yaml_file(folder_name, root: str = FLOW_ROOT):
+def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag.yaml"):
     flow_folder_path = Path(root) / folder_name
-    yaml_file = flow_folder_path / "flow.dag.yaml"
+    yaml_file = flow_folder_path / file_name
     return yaml_file
 
 
@@ -19,9 +19,9 @@ def get_flow_inputs(folder_name):
     return inputs
 
 
-def get_flow_sample_inputs(folder_name):
-    flow_folder_path = Path(FLOW_ROOT) / folder_name
-    samples_inputs = load_json(flow_folder_path / "samples.json")
+def get_flow_sample_inputs(folder_name, root: str = FLOW_ROOT, sample_inputs_file="samples.json"):
+    flow_folder_path = Path(root) / folder_name
+    samples_inputs = load_json(flow_folder_path / sample_inputs_file)
     return samples_inputs
 
 
@@ -29,6 +29,17 @@ def get_flow_expected_metrics(folder_name):
     flow_folder_path = Path(FLOW_ROOT) / folder_name
     samples_inputs = load_json(flow_folder_path / "expected_metrics.json")
     return samples_inputs
+
+
+def get_flow_expected_status_summary(folder_name):
+    flow_folder_path = Path(FLOW_ROOT) / folder_name
+    samples_inputs = load_json(flow_folder_path / "expected_status_summary.json")
+    return samples_inputs
+
+
+def get_flow_package_tool_definition(folder_name):
+    flow_folder_path = Path(FLOW_ROOT) / folder_name
+    return load_json(flow_folder_path / "package_tool_definition.json")
 
 
 def load_json(source: Union[str, Path]) -> dict:

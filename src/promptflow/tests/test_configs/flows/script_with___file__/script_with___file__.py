@@ -1,7 +1,10 @@
+from pathlib import Path
+
 from promptflow import tool
 
 
 print(f"The script is {__file__}")
+assert Path(__file__).is_absolute(), f"__file__ should be absolute path, got {__file__}"
 
 
 @tool

@@ -13,9 +13,8 @@ import traceback
 from collections import namedtuple
 from configparser import ConfigParser
 from functools import wraps
-from getpass import getpass
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import pydash
@@ -212,26 +211,6 @@ def _dump_entity_with_warnings(entity) -> Dict:
         logger.debug(traceback.format_exc())
 
 
-def get_migration_secret_from_args(args, *, raise_errors=True, allow_input=True):
-    if args.migration_secret:
-        return args.migration_secret
-    if args.migration_secret_file:
-        if not os.path.exists(args.migration_secret_file):
-            if raise_errors:
-                raise UserErrorException(f"Migration secret file {args.migration_secret_file} does not exist.")
-            else:
-                return None
-        return Path(args.migration_secret_file).read_text()
-    if allow_input:
-        migration_secret = getpass("Please input a migration secret:")
-        return migration_secret
-    if raise_errors:
-        raise UserErrorException(
-            "Please provide an migration secret via `--migration-secret` or `--migration-secret-file`."
-        )
-    return None
-
-
 def list_of_dict_to_dict(obj: list):
     if not isinstance(obj, list):
         return {}
@@ -250,30 +229,109 @@ def list_of_dict_to_nested_dict(obj: list):
     return result
 
 
+def _build_sorted_column_widths_tuple_list(
+    columns: List[str],
+    values1: Dict[str, int],
+    values2: Dict[str, int],
+    margins: Dict[str, int],
+) -> List[Tuple[str, int]]:
+    res = []
+    for column in columns:
+        value = max(values1[column], values2[column]) + margins[column]
+        res.append((column, value))
+    res.sort(key=lambda x: x[1], reverse=True)
+    return res
+
+
+def _assign_available_width(
+    column_expected_widths: List[Tuple[str, int]],
+    available_width: int,
+    column_assigned_widths: Dict[str, int],
+    average_width: Optional[int] = None,
+) -> Tuple[int, Dict[str, int]]:
+    for column, expected_width in column_expected_widths:
+        if available_width <= 0:
+            break
+        target = average_width if average_width is not None else column_assigned_widths[column]
+        delta = expected_width - target
+        if delta <= available_width:
+            column_assigned_widths[column] = expected_width
+            available_width -= delta
+        else:
+            column_assigned_widths[column] += available_width
+            available_width = 0
+    return available_width, column_assigned_widths
+
+
+def _calculate_column_widths(df: pd.DataFrame, terminal_width: int) -> List[int]:
+    num_rows, num_columns = len(df), len(df.columns)
+    index_column_width = max(len(str(num_rows)) + 2, 4)  # tabulate index column min width is 4
+    terminal_width_buffer = 10
+    available_width = terminal_width - terminal_width_buffer - index_column_width - (num_columns + 2)
+    avg_available_width = available_width // num_columns
+
+    header_widths, content_avg_widths, content_max_widths, column_margin = {}, {}, {}, {}
+    for column in df.columns:
+        header_widths[column] = len(column)
+        contents = []
+        for value in df[column]:
+            contents.append(len(str(value)))
+        content_avg_widths[column] = sum(contents) // len(contents)
+        content_max_widths[column] = max(contents)
+        # if header is longer than the longest content, the margin is 4; otherwise is 2
+        # so we need to record this for every column
+        if header_widths[column] >= content_max_widths[column]:
+            column_margin[column] = 4
+        else:
+            column_margin[column] = 2
+
+    column_widths = {}
+    # first round: try to meet the average(or column header) width
+    # record columns that need more width, we will deal with them in second round if we still have width
+    round_one_left_columns = []
+    for column in df.columns:
+        expected_width = max(header_widths[column], content_avg_widths[column]) + column_margin[column]
+        if avg_available_width <= expected_width:
+            column_widths[column] = avg_available_width
+            round_one_left_columns.append(column)
+        else:
+            column_widths[column] = expected_width
+
+    current_available_width = available_width - sum(column_widths.values())
+    if current_available_width > 0:
+        # second round: assign left available wdith to those columns that need more
+        # assign with greedy, sort recorded columns first from longest to shortest;
+        # iterate and try to meet each column's expected width
+        column_avg_tuples = _build_sorted_column_widths_tuple_list(
+            round_one_left_columns, header_widths, content_avg_widths, column_margin
+        )
+        current_available_width, column_widths = _assign_available_width(
+            column_avg_tuples, current_available_width, column_widths, avg_available_width
+        )
+
+    if current_available_width > 0:
+        # third round: if there are still left available width, assign to try to meet the max width
+        # still use greedy, sort first and iterate through all columns
+        column_max_tuples = _build_sorted_column_widths_tuple_list(
+            df.columns, header_widths, content_max_widths, column_margin
+        )
+        current_available_width, column_widths = _assign_available_width(
+            column_max_tuples, current_available_width, column_widths
+        )
+
+    max_col_widths = [index_column_width]  # index column
+    max_col_widths += [column_widths[column] - column_margin[column] for column in df.columns]  # sub margin
+    return max_col_widths
+
+
 def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
     # try to get terminal window width
     try:
         terminal_width = shutil.get_terminal_size().columns
     except Exception:  # pylint: disable=broad-except
         terminal_width = 120  # default value for Windows Terminal launch size columns
-
-    # calculate best max column widths based on data and window size
-    max_col_widths = [None]  # index column
-    num_columns = len(df.columns)
-    # remain a 10-width buffer
-    avg_col_width = (terminal_width - 10) // num_columns
-    for column in df.columns:
-        value_lengths = []
-        for value in df[column]:
-            value_lengths.append(len(str(value)))
-        # minimum column width as 10, in case there are too many columns so that average value can be very small
-        avg_length = max(sum(value_lengths) // len(value_lengths) + 1, 10)
-        if avg_length <= avg_col_width:
-            max_col_widths.append(None)
-        else:
-            max_col_widths.append(avg_col_width)
-    # print table with calculated maxcolwidths
-    print(tabulate(df, headers="keys", tablefmt="grid", maxcolwidths=max_col_widths))
+    column_widths = _calculate_column_widths(df, terminal_width)
+    print(tabulate(df, headers="keys", tablefmt="grid", maxcolwidths=column_widths, maxheadercolwidths=column_widths))
 
 
 def exception_handler(command: str):

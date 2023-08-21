@@ -6,8 +6,8 @@
 # so it should not contain any dependency on azure or azureml-related packages.
 
 
+import json
 import logging
-import re
 import sys
 from contextvars import ContextVar
 from dataclasses import dataclass
@@ -15,6 +15,7 @@ from typing import List, Optional
 
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow.contracts.run_mode import RunMode
+from promptflow.exceptions import ExceptionPresenter
 
 # The maximum length of logger name is 18 ("promptflow-runtime").
 # The maximum digit length of process id is 5. Fix the field width to 7.
@@ -27,11 +28,10 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 class CredentialScrubberFormatter(logging.Formatter):
     """Formatter that scrubs credentials in logs."""
 
-    def __init__(self, scrub_customer_content: bool, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._default_scrubber = CredentialScrubber()
         self._context_var = ContextVar("credential_scrubber", default=None)
-        self._scrub_customer_content = scrub_customer_content
 
     @property
     def credential_scrubber(self):
@@ -55,31 +55,41 @@ class CredentialScrubberFormatter(logging.Formatter):
         """Override logging.Formatter's format method and remove credentials from log."""
         s: str = super().format(record)
 
-        if self._scrub_customer_content:
-            # Scrub everything after traceback, because it might contain customer information.
-            s = re.sub(r"(?<=traceback)[\s\S]*", CredentialScrubber.PLACE_HOLDER, s, flags=re.IGNORECASE)
-
-        if hasattr(record, "customer_content"):
-            if self._scrub_customer_content:
-                s = s.format(customer_content=CredentialScrubber.PLACE_HOLDER)
-            else:
-                s = s.format(customer_content=record.customer_content)
+        s = self._handle_traceback(s, record)
+        s = self._handle_customer_content(s, record)
         return self.credential_scrubber.scrub(s)
 
-    def formatException(self, ei) -> str:
-        """Override logging.Formatter's formatException method.
+    def _handle_customer_content(self, s: str, record: logging.LogRecord) -> str:
+        """Handle customer content in log message.
 
-        Only return exception type.
+        Replace {customer_content} in log message with customer_content.
         """
-        if self._scrub_customer_content:
-            return f"Exception type: {ei[0]}"
-        return super().formatException(ei)
+        # If log record does not have "customer_content" field, return input logging string directly.
+        if not hasattr(record, "customer_content"):
+            return s
 
-    def formatStack(self, stack_info):
-        """Override logging.Formatter's formatStack method."""
-        if self._scrub_customer_content:
-            return ""
-        return super().formatStack(stack_info)
+        customer_content = record.customer_content
+
+        if isinstance(customer_content, Exception):
+            # If customer_content is an exception, convert it to string.
+            customer_str = self._convert_exception_to_str(customer_content)
+        elif isinstance(customer_content, str):
+            customer_str = customer_content
+        else:
+            customer_str = str(customer_content)
+
+        return s.replace("{customer_content}", customer_str)
+
+    def _handle_traceback(self, s: str, record: logging.LogRecord) -> str:
+        """Do nothing."""
+        return s
+
+    def _convert_exception_to_str(self, ex: Exception) -> str:
+        """Convert exception a user-friendly string."""
+        try:
+            return json.dumps(ExceptionPresenter(ex).to_dict(include_debug_info=True), indent=2)
+        except:  # noqa: E722
+            return str(ex)
 
 
 class FileHandler:
@@ -89,9 +99,7 @@ class FileHandler:
         self._stream_handler = self._get_stream_handler(file_path)
         if formatter is None:
             # Default formatter to scrub credentials in log message, exception and stack trace.
-            self._formatter = CredentialScrubberFormatter(
-                scrub_customer_content=False, fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT
-            )
+            self._formatter = CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
         else:
             self._formatter = formatter
         self._stream_handler.setFormatter(self._formatter)
@@ -158,9 +166,7 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.Logger(name)
     logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(
-        CredentialScrubberFormatter(scrub_customer_content=False, fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT)
-    )
+    stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
     logger.addHandler(stdout_handler)
     return logger
 

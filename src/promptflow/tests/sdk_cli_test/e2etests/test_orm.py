@@ -9,8 +9,8 @@ import uuid
 import pytest
 
 from promptflow._sdk._constants import ListViewType, RunStatus, RunTypes
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._orm import RunInfo
-from promptflow._sdk.exceptions import RunNotFoundError
 
 
 @pytest.fixture()

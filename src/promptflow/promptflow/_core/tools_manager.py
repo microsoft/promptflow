@@ -13,7 +13,8 @@ from typing import Callable, List, Mapping, Optional, Tuple, Union
 import pkg_resources
 import yaml
 
-from promptflow._utils.generate_tool_meta_utils import (
+from promptflow._core.errors import MissingRequiredInputs, PackageToolNotFoundError
+from promptflow._core.tool_meta_generator import (
     generate_prompt_tool,
     generate_python_tool,
     load_python_module_from_file,
@@ -21,14 +22,7 @@ from promptflow._utils.generate_tool_meta_utils import (
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
-from promptflow.exceptions import (
-    ErrorTarget,
-    MissingRequiredInputs,
-    PackageToolNotFoundError,
-    SystemErrorException,
-    UserErrorException,
-    ValidationException,
-)
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 module_logger = logging.getLogger(__name__)
 PACKAGE_TOOLS_ENTRY = "package_tools"
@@ -44,14 +38,21 @@ def collect_tools_from_directory(base_dir) -> dict:
     return tools
 
 
-def collect_package_tools() -> dict:
+def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     """Collect all tools from all installed packages."""
     all_package_tools = {}
+    if keys is not None:
+        keys = set(keys)
     for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
         try:
             list_tool_func = entry_point.resolve()
             package_tools = list_tool_func()
             for identifier, tool in package_tools.items():
+                #  Only load required tools to avoid unnecessary loading when keys is provided
+                if isinstance(keys, set) and identifier not in keys:
+                    continue
+                m = tool["module"]
+                importlib.import_module(m)  # Import the module to make sure it is valid
                 tool["package"] = entry_point.dist.project_name
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
@@ -266,14 +267,14 @@ def _register(provider_cls, collection, type):
                 value, type=type, is_builtin=True, initialize_inputs=initialize_inputs
             )
             collection[name] = value.__tool
-            module_logger.info(f"Registered {name} as a builtin function")
+            module_logger.debug(f"Registered {name} as a builtin function")
 
 
 def _register_method(provider_method, collection, type):
     name = provider_method.__qualname__
     provider_method.__tool = function_to_tool_definition(provider_method, type=type, is_builtin=True)
     collection[name] = provider_method.__tool
-    module_logger.info(f"Registered {name} as {type} function")
+    module_logger.debug(f"Registered {name} as {type} function")
 
 
 def _get_llm_reserved_keys():

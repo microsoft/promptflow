@@ -28,14 +28,8 @@ from promptflow._cli._pf._init_entry_generators import (
     copy_extra_files,
 )
 from promptflow._cli._pf._run import exception_handler
-from promptflow._cli._utils import (
-    activate_action,
-    confirm,
-    get_migration_secret_from_args,
-    inject_sys_path,
-    list_of_dict_to_dict,
-)
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._cli._utils import activate_action, confirm, inject_sys_path, list_of_dict_to_dict
+from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -219,7 +213,7 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
 
     python_tool.generate_to_file(tool_py)
     # Create .promptflow and flow.tools.json
-    meta_dir = flow_path / ".promptflow"
+    meta_dir = flow_path / PROMPT_FLOW_DIR_NAME
     meta_dir.mkdir(parents=True, exist_ok=True)
     tools.generate_to_file(meta_dir / "flow.tools.json")
     # Create flow.dag.yaml
@@ -289,6 +283,7 @@ def test_flow(args):
             inputs=inputs,
             environment_variables=environment_variables,
             variant=args.variant,
+            show_step_output=args.verbose,
         )
     else:
         result = pf_client.flows._test(
@@ -352,7 +347,6 @@ def export_flow(args):
     flow.export(
         output=args.output,
         format=args.format,
-        migration_secret=get_migration_secret_from_args(args),
     )
     print(
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"

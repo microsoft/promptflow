@@ -96,7 +96,7 @@ class ToolMetaGenerator(BaseGenerator):
 
     @property
     def prompt_params(self):
-        from promptflow._utils.generate_tool_meta_utils import generate_prompt_meta_dict
+        from promptflow._core.tool_meta_generator import generate_prompt_meta_dict
 
         prompt_objs = {}
         for key, file_name in self._prompt_params.items():

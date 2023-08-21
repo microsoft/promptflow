@@ -11,9 +11,12 @@ from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
     SCRUBBED_VALUE,
+    SCRUBBED_VALUE_NO_CHANGE,
+    SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
     ConnectionType,
 )
+from promptflow._sdk._errors import UnsecureConnectionError
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -24,7 +27,6 @@ from promptflow._sdk._utils import (
     snake_to_camel,
 )
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
-from promptflow._sdk.exceptions import UnsecureConnectionError
 from promptflow._sdk.schemas._connection import (
     AzureContentSafetyConnectionSchema,
     AzureOpenAIConnectionSchema,
@@ -61,6 +63,14 @@ class _Connection(YAMLTranslatableMixin):
         self.class_name = f"{self.TYPE.value}Connection"  # The type in executor connection dict
         self.configs = configs or {}
         self.module = module
+        # Note the connection secrets value behaviors:
+        # --------------------------------------------------------------------------------
+        # | secret value     | CLI create   | CLI update          | SDK create_or_update |
+        # --------------------------------------------------------------------------------
+        # | empty or all "*" | prompt input | use existing values | use existing values  |
+        # | <no-change>      | prompt input | use existing values | use existing values  |
+        # | <user-input>     | prompt input | prompt input        | raise error          |
+        # --------------------------------------------------------------------------------
         self.secrets = secrets or {}
         self._secrets = {**self.secrets}  # Unscrubbed secrets
         self.expiry_time = kwargs.get("expiry_time", None)
@@ -82,18 +92,37 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
+    @classmethod
+    def _is_scrubbed_value(cls, value):
+        """For scrubbed value, cli will get original for update, and prompt user to input for create."""
+        if value is None or not value:
+            return True
+        if all([v == "*" for v in value]):
+            return True
+        return value == SCRUBBED_VALUE_NO_CHANGE
+
+    @classmethod
+    def _is_user_input_value(cls, value):
+        """The value will prompt user to input in cli for both create and update."""
+        return value == SCRUBBED_VALUE_USER_INPUT
+
     def _validate_and_encrypt_secrets(self):
         encrypt_secrets = {}
+        invalid_secrets = []
         for k, v in self.secrets.items():
-            # If v is not scrubbed, use it.
-            # Else, use the value in _secrets.
-            if v == SCRUBBED_VALUE:
+            # In sdk experience, if v is not scrubbed, use it.
+            # If v is scrubbed, try to use the value in _secrets.
+            # If v is <user-input>, raise error.
+            if self._is_scrubbed_value(v):
                 # Try to get the value not scrubbed.
                 v = self._secrets.get(k)
-            if not v or v == SCRUBBED_VALUE:
-                # Can't find the original value, raise error.
-                raise ValueError(f"Connection {self.name!r} secrets {k!r} value invalid, please fill it.")
+            if self._is_scrubbed_value(v) or self._is_user_input_value(v):
+                # Can't find the original value or is <user-input>, raise error.
+                invalid_secrets.append(k)
+                continue
             encrypt_secrets[k] = encrypt_secret_value(v)
+        if invalid_secrets:
+            raise ValueError(f"Connection {self.name!r} secrets {invalid_secrets} value invalid, please fill them.")
         return encrypt_secrets
 
     @classmethod

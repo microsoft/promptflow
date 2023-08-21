@@ -10,7 +10,7 @@ from functools import partial
 
 from promptflow._cli._params import add_param_set
 from promptflow._cli._utils import activate_action, confirm, exception_handler
-from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
@@ -130,12 +130,16 @@ pf connection list
     )
 
 
-def validate_and_interactive_get_secrets(connection):
+def validate_and_interactive_get_secrets(connection, is_update=False):
     """Validate the connection and interactive get secrets if no secrets is provided."""
     prompt = "=================== Please input required secrets ==================="
     missing_secrets_prompt = False
     for name, val in connection.secrets.items():
-        if val and val != SCRUBBED_VALUE:
+        if not _Connection._is_scrubbed_value(val) and not _Connection._is_user_input_value(val):
+            # Not scrubbed value, not require user input.
+            continue
+        if is_update and _Connection._is_scrubbed_value(val):
+            # Scrubbed value, will use existing, not require user input.
             continue
         if not missing_secrets_prompt:
             print(prompt)
@@ -146,6 +150,15 @@ def validate_and_interactive_get_secrets(connection):
     return connection
 
 
+# Note the connection secrets value behaviors:
+# --------------------------------------------------------------------------------
+# | secret value     | CLI create   | CLI update          | SDK create_or_update |
+# --------------------------------------------------------------------------------
+# | empty or all "*" | prompt input | use existing values | use existing values  |
+# | <no-change>      | prompt input | use existing values | use existing values  |
+# | <user-input>     | prompt input | prompt input        | raise error          |
+# --------------------------------------------------------------------------------
+@exception_handler("Connection create")
 def create_connection(file_path, params_override=None, name=None):
     params_override = params_override or []
     if name:
@@ -166,6 +179,7 @@ def show_connection(name):
     print(json.dumps(connection._to_dict(), indent=4))
 
 
+@exception_handler("Connection list")
 def list_connection():
     connections = _client.connections.list()
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
@@ -179,10 +193,10 @@ def _upsert_connection_from_file(file, params_override=None):
     existing_connection = _client.connections.get(connection.name, raise_error=False)
     if existing_connection:
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
+        validate_and_interactive_get_secrets(connection, is_update=True)
         # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
         connection._secrets = existing_connection._secrets
     else:
-        # Note: For extension upsert, call validate only when user is creating a new connection.
         validate_and_interactive_get_secrets(connection)
     connection = _client.connections.create_or_update(connection)
     return connection
@@ -193,12 +207,14 @@ def update_connection(name, params_override=None):
     params_override = params_override or []
     existing_connection = _client.connections.get(name)
     connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
+    validate_and_interactive_get_secrets(connection, is_update=True)
     # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
     connection._secrets = existing_connection._secrets
     connection = _client.connections.create_or_update(connection)
     print(json.dumps(connection._to_dict(), indent=4))
 
 
+@exception_handler("Connection delete")
 def delete_connection(name):
     if confirm("Are you sure you want to perform this operation?"):
         _client.connections.delete(name)

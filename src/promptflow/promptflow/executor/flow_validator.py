@@ -7,7 +7,7 @@ from typing import Any, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputValueType, Node
-from promptflow.executor.error_codes import (
+from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputError,
     InputNotFound,
@@ -154,7 +154,7 @@ class FlowValidator:
                 if node is None:
                     msg = f"Output '{k}' references node '{v.reference.value}' which is not in the flow '{flow.name}'."
                     raise OutputReferenceNotFound(message=msg)
-                if node.reduce:
+                if node.aggregation:
                     msg = f"Output '{k}' references a reduce node '{v.reference.value}', will not take effect."
                     logger.warning(msg)
                     #  We will not add this output to the flow outputs, so we simply ignore it here
