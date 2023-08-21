@@ -1,35 +1,35 @@
 # Auto generate docstring
-This example shows how to create a basic chat flow. It demonstrates how to create a chatbot that can remember previous interactions and use the conversation history to generate next message.
+This example can help you automatically generate Python code's docstring and return the modified code.
 
 Tools used in this flow：
-- `llm` tool
+- `load_code` tool, it can load code from a file path.
+- `divide_code` tool, it can divide code into code blocks.
+- `generate_docstring` tool, it can generate docstring for a code block, and merge docstring into origin code.
+- `combine_code` tool, it can merge all code blocks into a code, and return the complete code.
 
 ## What you will learn
 
 In this flow, you will learn
-- how to compose a chat flow.
-- prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
-See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
-    ```jinja
-    system:
-    You are a chatbot having a conversation with a human.
-
-    user:
-    {{question}}
-    ```
-- how to consume chat history in prompt.
-    ```jinja
-    {% for item in chat_history %}
-    user:
-    {{item.inputs.question}}
-    assistant:
-    {{item.outputs.answer}}
-    {% endfor %}
-    ```
+- How to compose an auto generate docstring flow.
+- How to use different LLM APIs to request LLM, including synchronous/asynchronous APIs, chat/completion APIs.
+- How to use asynchronous multiple coroutine approach to request LLM API.
+- How to construct a prompt.
 
 ## Getting started
 
-### 1 Create connection for LLM tool to use
+### Local execution
+#### Create .env file in this folder with below content
+`OPENAI_API_BASE=<AOAI_endpoint>
+OPENAI_API_KEY=<AOAI_key>
+OPENAI_API_VERSION=2023-03-15-preview
+MODULE=gpt-35-turbo # default is gpt-35-turbo.`
+
+#### Run the command line
+`python main.py --file_path <your_file_path>`
+**Note**: the file path should be a python file path, default is `./demo_code.py`.
+
+### Execut with Promptflow
+#### 1 Create connection for LLM to use
 Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
 
 Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
@@ -45,14 +45,14 @@ Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open
 pf connection show --name azure_open_ai_connection
 ```
 
-### 2 Start chatting
+#### 2 Start flow
 
 ```bash
-# run chat flow with default question in flow.dag.yaml
+# run flow with default file path in flow.dag.yaml
 pf flow test --flow . 
 
-# run chat flow with new question
-pf flow test --flow . --inputs question="What's Azure Machine Learning?"
+# run flow with file path
+pf flow test --flow . --inputs code_path="./demo_code.py"
 
 # start a interactive chat session in CLI
 pf flow test --flow . --interactive
