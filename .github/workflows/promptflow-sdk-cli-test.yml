@@ -7,6 +7,12 @@ env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
+  pytestMarker: unittest or e2etest
+  packageSetupType: promptflow_new_extra
+  testWorkingDirectory: src/promptflow
+  coveragePath: promptflow
+  coverage: false
+  testPath: "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test"
 jobs:
   paths-filter:
     runs-on: ubuntu-latest
@@ -32,14 +38,78 @@ jobs:
       run: echo "Pass"
   
   run_tests:
-    name: run_tests
+    runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.output1 == 'true'
-    uses: "./.github/workflows/pipelines_templates_template_run_tests.yml"
-    with:
-      pytestMarker: unittest or e2etest
-      packageSetupType: promptflow_new_extra
-      testWorkingDirectory: src/promptflow
-      coveragePath: promptflow
-      coverage: false
-      testPath: "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test"
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display Env
+      uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
+    - name: Conda Setup
+      uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    - run: |
+        echo ${{ env.packageSetupType }}
+        echo ${{ env.testWorkingDirectory }}
+        echo ${{ env.coveragePath }}
+        echo ${{ env.coverage }}
+        echo ${{ env.testPath }}
+      shell: bash -l {0}
+    - name: Build wheel
+      uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
+      with:
+        setupType: ${{ env.packageSetupType }}
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Generate Configs
+      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+      with:
+        tenantId: ${{ env.TENANT_ID }}
+        clientId: ${{ env.CLIENT_ID }}
+        clientSecret: ${{ env.CLIENT_SECRET }}
+        targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Run Coverage Test
+      shell: bash -l {0}
+      working-directory: ${{ env.testWorkingDirectory }}
+      run: |-
+        set -x -e
+        export IS_IN_CI_PIPELINE="true"
+        az account show
+        conda activate release-env
+        python "../../scripts/building/run_coverage_tests.py" \
+          -p promptflow \
+          -t "${{ env.testPath }}" \
+          -l eastus \
+          -m ${{ env.pytestMarker }} \
+          -n 5
+    - name: Upload pytest test results
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: pytest-results
+        path: ${{ env.testWorkingDirectory }}/test-results.xml
+      # Use always() to always run this step to publish test results when there are test failures
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      with:
+        files: |
+          ${{ env.testWorkingDirectory }}/test-results.xml
+    - name: Generate Coverage Report
+      if: env.coverage == true && (success() || failure())
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.1.19
+      continue-on-error: false
+      with:
+        reports: "${{ env.testWorkingDirectory }}/coverage.xml"
+        targetdir: coveragereport_${{ github.run_number }}
+        reporttypes: HtmlInline
+    - name: Upload CoverageReport
+      if: env.coverage == true && (success() || failure())
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: CoverageReport
+        path: coveragereport_${{ github.run_number }}
+    
