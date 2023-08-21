@@ -8,8 +8,7 @@ env:
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
   packageSetupType: promptflow_open_source
-  testWorkingDirectory: src/promptflow
-  coveragePath: src/promptflow/promptflow
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   paths-filter:
     runs-on: ubuntu-latest
@@ -48,7 +47,6 @@ jobs:
     - run: |
         echo ${{ env.packageSetupType }}
         echo ${{ env.testWorkingDirectory }}
-        echo ${{ env.coveragePath }}
       shell: bash -l {0}
     - name: Build wheel
       uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
@@ -75,11 +73,11 @@ jobs:
         az account show
         conda activate release-env
         python "../../scripts/building/run_coverage_tests.py" \
-          -p ${{ env.coveragePath }} \
+          -p ${{ github.workspace }}src/promptflow/promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
           -l eastus \
-          -m "unittest or e2etest" \
-          -n 2 \
+          -m "all" \
+          -n 4 \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload pytest test results
       if: ${{ always() }}
