@@ -21,6 +21,13 @@
 
 ## CLI examples
 
+### Tutorials ([tutorials](tutorials))
+
+| path | status | description |
+------|--------|-------------
+{% for quickstart in quickstarts.readmes %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
+{% endfor %}
+
 ### Flows ([flows](flows))
 
 #### [Standard flows](flows/standard/) 

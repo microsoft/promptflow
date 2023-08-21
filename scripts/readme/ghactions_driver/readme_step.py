@@ -107,7 +107,7 @@ class ExtractStepsAndRun(Step):
             {
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
-                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+                "readme_name": ReadmeSteps.readme_name,
             }
         )
 
@@ -124,7 +124,7 @@ class ExtractStepsAndRunGPTFour(Step):
             {
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
-                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+                "readme_name": ReadmeSteps.readme_name,
             }
         )
 
@@ -176,6 +176,7 @@ class ReadmeSteps:
     """
 
     step_array = []  # Record steps
+    readme_name = ""  # Record readme name
     working_dir = ""  # the working directory of flow, relative to git_base_dir
     template = ""  # Select a base template under workflow_templates folder
     workflow = ""  # Target workflow name to be generated
@@ -231,7 +232,9 @@ class ReadmeSteps:
     # endregion steps
 
     @staticmethod
-    def setup_target(working_dir: str, template: str, target: str) -> str:
+    def setup_target(
+        working_dir: str, template: str, target: str, readme_name: str
+    ) -> str:
         """
         Used at the very head of jinja template to indicate basic information
         """
@@ -239,6 +242,7 @@ class ReadmeSteps:
         ReadmeSteps.template = template
         ReadmeSteps.workflow = target
         ReadmeSteps.step_array = []
+        ReadmeSteps.readme_name = readme_name
         return ""
 
     @staticmethod

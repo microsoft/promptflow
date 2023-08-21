@@ -270,6 +270,7 @@ if __name__ == "__main__":
     input_glob_readme = [
         "examples/flows/**/README.md",
         "examples/connections/**/README.md",
+        "examples/tutorials/**/chat*.md",
     ]
     readme_telemetrys = []
     readme_generator.main(input_glob_readme, readme_telemetrys)
