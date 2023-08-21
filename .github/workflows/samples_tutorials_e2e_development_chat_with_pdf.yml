@@ -3,10 +3,10 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_standard_web_classification
+name: samples_tutorials_e2e_development_chat_with_pdf
 on:
   schedule:
-    - cron: "13 21 * * *" # Every day starting at 5:13 BJT
+    - cron: "1 19 * * *" # Every day starting at 3:1 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]
@@ -25,7 +25,7 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/flows/standard/web-classification
+        working-directory: examples/tutorials/e2e-development
         run: |
           if [[ -e requirements.txt ]]; then
             python -m pip install --upgrade pip
@@ -37,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/flows/standard/web-classification
+        working-directory: examples/tutorials/e2e-development
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -47,8 +47,16 @@ jobs:
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
             mv .env.example .env
           fi
+      - name: Create AOAI Connection from ENV file
+        working-directory: examples/tutorials/e2e-development
+        run: |
+          if [[ -e .env ]]; then
+            pf connection create --file .env --name chat_with_pdf_custom_connection
+            pf connection list
+          fi
+          
       - name: Create run.yml
-        working-directory: examples/flows/standard/web-classification
+        working-directory: examples/tutorials/e2e-development
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -62,9 +70,9 @@ jobs:
       - name: Extract Steps
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/web-classification/README.md -o examples/flows/standard/web-classification
+          python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/e2e-development/chat-with-pdf.md -o examples/tutorials/e2e-development
       - name: Run scripts
-        working-directory: examples/flows/standard/web-classification
+        working-directory: examples/tutorials/e2e-development
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -77,4 +85,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/standard/web-classification/bash_script.sh
+          path: examples/tutorials/e2e-development/bash_script.sh

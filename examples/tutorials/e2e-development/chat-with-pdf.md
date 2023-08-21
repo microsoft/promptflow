@@ -20,10 +20,11 @@ In this tutorial we will try to mimic the functionality of retrieval of relevant
 ## Prerequisite
 To go through this tutorial:
 1. Install dependencies
-   ```bash
+```bash
    cd ../../flows/chat/chat-with-pdf/
    pip install -r requirements.txt
-   ```
+```
+
 2. Install VS code extension (optional but highly recommended)
    // TODO
 
