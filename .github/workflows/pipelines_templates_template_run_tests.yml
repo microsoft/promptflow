@@ -38,16 +38,6 @@ jobs:
       uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
     - name: Conda Setup
       uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
-    - name: Delete existing packages in the 'dist' folder
-      working-directory: ${{ inputs.testWorkingDirectory }}
-      shell: bash
-      run: |
-        echo "Delete existing packages in the 'dist' directory of 'promptflow/'"
-        rm -f ./dist/*
-        if [ $? != 0 ]; then
-            echo "Failed to delete existing dist folder for 'promptflow/'"
-            exit 1
-        fi
     - name: Build wheel
       uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
       with:
