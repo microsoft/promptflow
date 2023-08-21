@@ -1,6 +1,7 @@
 from openai.error import OpenAIError
 
-from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, infer_error_code_from_class
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, infer_error_code_from_class, \
+    RootErrorCode
 
 openai_error_code_ref_message = "Error reference: https://platform.openai.com/docs/guides/error-codes/api-errors"
 
@@ -44,38 +45,10 @@ class WrappedOpenAIError(UserErrorException):
     def message(self):
         return str(to_openai_error_message(self._ex))
 
-    def to_dict(self, *, include_debug_info=False):
-        """Return a dict representation of the exception.
-
-        This dict specification corresponds to the specification of the Microsoft API Guidelines:
-        https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
-
-        Note that this dict representation the "error" field in the response body of the API.
-        The whole error response is then populated in another place outside of this class.
-        """
-
-        result = {
-            "code": infer_error_code_from_class(UserErrorException),
-            "message": self.message,
-            "messageFormat": "",
-            "messageParameters": {},
-            "innerError": {
-                "code": "OpenAIError",
-                "innerError": {
-                    "code": self._ex.__class__.__name__,
-                    "innerError": None
-                }
-            },
-            "referenceCode": self.reference_code
-        }
-
-        if self.additional_info:
-            result["additionalInfo"] = [{"type": k, "info": v} for k, v in self.additional_info.items()]
-
-        if include_debug_info:
-            result["debugInfo"] = self.debug_info
-
-        return result
+    @property
+    def error_codes(self):
+        # For openai error, they would be classified as user error. Its error codes would be in below format.
+        return [RootErrorCode.USER_ERROR, OpenAIError.__name__, self._ex.__class__.__name__]
 
 
 class ExceedMaxRetryTimes(WrappedOpenAIError):
