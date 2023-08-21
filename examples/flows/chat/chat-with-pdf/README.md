@@ -28,7 +28,7 @@ A typical RAG application has two steps:
 - **Retrieval**: Retrieve context information from external systems (database, search engine, files, etc.)
 - **Generation**: Construct the prompt with the retrieved context and get response from LLMs.
 
-Since the retreival step is more of a search problem, it can get really complicated. A popular, simple but also effective approach is vector search, which requires a index building process. Say if you have one or more documents containing the context information, the index building process looks like:
+Since the retrieval step is more of a search problem, it can get really complicated. A popular, simple but also effective approach is vector search, which requires a index building process. Say if you have one or more documents containing the context information, the index building process looks like:
 1. **Chunk** Turn the documents into multiple chunks of text.
 2. **Embedding** For each of the text chunk call an embedding model to turn it into an array of floats (we call it embedding or vector).
 3. **Indexing** Put the vectors into an index or a database which supports vector search - returning the top K relevant/similar vectors from the index or DB.
@@ -58,9 +58,9 @@ You would expect the chatbot smart enough to figure out the **it** in your secon
 A "rewrite_question" step is performed before feeding the question to "find_context" step.
 
 ### Take a look at the chatbot in action!
-You should be able to run the console app by
+You should be able to run the console app by:
 ```shell
-cd <repo_root>/examples/chat/chat_with_pdf/
+cd <repo_root>/examples/flows/chat/chat_with_pdf/
 pip install -r requirements.txt
 python chat_with_pdf/main.py https://arxiv.org/pdf/1810.04805.pdf
 ```
@@ -75,6 +75,8 @@ Now let's look at actual code implmenting the chatbot.
 While this is a minimal LLM app, there are a few things we later want to configure or even experiment with, let's put them into environment variables. In later section we will show you how to experiment with these configurations to get a better quality for the chat app.
 
 Create .env file in this folder with below content and later load_dotenv() can be used to populate these into environment variables. We will explain what these are later when talking about how each step is implemented.
+
+Check out [example env file](.env.example).
 ```ini
 OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
@@ -88,6 +90,15 @@ CHUNK_OVERLAP=64
 VERBOSE=False
 ```
 Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
+
+```bash
+# create connection needed by flow
+if pf connection list | grep azure_open_ai_connection; then
+    echo "azure_open_ai_connection already exists"
+else
+    pf connection create --file azure_openai.yml --name azure_open_ai_connection
+fi
+```
 
 ### Implementation of each steps
 #### Download pdf: [download.py](chat_with_pdf/download.py)
@@ -111,7 +122,7 @@ Use OpenAI's ChatGPT or GPT4 model and ChatCompletion API to get a good answer f
 #### The main loop: [main.py](chat_with_pdf/main.py)
 This is the main entry of the chatbot with a loop to read question from user input and call the steps above to answer the question.
 
-To make this example simpler, we store downloaded file and also the built index as local files, though there is a mechanism to honor cached file/index, the index loading still takes certain time and add up to the latency that user can feel. Also if the chatbot is hosted on a server then it requires the requests for same PDF file to hit same server node to make the cache effective. In a real-world scenario, you will likely want to store the index in a centrialized service/DB instead. There're many such DB available like [Azure Cognitive Search](https://learn.microsoft.com/en-us/azure/search/vector-search-overview), [Pinecone](https://www.pinecone.io/), [Qdrant](https://qdrant.tech/), ...
+To make this example simpler, we store downloaded file and also the built index as local files, though there is a mechanism to honor cached file/index, the index loading still takes certain time and add up to the latency that user can feel. Also if the chatbot is hosted on a server then it requires the requests for same PDF file to hit same server node to make the cache effective. In a real-world scenario, you will likely want to store the index in a centralized service/DB instead. There're many such DB available like [Azure Cognitive Search](https://learn.microsoft.com/en-us/azure/search/vector-search-overview), [Pinecone](https://www.pinecone.io/), [Qdrant](https://qdrant.tech/), ...
 
 ## Prompt flow: when you start thinking about quality of your LLM app
 Now the simple chatbot is working, which straightforward. And this is just the first step or the simpler part of the journey. Just like any machine learning based application, building a good LLM app usually requires a lot of tuning work, e.g. trying different prompts (rewrite question, QnA), different parameters (chunk size, overlap size, context limit etc.) or even different workflow design (in our example with or without rewrite_question step is a configuration you may want to experiment with).
@@ -152,15 +163,15 @@ Now the prompt flow for chat_with_pdf is created, you might have already run/deb
 1. Create a test dataset which contains a few question and pdf_url pairs.
 2. Use existing [evaluation flows]() or develop new evaluation flows to generate metrics.
 
-A small dataset can be found here: [bert-paper-qna.jsonl](test_data/bert-paper-qna.jsonl) which contains around 10 questions for the BERT paper.
+A small dataset can be found here: [bert-paper-qna.jsonl](data/bert-paper-qna.jsonl) which contains around 10 questions for the BERT paper.
 
 You can do a batch run with the test dataset and manual review the output. This can be done through the Visual Studio Code extension, or CLI or Python SDK.
 
 **batch_run.yaml**
 ```yaml
 name: chat_with_pdf_default_20230820_162219_559000
-flow: /Users/jietong/Work/azure-promptflow/scratchpad/chat_with_pdf
-data: /Users/jietong/Work/azure-promptflow/scratchpad/chat_with_pdf/test_data/bert-paper-qna.jsonl
+flow: .
+data: ./data/bert-paper-qna.jsonl
 #run: <Uncomment to select a run input>
 column_mapping:
   chat_history: ${data.chat_history}
@@ -177,7 +188,8 @@ column_mapping:
 ```
 **CLI**
 ```bash
-pf run create --file batch_run.yaml --stream
+run_name="web_classification_"$(openssl rand -hex 12)
+pf run create --file batch_run.yaml --stream --name $run_name
 ```
 
 The output will include something like below:
@@ -194,12 +206,12 @@ The output will include something like below:
         "output_path": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000"
     },
     "flow_name": "chat_with_pdf",
-    "data": "/Users/jietong/Work/azure-promptflow/scratchpad/chat_with_pdf/test_data/bert-paper-qna.jsonl",
+    "data": "xxx/chat_with_pdf/data/bert-paper-qna.jsonl",
     "output": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000/flow_outputs/output.jsonl"    
 }
 ```
 
-And we developed two evaluation flows one for "[groundedness](../eval_groundedness/)" and one for "[perceived intelligence](../eval_perceived_intelligence/)". Reading the prompts will give you better idea what are these two metrics:
+And we developed two evaluation flows one for "[groundedness](../../evaluation/groundness-eval/)" and one for "[perceived intelligence](../../evaluation/perceived-intelligence-eval/)". Reading the prompts will give you better idea what are these two metrics:
 - [groundedness prompt](../eval_groundedness/gpt_groundedness.md)
 - [perceived intelligence prompt](../eval_perceived_intelligence/gpt_perceived_intelligence.md)
 
@@ -208,7 +220,7 @@ Evaluation is also a batch run - batch run of evaluation flow with the previous 
 **eval_run.yaml:**
 ```yaml
 name: eval_groundedness_default_20230820_200152_009000
-flow: /Users/jietong/Work/azure-promptflow/scratchpad/eval_groundedness
+flow: ..//eval_groundedness
 run: chat_with_pdf_default_20230820_162219_559000
 column_mapping:
   question: ${run.inputs.question}
@@ -219,7 +231,7 @@ NOTE: the run property in eval_run.yaml is the run name of batch_run.yaml
 
 **CLI:**
 ```bash
-pf run create --file eval_run.yaml
+pf run create --file eval_run.yaml --run $run_name
 ```
 
 After the run completes you can use below commands to get detail of the runs:

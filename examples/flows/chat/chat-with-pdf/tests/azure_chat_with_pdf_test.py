@@ -10,7 +10,7 @@ import os
 class TestChatWithPDFAzure(BaseTest):
     def setUp(self):
         super().setUp()
-        self.data_path = os.path.join(self.flow_path, "test_data/bert-paper-qna.jsonl")
+        self.data_path = os.path.join(self.flow_path, "data/bert-paper-qna.jsonl")
 
         try:
             credential = DefaultAzureCredential()

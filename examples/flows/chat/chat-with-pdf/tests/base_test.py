@@ -8,7 +8,7 @@ class BaseTest(unittest.TestCase):
         root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../")
         self.flow_path = os.path.join(root, "chat_with_pdf")
         self.data_path = os.path.join(
-            self.flow_path, "test_data/bert-paper-qna-1-line.jsonl"
+            self.flow_path, "data/bert-paper-qna-1-line.jsonl"
         )
         self.eval_groundedness_flow_path = os.path.join(root, "eval_groundedness")
         self.eval_perceived_intelligence_flow_path = os.path.join(

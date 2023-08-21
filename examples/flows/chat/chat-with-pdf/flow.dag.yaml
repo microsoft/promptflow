@@ -34,7 +34,7 @@ nodes:
     type: code
     path: setup_env.py
   inputs:
-    aoai_connection: my_aoai_connection
+    aoai_connection: azure_open_ai_connection
     config: ${inputs.config}
 - name: download_tool
   type: python
