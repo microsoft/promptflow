@@ -39,7 +39,7 @@ If you want to use the streaming mode, you need to create a flow that has a node
 > [!IMPORTANT]
 > Only the output of the last node of the flow can support streaming.
 >
-> "Last" means that the node output is not consumed by other nodes.
+> "Last node" means the node output is not consumed by other nodes.
 
 In this guide, we will use the "Chat with Wikipedia" sample flow as an example. This flow processes the user’s question, searches Wikipedia for relevant articles, and answers the question with information from the articles. It uses streaming mode to show the progress of the answer generation.
 
@@ -239,7 +239,7 @@ If the response code is "424 Model Error", it means that the error is caused by 
 
 ### Consume using Python
 
-We have created [a utility file](../media/how-to-enable-streaming-mode/scripts/event_stream.py) as an example to demonstrate how to consume the server-sent event. A sample usage would like:
+We have created [a utility file](https://aka.ms/pf-streaming-sample-util) as an example to demonstrate how to consume the server-sent event. A sample usage would like:
 
 ```python
 try:
@@ -265,7 +265,7 @@ There are several libraries to consume server-sent events in JavaScript. Here is
 ## A sample chat app using Python
 
 Here is a sample chat app written in Python.
-(Click [here](../media/how-to-enable-streaming-mode/scripts/chat_app.py) to view the source code.)
+(Click [here](https://aka.ms/pf-streaming-sample-chat) to view the source code.)
 
 ![chat_app](../media/how-to-enable-streaming-mode/chat_app.gif)
 
