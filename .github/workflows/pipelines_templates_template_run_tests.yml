@@ -48,8 +48,8 @@ jobs:
     - name: Build wheel
       uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
       with:
-        packageSetupType: ${{ inputs.packageSetupType }}
-        workingDirectory: ${{ inputs.testWorkingDirectory }}
+        setupType: ${{ inputs.packageSetupType }}
+        scriptPath: ${{ inputs.testWorkingDirectory }}
     - name: Generate Configs
       uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
       with:
