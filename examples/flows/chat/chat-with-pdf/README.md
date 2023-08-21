@@ -96,7 +96,7 @@ Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo
 if pf connection list | grep azure_open_ai_connection; then
     echo "azure_open_ai_connection already exists"
 else
-    pf connection create --file azure_openai.yml --name azure_open_ai_connection
+    pf connection create --file azure_openai.yml --name azure_open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
 fi
 ```
 
