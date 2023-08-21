@@ -1,18 +1,30 @@
-name: Promptflow Tools Pre Manual Release
+name: Promptflow Tools Release
 
 on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
   workflow_dispatch:
     inputs:
       ReleaseType:
-        description: 'manual test'
+        description: 'Official release or test'
         required: true
-        default: "Test"
-        type: string
+        default: "Release"
+        type: choice
+        options:
+          - "Release"
+          - "Test"
       UploadAsLatest:
         description: 'True to upload the distribution as latest'
         required: true
         default: "False"
-        type: string
+        type: choice
+        options:
+          - "True"
+          - "False"
       SourceFolderName:
         description: 'The source folder of the distribution'
         required: true
@@ -20,7 +32,24 @@ on:
         type: string
 
 jobs:
+  approve_manual_release:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    name: Approve manual release
+    permissions:
+      issues: write
+    steps:
+      - name: Wait for approval
+        uses: trstringer/manual-approval@v1
+        timeout-minutes: 60
+        with:
+          secret: ${{ github.TOKEN }}
+          approvers: 16oeahr,chjinche,DaweiCai
+          minimum-approvals: 1
+          issue-title: "Request to release new promptflow-tools version."
+  
   manual_release:
+    needs: approve_manual_release
     uses: ./.github/workflows/wheel_distributing.yml
     name: Manual release
     with:
@@ -29,21 +58,22 @@ jobs:
       SourceFolderName: ${{ inputs.SourceFolderName }}
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
-  
-  get_timestamp:
-    needs: manual_release
-    name: Get Timestamp
-    runs-on: ubuntu-latest
 
-    steps:
-    - name: Get Timestamp
-      id: timestamp_step
-      run: echo "::set-output name=timestamp::$(date +%s)"
+  continuous_delivery_release:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    uses: ./.github/workflows/wheel_distributing.yml
+    name: Continuous delivery release
+    with:
+      ReleaseType: "Test"
+      UploadAsLatest: "True"
+      SourceFolderName: "promptflow-tools"
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
 
   deploy_runtime_with_updated_tools_package:
-    needs: get_timestamp
+    needs: continuous_delivery_release
     uses: ./.github/workflows/deploy_runtime.yml
     name: Deploy runtime
     with:
-      ToolsPackageVersion: ${{ needs.get_timestamp.outputs.timestamp }}
+      ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
     secrets: inherit

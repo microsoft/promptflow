@@ -8,11 +8,6 @@ on:
         required: true
         default: "Test"
         type: string
-      UploadAsLatest:
-        description: 'True to upload the distribution as latest'
-        required: true
-        default: "False"
-        type: string
       SourceFolderName:
         description: 'The source folder of the distribution'
         required: true
@@ -25,7 +20,7 @@ jobs:
     name: Manual release
     with:
       ReleaseType: ${{ inputs.ReleaseType }}
-      UploadAsLatest: ${{ inputs.UploadAsLatest }}
+      UploadAsLatest: "False"
       SourceFolderName: ${{ inputs.SourceFolderName }}
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
