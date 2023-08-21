@@ -10,9 +10,9 @@ class BaseTest(unittest.TestCase):
         self.data_path = os.path.join(
             self.flow_path, "data/bert-paper-qna-1-line.jsonl"
         )
-        self.eval_groundedness_flow_path = os.path.join(root, "eval_groundedness")
+        self.eval_groundedness_flow_path = os.path.join(root, "../evaluation/groundedness-eval")
         self.eval_perceived_intelligence_flow_path = os.path.join(
-            root, "eval_perceived_intelligence"
+            root, "../evaluation/perceived-intelligence-eval"
         )
         self.all_runs_generated = []
         self.config_3k_context = {
@@ -37,12 +37,6 @@ class BaseTest(unittest.TestCase):
         # Switch current working directory to the folder of this file
         self.cwd = os.getcwd()
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-        # Delete tools.json
-        try:
-            os.remove(os.path.join(self.flow_path, ".promptflow/flow.tools.json"))
-        except Exception:
-            pass
 
     def tearDown(self):
         # Switch back to the original working directory

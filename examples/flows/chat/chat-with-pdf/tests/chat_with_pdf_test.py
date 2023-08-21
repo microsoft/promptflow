@@ -1,6 +1,7 @@
 import unittest
 import promptflow
 from base_test import BaseTest
+from promptflow.executor._errors import InputNotFoundInInputsMapping
 
 
 class TestChatWithPDF(BaseTest):
@@ -94,31 +95,25 @@ class TestChatWithPDF(BaseTest):
         self.assertEqual(details.shape[0], 1)
 
     def test_bulk_run_mapping_missing_one_column(self):
-        run = self.create_chat_run(
-            column_mapping={
-                "question": "${data.question}",
-                "pdf_url": "${data.pdf_url}",
-            }
-        )
-        self.pf.stream(run)  # wait for completion
-
-        self.assertEqual(run.status, "Failed")
-        with self.assertRaises(Exception):
-            print(self.pf.get_details(run))
+        # in this case, run won't be created.
+        with self.assertRaises(InputNotFoundInInputsMapping):
+            self.create_chat_run(
+                column_mapping={
+                    "question": "${data.question}",
+                    "pdf_url": "${data.pdf_url}",
+                }
+            )
 
     def test_bulk_run_invalid_mapping(self):
-        run = self.create_chat_run(
-            column_mapping={
-                "question": "${data.question_not_exist}",
-                "pdf_url": "${data.pdf_url}",
-                "chat_history": "${data.chat_history}",
-            }
-        )
-        self.pf.stream(run)  # wait for completion
-
-        self.assertEqual(run.status, "Failed")
-        with self.assertRaises(Exception):
-            print(self.pf.get_details(run))
+        # in this case, run won't be created.
+        with self.assertRaises(InputNotFoundInInputsMapping):
+            self.create_chat_run(
+                column_mapping={
+                    "question": "${data.question_not_exist}",
+                    "pdf_url": "${data.pdf_url}",
+                    "chat_history": "${data.chat_history}",
+                }
+            )
 
 
 if __name__ == "__main__":
