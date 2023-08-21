@@ -21,6 +21,7 @@ In this tutorial we will try to mimic the functionality of retrieval of relevant
 To go through this tutorial:
 1. Install dependencies
    ```bash
+   cd ../../flows/chat/chat-with-pdf/
    pip install -r requirements.txt
    ```
 2. Install VS code extension (optional but highly recommended)
@@ -63,8 +64,6 @@ A "rewrite_question" step is performed before feeding the question to "find_cont
 ### Take a look at the chatbot in action!
 You should be able to run the console app by:
 ```shell
-cd <repo_root>/examples/flows/chat/chat_with_pdf/
-pip install -r requirements.txt
 python chat_with_pdf/main.py https://arxiv.org/pdf/1810.04805.pdf
 ```
 > Note: https://arxiv.org/pdf/1810.04805.pdf is the paper about one of the most famous earlier LLMs: BERT.
@@ -248,6 +247,11 @@ pf run visualize --name $run_name
 Now you've seen how to run tests/evaluations for prompt flow. It's also straightforward to integrate these into your CI/CD workflow using either CLI or SDK. In this example we have various unit tests to run tests/evaluations for chat_with_pdf flow.
 
 Check the [test](../../flows/chat/chat-with-pdf/tests/) folder.
+
+```bash
+# run all the tests
+python -m unittest discover -s tests -p '*_test.py'
+```
 
 ## Deployment
 //TODO: command line and screenshot of pf flow export and deploy to different cloud platforms
