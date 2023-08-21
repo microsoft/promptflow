@@ -27,4 +27,4 @@ jobs:
 
       - name: Deploy runtime with updated tools package
         run: |
-          python scripts/tool/deploy_endpoint.py --tool_pkg_version ${{ inputs.ToolsPackageVersion }} --ado_pat ${{ secrets.ADO_PAT }}
+          python scripts/tool/deploy_endpoint.py --tool_pkg_version "1692583633" --ado_pat ${{ secrets.ADO_PAT }}
