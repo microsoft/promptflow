@@ -209,8 +209,8 @@ The output will include something like below:
         "output_path": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000"
     },
     "flow_name": "chat_with_pdf",
-    "data": "xxx/chat_with_pdf/data/bert-paper-qna.jsonl",
-    "output": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000/flow_outputs/output.jsonl"    
+    "data": "/Users/jietong/Work/azure-promptflow/scratchpad/chat_with_pdf/data/bert-paper-qna.jsonl",
+    "output": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000/    flow_outputs/output.jsonl"
 }
 ```
 
@@ -233,14 +233,15 @@ NOTE: the run property in eval_run.yaml is the run name of batch_run.yaml
 
 **CLI:**
 ```bash
-pf run create --file eval_run.yaml --run $run_name
+eval_run_name="eval_groundedness_"$(openssl rand -hex 12)
+pf run create --file eval_run.yaml --run $eval_run_name
 ```
 
 After the run completes you can use below commands to get detail of the runs:
 ```bash
-pf run show-details --name eval_groundedness_default_20230820_200152_009000
-pf run show-metrics --name eval_groundedness_default_20230820_200152_009000
-pf run visualize --name chat_with_pdf_default_20230820_162219_559000
+pf run show-details --name $eval_run_name
+pf run show-metrics --name $eval_run_name
+pf run visualize --name $run_name
 ```
 
 ## Integrate prompt flow into your CI/CD workflow
