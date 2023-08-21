@@ -7,7 +7,7 @@ env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-  pytestMarker: "unittest or e2etest"
+  pytestMarker: unittest or e2etest
   packageSetupType: promptflow_new_extra
   testWorkingDirectory: src/promptflow
   coveragePath: promptflow
@@ -83,7 +83,7 @@ jobs:
           -p promptflow \
           -t "${{ env.testPath }}" \
           -l eastus \
-          -m ${{ env.pytestMarker }} \
+          -m '${{ env.pytestMarker }}' \
           -n 5
     - name: Upload pytest test results
       if: ${{ always() }}
