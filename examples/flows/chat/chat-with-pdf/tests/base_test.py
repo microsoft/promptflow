@@ -6,7 +6,7 @@ import traceback
 class BaseTest(unittest.TestCase):
     def setUp(self):
         root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../")
-        self.flow_path = os.path.join(root, "chat_with_pdf")
+        self.flow_path = os.path.join(root, "chat-with-pdf")
         self.data_path = os.path.join(
             self.flow_path, "data/bert-paper-qna-1-line.jsonl"
         )
@@ -55,7 +55,7 @@ class BaseTest(unittest.TestCase):
                 print(e)
                 traceback.print_exc()
 
-    def create_chat_run(self, column_mapping=None, connections=None, runtime=None):
+    def create_chat_run(self, column_mapping=None, connections=None, runtime=None, display_name='chat_run'):
         if column_mapping is None:
             column_mapping = {
                 "chat_history": "${data.chat_history}",
@@ -69,12 +69,12 @@ class BaseTest(unittest.TestCase):
             column_mapping=column_mapping,
             connections=connections,
             runtime=runtime,
-            display_name="test_bulk_run_chat_with_pdf",
+            display_name=display_name,
             tags={"unittest": "true"},
             stream=True,
         )
         self.all_runs_generated.append(run)
-        self.check_run_basics(run, "test_bulk_run_chat_with_pdf")
+        self.check_run_basics(run, display_name)
         return run
 
     def create_eval_run(
@@ -95,7 +95,7 @@ class BaseTest(unittest.TestCase):
         self.check_run_basics(eval, run_display_name)
         return eval
 
-    def check_run_basics(self, run, name):
+    def check_run_basics(self, run, display_name):
         self.assertTrue(run is not None)
-        self.assertEqual(run.display_name, name)
+        self.assertEqual(run.display_name, display_name)
         self.assertEqual(run.tags["unittest"], "true")

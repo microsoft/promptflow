@@ -23,12 +23,14 @@ class TestChatWithPDFAzure(BaseTest):
         ml_client = MLClient.from_config(credential=credential)
 
         self.pf = azure.PFClient(ml_client)
+        # self.runtime = "chat_with_pdf_runtime"
+        self.runtime = None # serverless
 
     def tearDown(self) -> None:
         return super().tearDown()
 
     def test_bulk_run_chat_with_pdf(self):
-        run = self.create_chat_run(runtime="chat_with_pdf_runtime")
+        run = self.create_chat_run(runtime=self.runtime)
         self.pf.stream(run)  # wait for completion
 
         self.assertEqual(run.status, "Completed")
@@ -43,7 +45,7 @@ class TestChatWithPDFAzure(BaseTest):
                 "chat_history": "${data.chat_history}",
                 "config": self.config_2k_context,
             },
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
             display_name="chat_with_pdf_2k_context",
         )
         self.pf.stream(run2k)  # wait for completion
@@ -57,7 +59,7 @@ class TestChatWithPDFAzure(BaseTest):
                 "answer": "${run.outputs.answer}",
                 "context": "${run.outputs.context}",
             },
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
             display_name="eval_groundedness_2k_context",
         )
         self.pf.stream(eval)  # wait for completion
@@ -78,7 +80,7 @@ class TestChatWithPDFAzure(BaseTest):
                 "answer": "${run.outputs.answer}",
                 "context": "${run.outputs.context}",
             },
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
             display_name="eval_perceived_intelligence_2k_context",
         )
         self.pf.stream(eval2k_pi)  # wait for completion
@@ -101,7 +103,7 @@ class TestChatWithPDFAzure(BaseTest):
                 "chat_history": "${data.chat_history}",
                 "config": self.config_2k_context,
             },
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
         )
         self.pf.stream(run)  # wait for completion
 
@@ -115,7 +117,7 @@ class TestChatWithPDFAzure(BaseTest):
                 "question": "${data.question}",
                 "pdf_url": "${data.pdf_url}",
             },
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
         )
         self.pf.stream(run)  # wait for completion
 
@@ -131,7 +133,7 @@ class TestChatWithPDFAzure(BaseTest):
                 "chat_history": "${data.chat_history}",
             },
             connections={"setup_env": {"conn": "chat_with_pdf_custom_connection"}},
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
         )
 
         self.pf.stream(run)  # wait for completion
