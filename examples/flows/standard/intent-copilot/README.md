@@ -17,9 +17,34 @@ cat .env
 
 1. init flow directory - create promptflow folder from existing python file
 ```bash
-pf flow init --flow . --entry intent.py --function extract_intent --prompt-template user_prompt_template=user_intent_zero_shot.jinja2
+pf flow init --flow . --entry intent.py --function extract_intent --prompt-template chat_prompt=user_intent_zero_shot.jinja2
 ```
-TODO introduce the generated files
+The generated files:
+- extract_intent_tool.py: Wrap the func `extract_intent` in the `intent.py` script into a [Python tool](https://promptflow.azurewebsites.net/tools-reference/python-tool.html).
+- flow.dag.yaml: Describes the DAG(Directed Acyclic Graph) of this flow.
+- .gitignore: File/folder in the flow to be ignored.
+
+Please enter the input of the flow/node to `flow.dag.yaml`, like below:
+```yaml
+inputs:   # Enter the flow inputs
+  customer_info:
+    type: string
+  history:
+    type: list
+outputs:
+  output:
+    type: string
+    reference: ${extract_intent.output}
+nodes:
+- name: chat_prompt
+  type: prompt
+  source:
+    type: code
+    path: user_intent_zero_shot.jinja2
+  inputs:  # Enter the inputs of this node
+    customer_info: ${inputs.customer_info}
+    chat_history: ${inputs.history}
+```
 
 2. create needed custom connection
 ```bash
