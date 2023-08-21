@@ -1,4 +1,4 @@
-name: promptflow-sdk-cli-test
+name: promptflow-executor-test
 on:
   pull_request:
     branches: [ main ]
@@ -7,8 +7,9 @@ env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-  packageSetupType: promptflow_new_extra
+  packageSetupType: promptflow_open_source
   testWorkingDirectory: src/promptflow
+  coveragePath: src/promptflow/promptflow
 jobs:
   paths-filter:
     runs-on: ubuntu-latest
@@ -33,7 +34,7 @@ jobs:
       if: steps.filter.outputs.workflows != 'true'
       run: echo "Pass"
   
-  sdk_cli_tests:
+  executor_tests:
     runs-on: ubuntu-latest
     needs: paths-filter
     if: needs.paths-filter.outputs.output1 == 'true'
@@ -47,6 +48,7 @@ jobs:
     - run: |
         echo ${{ env.packageSetupType }}
         echo ${{ env.testWorkingDirectory }}
+        echo ${{ env.coveragePath }}
       shell: bash -l {0}
     - name: Build wheel
       uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
@@ -64,7 +66,7 @@ jobs:
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-    - name: Run Test
+    - name: Run Coverage Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
@@ -73,11 +75,12 @@ jobs:
         az account show
         conda activate release-env
         python "../../scripts/building/run_coverage_tests.py" \
-          -p promptflow \
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
+          -p ${{ env.coveragePath }} \
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
           -l eastus \
           -m "unittest or e2etest" \
-          -n 2
+          -n 2 \
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload pytest test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
@@ -91,5 +94,18 @@ jobs:
       with:
         files: |
           ${{ env.testWorkingDirectory }}/test-results.xml
-
+    - name: Generate Coverage Report
+      if: (success() || failure())
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.1.19
+      continue-on-error: false
+      with:
+        reports: "${{ env.testWorkingDirectory }}/coverage.xml"
+        targetdir: coveragereport_${{ github.run_number }}
+        reporttypes: HtmlInline
+    - name: Upload CoverageReport
+      if: (success() || failure())
+      uses: actions/upload-artifact@v3.1.1
+      with:
+        name: CoverageReport
+        path: coveragereport_${{ github.run_number }}
     
