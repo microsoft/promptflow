@@ -38,6 +38,13 @@ jobs:
       uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
     - name: Conda Setup
       uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    - run: |
+        echo ${{ inputs.packageSetupType }}
+        echo ${{ inputs.testWorkingDirectory }}
+        echo ${{ inputs.coveragePath }}
+        echo ${{ inputs.coverage }}
+        echo ${{ inputs.testPath }}
+      shell: bash -l {0}
     - name: Build wheel
       uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
       with:

@@ -2,11 +2,10 @@ name: pipelines_templates_steps_template_sdk_setup_step
 inputs:
   scriptPath:
     required: false
-    default: "$(scriptPath)"
     type: string
   setupType:
     required: false
-    default: promptflow_dev
+    default: promptflow_new_extra
     type: string
 runs:
   using: composite
