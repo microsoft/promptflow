@@ -110,13 +110,12 @@ except Exception as ex:
 3. Get a handle to the workspace
 ```python
 # Get a handle to workspace
-ml_client = MLClient(
+pf = PFClient(
     credential=credential,
     subscription_id="<SUBSCRIPTION_ID>",  # this will look like xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     resource_group_name="<RESOURCE_GROUP>",
     workspace_name="<AML_WORKSPACE_NAME>",
 )
-pf = PFClient(ml_client)
 ```
 
 4. Submit the flow run
