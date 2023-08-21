@@ -10,9 +10,16 @@ from chat_with_pdf.utils.lock import acquire_lock
 def setup_env(aoai_connection: AzureOpenAIConnection, config: dict):
     if not aoai_connection or not config:
         return
+
     os.environ["OPENAI_API_BASE"] = aoai_connection.api_base
     os.environ["OPENAI_API_KEY"] = aoai_connection.api_key
     os.environ["OPENAI_API_VERSION"] = aoai_connection.api_version
+
+    if isinstance(config, str):
+        import json
+        # Workaround if runtime not passing config as dict
+        config = json.loads(config)
+
     for key in config:
         os.environ[key] = str(config[key])
 

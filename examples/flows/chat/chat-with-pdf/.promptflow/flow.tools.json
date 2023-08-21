@@ -1,135 +1,5 @@
 {
     "package": {
-        "promptflow.tools.azure_translator.get_translation": {
-            "name": "Azure Translator",
-            "description": "Use Azure Translator API for translating text between 130+ languages.",
-            "type": "python",
-            "module": "promptflow.tools.azure_translator",
-            "function": "get_translation",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "CustomConnection"
-                    ]
-                },
-                "input_text": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "source_language": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "target_language": {
-                    "default": "en",
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
-        "promptflow.tools.azure_detect.AzureDetect.get_language": {
-            "class_name": "AzureDetect",
-            "function": "get_language",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "CustomConnection"
-                    ]
-                },
-                "input_text": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "module": "promptflow.tools.azure_detect",
-            "name": "Azure Language Detector",
-            "description": "Detect the language of the input text.",
-            "type": "python",
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
-        "promptflow.tools.embedding.embedding": {
-            "name": "Embedding",
-            "description": "Use Open AI's embedding model to create an embedding vector representing the input text.",
-            "type": "python",
-            "module": "promptflow.tools.embedding",
-            "function": "embedding",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "AzureOpenAIConnection",
-                        "OpenAIConnection"
-                    ]
-                },
-                "deployment_name": {
-                    "type": [
-                        "string"
-                    ],
-                    "enabled_by": "connection",
-                    "enabled_by_type": [
-                        "AzureOpenAIConnection"
-                    ],
-                    "capabilities": {
-                        "completion": false,
-                        "chat_completion": false,
-                        "embeddings": true
-                    },
-                    "model_list": [
-                        "text-embedding-ada-002",
-                        "text-search-ada-doc-001",
-                        "text-search-ada-query-001"
-                    ]
-                },
-                "model": {
-                    "type": [
-                        "string"
-                    ],
-                    "enabled_by": "connection",
-                    "enabled_by_type": [
-                        "OpenAIConnection"
-                    ],
-                    "enum": [
-                        "text-embedding-ada-002",
-                        "text-search-ada-doc-001",
-                        "text-search-ada-query-001"
-                    ]
-                },
-                "input": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
-        "promptflow.tools.azure_language_detector.get_language": {
-            "name": "Azure Language Detector",
-            "description": "Detect the language of the input text.",
-            "type": "python",
-            "module": "promptflow.tools.azure_language_detector",
-            "function": "get_language",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "CustomConnection"
-                    ]
-                },
-                "input_text": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
         "promptflow.tools.azure_content_safety.AzureContentSafety.analyze_text": {
             "class_name": "AzureContentSafety",
             "function": "analyze_text",
@@ -200,6 +70,114 @@
             "package": "promptflow-tools",
             "package_version": "0.1.0b3"
         },
+        "promptflow.tools.azure_language_detector.get_language": {
+            "name": "Azure Language Detector",
+            "description": "Detect the language of the input text.",
+            "type": "python",
+            "module": "promptflow.tools.azure_language_detector",
+            "function": "get_language",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "CustomConnection"
+                    ]
+                },
+                "input_text": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "package": "promptflow-tools",
+            "package_version": "0.1.0b3"
+        },
+        "promptflow.tools.azure_translator.get_translation": {
+            "name": "Azure Translator",
+            "description": "Use Azure Translator API for translating text between 130+ languages.",
+            "type": "python",
+            "module": "promptflow.tools.azure_translator",
+            "function": "get_translation",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "CustomConnection"
+                    ]
+                },
+                "input_text": {
+                    "type": [
+                        "string"
+                    ]
+                },
+                "source_language": {
+                    "type": [
+                        "string"
+                    ]
+                },
+                "target_language": {
+                    "default": "en",
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "package": "promptflow-tools",
+            "package_version": "0.1.0b3"
+        },
+        "promptflow.tools.embedding.embedding": {
+            "name": "Embedding",
+            "description": "Use Open AI's embedding model to create an embedding vector representing the input text.",
+            "type": "python",
+            "module": "promptflow.tools.embedding",
+            "function": "embedding",
+            "inputs": {
+                "connection": {
+                    "type": [
+                        "AzureOpenAIConnection",
+                        "OpenAIConnection"
+                    ]
+                },
+                "deployment_name": {
+                    "type": [
+                        "string"
+                    ],
+                    "enabled_by": "connection",
+                    "enabled_by_type": [
+                        "AzureOpenAIConnection"
+                    ],
+                    "capabilities": {
+                        "completion": false,
+                        "chat_completion": false,
+                        "embeddings": true
+                    },
+                    "model_list": [
+                        "text-embedding-ada-002",
+                        "text-search-ada-doc-001",
+                        "text-search-ada-query-001"
+                    ]
+                },
+                "model": {
+                    "type": [
+                        "string"
+                    ],
+                    "enabled_by": "connection",
+                    "enabled_by_type": [
+                        "OpenAIConnection"
+                    ],
+                    "enum": [
+                        "text-embedding-ada-002",
+                        "text-search-ada-doc-001",
+                        "text-search-ada-query-001"
+                    ]
+                },
+                "input": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "package": "promptflow-tools",
+            "package_version": "0.1.0b3"
+        },
         "promptflow.tools.serpapi.SerpAPI.search": {
             "name": "Serp API",
             "description": "Use Serp API to obtain search results from a specific search engine.",
@@ -261,7 +239,8 @@
             "inputs": {
                 "aoai_connection": {
                     "type": [
-                        "AzureOpenAIConnection"
+                        "AzureOpenAIConnection",
+                        "CustomConnection"
                     ]
                 },
                 "config": {

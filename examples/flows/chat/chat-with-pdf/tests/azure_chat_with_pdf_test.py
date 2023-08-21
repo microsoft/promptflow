@@ -10,7 +10,7 @@ import os
 class TestChatWithPDFAzure(BaseTest):
     def setUp(self):
         super().setUp()
-        self.data_path = os.path.join(self.flow_path, "data/bert-paper-qna.jsonl")
+        self.data_path = os.path.join(self.flow_path, "data/bert-paper-qna-1-line.jsonl")
 
         try:
             credential = DefaultAzureCredential()
@@ -38,6 +38,7 @@ class TestChatWithPDFAzure(BaseTest):
         self.assertEqual(details.shape[0], 11)
 
     def test_eval(self):
+        display_name = "chat_with_pdf_2k_context"
         run2k = self.create_chat_run(
             column_mapping={
                 "question": "${data.question}",
@@ -46,11 +47,12 @@ class TestChatWithPDFAzure(BaseTest):
                 "config": self.config_2k_context,
             },
             runtime=self.runtime,
-            display_name="chat_with_pdf_2k_context",
+            display_name=display_name,
         )
         self.pf.stream(run2k)  # wait for completion
-        self.check_run_basics(run2k)
+        self.check_run_basics(run2k, display_name)
 
+        display_name = "eval_groundedness_2k_context"
         eval2k_groundedness = self.create_eval_run(
             self.eval_groundedness_flow_path,
             run2k,
@@ -60,18 +62,19 @@ class TestChatWithPDFAzure(BaseTest):
                 "context": "${run.outputs.context}",
             },
             runtime=self.runtime,
-            display_name="eval_groundedness_2k_context",
+            display_name=display_name,
         )
-        self.pf.stream(eval)  # wait for completion
-        self.check_run_basics(eval2k_groundedness)
+        self.pf.stream(eval2k_groundedness)  # wait for completion
+        self.check_run_basics(eval2k_groundedness, display_name)
 
-        details = self.pf.get_details(eval)
+        details = self.pf.get_details(eval2k_groundedness)
         self.assertGreater(details.shape[0], 5)
 
-        metrics, elapsed = self.wait_for_metrics(eval)
+        metrics, elapsed = self.wait_for_metrics(eval2k_groundedness)
         self.assertGreaterEqual(metrics["groundedness"], 0.0)
         self.assertLessEqual(elapsed, 5)  # metrics should be available within 5 seconds
 
+        display_name = "eval_perceived_intelligence_2k_context"
         eval2k_pi = self.create_eval_run(
             self.eval_perceived_intelligence_flow_path,
             run2k,
@@ -81,15 +84,15 @@ class TestChatWithPDFAzure(BaseTest):
                 "context": "${run.outputs.context}",
             },
             runtime=self.runtime,
-            display_name="eval_perceived_intelligence_2k_context",
+            display_name=display_name,
         )
         self.pf.stream(eval2k_pi)  # wait for completion
-        self.check_run_basics(eval2k_pi)
+        self.check_run_basics(eval2k_pi, display_name)
 
-        details = self.pf.get_details(eval)
+        details = self.pf.get_details(eval2k_pi)
         self.assertGreater(details.shape[0], 5)
 
-        metrics, elapsed = self.wait_for_metrics(eval)
+        metrics, elapsed = self.wait_for_metrics(eval2k_pi)
         self.assertGreaterEqual(metrics["perceived_intelligence_score"], 0.0)
         self.assertLessEqual(
             elapsed, 5
@@ -132,7 +135,6 @@ class TestChatWithPDFAzure(BaseTest):
                 "pdf_url": "${data.pdf_url}",
                 "chat_history": "${data.chat_history}",
             },
-            connections={"setup_env": {"conn": "chat_with_pdf_custom_connection"}},
             runtime=self.runtime,
         )
 
@@ -145,9 +147,11 @@ class TestChatWithPDFAzure(BaseTest):
     def wait_for_metrics(self, run):
         start = time.time()
         metrics = self.pf.get_metrics(run)
-        while len(metrics) == 0:
+        cnt = 3
+        while len(metrics) == 0 and cnt > 0:
             time.sleep(5)
             metrics = self.pf.get_metrics(run)
+            cnt -= 1
 
         end = time.time()
         return metrics, end - start

@@ -1,5 +1,6 @@
 import unittest
 import os
+import json
 import traceback
 
 
@@ -33,6 +34,9 @@ class BaseTest(unittest.TestCase):
             "CHUNK_SIZE": 256,
             "CHUNK_OVERLAP": 32,
         }
+        # TODO remove this when object passing is supported
+        self.config_3k_context = json.dumps(self.config_3k_context)
+        self.config_2k_context = json.dumps(self.config_2k_context)
 
         # Switch current working directory to the folder of this file
         self.cwd = os.getcwd()
@@ -57,6 +61,7 @@ class BaseTest(unittest.TestCase):
                 "question": "${data.question}",
                 "config": self.config_2k_context,
             }
+
         run = self.pf.run(
             flow=self.flow_path,
             data=self.data_path,
@@ -72,21 +77,20 @@ class BaseTest(unittest.TestCase):
         return run
 
     def create_eval_run(
-        self, eval_flow_path, base_run, column_mapping, connections=None, runtime=None
+        self, eval_flow_path, base_run, column_mapping, connections=None, runtime=None, display_name=None
     ):
-        run_display_name = eval_flow_path.split("/")[-1]
         eval = self.pf.run(
             flow=eval_flow_path,
             run=base_run,
             column_mapping=column_mapping,
             connections=connections,
             runtime=runtime,
-            display_name=run_display_name,
+            display_name=display_name,
             tags={"unittest": "true"},
             stream=True,
         )
         self.all_runs_generated.append(eval)
-        self.check_run_basics(eval, run_display_name)
+        self.check_run_basics(eval, display_name)
         return eval
 
     def check_run_basics(self, run, display_name):
