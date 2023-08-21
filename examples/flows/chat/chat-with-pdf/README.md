@@ -49,7 +49,7 @@ fi
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs question="What is the name of the new language representation model introduced in the document?" pdf_url="https://arxiv.org/pdf/1810.04805.pdf"
+pf flow test --flow . --inputs question="What is the name of the new language representation model introduced in the document?" pdf_url="https://arxiv.org/pdf/1810.04805.pdf" config="{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }"
 
 # (Optional) create a random run name
 run_name="web_classification_"$(openssl rand -hex 12)
