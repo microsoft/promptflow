@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Get Timestamp
-      id: timestamp_step
+      id: version
       run: echo "version=0.0.$(date +%s)" >> "$GITHUB_OUTPUT"
 
   deploy_runtime_with_updated_tools_package:
