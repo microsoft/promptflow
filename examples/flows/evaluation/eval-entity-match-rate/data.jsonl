@@ -1,0 +1,2 @@
+{"entities": ["software engineer","CEO"],"ground_truth": "\"CEO, Software Engineer, Finance Manager\""}
+{"entities": ["Software Engineer","CEO", "Finance Manager"],"ground_truth": "\"CEO, Software Engineer, Finance Manager\""}
