@@ -71,6 +71,12 @@ jobs:
       with:
         files: |
           ${{ github.workspace }}/test-results.xml
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      with:
+        files: |
+          ${{ env.testWorkingDirectory }}/test-results.xml
     - name: Generate Coverage Report
       if: (success() || failure())
       uses: orgoro/coverage@v3.1
