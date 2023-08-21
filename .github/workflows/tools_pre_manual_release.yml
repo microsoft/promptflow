@@ -35,12 +35,12 @@ jobs:
     steps:
     - name: Get Timestamp
       id: timestamp_step
-      run: echo "::set-output name=timestamp::$(date +%s)"
+      run: echo "version=0.0.$(date + %s)" >> "$GITHUB_OUTPUT"
 
   deploy_runtime_with_updated_tools_package:
     needs: get_timestamp
     uses: ./.github/workflows/deploy_runtime.yml
     name: Deploy runtime
     with:
-      ToolsPackageVersion: ${{ needs.get_timestamp.outputs.timestamp }}
+      ToolsPackageVersion: ${{ needs.get_timestamp.outputs.version }}
     secrets: inherit
