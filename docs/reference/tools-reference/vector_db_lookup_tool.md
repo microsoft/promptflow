@@ -1,6 +1,6 @@
 # Vector DB Lookup
 
-Vector DB Lookup is a vector search tool that allows users to search top k similiar vectors from vector database. This tool is a wrapper for multiple third-party vector databases. The list of current supported databases is as follows.
+Vector DB Lookup is a vector search tool that allows users to search top k similar vectors from vector database. This tool is a wrapper for multiple third-party vector databases. The list of current supported databases is as follows.
 
 | Name | Description |
 | --- | --- |

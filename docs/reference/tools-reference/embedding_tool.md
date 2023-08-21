@@ -13,7 +13,7 @@ Create OpenAI resources:
 
 - **Azure OpenAI (AOAI)**
 
-    Create Azure OpenAI resources with [insturction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
+    Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
 ## **Connections**
 
@@ -22,7 +22,7 @@ Setup connections to provide resources in embedding tool.
 | Type        | Name     | API KEY  | API Type | API Version |
 |-------------|----------|----------|----------|-------------|
 | OpenAI      | Required | Required | -        | -           |
-| AzureOpenAI | Required | Requried | Required | Required    |
+| AzureOpenAI | Required | Required | Required | Required    |
 
 
 ## Inputs
