@@ -34,16 +34,13 @@ jobs:
 
     steps:
     - name: Get Timestamp
-      id: timestamp_step
-      run: echo "::set-output name=version::0.0.$(date +%s)"
+      id: get_version
+      run: echo "version=0.0.$(date +%s)" >> "$GITHUB_OUTPUT"
 
   deploy_runtime_with_updated_tools_package:
     needs: get_timestamp
+    uses: ./.github/workflows/deploy_runtime.yml
     name: Deploy runtime
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Deploy Runtime
-      uses: ./.github/workflows/deploy_runtime.yml
-      with:
-        ToolsPackageVersion: "${{ needs.get_timestamp.outputs.version }}"
+    with:
+      ToolsPackageVersion: "${{ needs.get_timestamp.steps.get_version.outputs.version }}"
+    secrets: inherit
