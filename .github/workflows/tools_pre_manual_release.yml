@@ -34,7 +34,7 @@ jobs:
 
     steps:
     - name: Get Timestamp
-      id: version
+      id: get_version
       run: echo "version=0.0.$(date +%s)" >> "$GITHUB_OUTPUT"
 
   deploy_runtime_with_updated_tools_package:
@@ -42,5 +42,5 @@ jobs:
     uses: ./.github/workflows/deploy_runtime.yml
     name: Deploy runtime
     with:
-      ToolsPackageVersion: "${{ needs.get_timestamp.outputs.version }}"
+      ToolsPackageVersion: "${{ needs.get_timestamp.steps.get_version.outputs.version }}"
     secrets: inherit
