@@ -159,14 +159,17 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
     # Adjust tutorial names:
 
     for readme_telemetry in readme_telemetrys:
-        notebook_name = readme_telemetry.readme_folder.split("/")[-1]
-        notebook_path = (
-            readme_telemetry.readme_folder.replace("examples/", "") + "/README.md"
-        )
+        if readme_telemetry.readme_name.endswith("README.md"):
+            notebook_name = readme_telemetry.readme_folder.split("/")[-1]
+        else:
+            notebook_name = readme_telemetry.readme_name.split("/")[-1].replace(
+                ".md", ""
+            )
+        notebook_path = readme_telemetry.readme_name.replace("examples/", "")
         pipeline_name = readme_telemetry.workflow_name
         yaml_name = f"{readme_telemetry.workflow_name}.yml"
         description = get_readme_description_first_sentence(
-            readme_telemetry.readme_folder + "/README.md"
+            readme_telemetry.readme_name
         )
         readme_folder = readme_telemetry.readme_folder
 

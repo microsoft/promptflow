@@ -312,3 +312,4 @@ class ReadmeStepsManage:
         output_telemetry.workflow_name = workflow_name
         output_telemetry.target_path = target_path
         output_telemetry.readme_folder = ReadmeSteps.working_dir
+        output_telemetry.readme_name = ReadmeSteps.readme_name

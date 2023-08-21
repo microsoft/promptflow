@@ -48,8 +48,11 @@ jobs:
       - name: Create AOAI Connection from ENV file
         working-directory: examples/tutorials/e2e-development
         run: |
-          pf connection create --file .env --name chat_with_pdf_custom_connection
-          pf connection list
+          if [[ -e .env ]]; then
+            pf connection create --file .env --name chat_with_pdf_custom_connection
+            pf connection list
+          fi
+          
       - name: Create run.yml
         working-directory: examples/tutorials/e2e-development
         run: |
