@@ -53,7 +53,7 @@ class BaseTest(unittest.TestCase):
                 print(e)
                 traceback.print_exc()
 
-    def create_chat_run(self, column_mapping=None, connections=None, runtime=None, display_name='chat_run'):
+    def create_chat_run(self, data=None, column_mapping=None, connections=None, runtime=None, display_name='chat_run'):
         if column_mapping is None:
             column_mapping = {
                 "chat_history": "${data.chat_history}",
@@ -61,10 +61,11 @@ class BaseTest(unittest.TestCase):
                 "question": "${data.question}",
                 "config": self.config_2k_context,
             }
+        data = self.data_path if data is None else data
 
         run = self.pf.run(
             flow=self.flow_path,
-            data=self.data_path,
+            data=data,
             column_mapping=column_mapping,
             connections=connections,
             runtime=runtime,
