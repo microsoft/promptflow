@@ -23,8 +23,8 @@ class TestChatWithPDFAzure(BaseTest):
         ml_client = MLClient.from_config(credential=credential)
 
         self.pf = azure.PFClient(ml_client)
-        # self.runtime = "chat_with_pdf_runtime"
-        self.runtime = None # serverless
+        self.runtime = "chat_with_pdf_runtime"
+        # self.runtime = None  # serverless
 
     def tearDown(self) -> None:
         return super().tearDown()
