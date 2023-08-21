@@ -1,6 +1,8 @@
 name: Promptflow Tools Pre Manual Release
 
 on:
+  pull_request:
+
   workflow_dispatch:
     inputs:
       ReleaseType:
@@ -19,9 +21,9 @@ jobs:
     uses: ./.github/workflows/wheel_distributing.yml
     name: Manual release
     with:
-      ReleaseType: ${{ inputs.ReleaseType }}
+      ReleaseType: "Test"
       UploadAsLatest: "False"
-      SourceFolderName: ${{ inputs.SourceFolderName }}
+      SourceFolderName: "promptflow-tools"
       ConfigsFolderPath: "scripts/distributing/configs"
     secrets: inherit
   
