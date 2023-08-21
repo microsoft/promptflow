@@ -67,7 +67,7 @@ pf run show-details --name $run_name
 
 create `evaluation` run:
 ```bash
-# (Optional) save previous run name into variable, and create a new random run name for furthur use
+# (Optional) save previous run name into variable, and create a new random run name for further use
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 # create run using command line args
@@ -93,7 +93,7 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
 # pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 
-# (Optional) create a new random run name for furthur use
+# (Optional) create a new random run name for further use
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # create run using yaml file, --name is optional
@@ -106,7 +106,7 @@ pfazure run show-details --name $run_name
 pfazure run show-metrics --name $run_name
 
 
-# (Optional) save previous run name into variable, and create a new random run name for furthur use
+# (Optional) save previous run name into variable, and create a new random run name for further use
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 
