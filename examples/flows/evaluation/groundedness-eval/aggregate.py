@@ -13,21 +13,6 @@ def aggregate(groundedness_scores: List[float]):
                         group the results by line number.
     """
 
-    # Add your aggregation logic here
-    # aggregated_results should be a dictionary with variant id as key, and for each variant id, it is also a
-    # dictionary with the metric name as the key and the metric value as the value.
-    # For example: {
-    #    "variant_0": {
-    #       "metric_name_0": metric_value_0,
-    #       "metric_name_1": metric_value_1,
-    #       ...
-    #    },
-    #    "variant_1": {
-    #       ...
-    #    },
-    #    ...
-    # }
-
     aggregated_results = {"groundedness": 0.0, "count": 0}
 
     # Calculate average groundedness score for each variant

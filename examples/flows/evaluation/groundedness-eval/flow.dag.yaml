@@ -1,5 +1,3 @@
-id: eval_groundedness
-name: Groundedness Evaluation Flow
 environment:
   python_requirements_txt: requirements.txt
 inputs:
@@ -224,64 +222,7 @@ inputs:
       incorrect words in left and right context (Mikolov et al., 2013).These
       approaches have been generalized to coarser granularities, such as
       sentence embed- dings (Kiros et al., 2015; Logeswaran and Lee, 2018) or
-      paragraph embeddings (Le and Mikolov, 2014). To train sentence
-      representations, prior work has used objectives to rank candidate next
-      sentences (Jernite et al., 2017; Logeswaran and Lee, 2018), left-to-right
-      generation of next sen- tence words given a representation of the previous
-      sentence (Kiros et al., 2015), or denoising auto- encoder","the
-      token-level classi\ufb01er over the NER label set. To ablate the
-      \ufb01ne-tuning approach, we apply the feature-based approach by
-      extracting the activa- tions from one or more layers without
-      \ufb01ne-tuning any parameters of BERT. These contextual em- beddings are
-      used as input to a randomly initial- ized two-layer 768-dimensional BiLSTM
-      before the classi\ufb01cation layer. Results are presented in Table 7.
-      BERT LARGE performs competitively with state-of-the-art meth- ods. The
-      best performing method concatenates the token representations from the top
-      four hidden lay- ers of the pre-trained Transformer, which is only 0.3 F1
-      behind \ufb01ne-tuning the entire model. This demonstrates that BERT is
-      effective for both \ufb01ne- tuning and feature-based approaches. 6
-      Conclusion Recent empirical improvements due to transfer learning with
-      language models have demonstrated that rich, unsupervised pre-training is
-      an integral part of many language understanding systems. In particular,
-      these results enable even low-resource tasks to bene\ufb01t from deep
-      unidirectional architec- tures. Our major contribution is further general-
-      izing these \ufb01ndings to deep bidirectional architec- tures, allowing
-      the same pre-trained model to suc- cessfully tackle a broad set of NLP
-      tasks.References Alan Akbik, Duncan Blythe, and Roland V ollgraf. 2018.
-      Contextual string embeddings for sequence labeling. In Proceedings of the
-      27th International Conference on Computational Linguistics , pages
-      1638\u20131649. Rami Al-Rfou, Dokook Choe, Noah Constant, Mandy Guo, and
-      Llion Jones. 2018. Character-level lan- guage modeling with deeper
-      self-attention. arXiv preprint arXiv:1808.04444 . Rie Kubota Ando and Tong
-      Zhang. 2005. A framework for learning predictive structures from multiple
-      tasks and unlabeled data. Journal of Machine Learning Research ,
-      6(Nov):1817\u20131853. Luisa Bentivogli, Bernardo Magnini, Ido Dagan, Hoa
-      Trang Dang, and Danilo Giampiccolo. 2009. The \ufb01fth PASCAL recognizing
-      textual entailment challenge. In TAC. NIST. John Blitzer, Ryan McDonald,
-      and Fernando Pereira. 2006. Domain adaptation with structural correspon-
-      dence learning. In Proceedings of the 2006 confer- ence on empirical
-      methods in natural language pro- cessing , pages 120\u2013128. Association
-      for Computa- tional Linguistics. Samuel R. Bowman, Gabor Angeli,
-      Christopher Potts, and Christopher D. Manning. 2015. A large anno- tated
-      corpus for learning natural language inference. InEMNLP . Association for
-      Computational Linguis- tics. Peter F Brown, Peter V Desouza, Robert L
-      Mercer, Vincent J Della Pietra, and Jenifer C Lai. 1992. Class-based
-      n-gram models of natural language. Computational linguistics ,
-      18(4):467\u2013479. Daniel Cer, Mona Diab, Eneko Agirre, Inigo Lopez-
-      Gazpio, and Lucia Specia. 2017. Semeval-2017 task 1: Semantic textual
-      similarity multilingual and crosslingual focused evaluation. In
-      Proceedings of the 11th International Workshop on Semantic Evaluation
-      (SemEval-2017) , pages 1\u201314, Vancou- ver, Canada. Association for
-      Computational Lin- guistics. Ciprian Chelba, Tomas Mikolov, Mike Schuster,
-      Qi Ge, Thorsten Brants, Phillipp Koehn, and Tony Robin- son. 2013. One
-      billion word benchmark for measur- ing progress in statistical language
-      modeling. arXiv preprint arXiv:1312.3005 . Z. Chen, H. Zhang, X. Zhang,
-      and L. Zhao. 2018. Quora question pairs. Christopher Clark and Matt
-      Gardner. 2018. Simple and effective multi-paragraph reading comprehen-
-      sion. In ACL.Kevin Clark, Minh-Thang Luong, Christopher D Man- ning, and
-      Quoc Le. 2018. Semi-supervised se- quence modeling with cross-view
-      training. In Pro- ceedings of the 2018 Conference on Empirical Meth-
-      ods"]'
+      paragraph embeddings (Le and Mikolov, 2014). "]'
 outputs:
   groundedness:
     type: string
@@ -315,6 +256,6 @@ nodes:
     context: ${inputs.context}
     temperature: 0
   provider: AzureOpenAI
-  connection: my_aoai_connection
+  connection: azure_open_ai_connection
   api: chat
   module: promptflow.tools.aoai

@@ -1,4 +1,7 @@
 # Tutorial: Chat with PDF
+
+In this tutorial, we will create a simple flow that mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT. 
+
 ## Overview
 Retrieval Augmented Generation (or RAG) becomes a common pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information. The screenshot below shows how new Bing in Edge sidebar can answer questions based on the page content on the left - in this case is a PDF file.
 ![edge-chat-pdf](assets/edge-chat-pdf.png)
@@ -219,8 +222,7 @@ Evaluation is also a batch run - batch run of evaluation flow with the previous 
 
 **eval_run.yaml:**
 ```yaml
-name: eval_groundedness_default_20230820_200152_009000
-flow: ..//eval_groundedness
+flow: ../../evaluation/groundedness-eval
 run: chat_with_pdf_default_20230820_162219_559000
 column_mapping:
   question: ${run.inputs.question}
