@@ -7,12 +7,10 @@ env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-  pytestMarker: unittest or e2etest
   packageSetupType: promptflow_new_extra
   testWorkingDirectory: src/promptflow
   coveragePath: promptflow
   coverage: false
-  testPath: "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test"
 jobs:
   paths-filter:
     runs-on: ubuntu-latest
@@ -81,10 +79,10 @@ jobs:
         conda activate release-env
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
-          -t "${{ env.testPath }}" \
+          -t "${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test" \
           -l eastus \
-          -m '${{ env.pytestMarker }}' \
-          -n 5
+          -m "unittest or e2etest" \
+          -n 2
     - name: Upload pytest test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
