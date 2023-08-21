@@ -39,7 +39,7 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
 # test with user specified inputs
-pf flow test --flow . --inputs url='https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h'
+pf flow test --flow . --inputs url='https://www.youtube.com/watch?v=kYqRtjDBci8'
 ```
 
 ### 4. Run with multi-line data
@@ -67,7 +67,7 @@ pf run show-details --name $run_name
 
 create `evaluation` run:
 ```bash
-# (Optional) save previous run name into variable, and create a new random run name for furthur use
+# (Optional) save previous run name into variable, and create a new random run name for further use
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 # create run using command line args
@@ -93,7 +93,7 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
 # pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
 
-# (Optional) create a new random run name for furthur use
+# (Optional) create a new random run name for further use
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # create run using yaml file, --name is optional
@@ -106,7 +106,7 @@ pfazure run show-details --name $run_name
 pfazure run show-metrics --name $run_name
 
 
-# (Optional) save previous run name into variable, and create a new random run name for furthur use
+# (Optional) save previous run name into variable, and create a new random run name for further use
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 

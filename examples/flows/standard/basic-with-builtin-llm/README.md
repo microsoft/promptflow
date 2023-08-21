@@ -1,5 +1,5 @@
-# Basic
-A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
+# Basic flow with builtin llm tool
+A basic standard flow that calls Azure OpenAI with builtin llm tool. 
 
 Tools used in this flow：
 - `prompt` tool
@@ -17,6 +17,8 @@ pip install -r requirements.txt
 
 ## Setup connection
 Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+
+Note in this example, we are using [chat api](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chatgpt?pivots=programming-language-chat-completions), please use `gpt-35-turbo` or `gpt-4` model deployment.
 
 Ensure you have created `azure_open_ai_connection` connection before.
 ```bash
@@ -39,7 +41,7 @@ pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<
 pf flow test --flow .
 
 # test with inputs
-pf flow test --flow . --inputs text="Hello World!"
+pf flow test --flow . --inputs text="Python Hello World!"
 ```
 
 ### run with multiple lines data

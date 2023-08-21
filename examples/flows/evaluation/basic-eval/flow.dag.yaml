@@ -26,3 +26,5 @@ nodes:
   inputs:
     processed_results: ${line_process.output}
   aggregation: true
+environment:
+    python_requirements_txt: requirements.txt

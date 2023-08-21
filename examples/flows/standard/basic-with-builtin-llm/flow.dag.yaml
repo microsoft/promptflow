@@ -1,7 +1,7 @@
 inputs:
   text:
     type: string
-    default: Hello World!
+    default: Python Hello World!
 outputs:
   output:
     type: string
@@ -18,12 +18,14 @@ nodes:
   type: llm
   inputs:
     prompt: ${hello_prompt.output}
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     max_tokens: '120'
   source:
     type: code
     path: hello.jinja2
   provider: AzureOpenAI
   connection: azure_open_ai_connection
-  api: completion
+  api: chat
 node_variants: {}
+environment:
+    python_requirements_txt: requirements.txt

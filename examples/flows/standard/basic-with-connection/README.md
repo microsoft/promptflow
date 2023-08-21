@@ -1,5 +1,5 @@
-# Basic
-A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
+# Basic flow with custom connection
+A basic standard flow that using custom python tool calls Azure OpenAI with connection info stored in custom connection. 
 
 Tools used in this flow：
 - `prompt` tool
@@ -41,7 +41,7 @@ pf flow test --flow .
 pf flow test --flow . --inputs text="Hello World!"
 
 # test node with inputs
-pf flow test --flow . --node llm --inputs hello_prompt.output="Write a simple Hello World! program that displays the greeting message when executed."
+pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! program that displays the greeting message when executed."
 
 ```
 

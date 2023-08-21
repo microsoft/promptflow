@@ -1,5 +1,6 @@
 # Intent-copilot
-This example shows how to create a flow from existing langchain [code](./intent.py). 
+This example shows how to create a flow from existing langchain code.
+Reference [code](./intent.py). 
 
 ## Prerequisites
 
@@ -103,8 +104,7 @@ pf run visualize --name $eval_run_name # your evaluation run name
 ```bash
 pf flow serve --source . --port 5123 --host localhost
 ```
-
-TODO: introduce the browser based test app 
+Visit http://localhost:5213 to access the test app.
 
 ### Export
 

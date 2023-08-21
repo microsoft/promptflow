@@ -1,2 +1,4 @@
 *.sqlite
 linux/flow
+linux/connections
+linux/settings.json

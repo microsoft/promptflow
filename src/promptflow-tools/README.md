@@ -1,30 +1,10 @@
-### Test your tool locally
-* Packages to install in order to run tool tests locally:
-    ```cmd
-    pip install promptflow --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-    ```
-* Generate connections config.
-  
-  Firstly, add a connection block in [connections.json.example](connections.json.example) like this:
-  ```json
-  "translate_connection": {
-      "type": "CustomConnection",
-      "value": {
-      "api_key": "translator-api-key",
-      "api_endpoint": "https://api.cognitive.microsofttranslator.com/",
-      "api_region": "global"
-      },
-      "module": "promptflow.connections"
-  },
-  ```
-  Secondly, run below command to generate connections config:
-  ```cmd
-  python scripts\tool\generate_connection_config.py --local
-  ```
-  Fill in the keys and secrets manually in `connections.json` when you run the tool test locally.
-* Write tools tests under [tests folder](tests/). Please also add a test to ensure that tool output is json serializable. Run below command to test:
-    ```cmd
-    pytest src\promptflow-tools\tests\<your_tool_test>.py
-    ```
-* If your tool needs a connection with secrets in it, please use this [workflow](https://github.com/microsoft/promptflow/actions/workflows/tools_secret_upload.yml) to upload secrets in key vault. The secrets you uploaded would be used in [Promptflow Tools Test CI](https://github.com/microsoft/promptflow/actions/workflows/tools_tests.yml). Note that you only need to upload the SECRETS.
-  > [!NOTE] After triggering the flow, kindly request approval from Promptflow Support before proceeding further.
+# Promptflow tools
+
+[![Python package](https://img.shields.io/pypi/v/promptflow-tools)](https://pypi.org/project/promptflow-tools/)
+[![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
+
+## Introduction
+
+Tools are the fundamental building blocks of a flow in Azure Machine Learning Prompt flow. Each tool is a simple, executable unit with a specific function, allowing users to perform various tasks. By combining different tools, users can create a flow that accomplishes a wide range of goals. One of the key benefit of prompt flow tools is their seamless integration with third-party APIs and python open source packages. This not only improves the functionality of large language models but also makes the development process more efficient for developers.
+
+In this package, we provide a set of builtin tools of prompt flow, which are the most commonly used tools in the development of AI applications. We also support users to create their own tools and share them with others. See [Custom tool package creation and usage](https://github.com/Azure/promptflow/blob/main/docs/how-to-guides/how-to-create-and-use-your-own-tool-package.md) for more details.
