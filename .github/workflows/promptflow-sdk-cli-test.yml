@@ -1,0 +1,73 @@
+name: promptflow-sdk-cli-test
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - src/promptflow/**
+      - scripts/**
+  workflow_dispatch:
+env:
+  TENANT_ID: "${{ secrets.TENANT_ID }}"
+  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
+  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
+  packageSetupType: promptflow_new_extra
+  testWorkingDirectory: src/promptflow
+jobs:
+  sdk_cli_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display Env
+      uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
+    - name: Conda Setup
+      uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    - run: |
+        echo ${{ env.packageSetupType }}
+        echo ${{ env.testWorkingDirectory }}
+      shell: bash -l {0}
+    - name: Build wheel
+      uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
+      with:
+        setupType: ${{ env.packageSetupType }}
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Generate Configs
+      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+      with:
+        tenantId: ${{ env.TENANT_ID }}
+        clientId: ${{ env.CLIENT_ID }}
+        clientSecret: ${{ env.CLIENT_SECRET }}
+        targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Run Test
+      shell: bash -l {0}
+      working-directory: ${{ env.testWorkingDirectory }}
+      run: |-
+        set -x -e
+        export IS_IN_CI_PIPELINE="true"
+        az account show
+        conda activate release-env
+        python "../../scripts/building/run_coverage_tests.py" \
+          -p promptflow \
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
+          -l eastus \
+          -m "unittest or e2etest" \
+          -n 2
+    - name: Upload pytest test results
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: pytest-results
+        path: ${{ env.testWorkingDirectory }}/test-results.xml
+      # Use always() to always run this step to publish test results when there are test failures
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      with:
+        files: |
+          ${{ env.testWorkingDirectory }}/test-results.xml
+
+    

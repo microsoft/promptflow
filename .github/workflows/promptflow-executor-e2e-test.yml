@@ -1,0 +1,82 @@
+name: promptflow-executor-e2e-test
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - src/promptflow/**
+      - scripts/**
+  workflow_dispatch:
+env:
+  TENANT_ID: "${{ secrets.TENANT_ID }}"
+  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
+  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
+  packageSetupType: promptflow_open_source
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+jobs:
+  executor_e2e_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display Env
+      uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
+    - name: Conda Setup
+      uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+    - run: |
+        echo ${{ env.packageSetupType }}
+        echo ${{ env.testWorkingDirectory }}
+      shell: bash -l {0}
+    - name: Build wheel
+      uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
+      with:
+        setupType: ${{ env.packageSetupType }}
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Generate Configs
+      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+      with:
+        tenantId: ${{ env.TENANT_ID }}
+        clientId: ${{ env.CLIENT_ID }}
+        clientSecret: ${{ env.CLIENT_SECRET }}
+        targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Run Coverage Test
+      shell: bash -l {0}
+      working-directory: ${{ github.workspace }}
+      run: |-
+        set -x -e
+        export IS_IN_CI_PIPELINE="true"
+        az account show
+        conda activate release-env
+        python scripts/building/run_coverage_tests.py \
+          -p ${{ github.workspace }}/src/promptflow/promptflow \
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests \
+          -l eastus \
+          -m "all" \
+          -n 4 \
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+    - name: Upload pytest test results
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: pytest-results
+        path: 
+          ${{ github.workspace }}/*.xml
+      # Use always() to always run this step to publish test results when there are test failures
+    - name: Publish Test Results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      with:
+        files: |
+          ${{ github.workspace }}/test-results.xml
+    - name: Generate Coverage Report
+      if: (success() || failure())
+      uses: orgoro/coverage@v3.1
+      with:
+        coverageFile: ${{ github.workspace }}/coverage.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        thresholdAll: 0.55
+
+    
