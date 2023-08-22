@@ -6,7 +6,7 @@ This is an experimental feature, and may change at any time. Learn [more](https:
 
 You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score.
 
-In this guide, we use [classification-accuracy-eval](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/classification-accuracy-eval) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
+In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
 
 
 
@@ -38,7 +38,7 @@ After the run is finished, you can evaluate the run with below command, compared
 - `run`: The run name of the flow run to be evaluated.
 
 ```sh
-pf run create --flow evaluation/classification-accuracy-eval --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
+pf run create --flow evaluation/eval-classification-accuracy --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
 ```
 
 Same as the previous run, you can specify the evaluation run name with `--name my_first_eval_run` in above command.
@@ -95,7 +95,7 @@ After the run is finished, you can evaluate the run with below command, compared
   
 ```python
 # set eval flow path
-eval_flow = "evaluation/classification-accuracy-eval"
+eval_flow = "evaluation/eval-classification-accuracy"
 data= "standard/web-classification/data.jsonl"
 
 # run the flow with exisiting run

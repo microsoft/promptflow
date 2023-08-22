@@ -54,7 +54,7 @@ pf run show-details --name $name -r 3
 
 ```bash
 # create evaluation run
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name
+pf run create --flow ../../evaluation/eval-classification-accuracy --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name
 ```
 
 ```bash
