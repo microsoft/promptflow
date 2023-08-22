@@ -44,7 +44,7 @@ jobs:
             echo "env replacement"
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
             mv .env.example .env
-            pf connection create --file .env --name azure_open_ai_connection
+            pf connection create --file .env --name chat_with_pdf_custom_connection
           fi
       - name: Azure Login
         uses: azure/login@v1
