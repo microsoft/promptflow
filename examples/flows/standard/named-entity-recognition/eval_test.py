@@ -3,7 +3,6 @@ import traceback
 import os
 import promptflow.azure as azure
 from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
-from azure.ai.ml import MLClient
 import promptflow
 
 
