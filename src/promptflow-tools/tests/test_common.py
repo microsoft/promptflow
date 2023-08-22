@@ -31,8 +31,8 @@ class TestCommon:
         "function_call, error_message",
         [
             ({"name": "get_current_weather"}, "must be str, bytes or bytearray"),
-            ("{'name': 'get_current_weather'}", "is an invaild json"),
-            ("get_current_weather", "is an invaild json"),
+            ("{'name': 'get_current_weather'}", "is an invalid json"),
+            ("get_current_weather", "is an invalid json"),
             ("123", "function_call parameter '123' must be a dict"),
             ('{"name1": "get_current_weather"}', 'function_call parameter {"name1": "get_current_weather"} must '
                                                  'contain "name" field'),
