@@ -1,21 +1,27 @@
-# flake8: noqa: E402
 import os
-import sys
 
 from promptflow import tool
-from promptflow.connections import CustomConnection
+from promptflow.connections import AzureOpenAIConnection
 
-# append chat_with_pdf to sys.path so code inside it can discover its modules
-sys.path.append(f"{os.path.dirname(__file__)}/chat_with_pdf")
 from chat_with_pdf.utils.lock import acquire_lock
 
 
 @tool
-def setup_env(conn: CustomConnection):
-    if not conn:
+def setup_env(aoai_connection: AzureOpenAIConnection, config: dict):
+    if not aoai_connection or not config:
         return
-    for key in conn:
-        os.environ[key] = conn[key]
+
+    os.environ["OPENAI_API_BASE"] = aoai_connection.api_base
+    os.environ["OPENAI_API_KEY"] = aoai_connection.api_key
+    os.environ["OPENAI_API_VERSION"] = aoai_connection.api_version
+
+    if isinstance(config, str):
+        import json
+        # Workaround if runtime not passing config as dict
+        config = json.loads(config)
+
+    for key in config:
+        os.environ[key] = str(config[key])
 
     with acquire_lock("create_folder.lock"):
         if not os.path.exists(".pdfs"):

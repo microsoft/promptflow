@@ -3,7 +3,7 @@ import faiss
 import os
 
 from utils.aoai import AOAIEmbedding
-from utils.langchain_faiss import LangChainFaissEngine
+from utils.index import FAISSIndex
 from utils.logging import log
 from utils.lock import acquire_lock
 
@@ -13,14 +13,17 @@ def create_faiss_index(pdf_path: str) -> str:
     lock_path = index_persistent_path + ".lock"
     log("Index path: " + os.path.abspath(index_persistent_path))
 
-    chunk_size = int(os.environ.get("CHUNK_SIZE", 1024))
-    chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", 0))
+    chunk_size = int(os.environ.get("CHUNK_SIZE"))
+    chunk_overlap = int(os.environ.get("CHUNK_OVERLAP"))
     log(f"Chunk size: {chunk_size}, chunk overlap: {chunk_overlap}")
 
     with acquire_lock(lock_path):
-        if os.path.exists(index_persistent_path):
+        if os.path.exists(os.path.join(index_persistent_path, "index.faiss")):
             log("Index already exists, bypassing index creation")
             return index_persistent_path
+        else:
+            if not os.path.exists(index_persistent_path):
+                os.makedirs(index_persistent_path)
 
         log("Building index")
         pdf_reader = PyPDF2.PdfReader(pdf_path)
@@ -39,12 +42,10 @@ def create_faiss_index(pdf_path: str) -> str:
 
         log(f"Number of segments: {len(segments)}")
 
-        engine = LangChainFaissEngine(
-            index=faiss.IndexFlatL2(1536), embedding=AOAIEmbedding()
-        )
-        engine.batch_insert_texts(segments)
+        index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=AOAIEmbedding())
+        index.insert_batch(segments)
 
-        engine.save_data_index_to_disk(index_persistent_path)
+        index.save(index_persistent_path)
 
         log("Index built: " + index_persistent_path)
         return index_persistent_path
