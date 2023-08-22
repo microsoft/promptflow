@@ -1,8 +1,11 @@
-# Deploy flows to AzureML managed oneline endpoint for real-time inference with CLI and SDK (preview)
+# Deploy a flow to online endpoint for real-time inference with CLI and SDK (preview)
 
-In this article, you'll learn to deploy your flow to a managed online endpoint for use in real-time inferencing with AzureML v2 SDK or CLI.
+In this article, you'll learn to deploy your flow to a [managed online endpoint](https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2#managed-online-endpoints-vs-kubernetes-online-endpoints) or a [Kubernetes oneline endpoint](https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2#managed-online-endpoints-vs-kubernetes-online-endpoints) for use in real-time inferencing with AzureML v2 CLI.
 
 The starting point is that you have tested your flow properly, and feel confident that it is ready to be deployed to production. If you haven't done so, please refer to [test your flow](../test-your-flow.md) for more details. Then you'll learn how to create managed online endpoint and deployment, and how to use the endpoint for real-time inferencing.
+
+- For **CLI** experience, all the sample yaml files can be found [here](https://aka.ms/pf-deploy-mir-cli).
+- For **Python SDK** experience, sample notebook is [here](https://aka.ms/pf-deploy-mir-sdk).
 
 ## Prerequisites
 
@@ -19,9 +22,6 @@ For managed online endpoints, Azure Machine Learning reserves 20% of your comput
 Each flow will have a folder which contains codes/prompts, definition and other artifacts of the flow. If you have developed your flow with UI, you can download the flow folder from the flow details page. If you have developed your flow with CLI or SDK, you should have the flow folder already. 
 
 This article will use the [sample flow "basic-chat"](../../examples/flows/chat/basic-chat) as an example to deploy to AzureML managed online endpoint. 
-
-- For **CLI** experience, all the sample yaml files can be found [here](https://aka.ms/pf-deploy-mir-cli).
-- For **Python SDK** experience, sample notebook is [here](https://aka.ms/pf-deploy-mir-sdk).
 
 ## Set default workspace
 
