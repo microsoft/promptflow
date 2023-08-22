@@ -16,7 +16,7 @@ KVUri = f"https://{key_vault_name}.vault.azure.net"
 
 def init_used_secret_names(client: SecretClient):
     global reserved_secret_names
-    reserved_secret_names = list_secret_names(client)
+    reserved_secret_names = list_names(client)
 
 
 def get_secret_client(
@@ -37,7 +37,7 @@ def get_secret(secret_name: str, client: SecretClient):
     return secret.value
 
 
-def list_secret_names(client: SecretClient) -> list:
+def list_names(client: SecretClient) -> list:
     secret_properties = client.list_properties_of_secrets()
 
     return [secret.name for secret in secret_properties]
@@ -49,7 +49,7 @@ def delete_secret(secret_name: str, client: SecretClient):
 
 
 def delete_useless_secrets(client: SecretClient):
-    all_secret_names = list_secret_names(client)
+    all_secret_names = list_names(client)
     print(f"All secrets names: {all_secret_names}")
     print(f"Reserved secret names: {reserved_secret_names}")
     useless_secrets = [
