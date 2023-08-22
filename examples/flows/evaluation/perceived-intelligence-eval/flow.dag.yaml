@@ -1,5 +1,4 @@
-id: eval_perceived_intelligence
-name: Perceived Intelligence Evaluation Flow
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: requirements.txt
 inputs:
