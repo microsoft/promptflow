@@ -20,8 +20,8 @@ Each flow will have a folder which contains codes/prompts, definition and other 
 
 This article will use the [sample flow "basic-chat"](../../examples/flows/chat/basic-chat) as an example to deploy to AzureML managed online endpoint. 
 
-- For **CLI** experience, all the sample yaml files can be found [here](../media/deploy-to-aml-code/cli).
-- For **Python SDK** experience, sample notebook is [here](../media/deploy-to-aml-code/sdk/deploy.ipynb).
+- For **CLI** experience, all the sample yaml files can be found [here](https://aka.ms/pf-deploy-mir-cli).
+- For **Python SDK** experience, sample notebook is [here](https://aka.ms/pf-deploy-mir-sdk).
 
 ## Set default workspace
 
