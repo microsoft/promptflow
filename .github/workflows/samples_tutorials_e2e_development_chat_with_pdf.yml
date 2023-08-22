@@ -51,7 +51,7 @@ jobs:
         working-directory: examples/tutorials/e2e-development
         run: |
           if [[ -e .env ]]; then
-            pf connection create --file .env --name chat_with_pdf_custom_connection
+            pf connection create --file .env --name azure_open_ai_connection
             pf connection list
           fi
           
