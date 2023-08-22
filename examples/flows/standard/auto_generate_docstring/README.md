@@ -15,15 +15,20 @@ In this flow, you will learn
 - How to use asynchronous multiple coroutine approach to request LLM API.
 - How to construct a prompt.
 
-## Getting started
+## Prerequisites
 
-### Local execution
-#### Create .env file in this folder with below content
+Install promptflow sdk and other dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Execute with python command
+#### Create `.env` file in this folder with below content
 ```
 OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
 OPENAI_API_VERSION=2023-03-15-preview
-MODULE=gpt-35-turbo # default is gpt-35-turbo.  
+MODULE=gpt-3.5-turbo # default is gpt-3.5-turbo.  
 ```
 
 #### Run the command line
@@ -34,7 +39,7 @@ A webpage will be generated, displaying diff:
 ![result](result.png)
 
 
-### Execute with Promptflow
+## Execute with Promptflow
 #### Create connection for LLM to use
 Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
 
@@ -59,9 +64,6 @@ pf flow test --flow .
 
 # run flow with file path
 pf flow test --flow . --inputs code_path="./demo_code.py"
-
-# start a interactive chat session in CLI
-pf flow test --flow . --interactive
 
 # start a interactive chat session in CLI with verbose info
 pf flow test --flow . --interactive --verbose

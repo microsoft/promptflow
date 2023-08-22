@@ -1,11 +1,15 @@
 import ast
 import asyncio
 import logging
+import os
 import sys
+from typing import Union
+from dataclasses import asdict
 from promptflow import tool
 from azure_open_ai import ChatLLM
 from divider import Divider
 from prompt import docstring_prompt, PromptLimitException
+from promptflow.connections import CustomConnection, AzureOpenAIConnection
 
 
 def get_imports(content):
@@ -25,7 +29,7 @@ def get_imports(content):
 
 
 async def agenerate_docstring(divided: list[str]):
-    llm = ChatLLM(module="gpt-35-turbo")
+    llm = ChatLLM()
     divided = list(reversed(divided))
     all_divided = []
 
@@ -73,7 +77,23 @@ async def agenerate_docstring(divided: list[str]):
 
 
 @tool
-def generate_docstring(divided: list[str]):
+def generate_docstring(divided: list[str],
+                       connection: Union[CustomConnection, AzureOpenAIConnection] = {},
+                       module: str = None):
+    if isinstance(connection, AzureOpenAIConnection):
+        connection_dict = asdict(connection)
+    else:
+        # custom connection is dict like object contains the configs and secrets
+        connection_dict = dict(connection)
+    if connection_dict.get("api_key"):
+        os.environ["OPENAI_API_KEY"] = connection_dict["api_key"]
+    if connection_dict.get("api_base"):
+        os.environ["OPENAI_API_BASE"] = connection_dict["api_base"]
+    if connection_dict.get("api_version"):
+        os.environ["OPENAI_API_VERSION"] = connection_dict["api_version"]
+    if module:
+        os.environ["MODULE"] = module
+
     if sys.platform.startswith("win"):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     return asyncio.run(agenerate_docstring(divided))

@@ -28,14 +28,14 @@ nodes:
     path: generate_docstring_tool.py
   inputs:
     divided: ${divide_code.output}
+    connection: azure_open_ai_connection
+    module: gpt-35-turbo
 - name: combine_code
-  type: python
+  type: prompt
   source:
     type: code
-    path: combine_code_tool.py
+    path: combine_code.jinja2
   inputs:
     divided: ${generate_docstring.output}
-id: auto_generate_docstring_flow
-name: Auto Generate Docstring Flow
 environment:
   python_requirements_txt: requirements.txt
