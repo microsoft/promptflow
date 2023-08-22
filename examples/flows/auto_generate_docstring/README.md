@@ -19,17 +19,23 @@ In this flow, you will learn
 
 ### Local execution
 #### Create .env file in this folder with below content
-`OPENAI_API_BASE=<AOAI_endpoint>
+```
+OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
 OPENAI_API_VERSION=2023-03-15-preview
-MODULE=gpt-35-turbo # default is gpt-35-turbo.`
+MODULE=gpt-35-turbo # default is gpt-35-turbo.  
+```
 
 #### Run the command line
-`python main.py --file <your_file_path>`
+`python main.py --file <your_file_path>`  
 **Note**: the file path should be a python file path, default is `./demo_code.py`.
 
-### Execut with Promptflow
-#### 1 Create connection for LLM to use
+A webpage will be generated, displaying diff:
+![result](./result.png)
+
+
+### Execute with Promptflow
+#### Create connection for LLM to use
 Go to "Prompt flow" "Connections" tab. Click on "Create" button, select one of LLM tool supported connection types and fill in the configurations.
 
 Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
@@ -45,7 +51,7 @@ Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open
 pf connection show --name azure_open_ai_connection
 ```
 
-#### 2 Start flow
+#### Start flow
 
 ```bash
 # run flow with default file path in flow.dag.yaml

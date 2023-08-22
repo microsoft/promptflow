@@ -3,7 +3,7 @@ import asyncio
 import logging
 import sys
 from promptflow import tool
-from AzureOpenAi import ChatLLM
+from azure_open_ai import ChatLLM
 from divider import Divider
 from prompt import docstring_prompt, PromptLimitException
 
