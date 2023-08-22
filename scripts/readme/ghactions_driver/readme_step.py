@@ -99,7 +99,7 @@ class CreateAoaiFromYaml(Step):
 
 class ExtractStepsAndRun(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Extract Steps")
+        Step.__init__(self, f"Extract Steps {ReadmeSteps.readme_name}")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_extract_steps_and_run.yml.jinja2")
@@ -107,14 +107,14 @@ class ExtractStepsAndRun(Step):
             {
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
-                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+                "readme_name": ReadmeSteps.readme_name,
             }
         )
 
 
 class ExtractStepsAndRunGPTFour(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Extract Steps")
+        Step.__init__(self, f"Extract Steps {ReadmeSteps.readme_name}")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template(
@@ -124,7 +124,7 @@ class ExtractStepsAndRunGPTFour(Step):
             {
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
-                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+                "readme_name": ReadmeSteps.readme_name,
             }
         )
 
@@ -176,6 +176,7 @@ class ReadmeSteps:
     """
 
     step_array = []  # Record steps
+    readme_name = ""  # Record readme name
     working_dir = ""  # the working directory of flow, relative to git_base_dir
     template = ""  # Select a base template under workflow_templates folder
     workflow = ""  # Target workflow name to be generated
@@ -231,7 +232,9 @@ class ReadmeSteps:
     # endregion steps
 
     @staticmethod
-    def setup_target(working_dir: str, template: str, target: str) -> str:
+    def setup_target(
+        working_dir: str, template: str, target: str, readme_name: str
+    ) -> str:
         """
         Used at the very head of jinja template to indicate basic information
         """
@@ -239,6 +242,7 @@ class ReadmeSteps:
         ReadmeSteps.template = template
         ReadmeSteps.workflow = target
         ReadmeSteps.step_array = []
+        ReadmeSteps.readme_name = readme_name
         return ""
 
     @staticmethod
@@ -308,3 +312,4 @@ class ReadmeStepsManage:
         output_telemetry.workflow_name = workflow_name
         output_telemetry.target_path = target_path
         output_telemetry.readme_folder = ReadmeSteps.working_dir
+        output_telemetry.readme_name = ReadmeSteps.readme_name
