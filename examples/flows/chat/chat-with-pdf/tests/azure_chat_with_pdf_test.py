@@ -1,7 +1,6 @@
 import unittest
 import promptflow.azure as azure
 from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
-from azure.ai.ml import MLClient
 from base_test import BaseTest
 import time
 import os
