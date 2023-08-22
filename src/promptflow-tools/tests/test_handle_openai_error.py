@@ -26,7 +26,7 @@ class TestHandleOpenAIError:
     def test_aoai_chat_message_invalid_format(self, aoai_provider):
         # chat api prompt should follow the format of "system:\nmessage1\nuser:\nmessage2".
         prompt = "what is your name"
-        error_codes = "UserError/OpenAIError/AuthenticationError"
+        error_codes = "UserError/OpenAIError/ChatAPIInvalidRole"
         with pytest.raises(ChatAPIInvalidRole,
                            match="The Chat API requires a specific format for prompt") as exc_info:
             aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
