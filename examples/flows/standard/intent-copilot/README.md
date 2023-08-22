@@ -59,7 +59,7 @@ pf run create --flow ../../evaluation/eval-classification-accuracy --data ./data
 
 ```bash
 # get the evaluation run in previous step
-eval_run_name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1 | tr -d '"')
+eval_run_name=$(pf run list | jq '.[] | select(.name | contains("eval_classification_accuracy")) | .name'| head -n 1 | tr -d '"')
 # show run
 pf run show --name $eval_run_name
 # show run output
