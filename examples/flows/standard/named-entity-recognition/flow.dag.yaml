@@ -1,0 +1,36 @@
+inputs:
+  entity_type:
+    type: string
+    default: job title
+  text:
+    type: string
+    default: Maxime is a data scientist at Auto Dataset, and his wife is a finance
+      manager in the same company.
+outputs:
+  entities:
+    type: string
+    reference: ${cleansing.output}
+nodes:
+- name: NER_LLM
+  type: llm
+  source:
+    type: code
+    path: NER_LLM.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    max_tokens: 64
+    text: ${inputs.text}
+    entity_type: ${inputs.entity_type}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+- name: cleansing
+  type: python
+  source:
+    type: code
+    path: cleansing.py
+  inputs:
+    entities_str: ${NER_LLM.output}
+environment:
+  python_requirements_txt: requirements.txt

@@ -1,11 +1,9 @@
-# flake8: noqa: E402
-
 import argparse
 from dotenv import load_dotenv
 import os
-import sys
 
 from qna import qna
+from find_context import find_context
 from rewrite_question import rewrite_question
 from build_index import create_faiss_index
 from download import download
@@ -13,7 +11,6 @@ from utils.lock import acquire_lock
 
 
 def chat_with_pdf(question: str, pdf_url: str, history: list):
-
     with acquire_lock("create_folder.lock"):
         if not os.path.exists(".pdfs"):
             os.mkdir(".pdfs")
@@ -23,7 +20,8 @@ def chat_with_pdf(question: str, pdf_url: str, history: list):
     pdf_path = download(pdf_url)
     index_path = create_faiss_index(pdf_path)
     q = rewrite_question(question, history)
-    stream, context = qna(q, index_path, history)
+    prompt, context = find_context(q, index_path)
+    stream = qna(prompt, history)
 
     return stream, context
 
@@ -38,12 +36,8 @@ def print_stream_and_return_full_answer(stream):
     return answer
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Ask questions about a PDF file")
-    parser.add_argument("url", help="URL to the PDF file")
-    args = parser.parse_args()
-
-    load_dotenv()
+def main_loop(url: str):
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
     history = []
     while True:
@@ -51,9 +45,9 @@ def main():
         if question == "q!":
             break
 
-        print("\033[92m" + "$Bot: " + "\033[0m", end=" ", flush=True)
-        stream, context = chat_with_pdf(question, args.url, history)
+        stream, context = chat_with_pdf(question, url, history)
 
+        print("\033[92m" + "$Bot: " + "\033[0m", end=" ", flush=True)
         answer = print_stream_and_return_full_answer(stream)
         history = history + [
             {"role": "user", "content": question},
@@ -61,5 +55,13 @@ def main():
         ]
 
 
+def main():
+    parser = argparse.ArgumentParser(description="Ask questions about a PDF file")
+    parser.add_argument("url", help="URL to the PDF file")
+    args = parser.parse_args()
+
+    main_loop(args.url)
+
+
 if __name__ == "__main__":
-    main()
+    main_loop("https://arxiv.org/pdf/1810.04805.pdf")

@@ -22,6 +22,13 @@
 
 ## CLI examples
 
+### Tutorials ([tutorials](tutorials))
+
+| path | status | description |
+------|--------|-------------
+| [chat-with-pdf](tutorials/e2e-development/chat-with-pdf.md) | [![samples_tutorials_e2e_development_chat_with_pdf](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml) |  In this tutorial, we will create a simple flow that mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT |
+
+
 ### Flows ([flows](flows))
 
 #### [Standard flows](flows/standard/) 
@@ -34,6 +41,7 @@
 | [flow-with-additional-includes](flows/standard/flow-with-additional-includes/README.md) | [![samples_flows_standard_flow_with_additional_includes](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_additional_includes.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_additional_includes.yml) |  User sometimes need to reference some common files or folders, this sample demos how to solve the problem using additional_includes |
 | [flow-with-symlinks](flows/standard/flow-with-symlinks/README.md) | [![samples_flows_standard_flow_with_symlinks](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_symlinks.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_symlinks.yml) |  User sometimes need to reference some common files or folders, this sample demos how to solve the problem using symlinks |
 | [intent-copilot](flows/standard/intent-copilot/README.md) | [![samples_flows_standard_intent_copilot](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_intent_copilot.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_intent_copilot.yml) |  This example shows how to create a flow from existing langchain code |
+| [named-entity-recognition](flows/standard/named-entity-recognition/README.md) | [![samples_flows_standard_named_entity_recognition](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_named_entity_recognition.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_named_entity_recognition.yml) |  A flow that perform named entity recognition task |
 | [summarizing-film-with-autogpt](flows/standard/summarizing-film-with-autogpt/README.md) | [![samples_flows_standard_summarizing_film_with_autogpt](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_summarizing_film_with_autogpt.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_summarizing_film_with_autogpt.yml) | This is a flow showcasing how to construct a AutoGPT flow to autonomously figures out how to apply the given functionsto solve the goal, which is film trivia that provides accurate and up-to-date information about movies, directors, actors, and more in this sample |
 | [web-classification](flows/standard/web-classification/README.md) | [![samples_flows_standard_web_classification](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_web_classification.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_web_classification.yml) |  This is a flow demonstrating multi-class classification with LLM |
 
@@ -44,6 +52,9 @@
 ------|--------|-------------
 | [basic-eval](flows/evaluation/basic-eval/README.md) | [![samples_flows_evaluation_basic_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_basic_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_basic_eval.yml) |  This example shows how to create a basic evaluation flow |
 | [classification-accuracy-eval](flows/evaluation/classification-accuracy-eval/README.md) | [![samples_flows_evaluation_classification_accuracy_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_classification_accuracy_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_classification_accuracy_eval.yml) |  This is a flow illustrating how to evaluate the performance of a classification system |
+| [eval-entity-match-rate](flows/evaluation/eval-entity-match-rate/README.md) | [![samples_flows_evaluation_eval_entity_match_rate](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_eval_entity_match_rate.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_eval_entity_match_rate.yml) |  This is a flow evaluates: entity match rate |
+| [groundedness-eval](flows/evaluation/groundedness-eval/README.md) | [![samples_flows_evaluation_groundedness_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_groundedness_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_groundedness_eval.yml) |  This is a flow leverage llm to eval groundedness: whether answer is stating facts that are all present in the given context |
+| [perceived-intelligence-eval](flows/evaluation/perceived-intelligence-eval/README.md) | [![samples_flows_evaluation_perceived_intelligence_eval](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_perceived_intelligence_eval.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_evaluation_perceived_intelligence_eval.yml) |  This is a flow leverage llm to eval percieved intelligence |
 
 
 #### [Chat flows](flows/chat/)

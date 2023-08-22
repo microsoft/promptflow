@@ -34,7 +34,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r ${{ github.workspace }}/examples/requirements.txt
           pip install -r ${{ github.workspace }}/examples/dev_requirements.txt
-      - name: Create Aoai Connection
+      - name: Create Chat With PDF Custom Connection
         working-directory: examples/flows/chat/chat-with-pdf
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
@@ -45,6 +45,14 @@ jobs:
             sed -i -e "s/<your_AOAI_key>/$AOAI_API_KEY/g" -e "s/<your_AOAI_endpoint>/$AOAI_API_ENDPOINT/g" .env.example
             mv .env.example .env
             pf connection create --file .env --name chat_with_pdf_custom_connection
+          fi
+      - name: Create AOAI Connection
+        working-directory: examples/flows/chat/chat-with-pdf
+        run: |
+          AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
+          AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
+          if [[ -e azure_openai.yml ]]; then
+            pf connection create --file azure_openai.yml --set api_key=$AOAI_API_KEY api_base=$AOAI_API_ENDPOINT
           fi
       - name: Azure Login
         uses: azure/login@v1
