@@ -25,7 +25,7 @@ OPENAI_API_VERSION=2023-03-15-preview
 MODULE=gpt-35-turbo # default is gpt-35-turbo.`
 
 #### Run the command line
-`python main.py --file_path <your_file_path>`
+`python main.py --file <your_file_path>`
 **Note**: the file path should be a python file path, default is `./demo_code.py`.
 
 ### Execut with Promptflow
