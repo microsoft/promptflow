@@ -1,6 +1,5 @@
 import pytest
 
-from promptflow.exceptions import ErrorResponse
 from promptflow.tools.embedding import embedding
 from promptflow.tools.exception import InvalidConnectionType
 
@@ -23,7 +22,7 @@ class TestEmbedding:
         assert len(result) == 1536
 
     def test_embedding_invalid_connection_type(self, serp_connection):
+        error_codes = "UserError/ToolValidationError/InvalidConnectionType"
         with pytest.raises(InvalidConnectionType) as exc_info:
             embedding(connection=serp_connection, input="hello", deployment_name="text-embedding-ada-002")
-        assert "UserError/ToolValidationError/InvalidConnectionType" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
+        assert exc_info.value.error_codes == error_codes.split("/")

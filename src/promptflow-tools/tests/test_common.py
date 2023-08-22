@@ -1,6 +1,5 @@
 import pytest
 
-from promptflow.exceptions import ErrorResponse
 from promptflow.tools.common import parse_function_role_prompt, ChatAPIInvalidFunctions, validate_functions, \
     process_function_call
 
@@ -22,30 +21,29 @@ class TestCommon:
         ],
     )
     def test_chat_api_invalid_functions(self, functions, error_message):
+        error_codes = "UserError/ToolValidationError/ChatAPIInvalidFunctions"
         with pytest.raises(ChatAPIInvalidFunctions) as exc_info:
             validate_functions(functions)
         assert error_message in exc_info.value.message
-        assert "UserError/ToolValidationError/ChatAPIInvalidFunctions" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.parametrize(
         "function_call, error_message",
         [
             ({"name": "get_current_weather"}, "must be str, bytes or bytearray"),
-            ("{'name': 'get_current_weather'}", "is an invaild json"),
-            ("get_current_weather", "is an invaild json"),
+            ("{'name': 'get_current_weather'}", "is an invalid json"),
+            ("get_current_weather", "is an invalid json"),
             ("123", "function_call parameter '123' must be a dict"),
             ('{"name1": "get_current_weather"}', 'function_call parameter {"name1": "get_current_weather"} must '
                                                  'contain "name" field'),
         ],
     )
     def test_chat_api_invalid_function_call(self, function_call, error_message):
+        error_codes = "UserError/ToolValidationError/ChatAPIInvalidFunctions"
         with pytest.raises(ChatAPIInvalidFunctions) as exc_info:
             process_function_call(function_call)
-
         assert error_message in exc_info.value.message
-        assert "UserError/ToolValidationError/ChatAPIInvalidFunctions" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_parse_function_role_prompt(self):
         function_str = "name:\n get_location  \n\ncontent:\nBoston\nabc"
