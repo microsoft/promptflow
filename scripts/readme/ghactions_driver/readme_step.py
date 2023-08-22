@@ -99,7 +99,7 @@ class CreateAoaiFromYaml(Step):
 
 class ExtractStepsAndRun(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Extract Steps")
+        Step.__init__(self, f"Extract Steps {ReadmeSteps.readme_name}")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_extract_steps_and_run.yml.jinja2")
@@ -114,7 +114,7 @@ class ExtractStepsAndRun(Step):
 
 class ExtractStepsAndRunGPTFour(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Extract Steps")
+        Step.__init__(self, f"Extract Steps {ReadmeSteps.readme_name}")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template(

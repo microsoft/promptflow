@@ -59,7 +59,7 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps
+      - name: Extract Steps examples/flows/standard/basic/README.md
         working-directory: ${{ github.workspace }}
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/basic/README.md -o examples/flows/standard/basic

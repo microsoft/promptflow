@@ -18,20 +18,7 @@ pip install -r requirements.txt
 ```
 
 ## Get started
-### Create .env file in this folder with below content
-```
-OPENAI_API_BASE=<AOAI_endpoint>
-OPENAI_API_KEY=<AOAI_key>
-OPENAI_API_VERSION=2023-03-15-preview
-EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
-CHAT_MODEL_DEPLOYMENT_NAME=gpt-35-turbo
-PROMPT_TOKEN_LIMIT=3000
-MAX_COMPLETION_TOKENS=256
-VERBOSE=false
-CHUNK_SIZE=1024
-CHUNK_OVERLAP=64
-```
-Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
+### Create connection in this folder
 
 ```bash
 # create connection needed by flow
