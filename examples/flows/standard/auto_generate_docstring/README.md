@@ -31,7 +31,7 @@ MODULE=gpt-35-turbo # default is gpt-35-turbo.
 **Note**: the file path should be a python file path, default is `./demo_code.py`.
 
 A webpage will be generated, displaying diff:
-![result](./result.png)
+![result](result.png)
 
 
 ### Execute with Promptflow
