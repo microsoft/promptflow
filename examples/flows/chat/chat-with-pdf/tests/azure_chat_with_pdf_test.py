@@ -71,9 +71,8 @@ class TestChatWithPDFAzure(BaseTest):
         self.assertGreater(details.shape[0], 2)
 
         metrics, elapsed = self.wait_for_metrics(eval2k_groundedness)
-        # TODO: fix this
-        # self.assertGreaterEqual(metrics["groundedness"], 0.0)
-        # self.assertLessEqual(elapsed, 5)  # metrics should be available within 5 seconds
+        self.assertGreaterEqual(metrics["groundedness"], 0.0)
+        self.assertLessEqual(elapsed, 5)  # metrics should be available within 5 seconds
 
         display_name = "eval_perceived_intelligence_2k_context"
         eval2k_pi = self.create_eval_run(
@@ -94,9 +93,8 @@ class TestChatWithPDFAzure(BaseTest):
         self.assertGreater(details.shape[0], 2)
 
         metrics, elapsed = self.wait_for_metrics(eval2k_pi)
-        # TODO: fix this
-        # self.assertGreaterEqual(metrics["perceived_intelligence_score"], 0.0)
-        # self.assertLessEqual(elapsed, 5)  # metrics should be available within 5 seconds
+        self.assertGreaterEqual(metrics["perceived_intelligence_score"], 0.0)
+        self.assertLessEqual(elapsed, 5)  # metrics should be available within 5 seconds
 
     def test_bulk_run_valid_mapping(self):
         data = os.path.join(self.flow_path, "data/bert-paper-qna-1-line.jsonl")

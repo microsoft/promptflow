@@ -11,3 +11,7 @@ image_tag=$docker_image_tag
 
 echo "Start pushing image...$image_tag"
 docker push "$image_tag"
+
+# docker build -t chat_with_pdf .
+# docker tag chat_with_pdf docker.io/modulesdkpreview/chat_with_pdf
+# docker push docker.io/modulesdkpreview/chat_with_pdf

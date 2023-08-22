@@ -43,7 +43,8 @@ class TestChatWithPDF(BaseTest):
         self.pf.stream(run)  # wait for completion
         self.assertEqual(run.status, "Completed")
 
-        eval = self.create_eval_run(
+        display_name = 'groundedness_eval'
+        eval_run = self.create_eval_run(
             self.eval_groundedness_flow_path,
             run,
             {
@@ -51,17 +52,18 @@ class TestChatWithPDF(BaseTest):
                 "answer": "${run.outputs.answer}",
                 "context": "${run.outputs.context}",
             },
+            display_name=display_name,
         )
-        self.pf.stream(eval)  # wait for completion
-        self.assertEqual(eval.status, "Completed")
+        self.pf.stream(eval_run)  # wait for completion
+        self.assertEqual(eval_run.status, "Completed")
 
-        details = self.pf.get_details(eval)
+        details = self.pf.get_details(eval_run)
         self.assertEqual(details.shape[0], 1)
 
-        metrics = self.pf.get_metrics(eval)
+        metrics = self.pf.get_metrics(eval_run)
         self.assertGreaterEqual(metrics["groundedness"], 0.0)
 
-        eval = self.create_eval_run(
+        eval_run = self.create_eval_run(
             self.eval_perceived_intelligence_flow_path,
             run,
             {
@@ -69,14 +71,15 @@ class TestChatWithPDF(BaseTest):
                 "answer": "${run.outputs.answer}",
                 "context": "${run.outputs.context}",
             },
+            display_name=display_name,
         )
-        self.pf.stream(eval)  # wait for completion
-        self.assertEqual(eval.status, "Completed")
+        self.pf.stream(eval_run)  # wait for completion
+        self.assertEqual(eval_run.status, "Completed")
 
-        details = self.pf.get_details(eval)
+        details = self.pf.get_details(eval_run)
         self.assertEqual(details.shape[0], 1)
 
-        metrics = self.pf.get_metrics(eval)
+        metrics = self.pf.get_metrics(eval_run)
         self.assertGreaterEqual(metrics["perceived_intelligence_score"], 0.0)
 
     def test_bulk_run_valid_mapping(self):
