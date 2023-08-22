@@ -3,6 +3,6 @@ from file import File
 
 
 @tool
-def load_code(code_path: str):
-    file = File(code_path)
+def load_code(source: str):
+    file = File(source)
     return file.content

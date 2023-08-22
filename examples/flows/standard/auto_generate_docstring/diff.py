@@ -13,7 +13,6 @@ def show_diff(left_content, right_content, name="file"):
         numlines=20)
     html = html.encode()
     html_name = name + "_diff.html"
-    fp = open(html_name, "w+b")
-    fp.write(html)
+    with open(html_name, "w+b") as fp:
+        fp.write(html)
     webbrowser.open(html_name)
-    fp.close()

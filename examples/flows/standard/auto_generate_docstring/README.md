@@ -32,8 +32,8 @@ MODULE=gpt-3.5-turbo # default is gpt-3.5-turbo.
 ```
 
 #### Run the command line
-`python main.py --file <your_file_path>`  
-**Note**: the file path should be a python file path, default is `./demo_code.py`.
+`python main.py --source <your_file_path>`  
+**Note**: the file path should be a python file path, default is `./azure_open_ai.py`.
 
 A webpage will be generated, displaying diff:
 ![result](result.png)
@@ -63,9 +63,11 @@ pf connection show --name azure_open_ai_connection
 pf flow test --flow . 
 
 # run flow with file path
-pf flow test --flow . --inputs code_path="./demo_code.py"
+pf flow test --flow . --inputs source="./demo_code.py"
+```
 
-# start a interactive chat session in CLI with verbose info
-pf flow test --flow . --interactive --verbose
+```bash
+# run flow with batch data
+pf run create --flow . --data ./data.jsonl --name auto_generate_docstring
 ```
 

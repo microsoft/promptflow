@@ -1,5 +1,5 @@
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 promptflow[azure]
-promptflow-tools==0.0.1.dev0
+promptflow-tools
 python-dotenv
 jinja2

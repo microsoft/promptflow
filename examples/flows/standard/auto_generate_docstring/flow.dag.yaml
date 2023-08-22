@@ -1,7 +1,7 @@
 inputs:
-  code_path:
+  source:
     type: string
-    default: ./demo_code.py
+    default: ./azure_open_ai.py
 outputs:
   code:
     type: string
@@ -13,7 +13,7 @@ nodes:
     type: code
     path: load_code_tool.py
   inputs:
-    code_path: ${inputs.code_path}
+    source: ${inputs.source}
 - name: divide_code
   type: python
   source:
