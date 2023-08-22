@@ -12,7 +12,7 @@ from openai.error import (
 )
 from pytest_mock import MockerFixture
 
-from promptflow.exceptions import UserErrorException, ErrorResponse
+from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import chat, completion
 
 from promptflow.tools.common import handle_openai_error
@@ -26,11 +26,11 @@ class TestHandleOpenAIError:
     def test_aoai_chat_message_invalid_format(self, aoai_provider):
         # chat api prompt should follow the format of "system:\nmessage1\nuser:\nmessage2".
         prompt = "what is your name"
+        error_codes = "UserError/OpenAIError/AuthenticationError"
         with pytest.raises(ChatAPIInvalidRole,
                            match="The Chat API requires a specific format for prompt") as exc_info:
             aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
-        assert "UserError/ToolValidationError/ChatAPIInvalidRole" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_authencation_error_with_bad_api_key(self, azure_open_ai_connection):
         azure_open_ai_connection.api_key = "hello"
@@ -41,11 +41,11 @@ class TestHandleOpenAIError:
             "correct regional API endpoint for your resource."
         )
         error_msg = to_openai_error_message(AuthenticationError(message=raw_message))
-        error_code = "UserError/OpenAIError/AuthenticationError"
+        error_codes = "UserError/OpenAIError/AuthenticationError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert error_msg == exc_info.value.message
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_connection_error_with_bad_api_base(self, azure_open_ai_connection):
         """
@@ -56,11 +56,11 @@ class TestHandleOpenAIError:
         """
         azure_open_ai_connection.api_base = "https://gpt-test-eus11.openai.azure.com/"
         prompt_template = "please complete this sentence: world war II "
-        error_code = "UserError/OpenAIError/APIConnectionError"
+        error_codes = "UserError/OpenAIError/APIConnectionError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert openai_error_code_ref_message in exc_info.value.message
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_invalid_request_error_with_bad_api_version(self, azure_open_ai_connection):
         """InvalidRequestError: Resource not found"""
@@ -68,12 +68,12 @@ class TestHandleOpenAIError:
         prompt_template = "please complete this sentence: world war II "
         raw_message = "Resource not found"
         error_msg = to_openai_error_message(InvalidRequestError(message=raw_message, param=None))
-        error_code = "UserError/OpenAIError/InvalidRequestError"
+        error_codes = "UserError/OpenAIError/InvalidRequestError"
         # Chat will throw: Exception occurs: InvalidRequestError: Resource not found
         with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert error_msg == exc_info.value.message
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_invalid_request_error_with_bad_api_type(self, azure_open_ai_connection):
         """
@@ -87,11 +87,11 @@ class TestHandleOpenAIError:
             "'azure', 'azure_ad', 'open_ai'"
         )
         error_msg = to_openai_error_message(InvalidAPIType(message=raw_message))
-        error_code = "UserError/OpenAIError/InvalidAPIType"
+        error_codes = "UserError/OpenAIError/InvalidAPIType"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             chat(azure_open_ai_connection, prompt=f"user:\n{prompt_template}", deployment_name="gpt-35-turbo")
         assert error_msg == exc_info.value.message
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_aoai_invalid_request_error_with_bad_deployment(self, aoai_provider):
         """
@@ -106,31 +106,31 @@ class TestHandleOpenAIError:
             "within the last 5 minutes, please wait a moment and try again."
         )
         error_msg = to_openai_error_message(InvalidRequestError(message=raw_message, param=None))
-        error_code = "UserError/OpenAIError/InvalidRequestError"
+        error_codes = "UserError/OpenAIError/InvalidRequestError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             aoai_provider.chat(prompt=f"user:\n{prompt_template}", deployment_name=deployment)
         assert error_msg == exc_info.value.message
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_rate_limit_error_insufficient_quota(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = RateLimitError("Something went wrong", json_body={"error": {"type": "insufficient_quota"}})
         mock_method = mocker.patch("promptflow.tools.aoai.openai.Completion.create", side_effect=dummyEx)
-        error_code = "UserError/OpenAIError/RateLimitError"
+        error_codes = "UserError/OpenAIError/RateLimitError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="text-ada-001")
         assert to_openai_error_message(dummyEx) == exc_info.value.message
         assert mock_method.call_count == 1
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_non_retriable_connection_error(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = APIConnectionError("Something went wrong")
         mock_method = mocker.patch("promptflow.tools.aoai.openai.Completion.create", side_effect=dummyEx)
-        error_code = "UserError/OpenAIError/APIConnectionError"
+        error_codes = "UserError/OpenAIError/APIConnectionError"
         with pytest.raises(WrappedOpenAIError) as exc_info:
             completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="text-ada-001")
         assert to_openai_error_message(dummyEx) == exc_info.value.message
         assert mock_method.call_count == 1
-        assert exc_info.value.error_codes == error_code.split("/")
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.parametrize(
         "dummyExceptionList",
@@ -162,8 +162,8 @@ class TestHandleOpenAIError:
 
             assert patched_test_method.call_count == max_retry + 1
             assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
-            error_code = "UserError/OpenAIError/" + type(dummyEx).__name__
-            assert exc_info.value.error_codes == error_code.split("/")
+            error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
+            assert exc_info.value.error_codes == error_codes.split("/")
             expected_calls = [
                 mocker.call(delay),
                 mocker.call(delay * 2),
@@ -204,8 +204,8 @@ class TestHandleOpenAIError:
 
             assert patched_test_method.call_count == max_retry + 1
             assert "Exceed max retry times. " + to_openai_error_message(dummyEx) == exc_info.value.message
-            error_code = "UserError/OpenAIError/" + type(dummyEx).__name__
-            assert exc_info.value.error_codes == error_code.split("/")
+            error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
+            assert exc_info.value.error_codes == error_codes.split("/")
             expected_calls = [
                 mocker.call(header_delay),
                 mocker.call(header_delay * 2),
@@ -233,32 +233,32 @@ class TestHandleOpenAIError:
             with pytest.raises(UserErrorException) as exc_info:
                 completion(connection=azure_open_ai_connection, prompt="hello", deployment_name="text-ada-001")
             assert to_openai_error_message(dummyEx) == exc_info.value.message
-            error_code = "UserError/OpenAIError/" + type(dummyEx).__name__
-            assert exc_info.value.error_codes == error_code.split("/")
+            error_codes = "UserError/OpenAIError/" + type(dummyEx).__name__
+            assert exc_info.value.error_codes == error_codes.split("/")
             assert mock_method.call_count == 1
 
     def test_unexpected_error_handle(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = Exception("Something went wrong")
         mock_method = mocker.patch("promptflow.tools.aoai.openai.ChatCompletion.create", side_effect=dummyEx)
+        error_codes = "UserError/LLMError"
         with pytest.raises(LLMError) as exc_info:
             chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
         assert to_openai_error_message(dummyEx) != exc_info.value.args[0]
         assert "OpenAI API hits exception: Exception: Something went wrong" == exc_info.value.message
         assert mock_method.call_count == 1
-        assert "UserError/LLMError" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     def test_template_syntax_error_handle(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = TemplateSyntaxError(message="Something went wrong", lineno=1)
         mock_method = mocker.patch("jinja2.Template.__new__", side_effect=dummyEx)
+        error_codes = "UserError/ToolValidationError/JinjaTemplateError"
         with pytest.raises(JinjaTemplateError) as exc_info:
             chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")
         error_message = "Failed to render jinja template: TemplateSyntaxError: Something went wrong\n  line 1. " \
                         + "Please modify your prompt to fix the issue."
         assert error_message == exc_info.value.message
         assert mock_method.call_count == 1
-        assert "UserError/ToolValidationError/JinjaTemplateError" == ErrorResponse.from_exception(
-            exc_info.value).error_code_hierarchy
+        assert exc_info.value.error_codes == error_codes.split("/")
 
     @pytest.mark.skip_if_no_key("open_ai_connection")
     def test_model_not_accept_functions_as_param(
