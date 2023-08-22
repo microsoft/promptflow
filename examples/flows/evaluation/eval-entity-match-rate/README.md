@@ -5,6 +5,12 @@ This is a flow evaluates: entity match rate.
 Tools used in this flow：
 - `python` tool
 
+## Prerequisites
+
+Install promptflow sdk and other dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 ### 1. Test flow/node
 
