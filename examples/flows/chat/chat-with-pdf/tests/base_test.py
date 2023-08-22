@@ -11,9 +11,11 @@ class BaseTest(unittest.TestCase):
         self.data_path = os.path.join(
             self.flow_path, "data/bert-paper-qna-1-line.jsonl"
         )
-        self.eval_groundedness_flow_path = os.path.join(root, "../evaluation/groundedness-eval")
+        self.eval_groundedness_flow_path = os.path.join(
+            root, "../evaluation/eval-groundedness"
+        )
         self.eval_perceived_intelligence_flow_path = os.path.join(
-            root, "../evaluation/perceived-intelligence-eval"
+            root, "../evaluation/eval-perceived-intelligence"
         )
         self.all_runs_generated = []
         self.config_3k_context = {
@@ -53,7 +55,14 @@ class BaseTest(unittest.TestCase):
                 print(e)
                 traceback.print_exc()
 
-    def create_chat_run(self, data=None, column_mapping=None, connections=None, runtime=None, display_name='chat_run'):
+    def create_chat_run(
+        self,
+        data=None,
+        column_mapping=None,
+        connections=None,
+        runtime=None,
+        display_name="chat_run",
+    ):
         if column_mapping is None:
             column_mapping = {
                 "chat_history": "${data.chat_history}",
@@ -78,7 +87,13 @@ class BaseTest(unittest.TestCase):
         return run
 
     def create_eval_run(
-        self, eval_flow_path, base_run, column_mapping, connections=None, runtime=None, display_name=None
+        self,
+        eval_flow_path,
+        base_run,
+        column_mapping,
+        connections=None,
+        runtime=None,
+        display_name=None,
     ):
         eval = self.pf.run(
             flow=eval_flow_path,

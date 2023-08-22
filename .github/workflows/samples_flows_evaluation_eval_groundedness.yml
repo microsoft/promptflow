@@ -3,10 +3,10 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_evaluation_basic_eval
+name: samples_flows_evaluation_eval_groundedness
 on:
   schedule:
-    - cron: "28 20 * * *" # Every day starting at 4:28 BJT
+    - cron: "48 22 * * *" # Every day starting at 6:48 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/** ]
@@ -25,7 +25,7 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/flows/evaluation/basic-eval
+        working-directory: examples/flows/evaluation/eval-groundedness
         run: |
           if [[ -e requirements.txt ]]; then
             python -m pip install --upgrade pip
@@ -37,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/flows/evaluation/basic-eval
+        working-directory: examples/flows/evaluation/eval-groundedness
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -48,7 +48,7 @@ jobs:
             mv .env.example .env
           fi
       - name: Create run.yml
-        working-directory: examples/flows/evaluation/basic-eval
+        working-directory: examples/flows/evaluation/eval-groundedness
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -59,16 +59,16 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/flows/evaluation/basic-eval/README.md
+      - name: Extract Steps examples/flows/evaluation/eval-groundedness/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/evaluation/basic-eval/README.md -o examples/flows/evaluation/basic-eval
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/evaluation/eval-groundedness/README.md -o examples/flows/evaluation/eval-groundedness
       - name: Cat script
-        working-directory: examples/flows/evaluation/basic-eval
+        working-directory: examples/flows/evaluation/eval-groundedness
         run: |
           cat bash_script.sh
       - name: Run scripts
-        working-directory: examples/flows/evaluation/basic-eval
+        working-directory: examples/flows/evaluation/eval-groundedness
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -81,4 +81,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/evaluation/basic-eval/bash_script.sh
+          path: examples/flows/evaluation/eval-groundedness/bash_script.sh
