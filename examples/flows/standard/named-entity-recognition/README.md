@@ -23,7 +23,7 @@ Note in this example, we are using [chat api](https://learn.microsoft.com/en-us/
 Create connection if you haven't done that. Ensure you have put your azure open ai endpoint key in [azure_openai.yml](azure_openai.yml) file. 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create -f azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+pf connection create -f ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 Ensure you have created `azure_open_ai_connection` connection.
