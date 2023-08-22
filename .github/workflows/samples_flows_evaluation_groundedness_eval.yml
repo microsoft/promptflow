@@ -63,6 +63,10 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/flows/evaluation/groundedness-eval/README.md -o examples/flows/evaluation/groundedness-eval
+      - name: Cat script
+        working-directory: examples/flows/evaluation/groundedness-eval
+        run: |
+          cat bash_script.sh
       - name: Run scripts
         working-directory: examples/flows/evaluation/groundedness-eval
         run: |

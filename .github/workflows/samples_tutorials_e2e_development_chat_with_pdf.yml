@@ -51,7 +51,7 @@ jobs:
         working-directory: examples/tutorials/e2e-development
         run: |
           if [[ -e .env ]]; then
-            pf connection create --file .env --name azure_open_ai_connection
+            pf connection create --file .env --name chat_with_pdf_custom_connection
             pf connection list
           fi
           
@@ -71,6 +71,10 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/e2e-development/chat-with-pdf.md -o examples/tutorials/e2e-development
+      - name: Cat script
+        working-directory: examples/tutorials/e2e-development
+        run: |
+          cat bash_script.sh
       - name: Run scripts
         working-directory: examples/tutorials/e2e-development
         run: |

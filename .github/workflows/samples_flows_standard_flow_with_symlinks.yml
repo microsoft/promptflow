@@ -66,6 +66,10 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/flow-with-symlinks/README.md -o examples/flows/standard/flow-with-symlinks
+      - name: Cat script
+        working-directory: examples/flows/standard/flow-with-symlinks
+        run: |
+          cat bash_script.sh
       - name: Run scripts
         working-directory: examples/flows/standard/flow-with-symlinks
         run: |

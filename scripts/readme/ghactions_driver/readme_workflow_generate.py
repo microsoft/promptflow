@@ -31,7 +31,7 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     ReadmeSteps.install_dev_dependencies()
     ReadmeSteps.create_env()
     if workflow_name.endswith("pdf"):
-        ReadmeSteps.env_create_aoai("azure_open_ai_connection")
+        ReadmeSteps.env_create_aoai("chat_with_pdf_custom_connection")
     ReadmeSteps.create_run_yaml()
     if (
         workflow_name.endswith("flows_standard_basic_with_builtin_llm")

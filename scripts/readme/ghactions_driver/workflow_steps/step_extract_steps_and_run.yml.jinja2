@@ -2,6 +2,10 @@
   working-directory: ${{ '{{' }} github.workspace }}
   run: |
     python scripts/readme/extract_steps_from_readme.py -f {{ readme_name }} -o {{ working_dir }}
+- name: Cat script
+  working-directory: {{ working_dir }}
+  run: |
+    cat bash_script.sh
 - name: Run scripts
   working-directory: {{ working_dir }}
   run: |
