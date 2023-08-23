@@ -6,6 +6,8 @@ Prompt flow LLM tool enables you to leverage widely used large language models l
 Prompt flow provides a few different LLM APIs:
 - **[Completion](https://platform.openai.com/docs/api-reference/completions)**: OpenAI's completion models generate text based on provided prompts.
 - **[Chat](https://platform.openai.com/docs/api-reference/chat)**: OpenAI's chat models facilitate interactive conversations with text-based inputs and responses.
+> [!NOTE]
+> We now remove the `embedding` option from LLM tool api setting. You can use embedding api with [Embedding tool](https://github.com/microsoft/promptflow/blob/main/docs/reference/tools-reference/embedding_tool.md).
 
 
 ## Prerequisite
@@ -18,7 +20,7 @@ Create OpenAI resources:
 
 - **Azure OpenAI (AOAI)**
 
-    Create Azure OpenAI resources with [insturction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
+    Create Azure OpenAI resources with [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal)
 
 ## **Connections**
 
