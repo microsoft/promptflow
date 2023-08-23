@@ -25,7 +25,7 @@ When creating or modifying a notebook or markdown file, please follow these guid
 - Each notebook or markdown file should follow the [PEP 8] style guide for Python code, and use consistent and readable variable names, indentation, spacing, and punctuation.
 - Each notebook or markdown file should include relevant references, citations, and acknowledgements
 
-## Generate Workflows and Submit Pull Requests
+## Generate Workflows, Update Readme and Submit Pull Requests
 
 To run the readme.py script, you need to have Python 3 installed on your system. You also need to install the required packages by running:
 
