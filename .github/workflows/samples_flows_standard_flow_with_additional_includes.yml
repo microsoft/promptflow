@@ -9,7 +9,7 @@ on:
     - cron: "29 20 * * *" # Every day starting at 4:29 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/flows/standard/flow-with-additional-includes/** ]
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/flows/standard/flow-with-additional-includes
+        working-directory: examples
         run: |
           if [[ -e requirements.txt ]]; then
             python -m pip install --upgrade pip

@@ -281,11 +281,16 @@ class ReadmeStepsManage:
         name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
         schedule_minute = name_hash % 60
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
+
+        if "tutorials" in workflow_name:
+            path_filter = "[ examples/** ]"
+        else:
+            path_filter = f"[ {ReadmeSteps.working_dir}/** ]"
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
             "ci_name": pipeline_name,
-            "path_filter": "[ examples/** ]",
+            "path_filter": path_filter,
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
             "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
         }
