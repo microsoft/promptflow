@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   url:
     type: string
@@ -47,8 +48,6 @@ nodes:
     path: convert_to_dict.py
   inputs:
     input_str: ${classify_with_llm.output}
-id: web_classification
-name: Web Classification
 
 additional_includes:
 - ../web-classification/classify_with_llm.jinja2
