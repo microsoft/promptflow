@@ -69,6 +69,7 @@ jobs:
       if: always()
       uses: EnricoMi/publish-unit-test-result-action/composite@v2
       with:
+        check_name: "Test Result [${{ github.GITHUB_REF_NAME }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ github.GITHUB_REF_NAME }}++)"
         files: |
           ${{ github.workspace }}/test-results.xml
     - name: Generate Coverage Report
