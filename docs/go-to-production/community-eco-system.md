@@ -31,9 +31,9 @@ For any questions or feedbacks, you can open Github issue directly or reach out 
 
 ## Transition to Production in cloud
 
-Once you've successfully developed and tested your prompt flow within our community ecosystem, the next step is transitioning to a production-grade LLM application. Azure Machine Learning is recommended for this phase, ensuring safety, productivity, and scalability.
+After successful development and testing of your prompt flow within our community ecosystem, the subsequent step you are considering may involve transitioning to a production-grade LLM application. We recommend Azure Machine Learning for this phase to ensure security, efficiency, and scalability.
 
-You can smoothly transition your local flow to your Azure resource to gain the large scale run and management on the cloud. For this purpose, you can jump to [Integration with LLMOps](../go-to-production/integrate_with_llmops.md#go-back-to-studio-ui).
+You can seamlessly shift your local flow to your Azure resource to leverage large-scale execution and management in the cloud. To achieve this, please refer to [Integration with LLMOps](../go-to-production/integrate_with_llmops.md#go-back-to-studio-ui).
 
 ## Conclusion
 
