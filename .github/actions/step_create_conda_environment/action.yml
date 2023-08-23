@@ -14,7 +14,6 @@ runs:
       activate-environment: release-env
       environment-file: ${{ inputs.condaEnvironmentFilePath }}
       python-version: 3.9
-      condarc-file: scripts/building/example-condarc.yml
       auto-activate-base: false
       auto-update-conda: true
   - run: |
