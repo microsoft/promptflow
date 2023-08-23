@@ -9,7 +9,7 @@ on:
     - cron: "1 19 * * *" # Every day starting at 3:1 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/**, .github/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml ]
   workflow_dispatch:
 
 jobs:

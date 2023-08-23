@@ -9,7 +9,7 @@ on:
     - cron: "41 20 * * *" # Every day starting at 4:41 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/standard/flow-with-symlinks/** ]
+    paths: [ examples/flows/standard/flow-with-symlinks/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_flow_with_symlinks.yml ]
   workflow_dispatch:
 
 jobs:
