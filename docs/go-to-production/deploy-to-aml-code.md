@@ -23,6 +23,10 @@ Each flow will have a folder which contains codes/prompts, definition and other 
 
 This article will use the [sample flow "basic-chat"](../../examples/flows/chat/basic-chat) as an example to deploy to AzureML managed online endpoint. 
 
+> [!IMPORTANT]
+>
+> Currently, deploy a flow with variants is not supported. Hence, make sure you have removed variants in your `flow.dag.yaml`.
+
 ## Set default workspace
 
 Use the following commands to set the default workspace and resource group for the CLI.
