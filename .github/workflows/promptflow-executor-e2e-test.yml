@@ -19,20 +19,20 @@ jobs:
     - name: checkout
       uses: actions/checkout@v3
     - name: Display Env
-      uses: "./.github/actions/pipelines_templates_steps_template_display_environment_variables_step"
+      uses: "./.github/actions/step_display_environment_variables"
     - name: Conda Setup
-      uses: "./.github/actions/pipelines_templates_steps_template_create_conda_environment_step"
+      uses: "./.github/actions/step_create_conda_environment"
     - run: |
         echo ${{ env.packageSetupType }}
         echo ${{ env.testWorkingDirectory }}
       shell: bash -l {0}
     - name: Build wheel
-      uses: "./.github/actions/pipelines_templates_steps_template_sdk_setup_step"
+      uses: "./.github/actions/step_sdk_setup"
       with:
         setupType: ${{ env.packageSetupType }}
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Generate Configs
-      uses: "./.github/actions/pipelines_templates_steps_template_generate_configs"
+      uses: "./.github/actions/step_generate_configs"
       with:
         tenantId: ${{ env.TENANT_ID }}
         clientId: ${{ env.CLIENT_ID }}

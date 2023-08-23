@@ -1,4 +1,4 @@
-name: pipelines_templates_steps_template_create_conda_environment_step
+name: step_create_conda_environment
 inputs:
   condaEnvironmentFilePath:
     required: false
