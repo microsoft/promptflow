@@ -283,9 +283,20 @@ class ReadmeStepsManage:
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
         if "tutorials" in workflow_name:
-            path_filter = "[ examples/** ]"
+            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
         else:
-            path_filter = f"[ {ReadmeSteps.working_dir}/** ]"
+            if "web_classification" in workflow_name:
+                path_filter = (
+                    f"[ {ReadmeSteps.working_dir}/**, "
+                    + "examples/*requirements.txt, "
+                    + "examples/flows/standard/flow-with-additional-includes/**, "
+                    + "examples/flows/standard/flow-with-symlinks/** ,"
+                    + ".github/workflows/{workflow_name}.yml ]"
+                )
+            else:
+                path_filter = (
+                    f"[ {ReadmeSteps.working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
+                )
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
@@ -301,15 +312,15 @@ class ReadmeStepsManage:
             / "ghactions_driver"
             / "workflow_templates"
         )
-        template = Environment(
-            loader=FileSystemLoader(workflow_template_path.resolve())
-        ).get_template(ReadmeSteps.template)
         target_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / ".github"
             / "workflows"
             / f"{workflow_name}.yml"
         )
+        template = Environment(
+            loader=FileSystemLoader(workflow_template_path.resolve())
+        ).get_template(ReadmeSteps.template)
         content = template.render(replacements)
         with open(target_path.resolve(), "w", encoding="utf-8") as f:
             f.write(content)

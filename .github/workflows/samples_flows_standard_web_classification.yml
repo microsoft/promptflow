@@ -9,7 +9,7 @@ on:
     - cron: "13 21 * * *" # Every day starting at 5:13 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/standard/web-classification/** ]
+    paths: [ examples/flows/standard/web-classification/**, examples/*requirements.txt, examples/flows/standard/flow-with-additional-includes/**, examples/flows/standard/flow-with-symlinks/** ,.github/workflows/{workflow_name}.yml ]
   workflow_dispatch:
 
 jobs:

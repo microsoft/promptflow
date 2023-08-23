@@ -10,7 +10,7 @@ def write_readme_shell(readme_path: str, output_folder: str):
     full_text = readme_parser(readme_path)
     Path(ReadmeStepsManage.git_base_dir())
     bash_script_path = (
-            Path(ReadmeStepsManage.git_base_dir()) / output_folder / "bash_script.sh"
+        Path(ReadmeStepsManage.git_base_dir()) / output_folder / "bash_script.sh"
     )
     template_env = Environment(
         loader=FileSystemLoader(
