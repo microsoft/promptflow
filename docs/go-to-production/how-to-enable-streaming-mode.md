@@ -1,4 +1,4 @@
-# How to use streaming endpoints deployed from prompt flow
+# How to use streaming endpoints deployed from prompt flow (preview)
 
 In prompt flow, you can [deploy flow to an AzureML managed online endpoint](./how-to-deploy-for-real-time-inference.md) for real-time inference.
 
