@@ -3,7 +3,7 @@
 In this tutorial, we will create a simple flow that mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT. 
 
 ## Overview
-Retrieval Augmented Generation (or RAG) becomes a common pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information. The screenshot below shows how new Bing in Edge sidebar can answer questions based on the page content on the left - in this case is a PDF file.
+Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information. The screenshot below shows how new Bing in Edge sidebar can answer questions based on the page content on the left - in this case is a PDF file.
 ![edge-chat-pdf](../../flows/chat/chat-with-pdf/assets/edge-chat-pdf.png)
 Note that new Bing will also search web for more information to generate the answer, let's ignore that part for now.
 
@@ -244,8 +244,36 @@ pf run show-metrics --name $eval_run_name
 pf run visualize --name $eval_run_name
 ```
 
+## Experimentation!!
+Now we've seen how to run tests/evaluations for prompt flow. And we have two metrics defined to measure the quality of our chat_with_pdf flow. We can try different settings/configurations and run the evaluations, and then compare the metrics to decide a best configuration for production deployment.
+
+A few things we can try (but not limited to):
+1. Different prompts for the rewrite_question and/or qna steps
+2. Different chunk size or chunk overlap in index building
+3. Different context limit
+
+These can be controlled through the "config" object in the flow inputs. If you want to experiment with #1 (different prompts) you can add properties to the config object to control that behavior - just pointing to different prompt file(s).
+
+Take a look at how we experiment with #3 in below test: [test_eval in tests/chat_with_pdf_test.py](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py). This test will create 6 runs in total:
+
+1. chat_with_pdf_2k_context
+2. chat_with_pdf_3k_context
+3. eval_groundedness_chat_with_pdf_2k_context
+4. eval_perceived_intelligence_chat_with_pdf_2k_context
+5. eval_groundedness_chat_with_pdf_3k_context
+6. eval_perceived_intelligence_chat_with_pdf_3k_context
+
+As you can probably tell through the names: run #3 and #4 generate metrics for run #1, run #5 and #6 generate metrics for run #2. You can compare these metrics to decide which performs better - 2K context or 3K context.
+
+NOTE: [azure_chat_with_pdf_test](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py) does the same tests but using Azure ML as backend, so you can see all the runs in a nice web portal where you can see logs and metrics comparison etc. 
+
+
+Further reading:
+- Learn [how to experiment with the chat-with-pdf flow](../../flows/chat/chat-with-pdf/chat-with-pdf.ipynb)
+- Learn [how to experiment with the chat-with-pdf flow on Azure](../../flows/chat/chat-with-pdf/chat-with-pdf-azure.ipynb) so that you can collaborate with your team.
+
 ## Integrate prompt flow into your CI/CD workflow
-Now you've seen how to run tests/evaluations for prompt flow. It's also straightforward to integrate these into your CI/CD workflow using either CLI or SDK. In this example we have various unit tests to run tests/evaluations for chat_with_pdf flow.
+It's also straightforward to integrate these into your CI/CD workflow using either CLI or SDK. In this example we have various unit tests to run tests/evaluations for chat_with_pdf flow.
 
 Check the [test](../../flows/chat/chat-with-pdf/tests/) folder.
 
