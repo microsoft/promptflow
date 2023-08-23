@@ -3,7 +3,7 @@
 In this tutorial, we will create a simple flow that mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT. 
 
 ## Overview
-Retrieval Augmented Generation (or RAG) becomes a common pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information. The screenshot below shows how new Bing in Edge sidebar can answer questions based on the page content on the left - in this case is a PDF file.
+Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information. The screenshot below shows how new Bing in Edge sidebar can answer questions based on the page content on the left - in this case is a PDF file.
 ![edge-chat-pdf](../../flows/chat/chat-with-pdf/assets/edge-chat-pdf.png)
 Note that new Bing will also search web for more information to generate the answer, let's ignore that part for now.
 
