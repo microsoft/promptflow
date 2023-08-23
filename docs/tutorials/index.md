@@ -14,7 +14,7 @@ This section contains a collection of flow samples and step-by-step tutorials.
 |Standard Flow|[summarizing-film-with-autogpt](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/summarizing-film-with-autogpt)| a flow showcasing how to construct a AutoGPT flow to autonomously figures out how to apply the given functions to solve the goal, which is film trivia that provides accurate and up-to-date information about movies, directors, actors, and more.
 |Chat Flow|[chat-with-wikipedia](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-wikipedia)| a flow demonstrating Q&A with GPT3.5 using information from Wikipedia to make the answer more grounded. 
 |Chat Flow|[chat-with-pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)| a flow that allow you to ask questions about the content of a PDF file and get answers. 
-|Evaluation Flow|[classification-accuracy-eval](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/classification-accuracy-eval)| a flow illustrating how to evaluate the performance of a classification system.
+|Evaluation Flow|[eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy)| a flow illustrating how to evaluate the performance of a classification system.
 
 Learn more:  [Try out more promptflow examples.](https://github.com/microsoft/promptflow/tree/main/examples)
 

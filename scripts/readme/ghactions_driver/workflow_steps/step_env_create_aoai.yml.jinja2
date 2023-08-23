@@ -1,5 +1,8 @@
 - name: {{ step_name }}
   working-directory: {{ working_dir }}
   run: |
-    pf connection create --file .env --name {{ connection_name }}
-    pf connection list
+    if [[ -e .env ]]; then
+      pf connection create --file .env --name {{ connection_name }}
+      pf connection list
+    fi
+    

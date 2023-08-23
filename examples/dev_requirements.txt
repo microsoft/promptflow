@@ -7,3 +7,4 @@ black-nb
 pypandoc # for markdown reader
 pypandoc_binary # pypandoc pandoc backend
 panflute # for pandoc filters
+jinja2 # for readme generations

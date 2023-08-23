@@ -71,7 +71,7 @@ create `evaluation` run:
 prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 # create run using command line args
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --stream
+pf run create --flow ../../evaluation/eval-classification-accuracy --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --stream
 # create run using yaml file, --name is optional
 pf run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name
 ```
@@ -111,7 +111,7 @@ prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 
 # create evaluation run, --name is optional
-pfazure run create --flow ../../evaluation/classification-accuracy-eval --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime demo-mir
+pfazure run create --flow ../../evaluation/eval-classification-accuracy --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime demo-mir
 pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name --runtime demo-mir
 
 pfazure run stream --name $run_name
