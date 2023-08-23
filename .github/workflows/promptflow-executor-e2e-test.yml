@@ -5,6 +5,7 @@ on:
     paths:
       - src/promptflow/**
       - scripts/**
+      - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
 env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
