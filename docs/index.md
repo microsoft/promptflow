@@ -32,7 +32,8 @@ This documentation site contains guides for prompt flow sdk, cli and vscode exte
   content: "
     A quick guide of how to developing and running your first prompt flow.<br/><br/>
     - [Start your prompt flow journey](how-to-guides/quick-start.md)<br/>
-    - [Run prompt flow in Azure AI](cloud/azureai/quick-start.md)<br/>
+    - [E2E development tutorial: chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)<br/>
+    - Learn more: [tutorials & samples](tutorials/index.md)<br/>
   "
 
 - header: "📒 How-to Guides"

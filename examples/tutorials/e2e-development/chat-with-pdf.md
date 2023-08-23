@@ -244,6 +244,10 @@ pf run show-metrics --name $eval_run_name
 pf run visualize --name $eval_run_name
 ```
 
+Further reading:
+- Learn [how to experiment with the chat-with-pdf flow](../../flows/chat/chat-with-pdf/chat-with-pdf.ipynb)
+- Learn [how to experiment with the chat-with-pdf flow on Azure](../../flows/chat/chat-with-pdf/chat-with-pdf-azure.ipynb) so that you can collaborate with your team.
+
 ## Integrate prompt flow into your CI/CD workflow
 Now you've seen how to run tests/evaluations for prompt flow. It's also straightforward to integrate these into your CI/CD workflow using either CLI or SDK. In this example we have various unit tests to run tests/evaluations for chat_with_pdf flow.
 
