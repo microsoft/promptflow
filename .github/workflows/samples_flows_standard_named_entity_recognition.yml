@@ -9,7 +9,7 @@ on:
     - cron: "11 22 * * *" # Every day starting at 6:11 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/standard/named-entity-recognition/** ]
+    paths: [ examples/flows/standard/named-entity-recognition/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_named_entity_recognition.yml ]
   workflow_dispatch:
 
 jobs:

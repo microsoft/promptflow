@@ -58,9 +58,9 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
     if "tutorials" in gh_working_dir:
-        path_filter = "[ examples/** ]"
+        path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
     else:
-        path_filter = f"[ {gh_working_dir}/** ]"
+        path_filter = f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
 
     if "chatwithpdf" in workflow_name:
         template_pdf = env.get_template("pdf_workflow.yml.jinja2")

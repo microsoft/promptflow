@@ -9,7 +9,7 @@ on:
     - cron: "29 20 * * *" # Every day starting at 4:29 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/standard/flow-with-additional-includes/** ]
+    paths: [ examples/flows/standard/flow-with-additional-includes/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_flow_with_additional_includes.yml ]
   workflow_dispatch:
 
 jobs:
