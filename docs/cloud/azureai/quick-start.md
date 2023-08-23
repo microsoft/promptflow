@@ -91,7 +91,6 @@ More details can be found in [CLI reference: pfazure](../../reference/pfazure-co
 1. Import the required libraries
 ```python
 from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
-from azure.ai.ml import MLClient
 # azure version promptflow apis
 from promptflow.azure import PFClient
 ```
