@@ -1,18 +1,22 @@
-# Integrate Prompt Flow with LLMOps (preview)
+# Integrate Prompt Flow with LLM-based application DevOps (preview)
 
-In this article, you'll learn about the integration of prompt flow with LLMOps (Large Language Model Operationalization) in Azure Machine Learning. Prompt flow offers a developer-friendly experience for flow developing and iterating with LLMOps. 
+In this article, you'll learn about the integration of prompt flow with LLM-based application DevOps in Azure Machine Learning. Prompt flow offers a developer-friendly and easy-to-use code-first
+experience for flow developing and iterating with your entire LLM-based application development workflow.
 
-It provides an **prompt flow SDK and CLI** to facilitate the development of flows, triggering of flow runs, evaluation runs, and transitioning flows from local to cloud (Azure Machine Learning workspace) environments. 
+It provides an **prompt flow SDK and CLI**, an **VS code extension**, and the new UI of **flow folder explorer** to facilitate the local development of flows, local triggering of flow runs and evaluation runs, and transitioning flows from local to cloud (Azure Machine Learning workspace) environments. 
 
-This documentation focuses on how to effectively combine the capabilities of prompt flow code experience and LLMOps to enhance your LLM-based application development workflows.
+This documentation focuses on how to effectively combine the capabilities of prompt flow code experience and DevOps to enhance your LLM-based application development workflows.
+
+![devops process](../media/integrate-with-llmapp-devops/devops_process.png)
+
 
 We introduce the following sections:
 * [Introduction of code-first experience in Prompt Flow](#introduction-of-code-first-experience-in-prompt-flow)
 * [Accessing prompt flow code definition](#accessing-prompt-flow-code-definition)
-* [Versioning prompt flow code in repository](#versioning-prompt-flow-code-in-repository)
+* [Versioning prompt flow in repository](#versioning-prompt-flow-in-repository)
 * [Submitting runs to cloud](#submitting-runs-to-cloud)
-* [Iterative development](#iterative-development)
-* [CICD integration](#cicd-integration)
+* [Iterative development from fine-tuning](#iterative-development-from-fine-tuning)
+* [CI/CD integration](#ci/cd-integration)
 
 
 ## Introduction of code-first experience in Prompt Flow
@@ -33,7 +37,7 @@ Each flow each prompt flow is associated with a **flow folder structure** that c
 
 Azure Machine Learning offers a shared file system for all workspace users. Upon creating a flow, a corresponding flow folder is automatically generated and stored there, located in the ```Users/<username>/promptflow``` directory.
 
-![Flow folder created in file share storage](../media/integrate-with-LLMOps/flow_folder_created_in_file_share_storage.png)
+![Flow folder created in file share storage](../media/integrate-with-llmapp-devops/flow_folder_created_in_file_share_storage.png)
 
 ### Flow folder structure
 
@@ -47,21 +51,21 @@ Overview of the flow folder structure and the key files it contains:
 
 Once the flow is created, you can navigate to the Flow Authoring Page to view and operate the flow files in the right file explorer. This allows you to view, edit, and manage your files. Any modifications made to the files will be directly reflected in the file share storage.
 
-![Flow file explorer](../media/integrate-with-LLMOps/flow_file_explorer.png)
+![Flow file explorer](../media/integrate-with-llmapp-devops/flow_file_explorer.png)
 
 Alternatively, you can access all the flow folders directly within the Azure Machine Learning notebook.
 
-![Notebook userpath](../media/integrate-with-LLMOps/aml_notebook_userpath.png)
+![Notebook userpath](../media/integrate-with-llmapp-devops/aml_notebook_userpath.png)
 
-## Versioning prompt flow code in repository
+## Versioning prompt flow in repository
 
 To check in your flow into your code  repository, you can easily export the flow folder from the flow authoring page to your local system. This will download a package containing all the files from the explorer to your local machine, which you can then check into your code repository.
 
-![Export flow folder](../media/integrate-with-LLMOps/flow_export.png)
+![Export flow folder](../media/integrate-with-llmapp-devops/flow_export.png)
 
 Additionally, you can access your workspace file system through the Azure Machine Learning notebook. Within the notebook, you can [access the compute instance terminal](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-access-terminal?view=azureml-api-2) and navigate to the ```Users/<username>/promptflow``` directory, where your flows are stored.
 
-![Compute instance](../media/integrate-with-LLMOps/ci_terminal_checkin.png)
+![Compute instance](../media/integrate-with-llmapp-devops/ci_terminal_checkin.png)
 
 In the terminal, you can utilize the ```git``` command to initialize a git repository, clone your existing git repository, and push the flow folder to your code repository.
 
@@ -359,11 +363,11 @@ pf.get_metrics("evaluation_run_name")
 
 ::::
 
-## Iterative development
+## Iterative development from fine-tuning
 
-### Local Iterations
+### Local development and testing
 
-When developing and refining your flow, you might want to perform multiple iterations locally within your code repository. We provide community version, that are **Prompt flow vs code extension** and **Prompt flow local SDK & CLI**, to support pure local development and testing, without Azure binding.
+When interative developing, refining and fine-tuning your flow or prompts, you might want to perform multiple iterations locally within your code repository. We provide community version, that are **Prompt flow vs code extension** and **Prompt flow local SDK & CLI**, to support pure local development and testing, without Azure binding.
 
 #### Prompt flow vs code extension
 
@@ -375,13 +379,13 @@ To use the extension:
 3. Use the visual editor to make any necessary changes to your flow, such as tune the prompts in variants, or add more tools.
 4. To test your flow, click the "Run Flow" button at the top of the visual editor. This will trigger a flow test.
 
-![visual_editor_flow_test](../media/integrate-with-LLMOps/run_flow_visual_editor.png)
+![visual_editor_flow_test](../media/integrate-with-llmapp-devops/run_flow_visual_editor.png)
 
 #### Prompt flow local SDK & CLI
 
 If you prefer to use Jupyter, PyCharm, Visual Studio, or other IDEs, you can directly modify the YAML definition in the ```flow.dag.yaml``` file.
 
-![q_0](../media/integrate-with-LLMOps/flow-directory-and-dag-yaml.png)
+![q_0](../media/integrate-with-llmapp-devops/flow-directory-and-dag-yaml.png)
 
 You can then trigger a flow single run for testing using either the Prompt Flow CLI or SDK.
 
@@ -396,7 +400,7 @@ Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/
 pf flow test --flow web-classification  # "web-classification" is the directory name
 ```
 
-![q_0](../media/integrate-with-LLMOps/flow-test-output-cli.png)
+![q_0](../media/integrate-with-llmapp-devops/flow-test-output-cli.png)
 
 :::
 
@@ -424,7 +428,7 @@ node_result = pf_client.test(flow=flow_path, inputs=node_inputs, node=node_name)
 print(f"Node outputs: {node_result}")
 ```
 
-![Flow test outputs](../media/integrate-with-LLMOps/flow_test_output.png)
+![Flow test outputs](../media/integrate-with-llmapp-devops/flow_test_output.png)
 :::
 
 ::::
@@ -433,7 +437,7 @@ This allows you to make and test changes quickly, without needing to update the 
 
 For more details and guidance on using the local versions, you can refer to the [Prompt flow community](https://github.com/microsoft/promptflow).
 
-### Go back to Studio UI
+### Go back to Studio UI for continuous development
 
 Alternatively, you have the option to go back to the Studio UI, leveraging the cloud resources and experience to make changes to your flow in the flow authoring page.
 
@@ -441,13 +445,13 @@ To continue developing and working with the most up-to-date version of the flow 
 
 In addition, if you prefer continuing to work in the Studio UI, you can directly import a local flow folder as a new draft flow. This allows you to seamlessly transition between local and cloud development.
 
-![Flow import from local](../media/integrate-with-LLMOps/flow_import_localupload.png)
+![Flow import from local](../media/integrate-with-llmapp-devops/flow_import_localupload.png)
 
-## CICD integration
+## CI/CD integration
 
 ### Trigger flow runs in CI pipeline
 
-@Abe to integrate example here, CICD in ADO and Github.
+@Abe to integrate example here, CI/CD in ADO and Github.
 
 ### Continuous deployment
 
