@@ -119,16 +119,16 @@ def local_filter(callback, array):
 
 def no_readme_generation_filter(item, index, array) -> bool:
     """
-    Set each ipynb metadata no_readme_generation to "true" to skip readme generation
+    Set each ipynb metadata stage to "development" to skip readme generation
     """
     try:
         # read in notebook
         with open(item, "r", encoding="utf-8") as f:
             data = json.load(f)
         try:
-            if data["metadata"]["no_readme_generation"] is not None:
+            if data["metadata"]["stage"] is not None:
                 # no_readme_generate == "true", then no generation
-                return data["metadata"]["no_readme_generation"] != "true"
+                return data["metadata"]["stage"] != "development"
         except Exception:
             return True  # generate readme
     except Exception:

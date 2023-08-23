@@ -1,17 +1,8 @@
-# Contributing to Examples Project
+# Contributing to examples folder
 
-Thank you for your interest in contributing to the examples project. This project contains a collection of Python notebooks and selected markdown files that demonstrate various workflows using the readme.py script. The script will automatically generate a README.md file in the root folder, listing all the notebooks and markdown files with their corresponding workflows.
+Thank you for your interest in contributing to the examples folder. This folder contains a collection of Python notebooks and selected markdown files that demonstrate various usage of this promptflow project. The script will automatically generate a README.md file in the root folder, listing all the notebooks and markdown files with their corresponding workflows.
 
-## How to Contribute
-
-Before you start working on your contribution, please make sure you have read and followed the [Code of Conduct](../CODE_OF_CONDUCT.md) and the [License](../LICENSE) of this project.
-
-To contribute to this project, you can either:
-
-- Submit an issue on GitHub if you have any suggestions, questions, or bug reports.
-- Fork the repository and create a pull request if you want to add a new notebook or markdown file, or modify an existing one.
-
-## Guidelines for Notebooks and Markdown Files in Examples Folder
+## Guidelines for notebooks and markdown files in examples folder
 
 When creating or modifying a notebook or markdown file, please follow these guidelines:
 
@@ -20,12 +11,12 @@ When creating or modifying a notebook or markdown file, please follow these guid
   - The first sentence of first paragraph of the markdown file is important. The introduction should be concise and informative, and end with a period.
   - Each notebook file should have a metadata area when the file is opened as a big JSON file. The metadata area may contain the following fields:
     - `.metadata.description`: (Mandatory) A short description of the example that will be displayed in the README.md file. The description should be concise and informative, and end with a period.
-    - `.metadata.no_readme_generation`: A boolean value that indicates whether the script should skip generating a workflow for this notebook or markdown file. If set to `true`, the script will ignore this file. If set to `false` or omitted, the script will generate a workflow for this file.
+    - `.metadata.stage`: (Optional) A value that indicates whether the script should skip generating a workflow for this notebook or markdown file. If set to `development`, the script will ignore this file. If set to other values or omitted, the script will generate a workflow for this file.
 - Each notebook or markdown file should have a clear and logical structure, using appropriate headings, subheadings, comments, and code cells. The code cells should be executable and produce meaningful outputs.
 - Each notebook or markdown file should follow the [PEP 8] style guide for Python code, and use consistent and readable variable names, indentation, spacing, and punctuation.
 - Each notebook or markdown file should include relevant references, citations, and acknowledgements
 
-## Generate Workflows, Update Readme and Submit Pull Requests
+## Generate workflows, update README.md and submit pull requests
 
 To run the readme.py script, you need to have Python 3 installed on your system. You also need to install the required packages by running:
 
@@ -44,11 +35,11 @@ python scripts/readme/readme.py
 
 For detailed usage of readme.py, please refer to the readme workflow generator manual [README.md](../scripts/readme/README.md) 
 
-### Generate [README.md](./README.md) in [examples](./) folder
+### Update [README.md](./README.md) in [examples](./) folder
 
-The script will scan all the notebooks and markdown files in the examples folder, and generate a README.md file in the root folder. The README.md file will contain a table of contents with links to each notebook and markdown file, as well as their descriptions and workflows.
+The readme.py script will scan all the notebooks and markdown files in the examples folder, and generate a README.md file in the root folder. The README.md file will contain a table of contents with links to each notebook and markdown file, as well as their descriptions and workflows.
 
-### Generate Workflows in the [workflows](../.github/workflows/) folder
+### Generations in the [workflows](../.github/workflows/) folder
 
 This contains two parts:
 * For notebooks, we'll prepare standard workflow running environment to test the notebook to the end.
@@ -58,4 +49,4 @@ The script will also save workflows in the [workflows](../.github/workflows/) fo
 
 ## Feedback and Support
 
-If you have any feedback or need any support regarding this project, please feel free to contact us at [opencode@microsoft.com](mailto:opencode@microsoft.com). We appreciate your contribution and hope you enjoy using our examples project.
+If you have any feedback or need any support regarding this folder, submit an issue on GitHub. We appreciate your contribution and hope you enjoy using our project.
