@@ -9,7 +9,7 @@ on:
     - cron: "41 21 * * *" # Every day starting at 5:41 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/flows/standard/basic/** ]
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/flows/standard/basic
+        working-directory: examples
         run: |
           if [[ -e requirements.txt ]]; then
             python -m pip install --upgrade pip
@@ -76,6 +76,11 @@ jobs:
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
           bash bash_script.sh
+      - name: Pip List for Debug
+        if : ${{ always() }}
+        working-directory: examples/flows/standard/basic
+        run: |
+          pip list
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

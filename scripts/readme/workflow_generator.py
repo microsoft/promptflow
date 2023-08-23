@@ -57,6 +57,11 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_minute = name_hash % 60
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
+    if "tutorials" in gh_working_dir:
+        path_filter = "[ examples/** ]"
+    else:
+        path_filter = f"[ {gh_working_dir}/** ]"
+
     if "chatwithpdf" in workflow_name:
         template_pdf = env.get_template("pdf_workflow.yml.jinja2")
         content = template_pdf.render(
@@ -65,7 +70,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
                 "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
-                "path_filter": "[ examples/** ]",
+                "path_filter": path_filter,
                 "crontab": f"{schedule_minute} {schedule_hour} * * *",
                 "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
             }
@@ -77,7 +82,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
                 "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
-                "path_filter": "[ examples/** ]",
+                "path_filter": path_filter,
                 "crontab": f"{schedule_minute} {schedule_hour} * * *",
                 "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
             }

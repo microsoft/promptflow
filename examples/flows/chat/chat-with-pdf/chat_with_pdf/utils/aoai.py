@@ -66,6 +66,8 @@ class AOAIChat(AOAI):
         )
 
         for chunk in response:
+            if "choices" not in chunk or len(chunk["choices"]) == 0:
+                continue
             delta = chunk["choices"][0]["delta"]
             if "content" in delta:
                 yield delta["content"]
