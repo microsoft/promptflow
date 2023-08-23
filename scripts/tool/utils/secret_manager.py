@@ -43,21 +43,6 @@ def list_secret_names(client: SecretClient) -> list:
     return [secret.name for secret in secret_properties]
 
 
-def delete_secret(secret_name: str, client: SecretClient):
-    client.begin_delete_secret(secret_name)
-
-
-def delete_useless_secrets(client: SecretClient):
-    all_secret_names = list_secret_names(client)
-    useless_secrets = [
-        secret for secret in all_secret_names if secret not in reserved_secret_names
-    ]
-
-    for secret in useless_secrets:
-        if secret not in reserved_secret_names:
-            delete_secret(secret, client)
-
-
 def validate_secret_name(secret_name: str):
     # Check if secret name is valid. Secret name can only contain alphanumeric characters and dashes.
     pattern = "^[a-zA-Z0-9-]+$"
