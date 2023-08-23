@@ -214,15 +214,15 @@ The output will include something like below:
 }
 ```
 
-And we developed two evaluation flows one for "[groundedness](../../evaluation/groundness-eval/)" and one for "[perceived intelligence](../../evaluation/perceived-intelligence-eval/)". Reading the prompts will give you better idea what are these two metrics:
-- [groundedness prompt](../eval_groundedness/gpt_groundedness.md)
-- [perceived intelligence prompt](../eval_perceived_intelligence/gpt_perceived_intelligence.md)
+And we developed two evaluation flows one for "[groundedness](../../flows/evaluation/eval-groundedness/)" and one for "[perceived intelligence](../../flows/evaluation/eval-perceived-intelligence/)". Reading the prompts will give you better idea what are these two metrics:
+- [groundedness prompt](../../flows/evaluation/eval-groundedness/gpt_groundedness.md)
+- [perceived intelligence prompt](../../flows/evaluation/eval-perceived-intelligence/gpt_perceived_intelligence.md)
 
 Evaluation is also a batch run - batch run of evaluation flow with the previous run as input.
 
 **eval_run.yaml:**
 ```yaml
-flow: ../../evaluation/groundedness-eval
+flow: ../../evaluation/eval-groundedness
 run: chat_with_pdf_default_20230820_162219_559000
 column_mapping:
   question: ${run.inputs.question}
