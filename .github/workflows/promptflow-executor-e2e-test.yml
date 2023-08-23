@@ -69,8 +69,8 @@ jobs:
       if: always()
       uses: EnricoMi/publish-unit-test-result-action/composite@v2
       with:
-        check_name: "Test Result [${{ github.ref_name }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml?query=branch:${{ github.ref_name }}++)"
-        comment_title: "Test Result [${{ github.ref_name }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml?query=branch:${{ github.ref_name }}++)"
+        check_name: "Executor E2E Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+        comment_title: "Executor E2E Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
         files: |
           ${{ github.workspace }}/test-results.xml
     - name: Generate Coverage Report
