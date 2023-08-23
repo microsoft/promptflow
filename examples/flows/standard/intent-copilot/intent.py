@@ -26,6 +26,7 @@ def extract_intent(customer_info: str, history: list, user_prompt_template: str)
         openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
         openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
         openai_api_type="azure",
+        openai_api_version="2023-07-01-preview",
         temperature=0,
     )
 
