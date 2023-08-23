@@ -50,7 +50,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
-test-results.xml
 
 # Translations
 *.mo
@@ -171,8 +170,10 @@ connection.json
 .azureml
 # secrets
 **/connections.json
+
+# doc build
+scripts/docs/_build/
 **/bash_script.sh
 
 .index
 .pdfs
-.condarc
