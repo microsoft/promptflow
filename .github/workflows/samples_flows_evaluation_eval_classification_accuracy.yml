@@ -76,6 +76,11 @@ jobs:
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
           bash bash_script.sh
+      - name: Pip List for Debug
+        if : ${{ always() }}
+        working-directory: examples/flows/evaluation/eval-classification-accuracy
+        run: |
+          pip list
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
