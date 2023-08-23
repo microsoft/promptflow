@@ -9,7 +9,7 @@ on:
     - cron: "24 20 * * *" # Every day starting at 4:24 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/run-management/** ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:

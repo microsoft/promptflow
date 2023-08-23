@@ -9,7 +9,7 @@ on:
     - cron: "28 19 * * *" # Every day starting at 3:28 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/tutorials/flow-in-pipeline/** ]
+    paths: [ examples/** ]
   workflow_dispatch:
 
 jobs:
