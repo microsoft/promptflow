@@ -37,9 +37,6 @@ class BaseTest(unittest.TestCase):
             "CHUNK_SIZE": 256,
             "CHUNK_OVERLAP": 32,
         }
-        # TODO remove this when object passing is supported
-        self.config_3k_context = json.dumps(self.config_3k_context)
-        self.config_2k_context = json.dumps(self.config_2k_context)
 
         # Switch current working directory to the folder of this file
         self.cwd = os.getcwd()
