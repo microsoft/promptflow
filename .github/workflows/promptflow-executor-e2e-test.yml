@@ -18,8 +18,10 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
-    - name: Display Env
-      uses: "./.github/actions/step_display_environment_variables"
+    - name: Display and Set Environment Variables
+      run: env | sort >> $GITHUB_OUTPUT
+      shell: bash -el {0}
+      id: display_env
     - name: Conda Setup
       uses: "./.github/actions/step_create_conda_environment"
     - run: |
