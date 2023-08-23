@@ -291,11 +291,13 @@ class ReadmeStepsManage:
                     + "examples/*requirements.txt, "
                     + "examples/flows/standard/flow-with-additional-includes/**, "
                     + "examples/flows/standard/flow-with-symlinks/** ,"
-                    + ".github/workflows/{workflow_name}.yml ]"
+                    + f".github/workflows/{workflow_name}.yml ]"
                 )
             else:
                 path_filter = (
-                    f"[ {ReadmeSteps.working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
+                    f"[ {ReadmeSteps.working_dir}/**, "
+                    + "examples/*requirements.txt, "
+                    + f".github/workflows/{workflow_name}.yml ]"
                 )
         replacements = {
             "steps": ReadmeSteps.step_array,
