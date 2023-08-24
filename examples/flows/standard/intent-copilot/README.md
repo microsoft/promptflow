@@ -21,7 +21,7 @@ cat .env
 pf flow init --flow . --entry intent.py --function extract_intent --prompt-template chat_prompt=user_intent_zero_shot.jinja2
 ```
 The generated files:
-- extract_intent_tool.py: Wrap the func `extract_intent` in the `intent.py` script into a [Python tool](https://promptflow.azurewebsites.net/tools-reference/python-tool.html).
+- extract_intent_tool.py: Wrap the func `extract_intent` in the `intent.py` script into a [Python Tool](https://promptflow.azurewebsites.net/tools-reference/python-tool.html).
 - flow.dag.yaml: Describes the DAG(Directed Acyclic Graph) of this flow.
 - .gitignore: File/folder in the flow to be ignored.
 
