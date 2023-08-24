@@ -130,9 +130,19 @@ Alternatively, you can test your tool package using the script below to ensure t
       import importlib
 
       def test():
-          """collect and list package info using the `package-tools` entry point.
+          """List all package tools information using the `package-tools` entry point.
 
-          This ensures that your package is correctly packed and your tools are accurately collected.
+          This function iterates through all entry points registered under the group "package_tools."
+          For each tool, it imports the associated module to ensure its validity and then prints
+          information about the tool.
+
+          Note:
+          - Make sure your package is correctly packed to appear in the list.
+          - The module is imported to validate its presence and correctness.
+
+          Example of tool information printed:
+          ----identifier
+          {'module': 'module_name', 'package': 'package_name', 'package_version': 'package_version', ...}
           """
           all_package_tools = {}
 
@@ -141,10 +151,8 @@ Alternatively, you can test your tool package using the script below to ensure t
               package_tools = list_tool_func()
 
               for identifier, tool in package_tools.items():
-                  m = tool["module"]
-                  importlib.import_module(m)  # Import the module to ensure its validity
-                  tool["package_version"] = entry_point.dist.version
-                  all_package_tools[identifier] = tool
+                  importlib.import_module(tool["module"])  # Import the module to ensure its validity
+                  print(f"----{identifier}\n{tool}")
 
           print(all_package_tools)
 
