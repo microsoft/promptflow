@@ -1,14 +1,5 @@
 name: pipelines_templates_steps_template_generate_connections
 inputs:
-  tenantId:
-    required: true
-    type: string
-  clientId:
-    required: true
-    type: string
-  clientSecret:
-    required: true
-    type: string
   targetFolder:
     required: false
     default: "."
@@ -24,7 +15,4 @@ runs:
       conda activate release-env
       echo "Generating connection config file..."
       python3 ./scripts/building/generate_connection_config.py \
-          --tenant_id ${{ inputs.tenantId }} \
-          --client_id ${{ inputs.clientId }} \
-          --client_secret ${{ inputs.clientSecret }} \
           --target_folder ${{ inputs.targetFolder }}

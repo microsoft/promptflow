@@ -34,17 +34,14 @@ jobs:
       with:
         setupType: ${{ env.packageSetupType }}
         scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Generate Configs
-      uses: "./.github/actions/step_generate_configs"
-      with:
-        tenantId: ${{ env.TENANT_ID }}
-        clientId: ${{ env.CLIENT_ID }}
-        clientSecret: ${{ env.CLIENT_SECRET }}
-        targetFolder: ${{ env.testWorkingDirectory }}
     - name: Azure Login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Generate Configs
+      uses: "./.github/actions/step_generate_configs"
+      with:
+        targetFolder: ${{ env.testWorkingDirectory }}
     - name: Run Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
