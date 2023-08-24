@@ -1,9 +1,8 @@
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
+  history:
+    type: string
   customer_info:
     type: string
-  history:
-    type: list
 outputs:
   output:
     type: string
@@ -14,9 +13,9 @@ nodes:
   source:
     type: code
     path: user_intent_zero_shot.jinja2
-  inputs:  # Enter the inputs of this node
+  inputs:  # Please check the generated prompt inputs
+    history: ${inputs.history}
     customer_info: ${inputs.customer_info}
-    chat_history: ${inputs.history}
 - name: extract_intent
   type: python
   source:
