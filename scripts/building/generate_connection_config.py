@@ -7,8 +7,7 @@ from azure.identity import ClientSecretCredential, DefaultAzureCredential
 
 
 CONNECTION_FILE_NAME = "connections.json"
-CONNECTION_TPL_FILE_PATH = Path('.') / "src/promptflow-tools" / "connections.json.example"
-
+CONNECTION_TPL_FILE_PATH = Path('.') / "src/promptflow" / "dev-connections.json.example"
 
 def get_secret_client(
     tenant_id: str, client_id: str, client_secret: str
@@ -16,7 +15,7 @@ def get_secret_client(
     try:
         if (tenant_id is None) or (client_id is None) or (client_secret is None):
             credential = DefaultAzureCredential()
-            client = SecretClient(vault_url="https://promptflow-api-keys.vault.azure.net/", credential=credential)
+            client = SecretClient(vault_url="https://promptflowprod.vault.azure.net/", credential=credential)
         else:
             credential = ClientSecretCredential(tenant_id, client_id, client_secret)
             client = SecretClient(vault_url="https://github-promptflow.vault.azure.net/", credential=credential)
