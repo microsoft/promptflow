@@ -1,13 +1,9 @@
 import functools
-import http
 import json
 import re
-import socket
 import sys
 import time
 
-import requests
-import urllib3
 from jinja2 import Template
 from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
 from promptflow.exceptions import SystemErrorException, UserErrorException
