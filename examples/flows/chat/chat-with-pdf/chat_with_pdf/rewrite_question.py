@@ -8,8 +8,8 @@ def rewrite_question(question: str, history: list):
     template = Environment(
         loader=FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
     ).get_template("rewrite_question_prompt.md")
-    token_limit = int(os.environ.get("PROMPT_TOKEN_LIMIT"))
-    max_completion_tokens = int(os.environ.get("MAX_COMPLETION_TOKENS"))
+    token_limit = int(os.environ["PROMPT_TOKEN_LIMIT"])
+    max_completion_tokens = int(os.environ["MAX_COMPLETION_TOKENS"])
 
     # Try to render the prompt with token limit and reduce the history count if it fails
     while True:
