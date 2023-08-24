@@ -38,7 +38,8 @@ runs:
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
-      pip install -e ./
+      python ./setup.py bdist_wheel
+      pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}

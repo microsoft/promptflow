@@ -53,6 +53,7 @@ jobs:
         export IS_IN_CI_PIPELINE="true"
         az account show
         conda activate release-env
+        export PYTHONPATH=${{ github.workspace }}/src/promptflow
         python scripts/building/run_coverage_tests.py \
           -p ${{ github.workspace }}/src/promptflow/promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
