@@ -131,7 +131,10 @@ Alternatively, you can test your tool package using the script below to ensure t
       import traceback
 
       def test():
-          """collect and list package info using the `package-tools` entry point. This ensures that your package is correctly packed and your tools are accurately collected."""
+          """collect and list package info using the `package-tools` entry point.
+
+          This ensures that your package is correctly packed and your tools are accurately collected.
+          """
           all_package_tools = {}
 
           for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
