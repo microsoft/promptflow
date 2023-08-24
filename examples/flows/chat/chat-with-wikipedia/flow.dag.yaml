@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   chat_history:
     type: list
@@ -68,5 +69,5 @@ nodes:
   provider: AzureOpenAI
   connection: azure_open_ai_connection
   api: chat
-id: chat_with_wikipedia
-name: Chat With Wikipedia
+environment:
+    python_requirements_txt: requirements.txt

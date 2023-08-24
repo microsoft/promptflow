@@ -9,11 +9,11 @@ on:
     - cron: "24 20 * * *" # Every day starting at 4:24 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/**, .github/workflows/samples_getstarted_quickstartazure.yml ]
   workflow_dispatch:
 
 jobs:
-  quickstart-azure:
+  samples_notebook_ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

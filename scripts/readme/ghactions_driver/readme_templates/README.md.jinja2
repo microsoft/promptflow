@@ -1,0 +1,95 @@
+# Promptflow examples
+
+[![code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![license: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](../LICENSE)
+
+## Get started
+
+**Install dependencies**
+
+- Bootstrap your python environment. 
+  - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
+  - install required packages in python environment : `pip install -r requirements.txt`
+    - show installed sdk: `pip show promptflow`
+
+**Quick start**
+
+| path | status | description |
+------|--------|-------------
+{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
+{% endfor %}
+
+## CLI examples
+
+### Tutorials ([tutorials](tutorials))
+
+| path | status | description |
+------|--------|-------------
+{% for tutorial in tutorials.readmes %}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
+{% endfor %}
+
+### Flows ([flows](flows))
+
+#### [Standard flows](flows/standard/) 
+
+| path | status | description |
+------|--------|-------------
+{% for flow in flows.readmes %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
+{% endfor %}
+
+#### [Evaluation flows](flows/evaluation/)
+
+| path | status | description |
+------|--------|-------------
+{% for evaluation in evaluations.readmes %}| [{{ evaluation.name }}]({{ evaluation.path }}) | [![{{evaluation.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}) | {{ evaluation.description }} |
+{% endfor %}
+
+#### [Chat flows](flows/chat/)
+
+| path | status | description |
+------|--------|-------------
+{% for chat in chats.readmes %}| [{{ chat.name }}]({{ chat.path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
+{% endfor %}
+
+### Connections ([connections](connections))
+
+| path | status | description |
+------|--------|-------------
+{% for connection in connections.readmes %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
+{% endfor %}
+
+### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
+
+| path | status | description |
+------|--------|-------------
+| [deploy.md](tutorials/flow-deploy/deploy.md) | | deploy flow as endpoint
+
+## SDK examples
+
+| path | status | description |
+------|--------|-------------
+{% for quickstart in quickstarts.notebooks %}| [{{ quickstart.name }}]({{ quickstart.path }}) | [![{{quickstart.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{quickstart.yaml_name}}) | {{ quickstart.description }} |
+{% endfor %}
+{%- for tutorial in tutorials.notebooks -%}| [{{ tutorial.name }}]({{ tutorial.path }}) | [![{{tutorial.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{tutorial.yaml_name}}) | {{ tutorial.description }} |
+{% endfor %}
+{%- if connections.notebooks|length > 0 -%}{% for connection in connections.notebooks %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
+{% endfor %}{% endif %}
+{%- if chats.notebooks|length > 0 -%}{% for chat in chats.notebooks %}| [{{ chat.name }}]({{ chat.path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
+{% endfor %}{% endif %}
+{%- if evaluations.notebooks|length > 0 -%}{% for evaluation in evaluations.notebooks %}| [{{ evaluation.name }}]({{ evaluation.path }}) | [![{{evaluation.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{evaluation.yaml_name}}) | {{ evaluation.description }} |
+{% endfor %}{% endif %}
+{%- if flows.notebooks|length > 0 -%}{% for flow in flows.notebooks %}| [{{ flow.name }}]({{ flow.path }}) | [![{{flow.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{flow.yaml_name}}) | {{ flow.description }} |
+{% endfor %}{% endif %}
+
+
+## Contributing
+
+We welcome contributions and suggestions! Please see the [contributing guidelines](../CONTRIBUTING.md) for details.
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). Please see the [code of conduct](../CODE_OF_CONDUCT.md) for details.
+
+## Reference
+
+* [Promptflow documentation](https://microsoft.github.io/promptflow)

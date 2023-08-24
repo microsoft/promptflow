@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   text:
     type: string
@@ -27,3 +28,5 @@ nodes:
   connection: azure_open_ai_connection
   api: chat
 node_variants: {}
+environment:
+    python_requirements_txt: requirements.txt

@@ -5,8 +5,7 @@ from typing import Union
 import openai
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
-from promptflow.core.tool import tool
-from promptflow.core.tools_manager import register_builtin_method
+from promptflow._internal import tool
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import InvalidConnectionType
 
@@ -37,8 +36,5 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input:
         )["data"][0]["embedding"]
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
-                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]"
+                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)
-
-
-register_builtin_method(embedding)

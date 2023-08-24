@@ -1,0 +1,59 @@
+.title {
+    font-weight:700;
+}
+
+.sd-card-header {
+    font-weight:700;
+    font-size: 16px;
+}
+
+
+.bd-page-width {
+    max-width: 100rem;
+}
+
+.bd-sidebar-primary {
+    flex: 0 0 20%;
+}
+
+.bd-main .bd-content .bd-article-container {
+    max-width: 70em;
+}
+
+/* (A) LIGHTBOX BACKGROUND */
+#lightbox {
+    /* (A1) COVERS FULLSCREEN */
+    position: fixed; z-index: 1060;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+
+    /* (A2) BACKGROUND */
+    background: rgba(0, 0, 0, 0.5);
+
+    /* (A3) CENTER IMAGE ON SCREEN */
+    display: flex;
+    align-items: center;
+    align-items: center;
+
+    /* (A4) HIDDEN BY DEFAULT */
+    visibility: hidden;
+    opacity: 0;
+
+    /* (A5) SHOW/HIDE ANIMATION */
+    transition: opacity ease 0.4s;
+}
+/* (A6) TOGGLE VISIBILITY */
+#lightbox.show {
+    visibility: visible;
+    opacity: 1;
+}
+/* (B) LIGHTBOX IMAGE */
+#lightbox img {
+    /* (B1) DIMENSIONS */
+    width: 100%;
+    height: 100%;
+
+    /* (B2) IMAGE FIT */
+    /* contain | cover | fill | scale-down */
+    object-fit: contain;
+}

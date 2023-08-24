@@ -1,5 +1,5 @@
-# Basic
-A basic standard flow that calls azure open ai with Azure OpenAI connection info stored in environment variables. 
+# Basic standard flow
+A basic standard flow using custom python tool that calls Azure OpenAI with connection info stored in environment variables. 
 
 Tools used in this flow：
 - `prompt` tool
@@ -77,6 +77,8 @@ pf connection show -n azure_open_ai_connection
 ```
 
 - Test using connection secret specified in environment variables
+**Note**: we used `'` to wrap value since it supports raw value without escape in powershell & bash. For windows command prompt, you may remove the `'` to avoid it become part of the value.
+
 ```bash
 # test with default input value in flow.dag.yaml 
 pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${azure_open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${azure_open_ai_connection.api_base}'
