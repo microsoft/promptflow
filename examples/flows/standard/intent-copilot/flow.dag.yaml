@@ -1,29 +1,28 @@
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
+  history:
+    type: string
   customer_info:
     type: string
-  history:
-    type: list
 outputs:
   output:
     type: string
     reference: ${extract_intent.output}
 nodes:
-- name: user_prompt_template
+- name: chat_prompt
   type: prompt
   source:
     type: code
     path: user_intent_zero_shot.jinja2
-  inputs: {}  # Please enter the inputs of this node
+  inputs:  # Please check the generated prompt inputs
+    history: ${inputs.history}
+    customer_info: ${inputs.customer_info}
 - name: extract_intent
   type: python
   source:
     type: code
     path: extract_intent_tool.py
   inputs:
-    customer_info: ${inputs.customer_info}
-    history: ${inputs.history}
-    user_prompt_template: ${user_prompt_template.output}
+    chat_prompt: ${chat_prompt.output}
     connection: custom_connection
 environment:
     python_requirements_txt: requirements.txt
