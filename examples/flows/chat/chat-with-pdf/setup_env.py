@@ -17,6 +17,7 @@ def setup_env(aoai_connection: AzureOpenAIConnection, config: dict):
 
     if isinstance(config, str):
         import json
+
         # Workaround if runtime not passing config as dict
         config = json.loads(config)
 
