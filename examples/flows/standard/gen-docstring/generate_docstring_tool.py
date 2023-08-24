@@ -54,7 +54,7 @@ async def agenerate_docstring(divided: list[str]):
                 divided.extend(list(reversed(divided_tmp)))
                 continue
             else:
-                logging.warning(f'The code is too long, will not generate docstring.')
+                logging.warning('The code is too long, will not generate docstring.')
         except Exception as e:
             logging.warning(e)
         all_divided.append(item)
@@ -68,7 +68,7 @@ async def agenerate_docstring(divided: list[str]):
     res_doc = await asyncio.gather(*tasks)
     new_code = []
     for i in range(len(all_divided)):
-        if type(res_doc[i]) == str:
+        if type(res_doc[i]) is str:
             new_code.append(Divider.merge_doc2code(res_doc[i], all_divided[i]))
         else:
             new_code.append(all_divided[i])

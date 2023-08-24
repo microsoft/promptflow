@@ -34,8 +34,8 @@ class Divider:
                     end = next(ends).start()
                 min_pos = min(min_pos, start)
                 splitted_content.append(text[start:end])
-            except:
-                if start != None:
+            except Exception as e:  # pylint: disable=broad-except
+                if start is not None:
                     min_pos = min(min_pos, start)
                     splitted_content.append(text[start:])
                 break
@@ -95,7 +95,9 @@ class Divider:
                 if code_doc:
                     code += part_full_code.replace(code_doc[0], format_new_doc.strip(), 1)
                 else:
-                    code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + format_new_doc + '\n' + origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
+                    code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + format_new_doc + '\n' + origin_code[
+                                                                                                  pos2[i2][1]:
+                                                                                                  pos2[i2 + 1][0]]
             else:
                 code += part_full_code
         return code
