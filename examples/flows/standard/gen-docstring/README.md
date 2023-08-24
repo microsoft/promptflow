@@ -1,9 +1,13 @@
-# Auto generate docstring
+# Generate Python  docstring
 This example can help you automatically generate Python code's docstring and return the modified code.
 
 Tools used in this flow：
 - `load_code` tool, it can load code from a file path.
+  - Load content from a local file.
+  - Loading content from a remote URL, currently loading HTML content, not just code, is under repair.
 - `divide_code` tool, it can divide code into code blocks.
+  - To avoid files that are too long and exceed the token limit, it is necessary to split the file.
+  - Avoid using the same function (such as __init__(self)) to generate docstrings in the same one file, which may cause confusion when adding docstrings to the corresponding functions in the future.
 - `generate_docstring` tool, it can generate docstring for a code block, and merge docstring into origin code.
 
 ## What you will learn
@@ -65,4 +69,6 @@ pf flow test --flow . --inputs source="./demo_code.py"
 # run flow with batch data
 pf run create --flow . --data ./data.jsonl --name auto_generate_docstring
 ```
+Output the code after add the docstring.
+
 
