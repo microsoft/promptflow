@@ -197,6 +197,7 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, convo_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
+        print('use engine: ', self.engine)
         response = await openai.ChatCompletion.acreate(
             engine=self.engine,
             messages=messages,
