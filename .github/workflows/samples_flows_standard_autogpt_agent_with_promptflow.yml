@@ -3,13 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_standard_summarizing_film_with_autogpt
+name: samples_flows_standard_autogpt_agent_with_promptflow
 on:
   schedule:
     - cron: "23 22 * * *" # Every day starting at 6:23 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/standard/summarizing-film-with-autogpt/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_summarizing_film_with_autogpt.yml ]
+    paths: [ examples/flows/standard/autogpt-agent-with-promptflow/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_autogpt_agent_with_promptflow.yml ]
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/flows/standard/summarizing-film-with-autogpt
+        working-directory: examples/flows/standard/autogpt-agent-with-promptflow
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -48,7 +48,7 @@ jobs:
             mv .env.example .env
           fi
       - name: Create run.yml
-        working-directory: examples/flows/standard/summarizing-film-with-autogpt
+        working-directory: examples/flows/standard/autogpt-agent-with-promptflow
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -59,16 +59,16 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/flows/standard/summarizing-film-with-autogpt/README.md
+      - name: Extract Steps examples/flows/standard/autogpt-agent-with-promptflow/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/summarizing-film-with-autogpt/README.md -o examples/flows/standard/summarizing-film-with-autogpt
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/autogpt-agent-with-promptflow/README.md -o examples/flows/standard/autogpt-agent-with-promptflow
       - name: Cat script
-        working-directory: examples/flows/standard/summarizing-film-with-autogpt
+        working-directory: examples/flows/standard/autogpt-agent-with-promptflow
         run: |
           cat bash_script.sh
       - name: Run scripts
-        working-directory: examples/flows/standard/summarizing-film-with-autogpt
+        working-directory: examples/flows/standard/autogpt-agent-with-promptflow
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -78,7 +78,7 @@ jobs:
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
-        working-directory: examples/flows/standard/summarizing-film-with-autogpt
+        working-directory: examples/flows/standard/autogpt-agent-with-promptflow
         run: |
           pip list
       - name: Upload artifact
@@ -86,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/standard/summarizing-film-with-autogpt/bash_script.sh
+          path: examples/flows/standard/autogpt-agent-with-promptflow/bash_script.sh
