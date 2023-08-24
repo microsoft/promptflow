@@ -9,7 +9,7 @@ on:
     - cron: "39 22 * * *" # Every day starting at 6:39 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/evaluation/eval-classification-accuracy/** ]
+    paths: [ examples/flows/evaluation/eval-classification-accuracy/**, examples/*requirements.txt, .github/workflows/samples_flows_evaluation_eval_classification_accuracy.yml ]
   workflow_dispatch:
 
 jobs:

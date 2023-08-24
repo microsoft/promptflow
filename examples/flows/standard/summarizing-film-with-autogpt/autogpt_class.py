@@ -76,7 +76,7 @@ class AutoGPT:
                     functions=self.functions)
                 return response
             except Exception as e:
-                if "The API deployment for this resource does not exist" in e.exc_msg:
+                if "The API deployment for this resource does not exist" in str(e):
                     raise Exception(
                         "Please fill in the deployment name of your Azure OpenAI resoure gpt-4 model.")
 

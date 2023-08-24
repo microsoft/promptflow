@@ -1,7 +1,6 @@
 import unittest
 import promptflow.azure as azure
 from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential
-from azure.ai.ml import MLClient
 from base_test import BaseTest
 import os
 
@@ -21,9 +20,7 @@ class TestChatWithPDFAzure(BaseTest):
             # Fall back to InteractiveBrowserCredential in case DefaultAzureCredential not work
             credential = InteractiveBrowserCredential()
 
-        ml_client = MLClient.from_config(credential=credential)
-
-        self.pf = azure.PFClient(ml_client)
+        self.pf = azure.PFClient.from_config(credential=credential)
         self.runtime = "chat_with_pdf_runtime"
         # self.runtime = None  # serverless
 
