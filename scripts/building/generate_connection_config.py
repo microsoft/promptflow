@@ -7,7 +7,8 @@ from azure.identity import ClientSecretCredential, DefaultAzureCredential
 
 
 CONNECTION_FILE_NAME = "connections.json"
-CONNECTION_TPL_FILE_PATH = Path('.') / "src/promptflow" / "dev-connections.json.example"
+CONNECTION_TPL_FILE_PATH = Path(".") / "src/promptflow" / "dev-connections.json.example"
+
 
 def get_secret_client(
     tenant_id: str, client_id: str, client_secret: str
@@ -15,10 +16,16 @@ def get_secret_client(
     try:
         if (tenant_id is None) or (client_id is None) or (client_secret is None):
             credential = DefaultAzureCredential()
-            client = SecretClient(vault_url="https://promptflowprod.vault.azure.net/", credential=credential)
+            client = SecretClient(
+                vault_url="https://promptflowprod.vault.azure.net/",
+                credential=credential,
+            )
         else:
             credential = ClientSecretCredential(tenant_id, client_id, client_secret)
-            client = SecretClient(vault_url="https://github-promptflow.vault.azure.net/", credential=credential)
+            client = SecretClient(
+                vault_url="https://github-promptflow.vault.azure.net/",
+                credential=credential,
+            )
     except Exception as e:
         print(e)
 
@@ -49,22 +56,35 @@ def fill_key_to_dict(template_dict, keys_dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tenant_id", type=str, help="The tenant id of the service principal")
-    parser.add_argument("--client_id", type=str, help="The client id of the service principal")
-    parser.add_argument("--client_secret", type=str, help="The client secret of the service principal")
-    parser.add_argument("--target_folder", type=str, help="The target folder to save the generated file")
+    parser.add_argument(
+        "--tenant_id", type=str, help="The tenant id of the service principal"
+    )
+    parser.add_argument(
+        "--client_id", type=str, help="The client id of the service principal"
+    )
+    parser.add_argument(
+        "--client_secret", type=str, help="The client secret of the service principal"
+    )
+    parser.add_argument(
+        "--target_folder", type=str, help="The target folder to save the generated file"
+    )
     args = parser.parse_args()
 
     template_dict = json.loads(
         open(CONNECTION_TPL_FILE_PATH.resolve().absolute(), "r").read()
     )
     file_path = (
-        (Path('.') / args.target_folder / CONNECTION_FILE_NAME).resolve().absolute().as_posix()
+        (Path(".") / args.target_folder / CONNECTION_FILE_NAME)
+        .resolve()
+        .absolute()
+        .as_posix()
     )
     print(f"file_path: {file_path}")
 
     client = get_secret_client(
-        tenant_id=args.tenant_id, client_id=args.client_id, client_secret=args.client_secret
+        tenant_id=args.tenant_id,
+        client_id=args.client_id,
+        client_secret=args.client_secret,
     )
     all_secret_names = list_secret_names(client)
     data = {
