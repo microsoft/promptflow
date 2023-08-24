@@ -1,4 +1,4 @@
-# AutoGPT Agent With Promptflow
+# Autonomous Agent With Promptflow
 
 This is a flow showcasing how to construct a AutoGPT agent with promptflow to autonomously figures out how to apply the given functions 
 to solve the goal, which is film trivia that provides accurate and up-to-date information about movies, directors, 
