@@ -4,3 +4,4 @@ type: azure_content_safety
 api_key: "<to-be-replaced>"
 endpoint: "endpoint"
 api_version: "2023-04-30-preview"
+
