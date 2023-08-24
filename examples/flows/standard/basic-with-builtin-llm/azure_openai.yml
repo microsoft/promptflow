@@ -4,4 +4,3 @@ type: azure_open_ai
 api_key: "<to-be-replaced>"
 api_base: "https://<to-be-replaced>.openai.azure.com/"
 api_type: "azure"
-api_version: "2023-03-15-preview"

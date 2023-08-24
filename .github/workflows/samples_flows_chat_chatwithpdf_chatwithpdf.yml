@@ -9,7 +9,7 @@ on:
     - cron: "12 21 * * *" # Every day starting at 5:12 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/flows/chat/chat-with-pdf/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml ]
   workflow_dispatch:
 
 jobs:
