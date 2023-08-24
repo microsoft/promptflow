@@ -1,4 +1,5 @@
 import uuid
+from types import GeneratorType
 
 import pytest
 
@@ -120,7 +121,7 @@ class TestExecutor:
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
         msg = f"Bulk result only has {len(bulk_results.line_results)}/{nlines} line results"
-        assert len(bulk_results.line_results) == nlines, msg
+        assert len(bulk_results.outputs) == nlines, msg
         for i, line_result in enumerate(bulk_results.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
@@ -174,7 +175,8 @@ class TestExecutor:
         bulk_inputs_mapping = self.get_bulk_inputs(
             flow_folder=flow_folder, sample_inputs_file="inputs_mapping.json", return_dict=True
         )
-        bulk_results = executor.exec_bulk_with_inputs_mapping(bulk_inputs, bulk_inputs_mapping, run_id)
+        resolved_inputs = executor.validate_and_apply_inputs_mapping(bulk_inputs, bulk_inputs_mapping)
+        bulk_results = executor.exec_bulk(resolved_inputs, run_id)
         assert isinstance(bulk_results, BulkResult)
         assert len(bulk_results.outputs) == 2
         assert bulk_results.outputs == [
@@ -305,3 +307,28 @@ class TestExecutor:
         assert ret == {"text": "12", "num": 11}
         with pytest.raises(InputTypeError):
             ret = executor.convert_flow_input_types(inputs={"num": "hello"})
+            executor.convert_flow_input_types(inputs={"num": "hello"})
+
+    def test_chat_flow_stream_mode(self, dev_connections) -> None:
+        executor = FlowExecutor.create(get_yaml_file("python_stream_tools", FLOW_ROOT), dev_connections)
+
+        # To run a flow with stream output, we need to set this flag to run tracker.
+        # TODO: refine the interface
+        executor._run_tracker.allow_generator_types = True
+
+        inputs = {"text": "hello", "chat_history": []}
+        line_result = executor.exec_line(inputs)
+
+        # Assert there's only one output
+        assert len(line_result.output) == 1
+        assert set(line_result.output.keys()) == {"output_echo"}
+
+        # Assert the only output is a generator
+        output_echo = line_result.output["output_echo"]
+        assert isinstance(output_echo, GeneratorType)
+        assert list(output_echo) == ["Echo: ", "hello "]
+
+        # Assert the flow is completed and no errors are raised
+        flow_run_info = line_result.run_info
+        assert flow_run_info.status == Status.Completed
+        assert flow_run_info.error is None

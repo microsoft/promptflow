@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from promptflow import tool
-from promptflow._internal import register_connections
+from promptflow._core.tools_manager import register_connections
 from promptflow.contracts.types import Secret
 
 

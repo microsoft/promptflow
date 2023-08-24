@@ -4,18 +4,19 @@
 import os
 from os import PathLike
 from pathlib import Path
-from azure.ai.ml import MLClient
-from typing import IO, AnyStr, List, Union, Dict, Any
+from typing import IO, Any, AnyStr, Dict, List, Optional, Union
 
+from azure.ai.ml import MLClient
+from azure.core.credentials import TokenCredential
 from pandas import DataFrame
 
+from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities import Run
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._utils.gerneral import is_remote_uri
-from promptflow._sdk._user_agent import USER_AGENT
 from promptflow.azure.operations import RunOperations
-from promptflow.azure.operations._flow_opearations import FlowOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
+from promptflow.azure.operations._flow_opearations import FlowOperations
 
 
 class PFClient:
@@ -23,54 +24,113 @@ class PFClient:
 
     Use this client to manage promptflow resources, e.g. runs
 
-    :param ml_client: An instance of MLClient, indicates to interact with Promptflow service
-    :type ml_client: azure.ai.ml.entities.MLClient
+    :param credential: Credential to use for authentication, defaults to None
+    :type credential: ~azure.core.credentials.TokenCredential
+    :param subscription_id: Azure subscription ID, optional for registry assets only, defaults to None
+    :type subscription_id: typing.Optional[str]
+    :param resource_group_name: Azure resource group, optional for registry assets only, defaults to None
+    :type resource_group_name: typing.Optional[str]
+    :param workspace_name: Workspace to use in the client, optional for non workspace dependent operations only,
+            defaults to None
+    :type workspace_name: typing.Optional[str]
     :param kwargs: A dictionary of additional configuration parameters.
     :type kwargs: dict
     """
 
-    def __init__(self, ml_client, **kwargs):
-        if not isinstance(ml_client, MLClient):
-            raise ValueError(f"ml_client must be an instance of 'azure.ai.MLClient', got {type(ml_client)!r} instead.")
+    def __init__(
+        self,
+        credential: TokenCredential = None,
+        subscription_id: Optional[str] = None,
+        resource_group_name: Optional[str] = None,
+        workspace_name: Optional[str] = None,
+        **kwargs,
+    ):
         self._add_user_agent(kwargs)
-        self._client = ml_client
+        self._ml_client = kwargs.pop("ml_client", None) or MLClient(
+            credential=credential,
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            **kwargs,
+        )
         self._flows = FlowOperations(
-            operation_scope=ml_client._operation_scope,
-            operation_config=ml_client._operation_config,
-            all_operations=ml_client._operation_container,
-            credential=ml_client._credential,
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            all_operations=self._ml_client._operation_container,
+            credential=self._ml_client._credential,
             **kwargs,
         )
         self._runs = RunOperations(
-            operation_scope=ml_client._operation_scope,
-            operation_config=ml_client._operation_config,
-            all_operations=ml_client._operation_container,
-            credential=ml_client._credential,
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            all_operations=self._ml_client._operation_container,
+            credential=self._ml_client._credential,
             flow_operations=self._flows,
             **kwargs,
         )
         self._connections = ConnectionOperations(
-            operation_scope=ml_client._operation_scope,
-            operation_config=ml_client._operation_config,
-            all_operations=ml_client._operation_container,
-            credential=ml_client._credential,
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            all_operations=self._ml_client._operation_container,
+            credential=self._ml_client._credential,
+            **kwargs,
+        )
+
+    @property
+    def ml_client(self):
+        """Return a client class to interact with Azure ML services."""
+        return self._ml_client
+
+    @classmethod
+    def from_config(
+        cls,
+        credential: TokenCredential,
+        *,
+        path: Optional[Union[os.PathLike, str]] = None,
+        file_name=None,
+        **kwargs,
+    ) -> "PFClient":
+        """Return a PFClient object connected to Azure Machine Learning workspace.
+
+        Reads workspace configuration from a file. Throws an exception if the config file can't be found.
+
+        The method provides a simple way to reuse the same workspace across multiple Python notebooks or projects.
+        Users can save the workspace Azure Resource Manager (ARM) properties using the
+        [workspace.write_config](https://aka.ms/ml-workspace-class) method,
+        and use this method to load the same workspace in different Python notebooks or projects without
+        retyping the workspace ARM properties.
+
+        :param credential: The credential object for the workspace.
+        :type credential: ~azure.core.credentials.TokenCredential
+        :param path: The path to the config file or starting directory to search.
+            The parameter defaults to starting the search in the current directory.
+            Defaults to None
+        :type path: typing.Union[os.PathLike, str]
+        :param file_name: Allows overriding the config file name to search for when path is a directory path.
+            (Default value = None)
+        :type file_name: str
+        """
+
+        ml_client = MLClient.from_config(credential=credential, path=path, file_name=file_name, **kwargs)
+        return PFClient(
+            ml_client=ml_client,
             **kwargs,
         )
 
     def run(
-            self,
-            flow: Union[str, PathLike],
-            *,
-            data: Union[str, PathLike] = None,
-            run: Union[str, Run] = None,
-            column_mapping: dict = None,
-            variant: str = None,
-            connections: dict = None,
-            environment_variables: dict = None,
-            name: str = None,
-            display_name: str = None,
-            tags: Dict[str, str] = None,
-            **kwargs,
+        self,
+        flow: Union[str, PathLike],
+        *,
+        data: Union[str, PathLike] = None,
+        run: Union[str, Run] = None,
+        column_mapping: dict = None,
+        variant: str = None,
+        connections: dict = None,
+        environment_variables: dict = None,
+        name: str = None,
+        display_name: str = None,
+        tags: Dict[str, str] = None,
+        **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
         Note: at least one of data or run must be provided.
@@ -122,7 +182,7 @@ class PFClient:
             variant=variant,
             flow=Path(flow),
             connections=connections,
-            environment_variables=environment_variables
+            environment_variables=environment_variables,
         )
         return self.runs.create_or_update(run=run, **kwargs)
 
@@ -208,9 +268,7 @@ class PFClient:
         )
 
         if component_type != "parallel":
-            raise NotImplementedError(
-                f"Component type {component_type} is not supported yet."
-            )
+            raise NotImplementedError(f"Component type {component_type} is not supported yet.")
 
         # TODO: confirm if we should keep flow operations
         component = self._flows.load_as_component(

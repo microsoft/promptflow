@@ -12,7 +12,11 @@ def test_swagger(flow_serving_client):
     swagger_dict = json.loads(flow_serving_client.get("/swagger.json").data.decode())
     assert swagger_dict == {
         "components": {"securitySchemes": {"bearerAuth": {"scheme": "bearer", "type": "http"}}},
-        "info": {"title": "Promptflow[default_flow] API", "version": "1.0.0"},
+        "info": {
+            "title": "Promptflow[basic-with-connection] API",
+            "version": "1.0.0",
+            "flow_name": "basic-with-connection",
+        },
         "openapi": "3.0.0",
         "paths": {
             "/score": {
@@ -43,7 +47,7 @@ def test_swagger(flow_serving_client):
                         "400": {"description": "Invalid input"},
                         "default": {"description": "unexpected error"},
                     },
-                    "summary": "run promptflow: default_flow with an given input",
+                    "summary": "run promptflow: basic-with-connection with an given input",
                 }
             }
         },

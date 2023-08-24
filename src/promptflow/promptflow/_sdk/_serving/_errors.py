@@ -16,10 +16,6 @@ class MissingRequiredFlowInput(BadRequest):
     pass
 
 
-class FlowFileNotFound(UserErrorException):
-    pass
-
-
 class MultipleStreamOutputFieldsNotSupported(UserErrorException):
     def __init__(self):
         super().__init__(

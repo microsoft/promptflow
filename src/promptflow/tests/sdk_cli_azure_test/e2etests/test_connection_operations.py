@@ -14,7 +14,7 @@ from promptflow.contracts.types import Secret
 def connection_ops(ml_client):
     from promptflow.azure import PFClient
 
-    pf = PFClient(ml_client)
+    pf = PFClient(ml_client=ml_client)
     yield pf._connections
 
 

@@ -12,11 +12,13 @@ import re
 import types
 from dataclasses import asdict
 from pathlib import Path
+from traceback import TracebackException
 
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
 from promptflow._core.errors import MetaFileNotFound, MetaFileReadError
 from promptflow._core.tool import ToolProvider
+from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
 from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
@@ -155,7 +157,7 @@ def load_python_module_from_file(src_file: Path):
         spec.loader.exec_module(m)
     except Exception as e:
         # TODO: add stacktrace to additional info
-        raise PythonParsingError(f"Failed to load python module from file '{src_file}', reason: {e}.") from e
+        raise PythonLoadError(f"Failed to load python module from file '{src_file}', reason: {e}.") from e
     return m
 
 
@@ -274,3 +276,42 @@ class MultipleToolsDefined(PythonParsingError):
 
 class BadFunctionInterface(PythonParsingError):
     pass
+
+
+class PythonLoadError(PythonParsingError):
+    @property
+    def python_load_traceback(self):
+        """Return the traceback inside user's source code scope.
+
+        The traceback inside the promptflow's internal code will be taken off.
+        """
+        exc = self.inner_exception
+        if exc and exc.__traceback__ is not None:
+            tb = exc.__traceback__
+            # The first three frames are always the code in tool.py who invokes the tool.
+            # We do not want to dump it to user code's traceback.
+            tb = get_tb_next(tb, next_cnt=3)
+            if tb is not None:
+                te = TracebackException(type(exc), exc, tb)
+                formatted_tb = "".join(te.format())
+
+                return formatted_tb
+        return None
+
+    @property
+    def additional_info(self):
+        """Set the python load exception details as additional info."""
+        if not self.inner_exception:
+            return None
+
+        info = {
+            "type": self.inner_exception.__class__.__name__,
+            "message": str(self.inner_exception),
+            "traceback": self.python_load_traceback,
+        }
+
+        info.update(last_frame_info(self.inner_exception))
+
+        return {
+            ADDITIONAL_INFO_USER_CODE_STACKTRACE: info,
+        }

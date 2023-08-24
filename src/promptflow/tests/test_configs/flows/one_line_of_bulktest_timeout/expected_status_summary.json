@@ -1,0 +1,8 @@
+{
+    "__pf__.nodes.my_python_tool.completed": 3,
+    "__pf__.nodes.my_python_tool.failed": 0,
+    "__pf__.nodes.my_python_tool_with_failed_line.completed": 2,
+    "__pf__.nodes.my_python_tool_with_failed_line.failed": 1,
+    "__pf__.lines.completed": 2,
+    "__pf__.lines.failed": 1
+}

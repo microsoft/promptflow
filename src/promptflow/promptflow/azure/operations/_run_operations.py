@@ -535,7 +535,8 @@ class RunOperations(_ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         flow = load_flow(run.flow)
-        self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow)
+        # ignore .promptflow/dag.toos.json only for run submission scenario
+        self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
         return flow.path
 
     def _get_session_id(self, flow):

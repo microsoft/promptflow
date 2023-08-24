@@ -25,7 +25,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
-from promptflow._internal import generate_tool_meta_dict_by_file
+from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
@@ -442,6 +442,7 @@ class PromptflowIgnoreFile(IgnoreFile):
     def __init__(self, prompt_flow_path: Union[Path, str]):
         super(PromptflowIgnoreFile, self).__init__(prompt_flow_path)
         self._path = Path(prompt_flow_path)
+        self._ignore_tools_json = False
 
     @property
     def base_path(self) -> Path:
@@ -453,7 +454,10 @@ class PromptflowIgnoreFile(IgnoreFile):
             return []
 
         base_ignore = get_ignore_file(self.base_path)
-        return self.IGNORE_FILE + base_ignore._get_ignore_list()
+        result = self.IGNORE_FILE + base_ignore._get_ignore_list()
+        if self._ignore_tools_json:
+            result.append(f"{PROMPT_FLOW_DIR_NAME}/{FLOW_TOOLS_JSON}")
+        return result
 
 
 def _generate_metas_from_files(
@@ -524,7 +528,7 @@ def _generate_package_tools() -> dict:
 
     imp.reload(pkg_resources)
 
-    from promptflow._internal import collect_package_tools
+    from promptflow._core.tools_manager import collect_package_tools
 
     return collect_package_tools()
 

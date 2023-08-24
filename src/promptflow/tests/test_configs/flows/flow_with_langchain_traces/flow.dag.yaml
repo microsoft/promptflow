@@ -4,13 +4,13 @@ inputs:
 outputs:
   output:
     type: string
-    reference: ${my_python_tool.output}
+    reference: ${test_langchain_traces.output}
 nodes:
-- name: my_python_tool
+- name: test_langchain_traces
   type: python
   source:
     type: code
-    path: my_python_tool.py
+    path: test_langchain_traces.py
   inputs:
     question: ${inputs.question}
     conn: azure_open_ai_connection

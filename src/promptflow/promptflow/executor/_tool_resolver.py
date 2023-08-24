@@ -44,6 +44,11 @@ class ToolResolver:
     def __init__(
         self, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
     ):
+        try:
+            # Import openai and aoai for llm tool
+            from promptflow.tools import aoai, openai  # noqa: F401
+        except ImportError:
+            pass
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)

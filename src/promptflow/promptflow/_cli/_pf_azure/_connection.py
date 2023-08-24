@@ -7,7 +7,8 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
-from promptflow._cli._utils import _set_workspace_argument_for_subparsers, get_client_for_cli
+from promptflow._cli._params import add_param_connection_name, add_param_env, logging_params
+from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activate_action, get_client_for_cli
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import Secret
@@ -26,32 +27,46 @@ def add_connection_parser(subparsers):
 
 
 def add_connection_create(subparsers):
-    create_parser = subparsers.add_parser(
-        "create", description="Create a connection for promptflow.", help="pf connection create"
-    )
-    _set_workspace_argument_for_subparsers(create_parser)
-    create_parser.add_argument("--name", "-n", type=str, help="Name of the connection to create.")
-    create_parser.add_argument(
+    add_param_type = lambda parser: parser.add_argument(  # noqa: E731
         "--type",
         type=str,
         help='Type of the connection, Possible values include: "OpenAI", "AzureOpenAI", "Serp", "Bing", '
         '"Custom", "AzureContentSafety", "CognitiveSearch", "SubstrateLLM',
     )
-    # TODO: reuse existing code
-    create_parser.add_argument(
-        "--env",
-        type=str,
-        default=None,
-        help="the dotenv file path containing the environment variables to be used in the flow.",
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_connection_name,
+        add_param_type,
+        add_param_env,
+    ] + logging_params
+
+    activate_action(
+        name="create",
+        description="Create a connection for promptflow.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pf connection create",
+        action_param_name="sub_action",
     )
-    create_parser.set_defaults(sub_action="create")
 
 
 def add_connection_get(subparsers):
-    get_parser = subparsers.add_parser("get", description="Get a connection for promptflow.", help="pf connection get")
-    _set_workspace_argument_for_subparsers(get_parser)
-    get_parser.add_argument("--name", "-n", type=str, help="Name of the connection to get.")
-    get_parser.set_defaults(sub_action="get")
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_connection_name,
+        add_param_env,
+    ] + logging_params
+
+    activate_action(
+        name="get",
+        description="Get a connection for promptflow.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pf connection get",
+        action_param_name="sub_action",
+    )
 
 
 def _get_conn_operations(subscription_id, resource_group, workspace_name):
@@ -60,7 +75,7 @@ def _get_conn_operations(subscription_id, resource_group, workspace_name):
     client = get_client_for_cli(
         subscription_id=subscription_id, workspace_name=workspace_name, resource_group_name=resource_group
     )
-    pf = PFClient(client)
+    pf = PFClient(ml_client=client)
     return pf._connections
 
 

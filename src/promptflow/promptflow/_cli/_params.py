@@ -167,6 +167,14 @@ def add_param_connection(parser):
     parser.add_argument("--connection", type=str, help="Name of your connection in Azure ML workspace.")
 
 
+def add_param_run_name(parser):
+    parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
+
+
+def add_param_connection_name(parser):
+    parser.add_argument("-n", "--name", type=str, help="Name of the connection to create.")
+
+
 def add_param_variants(parser):
     parser.add_argument(
         "--variants",
@@ -226,6 +234,8 @@ def add_parser_export(parent_parser, entity_name: str):
     parser.add_argument(
         "--format", "-f", required=True, type=str, help="The format to export in.", choices=["docker", "package"]
     )
+    add_param_verbose(parser)
+    add_param_debug(parser)
     parser.set_defaults(sub_action="export")
 
 
@@ -244,3 +254,6 @@ def add_param_verbose(parser):
         action="store_true",
         help="Increase logging verbosity. Use --debug for full debug logs.",
     )
+
+
+logging_params = [add_param_verbose, add_param_debug]

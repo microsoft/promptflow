@@ -5,8 +5,9 @@ from os import PathLike
 from pathlib import Path
 from typing import IO, AnyStr, Union
 
+from promptflow._cli._params import logging_params
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
-from promptflow._cli._utils import _set_workspace_argument_for_subparsers
+from promptflow._cli._utils import _set_workspace_argument_for_subparsers, activate_action
 from promptflow.azure._load_functions import load_flow
 
 
@@ -29,28 +30,63 @@ def add_parser_flow(subparsers):
 
 def add_parser_flow_create(subparsers):
     """Add flow create parser to the pf flow subparsers."""
-    create_parser = subparsers.add_parser("create", description="Create a flow for promptflow.", help="pf flow create")
-    _set_workspace_argument_for_subparsers(create_parser)
-    create_parser.add_argument("--source", type=str, help="Source folder of the flow to create.")
-    create_parser.set_defaults(sub_action="create")
+    add_param_source = lambda parser: parser.add_argument(  # noqa: E731
+        "--source", type=str, help="Source folder of the flow to create."
+    )
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_source,
+    ] + logging_params
+
+    activate_action(
+        name="create",
+        description="Create a flow for promptflow.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pf flow create",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_flow_list(subparsers):
     """Add flow list parser to the pf flow subparsers."""
-    list_parser = subparsers.add_parser("list", description="List flows for promptflow.", help="pf flow list")
-    _set_workspace_argument_for_subparsers(list_parser)
-    list_parser.set_defaults(sub_action="list")
+    add_params = [_set_workspace_argument_for_subparsers] + logging_params
+
+    activate_action(
+        name="list",
+        description="List flows for promptflow.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pf flow list",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_flow_download(subparsers):
     """Add flow download parser to the pf flow subparsers."""
-    download_parser = subparsers.add_parser(
-        "download", description="Download a flow from file share to local.", help="pf flow download"
+    add_param_source = lambda parser: parser.add_argument(  # noqa: E731
+        "--source", type=str, help="The flow folder path on file share to download."
     )
-    _set_workspace_argument_for_subparsers(download_parser)
-    download_parser.add_argument("--source", type=str, help="The flow folder path on file share to download.")
-    download_parser.add_argument("--destination", "-d", type=str, help="The destination folder path to download.")
-    download_parser.set_defaults(sub_action="download")
+    add_param_destination = lambda parser: parser.add_argument(  # noqa: E731
+        "--destination", "-d", type=str, help="The destination folder path to download."
+    )
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_source,
+        add_param_destination,
+    ] + logging_params
+
+    activate_action(
+        name="download",
+        description="Download a flow from file share to local.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="pf flow download",
+        action_param_name="sub_action",
+    )
 
 
 def _get_flow_operation(subscription_id, resource_group, workspace_name):

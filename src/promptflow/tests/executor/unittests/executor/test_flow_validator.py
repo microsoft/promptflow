@@ -60,6 +60,11 @@ class TestFlowValidator:
         "inputs, inputs_mapping",
         (
             [
+                # Missing line_number should not raise exception. That's one reserved key.
+                {"line_number": None},
+                {},
+            ],
+            [
                 {"fake_input_1": None},
                 {"fake_input_1": "fake_input_1", "fake_input_2": "fake_input_2"},
             ],
@@ -93,5 +98,18 @@ class TestFlowValidator:
             FlowValidator.ensure_flow_inputs_mapping_valid(inputs, inputs_mapping)
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
-    def test_validate_nodes_topology(self):
-        pass
+    @pytest.mark.parametrize(
+        "file_name",
+        ["simple_flow_with_python_tool_and_aggregate/flow.dag.yaml"],
+    )
+    def test_ensure_outputs_valid_with_aggregation(self, file_name):
+        flow_file_path = Path(REQUESTS_PATH) / file_name
+        flow_file_path = flow_file_path.resolve().absolute()
+        with open(flow_file_path, "r") as fin:
+            flow = Flow.deserialize(yaml.safe_load(fin))
+        assert flow.outputs["content"] is not None
+        assert flow.outputs["aggregate_content"] is not None
+        flow.outputs = FlowValidator._ensure_outputs_valid(flow)
+        print(flow.outputs)
+        assert flow.outputs["content"] is not None
+        assert flow.outputs.get("aggregate_content") is None

@@ -82,12 +82,20 @@ class TestAzureCli:
         )
         mocked.assert_called_once()
 
-    def test_run_list_runs(self, mocker: MockFixture, operation_scope_args):
+    def test_run_list_runs(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+        default_subscription_id,
+        default_resource_group,
+        default_workspace,
+    ):
         mocked_run = MagicMock()
         mocked_run._to_dict.return_value = {"name": "test_run"}
         mocked = mocker.patch.object(RunOperations, "list")
         # list_runs will print the run list, so we need to mock the return value
         mocked.return_value = [mocked_run]
+
         run_pf_command(
             "run",
             "list",
@@ -106,4 +114,20 @@ class TestAzureCli:
             "table",
             *operation_scope_args,
         )
-        assert mocked.call_count == 2
+
+        mocker.patch.dict(
+            os.environ,
+            {
+                "AZUREML_ARM_WORKSPACE_NAME": default_workspace,
+                "AZUREML_ARM_SUBSCRIPTION": default_subscription_id,
+                "AZUREML_ARM_RESOURCEGROUP": default_resource_group,
+            },
+        )
+        run_pf_command(
+            "run",
+            "list",
+            "--max-results",
+            "10",
+            "--include-archived",
+        )
+        assert mocked.call_count == 3

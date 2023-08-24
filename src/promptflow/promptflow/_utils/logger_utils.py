@@ -11,11 +11,12 @@ import logging
 import sys
 from contextvars import ContextVar
 from dataclasses import dataclass
+from functools import partial
 from typing import List, Optional
 
 from promptflow._utils.credential_scrubber import CredentialScrubber
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import ExceptionPresenter
 
 # The maximum length of logger name is 18 ("promptflow-runtime").
 # The maximum digit length of process id is 5. Fix the field width to 7.
@@ -87,7 +88,7 @@ class CredentialScrubberFormatter(logging.Formatter):
     def _convert_exception_to_str(self, ex: Exception) -> str:
         """Convert exception a user-friendly string."""
         try:
-            return json.dumps(ExceptionPresenter(ex).to_dict(include_debug_info=True), indent=2)
+            return json.dumps(ExceptionPresenter.create(ex).to_dict(include_debug_info=True), indent=2)
         except:  # noqa: E722
             return str(ex)
 
@@ -119,7 +120,7 @@ class FileHandler:
 
     def _get_stream_handler(self, file_path) -> logging.StreamHandler:
         """This method can be overridden by derived class to save log file in cloud."""
-        return logging.FileHandler(file_path)
+        return logging.FileHandler(file_path, encoding="UTF-8")
 
 
 class FileHandlerConcurrentWrapper(logging.Handler):
@@ -184,18 +185,46 @@ bulk_logger = get_logger("execution.bulk")
 logger = get_logger("execution")
 
 
+logger_contexts = []
+
+
 @dataclass
 class LogContext:
     """A context manager to setup logger context for input_logger, logger, flow_logger and bulk_logger."""
 
     file_path: str  # Log file path.
-    run_mode: Optional[RunMode] = RunMode.Flow
+    run_mode: Optional[RunMode] = RunMode.Test
     credential_list: Optional[List[str]] = None  # These credentials will be scrubbed in logs.
     input_logger: logging.Logger = None  # If set, then context will also be set for input_logger.
+
+    def get_initializer(self):
+        return partial(
+            LogContext, file_path=self.file_path, run_mode=self.run_mode, credential_list=self.credential_list
+        )
+
+    @staticmethod
+    def get_current() -> Optional["LogContext"]:
+        global logger_contexts
+        if logger_contexts:
+            return logger_contexts[-1]
+        return None
+
+    @staticmethod
+    def set_current(context: "LogContext"):
+        global logger_contexts
+        if isinstance(context, LogContext):
+            logger_contexts.append(context)
+
+    @staticmethod
+    def clear_current():
+        global logger_contexts
+        if logger_contexts:
+            logger_contexts.pop()
 
     def __enter__(self):
         self._set_log_path()
         self._set_credential_list()
+        LogContext.set_current(self)
 
     def __exit__(self, *args):
         """Clear context-local variables."""
@@ -208,6 +237,7 @@ class LogContext:
                     handler.clear()
                 elif isinstance(handler.formatter, CredentialScrubberFormatter):
                     handler.formatter.clear()
+        LogContext.clear_current()
 
     def _set_log_path(self):
         if not self.file_path:
@@ -238,9 +268,9 @@ class LogContext:
         if self.input_logger:
             logger_list.append(self.input_logger)
 
-        # For bulktest and eval modes, set log path for bulk_logger,
+        # For Batch run mode, set log path for bulk_logger,
         # otherwise for flow_logger.
-        if self.run_mode in (RunMode.BulkTest, RunMode.Eval):
+        if self.run_mode == RunMode.Batch:
             logger_list.append(bulk_logger)
         else:
             logger_list.append(flow_logger)

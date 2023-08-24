@@ -166,11 +166,12 @@ class FlowValidator:
     def ensure_flow_inputs_mapping_valid(
         flow_inputs: Mapping[str, FlowInputDefinition], inputs_mapping: Mapping[str, str]
     ):
+        LINE_NUMBER_KEY = "line_number"  # One special reserved key for bulk run, we don't assert for it.
         if not flow_inputs:
             return
         inputs_mapping = inputs_mapping or {}
         for each_input in flow_inputs.keys():
-            if each_input not in inputs_mapping:
+            if each_input not in inputs_mapping and each_input != LINE_NUMBER_KEY:
                 message_format = (
                     "Input '{input_key}' is not found in inputs mapping. "
                     "All available keys in mapping are {inputs_mapping_keys}."

@@ -11,11 +11,12 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
-from promptflow.exceptions import ErrorTarget, ExceptionPresenter, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 from promptflow.storage import AbstractRunStorage, DummyRunStorage
 
 
@@ -28,7 +29,7 @@ class RunTracker(ThreadLocalSingleton):
     def init_dummy() -> "RunTracker":
         return RunTracker(DummyRunStorage())
 
-    def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Flow, node_log_manager=None):
+    def __init__(self, run_storage: AbstractRunStorage, run_mode: RunMode = RunMode.Test, node_log_manager=None):
         self._node_runs: Dict[str, RunInfo] = {}
         self._flow_runs: Dict[str, FlowRunInfo] = {}
         self._current_run_id = ""
@@ -217,7 +218,7 @@ class RunTracker(ThreadLocalSingleton):
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
         try:
-            return self._ensure_serializable_value(output)
+            return {k: self._ensure_serializable_value(v) for k, v in output.items()}
         except Exception as e:
             # If it is flow output not node output, raise an exception.
             raise UserErrorException(
@@ -227,7 +228,7 @@ class RunTracker(ThreadLocalSingleton):
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
-        run_info.error = ExceptionPresenter(ex).to_dict(include_debug_info=self._debug)
+        run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
         run_info.status = Status.Failed
 
     def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:

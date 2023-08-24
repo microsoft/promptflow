@@ -28,8 +28,8 @@ PS> .\deploy.ps1 -i <image_tag> -r <registry> -n <app_name> -g <resource_group> 
 param(
     [Alias("i", "image_tag")][string]$ImageTag,
     [Alias("r")][string]$Registry,
-    [Alias("n")][string]$Name = "intent-copilot15fc58",
-    [Alias("l")][string]$Location = "centralus",
+    [Alias("n")][string]$Name = "intent-copilot95f364",
+    [Alias("l")][string]$Location = "eastus",
     [string]$Sku = "F1",
     [Alias("g", "resource_group")][string]$ResourceGroup,
     [string]$Subscription
@@ -100,7 +100,7 @@ docker push "$ImageTag"
 
 ####################### Create and config app ############################
 
-function append_to_command {
+function Append-To-Command {
     param (
         [string] $Command
     )
@@ -108,29 +108,44 @@ function append_to_command {
         $Command = "$Command --subscription $Subscription"
   }
   if ($VerbosePreference -eq "Continue") {
-        $Command="$Command -v"
+        $Command="$Command --debug"
   }
   Write-Host "$Command"
     return $Command
 }
 
+function Invoke-Expression-And-Check{
+    param (
+        [string]$Command
+    )
+    $Command=$(Append-To-Command "$Command")
+    Invoke-Expression $Command
+    if ($LASTEXITCODE -gt 0) {
+        exit $LASTEXITCODE
+    }
+}
+
+# Check and create resource group if not exist
+$Result = (az group exists --name $ResourceGroup)
+if ($Result -eq "false") {
+    Write-Host "Creating resource group...$ResourceGroup"
+    $Command="az group create --name $ResourceGroup -l $Location"
+    Invoke-Expression-And-Check "$Command"
+}
 # Create service plan
 $ServicePlanName = $Name + "_service_plan"
 Write-Host "Creating service plan...$ServicePlanName"
 $Command="az appservice plan create --name $ServicePlanName --sku $Sku --location $location --is-linux -g $ResourceGroup"
-$Command=$(append_to_command "$Command")
-Invoke-Expression -Command "$Command"
+Invoke-Expression-And-Check "$Command"
 # Create app
 Write-Host "Creating app...$Name"
 $Command="az webapp create --name $Name -p $ServicePlanName --deployment-container-image-name $ImageTag --startup-file 'bash start.sh' -g $ResourceGroup"
-$Command=$(append_to_command "$Command")
-Invoke-Expression -Command "$Command"
+Invoke-Expression-And-Check "$Command"
 # Config environment variable
 Write-Host "Config app...$Name"
 $Command="az webapp config appsettings set -g $ResourceGroup --name $Name --settings ('@settings.json')"
-$Command=$(append_to_command "$Command")
-Invoke-Expression -Command "$Command"
-Write-Host "Please go to https://ms.portal.azure.com/ to config environment variables for the app: $Name at (Settings>Configuration) or (Settings>Environment variables)"
+Invoke-Expression-And-Check "$Command"
+Write-Host "Please go to https://ms.portal.azure.com/ to config environment variables and restart the app: $Name at (Settings>Configuration) or (Settings>Environment variables)"
 Write-Host "Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream)"
 Write-Host "Reach advanced deployment tools at https://$Name.scm.azurewebsites.net/"
 Write-Host "Reach more details about app service at https://learn.microsoft.com/en-us/azure/app-service/"

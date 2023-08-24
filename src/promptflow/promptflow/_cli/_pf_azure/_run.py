@@ -10,11 +10,12 @@ from typing import Optional
 
 import pandas as pd
 
-from promptflow._cli._params import add_param_debug, add_param_verbose
+from promptflow._cli._params import add_param_debug, add_param_run_name, add_param_verbose, logging_params
 from promptflow._cli._pf._run import add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
     _set_workspace_argument_for_subparsers,
+    activate_action,
     exception_handler,
     pretty_print_dataframe_as_table,
 )
@@ -58,19 +59,13 @@ def add_run_create_cloud(subparsers):
             "--data", type=str, help="Local path to the data file or remote data. e.g. azureml:name:version."
         )
 
-    parser = add_run_create_common(subparsers, add_param_data)
-    _set_workspace_argument_for_subparsers(parser)
-    parser.add_argument("--runtime", type=str, help=argparse.SUPPRESS)
-    add_param_debug(parser)
+    add_param_runtime = lambda parser: parser.add_argument("--runtime", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_run_create_common(subparsers, [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime])
 
 
 def add_parser_run_list(subparsers):
     """Add run list parser to the pfazure subparsers."""
-    run_list_parser = subparsers.add_parser(
-        "list", description="A CLI tool to List all runs.", help="List runs in a workspace."
-    )
-    _set_workspace_argument_for_subparsers(run_list_parser)
-    run_list_parser.add_argument(
+    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
         dest="max_results",
@@ -78,17 +73,20 @@ def add_parser_run_list(subparsers):
         default=MAX_LIST_CLI_RESULTS,
         help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}, 100 at most.",
     )
-    run_list_parser.add_argument(
+
+    add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
         "--archived-only",
         action="store_true",
         help="List archived runs only.",
     )
-    run_list_parser.add_argument(
+
+    add_param_include_archived = lambda parser: parser.add_argument(  # noqa: E731
         "--include-archived",
         action="store_true",
         help="List archived runs and active runs.",
     )
-    run_list_parser.add_argument(
+
+    add_param_output = lambda parser: parser.add_argument(  # noqa: E731
         "-o",
         "--output",
         dest="output",
@@ -96,7 +94,24 @@ def add_parser_run_list(subparsers):
         default=CLIListOutputFormat.JSON,
         help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
     )
-    run_list_parser.set_defaults(sub_action="list")
+
+    add_params = [
+        add_param_max_results,
+        add_param_archived_only,
+        add_param_include_archived,
+        add_param_output,
+        _set_workspace_argument_for_subparsers,
+    ] + logging_params
+
+    activate_action(
+        name="list",
+        description="A CLI tool to List all runs.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="List runs in a workspace.",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_run_stream(subparsers):
@@ -107,25 +122,32 @@ def add_parser_run_stream(subparsers):
     _set_workspace_argument_for_subparsers(run_stream_parser)
     run_stream_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to stream.")
     add_param_debug(run_stream_parser)
+    add_param_verbose(run_stream_parser)
     run_stream_parser.set_defaults(sub_action="stream")
 
 
 def add_parser_run_show(subparsers):
     """Add run show parser to the pfazure subparsers."""
-    run_show_parser = subparsers.add_parser("show", description="A CLI tool to show a run.", help="Show a run.")
-    _set_workspace_argument_for_subparsers(run_show_parser)
-    run_show_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to show.")
-    run_show_parser.set_defaults(sub_action="show")
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="show",
+        description="A CLI tool to show a run.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Show a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_run_show_details(subparsers):
     """Add run show details parser to the pfazure subparsers."""
-    run_show_details_parser = subparsers.add_parser(
-        "show-details", description="A CLI tool to show a run details.", help="Show a run details."
-    )
-    _set_workspace_argument_for_subparsers(run_show_details_parser)
-    run_show_details_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to show details.")
-    run_show_details_parser.add_argument(
+
+    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
         dest="max_results",
@@ -133,77 +155,143 @@ def add_parser_run_show_details(subparsers):
         default=MAX_SHOW_DETAILS_RESULTS,
         help=f"Number of lines to show. Default is {MAX_SHOW_DETAILS_RESULTS}.",
     )
-    add_param_debug(run_show_details_parser)
-    run_show_details_parser.set_defaults(sub_action="show-details")
+
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_max_results,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="show-details",
+        description="A CLI tool to show a run details.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Show a run details.",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_run_show_metrics(subparsers):
     """Add run show metrics parser to the pfazure subparsers."""
-    run_show_metrics_parser = subparsers.add_parser(
-        "show-metrics", description="A CLI tool to show run metrics.", help="Show run metrics."
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="show-metrics",
+        description="A CLI tool to show run metrics.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Show run metrics.",
+        action_param_name="sub_action",
     )
-    _set_workspace_argument_for_subparsers(run_show_metrics_parser)
-    run_show_metrics_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to show metrics.")
-    run_show_metrics_parser.set_defaults(sub_action="show-metrics")
 
 
 def add_parser_run_cancel(subparsers):
     """Add run cancel parser to the pfazure subparsers."""
-    run_cancel_parser = subparsers.add_parser("cancel", description="A CLI tool to cancel a run.", help="Cancel a run.")
-    _set_workspace_argument_for_subparsers(run_cancel_parser)
-    run_cancel_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to cancel.")
-    run_cancel_parser.set_defaults(sub_action="cancel")
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="cancel",
+        description="A CLI tool to cancel a run.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Cancel a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_run_visualize(subparsers):
     """Add run visualize parser to the pfazure subparsers."""
-    run_visualize_parser = subparsers.add_parser(
-        "visualize", description="A CLI tool to visualize a run.", help="Visualize a run."
-    )
-    _set_workspace_argument_for_subparsers(run_visualize_parser)
-    run_visualize_parser.add_argument(
+    add_param_name = lambda parser: parser.add_argument(  # noqa: E731
         "-n", "--names", type=str, required=True, help="Name of the runs, comma separated."
     )
-    run_visualize_parser.add_argument("--html-path", type=str, default=None, help=argparse.SUPPRESS)
-    add_param_debug(run_visualize_parser)
-    add_param_verbose(run_visualize_parser)
-    run_visualize_parser.set_defaults(sub_action="visualize")
+    add_param_html_path = lambda parser: parser.add_argument(  # noqa: E731
+        "--html-path", type=str, default=None, help=argparse.SUPPRESS
+    )
+
+    add_params = [
+        add_param_name,
+        add_param_html_path,
+        _set_workspace_argument_for_subparsers,
+    ] + logging_params
+
+    activate_action(
+        name="visualize",
+        description="A CLI tool to visualize a run.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Visualize a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_run_archive(subparsers):
     """Add run archive parser to the pfazure subparsers."""
-    run_archive_parser = subparsers.add_parser(
-        "archive", description="A CLI tool to archive a run.", help="Archive a run."
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="archive",
+        description="A CLI tool to archive a run.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Archive a run.",
+        action_param_name="sub_action",
     )
-    _set_workspace_argument_for_subparsers(run_archive_parser)
-    run_archive_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to archive.")
-    run_archive_parser.set_defaults(sub_action="archive")
 
 
 def add_parser_run_restore(subparsers):
     """Add run restore parser to the pfazure subparsers."""
-    run_restore_parser = subparsers.add_parser(
-        "restore", description="A CLI tool to restore a run.", help="Restore a run."
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="restore",
+        description="A CLI tool to restore a run.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Restore a run.",
+        action_param_name="sub_action",
     )
-    _set_workspace_argument_for_subparsers(run_restore_parser)
-    run_restore_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to restore.")
-    run_restore_parser.set_defaults(sub_action="restore")
 
 
 def add_parser_run_update(subparsers):
     """Add run update parser to the pfazure subparsers."""
-    run_update_parser = subparsers.add_parser(
-        "update",
+    add_params = [
+        _set_workspace_argument_for_subparsers,
+        add_param_run_name,
+    ] + logging_params
+
+    activate_action(
+        name="update",
         description="A CLI tool to update a run.",
-        help="Update a run.",
+        epilog=None,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Update a run.",
+        action_param_name="sub_action",
     )
-    _set_workspace_argument_for_subparsers(run_update_parser)
-    run_update_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to update.")
-    run_update_parser.set_defaults(sub_action="update")
 
 
 def dispatch_run_commands(args: argparse.Namespace):
-    if hasattr(args, "verbose") and args.verbose:
+    # --verbose and --debug, enable debug logging
+    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
         for handler in logging.getLogger(LOGGER_NAME).handlers:
             handler.setLevel(logging.DEBUG)
 

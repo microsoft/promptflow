@@ -76,7 +76,7 @@ class TestExecutorLogs:
 
         # bulk run: test exec_bulk
         # setting run_mode to BulkTest is a requirement to use bulk_logger
-        with LogContext(bulk_run_log_path, run_mode=RunMode.BulkTest):
+        with LogContext(bulk_run_log_path, run_mode=RunMode.Batch):
             bulk_inputs = [{"text": f"text_{idx}"} for idx in range(10)]
             executor.exec_bulk(bulk_inputs)
             log_content = load_content(bulk_run_log_path)
@@ -93,7 +93,7 @@ class TestExecutorLogs:
         bulk_run_log_path = str(logs_directory / "test_bulk_run.log")
 
         # flow run: test exec_line
-        with LogContext(flow_run_log_path, run_mode=RunMode.Flow):
+        with LogContext(flow_run_log_path, run_mode=RunMode.Test):
             executor = FlowExecutor.create(get_yaml_file(folder_name), {})
             executor.exec_line({"text": "line_text"})
             log_content = load_content(flow_run_log_path)
@@ -102,7 +102,7 @@ class TestExecutorLogs:
 
         # bulk run: test exec_bulk
         # setting run_mode to BulkTest is a requirement to use bulk_logger
-        with LogContext(bulk_run_log_path, run_mode=RunMode.BulkTest):
+        with LogContext(bulk_run_log_path, run_mode=RunMode.Batch):
             bulk_inputs = [{"text": f"text_{idx}"} for idx in range(10)]
             executor.exec_bulk(bulk_inputs)
             log_content = load_content(bulk_run_log_path)

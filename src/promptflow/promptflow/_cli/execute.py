@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--inputs_mapping", "-im", type=str, default=None)
     parser.add_argument("--output", "-o", type=str, required=True)
     parser.add_argument("--connections", "-c", default="connections.json")
-    parser.add_argument("--run-mode", "-m", choices=list(RunMode), default="Flow", type=RunMode.parse)
+    parser.add_argument("--run-mode", "-m", choices=list(RunMode), default="Test", type=RunMode.parse)
     parser.add_argument("--run-id", "-r", type=str, default=None)
     parser.add_argument("--node-name", "-n", type=str, default=None)
     parser.add_argument("--raise_ex", action="store_true")
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         raise_ex=args.raise_ex,  # For Flow run, default is True; For bulk run, False
     )
     try:
-        if run_mode == RunMode.Flow:
+        if run_mode == RunMode.Test:
             if isinstance(input_data, list) and len(input_data) > 0:
                 input_data = input_data[0]
             line_result = executor.exec_line(input_data)
@@ -71,12 +71,11 @@ if __name__ == "__main__":
             updated_inputs = executor.validate_node_inputs(args.node_name, input_data)
             node_output = executor.exec_node(args.node_name, updated_inputs)
             print(node_output)
-        elif run_mode == RunMode.BulkTest:
+        elif run_mode == RunMode.Batch:
             if args.need_inputs_resolve is True:
                 updated_input_data = resolve_json_inputs(input_data, working_dir)
-                bulk_result = executor.exec_bulk_with_inputs_mapping(
-                    updated_input_data, input_mapping, run_id=args.run_id
-                )
+                resolved_inputs = executor.validate_and_apply_inputs_mapping(updated_input_data, input_mapping)
+                bulk_result = executor.exec_bulk(resolved_inputs, run_id)
             else:
                 bulk_result = executor.exec_bulk(input_data, run_id=args.run_id)
             print(bulk_result.outputs)

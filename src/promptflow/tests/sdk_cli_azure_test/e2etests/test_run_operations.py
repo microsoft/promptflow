@@ -49,32 +49,32 @@ class TestFlowRun:
         run = remote_client.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_basic_evaluation(self, remote_client, pf, runtime):
+    def test_basic_evaluation(self, remote_client_int, runtime_int):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
-        run = pf.run(
+        run = remote_client_int.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=data_path,
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            runtime=runtime,
+            runtime=runtime_int,
         )
         assert isinstance(run, Run)
-        run = remote_client.runs.stream(run=run.name)
+        run = remote_client_int.runs.stream(run=run.name)
         assert run.status == RunStatus.COMPLETED
 
-        eval_run = pf.run(
+        eval_run = remote_client_int.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             data=data_path,
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-            runtime=runtime,
+            runtime=runtime_int,
         )
         assert isinstance(eval_run, Run)
-        remote_client.runs.stream(run=eval_run.name)
+        remote_client_int.runs.stream(run=eval_run.name)
 
         # evaluation run without data
-        eval_run = pf.run(
+        eval_run = remote_client_int.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             run=run,
             column_mapping={
@@ -82,10 +82,10 @@ class TestFlowRun:
                 "groundtruth": "${run.inputs.url}",
                 "prediction": "${run.outputs.category}",
             },
-            runtime=runtime,
+            runtime=runtime_int,
         )
         assert isinstance(eval_run, Run)
-        remote_client.runs.stream(run=eval_run.name)
+        remote_client_int.runs.stream(run=eval_run.name)
 
     def test_run_with_connection_overwrite(self, remote_client, pf, runtime):
         run = pf.run(
@@ -276,18 +276,37 @@ class TestFlowRun:
         remote_client.runs.stream(run=run.name)
 
     def test_run_bulk_without_retry(self, remote_client):
+        from azure.core.exceptions import ServiceResponseError
         from azure.core.pipeline.transport._requests_basic import RequestsTransport
         from azure.core.rest._requests_basic import RestRequestsTransportResponse
         from requests import Response
 
         from promptflow.azure._restclient.flow.models import SubmitBulkRunRequest
-        from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+        from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 
         mock_run = MagicMock()
         mock_run._runtime = "fake_runtime"
         mock_run._to_rest_object.return_value = SubmitBulkRunRequest()
+
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
-            with patch.object(RequestsTransport, "send") as mock_request:
+            with patch.object(RequestsTransport, "send") as mock_request, patch.object(
+                FlowServiceCaller, "_set_headers_with_user_aml_token"
+            ):
+
+                mock_request.side_effect = ServiceResponseError(
+                    "Connection aborted.",
+                    error=ConnectionResetError(10054, "An existing connection was forcibly closed", None, 10054, None),
+                )
+                with pytest.raises(ServiceResponseError):
+                    remote_client.runs.create_or_update(run=mock_run)
+                # won't retry connection error since POST without response code is not retryable according to
+                # retry policy
+                assert mock_request.call_count == 1
+
+        with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
+            with patch.object(RequestsTransport, "send") as mock_request, patch.object(
+                FlowServiceCaller, "_set_headers_with_user_aml_token"
+            ):
                 fake_response = Response()
                 # won't retry 500
                 fake_response.status_code = 500
@@ -302,7 +321,9 @@ class TestFlowRun:
                 assert mock_request.call_count == 1
 
         with patch.object(RunOperations, "_resolve_data_to_asset_id"), patch.object(RunOperations, "_resolve_flow"):
-            with patch.object(RequestsTransport, "send") as mock_request:
+            with patch.object(RequestsTransport, "send") as mock_request, patch.object(
+                FlowServiceCaller, "_set_headers_with_user_aml_token"
+            ):
                 fake_response = Response()
                 # will retry 503
                 fake_response.status_code = 503
@@ -394,12 +415,15 @@ class TestFlowRun:
     def test_input_mapping_with_dict(self, pf, runtime: str):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
-        pf.run(
+        run = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_dict_input",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping=dict(key={"a": 1}, extra="${data.url}"),
             runtime=runtime,
         )
+        assert '"{\\"a\\": 1}"' in run.properties["azureml.promptflow.inputs_mapping"]
+        run = pf.runs.stream(run=run)
+        assert run.status == "Completed"
 
     def test_get_invalid_run_cases(self, pf):
         # test get invalid run type
@@ -428,6 +452,35 @@ class TestFlowRun:
             )
             rest_run = run._to_rest_object()
             assert rest_run.run_experiment_name == "flow_dir_with_dash"
+
+    def test_tools_json_ignored(self, pf):
+        from azure.ai.ml._artifacts._blob_storage_helper import BlobStorageClient
+
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+
+        files_to_upload = []
+
+        def fake_upload_file(storage_client, source: str, dest, *args, **kwargs):
+            files_to_upload.append(source)
+            storage_client.uploaded_file_count += 1
+
+        with patch("azure.ai.ml._utils._asset_utils.upload_file") as mock_upload_file, patch.object(
+            FlowServiceCaller, "submit_bulk_run"
+        ), patch.object(BlobStorageClient, "_set_confirmation_metadata"), patch.object(RunOperations, "get"):
+            mock_upload_file.side_effect = fake_upload_file
+            data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+
+            pf.run(
+                flow=f"{FLOWS_DIR}/flow_with_dict_input",
+                data=data_path,
+                column_mapping={"key": {"value": "1"}},
+                runtime="fake_runtime",
+            )
+
+            # make sure .promptflow/flow.tools.json not uploaded
+            for f in files_to_upload:
+                if ".promptflow/flow.tools.json" in f:
+                    raise Exception(f"flow.tools.json should not be uploaded, got {f}")
 
     def test_automatic_runtime_creation_user_aml_token(self, pf):
         from azure.core.pipeline import Pipeline

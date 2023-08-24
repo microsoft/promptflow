@@ -11,8 +11,9 @@ from promptflow._sdk._serving._errors import (
     MissingRequiredFlowInput,
     NotAcceptable,
 )
+from promptflow._utils.exception_utils import ErrorResponse, ExceptionPresenter
 from promptflow.contracts.flow import Flow as FlowContract
-from promptflow.exceptions import ErrorResponse, ErrorTarget, ExceptionPresenter
+from promptflow.exceptions import ErrorTarget
 
 
 def load_request_data(flow, raw_data, logger):
@@ -78,7 +79,7 @@ def get_output_fields_to_remove(flow: FlowContract, logger) -> list:
 
 
 def handle_error_to_response(e, logger):
-    presenter = ExceptionPresenter(e)
+    presenter = ExceptionPresenter.create(e)
     logger.error(f"Promptflow serving app error: {presenter.to_dict()}")
     logger.error(f"Promptflow serving error traceback: {presenter.formatted_traceback}")
     resp = ErrorResponse(presenter.to_dict())
