@@ -6,8 +6,10 @@ import contextlib
 import json
 import logging
 import sys
+import time
 from pathlib import Path
-from typing import Any, Mapping
+from types import GeneratorType
+from typing import Any, Iterable, Mapping
 
 from promptflow._sdk._constants import CHAT_HISTORY, LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import parse_variant
@@ -150,6 +152,23 @@ class TestSubmitter:
                 line_result.output.pop(LINE_NUMBER_KEY, None)
             return line_result
 
+    def interactive_test(self, inputs: Mapping[str, Any], environment_variables: dict = None):
+        from promptflow.executor.flow_executor import FlowExecutor
+
+        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        # resolve environment variables
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        environment_variables = environment_variables if environment_variables else {}
+        SubmitterHelper.init_env(environment_variables=environment_variables)
+
+        with LoggerOperations(log_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log").setup_logger(stream=False):
+            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+            # TODO modify to call the method in the flow server
+            flow_executor._run_tracker.allow_generator_types = True
+            flow_executor.enable_streaming_for_llm_flow(lambda: True)
+            line_result = flow_executor._exec(inputs)
+        return line_result
+
     def node_test(
         self,
         node_name: str,
@@ -207,8 +226,52 @@ class TestSubmitter:
             yield
             sys.stdout.write = write
 
+        def print_chat_output(output):
+            chat_output = output
+            if isinstance(output, Iterable):
+                chat_output = ""
+                for event in output:
+                    print(event, end="")
+                    # For better animation effects
+                    time.sleep(0.01)
+                    chat_output += event
+                # Print a new line at the end of the response
+                print()
+            else:
+                print(chat_output)
+            return chat_output
+
+        def get_generator_values(generator):
+            if isinstance(generator, GeneratorType):
+                if generator not in generator_record:
+                    generator_record[generator] = list(generator)
+                return generator_record[generator]
+            else:
+                return generator
+
+        def resolve_generator(flow_result, flow_outputs, node_outputs):
+            flow_outputs = flow_outputs or {}
+            node_outputs = node_outputs or {}
+            # resolve generator in flow result
+            for k, v in flow_result.run_info.output.items():
+                if isinstance(v, GeneratorType):
+                    flow_output = flow_outputs.get(k, "".join(v))
+                    flow_result.run_info.output[k] = flow_output
+                    flow_result.run_info.result[k] = flow_output
+                    flow_result.output[k] = flow_output
+
+            # resolve generator in node outputs
+            for node_name, node in flow_result.node_run_infos.items():
+                if isinstance(node.output, GeneratorType):
+                    node_output = node_outputs.get(node_name, "".join(node.output))
+                    node.output = node_output
+                    node.result = node_output
+
+            return flow_result
+
         init(autoreset=True)
         chat_history = []
+        generator_record = {}
         input_name = next(
             filter(lambda key: self.dataplane_flow.inputs[key].is_chat_input, self.dataplane_flow.inputs.keys())
         )
@@ -235,26 +298,34 @@ class TestSubmitter:
                 chat_inputs, _ = self._resolve_data(inputs=inputs)
 
             with add_prefix():
-                flow_result = self.flow_test(
+                flow_result = self.interactive_test(
                     inputs=chat_inputs,
                     environment_variables=environment_variables,
-                    stream=False,
                 )
-                self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
                 self._raise_error_when_test_failed(flow_result, show_trace=True)
+            node_outputs = {}
             if show_step_output:
                 for node_name, node_result in flow_result.node_run_infos.items():
                     print(f"{Fore.CYAN}{node_name}: ", end="")
                     try:
-                        print(f"{Fore.LIGHTWHITE_EX}{json.dumps(node_result.output, indent=4)}")
+                        # TODO executor return a type string of generator
+                        node_output = node_result.output
+                        if isinstance(node_result.output, GeneratorType):
+                            node_output = "".join(get_generator_values(node_result.output))
+                        print(f"{Fore.LIGHTWHITE_EX}{json.dumps(node_output, indent=4)}")
                     except Exception:  # pylint: disable=broad-except
-                        print(f"{Fore.LIGHTWHITE_EX}{node_result.output}")
+                        print(f"{Fore.LIGHTWHITE_EX}{node_output}")
+                    node_outputs[node_name] = node_output
 
             print(f"{Fore.YELLOW}Bot: ", end="")
-            output = flow_result.output[output_name]
-            print(output)
-            history = {"inputs": {input_name: input_value}, "outputs": {output_name: output}}
+            chat_output = get_generator_values(flow_result.output[output_name])
+            chat_output = print_chat_output(chat_output)
+            flow_outputs = {k: v for k, v in flow_result.output.items()}
+            flow_outputs[output_name] = chat_output
+            history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
+            flow_result = resolve_generator(flow_result, flow_outputs, node_outputs)
+            self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 
     @staticmethod
     def _dump_result(flow_folder, prefix, flow_result=None, node_result=None):

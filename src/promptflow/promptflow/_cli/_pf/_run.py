@@ -56,7 +56,7 @@ def add_run_parser(subparsers):
     run_parser.set_defaults(action="run")
 
 
-def add_run_create_common(subparsers, add_param_list):
+def add_run_create_common(subparsers, add_param_list, epilog: Optional[str] = None):
     # pf run create --file batch_run.yaml [--stream]
     add_param_file = lambda parser: parser.add_argument(  # noqa: E731
         "-f",
@@ -105,7 +105,7 @@ def add_run_create_common(subparsers, add_param_list):
     create_parser = activate_action(
         name="create",
         description=None,
-        epilog="pf run create --file <local-path-to-yaml> [--stream]",
+        epilog=epilog or "pf run create --file <local-path-to-yaml> [--stream]",
         add_params=add_params,
         subparsers=subparsers,
         help_message="Create a run.",
@@ -115,19 +115,34 @@ def add_run_create_common(subparsers, add_param_list):
 
 
 def add_run_create(subparsers):
+    epilog = """
+Examples:
+
+# Create a run with YAML file:
+pf run create -f <yaml-filename>
+# Create a run from flow directory and reference a run:
+pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
+"""
+
     # data for pf has different help doc than pfazure
     def add_param_data(parser):
         parser.add_argument("--data", type=str, help="Local path to the data file.")
 
-    add_run_create_common(subparsers, [add_param_data])
+    add_run_create_common(subparsers, [add_param_data], epilog=epilog)
 
 
 def add_run_cancel(subparsers):
+    epilog = """
+Example:
+
+# Cancel a run:
+pf run cancel --name <name>
+"""
     add_params = [add_param_run_name] + logging_params
     activate_action(
         name="cancel",
         description=None,
-        epilog="pf run cancel --name <name>",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Cancel a run.",
@@ -136,6 +151,12 @@ def add_run_cancel(subparsers):
 
 
 def add_run_update(subparsers):
+    epilog = """
+Example:
+
+# Update a run metdata:
+pf run update --name <name> --set display_name="<display-name>" description="<description>" tag.key="<value>"
+"""
     add_params = [
         add_param_run_name,
         add_param_set,
@@ -143,7 +164,7 @@ def add_run_update(subparsers):
     activate_action(
         name="update",
         description=None,
-        epilog='pf run update --name <name> --set display_name="<display-name>" description="<description>" tag.key="<value>"',  # noqa: E501
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Update a run metadata, including display name, description and tags.",
@@ -152,11 +173,17 @@ def add_run_update(subparsers):
 
 
 def add_run_stream(subparsers):
+    epilog = """
+Example:
+
+# Stream run logs:
+pf run stream --name <name>
+"""
     add_params = [add_param_run_name] + logging_params
     activate_action(
         name="stream",
         description=None,
-        epilog="pf run stream --name <name>",  # noqa: E501
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Stream run logs to the console.",
@@ -165,6 +192,22 @@ def add_run_stream(subparsers):
 
 
 def add_run_list(subparsers):
+    epilog = """
+Examples:
+
+# List runs status locally:
+pf run list
+# List most recent 10 runs status:
+pf run list --max-results 10
+# List active and archived runs status:
+pf run list --include-archived
+# List arhived runs status only:
+pf run list --archived-only
+# List all runs status:
+pf run list --all-results
+# List all runs status as table:
+pf run list --output table
+"""
     add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
@@ -214,7 +257,7 @@ def add_run_list(subparsers):
     activate_action(
         name="list",
         description=None,
-        epilog="pf run list [--max-results 10] [--all-results] [--archived-only] [--include-archived]",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="List runs locally.",
@@ -223,12 +266,18 @@ def add_run_list(subparsers):
 
 
 def add_run_show(subparsers):
+    epilog = """
+Example:
+
+# Show the status of a run:
+pf run show --name <name>
+"""
     add_params = [add_param_run_name] + logging_params
 
     activate_action(
         name="show",
         description=None,
-        epilog="pf run show --name <name>",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Show details for a run.",
@@ -237,6 +286,12 @@ def add_run_show(subparsers):
 
 
 def add_run_show_details(subparsers):
+    epilog = """
+Example:
+
+# View input(s) and output(s) of a run:
+pf run show-details --name <name>
+"""
     add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
@@ -251,7 +306,7 @@ def add_run_show_details(subparsers):
     activate_action(
         name="show-details",
         description=None,
-        epilog="pf run show-details --name <name>",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Preview a run's input(s) and output(s).",
@@ -260,12 +315,18 @@ def add_run_show_details(subparsers):
 
 
 def add_run_show_metrics(subparsers):
+    epilog = """
+Example:
+
+# View metrics of a run:
+pf run show-metrics --name <name>
+"""
     add_params = [add_param_run_name] + logging_params
 
     activate_action(
         name="show-metrics",
         description=None,
-        epilog="pf run show-metrics --name <name>",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Print run metrics to the console.",
@@ -274,6 +335,15 @@ def add_run_show_metrics(subparsers):
 
 
 def add_run_visualize(subparsers):
+    epilog = """
+Examples:
+
+# Visualize a run:
+pf run visualize -n <name>
+# Visualize runs:
+pf run visualize --names "<name1,name2>"
+pf run visualize --names "<name1>, <name2>"
+"""
 
     add_param_name = lambda parser: parser.add_argument(  # noqa: E731
         "-n", "--names", type=str, required=True, help="Name of the runs, comma separated."
@@ -287,7 +357,7 @@ def add_run_visualize(subparsers):
     activate_action(
         name="visualize",
         description=None,
-        epilog='pf run visualize "run1,run2"',
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Visualize a run.",
@@ -296,12 +366,18 @@ def add_run_visualize(subparsers):
 
 
 def add_run_archive(subparsers):
+    epilog = """
+Example:
+
+# Archive a run:
+pf run archive --name <name>
+"""
     add_params = [add_param_run_name] + logging_params
 
     activate_action(
         name="archive",
         description=None,
-        epilog="pf run archive --name <name>",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Archive a run.",
@@ -310,12 +386,18 @@ def add_run_archive(subparsers):
 
 
 def add_run_restore(subparsers):
+    epilog = """
+Example:
+
+# Restore an archived run:
+pf run restore --name <name>
+"""
     add_params = [add_param_run_name] + logging_params
 
     activate_action(
         name="restore",
         description=None,
-        epilog="pf run restore --name <name>",
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Restore an archived run.",

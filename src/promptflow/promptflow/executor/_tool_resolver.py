@@ -9,8 +9,8 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._core._errors import PackageToolNotFoundError
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.errors import PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,

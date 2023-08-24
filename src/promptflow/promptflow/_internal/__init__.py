@@ -7,9 +7,9 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 
 """Put some imports here for internal packages to minimize the effort of refactoring."""
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
+from promptflow._core._errors import GenerateMetaUserError, PackageToolNotFoundError, ToolExecutionError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheManager, enable_cache
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.errors import GenerateMetaUserError, PackageToolNotFoundError, ToolExecutionError
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.log_manager import NodeLogManager, NodeLogWriter
 from promptflow._core.metric_logger import add_metric_logger
@@ -92,3 +92,4 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._version import VERSION
+from promptflow.executor._errors import InputNotFound, InputNotFoundInInputsMapping

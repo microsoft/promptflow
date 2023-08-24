@@ -14,7 +14,10 @@ nodes:
   source:
     type: code
     path: {{ file }}
-  inputs: {}  # Please enter the inputs of this node
+  inputs:  # Please check the generated prompt inputs
+  {% for arg in prompt_inputs[param_name].keys() %}
+    {{ arg }}: ${inputs.{{ arg }}}
+  {% endfor %}
 {% endfor %}
 - name: {{ main_node_name }}
   type: python
@@ -23,7 +26,7 @@ nodes:
     path: {{ tool_file }}
   inputs:
   {# Below are node inputs link to flow inputs #}
-  {% for arg in flow_inputs.keys() %}
+  {% for arg in func_params.keys() %}
     {{ arg }}: ${inputs.{{ arg }}}
   {% endfor %}
   {# Below are node prompt template inputs from prompt nodes #}

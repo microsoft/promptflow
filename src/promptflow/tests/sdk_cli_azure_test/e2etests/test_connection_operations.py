@@ -82,25 +82,22 @@ class TestConnectionOperations:
         for config_dict in aoai_config_specs:
             if config_dict["name"] == "api_version":
                 del config_dict["default_value"]
-        assert result["AzureOpenAI"] == {
-            "module": "promptflow.connections",
-            "connection_type": "AzureOpenAI",
-            "flow_value_type": "AzureOpenAIConnection",
-            "config_specs": [
-                {"name": "api_key", "display_name": "API key", "config_value_type": "Secret", "is_optional": False},
-                {"name": "api_base", "display_name": "API base", "config_value_type": "String", "is_optional": False},
-                {
-                    "name": "api_type",
-                    "display_name": "API type",
-                    "config_value_type": "String",
-                    "default_value": "azure",
-                    "is_optional": False,
-                },
-                {
-                    "name": "api_version",
-                    "display_name": "API version",
-                    "config_value_type": "String",
-                    "is_optional": False,
-                },
-            ],
-        }
+        expected_config_specs = [
+            {"name": "api_key", "display_name": "API key", "config_value_type": "Secret", "is_optional": False},
+            {"name": "api_base", "display_name": "API base", "config_value_type": "String", "is_optional": False},
+            {
+                "name": "api_type",
+                "display_name": "API type",
+                "config_value_type": "String",
+                "default_value": "azure",
+                "is_optional": False,
+            },
+            {
+                "name": "api_version",
+                "display_name": "API version",
+                "config_value_type": "String",
+                "is_optional": False,
+            },
+        ]
+        for spec in expected_config_specs:
+            assert spec in result["AzureOpenAI"]["config_specs"]

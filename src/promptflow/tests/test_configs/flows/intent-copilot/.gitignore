@@ -1,6 +1,5 @@
-.venv/
-.data/
 .env
-.vscode/
-outputs/
-connection.json
+__pycache__/
+.promptflow/*
+!.promptflow/flow.tools.json
+.runs/

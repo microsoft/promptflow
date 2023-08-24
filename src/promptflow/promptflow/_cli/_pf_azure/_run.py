@@ -53,6 +53,15 @@ def add_parser_run(subparsers):
 
 
 def add_run_create_cloud(subparsers):
+    epilog = """
+Example:
+
+# Create a run with YAML file:
+pfazure run create -f <yaml-filename>
+# Create a run from flow directory and reference a run:
+pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run <run-name> --variant "${summarize_text_content.variant_0}" --stream  # noqa: E501
+"""
+
     def add_param_data(parser):
         # cloud pf can also accept remote data
         parser.add_argument(
@@ -60,11 +69,27 @@ def add_run_create_cloud(subparsers):
         )
 
     add_param_runtime = lambda parser: parser.add_argument("--runtime", type=str, help=argparse.SUPPRESS)  # noqa: E731
-    add_run_create_common(subparsers, [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime])
+    add_run_create_common(
+        subparsers, [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime], epilog=epilog
+    )
 
 
 def add_parser_run_list(subparsers):
     """Add run list parser to the pfazure subparsers."""
+    epilog = """
+Examples:
+
+# List runs status locally:
+pfazure run list
+# List most recent 10 runs status:
+pfazure run list --max-results 10
+# List active and archived runs status:
+pfazure run list --include-archived
+# List arhived runs status only:
+pfazure run list --archived-only
+# List all runs status as table:
+pfazure run list --output table
+"""
     add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
@@ -106,7 +131,7 @@ def add_parser_run_list(subparsers):
     activate_action(
         name="list",
         description="A CLI tool to List all runs.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="List runs in a workspace.",
@@ -116,8 +141,17 @@ def add_parser_run_list(subparsers):
 
 def add_parser_run_stream(subparsers):
     """Add run stream parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Stream run logs:
+pfazure run stream --name <name>
+"""
     run_stream_parser = subparsers.add_parser(
-        "stream", description="A CLI tool to stream run logs to the console.", help="Stream run logs to the console."
+        "stream",
+        description="A CLI tool to stream run logs to the console.",
+        epilog=epilog,
+        help="Stream run logs to the console.",
     )
     _set_workspace_argument_for_subparsers(run_stream_parser)
     run_stream_parser.add_argument("-n", "--name", type=str, required=True, help="The run name to stream.")
@@ -128,6 +162,12 @@ def add_parser_run_stream(subparsers):
 
 def add_parser_run_show(subparsers):
     """Add run show parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Show the status of a run:
+pfazure run show --name <name>
+"""
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
@@ -136,7 +176,7 @@ def add_parser_run_show(subparsers):
     activate_action(
         name="show",
         description="A CLI tool to show a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Show a run.",
@@ -146,6 +186,12 @@ def add_parser_run_show(subparsers):
 
 def add_parser_run_show_details(subparsers):
     """Add run show details parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# View input(s) and output(s) of a run:
+pfazure run show-details --name <name>
+"""
 
     add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
@@ -165,7 +211,7 @@ def add_parser_run_show_details(subparsers):
     activate_action(
         name="show-details",
         description="A CLI tool to show a run details.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Show a run details.",
@@ -175,6 +221,12 @@ def add_parser_run_show_details(subparsers):
 
 def add_parser_run_show_metrics(subparsers):
     """Add run show metrics parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# View metrics of a run:
+pfazure run show-metrics --name <name>
+"""
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
@@ -183,7 +235,7 @@ def add_parser_run_show_metrics(subparsers):
     activate_action(
         name="show-metrics",
         description="A CLI tool to show run metrics.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Show run metrics.",
@@ -211,6 +263,15 @@ def add_parser_run_cancel(subparsers):
 
 def add_parser_run_visualize(subparsers):
     """Add run visualize parser to the pfazure subparsers."""
+    epilog = """
+Examples:
+
+# Visualize a run:
+pfazure run visualize -n <name>
+# Visualize runs:
+pfazure run visualize --names "<name1,name2>"
+pfazure run visualize --names "<name1>, <name2>"
+"""
     add_param_name = lambda parser: parser.add_argument(  # noqa: E731
         "-n", "--names", type=str, required=True, help="Name of the runs, comma separated."
     )
@@ -227,7 +288,7 @@ def add_parser_run_visualize(subparsers):
     activate_action(
         name="visualize",
         description="A CLI tool to visualize a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Visualize a run.",

@@ -16,7 +16,7 @@ from traceback import TracebackException
 
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
-from promptflow._core.errors import MetaFileNotFound, MetaFileReadError
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
 from promptflow._core.tool import ToolProvider
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
 from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template

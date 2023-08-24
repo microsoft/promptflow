@@ -70,7 +70,8 @@ class FlowOperations:
         flow = load_flow(flow)
         with TestSubmitter(flow=flow, variant=variant).init() as submitter:
             flow_inputs, dependency_nodes_outputs = submitter._resolve_data(node_name=node, inputs=inputs)
-            if self._is_chat_flow(submitter.dataplane_flow) and flow_inputs.get(CHAT_HISTORY, None):
+            is_chat_flow, _ = self._is_chat_flow(submitter.dataplane_flow)
+            if is_chat_flow and flow_inputs.get(CHAT_HISTORY, None):
                 flow_inputs[CHAT_HISTORY] = []
             if node:
                 return submitter.node_test(
@@ -87,10 +88,22 @@ class FlowOperations:
     def _is_chat_flow(flow):
         """
         Check if the flow is chat flow.
-        Check if chat_history in the flow input and only on chat input to determine if it is a chat flow.
+        Check if chat_history in the flow input and only one chat input and
+        one chat output to determine if it is a chat flow.
         """
         chat_inputs = [item for item in flow.inputs.values() if item.is_chat_input]
-        return len(chat_inputs) == 1 and CHAT_HISTORY in flow.inputs
+        chat_outputs = [item for item in flow.outputs.values() if item.is_chat_output]
+        is_chat_flow, error_msg = True, ""
+        if len(chat_inputs) != 1:
+            is_chat_flow = False
+            error_msg = "chat flow does not support multiple chat inputs"
+        elif len(chat_outputs) != 1:
+            is_chat_flow = False
+            error_msg = "chat flow does not support multiple chat outputs"
+        elif CHAT_HISTORY not in flow.inputs:
+            is_chat_flow = False
+            error_msg = "chat_history is required in the inputs of chat flow"
+        return is_chat_flow, error_msg
 
     def _chat(
         self,
@@ -114,9 +127,9 @@ class FlowOperations:
 
         flow = load_flow(flow)
         with TestSubmitter(flow=flow, variant=variant).init() as submitter:
-            is_chat_flow = self._is_chat_flow(submitter.dataplane_flow)
+            is_chat_flow, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
-                raise UserErrorException("Only support chat flow in interactive mode.")
+                raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
 
             info_msg = f"Welcome to chat flow, {submitter.dataplane_flow.name}."
             print("=" * len(info_msg))

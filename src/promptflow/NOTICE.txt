@@ -194,7 +194,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---------------------------------------------------------
 
-cryptography 41.0.2 - Apache-2.0 OR (Apache-2.0 AND BSD-3-Clause)
+cryptography 41.0.3 - Apache-2.0 OR (Apache-2.0 AND BSD-3-Clause)
 
 
 Copyright 2013-2023

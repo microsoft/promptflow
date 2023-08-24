@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import string
-import sys
 from enum import Enum
 from functools import cached_property
 
@@ -44,9 +43,6 @@ class PromptflowException(Exception):
         **kwargs,
     ):
         self._inner_exception = kwargs.get("error")
-        self.exc_type, self.exc_value, self.exc_traceback = sys.exc_info()
-        self.exc_type = self.exc_type.__name__ if self.exc_type else type(self._inner_exception)
-        self.exc_msg = "{}, {}: {}".format(message, self.exc_type, self.exc_value)
         self._message = str(message)
         self._target = target
         self._module = module

@@ -120,12 +120,9 @@ def score():
     logger.info(f"Validating flow input with data {data!r}")
     validate_request_data(app.flow, data)
     logger.info(f"Execute flow with data {data!r}")
-    result = app.executor.exec(data)
+    result = app.executor.exec_line(data)
     # remove evaluation only fields
-    result = {k: v for k, v in result.items() if k not in app.response_fields_to_remove}
-
-    # remove evaluation only fields
-    result = {k: v for k, v in result.items() if k not in app.response_fields_to_remove}
+    result = {k: v for k, v in result.output.items() if k not in app.response_fields_to_remove}
 
     response_creator = ResponseCreator(
         flow_run_result=result,

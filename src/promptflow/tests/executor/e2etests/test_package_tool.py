@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow._core.errors import PackageToolNotFoundError
+from promptflow._core._errors import PackageToolNotFoundError
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import NodeInputValidationError

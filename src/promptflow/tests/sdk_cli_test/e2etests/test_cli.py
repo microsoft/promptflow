@@ -702,6 +702,28 @@ class TestCli:
             _, err = capsys.readouterr()
             assert "pf flow init: error: the following arguments are required: --flow" in err
 
+    def test_flow_init_intent_copilot(self):
+        flow_path = os.path.join(FLOWS_DIR, "intent-copilot")
+        run_pf_command(
+            "flow",
+            "init",
+            "--flow",
+            flow_path,
+            "--entry",
+            "intent.py",
+            "--function",
+            "extract_intent",
+            "--prompt-template",
+            "chat_prompt=user_intent_zero_shot.jinja2",
+        )
+        with open(Path(flow_path) / "flow.dag.yaml", "r") as f:
+            flow_dict = yaml.safe_load(f)
+            assert "chat_history" in flow_dict["inputs"]
+            assert "customer_info" in flow_dict["inputs"]
+            chat_prompt_node = next(filter(lambda item: item["name"] == "chat_prompt", flow_dict["nodes"]))
+            assert "chat_history" in chat_prompt_node["inputs"]
+            assert "customer_info" in chat_prompt_node["inputs"]
+
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -749,6 +771,17 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_with_multi_output",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat flow does not support multiple chat outputs" in outerr.out
 
     def test_flow_test_inputs(self, capsys, caplog):
         # Flow test missing required inputs

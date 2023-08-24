@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
 
-from jinja2 import Template
+from jinja2 import Environment, Template, meta
 
 from promptflow._sdk._constants import LOGGER_NAME
 
@@ -133,22 +133,64 @@ class FlowDAGGenerator(BaseGenerator):
         self.tool_file = tool_py
         self.main_node_name = function
         self.prompt_params = prompt_params
-        # Abstract prompt param from tool meta args
-        self.flow_inputs = self.get_flow_inputs(function_obj, prompt_params)
         self.setup_sh = None
         self.python_requirements_txt = None
+        self._prompt_inputs = None
+        self._func_params = None
+        self._function_obj = function_obj
+        # Abstract prompt param from tool meta args
+        self.flow_inputs = self.get_flow_inputs(prompt_params)
 
-    def get_flow_inputs(self, function_obj, prompt_params):
-        func_params = inspect.signature(function_obj).parameters
-        return {k: ValueType.from_type(v.annotation).value for k, v in func_params.items() if k not in prompt_params}
+    def get_flow_inputs(self, prompt_params):
+        """Generate the flow inputs"""
+        flow_inputs = {
+            k: ValueType.from_type(v.annotation).value for k, v in self.func_params.items() if k not in prompt_params
+        }
+        for prompt_inputs in self.prompt_inputs.values():
+            flow_inputs.update(prompt_inputs)
+        return flow_inputs
 
     @property
     def tpl_file(self):
         return TEMPLATE_PATH / "flow.dag.yaml.jinja2"
 
     @property
+    def func_params(self):
+        """Generate function inputs without prompt templates."""
+        if self._func_params is None:
+            self._func_params = {
+                k: v for k, v in inspect.signature(self._function_obj).parameters.items() if k not in self.prompt_params
+            }
+        return self._func_params
+
+    @property
+    def prompt_inputs(self):
+        """Generate prompt inputs."""
+        if self._prompt_inputs is None:
+            self._prompt_inputs = {}
+            for prompt_name, file_name in self.prompt_params.items():
+                try:
+                    with open(file_name, "r") as f:
+                        env = Environment()
+                        ast = env.parse(f.read())
+                        variables = meta.find_undeclared_variables(ast)
+                        self._prompt_inputs[prompt_name] = {item: "string" for item in variables or []}
+                except Exception as e:
+                    logger.warning(f"Get the prompt input from {file_name} failed, {e}.")
+        return self._prompt_inputs
+
+    @property
     def entry_template_keys(self):
-        return ["flow_inputs", "main_node_name", "prompt_params", "tool_file", "setup_sh", "python_requirements_txt"]
+        return [
+            "flow_inputs",
+            "main_node_name",
+            "prompt_params",
+            "tool_file",
+            "setup_sh",
+            "python_requirements_txt",
+            "prompt_inputs",
+            "func_params",
+        ]
 
     def generate_to_file(self, target):
         # Get requirements.txt and setup.sh from target folder.

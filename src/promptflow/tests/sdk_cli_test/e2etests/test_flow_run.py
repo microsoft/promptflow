@@ -593,3 +593,12 @@ class TestFlowRun:
         # node runs
         assert "node_runs" in detail
         assert isinstance(detail["node_runs"], list)
+
+    def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/partial_fail",
+            data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
+        )
+        detail = pf.runs.get_details(name=run.name)
+        detail.fillna("", inplace=True)
+        assert len(detail) == 3

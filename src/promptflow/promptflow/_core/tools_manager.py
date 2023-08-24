@@ -13,7 +13,7 @@ from typing import Callable, List, Mapping, Optional, Tuple, Union
 import pkg_resources
 import yaml
 
-from promptflow._core.errors import MissingRequiredInputs, PackageToolNotFoundError
+from promptflow._core._errors import MissingRequiredInputs, PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
     generate_prompt_tool,
     generate_python_tool,
