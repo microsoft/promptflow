@@ -125,15 +125,39 @@ Alternatively, you can test your tool package using the script below to ensure t
 
   1. Make sure to install the tool package in your conda environment before executing this script.
   2. Create a python file anywhere and copy the content below into it.
-      ```python
-      def test():
-          # `collect_package_tools` gathers all tools info using the `package-tools` entry point. This ensures that your package is correctly packed and your tools are accurately collected. 
-          from promptflow._internal import collect_package_tools
-          tools = collect_package_tools()
-          print(tools)
-      if __name__ == "__main__":
-          test()
-      ```
+    ```python
+    import pkg_resources
+    import importlib
+    import traceback
+
+    def test():
+        """collect and list package info using the `package-tools` entry point. This ensures that your package is correctly packed and your tools are accurately collected."""
+        all_package_tools = {}
+
+        for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
+            try:
+                list_tool_func = entry_point.resolve()
+                package_tools = list_tool_func()
+
+                for identifier, tool in package_tools.items():
+                    m = tool["module"]
+                    importlib.import_module(m)  # Import the module to ensure its validity
+                    tool["package"] = entry_point.dist.project_name
+                    tool["package_version"] = entry_point.dist.version
+                    all_package_tools[identifier] = tool
+
+            except Exception as e:
+                msg = (
+                    f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                    + f" traceback: {traceback.format_exc()}"
+                )
+                print(msg)
+
+        print(all_package_tools)
+
+    if __name__ == "__main__":
+        test()
+    ```
   3. Run this script in your conda environment. This will return the metadata of all tools installed in your local environment, and you should verify that your tools are listed.
 
 ### Why am I unable to upload package to PyPI?
