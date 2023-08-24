@@ -25,28 +25,6 @@ The generated files:
 - flow.dag.yaml: Describes the DAG(Directed Acyclic Graph) of this flow.
 - .gitignore: File/folder in the flow to be ignored.
 
-Please enter the input of the flow/node to `flow.dag.yaml`, like below:
-```yaml
-inputs:   # Enter the flow inputs
-  customer_info:
-    type: string
-  history:
-    type: list
-outputs:
-  output:
-    type: string
-    reference: ${extract_intent.output}
-nodes:
-- name: chat_prompt
-  type: prompt
-  source:
-    type: code
-    path: user_intent_zero_shot.jinja2
-  inputs:  # Enter the inputs of this node
-    customer_info: ${inputs.customer_info}
-    chat_history: ${inputs.history}
-```
-
 2. create needed custom connection
 ```bash
 pf connection create -f .env --name custom_connection
