@@ -4,29 +4,92 @@
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
 
-You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score.
+After you have developed and tested the flow in [init and test a flow](./init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
-In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
+## Create a bulk run
 
+A bulk test allows you to run your flow with a large dataset and generate outputs for each data row. 
 
+Let's create a run with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification). It is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
-## Evaluate your run
-### Run evaluation flow against run
-
-Firstly set the working directory to `<path-to-the-sample-repo>/examples/flows/`
+To begin with the guide, git clone the sample repository(above flow link) and set the working directory to `<path-to-the-sample-repo>/examples/flows/`.
 
 ::::{tab-set}
 
 :::{tab-item} CLI
 :sync: CLI
 
-**Create a flow run to be evaluated**
-
-To evaluate a flow run, you need an already finished run and pass it to the evaluation method flow. Let's create a run `my_first_run` with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
-
 ```sh
 pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --name my_first_run --stream
 ```
+
+You can specify the run name with `--name my_first_run`, otherwise there will be a generated run name that contains flow name and timestamp, something like `web_classification_default_20230804_143634_056856`
+
+With a run name, you can easily stream or view the run details using below commands:
+
+```sh
+pf run stream -n my_first_run  # same as "--stream" in command "run create"
+pf run show-details -n my_first_run
+pf run show-metrics -n my_first_run
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+from promptflow import PFClient
+
+pf = PFClient()
+flow = "standard/web-classification" # set the flow directory
+data= "standard/web-classification/data.jsonl" # set the data file
+
+# create a run
+base_run = pf.run(
+    flow=flow,
+    data=data,
+)
+
+# stream the run until it's finished
+pf.stream(base_run)
+
+# get the inputs/outputs details of a finished run.
+details = pf.get_details(base_run)
+details.head(10)
+
+# view the metrics of the run
+metrics = pf.get_metrics(base_run)
+print(json.dumps(metrics, indent=4))
+
+# visualize both the base run
+pf.visualize(base_run)
+
+```
+
+
+:::
+
+:::{tab-item} VS Code Extension
+:sync: VS Code Extension
+(WIP)
+:::
+
+::::
+
+
+## Evaluate your flow
+
+You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score.
+
+In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
+
+### Run evaluation flow against run
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
 
 **Evaluate the finished flow run**
 
@@ -43,7 +106,7 @@ pf run create --flow evaluation/eval-classification-accuracy --data standard/web
 
 Same as the previous run, you can specify the evaluation run name with `--name my_first_eval_run` in above command.
 
-With a run name, you can easily stream or view the run details using below commands:
+You can also stream or view the run details with:
 
 ```sh
 pf run stream -n my_first_eval_run  # same as "--stream" in command "run create"
@@ -66,24 +129,6 @@ A web browser will be opened to show the visualization result.
 :::{tab-item} SDK
 :sync: SDK
 
-**Create a flow run to be evaluated**
-
-To evaluate a flow run, you need an already finished run and pass it to the evaluation method flow. Let's create a run `base_run` with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
-
-```python
-from promptflow import PFClient
-
-pf = PFClient()
-flow = "standard/web-classification" # set the flow directory
-data= "standard/web-classification/data.jsonl" # set the data file
-
-# create a run
-base_run = pf.run(
-    flow=flow,
-    data=data,
-)
-```
-
 **Evaluate the finished flow run**
 
 After the run is finished, you can evaluate the run with below command, compared with the normal run create command, note there are two extra arguments:
@@ -103,7 +148,10 @@ eval_run = pf.run(
     flow=eval_flow,
     data=data,
     run=base_run,
-    column_mapping={"groundtruth": "${data.answer}","prediction": "${run.outputs.category}"},  # map the url field from the data to the url input of the flow
+    column_mapping={  # map the url field from the data to the url input of the flow
+      "groundtruth": "${data.answer}",
+      "prediction": "${run.outputs.category}",
+    }
 )
 
 # stream the run until it's finished
