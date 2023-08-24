@@ -13,10 +13,13 @@ from promptflow._cli._params import (
     add_param_columns_mapping,
     add_param_connections,
     add_param_environment_variables,
+    add_param_run_name,
     add_param_set,
     add_parser_export,
+    logging_params,
 )
 from promptflow._cli._utils import (
+    activate_action,
     exception_handler,
     list_of_dict_to_dict,
     list_of_dict_to_nested_dict,
@@ -53,12 +56,9 @@ def add_run_parser(subparsers):
     run_parser.set_defaults(action="run")
 
 
-def add_run_create_common(subparsers, add_param_data):
-    create_parser = subparsers.add_parser(
-        "create", help="Create a run.", epilog="pf run create --file <local-path-to-yaml> [--stream]"
-    )
+def add_run_create_common(subparsers, add_param_list):
     # pf run create --file batch_run.yaml [--stream]
-    create_parser.add_argument(
+    add_param_file = lambda parser: parser.add_argument(  # noqa: E731
         "-f",
         "--file",
         dest="file",
@@ -66,33 +66,51 @@ def add_run_create_common(subparsers, add_param_data):
         help="Local path to the YAML file containing the run definition. "
         "Reference https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json for the schema.",
     )
-    create_parser.add_argument(
+    add_param_stream = lambda parser: parser.add_argument(  # noqa: E731
         "-s",
         "--stream",
         action="store_true",
         default=False,
         help="Indicates whether to stream the run's logs to the console.",
     )
-    # pf run create --type batch --flow ./flow_dir --data xx.jsonl \
-    #   --inputs_mapping "xx=yy,aa=bb" --node_variant "${node_name.variant1}" --name "run1"
-    create_parser.add_argument("--flow", type=str, help="Local path to the flow directory.")
-    add_param_data(create_parser)
-    add_param_columns_mapping(create_parser)
-    create_parser.add_argument(
+    add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
+        "--flow", type=str, help="Local path to the flow directory."
+    )
+    add_param_variant = lambda parser: parser.add_argument(  # noqa: E731
         "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
     )
-    create_parser.add_argument(
+    add_param_run = lambda parser: parser.add_argument(  # noqa: E731
         "--run",
         type=str,
         help="Referenced flow run name referenced by current run. "
         "For example, you can run an evaluation flow against an existing run.",
     )
-    create_parser.add_argument("-n", "--name", type=str, help="Name of the run.")
-    # add env var overwrite
-    add_param_environment_variables(create_parser)
-    add_param_connections(create_parser)
-    add_param_set(create_parser)
-    create_parser.set_defaults(sub_action="create")
+    add_param_name = lambda parser: parser.add_argument("-n", "--name", type=str, help="Name of the run.")  # noqa: E731
+
+    add_params = [
+        add_param_file,
+        add_param_stream,
+        add_param_flow,
+        add_param_variant,
+        add_param_run,
+        add_param_name,
+        add_param_columns_mapping,
+        # add env var overwrite
+        add_param_environment_variables,
+        add_param_connections,
+        add_param_set,
+    ] + logging_params
+
+    add_params.extend(add_param_list)
+    create_parser = activate_action(
+        name="create",
+        description=None,
+        epilog="pf run create --file <local-path-to-yaml> [--stream]",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Create a run.",
+        action_param_name="sub_action",
+    )
     return create_parser
 
 
@@ -101,41 +119,53 @@ def add_run_create(subparsers):
     def add_param_data(parser):
         parser.add_argument("--data", type=str, help="Local path to the data file.")
 
-    add_run_create_common(subparsers, add_param_data)
+    add_run_create_common(subparsers, [add_param_data])
 
 
 def add_run_cancel(subparsers):
-    cancel_parser = subparsers.add_parser("cancel", help="Cancel a run.", epilog="pf run cancel --name <name>")
-    cancel_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    cancel_parser.set_defaults(sub_action="cancel")
+    add_params = [add_param_run_name] + logging_params
+    activate_action(
+        name="cancel",
+        description=None,
+        epilog="pf run cancel --name <name>",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Cancel a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_run_update(subparsers):
-    update_parser = subparsers.add_parser(
-        "update",
-        help="Update a run metadata, including display name, description and tags.",
+    add_params = [
+        add_param_run_name,
+        add_param_set,
+    ] + logging_params
+    activate_action(
+        name="update",
+        description=None,
         epilog='pf run update --name <name> --set display_name="<display-name>" description="<description>" tag.key="<value>"',  # noqa: E501
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Update a run metadata, including display name, description and tags.",
+        action_param_name="sub_action",
     )
-    update_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    add_param_set(update_parser)
-    update_parser.set_defaults(sub_action="update")
 
 
 def add_run_stream(subparsers):
-    stream_parser = subparsers.add_parser(
-        "stream", help="Stream run logs to the console.", epilog="pf run stream --name <name>"
+    add_params = [add_param_run_name] + logging_params
+    activate_action(
+        name="stream",
+        description=None,
+        epilog="pf run stream --name <name>",  # noqa: E501
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Stream run logs to the console.",
+        action_param_name="sub_action",
     )
-    stream_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    stream_parser.set_defaults(sub_action="stream")
 
 
 def add_run_list(subparsers):
-    list_parser = subparsers.add_parser(
-        "list",
-        help="List runs locally.",
-        epilog="pf run list [--max-results 10] [--all-results] [--archived-only] [--include-archived]",
-    )
-    list_parser.add_argument(
+    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
         dest="max_results",
@@ -143,28 +173,28 @@ def add_run_list(subparsers):
         default=MAX_LIST_CLI_RESULTS,
         help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
     )
-    list_parser.add_argument(
+    add_param_all_results = lambda parser: parser.add_argument(  # noqa: E731
         "--all-results",
         action="store_true",
         dest="all_results",
         default=False,
         help="Returns all results",
     )
-    list_parser.add_argument(
+    add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
         "--archived-only",
         action="store_true",
         dest="archived_only",
         default=False,
         help="List archived runs only.",
     )
-    list_parser.add_argument(
+    add_param_include_archived = lambda parser: parser.add_argument(  # noqa: E731
         "--include-archived",
         action="store_true",
         dest="include_archived",
         default=False,
         help="List archived runs and active runs.",
     )
-    list_parser.add_argument(
+    add_param_output = lambda parser: parser.add_argument(  # noqa: E731
         "-o",
         "--output",
         dest="output",
@@ -172,21 +202,42 @@ def add_run_list(subparsers):
         default=CLIListOutputFormat.JSON,
         help="Output format, accepted values are 'json' and 'table'. Default is 'json'.",
     )
-    list_parser.set_defaults(sub_action="list")
+
+    add_params = [
+        add_param_max_results,
+        add_param_all_results,
+        add_param_archived_only,
+        add_param_include_archived,
+        add_param_output,
+    ] + logging_params
+
+    activate_action(
+        name="list",
+        description=None,
+        epilog="pf run list [--max-results 10] [--all-results] [--archived-only] [--include-archived]",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="List runs locally.",
+        action_param_name="sub_action",
+    )
 
 
 def add_run_show(subparsers):
-    show_parser = subparsers.add_parser("show", help="Show details for a run.", epilog="pf run show --name <name>")
-    show_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    show_parser.set_defaults(sub_action="show")
+    add_params = [add_param_run_name] + logging_params
+
+    activate_action(
+        name="show",
+        description=None,
+        epilog="pf run show --name <name>",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Show details for a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_run_show_details(subparsers):
-    show_details_parser = subparsers.add_parser(
-        "show-details", help="Preview a run's input(s) and output(s).", epilog="pf run show-details --name <name>"
-    )
-    show_details_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    show_details_parser.add_argument(
+    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
         "-r",
         "--max-results",
         dest="max_results",
@@ -194,41 +245,89 @@ def add_run_show_details(subparsers):
         default=MAX_SHOW_DETAILS_RESULTS,
         help=f"Number of lines to show. Default is {MAX_SHOW_DETAILS_RESULTS}.",
     )
-    show_details_parser.set_defaults(sub_action="show-details")
+
+    add_params = [add_param_max_results, add_param_run_name] + logging_params
+
+    activate_action(
+        name="show-details",
+        description=None,
+        epilog="pf run show-details --name <name>",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Preview a run's input(s) and output(s).",
+        action_param_name="sub_action",
+    )
 
 
 def add_run_show_metrics(subparsers):
-    show_metrics_parser = subparsers.add_parser(
-        "show-metrics", help="Print run metrics to the console.", epilog="pf run show-metrics --name <name>"
+    add_params = [add_param_run_name] + logging_params
+
+    activate_action(
+        name="show-metrics",
+        description=None,
+        epilog="pf run show-metrics --name <name>",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Print run metrics to the console.",
+        action_param_name="sub_action",
     )
-    show_metrics_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    show_metrics_parser.set_defaults(sub_action="show-metrics")
 
 
 def add_run_visualize(subparsers):
-    visualize_parser = subparsers.add_parser(
-        "visualize", help="Visualize a run.", epilog='pf run visualize "run1,run2"'
+
+    add_param_name = lambda parser: parser.add_argument(  # noqa: E731
+        "-n", "--names", type=str, required=True, help="Name of the runs, comma separated."
     )
-    visualize_parser.add_argument("-n", "--names", type=str, required=True, help="Name of the runs, comma separated.")
-    visualize_parser.add_argument("--html-path", type=str, default=None, help=argparse.SUPPRESS)
-    visualize_parser.set_defaults(sub_action="visualize")
+    add_param_html_path = lambda parser: parser.add_argument(  # noqa: E731
+        "--html-path", type=str, default=None, help=argparse.SUPPRESS
+    )
+
+    add_params = [add_param_name, add_param_html_path] + logging_params
+
+    activate_action(
+        name="visualize",
+        description=None,
+        epilog='pf run visualize "run1,run2"',
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Visualize a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_run_archive(subparsers):
-    archive_parser = subparsers.add_parser("archive", help="Archive a run.", epilog="pf run archive --name <name>")
-    archive_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    archive_parser.set_defaults(sub_action="archive")
+    add_params = [add_param_run_name] + logging_params
+
+    activate_action(
+        name="archive",
+        description=None,
+        epilog="pf run archive --name <name>",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Archive a run.",
+        action_param_name="sub_action",
+    )
 
 
 def add_run_restore(subparsers):
-    restore_parser = subparsers.add_parser(
-        "restore", help="Restore an archived run.", epilog="pf run restore --name <name>"
+    add_params = [add_param_run_name] + logging_params
+
+    activate_action(
+        name="restore",
+        description=None,
+        epilog="pf run restore --name <name>",
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Restore an archived run.",
+        action_param_name="sub_action",
     )
-    restore_parser.add_argument("-n", "--name", required=True, type=str, help="Name of the run.")
-    restore_parser.set_defaults(sub_action="restore")
 
 
 def dispatch_run_commands(args: argparse.Namespace):
+    # --verbose and --debug, enable debug logging
+    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
+        for handler in logging.getLogger(LOGGER_NAME).handlers:
+            handler.setLevel(logging.DEBUG)
     if args.sub_action == "create":
         create_run(create_func=_create_run, args=args)
     elif args.sub_action == "update":

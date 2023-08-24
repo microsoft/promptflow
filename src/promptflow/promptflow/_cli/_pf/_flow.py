@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import webbrowser
 from pathlib import Path
 
 from promptflow._cli._params import (
@@ -20,6 +21,7 @@ from promptflow._cli._params import (
     add_param_source,
     add_param_yes,
     add_parser_export,
+    logging_params,
 )
 from promptflow._cli._pf._init_entry_generators import (
     FlowDAGGenerator,
@@ -51,6 +53,10 @@ def add_flow_parser(subparsers):
 
 
 def dispatch_flow_commands(args: argparse.Namespace):
+    # --verbose and --debug, enable debug logging
+    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
+        for handler in logging.getLogger(LOGGER_NAME).handlers:
+            handler.setLevel(logging.DEBUG)
     if args.sub_action == "init":
         init_flow(args)
     elif args.sub_action == "test":
@@ -73,26 +79,31 @@ pf flow init --flow my-awesome-flow --type evaluation
 # Creating a flow in existing folder
 pf flow init --flow intent_copilot --entry intent.py --function extract_intent --prompt-template prompt_template=tpl.jinja2
 """  # noqa: E501
-    init_parser = subparsers.add_parser(
-        "init",
-        description="Creating a flow folder with code/prompts and yaml definitions of the flow.",
-        epilog=epilog,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        help="Initialize a prompt flow directory.",
-    )
-
-    add_params = [add_param_yes, add_param_flow_name, add_param_entry, add_param_function, add_param_prompt_template]
-    for add_param_func in add_params:
-        add_param_func(init_parser)
-
-    init_parser.add_argument(
+    add_param_type = lambda parser: parser.add_argument(  # noqa: E731
         "--type",
         type=str,
         choices=["standard", "evaluation", "chat"],
         help="The initialized flow type.",
         default="standard",
     )
-    init_parser.set_defaults(sub_action="init")
+
+    add_params = [
+        add_param_type,
+        add_param_yes,
+        add_param_flow_name,
+        add_param_entry,
+        add_param_function,
+        add_param_prompt_template,
+    ] + logging_params
+    activate_action(
+        name="init",
+        description="Creating a flow folder with code/prompts and yaml definitions of the flow.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Initialize a prompt flow directory.",
+        action_param_name="sub_action",
+    )
 
 
 def add_parser_serve_flow(subparsers):
@@ -124,8 +135,10 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
             add_param_host,
             add_param_static_folder,
             add_param_environment_variables,
-        ],
+        ]
+        + logging_params,
         subparsers=subparsers,
+        help_message="Serving a flow as an endpoint.",
         action_param_name="sub_action",
     )
 
@@ -146,28 +159,38 @@ pf flow test --flow my-awesome-flow --node node_name
 # Chat in the flow:
 pf flow test --flow my-awesome-flow --node node_name --interactive
 """  # noqa: E501
-    test_parser = subparsers.add_parser(
-        "test",
-        description="Test the flow.",
-        epilog=epilog,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        help="Test the prompt flow or flow node in local.",
+    add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
+        "--flow", type=str, required=True, help="the flow directory to test."
     )
-
-    test_parser.add_argument("--flow", type=str, required=True, help="the flow directory to test.")
-    add_param_inputs(test_parser)
-    test_parser.add_argument("--node", type=str, help="the node name in the flow need to be tested.")
-    test_parser.add_argument("--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}.")
-    test_parser.add_argument(
+    add_param_node = lambda parser: parser.add_argument(  # noqa: E731
+        "--node", type=str, help="the node name in the flow need to be tested."
+    )
+    add_param_variant = lambda parser: parser.add_argument(  # noqa: E731
+        "--variant", type=str, help="Node & variant name in format of ${node_name.variant_name}."
+    )
+    add_param_interactive = lambda parser: parser.add_argument(  # noqa: E731
         "--interactive", action="store_true", help="start a interactive chat session for chat flow."
     )
-    test_parser.add_argument(
-        "--verbose", action="store_true", help="displays the output for each step in the chat flow."
+    add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
+
+    add_params = [
+        add_param_flow,
+        add_param_node,
+        add_param_variant,
+        add_param_interactive,
+        add_param_input,
+        add_param_inputs,
+        add_param_environment_variables,
+    ] + logging_params
+    activate_action(
+        name="test",
+        description="Test the flow.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="Test the prompt flow or flow node in local.",
+        action_param_name="sub_action",
     )
-    test_parser.add_argument("--input", type=str, help=argparse.SUPPRESS)
-    test_parser.add_argument("--debug", action="store_true", help=argparse.SUPPRESS)
-    add_param_environment_variables(test_parser)
-    test_parser.set_defaults(sub_action="test")
 
 
 def init_flow(args):
@@ -333,6 +356,9 @@ def serve_flow(args):
     app = create_app(
         static_folder=static_folder, environment_variables=list_of_dict_to_dict(args.environment_variables)
     )
+    target = f"http://{args.host}:{args.port}"
+    print(f"Opening browser {target}...")
+    webbrowser.open(target)
     # Debug is not supported for now as debug will rerun command, and we changed working directory.
     app.run(port=args.port, host=args.host)
     logger.info("Promptflow app ended")

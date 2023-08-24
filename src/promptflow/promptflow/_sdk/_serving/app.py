@@ -76,12 +76,16 @@ class PromptflowServingApp(Flask):
             )
         self.executor._run_tracker.allow_generator_types = True
         self.flow = self.executor._flow
+        # Set the flow name as folder name
+        self.flow.name = Path(self.project_path).stem
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
         self.executor.enable_streaming_for_llm_flow(streaming_response_required)
         logger.info("Promptflow executor initiated successfully.")
 
     def init_swagger(self):
         flow = self.flow_entity._init_executable()
+        # Set the flow name as folder name
+        flow.name = Path(self.project_path).stem
         self.response_fields_to_remove = get_output_fields_to_remove(flow, logger)
         self.swagger = generate_swagger(flow, self.sample, self.response_fields_to_remove)
 

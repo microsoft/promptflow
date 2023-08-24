@@ -28,6 +28,7 @@ from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
+from promptflow.exceptions import UserErrorException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
     AzureRunTypes.BATCH: RunTypes.BATCH,
@@ -377,15 +378,34 @@ class Run(YAMLTranslatableMixin):
             elif isinstance(self.run, str):
                 variant = self.run
             else:
-                raise ValueError(f"Invalid run type: {type(self.run)}")
+                raise UserErrorException(f"Invalid run type: {type(self.run)}")
         else:
             variant = None
 
         if not variant and not self.data:
-            raise ValueError("Either run or data should be provided")
+            raise UserErrorException("Either run or data should be provided")
 
         # sanitize flow_dir to avoid invalid experiment name
         run_experiment_name = _sanitize_python_variable_name(self._flow_dir)
+
+        # parse inputs mapping
+        inputs_mapping = {}
+        if self.column_mapping and not isinstance(self.column_mapping, dict):
+            raise UserErrorException(f"column_mapping should be a dictionary, got {type(self.column_mapping)} instead.")
+        if self.column_mapping:
+            for k, v in self.column_mapping.items():
+                if isinstance(v, (int, float, str, bool)):
+                    inputs_mapping[k] = v
+                else:
+                    try:
+                        val = json.dumps(v)
+                    except Exception as e:
+                        raise UserErrorException(
+                            f"Invalid input mapping value: {v}, "
+                            f"only primitive or json serializable value is supported, got {type(v)}",
+                            error=e,
+                        )
+                    inputs_mapping[k] = val
 
         if str(self.flow).startswith("azureml://"):
             # upload via _check_and_upload_path
@@ -403,7 +423,7 @@ class Run(YAMLTranslatableMixin):
                 batch_data_input=BatchDataInput(
                     data_uri=self.data,
                 ),
-                inputs_mapping=self.column_mapping,
+                inputs_mapping=inputs_mapping,
                 run_experiment_name=run_experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
@@ -422,7 +442,7 @@ class Run(YAMLTranslatableMixin):
                 batch_data_input=BatchDataInput(
                     data_uri=self.data,
                 ),
-                inputs_mapping=self.column_mapping,
+                inputs_mapping=inputs_mapping,
                 run_experiment_name=run_experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,

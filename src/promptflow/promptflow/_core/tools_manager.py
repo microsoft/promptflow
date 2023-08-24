@@ -335,9 +335,5 @@ class APINotFound(ValidationException):
     pass
 
 
-class ToolNotFound(ValidationException):
-    pass
-
-
 class NodeSourcePathEmpty(ValidationException):
     pass

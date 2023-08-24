@@ -68,12 +68,9 @@ class GenerateFlowToolsJsonError(PromptflowException):
 class BulkRunException(PromptflowException):
     """Exception raised when bulk run failed."""
 
-    def __init__(self, *, failed_lines: int, total_lines: int, module: str = None, **kwargs):
+    def __init__(self, *, message="", failed_lines: int, total_lines: int, module: str = None, **kwargs):
         self.failed_lines = failed_lines
         self.total_lines = total_lines
-        super().__init__(target=ErrorTarget.RUNTIME, module=module, **kwargs)
-
-    def to_dict(self, *, include_debug_info=False):
-        result = super().to_dict(include_debug_info=include_debug_info)
-        result["failed_lines"] = f"{self.failed_lines}/{self.total_lines}"
-        return result
+        # TODO(2626231): aggregate error messages
+        message = f"Failed to run {failed_lines}/{total_lines} lines: First error message is: {message}"
+        super().__init__(message=message, target=ErrorTarget.RUNTIME, module=module, **kwargs)

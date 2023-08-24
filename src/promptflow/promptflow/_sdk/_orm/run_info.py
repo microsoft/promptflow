@@ -38,6 +38,8 @@ class RunInfo(Base):
     archived = Column(Boolean, default=False)
     # NOTE: please always add columns to the tail, so that we can easily handle schema changes;
     #       also don't forget to update `__pf_schema_version__` when you change the schema
+    # NOTE: keep in mind that we need to well handle runs with legacy schema;
+    #       normally new fields will be `None`, remember to handle them properly
     start_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     end_time = Column(TEXT)  # ISO8601("YYYY-MM-DD HH:MM:SS.SSS"), string
     data = Column(TEXT)  # local path of original run data, string

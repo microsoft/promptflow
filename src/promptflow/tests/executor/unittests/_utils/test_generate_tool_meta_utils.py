@@ -1,13 +1,18 @@
 import os
+import re
 import sys
 from multiprocessing import Pool
 from pathlib import Path
 
 import pytest
 
-from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._core.tool_meta_generator import PythonLoadError, generate_python_meta, generate_tool_meta_dict_by_file
+from promptflow._utils.exception_utils import ExceptionPresenter
 
 from ...utils import FLOW_ROOT, load_json
+
+TEST_ROOT = Path(__file__).parent.parent.parent.parent
+TOOLS_ROOT = TEST_ROOT / "test_configs/wrong_tools"
 
 
 def cd_and_run(working_dir, source_path, tool_type):
@@ -67,3 +72,37 @@ class TestToolMetaUtils:
         ret = generate_tool_meta_dict_by_file_with_cd(wd, tool_path, tool_type)
         assert isinstance(ret, str), "Call cd_and_run should fail but succeeded:\n" + str(ret)
         assert msg in ret
+
+
+@pytest.mark.unittest
+class TestPythonLoadError:
+    def test_additional_info(self):
+        source = TOOLS_ROOT / "load_error.py"
+        with open(source, "r") as f:
+            code = f.read()
+        with pytest.raises(PythonLoadError) as ex:
+            generate_python_meta("some_tool", code, source)
+
+        additional_info = ExceptionPresenter.create(ex.value).to_dict().get("additionalInfo")
+        assert len(additional_info) == 1
+
+        info_0 = additional_info[0]
+        assert info_0["type"] == "UserCodeStackTrace"
+        info_0_value = info_0["info"]
+        assert info_0_value.get("type") == "ZeroDivisionError"
+        assert info_0_value.get("message") == "division by zero"
+        assert re.match(r".*load_error.py", info_0_value["filename"])
+        assert info_0_value.get("lineno") == 3
+        assert info_0_value.get("name") == "<module>"
+        assert re.search(
+            r"Traceback \(most recent call last\):\n"
+            r'  File ".*load_error.py", line .*, in <module>\n'
+            r"    1 / 0\n"
+            r"ZeroDivisionError: division by zero\n",
+            info_0_value.get("traceback"),
+        )
+
+    def test_additional_info_for_empty_inner_error(self):
+        ex = PythonLoadError("Test empty error")
+        additional_info = ExceptionPresenter.create(ex).to_dict().get("additionalInfo")
+        assert additional_info is None

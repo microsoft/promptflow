@@ -1,9 +1,9 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 import argparse
 import sys
+import timeit
 
 from promptflow._cli._pf._connection import add_connection_parser, dispatch_connection_commands
 from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands
@@ -12,6 +12,9 @@ from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import get_promptflow_sdk_version, setup_user_agent_to_operation_context
+
+# Log the start time
+start_time = timeit.default_timer()
 
 # configure logger for CLI
 logger = LoggerFactory.get_logger(name=LOGGER_NAME)
@@ -36,15 +39,36 @@ def entry(argv):
     add_run_parser(subparsers)
 
     args = parser.parse_args(argv)
-
-    if args.version:
-        print(get_promptflow_sdk_version())
-    elif args.action == "flow":
-        dispatch_flow_commands(args)
-    elif args.action == "connection":
-        dispatch_connection_commands(args)
-    elif args.action == "run":
-        dispatch_run_commands(args)
+    # Log the init finish time
+    init_finish_time = timeit.default_timer()
+    try:
+        if args.version:
+            print(get_promptflow_sdk_version())
+        elif args.action == "flow":
+            dispatch_flow_commands(args)
+        elif args.action == "connection":
+            dispatch_connection_commands(args)
+        elif args.action == "run":
+            dispatch_run_commands(args)
+    except KeyboardInterrupt as ex:
+        logger.debug("Keyboard interrupt is captured.")
+        raise ex
+    except SystemExit as ex:  # some code directly call sys.exit, this is to make sure command metadata is logged
+        exit_code = ex.code if ex.code is not None else 1
+        logger.debug(f"Code directly call sys.exit with code {exit_code}")
+        raise ex
+    except Exception as ex:
+        logger.debug(f"Command {args} execute failed. {str(ex)}")
+        raise ex
+    finally:
+        # Log the invoke finish time
+        invoke_finish_time = timeit.default_timer()
+        logger.debug(
+            "Command ran in %.3f seconds (init: %.3f, invoke: %.3f)",
+            invoke_finish_time - start_time,
+            init_finish_time - start_time,
+            invoke_finish_time - init_finish_time,
+        )
 
 
 def main():

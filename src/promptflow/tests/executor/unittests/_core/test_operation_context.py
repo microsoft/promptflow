@@ -27,11 +27,9 @@ class TestOperationContext:
     @pytest.mark.parametrize(
         "run_mode, expected",
         [
-            (RunMode.Flow, "Flow"),
+            (RunMode.Test, "Test"),
             (RunMode.SingleNode, "SingleNode"),
-            (RunMode.FromNode, "FromNode"),
-            (RunMode.BulkTest, "BulkTest"),
-            (RunMode.Eval, "Eval"),
+            (RunMode.Batch, "Batch"),
         ],
     )
     def test_run_mode(self, run_mode, expected):

@@ -10,11 +10,15 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
     ConnectionNotFound,
     DuplicateNodeName,
+    EmptyOutputError,
     InputNotFound,
+    InputReferenceNotFound,
     InputTypeError,
     InvalidFlowRequest,
     InvalidSource,
+    NodeCircularDependency,
     NodeInputValidationError,
+    NodeReferenceNotFound,
     OutputReferenceNotFound,
 )
 from promptflow.executor.flow_executor import BulkResult
@@ -31,6 +35,10 @@ class TestValidation:
             ("nodes_names_duplicated", "flow.dag.yaml", DuplicateNodeName),
             ("source_file_missing", "flow.dag.python.yaml", PythonParsingError),
             ("source_file_missing", "flow.dag.jinja.yaml", InvalidSource),
+            ("node_reference_not_found", "flow.dag.yaml", NodeReferenceNotFound),
+            ("node_circular_dependency", "flow.dag.yaml", NodeCircularDependency),
+            ("flow_input_reference_invalid", "flow.dag.yaml", InputReferenceNotFound),
+            ("flow_output_reference_invalid", "flow.dag.yaml", EmptyOutputError),
         ],
     )
     def test_executor_create(self, flow_folder, yml_file, error_class, dev_connections):
@@ -80,33 +88,51 @@ class TestValidation:
             executor.exec_line(line_input)
 
     @pytest.mark.parametrize(
-        "flow_folder, batch_input, error_class",
+        "flow_folder, batch_input, error_message, error_class",
         [
-            ("simple_flow_with_python_tool", [{"num11": "22"}], InputNotFound),
-            ("simple_flow_with_python_tool", [{"num": "hello"}], InputTypeError),
+            (
+                "simple_flow_with_python_tool",
+                [{"num11": "22"}],
+                "Input 'num' in line 0 is not provided for flow.",
+                "InputNotFound",
+            ),
+            (
+                "simple_flow_with_python_tool",
+                [{"num": "hello"}],
+                "Input 'num' in line 0 for flow 'default_flow' of value hello is not type int.",
+                "InputTypeError",
+            ),
         ],
     )
-    def test_bulk_run_input_type_invalid(self, flow_folder, batch_input, error_class, dev_connections):
+    def test_bulk_run_input_type_invalid(self, flow_folder, batch_input, error_message, error_class, dev_connections):
         # Bulk run - the input is from sample.json
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
-        with pytest.raises(error_class):
-            executor.exec_bulk(
-                batch_input,
-            )
+        bulk_result = executor.exec_bulk(
+            batch_input,
+        )
+        assert error_message in str(
+            bulk_result.line_results[0].run_info.error
+        ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
+        assert error_class in str(
+            bulk_result.line_results[0].run_info.error
+        ), f"Expected message {error_class} but got {str(bulk_result.line_results[0].run_info.error)}"
 
     @pytest.mark.parametrize(
-        "flow_folder, line_input, error_class",
+        "path_root, flow_folder, node_name, line_input, error_class",
         [
-            ("simple_flow_with_python_tool", {"num11": "22"}, InputNotFound),
-            ("simple_flow_with_python_tool", {"num": "hello"}, InputTypeError),
+            (FLOW_ROOT, "simple_flow_with_python_tool", "divide_num", {"num11": "22"}, InputNotFound),
+            (FLOW_ROOT, "simple_flow_with_python_tool", "divide_num", {"num": "hello"}, InputTypeError),
+            (WRONG_FLOW_ROOT, "flow_input_reference_invalid", "divide_num", {"num": "22"}, InputNotFound),
         ],
     )
-    def test_single_node_input_type_invalid(self, flow_folder, line_input, error_class, dev_connections):
+    def test_single_node_input_type_invalid(
+        self, path_root: str, flow_folder, node_name, line_input, error_class, dev_connections
+    ):
         # Single Node run - the inputs are from flow_inputs + dependency_nodes_outputs
         with pytest.raises(error_class):
             FlowExecutor.load_and_exec_node(
-                flow_file=get_yaml_file(flow_folder, FLOW_ROOT),
-                node_name="divide_num",
+                flow_file=get_yaml_file(flow_folder, path_root),
+                node_name=node_name,
                 flow_inputs=line_input,
                 dependency_nodes_outputs={},
                 connections=dev_connections,

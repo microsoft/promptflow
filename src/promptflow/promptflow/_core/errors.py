@@ -1,11 +1,7 @@
 from traceback import TracebackException
 
-from promptflow.exceptions import (
-    ADDITIONAL_INFO_USER_EXECUTION_ERROR,
-    ErrorTarget,
-    UserErrorException,
-    ValidationException,
-)
+from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info
+from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
 
 
 class PackageToolNotFoundError(ValidationException):
@@ -50,17 +46,7 @@ class ToolExecutionError(UserErrorException):
     @property
     def tool_last_frame_info(self):
         """Return the line number inside the tool where the error occurred."""
-        if self.inner_exception:
-            tb = TracebackException.from_exception(self.inner_exception)
-            last_frame = tb.stack[-1] if tb.stack else None
-            if last_frame:
-                return {
-                    "filename": last_frame.filename,
-                    "lineno": last_frame.lineno,
-                    "name": last_frame.name,
-                }
-
-        return {}
+        return last_frame_info(self.inner_exception)
 
     @property
     def tool_traceback(self):

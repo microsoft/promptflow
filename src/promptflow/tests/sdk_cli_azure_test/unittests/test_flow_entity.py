@@ -74,6 +74,7 @@ class TestFlow:
         with tempfile.TemporaryDirectory() as temp:
             flow_path = Path(temp) / "flow"
             shutil.copytree(local_file, flow_path)
+            assert (Path(temp) / "flow/.promptflow/flow.tools.json").exists()
 
             (Path(flow_path) / ".runs").mkdir(parents=True)
             (Path(flow_path) / ".runs" / "mock.file").touch()

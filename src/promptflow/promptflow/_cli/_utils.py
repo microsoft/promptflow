@@ -176,13 +176,13 @@ def inject_sys_path(path):
         sys.path = original_sys_path
 
 
-def activate_action(name, description, epilog, add_params, subparsers, action_param_name="action"):
+def activate_action(name, description, epilog, add_params, subparsers, help_message, action_param_name="action"):
     parser = subparsers.add_parser(
         name,
         description=description,
         epilog=epilog,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help=description,
+        help=help_message,
     )
     if add_params:
         for add_param_func in add_params:

@@ -34,13 +34,23 @@ def ml_client(
 
 @pytest.fixture()
 def remote_client() -> PFClient:
-    client = MLClient(
+    return PFClient(
         credential=get_cred(),
         subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
         resource_group_name="promptflow",
         workspace_name="promptflow-eastus",
     )
-    return PFClient(client)
+
+
+@pytest.fixture()
+def remote_client_int() -> PFClient:
+    client = MLClient(
+        credential=get_cred(),
+        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+        resource_group_name="promptflow",
+        workspace_name="promptflow-int",
+    )
+    return PFClient(ml_client=client)
 
 
 @pytest.fixture()
@@ -52,9 +62,9 @@ def pf(remote_client) -> PFClient:
 def remote_web_classification_data(remote_client):
     data_name, data_version = "webClassification1", "1"
     try:
-        return remote_client._client.data.get(name=data_name, version=data_version)
+        return remote_client.ml_client.data.get(name=data_name, version=data_version)
     except ResourceNotFoundError:
-        return remote_client._client.data.create_or_update(
+        return remote_client.ml_client.data.create_or_update(
             Data(name=data_name, version=data_version, path=f"{DATAS_DIR}/webClassification1.jsonl", type="uri_file")
         )
 
@@ -62,6 +72,11 @@ def remote_web_classification_data(remote_client):
 @pytest.fixture
 def runtime():
     return "demo-mir"
+
+
+@pytest.fixture
+def runtime_int():
+    return "daily-image-mir"
 
 
 @pytest.fixture

@@ -5,21 +5,23 @@ from unittest.mock import patch
 
 import pytest
 
-from promptflow._internal import OperationContext
+from promptflow._core.operation_context import OperationContext
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor import FlowExecutor
 
 from ..utils import get_yaml_file
 
+Completion = namedtuple("Completion", ["choices"])
+Delta = namedtuple("Delta", ["content"])
+
+
+def stream_response(kwargs):
+    delta = Delta(content=json.dumps(kwargs.get("headers", {})))
+    yield Completion(choices=[{"delta": delta}])
+
 
 def mock_stream_chat(**kwargs):
-    def stream_response():
-        Completion = namedtuple("Completion", ["choices"])
-        Delta = namedtuple("Delta", ["content"])
-        delta = Delta(content=json.dumps(kwargs.get("headers", {})))
-        yield Completion(choices=[{"delta": delta}])
-
-    return stream_response()
+    return stream_response(kwargs)
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -47,7 +49,7 @@ class TestExecutorTelemetry:
 
             assert "promptflow/" in headers.get("x-ms-useragent")
             assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
-            assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Flow.name
+            assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Test.name
 
             # exec_bulk case
             run_id = str(uuid.uuid4())
@@ -58,7 +60,7 @@ class TestExecutorTelemetry:
                 headers = json.loads(line.get("answer", ""))
                 assert "promptflow/" in headers.get("x-ms-useragent")
                 assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
-                assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.BulkTest.name
+                assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
 
             # single_node case
             run_info = FlowExecutor.load_and_exec_node(

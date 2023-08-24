@@ -8,7 +8,7 @@ import json
 import logging
 from functools import partial
 
-from promptflow._cli._params import add_param_set
+from promptflow._cli._params import add_param_set, logging_params
 from promptflow._cli._utils import activate_action, confirm, exception_handler
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
@@ -56,8 +56,9 @@ pf connection create -f .env --name custom
         name="create",
         description="Create a connection.",
         epilog=epilog,
-        add_params=[add_param_set, add_param_file, add_param_name],
+        add_params=[add_param_set, add_param_file, add_param_name] + logging_params,
         subparsers=subparsers,
+        help_message="Create a connection.",
         action_param_name="sub_action",
     )
 
@@ -73,8 +74,9 @@ pf connection update -n my_connection --set api_key="my_api_key"
         name="update",
         description="Update a connection.",
         epilog=epilog,
-        add_params=[add_param_set, partial(add_param_name, required=True)],
+        add_params=[add_param_set, partial(add_param_name, required=True)] + logging_params,
         subparsers=subparsers,
+        help_message="Update a connection.",
         action_param_name="sub_action",
     )
 
@@ -90,8 +92,9 @@ pf connection show -n my_connection_name
         name="show",
         description="Show a connection for promptflow.",
         epilog=epilog,
-        add_params=[partial(add_param_name, required=True)],
+        add_params=[partial(add_param_name, required=True)] + logging_params,
         subparsers=subparsers,
+        help_message="Show a connection for promptflow.",
         action_param_name="sub_action",
     )
 
@@ -107,8 +110,9 @@ pf connection delete -n my_connection_name
         name="delete",
         description="Delete a connection with specific name.",
         epilog=epilog,
-        add_params=[partial(add_param_name, required=True)],
+        add_params=[partial(add_param_name, required=True)] + logging_params,
         subparsers=subparsers,
+        help_message="Delete a connection with specific name.",
         action_param_name="sub_action",
     )
 
@@ -124,8 +128,9 @@ pf connection list
         name="list",
         description="List all connections.",
         epilog=epilog,
-        add_params=[],
+        add_params=logging_params,
         subparsers=subparsers,
+        help_message="List all connections.",
         action_param_name="sub_action",
     )
 
@@ -223,6 +228,11 @@ def delete_connection(name):
 
 
 def dispatch_connection_commands(args: argparse.Namespace):
+    # --verbose and --debug, enable debug logging
+    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
+        for handler in logging.getLogger(LOGGER_NAME).handlers:
+            handler.setLevel(logging.DEBUG)
+
     if args.sub_action == "create":
         create_connection(args.file, args.params_override, args.name)
     elif args.sub_action == "show":

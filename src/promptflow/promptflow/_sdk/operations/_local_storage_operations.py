@@ -31,6 +31,7 @@ from promptflow._sdk._utils import generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -276,7 +277,7 @@ class LocalStorageOperations(AbstractRunStorage):
                 total_lines=total,
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(exception.to_dict(include_debug_info=True), f)
+            json.dump(ExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
 
     def load_exception(self) -> Dict:
         try:

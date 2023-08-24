@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from dataclasses import _MISSING_TYPE, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Type, TypeVar
@@ -36,24 +36,6 @@ def deserialize_dataclass(cls: Type[T], data: dict) -> T:
         field_type = get_type(field.type)
         kwargs[field.name] = deserialize_value(data[field.name], field_type)
     return cls(**kwargs)
-
-
-def deserialize_flow_run_info(data: dict):
-    from promptflow.contracts.run_info import FlowRunInfo
-
-    value = deserialize_dataclass(FlowRunInfo, data)
-    if isinstance(value.output, _MISSING_TYPE):
-        value.output = value.result  # Backward compatibility
-    return value
-
-
-def deserialize_node_run_info(data: dict):
-    from promptflow.contracts.run_info import RunInfo
-
-    value = deserialize_dataclass(RunInfo, data)
-    if isinstance(value.output, _MISSING_TYPE):
-        value.output = value.result  # Backward compatibility
-    return value
 
 
 def deserialize_value(obj, field_type):

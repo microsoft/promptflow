@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 # pylint: disable=protected-access
 
+import logging
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict
@@ -14,6 +16,7 @@ from azure.ai.ml._scope_dependent_operations import (
     OperationScope,
     _ScopeDependentOperations,
 )
+from azure.ai.ml._utils._asset_utils import traverse_directory
 from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 from azure.ai.ml._utils.utils import hash_dict
 from azure.ai.ml.constants._common import SHORT_URI_FORMAT, AzureMLResourceType
@@ -22,14 +25,20 @@ from azure.ai.ml.operations._code_operations import CodeOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
 
-from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME, WORKSPACE_LINKED_DATASTORE_NAME
-from promptflow._sdk._utils import generate_flow_tools_json
+from promptflow._sdk._constants import (
+    FLOW_TOOLS_JSON,
+    LOGGER_NAME,
+    PROMPT_FLOW_DIR_NAME,
+    WORKSPACE_LINKED_DATASTORE_NAME,
+)
+from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._ml import Component
 from promptflow.azure._restclient.flow.models import FlowRunMode, LoadFlowAsComponentRequest
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils import is_arm_id
+from promptflow.exceptions import SystemErrorException
 
 
 class FlowOperations(_ScopeDependentOperations):
@@ -232,13 +241,13 @@ class FlowOperations(_ScopeDependentOperations):
             flow.path = (Path(path) / flow.path).as_posix()
             flow._code_uploaded = True
 
-    def _resolve_arm_id_or_upload_dependencies(self, flow: Flow) -> None:
+    def _resolve_arm_id_or_upload_dependencies(self, flow: Flow, ignore_tools_json=False) -> None:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         # resolve flow's code
-        self._try_resolve_code_for_flow(flow=flow, ops=ops)
+        self._try_resolve_code_for_flow(flow=flow, ops=ops, ignore_tools_json=ignore_tools_json)
 
     @classmethod
-    def _try_resolve_code_for_flow(cls, flow: Flow, ops: OperationOrchestrator) -> None:
+    def _try_resolve_code_for_flow(cls, flow: Flow, ops: OperationOrchestrator, ignore_tools_json=False) -> None:
         if flow.path:
             # remote path
             if flow.path.startswith("azureml://datastores"):
@@ -256,6 +265,28 @@ class FlowOperations(_ScopeDependentOperations):
             # TODO(2567532): backend does not fully support generate flow.tools.json from blob storage yet
             if not (Path(code.path) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON).exists():
                 generate_flow_tools_json(code.path)
+            # ignore flow.tools.json if needed (e.g. for flow run scenario)
+            if ignore_tools_json:
+                ignore_file = code._ignore_file
+                if isinstance(ignore_file, PromptflowIgnoreFile):
+                    ignore_file._ignore_tools_json = ignore_tools_json
+                else:
+                    raise SystemErrorException(
+                        message=f"Flow code should have PromptflowIgnoreFile, got {type(ignore_file)}"
+                    )
+
+            # flow directory per file upload summary
+            # as the upload logic locates in azure-ai-ml, we cannot touch during the upload
+            # copy the logic here to print per file upload summary
+            ignore_file = code._ignore_file
+            upload_paths = []
+            source_path = Path(code.path).resolve()
+            prefix = os.path.basename(source_path) + "/"
+            for root, _, files in os.walk(source_path, followlinks=True):
+                upload_paths += list(traverse_directory(root, files, source_path, prefix, ignore_file=ignore_file))
+            logger = logging.getLogger(LOGGER_NAME)
+            for file_path, _ in upload_paths:
+                logger.debug(f"will upload file: {file_path}...")
 
             code.datastore = WORKSPACE_LINKED_DATASTORE_NAME
             # NOTE: For flow directory upload, we prefer to upload it to the workspace linked datastore,
@@ -272,7 +303,7 @@ class FlowOperations(_ScopeDependentOperations):
                     asset_operations=ops._code_assets,
                     artifact_type="Code",
                     datastore_name=WORKSPACE_LINKED_DATASTORE_NAME,  # actually not work at all
-                    show_progress=False,
+                    show_progress=True,
                 )
                 path = uploaded_code_asset.path
                 path = path[path.find("LocalUpload") :]  # path on container

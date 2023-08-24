@@ -43,11 +43,6 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
-def get_string_size(content: str) -> int:
-    """Get the size of content"""
-    return len(content.encode("utf-8"))
-
-
 def load_json(file_path: Union[str, Path]) -> dict:
     with open(file_path, "r") as f:
         return json.load(f)
@@ -71,17 +66,6 @@ def reverse_transpose(values: Dict[str, List]) -> List[Dict[str, Any]]:
         for _idx, val in enumerate(vals):
             result[_idx][key] = val
     return result
-
-
-def get_mlflow_tracking_uri(
-    subscription_id: str, resource_group_name: str, workspace_name: str, mt_endpoint: str
-) -> str:
-    """Get the full mlflow tracking uri"""
-    # "https://master.api.azureml-test.ms" to "azureml://master.api.azureml-test.ms"
-    return (
-        f"{mt_endpoint.replace('https', 'azureml')}/mlflow/v1.0/subscriptions/{subscription_id}/"
-        f"resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
-    )
 
 
 def deprecated(f=None, replace=None, version=None):
@@ -133,6 +117,12 @@ def count_and_log_progress(
         yield item
 
 
+def log_progress(logger: logging.Logger, count: int, total_count: int, formatter="{count} / {total_count} finished."):
+    log_interval = max(int(total_count / 10), 1)
+    if count % log_interval == 0 or count == total_count:
+        logger.info(formatter.format(count=count, total_count=total_count))
+
+
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     from promptflow._core import flow_execution_context
 
@@ -173,24 +163,13 @@ def generate_elapsed_time_messages(func_name: str, start_time: float, interval: 
     return msgs
 
 
-def _get_default_credential():
-    """get default credential for current compute, cache the result to minimize actual token request count sent"""
-    if is_in_ci_pipeline():
-        from azure.identity import AzureCliCredential
-
-        cred = AzureCliCredential()
-    else:
-        from azure.identity import DefaultAzureCredential
-
-        cred = DefaultAzureCredential(exclude_interactive_browser_credential=True)
-    return cred
-
-
 def set_context(context: contextvars.Context):
     for var, value in context.items():
         var.set(value)
 
 
+# TODO: refactor and use pf version, for EPR
+# used in exceptions.py ("componentName": f"{ERROR_RESPONSE_COMPONENT_NAME}/{get_runtime_version()}",)
 def get_runtime_version():
     build_info = os.environ.get("BUILD_INFO", "")
     try:

@@ -1,11 +1,10 @@
-import contextvars
 import time
 from io import StringIO
 from logging import WARNING, Logger, StreamHandler
 
 import pytest
 
-from promptflow._utils.thread_utils import RepeatLogTimer, timeout
+from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import generate_elapsed_time_messages
 
 
@@ -37,39 +36,3 @@ class TestRepeatLogTimer:
                 + "thread None cannot be found in sys._current_frames, "
                 + "maybe it has been terminated due to unexpected errors."
             )
-
-
-@pytest.mark.unittest
-class TestTimeoutDecorator:
-    def test_timeout(self):
-        @timeout(timeout_seconds=1)
-        def func():
-            time.sleep(10)
-
-        with pytest.raises(TimeoutError):
-            func()
-
-    def test_exception_is_raised(self):
-        @timeout(timeout_seconds=1)
-        def func():
-            raise DummyException()
-
-        with pytest.raises(DummyException):
-            func()
-
-    def test_result_is_return(self):
-        @timeout(timeout_seconds=1)
-        def func():
-            return 1
-
-        assert func() == 1
-
-    def test_context_variables_are_preserved(self):
-        var = contextvars.ContextVar("test-var", default=None)
-        var.set(1)
-
-        @timeout(timeout_seconds=1)
-        def func():
-            return var.get() == 1
-
-        assert func()

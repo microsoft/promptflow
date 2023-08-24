@@ -8,7 +8,6 @@ from azure.ai.ml import Input, dsl
 from azure.ai.ml.constants import AssetTypes
 from azure.ai.ml.entities import Component, PipelineJob
 
-from promptflow.azure import PFClient
 from promptflow.connections import AzureOpenAIConnection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -117,12 +116,11 @@ class TestFlowInAzureML:
         self,
         azure_open_ai_connection: AzureOpenAIConnection,
         temp_output_dir,
-        ml_client_canary,
+        pf,
         load_params: dict,
         expected_spec_attrs: dict,
         request,
     ) -> None:
-        pf = PFClient(ml_client_canary)
 
         flows_dir = "./tests/test_configs/flows"
 
@@ -138,9 +136,8 @@ class TestFlowInAzureML:
         assert slimmed_created_component_attrs == expected_spec_attrs
 
     def test_flow_as_component_in_dsl_pipeline(
-        self, azure_open_ai_connection: AzureOpenAIConnection, temp_output_dir, ml_client_canary
+        self, azure_open_ai_connection: AzureOpenAIConnection, temp_output_dir, pf
     ) -> None:
-        pf = PFClient(ml_client_canary)
 
         flows_dir = "./tests/test_configs/flows"
 
@@ -175,6 +172,6 @@ class TestFlowInAzureML:
         # compute cluster doesn't have access to azurecr for now, so the submitted job will fail in building image stage
         pipeline.settings.default_compute = "cpu-cluster"
 
-        created_job: PipelineJob = ml_client_canary.jobs.create_or_update(pipeline)
+        created_job: PipelineJob = pf.ml_client.jobs.create_or_update(pipeline)
         assert created_job.id
         assert created_job.jobs["flow_node"].logging_level == "DEBUG"
