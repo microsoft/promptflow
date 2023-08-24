@@ -1,40 +1,33 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   chat_history:
     type: list
-    default:
-    - inputs:
-        question: what is BERT?
-      outputs:
-        answer: BERT (Bidirectional Encoder Representations from Transformers) is a
-          language representation model that pre-trains deep bidirectional
-          representations from unlabeled text by jointly conditioning on both
-          left and right context in all layers. Unlike other language
-          representation models, BERT can be fine-tuned with just one additional
-          output layer to create state-of-the-art models for a wide range of
-          tasks such as question answering and language inference, without
-          substantial task-specific architecture modifications. BERT is
-          effective for both fine-tuning and feature-based approaches. It
-          obtains new state-of-the-art results on eleven natural language
-          processing tasks, including pushing the GLUE score to 80.5% (7.7%
-          point absolute improvement), MultiNLI accuracy to 86.7% (4.6% absolute
-          improvement), SQuAD v1.1 question answering Test F1 to 93.2 (1.5 point
-          absolute improvement) and SQuAD v2.0 Test F1 to 83.1 (5.1 point
-          absolute improvement).
+    default: []
   pdf_url:
     type: string
     default: https://arxiv.org/pdf/1810.04805.pdf
   question:
     type: string
     is_chat_input: true
-    default: what NLP tasks does it perform well?
+    default: what is BERT?
+  config:
+    type: object
+    default:
+      EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
+      CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo
+      PROMPT_TOKEN_LIMIT: 3000
+      MAX_COMPLETION_TOKENS: 256
+      VERBOSE: true
+      CHUNK_SIZE: 1024
+      CHUNK_OVERLAP: 64
 outputs:
   answer:
     type: string
     is_chat_output: true
-    reference: ${chat_with_pdf_tool.output.answer}
+    reference: ${qna_tool.output.answer}
   context:
     type: string
-    reference: ${chat_with_pdf_tool.output.context}
+    reference: ${find_context_tool.output.context}
 nodes:
 - name: setup_env
   type: python
@@ -42,16 +35,45 @@ nodes:
     type: code
     path: setup_env.py
   inputs:
-    conn: chat_with_pdf_custom_connection
-- name: chat_with_pdf_tool
+    aoai_connection: azure_open_ai_connection
+    config: ${inputs.config}
+- name: download_tool
   type: python
   source:
     type: code
-    path: chat_with_pdf_tool.py
+    path: download_tool.py
   inputs:
+    url: ${inputs.pdf_url}
+    env_ready_signal: ${setup_env.output}
+- name: build_index_tool
+  type: python
+  source:
+    type: code
+    path: build_index_tool.py
+  inputs:
+    pdf_path: ${download_tool.output}
+- name: find_context_tool
+  type: python
+  source:
+    type: code
+    path: find_context_tool.py
+  inputs:
+    question: ${rewrite_question_tool.output}
+    index_path: ${build_index_tool.output}
+- name: qna_tool
+  type: python
+  source:
+    type: code
+    path: qna_tool.py
+  inputs:
+    prompt: ${find_context_tool.output.prompt}
     history: ${inputs.chat_history}
-    pdf_url: ${inputs.pdf_url}
+- name: rewrite_question_tool
+  type: python
+  source:
+    type: code
+    path: rewrite_question_tool.py
+  inputs:
     question: ${inputs.question}
-    ready: ${setup_env.output}
-environment:
-    python_requirements_txt: requirements.txt
+    history: ${inputs.chat_history}
+    env_ready_signal: ${setup_env.output}

@@ -23,7 +23,7 @@ def extract_intent(chat_prompt: str):
         openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
         openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
         openai_api_type="azure",
-        openai_api_version="2023-03-15-preview",
+        openai_api_version="2023-07-01-preview",
         temperature=0,
     )
     reply_message = chat([HumanMessage(content=chat_prompt)])

@@ -1,4 +1,5 @@
-inputs:   # Enter the flow inputs
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
   customer_info:
     type: string
   history:

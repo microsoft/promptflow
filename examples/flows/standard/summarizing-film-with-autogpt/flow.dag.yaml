@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   name:
     type: string
@@ -19,7 +20,7 @@ nodes:
     type: code
     path: autogpt_easy_start.py
   inputs:
-    connection: azure_open_ai_20230701
+    connection: azure_open_ai_connection
     functions: ${functions.output}
     model_or_deployment_name: gpt-4
     system_prompt: ${system_prompt.output}

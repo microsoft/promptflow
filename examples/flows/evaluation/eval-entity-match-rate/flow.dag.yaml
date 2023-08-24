@@ -1,0 +1,40 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  entities:
+    type: list
+    default:
+    - software engineer
+    - CEO
+  ground_truth:
+    type: string
+    default: '"CEO, Software Engineer, Finance Manager"'
+outputs:
+  match_cnt:
+    type: object
+    reference: ${match.output}
+nodes:
+- name: cleansing
+  type: python
+  source:
+    type: code
+    path: cleansing.py
+  inputs:
+    entities_str: ${inputs.ground_truth}
+- name: match
+  type: python
+  source:
+    type: code
+    path: match.py
+  inputs:
+    answer: ${inputs.entities}
+    ground_truth: ${cleansing.output}
+- name: log_metrics
+  type: python
+  source:
+    type: code
+    path: log_metrics.py
+  inputs:
+    match_counts: ${match.output}
+  aggregation: true
+environment:
+  python_requirements_txt: requirements.txt

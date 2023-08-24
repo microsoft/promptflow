@@ -1,5 +1,5 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
-flow: ../../evaluation/classification-accuracy-eval
+flow: ../../evaluation/eval-classification-accuracy
 data: data.jsonl
 run: web_classification_variant_1_20230724_173442_973403 # replace with your run name
 column_mapping:

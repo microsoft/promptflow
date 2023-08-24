@@ -1,0 +1,15 @@
+{"text": "The software engineer is working on a new update for the application.", "entity_type": "job title", "results": "software engineer"}
+{"text": "The project manager and the data analyst are collaborating to interpret the project data.", "entity_type": "job title", "results": "project manager, data analyst"}
+{"text": "The marketing manager is coordinating with the graphic designer to create a new advertisement campaign.", "entity_type": "job title", "results": "marketing manager, graphic designer"}
+{"text": "The CEO and CFO are discussing the financial forecast for the next quarter.", "entity_type": "job title", "results": "CEO, CFO"}
+{"text": "The web developer and UX designer are working together to improve the website's user interface.", "entity_type": "job title", "results": "web developer, UX designer"}
+{"text": "John finally decided to change his phone number after receiving too many spam calls.", "results": "None", "entity_type": "phone number"}
+{"text": "If you have any questions about our products, please call our customer service at (123) 456-7890.", "results": "(123) 456-7890", "entity_type": "phone number"}
+{"text": "My new phone number is (098) 765-4321, please update your contact list.", "results": "(098) 765-4321", "entity_type": "phone number"}
+{"text": "The phone number (321) 654-0987 is no longer in service.", "results": "(321) 654-0987", "entity_type": "phone number"}
+{"text": "Please dial the following phone number: (555) 123-4567 to reach our technical support.", "results": "(555) 123-4567", "entity_type": "phone number"}
+{"text": "John Doe has been appointed as the new CEO of the company.", "entity_type":"people's full name", "results":"John Doe"}
+{"text": "The novel 'The Great Gatsby' was written by F. Scott Fitzgerald.", "entity_type":"people's full name", "results":"F. Scott Fitzgerald"}
+{"text": "Mary Jane Watson and Peter Parker are characters in the Spider-Man series.", "entity_type":"people's full name", "results":"Mary Jane Watson, Peter Parker"}
+{"text": "The famous physicists, Albert Einstein and Isaac Newton, made significant contributions to the field of physics.", "entity_type":"people's full name", "results":"Isaac Newton, Albert Einstein"}
+{"text": "The Eiffel Tower is an iconic landmark in Paris.", "entity_type":"people's full name", "results":"None"}
