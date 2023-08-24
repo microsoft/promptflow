@@ -76,5 +76,4 @@ nodes:
   inputs:
     question: ${inputs.question}
     history: ${inputs.chat_history}
-    # dummy dependency edge to make sure setup already finished
-    dummy: ${setup_env.output}
+    env_ready_signal: ${setup_env.output}
