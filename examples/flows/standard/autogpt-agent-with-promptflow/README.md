@@ -1,6 +1,6 @@
-# Summarizing Film With AutoGPT 
+# AutoGPT Agent With Promptflow
 
-This is a flow showcasing how to construct a AutoGPT flow to autonomously figures out how to apply the given functions 
+This is a flow showcasing how to construct a AutoGPT agent with promptflow to autonomously figures out how to apply the given functions 
 to solve the goal, which is film trivia that provides accurate and up-to-date information about movies, directors, 
 actors, and more in this sample.
 
