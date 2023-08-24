@@ -40,7 +40,7 @@ Multiple inputs are supported.
 ### 3.1 Notebook Workflow Generation
 
 * Each workflow contains metadata area, set `.metadata.description` area will display this message in the corresponding cell in [README.md](../../examples/README.md) file.
-* When set `.metadata.stage` to value `development`, the script will stop generating for this notebook.
+* When set `.metadata.no_readme_generation` to value `true`, the script will stop generating for this notebook.
 
 ### 3.2 README.md Workflow Generation
 

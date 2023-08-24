@@ -1,0 +1,18 @@
+name: pipelines_templates_steps_template_generate_connections
+inputs:
+  targetFolder:
+    required: false
+    default: "."
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Generate the connections config file
+    working-directory: ${{ github.workspace }}
+    shell: bash -l {0}
+    run: |
+      set -xe
+      conda activate release-env
+      echo "Generating connection config file..."
+      python3 ./scripts/building/generate_connection_config.py \
+          --target_folder ${{ inputs.targetFolder }}
