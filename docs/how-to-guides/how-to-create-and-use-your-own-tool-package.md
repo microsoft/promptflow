@@ -128,7 +128,6 @@ Alternatively, you can test your tool package using the script below to ensure t
       ```python
       import pkg_resources
       import importlib
-      import traceback
 
       def test():
           """collect and list package info using the `package-tools` entry point.
@@ -138,23 +137,14 @@ Alternatively, you can test your tool package using the script below to ensure t
           all_package_tools = {}
 
           for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
-              try:
-                  list_tool_func = entry_point.resolve()
-                  package_tools = list_tool_func()
+              list_tool_func = entry_point.resolve()
+              package_tools = list_tool_func()
 
-                  for identifier, tool in package_tools.items():
-                      m = tool["module"]
-                      importlib.import_module(m)  # Import the module to ensure its validity
-                      tool["package"] = entry_point.dist.project_name
-                      tool["package_version"] = entry_point.dist.version
-                      all_package_tools[identifier] = tool
-
-              except Exception as e:
-                  msg = (
-                      f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
-                      + f" traceback: {traceback.format_exc()}"
-                  )
-                  print(msg)
+              for identifier, tool in package_tools.items():
+                  m = tool["module"]
+                  importlib.import_module(m)  # Import the module to ensure its validity
+                  tool["package_version"] = entry_point.dist.version
+                  all_package_tools[identifier] = tool
 
           print(all_package_tools)
 
