@@ -99,7 +99,7 @@ class CreateAoaiFromYaml(Step):
 
 class ExtractStepsAndRun(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Extract Steps")
+        Step.__init__(self, f"Extract Steps {ReadmeSteps.readme_name}")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template("step_extract_steps_and_run.yml.jinja2")
@@ -107,14 +107,14 @@ class ExtractStepsAndRun(Step):
             {
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
-                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+                "readme_name": ReadmeSteps.readme_name,
             }
         )
 
 
 class ExtractStepsAndRunGPTFour(Step):
     def __init__(self) -> None:
-        Step.__init__(self, "Extract Steps")
+        Step.__init__(self, f"Extract Steps {ReadmeSteps.readme_name}")
 
     def get_workflow_step(self) -> str:
         template = Step.get_workflow_template(
@@ -124,7 +124,7 @@ class ExtractStepsAndRunGPTFour(Step):
             {
                 "step_name": self.workflow_name,
                 "working_dir": ReadmeSteps.working_dir,
-                "readme_name": (Path(ReadmeSteps.working_dir) / "README.md").as_posix(),
+                "readme_name": ReadmeSteps.readme_name,
             }
         )
 
@@ -176,6 +176,7 @@ class ReadmeSteps:
     """
 
     step_array = []  # Record steps
+    readme_name = ""  # Record readme name
     working_dir = ""  # the working directory of flow, relative to git_base_dir
     template = ""  # Select a base template under workflow_templates folder
     workflow = ""  # Target workflow name to be generated
@@ -231,7 +232,9 @@ class ReadmeSteps:
     # endregion steps
 
     @staticmethod
-    def setup_target(working_dir: str, template: str, target: str) -> str:
+    def setup_target(
+        working_dir: str, template: str, target: str, readme_name: str
+    ) -> str:
         """
         Used at the very head of jinja template to indicate basic information
         """
@@ -239,6 +242,7 @@ class ReadmeSteps:
         ReadmeSteps.template = template
         ReadmeSteps.workflow = target
         ReadmeSteps.step_array = []
+        ReadmeSteps.readme_name = readme_name
         return ""
 
     @staticmethod
@@ -277,11 +281,29 @@ class ReadmeStepsManage:
         name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
         schedule_minute = name_hash % 60
         schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
+
+        if "tutorials" in workflow_name:
+            path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
+        else:
+            if "web_classification" in workflow_name:
+                path_filter = (
+                    f"[ {ReadmeSteps.working_dir}/**, "
+                    + "examples/*requirements.txt, "
+                    + "examples/flows/standard/flow-with-additional-includes/**, "
+                    + "examples/flows/standard/flow-with-symlinks/** ,"
+                    + f".github/workflows/{workflow_name}.yml ]"
+                )
+            else:
+                path_filter = (
+                    f"[ {ReadmeSteps.working_dir}/**, "
+                    + "examples/*requirements.txt, "
+                    + f".github/workflows/{workflow_name}.yml ]"
+                )
         replacements = {
             "steps": ReadmeSteps.step_array,
             "workflow_name": workflow_name,
             "ci_name": pipeline_name,
-            "path_filter": "[ examples/** ]",
+            "path_filter": path_filter,
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
             "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
         }
@@ -292,15 +314,15 @@ class ReadmeStepsManage:
             / "ghactions_driver"
             / "workflow_templates"
         )
-        template = Environment(
-            loader=FileSystemLoader(workflow_template_path.resolve())
-        ).get_template(ReadmeSteps.template)
         target_path = (
             Path(ReadmeStepsManage.git_base_dir())
             / ".github"
             / "workflows"
             / f"{workflow_name}.yml"
         )
+        template = Environment(
+            loader=FileSystemLoader(workflow_template_path.resolve())
+        ).get_template(ReadmeSteps.template)
         content = template.render(replacements)
         with open(target_path.resolve(), "w", encoding="utf-8") as f:
             f.write(content)
@@ -308,3 +330,4 @@ class ReadmeStepsManage:
         output_telemetry.workflow_name = workflow_name
         output_telemetry.target_path = target_path
         output_telemetry.readme_folder = ReadmeSteps.working_dir
+        output_telemetry.readme_name = ReadmeSteps.readme_name

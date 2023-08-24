@@ -9,7 +9,7 @@ on:
     - cron: "40 20 * * *" # Every day starting at 4:40 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/connections/**, examples/*requirements.txt, .github/workflows/samples_connections.yml ]
   workflow_dispatch:
 
 jobs:
@@ -25,10 +25,12 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/connections
+        working-directory: examples
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [[ -e requirements.txt ]]; then
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+          fi
       - name: Prepare dev requirements
         working-directory: examples
         run: |
@@ -57,10 +59,14 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps
+      - name: Extract Steps examples/connections/README.md
         working-directory: ${{ github.workspace }}
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/connections/README.md -o examples/connections
+      - name: Cat script
+        working-directory: examples/connections
+        run: |
+          cat bash_script.sh
       - name: Run scripts
         working-directory: examples/connections
         run: |
@@ -70,6 +76,11 @@ jobs:
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
           bash bash_script.sh
+      - name: Pip List for Debug
+        if : ${{ always() }}
+        working-directory: examples/connections
+        run: |
+          pip list
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

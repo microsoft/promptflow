@@ -41,7 +41,7 @@ def main(input_glob, output_files=[]):
 
     for readme in readme_items:
         readme_telemetry = Telemetry()
-        workflow_name = readme.parent.relative_to(ReadmeStepsManage.git_base_dir())
+        workflow_name = readme.relative_to(ReadmeStepsManage.git_base_dir())
         # Deal with readme
         write_readme_workflow(workflow_name.resolve(), readme_telemetry)
         ReadmeSteps.cleanup()

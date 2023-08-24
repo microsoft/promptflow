@@ -36,5 +36,5 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input:
         )["data"][0]["embedding"]
     else:
         error_message = f"Not Support connection type '{type(connection).__name__}' for embedding api. " \
-                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]"
+                        f"Connection type should be in [AzureOpenAIConnection, OpenAIConnection]."
         raise InvalidConnectionType(message=error_message)

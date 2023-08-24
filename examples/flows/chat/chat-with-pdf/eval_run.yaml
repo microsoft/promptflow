@@ -1,0 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
+#name: eval_groundedness_default_20230820_200152_009000
+flow: ../../evaluation/eval-groundedness
+run: chat_with_pdf_default_20230820_162219_559000
+column_mapping:
+  question: ${run.inputs.question}
+  answer: ${run.outputs.answer}
+  context: ${run.outputs.context}

@@ -8,17 +8,24 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     relative_path = Path(readme_path).relative_to(
         Path(ReadmeStepsManage.git_base_dir())
     )
-    workflow_path = relative_path.as_posix()
+    workflow_path = relative_path.parent.as_posix()
     relative_name_path = Path(readme_path).relative_to(
         Path(ReadmeStepsManage.git_base_dir()) / "examples"
     )
-    workflow_name = relative_name_path.as_posix().replace("/", "_").replace("-", "_")
+    workflow_name = (
+        relative_name_path.as_posix()
+        .replace(".md", "")
+        .replace("/README", "")
+        .replace("/", "_")
+        .replace("-", "_")
+    )
     workflow_name = "samples_" + workflow_name
 
     ReadmeSteps.setup_target(
         workflow_path,
         "basic_workflow_replace.yml.jinja2",
         f"{workflow_name}.yml",
+        relative_path.as_posix(),
     )
     ReadmeSteps.install_dependencies()
     ReadmeSteps.install_dev_dependencies()

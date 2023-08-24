@@ -1,0 +1,55 @@
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        question: what is BERT?
+      outputs:
+        answer: BERT (Bidirectional Encoder Representations from Transformers) is a
+          language representation model that pre-trains deep bidirectional
+          representations from unlabeled text by jointly conditioning on both
+          left and right context in all layers. Unlike other language
+          representation models, BERT can be fine-tuned with just one additional
+          output layer to create state-of-the-art models for a wide range of
+          tasks such as question answering and language inference, without
+          substantial task-specific architecture modifications. BERT is
+          effective for both fine-tuning and feature-based approaches. It
+          obtains new state-of-the-art results on eleven natural language
+          processing tasks, including pushing the GLUE score to 80.5% (7.7%
+          point absolute improvement), MultiNLI accuracy to 86.7% (4.6% absolute
+          improvement), SQuAD v1.1 question answering Test F1 to 93.2 (1.5 point
+          absolute improvement) and SQuAD v2.0 Test F1 to 83.1 (5.1 point
+          absolute improvement).
+  pdf_url:
+    type: string
+    default: https://arxiv.org/pdf/1810.04805.pdf
+  question:
+    type: string
+    is_chat_input: true
+    default: what NLP tasks does it perform well?
+outputs:
+  answer:
+    type: string
+    is_chat_output: true
+    reference: ${chat_with_pdf_tool.output.answer}
+  context:
+    type: string
+    reference: ${chat_with_pdf_tool.output.context}
+nodes:
+- name: setup_env
+  type: python
+  source:
+    type: code
+    path: setup_env.py
+  inputs:
+    conn: my_custom_connection
+- name: chat_with_pdf_tool
+  type: python
+  source:
+    type: code
+    path: chat_with_pdf_tool.py
+  inputs:
+    history: ${inputs.chat_history}
+    pdf_url: ${inputs.pdf_url}
+    question: ${inputs.question}
+    ready: ${setup_env.output}
