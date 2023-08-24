@@ -58,3 +58,6 @@ pf flow test --flow .
 # create run using command line args
 pf run create --flow . --data ./data.jsonl --stream
 ```
+
+## Disclaimer
+LLM systems are susceptible to prompt injection, and you can gain a deeper understanding of this issue in the [technical blog](https://developer.nvidia.com/blog/securing-llm-systems-against-prompt-injection/). As an illustration, the PythonREPL function might execute harmful code if provided with a malicious prompt within the provided sample. Furthermore, we cannot guarantee that implementing AST validations solely within the PythonREPL function will reliably elevate the sample's security to an enterprise level. We kindly remind you to refrain from utilizing this in a production environment.
