@@ -1,0 +1,10 @@
+inputs: {}
+outputs: {}
+nodes:
+- name: tool_with_conn
+  type: python
+  source:
+    type: package
+    tool: tool_with_connection
+  inputs:
+    conn: test_conn

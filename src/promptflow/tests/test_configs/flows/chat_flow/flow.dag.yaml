@@ -1,0 +1,35 @@
+inputs:
+  chat_history:
+    type: list
+  question:
+    type: string
+    is_chat_input: true
+    default: What is ChatGPT?
+outputs:
+  answer:
+    type: string
+    reference: ${show_answer.output}
+    is_chat_output: true
+nodes:
+- inputs:
+    deployment_name: gpt-35-turbo
+    max_tokens: "256"
+    temperature: "0.7"
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+  name: chat_node
+  type: llm
+  source:
+    type: code
+    path: chat.jinja2
+  api: chat
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+- name: show_answer
+  type: python
+  source:
+    type: code
+    path: show_answer.py
+  inputs:
+    chat_answer: ${chat_node.output}
+node_variants: {}

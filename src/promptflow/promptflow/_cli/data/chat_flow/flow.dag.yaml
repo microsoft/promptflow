@@ -1,0 +1,31 @@
+inputs:
+  chat_history:
+    type: list
+    default: []
+  question:
+    type: string
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${chat.output}
+    is_chat_output: true
+nodes:
+- name: chat
+  type: llm
+  source:
+    type: code
+    path: chat.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    max_tokens: '256'
+    temperature: '0.7'
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+  api: chat
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+id: template_chat_flow
+name: Template Chat Flow
+environment:
+  python_requirements_txt: requirements.txt
