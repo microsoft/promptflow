@@ -9,7 +9,7 @@ on:
     - cron: "2 19 * * *" # Every day starting at 3:2 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/evaluation/eval-basic/** ]
+    paths: [ examples/flows/evaluation/eval-basic/**, examples/*requirements.txt, .github/workflows/samples_flows_evaluation_eval_basic.yml ]
   workflow_dispatch:
 
 jobs:

@@ -37,5 +37,3 @@ if __name__ == "__main__":
     )
     init_used_secret_names(secret_client)
     validate_secret_name(args.secret_name)
-
-    print(f"Secret name {args.secret_name} is valid.")

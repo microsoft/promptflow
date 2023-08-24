@@ -9,7 +9,7 @@ on:
     - cron: "0 20 * * *" # Every day starting at 4:0 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/standard/intent-copilot/** ]
+    paths: [ examples/flows/standard/intent-copilot/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_intent_copilot.yml ]
   workflow_dispatch:
 
 jobs:

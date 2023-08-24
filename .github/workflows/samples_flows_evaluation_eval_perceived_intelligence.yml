@@ -9,7 +9,7 @@ on:
     - cron: "41 21 * * *" # Every day starting at 5:41 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/evaluation/eval-perceived-intelligence/** ]
+    paths: [ examples/flows/evaluation/eval-perceived-intelligence/**, examples/*requirements.txt, .github/workflows/samples_flows_evaluation_eval_perceived_intelligence.yml ]
   workflow_dispatch:
 
 jobs:
