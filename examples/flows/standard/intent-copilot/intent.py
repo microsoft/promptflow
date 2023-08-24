@@ -1,11 +1,12 @@
 import os
 import pip
-from langchain import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts.prompt import PromptTemplate
+from langchain.schema import HumanMessage
 
 
-def extract_intent(customer_info: str, history: list, user_prompt_template: str):
+def extract_intent(chat_prompt: str):
     if "AZURE_OPENAI_API_KEY" not in os.environ:
         # load environment variables from .env file
         try:
@@ -17,27 +18,31 @@ def extract_intent(customer_info: str, history: list, user_prompt_template: str)
 
         load_dotenv()
 
-    chat_history_text = "\n".join(
-        [message["role"] + ": " + message["content"] for message in history]
-    )
-
     chat = AzureChatOpenAI(
         deployment_name=os.environ["CHAT_DEPLOYMENT_NAME"],
         openai_api_key=os.environ["AZURE_OPENAI_API_KEY"],
         openai_api_base=os.environ["AZURE_OPENAI_API_BASE"],
         openai_api_type="azure",
-        openai_api_version="2023-03-15-preview",
+        openai_api_version="2023-07-01-preview",
         temperature=0,
     )
+    reply_message = chat([HumanMessage(content=chat_prompt)])
+    return reply_message.content
 
-    chat_prompt_template = ChatPromptTemplate.from_messages(
-        [HumanMessagePromptTemplate.from_template(user_prompt_template)]
+
+def generate_prompt(customer_info: str, history: list, user_prompt_template: str):
+
+    chat_history_text = "\n".join(
+        [message["role"] + ": " + message["content"] for message in history]
     )
 
-    chain = LLMChain(llm=chat, prompt=chat_prompt_template)
-
-    reply = chain.run(customer_info=customer_info, chat_history=chat_history_text)
-    return reply
+    prompt_template = PromptTemplate.from_template(user_prompt_template)
+    chat_prompt_template = ChatPromptTemplate.from_messages(
+        [
+            HumanMessagePromptTemplate(prompt=prompt_template)
+        ]
+    )
+    return chat_prompt_template.format_prompt(customer_info=customer_info, chat_history=chat_history_text).to_string()
 
 
 if __name__ == "__main__":
@@ -55,7 +60,8 @@ if __name__ == "__main__":
 
     # each test
     for item in data:
-        reply = extract_intent(item["customer_info"], item["history"], user_prompt_template)
+        chat_prompt = generate_prompt(item["customer_info"], item["history"], user_prompt_template)
+        reply = extract_intent(chat_prompt)
         print("=====================================")
         # print("Customer info: ", item["customer_info"])
         # print("+++++++++++++++++++++++++++++++++++++")

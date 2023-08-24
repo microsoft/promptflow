@@ -1,3 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   chat_history:
     type: list
@@ -75,3 +76,4 @@ nodes:
   inputs:
     question: ${inputs.question}
     history: ${inputs.chat_history}
+    env_ready_signal: ${setup_env.output}

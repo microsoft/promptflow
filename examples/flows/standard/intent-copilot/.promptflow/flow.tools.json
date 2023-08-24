@@ -1,7 +1,7 @@
 {
     "package": {},
     "code": {
-        "user_prompt_template": {
+        "chat_prompt": {
             "type": "prompt",
             "inputs": {
                 "customer_info": {
@@ -20,17 +20,7 @@
         "extract_intent_tool.py": {
             "type": "python",
             "inputs": {
-                "customer_info": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "history": {
-                    "type": [
-                        "list"
-                    ]
-                },
-                "user_prompt_template": {
+                "chat_prompt": {
                     "type": [
                         "string"
                     ]
