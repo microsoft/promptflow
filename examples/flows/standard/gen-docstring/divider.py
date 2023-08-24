@@ -34,7 +34,7 @@ class Divider:
                     end = next(ends).start()
                 min_pos = min(min_pos, start)
                 splitted_content.append(text[start:end])
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 if start is not None:
                     min_pos = min(min_pos, start)
                     splitted_content.append(text[start:])
