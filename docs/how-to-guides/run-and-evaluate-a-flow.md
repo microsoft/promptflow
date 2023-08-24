@@ -8,7 +8,7 @@ After you have developed and tested the flow in [init and test a flow](./init-an
 
 ## Create a bulk run
 
-A bulk test allows you to run your flow with a large dataset and generate outputs for each data row. 
+A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (E.g. `pf run list`)
 
 Let's create a run with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification). It is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
