@@ -128,7 +128,7 @@ Alternatively, you can test your tool package using the script below to ensure t
       ```python
       def test():
           # `collect_package_tools` gathers all tools info using the `package-tools` entry point. This ensures that your package is correctly packed and your tools are accurately collected. 
-          from promptflow.core.tools_manager import collect_package_tools
+          from promptflow._internal import collect_package_tools
           tools = collect_package_tools()
           print(tools)
       if __name__ == "__main__":
