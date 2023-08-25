@@ -8,15 +8,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
-from promptflow._sdk._constants import VISUALIZE_CLOUD_VERSION, VISUALIZE_HTML_TEMPLATE, VISUALIZE_LOCAL_VERSION
+from promptflow._sdk._constants import VIS_HTML_TMPL, VIS_LIB_VERSION
 from promptflow._sdk._utils import render_jinja_template
 from promptflow.contracts._run_management import VisualizationRender
 
 
-def generate_html_string(data: dict, is_cloud: bool) -> str:
-    version = VISUALIZE_CLOUD_VERSION if is_cloud else VISUALIZE_LOCAL_VERSION
-    visualization_render = VisualizationRender(data=data, version=version)
-    return render_jinja_template(VISUALIZE_HTML_TEMPLATE, **asdict(visualization_render))
+def generate_html_string(data: dict) -> str:
+    visualization_render = VisualizationRender(data=data, version=VIS_LIB_VERSION)
+    return render_jinja_template(VIS_HTML_TMPL, **asdict(visualization_render))
 
 
 def try_to_open_html(html_path: str) -> None:
