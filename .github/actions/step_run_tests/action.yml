@@ -45,7 +45,7 @@ runs:
     - name: Azure Login
       uses: azure/login@v1
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        creds: ${{ env.AZURE_CREDENTIALS }}
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:
@@ -87,5 +87,5 @@ runs:
       uses: orgoro/coverage@v3.1
       with:
         coverageFile: ${{ github.workspace }}/coverage-${{ inputs.testReportName }}.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ env.GITHUB_TOKEN }}
         thresholdAll: 0.3

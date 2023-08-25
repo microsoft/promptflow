@@ -11,13 +11,15 @@ env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
+  AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   packageSetupType: promptflow_open_source
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   executor_e2e_tests:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout
+    - name: Checkout repository
       uses: actions/checkout@v3
     - name: Run executor e2e tests
       uses: "./.github/actions/step_run_tests"
@@ -34,7 +36,7 @@ jobs:
   executor_unit_tests:
     runs-on: ubuntu-latest
     steps:
-    - name: checkout
+    - name: Checkout repository
       uses: actions/checkout@v3
     - name: Run executor unit tests
       uses: "./.github/actions/step_run_tests"
