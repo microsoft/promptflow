@@ -7,7 +7,6 @@ Your tool package should be a python package. To try it quickly, just use [my-to
 ### Prerequisites
 Create a new conda environment using python 3.9 or 3.10. Run below command to install PromptFlow dependencies:
 ```
-# eventually only need to install promptflow
 pip install promptflow
 ```
 Install Pytest packages for running tests:
