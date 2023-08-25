@@ -17,6 +17,8 @@ jobs:
   executor_e2e_tests:
     runs-on: ubuntu-latest
     steps:
+    - name: checkout
+      uses: actions/checkout@v3
     - name: Run executor e2e tests
       uses: "./.github/actions/step_run_tests"
       with:
@@ -32,6 +34,8 @@ jobs:
   executor_unit_tests:
     runs-on: ubuntu-latest
     steps:
+    - name: checkout
+      uses: actions/checkout@v3
     - name: Run executor unit tests
       uses: "./.github/actions/step_run_tests"
       with:
