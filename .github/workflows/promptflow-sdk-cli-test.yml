@@ -59,6 +59,7 @@ jobs:
           -l eastus \
           -m "unittest or e2etest" \
           -n 2
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
     - name: Upload pytest test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
