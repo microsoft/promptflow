@@ -83,3 +83,12 @@ jobs:
         coverageFile: ${{ github.workspace }}/coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
         thresholdAll: 0.55
+    - name: Generate Coverage Report - 1
+      if: (success() || failure())
+      uses: 5monkeys/cobertura-action@master
+      with:
+        path: ${{ github.workspace }}/coverage.xml
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        only_changed_files: false
+        minimum_coverage: 55
+        fail_below_threshold: 55
