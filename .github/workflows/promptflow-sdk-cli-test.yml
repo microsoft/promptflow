@@ -61,7 +61,7 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
           -l eastus \
           -m "unittest or e2etest" \
-          -n ${{ steps.cpu-cores.outputs.count }}
+          -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
     - name: Upload pytest test results
       if: ${{ always() }}
