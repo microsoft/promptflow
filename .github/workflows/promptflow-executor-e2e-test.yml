@@ -91,4 +91,4 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         only_changed_files: false
         minimum_coverage: 55
-        fail_below_threshold: 55
+        fail_below_threshold: true
