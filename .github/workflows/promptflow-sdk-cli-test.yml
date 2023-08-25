@@ -84,6 +84,6 @@ jobs:
       with:
         coverageFile: ${{ env.testWorkingDirectory }}/coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
-        thresholdAll: 0.3
+        thresholdAll: 0.4
 
     
