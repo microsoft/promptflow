@@ -1,7 +1,7 @@
 import unittest
 import promptflow
 from base_test import BaseTest
-from promptflow.executor._errors import InputNotFoundInInputsMapping
+from promptflow.exceptions import ValidationException
 
 
 class TestChatWithPDF(BaseTest):
@@ -72,7 +72,7 @@ class TestChatWithPDF(BaseTest):
 
     def test_bulk_run_mapping_missing_one_column(self):
         # in this case, run won't be created.
-        with self.assertRaises(InputNotFoundInInputsMapping):
+        with self.assertRaises(ValidationException):
             self.create_chat_run(
                 column_mapping={
                     "question": "${data.question}",
@@ -82,7 +82,7 @@ class TestChatWithPDF(BaseTest):
 
     def test_bulk_run_invalid_mapping(self):
         # in this case, run won't be created.
-        with self.assertRaises(InputNotFoundInInputsMapping):
+        with self.assertRaises(ValidationException):
             self.create_chat_run(
                 column_mapping={
                     "question": "${data.question_not_exist}",
