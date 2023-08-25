@@ -1,0 +1,12 @@
+{
+  "name": "summarize_text_content_prompt",
+  "type": "prompt",
+  "inputs": {
+    "text": {
+      "type": [
+        "string"
+      ]
+    }
+  },
+  "source": "summarize_text_content_prompt.jinja2"
+}

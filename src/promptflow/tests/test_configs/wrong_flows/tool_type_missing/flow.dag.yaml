@@ -1,0 +1,30 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${summarize_text_content.output}
+nodes:
+- name: summarize_text_content
+  source:
+    type: code
+    path: summarize_text_content__variant_1.jinja2
+  inputs:
+    deployment_name: text-davinci-003
+    suffix: ''
+    max_tokens: '256'
+    temperature: '0.2'
+    top_p: '1.0'
+    logprobs: ''
+    echo: 'False'
+    stop: ''
+    presence_penalty: '0'
+    frequency_penalty: '0'
+    best_of: '1'
+    logit_bias: ''
+    text: ${inputs.text}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
+  module: promptflow.tools.aoai

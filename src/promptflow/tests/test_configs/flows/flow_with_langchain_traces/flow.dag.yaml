@@ -1,0 +1,16 @@
+inputs:
+  question:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${test_langchain_traces.output}
+nodes:
+- name: test_langchain_traces
+  type: python
+  source:
+    type: code
+    path: test_langchain_traces.py
+  inputs:
+    question: ${inputs.question}
+    conn: azure_open_ai_connection

@@ -1,0 +1,12 @@
+*.ipynb
+.venv/
+.data/
+.env
+.vscode/
+outputs/
+connection.json
+.gitignore
+.promptflow/flow.tools.json
+README.md
+eval_cli.md
+data/
