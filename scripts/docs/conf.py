@@ -16,6 +16,7 @@ from gallery_directive import GalleryDirective  # noqa: E402
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinxext.rediraffe",
     "sphinx_design",
