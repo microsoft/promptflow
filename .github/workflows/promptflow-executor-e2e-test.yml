@@ -60,7 +60,7 @@ jobs:
           -n 4 \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload pytest test results
-      if: ${{ always() }}
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results
@@ -92,8 +92,3 @@ jobs:
         only_changed_files: false
         minimum_coverage: 55
         fail_below_threshold: true
-    - name: Deploy coverage report to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ${{ github.workspace }}/htmlcov
