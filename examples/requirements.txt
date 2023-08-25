@@ -3,6 +3,4 @@
 promptflow[azure]==0.0.102647045
 promptflow-tools==0.1.0.b4
 python-dotenv
-langchain
-jinja2
 bs4
