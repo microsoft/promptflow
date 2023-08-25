@@ -585,7 +585,7 @@ class RunOperations(_ScopeDependentOperations):
         for run in runs:
             run_name = Run._validate_and_return_run_name(run)
             validated_runs.append(run_name)
-        
+
         subscription_id = self._operation_scope.subscription_id
         resource_group_name = self._operation_scope.resource_group_name
         workspace_name = self._operation_scope.workspace_name
