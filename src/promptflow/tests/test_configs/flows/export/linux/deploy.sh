@@ -16,14 +16,14 @@ function usage {
     echo "  -v|-verbose|--verbose                         specify verbose mode"
     exit 1
 }
-if [ "$1" == "–help" ] || [ "$1" == "-h" ]; then
+if [ "$1" == "-help" ] || [ "$1" == "-h" ]; then
   usage
   exit 0
 fi
 
 location="eastus"
 sku="F1"
-name="intent-copilot95f364"
+name="intent-copilot-dummy1"
 verbose=false
 
 ####################### Parse and validate args ############################

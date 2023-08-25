@@ -159,7 +159,9 @@ def remove_additional_includes(flow_path: Path):
 @contextlib.contextmanager
 def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant: str = None, connections: dict = None):
     """Override variant and connections in the flow."""
+    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
     flow_dag_path, _ = _load_flow_dag(flow_path)
+    flow_dir_path = flow_dag_path.parent
     if _get_additional_includes(flow_dag_path):
         # Merge the flow folder and additional includes to temp folder.
         with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
@@ -174,10 +176,10 @@ def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant:
         # the dag path points to the temp dag file after overwriting variant.
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dag_file = Path(temp_dir) / DAG_FILE_NAME
-            shutil.copy2((flow_path / DAG_FILE_NAME).resolve().as_posix(), temp_dag_file)
+            shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
             overwrite_variant(Path(temp_dir), tuning_node, variant)
-            overwrite_connections(Path(temp_dir), connections, working_dir=flow_path)
-            flow = Flow(code=flow_path, path=temp_dag_file)
+            overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
+            flow = Flow(code=flow_dir_path, path=temp_dag_file)
             yield flow
 
 
@@ -252,8 +254,8 @@ class RunSubmitter:
 
         # running specified variant
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run)
-            with local_storage.logger.setup_logger(stream=stream):
+            local_storage = LocalStorageOperations(run, stream=stream)
+            with local_storage.logger:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:

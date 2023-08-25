@@ -832,13 +832,13 @@ class TestCli:
                 "answer=Channel",
                 "evidence=Url",
             )
-            unknown_input_log = caplog.records[-2]
+            unknown_input_log = caplog.records[0]
             expect_inputs = {"answer": "Channel", "evidence": "Url"}
             validate_log(
                 prefix="Unknown input(s) of flow: ", log_msg=unknown_input_log.message, expect_dict=expect_inputs
             )
 
-            flow_input_log = caplog.records[-1]
+            flow_input_log = caplog.records[1]
             expect_inputs = {
                 "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
                 "answer": "Channel",
@@ -859,7 +859,7 @@ class TestCli:
                 "--node",
                 "fetch_text_content_from_url",
             )
-            unknown_input_log = caplog.records[-2]
+            unknown_input_log = caplog.records[3]
             expect_inputs = {"unknown_input": "unknown_val"}
             validate_log(
                 prefix="Unknown input(s) of fetch_text_content_from_url: ",
@@ -867,7 +867,7 @@ class TestCli:
                 expect_dict=expect_inputs,
             )
 
-            node_input_log = caplog.records[-1]
+            node_input_log = caplog.records[4]
             expect_inputs = {
                 "fetch_url": "https://www.microsoft.com/en-us/d/"
                 "xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
@@ -892,8 +892,6 @@ class TestCli:
                 temp_dir,
                 "--format",
                 "docker",
-                "--encryption-key",
-                "123",
             )
 
     @pytest.mark.parametrize(
@@ -970,3 +968,47 @@ class TestCli:
                     "--names",
                     name,
                 )
+
+    def test_pf_run_with_stream_log(self):
+        f = io.StringIO()
+        # with --stream will show logs in stdout
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/flow_with_user_output",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--column-mapping",
+                "key=value",
+                "--stream",
+            )
+        assert "user log" in f.getvalue()
+        assert "error log" in f.getvalue()
+        # flow logs will stream
+        assert "Executing node print_val. node run id:" in f.getvalue()
+        # executor logs will stream
+        assert "Node print_val completes." in f.getvalue()
+
+    def test_pf_run_no_stream_log(self):
+        f = io.StringIO()
+
+        # without --stream, logs will be in the run's log file
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/flow_with_user_output",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--column-mapping",
+                "key=value",
+            )
+        assert "user log" not in f.getvalue()
+        assert "error log" not in f.getvalue()
+        # flow logs won't stream
+        assert "Executing node print_val. node run id:" not in f.getvalue()
+        # executor logs won't stream
+        assert "Node print_val completes." not in f.getvalue()

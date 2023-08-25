@@ -7,8 +7,8 @@ import datetime
 import json
 import logging
 import shutil
-from contextlib import contextmanager
 from dataclasses import asdict, dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 
@@ -32,6 +32,7 @@ from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -45,50 +46,50 @@ RunOutputs = NewType("RunOutputs", Dict[str, List[Any]])
 RunMetrics = NewType("RunMetrics", Dict[str, Any])
 
 
-class LoggerOperations:
-    def __init__(self, log_path: str):
-        self._log_path = Path(log_path)
+@dataclass
+class LoggerOperations(LogContext):
+    stream: bool = False
 
     @property
     def log_path(self) -> str:
-        return str(self._log_path)
+        return str(self.file_path)
 
     def get_logs(self) -> str:
-        with open(self._log_path, "r") as f:
+        with open(self.file_path, "r") as f:
             return f.read()
 
-    @contextmanager
-    def setup_logger(self, stream=False):
-        # avoid circular import
-        from promptflow._utils.logger_utils import (
-            FileHandler,
-            FileHandlerConcurrentWrapper,
-            bulk_logger,
-            flow_logger,
-            logger,
+    def _get_execute_loggers_list(cls) -> List[logging.Logger]:
+        result = super()._get_execute_loggers_list()
+        result.append(logger)
+        return result
+
+    def get_initializer(self):
+        return partial(
+            LoggerOperations,
+            file_path=self.file_path,
+            run_mode=self.run_mode,
+            credential_list=self.credential_list,
+            stream=self.stream,
         )
 
-        executor_loggers = [logger, flow_logger, bulk_logger]
-        self._log_path.parent.mkdir(parents=True, exist_ok=True)
-        self._log_path.touch(exist_ok=True)
-        # set log path
-        for _logger in executor_loggers:
-            for handler in _logger.handlers:
-                if isinstance(handler, FileHandlerConcurrentWrapper):
-                    handler.handler = FileHandler(self.log_path)
-                if stream is False and isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.CRITICAL)
-        try:
-            yield
+    def __enter__(self):
+        log_path = Path(self.log_path)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        log_path.touch(exist_ok=True)
 
-        finally:
-            # clear log path config
-            for _logger in executor_loggers:
-                for handler in _logger.handlers:
-                    if isinstance(handler, FileHandlerConcurrentWrapper):
-                        handler.clear()
-                    if stream is False and isinstance(handler, logging.StreamHandler):
-                        handler.setLevel(logging.INFO)
+        for _logger in self._get_execute_loggers_list():
+            for handler in _logger.handlers:
+                if self.stream is False and isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.CRITICAL)
+        super().__enter__()
+
+    def __exit__(self, *args):
+        super().__exit__(*args)
+
+        for _logger in self._get_execute_loggers_list():
+            for handler in _logger.handlers:
+                if self.stream is False and isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.CRITICAL)
 
 
 @dataclass
@@ -164,11 +165,11 @@ class LocalStorageOperations(AbstractRunStorage):
 
     LINE_NUMBER_WIDTH = 9
 
-    def __init__(self, run: Run):
+    def __init__(self, run: Run, stream=False):
         self._run = run
         self.path = self._prepare_folder(get_run_output_path(self._run))
 
-        self.logger = LoggerOperations(log_path=self.path / LocalStorageFilenames.LOG)
+        self.logger = LoggerOperations(file_path=self.path / LocalStorageFilenames.LOG, stream=stream)
         # snapshot
         self._snapshot_folder_path = self._prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
         self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG

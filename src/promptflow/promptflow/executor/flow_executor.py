@@ -542,10 +542,15 @@ class FlowExecutor:
         )
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping):
-        inputs_mapping = inputs_mapping if inputs_mapping else self.default_inputs_mapping
-        FlowValidator.ensure_flow_inputs_mapping_valid(self._flow.inputs, inputs_mapping)
+        inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
         resolved_inputs = self.apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         return resolved_inputs
+
+    def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
+        inputs_mapping = inputs_mapping or {}
+        result_mapping = self.default_inputs_mapping
+        result_mapping.update(inputs_mapping)
+        return result_mapping
 
     def _exec(
         self,
@@ -728,6 +733,7 @@ class FlowExecutor:
         import re
 
         result = {}
+        notfound_mapping_relations = []
         for map_to_key, map_value in inputs_mapping.items():
             # Ignore reserved key configuration from inputs mapping.
             if map_to_key == LINE_NUMBER_KEY:
@@ -751,11 +757,18 @@ class FlowExecutor:
                         result[map_to_key] = inputs[key][source]
                         break
                 if not find_match:
-                    raise MappingSourceNotFound(
-                        f"Failed to do input mapping for '{map_value}', can't find corresponding input."
-                    )
+                    notfound_mapping_relations.append(map_value)
             else:
                 result[map_to_key] = map_value  # Literal value
+        # Return all not found mapping relations in one exception to provide better debug experience.
+        if notfound_mapping_relations:
+            raise MappingSourceNotFound(
+                f"The following mapping relations were not found: {', '.join(notfound_mapping_relations)}. "
+                "Please make sure that the keys and values in your inputs mapping are correct "
+                "and match the keys and values in your input data. If the mapping relation starts with '${data', "
+                "it may have been generated according to the YAML input file. "
+                "You may need to assign it manually according to your input data."
+            )
         # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:
             result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]

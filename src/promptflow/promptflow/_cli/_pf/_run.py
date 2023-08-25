@@ -406,10 +406,6 @@ pf run restore --name <name>
 
 
 def dispatch_run_commands(args: argparse.Namespace):
-    # --verbose and --debug, enable debug logging
-    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
-        for handler in logging.getLogger(LOGGER_NAME).handlers:
-            handler.setLevel(logging.DEBUG)
     if args.sub_action == "create":
         create_run(create_func=_create_run, args=args)
     elif args.sub_action == "update":

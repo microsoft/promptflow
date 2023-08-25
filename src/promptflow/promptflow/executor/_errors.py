@@ -61,10 +61,6 @@ class InvalidBulkTestRequest(ValidationException):
         )
 
 
-class InputNotFoundInInputsMapping(InvalidBulkTestRequest):
-    pass
-
-
 class InvalidFlowRequest(ValidationException):
     def __init__(
         self,

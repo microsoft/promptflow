@@ -234,6 +234,12 @@ def add_parser_export(parent_parser, entity_name: str):
     parser.add_argument(
         "--format", "-f", required=True, type=str, help="The format to export in.", choices=["docker", "package"]
     )
+    parser.add_argument(
+        "--variant",
+        "-v",
+        type=str,
+        help="The variant to be used in exported flow, will use default variant if not specified.",
+    )
     add_param_verbose(parser)
     add_param_debug(parser)
     parser.set_defaults(sub_action="export")

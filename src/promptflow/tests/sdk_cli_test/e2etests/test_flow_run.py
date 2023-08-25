@@ -16,7 +16,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
-from promptflow.executor._errors import InputNotFoundInInputsMapping
+from promptflow.executor.flow_executor import MappingSourceNotFound
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -506,15 +506,15 @@ class TestFlowRun:
         additional_includes = _get_additional_includes(snapshot_path / "flow.dag.yaml")
         assert not additional_includes
 
-    def test_input_mapping_parse_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
-        # input_mapping parse error won't create run
+    def test_input_mapping_source_not_found_error(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
+        # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(InputNotFoundInInputsMapping):
+        with pytest.raises(MappingSourceNotFound):
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=data_path,
-                column_mapping={"not_exist": "${data.url}"},
+                column_mapping={"not_exist": "${data.not_exist_key}"},
                 name=name,
             )
 
@@ -593,6 +593,24 @@ class TestFlowRun:
         # node runs
         assert "node_runs" in detail
         assert isinstance(detail["node_runs"], list)
+
+    def test_run_logs(self, pf):
+        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_user_output",
+            data=data_path,
+            column_mapping={"key": {"value": "1"}},
+        )
+        local_storage = LocalStorageOperations(run=run)
+        logs = local_storage.logger.get_logs()
+        assert "user log" in logs
+        # error logs can be stored
+        assert "error log" in logs
+        # flow logs can be stored
+        assert "Executing node print_val. node run id:" in logs
+        # executor logs can be stored
+        assert "Node print_val completes." in logs
 
     def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
         run = pf.run(

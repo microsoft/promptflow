@@ -4,7 +4,7 @@ import pytest
 import yaml
 
 from promptflow.contracts.flow import Flow
-from promptflow.executor._errors import InputNotFoundInInputsMapping, InvalidFlowRequest
+from promptflow.executor._errors import InvalidFlowRequest
 from promptflow.executor.flow_validator import FlowValidator
 
 TEST_ROOT = Path(__file__).parent.parent.parent.parent
@@ -54,48 +54,6 @@ class TestFlowValidator:
             flow = Flow.deserialize(yaml.safe_load(fin))
         with pytest.raises(InvalidFlowRequest) as e:
             FlowValidator._ensure_nodes_order(flow)
-        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
-
-    @pytest.mark.parametrize(
-        "inputs, inputs_mapping",
-        (
-            [
-                # Missing line_number should not raise exception. That's one reserved key.
-                {"line_number": None},
-                {},
-            ],
-            [
-                {"fake_input_1": None},
-                {"fake_input_1": "fake_input_1", "fake_input_2": "fake_input_2"},
-            ],
-            [
-                None,
-                {"fake_input_1": "fake_input_1", "fake_input_2": "fake_input_2"},
-            ],
-        ),
-    )
-    def test_ensure_flow_inputs_mapping_valid(self, inputs, inputs_mapping):
-        FlowValidator.ensure_flow_inputs_mapping_valid(inputs, inputs_mapping)
-
-    @pytest.mark.parametrize(
-        "inputs, inputs_mapping, error_message",
-        [
-            (
-                {"fake_input_not_exist": None},
-                {"fake_input_1": "fake_input_1", "fake_input_2": "fake_input_2"},
-                "Input 'fake_input_not_exist' is not found in inputs mapping. "
-                "All available keys in mapping are ['fake_input_1', 'fake_input_2'].",
-            ),
-            (
-                {"fake_input_not_exist": None},
-                None,
-                "Input 'fake_input_not_exist' is not found in inputs mapping. All available keys in mapping are [].",
-            ),
-        ],
-    )
-    def test_ensure_flow_inputs_mapping_valid_error(self, inputs, inputs_mapping, error_message):
-        with pytest.raises(InputNotFoundInInputsMapping) as e:
-            FlowValidator.ensure_flow_inputs_mapping_valid(inputs, inputs_mapping)
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(

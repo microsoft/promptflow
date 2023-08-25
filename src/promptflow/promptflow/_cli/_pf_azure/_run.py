@@ -351,11 +351,6 @@ def add_parser_run_update(subparsers):
 
 
 def dispatch_run_commands(args: argparse.Namespace):
-    # --verbose and --debug, enable debug logging
-    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
-        for handler in logging.getLogger(LOGGER_NAME).handlers:
-            handler.setLevel(logging.DEBUG)
-
     if args.sub_action == "create":
         pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
         create_run(create_func=functools.partial(pf.runs.create_or_update, runtime=args.runtime), args=args)

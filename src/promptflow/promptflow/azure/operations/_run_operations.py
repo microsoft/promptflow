@@ -4,6 +4,7 @@
 import concurrent
 import copy
 import json
+import logging
 import os
 import re
 import sys
@@ -56,7 +57,7 @@ from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisu
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
-logger = LoggerFactory.get_logger(name=LOGGER_NAME)
+logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
 class RunRequestException(Exception):

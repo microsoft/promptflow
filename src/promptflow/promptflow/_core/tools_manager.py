@@ -85,6 +85,7 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
         with open(working_dir / source.path) as fin:
             content = fin.read()
         if tool_type == ToolType.PYTHON:
+            # TODO: working directory doesn't take effect when loading module.
             return generate_python_tool(name, content, source=str(working_dir / source.path))
         elif tool_type == ToolType.PROMPT:
             return generate_prompt_tool(name, content, prompt_only=True)

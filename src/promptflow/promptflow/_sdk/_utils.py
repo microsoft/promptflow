@@ -49,7 +49,7 @@ from promptflow._sdk._errors import (
     StoreConnectionEncryptionKeyError,
     UnsecureConnectionError,
 )
-from promptflow._sdk._vendor import IgnoreFile, get_ignore_file
+from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow.contracts.tool import ToolType
 
@@ -156,7 +156,7 @@ def get_encryption_key(generate_if_not_found: bool = False) -> str:
             raise StoreConnectionEncryptionKeyError(
                 "System keyring backend service not found in your operating system. "
                 "See https://pypi.org/project/keyring/ to install requirement for different operating system, "
-                "or 'pip install keyring.alt' to use the third-party backend."
+                "or 'pip install keyrings.alt' to use the third-party backend."
             ) from e
 
     ENCRYPTION_KEY_IN_KEY_RING = _get_from_keyring()
@@ -391,6 +391,7 @@ def _get_additional_includes(yaml_path):
 
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
+    # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
     if code_path.is_dir():
         yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
         code_path = code_path.resolve()
@@ -593,3 +594,30 @@ def setup_user_agent_to_operation_context(user_agent):
         OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
     # Append user agent
     OperationContext.get_instance().append_user_agent(user_agent)
+
+
+def generate_random_string(length: int = 6) -> str:
+    import random
+    import string
+
+    return "".join(random.choice(string.ascii_lowercase) for _ in range(length))
+
+
+def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, render_context: dict = None):
+    def is_template(path: str):
+        return path.endswith(".jinja2")
+
+    for source_path, target_path in get_upload_files_from_folder(
+        path=source,
+        ignore_file=PromptflowIgnoreFile(prompt_flow_path=source),
+    ):
+        (target / target_path).parent.mkdir(parents=True, exist_ok=True)
+        if render_context is None or not is_template(source_path):
+            shutil.copy(source_path, target / target_path)
+        else:
+            (target / target_path[: -len(".jinja2")]).write_bytes(
+                # always use unix line ending
+                render_jinja_template(source_path, **render_context)
+                .encode("utf-8")
+                .replace(b"\r\n", b"\n"),
+            )

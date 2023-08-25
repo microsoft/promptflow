@@ -41,7 +41,7 @@ class BaseGenerator(ABC):
         """Generate content to a file based on given template and actual value of template keys."""
         target = Path(target).resolve()
         action = "Overwriting" if target.exists() else "Creating"
-        logger.info(f"{action} {target.resolve()}...")
+        print(f"{action} {target.resolve()}...")
         with open(target, "w", encoding="utf-8") as f:
             f.write(self.generate())
 
@@ -223,5 +223,5 @@ def copy_extra_files(flow_path, extra_files):
         )
         target_path = Path(flow_path) / file_name
         action = "Overwriting" if target_path.exists() else "Creating"
-        logger.info(f"{action} {target_path.resolve()}...")
+        print(f"{action} {target_path.resolve()}...")
         shutil.copy2(extra_file_path, target_path)
