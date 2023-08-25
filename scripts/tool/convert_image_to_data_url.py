@@ -38,7 +38,7 @@ def image_to_data_url(image_path):
 def create_html_file(data_uri, output_path):
     html_content = '<html>\n<body>\n<img src="{}" alt="My Image">\n</body>\n</html>'.format(data_uri)
 
-    with open(output_path, 'w') as file:  
+    with open(output_path, 'w') as file:
         file.write(html_content)
 
 
