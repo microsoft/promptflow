@@ -1,3 +1,5 @@
+import asyncio
+import logging
 import uuid
 import openai
 import os
@@ -12,17 +14,21 @@ class AOAI(ABC):
         openai.api_key = os.environ.get("OPENAI_API_KEY")
         openai.api_base = os.environ.get("OPENAI_API_BASE")
         openai.api_version = os.environ.get("OPENAI_API_VERSION")
-        openai.api_type = "azure"
+        openai.api_type = os.environ.get("API_TYPE") or "azure"
         self.default_engine = None
         self.engine = kwargs.pop('module', None) or os.environ.get("MODULE")
-        self.max_tokens = kwargs.pop('max_tokens', None) or os.environ.get("MAX_TOKENS") or 4000
+        self.total_tokens = 4000
+        self.max_tokens = kwargs.pop('max_tokens', None) or os.environ.get("MAX_TOKENS") or 1200
         if self.engine == "gpt-4-32k":
-            self.max_tokens = 31000
+            self.total_tokens = 31000
         if self.engine == "gpt-4":
-            self.max_tokens = 7000
+            self.total_tokens = 7000
         if self.engine == "gpt-3.5-turbo-16k":
-            self.max_tokens = 15000
-        self.tokens_limit = kwargs.pop('tokens_limit', None) or max(self.max_tokens - 1000, self.max_tokens // 2)
+            self.total_tokens = 15000
+        if self.max_tokens > self.total_tokens:
+            raise ValueError(f"max_tokens must be less than total_tokens, "
+                             f"total_tokens is {self.total_tokens}, max_tokens is {self.max_tokens}")
+        self.tokens_limit = self.total_tokens - self.max_tokens
 
     def count_tokens(self, text: str) -> int:
         try:
@@ -40,12 +46,19 @@ class AOAI(ABC):
 
     async def aquery(self, text, **kwargs):
         stream = kwargs.pop("stream", False)
-        if not stream:
-            res = await self.aquery_with_nostream(text, **kwargs)
-            return res
-        else:
-            res = await self.aquery_with_stream(text, **kwargs)
-            return "".join(res)
+        for i in range(3):
+            try:
+                if not stream:
+                    res = await self.aquery_with_nostream(text, **kwargs)
+                    return res
+                else:
+                    res = await self.aquery_with_stream(text, **kwargs)
+                    return "".join(res)
+            except Exception as e:
+                logging.error(f"llm response error, message={e}, "
+                              f"will retry request llm after {(i + 1) * (i + 1)} seconds.")
+                await asyncio.sleep((i + 1) * (i + 1))
+        raise Exception("llm response error, and retry 3 times, but still failed.")
 
     @abstractmethod
     def query_with_nostream(self, text, **kwargs):
@@ -197,7 +210,6 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, convo_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        print('use engine: ', self.engine)
         response = await openai.ChatCompletion.acreate(
             engine=self.engine,
             messages=messages,

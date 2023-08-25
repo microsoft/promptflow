@@ -20,21 +20,20 @@ In this flow, you will learn
 
 ## Prerequisites
 
-Install promptflow sdk and other dependencies:
+### Install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Execute with python command
-#### Create `.env` file in this folder with below content
+### Create connection for LLM to use
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
-OPENAI_API_BASE=<AOAI_endpoint>
-OPENAI_API_KEY=<AOAI_key>
-OPENAI_API_VERSION=2023-03-15-preview
-MODULE=gpt-3.5-turbo # default is gpt-3.5-turbo.  
-```
+Because of in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open_ai_connection`.
 
-#### Run the command line
+## Execute with Promptflow
+###Execute with SDK
 `python main.py --source <your_file_path>`  
 **Note**: the file path should be a python file path, default is `./azure_open_ai.py`.
 
@@ -42,27 +41,13 @@ A webpage will be generated, displaying diff:
 ![result](result.png)
 
 
-## Execute with Promptflow
-#### Create connection for LLM to use
-```bash
-# Override keys with --set to avoid yaml file changes
-pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
-```
-
-Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open_ai_connection`.
-```bash
-# show registered connection 
-pf connection show --name azure_open_ai_connection
-```
-
-#### Start flow
-
+### Execute with CLI
 ```bash
 # run flow with default file path in flow.dag.yaml
 pf flow test --flow . 
 
 # run flow with file path
-pf flow test --flow . --inputs source="./demo_code.py"
+pf flow test --flow . --inputs source="./azure_open_ai.py"
 ```
 
 ```bash
