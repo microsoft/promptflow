@@ -187,6 +187,11 @@
                     "type": [
                         "list"
                     ]
+                },
+                "env_ready_signal": {
+                    "type": [
+                        "string"
+                    ]
                 }
             },
             "source": "qna_tool.py",
