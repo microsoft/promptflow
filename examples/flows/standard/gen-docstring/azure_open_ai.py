@@ -85,80 +85,6 @@ class AOAI(ABC):
         pass
 
 
-class LLM(AOAI):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.default_engine = "text-davinci-003"
-        self.engine = self.engine or self.default_engine
-
-    def query_with_nostream(self, text, **kwargs):
-        prompt = self.create_prompt(text)
-        self.validate_tokens(prompt)
-        temperature = kwargs.pop("temperature", 0.1)
-        response = openai.Completion.create(
-            engine=self.engine,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=self.max_tokens,
-            stream=False,
-            **kwargs,
-        )
-        return response["choices"][0]["text"]
-
-    def query_with_stream(self, text, **kwargs):
-        prompt = self.create_prompt(text)
-        self.validate_tokens(prompt)
-        temperature = kwargs.pop("temperature", 0.1)
-        response = openai.Completion.create(
-            engine=self.engine,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=self.max_tokens,
-            stream=True,
-            **kwargs,
-        )
-        for chunk in response:
-            yield chunk["choices"][0]["text"]
-
-    async def aquery_with_nostream(self, text, **kwargs):
-        prompt = self.create_prompt(text)
-        self.validate_tokens(prompt)
-        temperature = kwargs.pop("temperature", 0.1)
-        response = await openai.Completion.acreate(
-            engine=self.engine,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=self.max_tokens,
-            stream=False,
-            **kwargs,
-        )
-        return response["choices"][0]["text"]
-
-    async def aquery_with_stream(self, text, **kwargs):
-        prompt = self.create_prompt(text)
-        self.validate_tokens(prompt)
-        temperature = kwargs.pop("temperature", 0.1)
-        response = await openai.Completion.acreate(
-            engine=self.engine,
-            prompt=prompt,
-            temperature=temperature,
-            max_tokens=self.max_tokens,
-            stream=True,
-            **kwargs,
-        )
-        for chunk in response:
-            yield chunk["choices"][0]["text"]
-
-    def validate_tokens(self, text: str) -> None:
-        total_tokens = self.count_tokens(text)
-        if total_tokens > self.tokens_limit:
-            message = f"token count {total_tokens} exceeds limit {self.tokens_limit}"
-            raise PromptLimitException(message)
-
-    def create_prompt(self, text):
-        return text
-
-
 class ChatLLM(AOAI):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -321,7 +247,7 @@ class ChatLLM(AOAI):
 
 if __name__ == "__main__":
     load_dotenv()
-    llm = LLM()
+    llm = ChatLLM()
     print(llm.query(text='how are you?'))
     res = llm.query_with_stream(text='how are you?')
     for item in res:
