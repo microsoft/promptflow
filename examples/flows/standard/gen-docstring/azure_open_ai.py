@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 import uuid
 import openai
 import os
@@ -39,10 +40,17 @@ class AOAI(ABC):
 
     def query(self, text, **kwargs):
         stream = kwargs.pop("stream", False)
-        if not stream:
-            return self.query_with_nostream(text, **kwargs)
-        else:
-            return "".join(self.query_with_stream(text, **kwargs))
+        for i in range(3):
+            try:
+                if not stream:
+                    return self.query_with_nostream(text, **kwargs)
+                else:
+                    return "".join(self.query_with_stream(text, **kwargs))
+            except Exception as e:
+                logging.error(f"llm response error, message={e}, "
+                              f"will retry request llm after {(i + 1) * (i + 1)} seconds.")
+                time.sleep((i + 1) * (i + 1))
+        raise Exception("llm response error, and retry 3 times, but still failed.")
 
     async def aquery(self, text, **kwargs):
         stream = kwargs.pop("stream", False)
