@@ -144,8 +144,6 @@ Alternatively, you can test your tool package using the script below to ensure t
           ----identifier
           {'module': 'module_name', 'package': 'package_name', 'package_version': 'package_version', ...}
           """
-          all_package_tools = {}
-
           for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
               list_tool_func = entry_point.resolve()
               package_tools = list_tool_func()
@@ -153,8 +151,6 @@ Alternatively, you can test your tool package using the script below to ensure t
               for identifier, tool in package_tools.items():
                   importlib.import_module(tool["module"])  # Import the module to ensure its validity
                   print(f"----{identifier}\n{tool}")
-
-          print(all_package_tools)
 
       if __name__ == "__main__":
           test()
