@@ -1,0 +1,13 @@
+{
+  "name": "script_with___file__",
+  "type": "python",
+  "inputs": {
+    "input1": {
+      "type": [
+        "string"
+      ]
+    }
+  },
+  "source": "script_with___file__.py",
+  "function": "my_python_tool"
+}

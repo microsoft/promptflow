@@ -1,0 +1,25 @@
+name: node_cycle
+inputs:
+  text:
+    type: string
+outputs:
+  result:
+    type: string
+    reference: ${second_node}
+nodes:
+- name: first_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${second_node}
+  aggregation: true
+- name: second_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${first_node}
+  aggregation: true

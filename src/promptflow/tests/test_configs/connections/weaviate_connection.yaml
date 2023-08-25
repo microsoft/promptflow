@@ -1,0 +1,5 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/WeaviateConnection.schema.json
+name: my_weaviate_connection
+type: weaviate
+api_key: "<to-be-replaced>"
+api_base: "endpoint"

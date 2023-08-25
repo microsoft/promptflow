@@ -1,0 +1,29 @@
+inputs:
+outputs:
+  content:
+    type: string
+    reference: ${divide_num.output}
+nodes:
+- name: divide_num
+  type: python
+  source:
+    type: code
+    path: divide_num.py
+  inputs:
+    num: ${divide_num_2.output}
+- name: divide_num_1
+  type: python
+  source:
+    type: code
+    path: divide_num.py
+  inputs:
+    num: ${divide_num.output}
+- name: divide_num_2
+  type: python
+  source:
+    type: code
+    path: divide_num.py
+  inputs:
+    num: ${divide_num_1.output}
+
+

@@ -1,0 +1,38 @@
+{
+    "package": {},
+    "code": {
+        "chat_prompt": {
+            "type": "prompt",
+            "inputs": {
+                "customer_info": {
+                    "type": [
+                        "string"
+                    ]
+                },
+                "chat_history": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "source": "user_intent_zero_shot.jinja2"
+        },
+        "extract_intent_tool.py": {
+            "type": "python",
+            "inputs": {
+                "chat_prompt": {
+                    "type": [
+                        "string"
+                    ]
+                },
+                "connection": {
+                    "type": [
+                        "CustomConnection"
+                    ]
+                }
+            },
+            "function": "extract_intent_tool",
+            "source": "extract_intent_tool.py"
+        }
+    }
+}

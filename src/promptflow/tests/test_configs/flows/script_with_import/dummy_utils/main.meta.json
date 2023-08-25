@@ -1,0 +1,13 @@
+{
+  "name": "main",
+  "type": "python",
+  "inputs": {
+    "x": {
+      "type": [
+        "string"
+      ]
+    }
+  },
+  "source": "dummy_utils/main.py",
+  "function": "main"
+}
