@@ -2,7 +2,7 @@ examples:
 - examples/*
 documentation:
 - docs/*
-sdk_cli:
+sdk:
 - src/promptflow/promptflow/_cli/*
 - src/promptflow/promptflow/_sdk/*
 - src/promptflow/promptflow/azure/*
