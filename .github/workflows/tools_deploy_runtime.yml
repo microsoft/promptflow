@@ -1,4 +1,4 @@
-name: Deploy runtime
+name: tools_deploy_runtime
 
 on:
   workflow_call:
