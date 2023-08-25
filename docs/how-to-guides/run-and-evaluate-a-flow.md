@@ -72,7 +72,8 @@ pf.visualize(base_run)
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-(WIP)
+![img](../media/how-to-guides/vscode_batch_run_yaml.png)
+![img](../media/how-to-guides/vscode_batch_run_visual.png)
 :::
 
 ::::
@@ -178,7 +179,8 @@ A web browser will be opened to show the visualization result.
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-(WIP)
+![img](../media/how-to-guides/vscode_against_run.png)
+![img](../media/how-to-guides/vscode_against_run_2.png)
 :::
 
 ::::
