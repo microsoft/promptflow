@@ -56,7 +56,7 @@ class PFClient:
         )
         workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
         self._service_caller = _FlowServiceCallerFactory.get_instance(
-            workspace=workspace, credential=credential, **kwargs
+            workspace=workspace, credential=self._ml_client._credential, **kwargs
         )
         self._flows = FlowOperations(
             operation_scope=self._ml_client._operation_scope,

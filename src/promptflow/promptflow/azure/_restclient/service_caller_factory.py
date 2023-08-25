@@ -17,11 +17,11 @@ class _FlowServiceCallerFactory:
 
         :param workspace: workspace
         """
-        catch_id = workspace.id if workspace else region
+        cache_id = workspace.id if workspace else region
         cache = cls.caller_cache_by_workspace_id
-        if catch_id not in cache:
+        if cache_id not in cache:
             with _FlowServiceCallerFactory._instance_lock:
-                if catch_id not in cache:
-                    cache[catch_id] = FlowServiceCaller(workspace, credential=credential, region=region, **kwargs)
+                if cache_id not in cache:
+                    cache[cache_id] = FlowServiceCaller(workspace, credential=credential, region=region, **kwargs)
 
-        return cache[catch_id]
+        return cache[cache_id]
