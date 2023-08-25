@@ -32,6 +32,7 @@ REQUIRES = [
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
     "marshmallow>=3.5,<4.0.0",
     "pyyaml>=5.1.0,<7.0.0",
+    "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
 ]
 
 setup(
@@ -62,7 +63,6 @@ setup(
             "azure-identity>=1.12.0,<2.0.0",
             "azure-ai-ml>=1.9.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
-            "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
         ],
     },
     packages=find_packages(),
