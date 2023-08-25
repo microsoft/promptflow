@@ -1,4 +1,4 @@
-name: Promptflow Tools Release
+name: tools_continuous_delivery
 
 on:
   pull_request:
@@ -72,7 +72,7 @@ jobs:
 
   deploy_runtime_with_updated_tools_package:
     needs: continuous_delivery_release
-    uses: ./.github/workflows/deploy_runtime.yml
+    uses: ./.github/workflows/tools_deploy_runtime.yml
     name: Deploy runtime
     with:
       ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
