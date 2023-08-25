@@ -42,6 +42,9 @@ jobs:
       uses: "./.github/actions/step_generate_configs"
       with:
         targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v1
+      id: cpu-cores
     - name: Run Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
@@ -58,13 +61,14 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
           -l eastus \
           -m "unittest or e2etest" \
-          -n 2
+          -n ${{ steps.cpu-cores.outputs.count }} \
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
     - name: Upload pytest test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results
-        path: ${{ env.testWorkingDirectory }}/test-results.xml
+        path: ${{ env.testWorkingDirectory }}/*.xml
       # Use always() to always run this step to publish test results when there are test failures
     - name: Publish Test Results
       if: always()
@@ -74,5 +78,12 @@ jobs:
         comment_title: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
         files: |
           ${{ env.testWorkingDirectory }}/test-results.xml
+    - name: Generate Coverage Report
+      if: (success() || failure())
+      uses: orgoro/coverage@v3.1
+      with:
+        coverageFile: ${{ env.testWorkingDirectory }}/coverage.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        thresholdAll: 0.4
 
     
