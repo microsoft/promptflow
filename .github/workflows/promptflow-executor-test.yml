@@ -1,0 +1,45 @@
+name: promptflow-executor-test
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - src/promptflow/**
+      - scripts/**
+      - .github/workflows/promptflow-executor-test.yml
+  workflow_dispatch:
+env:
+  TENANT_ID: "${{ secrets.TENANT_ID }}"
+  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
+  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
+  packageSetupType: promptflow_open_source
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+jobs:
+  executor_e2e_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run executor e2e tests
+      uses: "./.github/actions/step_run_tests"
+      with:
+        testReportName: executor-e2e-tests
+        testWorkingDirectory: ${{ env.packageSetupType }}
+        packageSetupType: ${{ env.testWorkingDirectory }}
+        testPath: src/promptflow/tests/executor/e2etests
+        coveragePath: src/promptflow/promptflow
+        coverageConfigPath: src/promptflow/tests/executor/.coveragerc
+        coverageThreshold: 0.55
+        workflowLink: https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml
+
+  executor_unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run executor unit tests
+      uses: "./.github/actions/step_run_tests"
+      with:
+        testReportName: executor-unit-tests
+        testWorkingDirectory: ${{ env.packageSetupType }}
+        packageSetupType: ${{ env.testWorkingDirectory }}
+        workflowLink: https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml
+        testPath: src/promptflow/tests/executor/unittests
+        coveragePath: src/promptflow/promptflow
+        coverageConfigPath: src/promptflow/tests/executor/.coveragerc
+        coverageThreshold: 0.3
