@@ -4,6 +4,7 @@
 
 import datetime
 import json
+import os.path
 import uuid
 from os import PathLike
 from pathlib import Path
@@ -104,6 +105,8 @@ class Run(YAMLTranslatableMixin):
         self._creation_context = kwargs.get("creation_context", None)
         if self._run_source == RunInfoSources.LOCAL:
             self.flow = Path(flow).resolve().absolute()
+            if not os.path.exists(self.flow):
+                raise UserErrorException(f"Flow {self.flow} does not exist. Please check the path.")
             self._flow_dir = self._get_flow_dir()
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
