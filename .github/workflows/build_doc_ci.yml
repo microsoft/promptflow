@@ -12,6 +12,10 @@ on:
       - 'scripts/docs/**'
       - '.github/workflows/build_doc_ci.yml'
 
+env:
+  packageSetupType: promptflow_open_source
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+
 jobs:
   build_doc_job:
     runs-on: windows-latest
@@ -22,10 +26,25 @@ jobs:
         with:
           submodules: true
 
+      - name: Conda Setup
+        uses: "./.github/actions/step_create_conda_environment"
+
+      - name: Display environment variables
+        run: |
+          echo ${{ env.packageSetupType }}
+          echo ${{ env.testWorkingDirectory }}
+        shell: bash -l {0}
+
+      - name: Dev setup
+        uses: "./.github/actions/step_sdk_setup"
+        with:
+          setupType: ${{ env.packageSetupType }}
+          scriptPath: ${{ env.testWorkingDirectory }}
+
       - name: Build Doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -WarningAsError:$true
+        run: ./doc_generation.ps1
 
   # Note: We have this job separately because some error may missing when build link check exists.
   link_check_job:

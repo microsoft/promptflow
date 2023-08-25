@@ -59,6 +59,7 @@ ProcessFiles
 if(!$BuildLinkCheck){
     # Only build ref doc when it's not link check
     $RefDocPath = [System.IO.Path]::Combine($TempDocPath, "reference\python-library-reference")
+    Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
     sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath"
 }
