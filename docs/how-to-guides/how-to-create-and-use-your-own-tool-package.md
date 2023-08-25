@@ -73,6 +73,37 @@ hello-world-proj/
     python ..\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
     ```
     To populate your tool module, adhere to the pattern \<package_name\>.tools.\<tool_name\>, which represents the folder path to your tool within the package.
+
+    In the auto-generated tool yaml file, you can customize your tool's icon and structure by adding the tool icon's data URI and the structure path directly to the YAML file:
+    ```
+    my_tool_package.tools.my_tool_1.my_tool:
+      name: My First Tool
+      description: This is my first tool
+      icon: sdfsdf
+      structure: Test/My First Tool
+      module: my_tool_package.tools.my_tool_1
+      function: my_tool
+      type: python
+      inputs:
+        connection:
+          type:
+          - CustomConnection
+        input_text:
+          type:
+          - string
+    ```
+    The tool icon is a graphic representation of your tool in the user interface (UI). If you don't supply a tool icon, the system will use a default one.
+    The tool structure path would be used by UI to display the tool's hierarchy structure.
+
+    You can use the below command to generate your tool icon data uri:
+    ```
+    python scripts\tool\convert_image_to_data_url.py --image-path "AzureContentSafetyIcon.png" -o "output.html"
+    ```
+    > [!Note] 
+    > 1. In order to run this script, you will need to `pip install pillow`.
+    > 2. the output file suffix has to be `html`.
+    This will generate an HTML file at the specified output file path. To see the result, open the file in a web browser.
+
 6. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
     ```
     pytest tests
