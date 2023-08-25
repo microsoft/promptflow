@@ -1,4 +1,4 @@
-name: Promptflow Tools Release Tag
+name: create_tools_release_tag
 on:
   workflow_dispatch:
     inputs:

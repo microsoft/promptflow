@@ -1,13 +1,9 @@
 import functools
-import http
 import json
 import re
-import socket
 import sys
 import time
 
-import requests
-import urllib3
 from jinja2 import Template
 from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
 from promptflow.exceptions import SystemErrorException, UserErrorException
@@ -119,23 +115,6 @@ def parse_chat(chat_str):
             new_message = {"role": role}
             chat_list.append(new_message)
     return chat_list
-
-
-# Define the retriable exceptions
-retriable_exceptions = (
-    urllib3.exceptions.HTTPError,  # this is a parent class, we might not list its sub-class
-    urllib3.exceptions.MaxRetryError,
-    urllib3.exceptions.TimeoutError,
-    urllib3.exceptions.ConnectionError,
-    socket.timeout,
-    http.client.RemoteDisconnected,
-    http.client.HTTPException,
-    requests.exceptions.ConnectionError,
-    requests.exceptions.Timeout,
-    requests.exceptions.RetryError,
-    requests.exceptions.TooManyRedirects,
-    requests.exceptions.HTTPError,
-)
 
 
 def handle_openai_error(tries: int = 10, delay: float = 8.0):
