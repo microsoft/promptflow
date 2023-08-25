@@ -1,13 +1,16 @@
 examples:
-- examples/*
+- examples/**
 documentation:
-- docs/*
+- docs/**
 cli:
-- src/promptflow/promptflow/_cli/*
+- src/promptflow/promptflow/_cli/**
 sdk:
-- src/promptflow/promptflow/_sdk/*
-- src/promptflow/promptflow/azure/*
+- src/promptflow/promptflow/_sdk/**
+- src/promptflow/promptflow/azure/**
 promptflow:
-- src/promptflow/*
+- src/promptflow/**
 promptflow-tools:
-- src/promptflow-tools/*
+- src/promptflow-tools/**
+fundamental:
+- scripts/**
+- .github/**
