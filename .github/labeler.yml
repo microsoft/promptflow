@@ -2,8 +2,9 @@ examples:
 - examples/*
 documentation:
 - docs/*
-sdk:
+cli:
 - src/promptflow/promptflow/_cli/*
+sdk:
 - src/promptflow/promptflow/_sdk/*
 - src/promptflow/promptflow/azure/*
 promptflow:
