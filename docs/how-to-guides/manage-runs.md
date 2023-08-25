@@ -91,7 +91,8 @@ print(result)
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-[TODO]
+![img](../media/how-to-guides/vscode_batch_run_yaml.png)
+![img](../media/how-to-guides/vscode_batch_run_visual.png)
 :::
 ::::
 
@@ -127,7 +128,7 @@ print(run)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_detail.png)
 :::
 ::::
 
@@ -165,7 +166,7 @@ print(tabulate(details.head(max_results), headers="keys", tablefmt="grid"))
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_detail.png)
 :::
 ::::
 
@@ -201,10 +202,6 @@ print(json.dumps(metrics, indent=4))
 ```
 :::
 
-:::{tab-item} VS Code Extension
-:sync: VSC
-[TODO]
-:::
 ::::
 
 ## Visualize a run
@@ -241,7 +238,7 @@ client.runs.visualize(name="<run-name>")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_actions.png)
 :::
 ::::
 
@@ -312,12 +309,6 @@ print(run)
 ```
 :::
 
-:::{tab-item} VS Code Extension
-:sync: VSC
-[TODO]
-:::
-::::
-
 ## Archive a run
 
 ::::{tab-set}
@@ -347,7 +338,7 @@ client.runs.archive(name="<run-name>")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_actions.png)
 :::
 ::::
 
@@ -377,9 +368,3 @@ pf = PFClient()
 client.runs.restore(name="<run-name>")
 ```
 :::
-
-:::{tab-item} VS Code Extension
-:sync: VSC
-[TODO]
-:::
-::::
