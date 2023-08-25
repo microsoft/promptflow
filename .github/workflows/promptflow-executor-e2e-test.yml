@@ -64,8 +64,9 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results
-        path: 
+        path: |
           ${{ github.workspace }}/*.xml
+          ${{ github.workspace }}/htmlcov/
       # Use always() to always run this step to publish test results when there are test failures
     - name: Publish Test Results
       if: always()
