@@ -3,12 +3,6 @@ inputs:
   testReportName:
     required: true
     type: string
-  testWorkingDirectory:
-    required: true
-    type: string
-  packageSetupType:
-    required: true
-    type: string
   testPath:
     required: true
     type: string
@@ -34,14 +28,14 @@ runs:
     - name: Conda Setup
       uses: "./.github/actions/step_create_conda_environment"
     - run: |
-        echo ${{ inputs.packageSetupType }}
-        echo ${{ inputs.testWorkingDirectory }}
+        echo ${{ env.packageSetupType }}
+        echo ${{ env.testWorkingDirectory }}
       shell: bash -l {0}
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
-        setupType: ${{ inputs.packageSetupType }}
-        scriptPath: ${{ inputs.testWorkingDirectory }}
+        setupType: ${{ env.packageSetupType }}
+        scriptPath: ${{ env.testWorkingDirectory }}
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -49,7 +43,7 @@ runs:
     - name: Generate Configs
       uses: "./.github/actions/step_generate_configs"
       with:
-        targetFolder: ${{ inputs.testWorkingDirectory }}
+        targetFolder: ${{ env.testWorkingDirectory }}
     - name: Run Coverage Test
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
