@@ -47,10 +47,10 @@ class AOAI(ABC):
                 else:
                     return "".join(self.query_with_stream(text, **kwargs))
             except Exception as e:
-                logging.error(f"llm response error, message={e}, "
+                logging.error(f"Query failed, message={e}, "
                               f"will retry request llm after {(i + 1) * (i + 1)} seconds.")
                 time.sleep((i + 1) * (i + 1))
-        raise Exception("llm response error, and retry 3 times, but still failed.")
+        raise Exception("Query failed, and retry 3 times, but still failed.")
 
     async def aquery(self, text, **kwargs):
         stream = kwargs.pop("stream", False)

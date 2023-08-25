@@ -11,15 +11,12 @@ class File:
         if self._is_url:
             parsed_url = urlparse(source)
             path = parsed_url.path
-            self._path = os.path.normpath(os.path.abspath(path))
-            self._dirname = os.path.dirname(self._path)
-            self._filename = os.path.basename(self._path).split(".")[0]
-            self._language = os.path.basename(self._path).split(".")[1]
         else:
-            self._path = os.path.normpath(os.path.abspath(source))
-            self._dirname = os.path.dirname(self._path)
-            self._filename = os.path.basename(self._path).split(".")[0]
-            self._language = os.path.basename(self._path).split(".")[1]
+            path = source
+        self._path = os.path.normpath(os.path.abspath(path))
+        self._dirname = os.path.dirname(self._path)
+        self._filename = os.path.basename(self._path).split(".")[0]
+        self._language = os.path.basename(self._path).split(".")[1]
 
     def _read_content(self):
         if self._is_url:
@@ -64,7 +61,6 @@ class File:
     def override_origin_file(self, content: str) -> None:
         if not self._is_url:
             with open(self._path, "w") as f:
-                # self._content = content
                 f.write(content)
         else:
             logging.warning("Cannot override origin file from URL, create a new file instead.")

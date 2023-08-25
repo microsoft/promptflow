@@ -3,7 +3,6 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Union
 from dataclasses import asdict
 from promptflow import tool
 from azure_open_ai import ChatLLM
@@ -78,19 +77,20 @@ async def agenerate_docstring(divided: list[str]):
 
 @tool
 def generate_docstring(divided: list[str],
-                       connection: Union[CustomConnection, AzureOpenAIConnection] = {},
+                       connection: AzureOpenAIConnection = None,
                        module: str = None):
     if isinstance(connection, AzureOpenAIConnection):
         connection_dict = asdict(connection)
     else:
-        # custom connection is dict like object contains the configs and secrets
-        connection_dict = dict(connection)
+        connection_dict = {}
     if connection_dict.get("api_key"):
         os.environ["OPENAI_API_KEY"] = connection_dict["api_key"]
     if connection_dict.get("api_base"):
         os.environ["OPENAI_API_BASE"] = connection_dict["api_base"]
     if connection_dict.get("api_version"):
         os.environ["OPENAI_API_VERSION"] = connection_dict["api_version"]
+    if connection_dict.get("API_TYPE"):
+        os.environ["API_TYPE"] = connection_dict["api_type"]
     if module:
         os.environ["MODULE"] = module
 
