@@ -25,7 +25,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import AzureMLResourceType
-from azure.ai.ml.operations import DataOperations, WorkspaceOperations
+from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from pandas import DataFrame
 
@@ -85,22 +85,16 @@ class RunOperations(_ScopeDependentOperations):
         all_operations: OperationsContainer,
         flow_operations: FlowOperations,
         credential,
+        service_caller: FlowServiceCaller,
         **kwargs: Dict,
     ):
         super().__init__(operation_scope, operation_config)
         self._all_operations = all_operations
-        workspace = self._workspace_operations.get(name=operation_scope.workspace_name)
-        self._service_caller = FlowServiceCaller(workspace, credential, **kwargs)
+        self._service_caller = service_caller
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         self._workspace_default_datastore = self._datastore_operations.get_default().name
-
-    @property
-    def _workspace_operations(self) -> WorkspaceOperations:
-        return self._all_operations.get_operation(
-            AzureMLResourceType.WORKSPACE, lambda x: isinstance(x, WorkspaceOperations)
-        )
 
     @property
     def _data_operations(self):
