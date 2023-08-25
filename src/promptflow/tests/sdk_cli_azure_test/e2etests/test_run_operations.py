@@ -508,7 +508,8 @@ class TestFlowRun:
 
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
-            assert body.session_id == flow_id
+            # session id also contains alias
+            assert flow_id in body.session_id
             return body
 
         # flow session id is same with or without session creation

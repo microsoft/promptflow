@@ -39,10 +39,11 @@ from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
+from promptflow._utils.flow_utils import get_flow_session_id
 from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
-from promptflow.azure._utils.gerneral import is_remote_uri
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
 from promptflow.azure.operations._flow_opearations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -530,6 +531,15 @@ class RunOperations(_ScopeDependentOperations):
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
         return flow.path
 
+    def _get_session_id(self, flow):
+        try:
+            user_alias = get_user_alias_from_credential(self._credential)
+        except Exception:
+            # fall back to unknown user when failed to get credential.
+            user_alias = "unknown_user"
+        flow_id = get_flow_session_id(flow_dir=flow)
+        return f"{user_alias}_{flow_id}"
+
     def _get_child_runs_from_pfs(self, run_id: str):
         """Get the child runs from the PFS."""
         headers = self._get_headers()
@@ -658,7 +668,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _resolve_runtime(self, run, flow_path, runtime):
         runtime = run._runtime or runtime
-        session_id = get_flow_session_id(flow_dir=flow_path)
+        session_id = self._get_session_id(flow=flow_path)
 
         if runtime:
             if not isinstance(runtime, str):
