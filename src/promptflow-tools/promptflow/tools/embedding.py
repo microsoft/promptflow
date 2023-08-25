@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from enum import Enum
 from typing import Union
 
@@ -20,7 +19,7 @@ class EmbeddingModel(str, Enum):
 @handle_openai_error()
 def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input: str, deployment_name: str = "",
               model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
-    connection_dict = asdict(connection)
+    connection_dict = dict(connection.items())
     if isinstance(connection, AzureOpenAIConnection):
         return openai.Embedding.create(
             input=input,

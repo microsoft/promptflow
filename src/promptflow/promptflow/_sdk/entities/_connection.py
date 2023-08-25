@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import abc
 import json
+from builtins import _dict_items
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Union
@@ -17,6 +18,7 @@ from promptflow._sdk._constants import (
     ConnectionType,
 )
 from promptflow._sdk._errors import UnsecureConnectionError
+from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._orm.connection import Connection as ORMConnection
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -39,13 +41,15 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
 )
 
+logger = LoggerFactory.get_logger(name=__name__)
+
 
 class _Connection(YAMLTranslatableMixin):
     TYPE = ConnectionType._NOT_SET
 
     def __init__(
         self,
-        name,
+        name: str = "default_connection",
         module: str = "promptflow.connections",
         configs: Dict[str, str] = None,
         secrets: Dict[str, str] = None,
@@ -91,6 +95,9 @@ class _Connection(YAMLTranslatableMixin):
         if typ in type_dict:
             return type_dict.get(typ)
         return snake_to_camel(typ)
+
+    def items(self) -> _dict_items:
+        return {**self.configs, **self.secrets}.items()
 
     @classmethod
     def _is_scrubbed_value(cls, value):
@@ -276,6 +283,13 @@ class _StrongTypeConnection(_Connection):
 
 
 class AzureOpenAIConnection(_StrongTypeConnection):
+    """
+    :param api_key: The api key.
+    :param api_base: The api base.
+    :param api_type: The api type, default "azure".
+    :param api_version: The api version, default "2023-07-01-preview".
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
@@ -315,6 +329,11 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
 
 class OpenAIConnection(_StrongTypeConnection):
+    """
+    :param api_key: The api key.
+    :param organization: The organization, optional.
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.OPEN_AI
 
     def __init__(self, api_key: str, organization: str = None, **kwargs):
@@ -336,6 +355,10 @@ class OpenAIConnection(_StrongTypeConnection):
 
 
 class SerpConnection(_StrongTypeConnection):
+    """
+    :param api_key: The api key.
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.SERP
 
     def __init__(self, api_key: str, **kwargs):
@@ -365,6 +388,11 @@ class _EmbeddingStoreConnection(_StrongTypeConnection):
 
 
 class QdrantConnection(_EmbeddingStoreConnection):
+    """
+    :param api_key: The api key.
+    :param api_base: The api base.
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.QDRANT
 
     @classmethod
@@ -373,6 +401,11 @@ class QdrantConnection(_EmbeddingStoreConnection):
 
 
 class WeaviateConnection(_EmbeddingStoreConnection):
+    """
+    :param api_key: The api key.
+    :param api_base: The api base.
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.WEAVIATE
 
     @classmethod
@@ -381,6 +414,12 @@ class WeaviateConnection(_EmbeddingStoreConnection):
 
 
 class CognitiveSearchConnection(_StrongTypeConnection):
+    """
+    :param api_key: The api key.
+    :param api_base: The api base.
+    :param api_version: The api version, default "2023-07-01-Preview".
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.COGNITIVE_SEARCH
 
     def __init__(self, api_key: str, api_base: str, api_version: str = "2023-07-01-Preview", **kwargs):
@@ -410,6 +449,13 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):
+    """
+    :param api_key: The api key.
+    :param endpoint: The api endpoint.
+    :param api_version: The api version, default "2023-04-30-preview".
+    :param api_type: The api type, default "Content Safety".
+    :param name: Connection name.
+    """
     TYPE = ConnectionType.AZURE_CONTENT_SAFETY
 
     def __init__(
@@ -454,6 +500,13 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
 
 
 class FormRecognizerConnection(AzureContentSafetyConnection):
+    """
+    :param api_key: The api key.
+    :param endpoint: The api endpoint.
+    :param api_version: The api version, default "2023-07-31".
+    :param api_type: The api type, default "Form Recognizer".
+    :param name: Connection name.
+    """
     # Note: FormRecognizer and ContentSafety are using CognitiveService type in ARM, so keys are the same.
     TYPE = ConnectionType.FORM_RECOGNIZER
 
@@ -468,16 +521,46 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
 
 
 class CustomConnection(_Connection):
+    """
+    :param configs: The configs kv pairs.
+    :param secrets: The secrets kv pairs.
+    :param name: Connection name
+    """
     TYPE = ConnectionType.CUSTOM
 
     def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
         if not secrets:
-            raise ValueError("secrets is required for custom connection.")
+            raise ValueError(
+                "Secrets is required for custom connection, "
+                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                "to initialize custom connection."
+            )
         super().__init__(secrets=secrets, configs=configs, **kwargs)
 
     @classmethod
     def _get_schema_cls(cls):
         return CustomConnectionSchema
+
+    def __getattr__(self, item):
+        # Note: This is added for compatibility with promptflow.connections custom connection usage.
+        if item == "secrets":
+            # Usually obj.secrets will not reach here
+            # This is added to handle copy.deepcopy loop issue
+            return super().__getattribute__("secrets")
+        if item == "configs":
+            # Usually obj.configs will not reach here
+            # This is added to handle copy.deepcopy loop issue
+            return super().__getattribute__("configs")
+        if item in self.secrets:
+            logger.warning("Please use connection.secrets[key] to access secrets.")
+            return self.secrets[item]
+        if item in self.configs:
+            logger.warning("Please use connection.configs[key] to access configs.")
+            return self.configs[item]
+        return super().__getattribute__(item)
+    def is_secret(self, item):
+        # Note: This is added for compatibility with promptflow.connections custom connection usage.
+        return item in self.secrets
 
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
