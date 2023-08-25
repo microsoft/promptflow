@@ -15,12 +15,14 @@ import yaml
 
 from promptflow._core._errors import MissingRequiredInputs, PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
+    _parse_tool_from_function,
+    collect_tool_function_in_module,
     generate_prompt_tool,
     generate_python_tool,
     load_python_module_from_file,
 )
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
-from promptflow.contracts.flow import InputAssignment, InputValueType, ToolSource, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -93,6 +95,56 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             return generate_prompt_tool(name, content)
         else:
             raise NotImplementedError(f"Tool type {tool_type} is not supported yet.")
+
+
+def load_tool_for_node(node: Node, working_dir: str) -> Tool:
+    if node.source is None:
+        raise UserErrorException(f"Node {node.name} does not have source defined.")
+    if node.type is ToolType.PYTHON:
+        if node.source.type == ToolSourceType.Package:
+            return load_tool_for_package_node(node)
+        elif node.source.type == ToolSourceType.Code:
+            return load_tool_for_script_node(node, working_dir)
+        raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
+    elif node.type is ToolType.PROMPT:
+        return None
+    elif node.type is ToolType.LLM:
+        return load_tool_for_llm_node(node)
+    elif node.type is ToolType.CUSTOM_LLM:
+        if node.source.type == ToolSourceType.PackageWithPrompt:
+            return load_tool_for_package_node(node)
+        raise NotImplementedError(
+            f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
+        )
+    else:
+        raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+
+
+def load_tool_for_package_node(node: Node):
+    package_tools = collect_package_tools()
+    if node.source.tool in package_tools:
+        return Tool.deserialize(package_tools[node.source.tool])
+    raise PackageToolNotFoundError(
+        f"Package tool '{node.source.tool}' is not found in the current environment. "
+        f"All available package tools are: {list(package_tools.keys())}.",
+        target=ErrorTarget.EXECUTOR,
+    )
+
+
+def load_tool_for_script_node(node: Node, working_dir: str):
+    if node.source.path is None:
+        raise UserErrorException(f"Node {node.name} does not have source path defined.")
+    path = node.source.path
+    m = load_python_module_from_file(working_dir / path)
+    if m is None:
+        raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
+    f = collect_tool_function_in_module(m)
+    return _parse_tool_from_function(f)
+
+
+def load_tool_for_llm_node(node: Node):
+    api_name = f"{node.provider}.{node.api}"
+    return BuiltinsManager._load_llm_api(api_name)
 
 
 class BuiltinsManager:

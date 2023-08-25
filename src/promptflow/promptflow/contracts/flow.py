@@ -258,6 +258,7 @@ class Flow:
     inputs: Dict[str, FlowInputDefinition]
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
+    working_dir: str = None
 
     def serialize(self):
         data = {
@@ -319,18 +320,11 @@ class Flow:
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))
-
-        # TODO: Postpone tool generation to flow execution in all scenarios and remove this parameter.
-        if not gen_tool:
-            return flow
-        from promptflow._core.tools_manager import gen_tool_by_source
-
-        for node in flow.nodes:
-            if node.source:
-                tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
-                node.tool = tool.name
-                flow.tools.append(tool)
+            flow._set_working_dir(working_dir)
         return flow
+
+    def _set_working_dir(self, working_dir):
+        self._working_dir = working_dir
 
     def apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
@@ -414,14 +408,9 @@ class Flow:
     def get_chat_output_name(self):
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
-    def get_connection_input_names_for_node(self, node_name):
-        """Return connection input names."""
-        node = self.get_node(node_name)
-        if not node:
-            return []
-        result = []
+    def _get_connection_name_from_tool(self, tool: Tool, node: Node):
+        connection_names = {}
         value_types = set({v.value for v in ValueType.__members__.values()})
-        tool = self.get_tool(node.tool)
         for k, v in tool.inputs.items():
             input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
             if all(typ.lower() in value_types for typ in input_type):
@@ -429,40 +418,35 @@ class Flow:
                 continue
             input_assignment = node.inputs.get(k)
             # Add literal node assignment values to results, skip node reference
-            if isinstance(input_assignment, InputAssignment) and input_assignment.value_type == InputValueType.LITERAL:
-                result.append(k)
-        return result
+            if (
+                isinstance(input_assignment, InputAssignment)
+                and input_assignment.value_type == InputValueType.LITERAL
+            ):
+                connection_names[k] = input_assignment.value
+        return connection_names
 
     def get_connection_names(self):
-        """Return the possible connection names in flow object."""
         connection_names = set({})
-        tool_metas = {tool.name: tool for tool in self.tools}
-        value_types = set({v.value for v in ValueType.__members__.values()})
         for node in self.nodes:
             if node.connection:
-                # Some node has a separate field for connection.
                 connection_names.add(node.connection)
                 continue
-            # Get tool meta and return possible input name with connection type
-            if node.tool not in tool_metas:
-                msg = f"Node {node.name!r} references tool {node.tool!r} which is not in the flow {self.name!r}."
-                raise Exception(msg)
-            tool = tool_metas.get(node.tool)
-            # Force regard input type not in ValueType as connection type.
-            for k, v in tool.inputs.items():
-                input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
-                if all(typ.lower() in value_types for typ in input_type):
-                    # All type is value type, the key is not a possible connection key.
-                    continue
-                input_assignment = node.inputs.get(k)
-                # Add literal node assignment values to results, skip node reference
-                if (
-                    isinstance(input_assignment, InputAssignment)
-                    and input_assignment.value_type == InputValueType.LITERAL
-                ):
-                    connection_names.add(input_assignment.value)
-        # Filter None and empty string out
-        return set({item for item in connection_names if item})
+            from promptflow._core.tools_manager import load_tool_for_node
+            tool = load_tool_for_node(node, self._working_dir)
+            if tool:
+                connection_names.update(self._get_connection_name_from_tool(tool, node).values())
+        return connection_names
+
+    def get_connection_input_names_for_node(self, node_name):
+        """Return connection input names."""
+        node = self.get_node(node_name)
+        if not node:
+            return []
+        from promptflow._core.tools_manager import load_tool_for_node
+        tool = load_tool_for_node(node, self._working_dir)
+        if tool:
+            return self._get_connection_name_from_tool(tool, node).keys()
+        return []
 
     def replace_with_variant(self, variant_node: Node, variant_tools: list):
         for index, node in enumerate(self.nodes):
