@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Coverage report</title>
+    <link rel="icon" sizes="32x32" href="favicon_32.png">
+    <link rel="stylesheet" href="style.css" type="text/css">
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.ba-throttle-debounce.min.js"></script>
+    <script type="text/javascript" src="jquery.tablesorter.min.js"></script>
+    <script type="text/javascript" src="jquery.hotkeys.js"></script>
+    <script type="text/javascript" src="coverage_html.js"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(coverage.index_ready);
+    </script>
+</head>
+<body class="indexfile">
+<div id="header">
+    <div class="content">
+        <h1>Coverage report:
+            <span class="pc_cov">67%</span>
+        </h1>
+        <img id="keyboard_icon" src="keybd_closed.png" alt="Show keyboard shortcuts" />
+        <form id="filter_container">
+            <input id="filter" type="text" value="" placeholder="filter..." />
+        </form>
+    </div>
+</div>
+<div class="help_panel">
+    <img id="panel_icon" src="keybd_open.png" alt="Hide keyboard shortcuts" />
+    <p class="legend">Hot-keys on this page</p>
+    <div>
+    <p class="keyhelp">
+        <span class="key">n</span>
+        <span class="key">s</span>
+        <span class="key">m</span>
+        <span class="key">x</span>
+        <span class="key">b</span>
+        <span class="key">p</span>
+        <span class="key">c</span> &nbsp; change column sorting
+    </p>
+    </div>
+</div>
+<div id="index">
+    <table class="index">
+        <thead>
+            <tr class="tablehead" title="Click to sort">
+                <th class="name left headerSortDown shortkey_n">Module</th>
+                <th class="shortkey_s">statements</th>
+                <th class="shortkey_m">missing</th>
+                <th class="shortkey_x">excluded</th>
+                <th class="shortkey_b">branches</th>
+                <th class="shortkey_p">partial</th>
+                <th class="right shortkey_c">coverage</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr class="total">
+                <td class="name left">Total</td>
+                <td>4638</td>
+                <td>1287</td>
+                <td>0</td>
+                <td>1708</td>
+                <td>184</td>
+                <td class="right" data-ratio="4271 6346">67%</td>
+            </tr>
+        </tfoot>
+        <tbody>
+            <tr class="file">
+                <td class="name left"><a href="d_eaab3bd657492dea___init___py.html">src/promptflow/promptflow/__init__.py</a></td>
+                <td>8</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="8 8">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_eaab3bd657492dea__constants_py.html">src/promptflow/promptflow/_constants.py</a></td>
+                <td>10</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="10 10">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8___init___py.html">src/promptflow/promptflow/_core/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8__errors_py.html">src/promptflow/promptflow/_core/_errors.py</a></td>
+                <td>53</td>
+                <td>4</td>
+                <td>0</td>
+                <td>12</td>
+                <td>6</td>
+                <td class="right" data-ratio="55 65">85%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_cache_manager_py.html">src/promptflow/promptflow/_core/cache_manager.py</a></td>
+                <td>81</td>
+                <td>34</td>
+                <td>0</td>
+                <td>10</td>
+                <td>0</td>
+                <td class="right" data-ratio="51 91">56%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_connection_manager_py.html">src/promptflow/promptflow/_core/connection_manager.py</a></td>
+                <td>75</td>
+                <td>18</td>
+                <td>0</td>
+                <td>34</td>
+                <td>3</td>
+                <td class="right" data-ratio="78 109">72%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_flow_execution_context_py.html">src/promptflow/promptflow/_core/flow_execution_context.py</a></td>
+                <td>127</td>
+                <td>13</td>
+                <td>0</td>
+                <td>30</td>
+                <td>5</td>
+                <td class="right" data-ratio="135 157">86%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_generator_proxy_py.html">src/promptflow/promptflow/_core/generator_proxy.py</a></td>
+                <td>15</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="15 15">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_log_manager_py.html">src/promptflow/promptflow/_core/log_manager.py</a></td>
+                <td>82</td>
+                <td>4</td>
+                <td>0</td>
+                <td>18</td>
+                <td>4</td>
+                <td class="right" data-ratio="90 100">90%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_metric_logger_py.html">src/promptflow/promptflow/_core/metric_logger.py</a></td>
+                <td>34</td>
+                <td>4</td>
+                <td>0</td>
+                <td>14</td>
+                <td>4</td>
+                <td class="right" data-ratio="40 48">83%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_openai_injector_py.html">src/promptflow/promptflow/_core/openai_injector.py</a></td>
+                <td>77</td>
+                <td>6</td>
+                <td>0</td>
+                <td>24</td>
+                <td>2</td>
+                <td class="right" data-ratio="89 101">88%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_operation_context_py.html">src/promptflow/promptflow/_core/operation_context.py</a></td>
+                <td>40</td>
+                <td>13</td>
+                <td>0</td>
+                <td>16</td>
+                <td>3</td>
+                <td class="right" data-ratio="32 56">57%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_run_tracker_py.html">src/promptflow/promptflow/_core/run_tracker.py</a></td>
+                <td>231</td>
+                <td>39</td>
+                <td>0</td>
+                <td>76</td>
+                <td>9</td>
+                <td class="right" data-ratio="245 307">80%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_thread_local_singleton_py.html">src/promptflow/promptflow/_core/thread_local_singleton.py</a></td>
+                <td>19</td>
+                <td>1</td>
+                <td>0</td>
+                <td>2</td>
+                <td>1</td>
+                <td class="right" data-ratio="19 21">90%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_tool_py.html">src/promptflow/promptflow/_core/tool.py</a></td>
+                <td>74</td>
+                <td>15</td>
+                <td>0</td>
+                <td>20</td>
+                <td>1</td>
+                <td class="right" data-ratio="70 94">74%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_tool_meta_generator_py.html">src/promptflow/promptflow/_core/tool_meta_generator.py</a></td>
+                <td>186</td>
+                <td>97</td>
+                <td>0</td>
+                <td>68</td>
+                <td>6</td>
+                <td class="right" data-ratio="105 254">41%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_tools_manager_py.html">src/promptflow/promptflow/_core/tools_manager.py</a></td>
+                <td>211</td>
+                <td>78</td>
+                <td>0</td>
+                <td>66</td>
+                <td>7</td>
+                <td class="right" data-ratio="164 277">59%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_6c46942e6f3a8be8_tracer_py.html">src/promptflow/promptflow/_core/tracer.py</a></td>
+                <td>95</td>
+                <td>10</td>
+                <td>0</td>
+                <td>31</td>
+                <td>3</td>
+                <td class="right" data-ratio="111 126">88%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_26f7aef8246d830f___init___py.html">src/promptflow/promptflow/_internal/__init__.py</a></td>
+                <td>29</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="29 29">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8___init___py.html">src/promptflow/promptflow/_utils/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_ast_parser_py.html">src/promptflow/promptflow/_utils/ast_parser.py</a></td>
+                <td>22</td>
+                <td>14</td>
+                <td>0</td>
+                <td>6</td>
+                <td>0</td>
+                <td class="right" data-ratio="8 28">29%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_context_utils_py.html">src/promptflow/promptflow/_utils/context_utils.py</a></td>
+                <td>20</td>
+                <td>5</td>
+                <td>0</td>
+                <td>2</td>
+                <td>1</td>
+                <td class="right" data-ratio="16 22">73%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_credential_scrubber_py.html">src/promptflow/promptflow/_utils/credential_scrubber.py</a></td>
+                <td>29</td>
+                <td>9</td>
+                <td>0</td>
+                <td>8</td>
+                <td>1</td>
+                <td class="right" data-ratio="23 37">62%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_dataclass_serializer_py.html">src/promptflow/promptflow/_utils/dataclass_serializer.py</a></td>
+                <td>82</td>
+                <td>50</td>
+                <td>0</td>
+                <td>64</td>
+                <td>4</td>
+                <td class="right" data-ratio="56 146">38%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_exception_utils_py.html">src/promptflow/promptflow/_utils/exception_utils.py</a></td>
+                <td>171</td>
+                <td>58</td>
+                <td>0</td>
+                <td>52</td>
+                <td>7</td>
+                <td class="right" data-ratio="136 223">61%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_flow_utils_py.html">src/promptflow/promptflow/_utils/flow_utils.py</a></td>
+                <td>19</td>
+                <td>19</td>
+                <td>0</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 21">0%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_load_data_py.html">src/promptflow/promptflow/_utils/load_data.py</a></td>
+                <td>81</td>
+                <td>65</td>
+                <td>0</td>
+                <td>38</td>
+                <td>0</td>
+                <td class="right" data-ratio="16 119">13%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_logger_utils_py.html">src/promptflow/promptflow/_utils/logger_utils.py</a></td>
+                <td>187</td>
+                <td>28</td>
+                <td>0</td>
+                <td>74</td>
+                <td>11</td>
+                <td class="right" data-ratio="208 261">80%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_retry_utils_py.html">src/promptflow/promptflow/_utils/retry_utils.py</a></td>
+                <td>22</td>
+                <td>13</td>
+                <td>0</td>
+                <td>6</td>
+                <td>0</td>
+                <td class="right" data-ratio="9 28">32%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_thread_utils_py.html">src/promptflow/promptflow/_utils/thread_utils.py</a></td>
+                <td>25</td>
+                <td>0</td>
+                <td>0</td>
+                <td>6</td>
+                <td>1</td>
+                <td class="right" data-ratio="30 31">97%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_tool_utils_py.html">src/promptflow/promptflow/_utils/tool_utils.py</a></td>
+                <td>176</td>
+                <td>92</td>
+                <td>0</td>
+                <td>98</td>
+                <td>8</td>
+                <td class="right" data-ratio="117 274">43%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e30cf5fce34443e8_utils_py.html">src/promptflow/promptflow/_utils/utils.py</a></td>
+                <td>123</td>
+                <td>52</td>
+                <td>0</td>
+                <td>41</td>
+                <td>4</td>
+                <td class="right" data-ratio="81 164">49%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_eaab3bd657492dea__version_py.html">src/promptflow/promptflow/_version.py</a></td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="1 1">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_eaab3bd657492dea_connections_py.html">src/promptflow/promptflow/connections.py</a></td>
+                <td>54</td>
+                <td>9</td>
+                <td>0</td>
+                <td>22</td>
+                <td>1</td>
+                <td class="right" data-ratio="64 76">84%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e___init___py.html">src/promptflow/promptflow/contracts/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e__errors_py.html">src/promptflow/promptflow/contracts/_errors.py</a></td>
+                <td>3</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="3 3">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e__run_management_py.html">src/promptflow/promptflow/contracts/_run_management.py</a></td>
+                <td>29</td>
+                <td>2</td>
+                <td>0</td>
+                <td>8</td>
+                <td>0</td>
+                <td class="right" data-ratio="35 37">95%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e_flow_py.html">src/promptflow/promptflow/contracts/flow.py</a></td>
+                <td>310</td>
+                <td>100</td>
+                <td>0</td>
+                <td>166</td>
+                <td>12</td>
+                <td class="right" data-ratio="278 476">58%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e_run_info_py.html">src/promptflow/promptflow/contracts/run_info.py</a></td>
+                <td>62</td>
+                <td>3</td>
+                <td>0</td>
+                <td>8</td>
+                <td>0</td>
+                <td class="right" data-ratio="63 70">90%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e_run_mode_py.html">src/promptflow/promptflow/contracts/run_mode.py</a></td>
+                <td>14</td>
+                <td>7</td>
+                <td>0</td>
+                <td>6</td>
+                <td>0</td>
+                <td class="right" data-ratio="7 20">35%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e_tool_py.html">src/promptflow/promptflow/contracts/tool.py</a></td>
+                <td>172</td>
+                <td>54</td>
+                <td>0</td>
+                <td>93</td>
+                <td>9</td>
+                <td class="right" data-ratio="160 265">60%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e_trace_py.html">src/promptflow/promptflow/contracts/trace.py</a></td>
+                <td>18</td>
+                <td>0</td>
+                <td>0</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="right" data-ratio="20 20">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e0f2b93346a1a80e_types_py.html">src/promptflow/promptflow/contracts/types.py</a></td>
+                <td>5</td>
+                <td>1</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="4 5">80%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_9c8af78919af1178___init___py.html">src/promptflow/promptflow/core/__init__.py</a></td>
+                <td>18</td>
+                <td>18</td>
+                <td>0</td>
+                <td>4</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 22">0%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_eaab3bd657492dea_exceptions_py.html">src/promptflow/promptflow/exceptions.py</a></td>
+                <td>92</td>
+                <td>10</td>
+                <td>0</td>
+                <td>20</td>
+                <td>3</td>
+                <td class="right" data-ratio="93 112">83%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f___init___py.html">src/promptflow/promptflow/executor/__init__.py</a></td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="2 2">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__dag_manager_py.html">src/promptflow/promptflow/executor/_dag_manager.py</a></td>
+                <td>33</td>
+                <td>1</td>
+                <td>0</td>
+                <td>18</td>
+                <td>0</td>
+                <td class="right" data-ratio="50 51">98%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__errors_py.html">src/promptflow/promptflow/executor/_errors.py</a></td>
+                <td>58</td>
+                <td>4</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="54 58">93%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__flow_nodes_scheduler_py.html">src/promptflow/promptflow/executor/_flow_nodes_scheduler.py</a></td>
+                <td>71</td>
+                <td>0</td>
+                <td>0</td>
+                <td>20</td>
+                <td>1</td>
+                <td class="right" data-ratio="90 91">99%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__input_assignment_parser_py.html">src/promptflow/promptflow/executor/_input_assignment_parser.py</a></td>
+                <td>40</td>
+                <td>16</td>
+                <td>0</td>
+                <td>24</td>
+                <td>6</td>
+                <td class="right" data-ratio="38 64">59%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__line_execution_process_pool_py.html">src/promptflow/promptflow/executor/_line_execution_process_pool.py</a></td>
+                <td>162</td>
+                <td>49</td>
+                <td>0</td>
+                <td>32</td>
+                <td>3</td>
+                <td class="right" data-ratio="128 194">66%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__result_py.html">src/promptflow/promptflow/executor/_result.py</a></td>
+                <td>78</td>
+                <td>2</td>
+                <td>0</td>
+                <td>38</td>
+                <td>3</td>
+                <td class="right" data-ratio="111 116">96%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f__tool_resolver_py.html">src/promptflow/promptflow/executor/_tool_resolver.py</a></td>
+                <td>167</td>
+                <td>19</td>
+                <td>0</td>
+                <td>67</td>
+                <td>18</td>
+                <td class="right" data-ratio="197 234">84%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f_flow_executor_py.html">src/promptflow/promptflow/executor/flow_executor.py</a></td>
+                <td>495</td>
+                <td>112</td>
+                <td>0</td>
+                <td>231</td>
+                <td>33</td>
+                <td class="right" data-ratio="547 726">75%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f_flow_validator_py.html">src/promptflow/promptflow/executor/flow_validator.py</a></td>
+                <td>104</td>
+                <td>3</td>
+                <td>0</td>
+                <td>65</td>
+                <td>3</td>
+                <td class="right" data-ratio="163 169">96%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_869857c801862e2f_tool_invoker_py.html">src/promptflow/promptflow/executor/tool_invoker.py</a></td>
+                <td>11</td>
+                <td>1</td>
+                <td>0</td>
+                <td>4</td>
+                <td>1</td>
+                <td class="right" data-ratio="13 15">87%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e3b9dc3864b99030___init___py.html">src/promptflow/promptflow/integrations/__init__.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_e3b9dc3864b99030_langchain_py.html">src/promptflow/promptflow/integrations/langchain.py</a></td>
+                <td>61</td>
+                <td>37</td>
+                <td>0</td>
+                <td>8</td>
+                <td>0</td>
+                <td class="right" data-ratio="24 69">35%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_87bb09dbc20ee6f2___init___py.html">src/promptflow/promptflow/storage/__init__.py</a></td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="2 2">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_87bb09dbc20ee6f2__errors_py.html">src/promptflow/promptflow/storage/_errors.py</a></td>
+                <td>4</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="4 4">100%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_87bb09dbc20ee6f2_cache_storage_py.html">src/promptflow/promptflow/storage/cache_storage.py</a></td>
+                <td>37</td>
+                <td>8</td>
+                <td>0</td>
+                <td>6</td>
+                <td>0</td>
+                <td class="right" data-ratio="33 43">77%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_87bb09dbc20ee6f2_common_py.html">src/promptflow/promptflow/storage/common.py</a></td>
+                <td>12</td>
+                <td>12</td>
+                <td>0</td>
+                <td>6</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 18">0%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_87bb09dbc20ee6f2_run_storage_py.html">src/promptflow/promptflow/storage/run_storage.py</a></td>
+                <td>12</td>
+                <td>2</td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                <td class="right" data-ratio="10 12">83%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_87bb09dbc20ee6f2_sqlite_client_py.html">src/promptflow/promptflow/storage/sqlite_client.py</a></td>
+                <td>94</td>
+                <td>63</td>
+                <td>0</td>
+                <td>40</td>
+                <td>0</td>
+                <td class="right" data-ratio="31 134">23%</td>
+            </tr>
+            <tr class="file">
+                <td class="name left"><a href="d_2643392149bea4d8___init___py.html">src/promptflow/promptflow/utils/__init__.py</a></td>
+                <td>13</td>
+                <td>13</td>
+                <td>0</td>
+                <td>2</td>
+                <td>0</td>
+                <td class="right" data-ratio="0 15">0%</td>
+            </tr>
+        </tbody>
+    </table>
+    <p id="no_rows">
+        No items found using the specified filter.
+    </p>
+</div>
+<div id="footer">
+    <div class="content">
+        <p>
+            <a class="nav" href="https://coverage.readthedocs.io">coverage.py v6.0.1</a>,
+            created at 2023-08-25 10:10 +0000
+        </p>
+    </div>
+</div>
+</body>
+</html>
