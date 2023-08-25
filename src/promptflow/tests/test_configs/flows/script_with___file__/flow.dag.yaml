@@ -1,0 +1,29 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output_prompt:
+    type: string
+    reference: ${node1.output}
+nodes:
+- name: node1
+  type: python
+  source:
+    type: code
+    path: script_with___file__.py
+  inputs:
+    input1: ${inputs.text}
+- name: node2
+  type: python
+  source:
+    type: code
+    path: folder/another-tool.py
+  inputs:
+    input1: ${node1.output}
+- name: node3
+  type: python
+  source:
+    type: code
+    path: folder/another-tool.py
+  inputs:
+    input1: random value

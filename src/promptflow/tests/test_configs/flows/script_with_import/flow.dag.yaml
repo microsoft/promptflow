@@ -1,0 +1,15 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${node1.output}
+nodes:
+- name: node1
+  type: python
+  source:
+    type: code
+    path: dummy_utils/main.py
+  inputs:
+    x: ${inputs.text}

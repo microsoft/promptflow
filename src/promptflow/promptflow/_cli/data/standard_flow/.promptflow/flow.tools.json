@@ -1,0 +1,26 @@
+{
+    "package": {},
+    "code": {
+        "hello.jinja2": {
+            "type": "prompt",
+            "inputs": {
+                "text": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            }
+        },
+        "hello.py": {
+            "type": "python",
+            "inputs": {
+                "input1": {
+                    "type": [
+                        "string"
+                    ]
+                }
+            },
+            "function": "my_python_tool"
+        }
+    }
+}

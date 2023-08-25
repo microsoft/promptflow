@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local Server Test App</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      #root {
+        height: 100%;
+        width: 100%;
+        display: flex;
+      }
+    </style>
+    <script type="module" crossorigin src="/static/index-af571bfb.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      const time = new Date().toISOString();
+      const now = performance.now();
+      console.log("[perf " + time + " " + now + "]" + " load script start");
+    </script>
+  </body>
+</html>

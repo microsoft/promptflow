@@ -1,0 +1,7 @@
+[run]
+omit =
+    */promptflow/_cli/*
+    */promptflow/_sdk/*
+    */promptflow/azure/*
+    */promptflow/entities/*
+    */promptflow/operations/*

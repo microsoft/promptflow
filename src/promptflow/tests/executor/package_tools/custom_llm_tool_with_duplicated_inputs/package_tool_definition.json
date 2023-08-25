@@ -1,0 +1,15 @@
+{
+    "custom_llm_tool.TestCustomLLMTool.call": {
+        "class_name": "TestCustomLLMTool",
+        "function": "call",
+        "inputs": {
+            "connection": {"type": ["AzureOpenAIConnection"]},
+            "api": {"type": ["string"]},
+            "template": {"type": ["PromptTemplate"]}
+        },
+        "module": "custom_llm_tool",
+        "name": "Test Custom LLM Tool",
+        "description": "Test Custom LLM Tool",
+        "type": "python"
+    }
+}
