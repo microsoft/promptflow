@@ -222,27 +222,6 @@ class TestFlowRun:
         # error info will store in run dict
         assert "error" in run._to_dict()
 
-    @pytest.mark.skip(reason="visualize for cloud run will be deprecated, skip it for now.")
-    def test_visualize(self, remote_client, pf, runtime) -> None:
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        run1 = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=data_path,
-            column_mapping={"url": "${data.url}"},
-            variant="${summarize_text_content.variant_0}",
-            runtime=runtime,
-        )
-        remote_client.runs.stream(run=run1.name)
-        run2 = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-            data=data_path,
-            run=run1,
-            column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-            runtime=runtime,
-        )
-        remote_client.runs.stream(run=run2.name)
-        remote_client.runs.visualize([run1, run2])
-
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification_with_additional_include",

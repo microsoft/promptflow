@@ -1,5 +1,6 @@
 import os
 import sys
+from typing import List
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -7,6 +8,7 @@ import pytest
 from pytest_mock import MockFixture
 
 from promptflow._cli._pf_azure.entry import main
+from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
 from promptflow.azure.operations._run_operations import RunOperations
 
 
@@ -131,3 +133,29 @@ class TestAzureCli:
             "--include-archived",
         )
         assert mocked.call_count == 3
+
+    def test_run_visualize(
+        self,
+        default_subscription_id: str,
+        default_resource_group: str,
+        default_workspace: str,
+        operation_scope_args: List[str],
+        capfd: pytest.CaptureFixture,
+    ) -> None:
+        # cloud version visualize is actually a string concatenation
+        names = "name1,name2,name3"
+        run_pf_command(
+            "run",
+            "visualize",
+            "--names",
+            names,
+            *operation_scope_args,
+        )
+        captured = capfd.readouterr()
+        expected_portal_url = VIS_PORTAL_URL_TMPL.format(
+            subscription_id=default_subscription_id,
+            resource_group_name=default_resource_group,
+            workspace_name=default_workspace,
+            names=names,
+        )
+        assert expected_portal_url in captured.out

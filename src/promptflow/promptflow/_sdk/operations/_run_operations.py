@@ -228,7 +228,7 @@ class RunOperations:
             details.append(copy.deepcopy(detail))
             metadatas.append(asdict(metadata))
         data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
-        html_string = generate_html_string(asdict(data_for_visualize), is_cloud=False)
+        html_string = generate_html_string(asdict(data_for_visualize))
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)
 
