@@ -1,0 +1,12 @@
+examples:
+- examples/*
+documentation:
+- docs/*
+sdk_cli:
+- src/promptflow/promptflow/_cli/*
+- src/promptflow/promptflow/_sdk/*
+- src/promptflow/promptflow/azure/*
+promptflow:
+- src/promptflow/*
+promptflow-tools:
+- src/promptflow-tools/*
