@@ -235,4 +235,4 @@ TODO add screenshot
 
 ## Next steps
 
-- Flow bulk test
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
