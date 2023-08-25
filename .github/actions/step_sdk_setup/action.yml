@@ -22,8 +22,9 @@ runs:
     run: |-
       conda activate release-env
       python ./setup.py bdist_wheel
+      cd dist
       package=$(ls | grep '.whl')
-      pip install '$package'
+      eval "pip install '$package'"
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
