@@ -558,6 +558,7 @@ class CustomConnection(_Connection):
             logger.warning("Please use connection.configs[key] to access configs.")
             return self.configs[item]
         return super().__getattribute__(item)
+
     def is_secret(self, item):
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
         return item in self.secrets
