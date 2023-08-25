@@ -8,7 +8,7 @@ from promptflow import tool
 from azure_open_ai import ChatLLM
 from divider import Divider
 from prompt import docstring_prompt, PromptLimitException
-from promptflow.connections import CustomConnection, AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection
 
 
 def get_imports(content):
