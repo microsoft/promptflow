@@ -1,4 +1,5 @@
 from pathlib import Path
+from types import GeneratorType
 
 import pytest
 
@@ -29,6 +30,13 @@ class TestFlowTest:
 
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
+
+    def test_pf_test_with_streaming_output(self):
+        flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
+        result = _client.test(flow=flow_path)
+        chat_output = result["answer"]
+        assert isinstance(chat_output, GeneratorType)
+        assert "".join(chat_output)
 
     def test_pf_test_node(self):
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}

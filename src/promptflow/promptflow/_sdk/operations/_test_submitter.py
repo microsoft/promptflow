@@ -137,7 +137,7 @@ class TestSubmitter:
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(log_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log").setup_logger(stream=stream):
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream):
             flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
             line_result = flow_executor.exec_line(inputs, index=0)
             if line_result.aggregation_inputs:
@@ -161,7 +161,7 @@ class TestSubmitter:
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(log_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log").setup_logger(stream=False):
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=False):
             flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
             # TODO modify to call the method in the flow server
             flow_executor._run_tracker.allow_generator_types = True
@@ -184,9 +184,7 @@ class TestSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(log_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log").setup_logger(
-            stream=stream
-        ):
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -326,6 +324,19 @@ class TestSubmitter:
             chat_history.append(history)
             flow_result = resolve_generator(flow_result, flow_outputs, node_outputs)
             self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
+
+    def _get_streaming_nodes(self):
+        """Get streaming node that is llm node and the node output is only referenced by flow output."""
+        # TODO remove it after executor exposing this method.
+        streaming_nodes = []
+        for node in self.dataplane_flow.nodes:
+            if (
+                self.dataplane_flow.is_llm_node(node)
+                and self.dataplane_flow.is_referenced_by_flow_output(node)
+                and not self.dataplane_flow.is_referenced_by_other_node(node)
+            ):
+                streaming_nodes.append(node)
+        return streaming_nodes
 
     @staticmethod
     def _dump_result(flow_folder, prefix, flow_result=None, node_result=None):

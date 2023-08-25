@@ -1,12 +1,12 @@
 from pathlib import Path
 from promptflow import tool
 
-if not Path("summarize_text_content.jinja2").exists():
-    raise Exception("Cannot find summarize_text_content.jinja2")
-
 
 @tool
 def prepare_examples():
+    if not Path("summarize_text_content.jinja2").exists():
+        raise Exception("Cannot find summarize_text_content.jinja2")
+
     return [
         {
             "url": "https://play.google.com/store/apps/details?id=com.spotify.music",

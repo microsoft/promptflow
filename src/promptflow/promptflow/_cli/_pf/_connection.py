@@ -228,11 +228,6 @@ def delete_connection(name):
 
 
 def dispatch_connection_commands(args: argparse.Namespace):
-    # --verbose and --debug, enable debug logging
-    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
-        for handler in logging.getLogger(LOGGER_NAME).handlers:
-            handler.setLevel(logging.DEBUG)
-
     if args.sub_action == "create":
         create_connection(args.file, args.params_override, args.name)
     elif args.sub_action == "show":

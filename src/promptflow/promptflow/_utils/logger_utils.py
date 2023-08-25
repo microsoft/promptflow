@@ -252,7 +252,7 @@ class LogContext:
 
     def _set_credential_list(self):
         # Set credential list to all loggers.
-        all_logger_list = [logger, flow_logger, bulk_logger]
+        all_logger_list = self._get_execute_loggers_list()
         if self.input_logger:
             all_logger_list.append(self.input_logger)
         credential_list = self.credential_list or []
@@ -275,6 +275,11 @@ class LogContext:
         else:
             logger_list.append(flow_logger)
         return logger_list
+
+    @classmethod
+    def _get_execute_loggers_list(cls) -> List[logging.Logger]:
+        # return all loggers for executor
+        return [logger, flow_logger, bulk_logger]
 
 
 def update_log_path(log_path: str, input_logger: logging.Logger = None):

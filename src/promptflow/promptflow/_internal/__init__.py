@@ -92,4 +92,4 @@ from promptflow._utils.utils import (
     transpose,
 )
 from promptflow._version import VERSION
-from promptflow.executor._errors import InputNotFound, InputNotFoundInInputsMapping
+from promptflow.executor._errors import InputNotFound

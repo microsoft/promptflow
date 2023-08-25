@@ -53,15 +53,16 @@ def add_flow_parser(subparsers):
 
 
 def dispatch_flow_commands(args: argparse.Namespace):
-    # --verbose and --debug, enable debug logging
-    if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
-        for handler in logging.getLogger(LOGGER_NAME).handlers:
-            handler.setLevel(logging.DEBUG)
     if args.sub_action == "init":
         init_flow(args)
     elif args.sub_action == "test":
         test_flow(args)
     elif args.sub_action == "serve":
+        if (hasattr(args, "verbose") and args.verbose) or (hasattr(args, "debug") and args.debug):
+            pass
+        else:
+            for handler in logging.getLogger(LOGGER_NAME).handlers:
+                handler.setLevel(logging.INFO)
         serve_flow(args)
     elif args.sub_action == "export":
         export_flow(args)
@@ -195,7 +196,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
 
 def init_flow(args):
     if any([args.entry, args.prompt_template]):
-        logger.info("Creating flow from existing folder...")
+        print("Creating flow from existing folder...")
         prompt_tpl = {}
         if args.prompt_template:
             for _dct in args.prompt_template:
@@ -203,7 +204,7 @@ def init_flow(args):
         _init_existing_flow(args.flow, args.entry, args.function, prompt_tpl)
     else:
         # Create an example flow
-        logger.info("Creating flow from scratch...")
+        print("Creating flow from scratch...")
         _init_flow_by_template(args.flow, args.type, args.yes)
 
 
@@ -215,7 +216,7 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     if not flow_path.exists():
         logger.error(f"{flow_path.resolve()} must exist when --entry specified.")
         return
-    logger.info(f"Change working directory to .. {flow_path.resolve()}")
+    print(f"Change working directory to .. {flow_path.resolve()}")
     os.chdir(flow_path)
     entry = Path(entry).resolve()
     if not entry.exists():
@@ -242,7 +243,7 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     # Create flow.dag.yaml
     FlowDAGGenerator(tool_py, function, function_obj, prompt_params).generate_to_file("flow.dag.yaml")
     copy_extra_files(flow_path=flow_path, extra_files=[".gitignore"])
-    logger.info(f"Done. Generated flow in folder: {flow_path.resolve()}.")
+    print(f"Done. Generated flow in folder: {flow_path.resolve()}.")
 
 
 def _init_flow_by_template(flow_name, flow_type, overwrite=False):
@@ -257,7 +258,7 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
             else confirm("The flow folder already exists, do you want to create the flow in this existing folder?")
         )
         if not answer:
-            logger.info("The 'pf init' command has been cancelled.")
+            print("The 'pf init' command has been cancelled.")
             return
     flow_path.mkdir(parents=True, exist_ok=True)
     example_flow_path = Path(__file__).parent.parent / "data" / f"{flow_type}_flow"
@@ -265,17 +266,17 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
         target = flow_path / item.name
         action = "Overwriting" if target.exists() else "Creating"
         if item.is_file():
-            logger.info(f"{action} {item.name}...")
+            print(f"{action} {item.name}...")
             shutil.copy2(item, target)
         else:
-            logger.info(f"{action} {item.name} folder...")
+            print(f"{action} {item.name} folder...")
             shutil.copytree(item, target, dirs_exist_ok=True)
     copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
 
-    logger.info(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
+    print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
     flow_test_args = "--interactive" if flow_type == "chat" else f"--input {os.path.join(flow_name, 'data.jsonl')}"
     flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
-    logger.info(f"You can execute this command to test the flow, {flow_test_command}")
+    print(f"You can execute this command to test the flow, {flow_test_command}")
 
 
 @exception_handler("Flow test")
@@ -315,6 +316,7 @@ def test_flow(args):
             environment_variables=environment_variables,
             variant=args.variant,
             node=args.node,
+            streaming_output=False,
         )
         # Dump flow/node test info
         flow = load_flow(args.flow)
@@ -365,14 +367,13 @@ def serve_flow(args):
 
 
 def export_flow(args):
-    from promptflow._sdk._load_functions import load_flow
-    from promptflow._sdk.entities._flow import FlowProtected
+    pf_client = PFClient()
 
-    flow = load_flow(source=args.source)
-    flow.__class__ = FlowProtected
-    flow.export(
+    pf_client.flows.export(
+        flow=args.source,
         output=args.output,
         format=args.format,
+        variant=args.variant,
     )
     print(
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"

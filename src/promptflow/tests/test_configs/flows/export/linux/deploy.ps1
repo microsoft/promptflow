@@ -28,7 +28,7 @@ PS> .\deploy.ps1 -i <image_tag> -r <registry> -n <app_name> -g <resource_group> 
 param(
     [Alias("i", "image_tag")][string]$ImageTag,
     [Alias("r")][string]$Registry,
-    [Alias("n")][string]$Name = "intent-copilot95f364",
+    [Alias("n")][string]$Name = "intent-copilot-dummy1",
     [Alias("l")][string]$Location = "eastus",
     [string]$Sku = "F1",
     [Alias("g", "resource_group")][string]$ResourceGroup,
@@ -124,7 +124,6 @@ function Invoke-Expression-And-Check{
         exit $LASTEXITCODE
     }
 }
-
 # Check and create resource group if not exist
 $Result = (az group exists --name $ResourceGroup)
 if ($Result -eq "false") {

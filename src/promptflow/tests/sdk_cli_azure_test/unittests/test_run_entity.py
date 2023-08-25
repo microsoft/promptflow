@@ -54,7 +54,3 @@ class TestRun:
         run = Run(flow=flow_path, data=data_path, column_mapping="str")
         with pytest.raises(UserErrorException):
             run._to_rest_object()
-
-        from promptflow.executor._errors import InputNotFoundInInputsMapping
-
-        InputNotFoundInInputsMapping

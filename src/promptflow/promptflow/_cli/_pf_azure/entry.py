@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import argparse
+import logging
 import sys
 import timeit
 
@@ -14,7 +15,7 @@ from promptflow._sdk._utils import get_promptflow_sdk_version
 start_time = timeit.default_timer()
 
 # configure logger for CLI
-logger = LoggerFactory.get_logger(name=LOGGER_NAME)
+logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
 def entry(argv):
@@ -40,6 +41,14 @@ def entry(argv):
     # Log the init finish time
     init_finish_time = timeit.default_timer()
     try:
+        # --verbose, enable info logging
+        if hasattr(args, "verbose") and args.verbose:
+            for handler in logging.getLogger(LOGGER_NAME).handlers:
+                handler.setLevel(logging.INFO)
+        # --debug, enable debug logging
+        if hasattr(args, "debug") and args.debug:
+            for handler in logging.getLogger(LOGGER_NAME).handlers:
+                handler.setLevel(logging.DEBUG)
         if args.version:
             print(get_promptflow_sdk_version())
         elif args.action == "run":
@@ -57,7 +66,7 @@ def entry(argv):
     finally:
         # Log the invoke finish time
         invoke_finish_time = timeit.default_timer()
-        logger.debug(
+        logger.info(
             "Command ran in %.3f seconds (init: %.3f, invoke: %.3f)",
             invoke_finish_time - start_time,
             init_finish_time - start_time,
