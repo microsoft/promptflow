@@ -19,6 +19,3 @@ keyrings.alt
 promptflow-tools==0.1.0b4
 
 beautifulsoup4==4.12.2
-
-# Note: For test pass
-langchain==0.0.149
