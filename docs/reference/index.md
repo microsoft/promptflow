@@ -10,6 +10,13 @@ pfazure-command-reference.md
 ```
 
 ```{toctree}
+:caption: Python Library Reference
+:maxdepth: 1
+
+python-library-reference/promptflow
+```
+
+```{toctree}
 :caption: Tool Reference
 :maxdepth: 1
 
