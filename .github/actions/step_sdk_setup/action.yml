@@ -22,7 +22,8 @@ runs:
     run: |-
       conda activate release-env
       python ./setup.py bdist_wheel
-      pip install './dist/promptflow_tools-0.0.1-py3-none-any.whl'
+      package=$(ls | grep '.whl')
+      pip install '$package'
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
