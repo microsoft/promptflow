@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import abc
 import json
-from builtins import _dict_items
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Union
@@ -96,8 +95,16 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
-    def items(self) -> _dict_items:
-        return {**self.configs, **self.secrets}.items()
+    def keys(self):
+        return list(self.configs.keys()) + list(self.secrets.keys())
+
+    def __getitem__(self, item):
+        # Note: This is added to allow usage **connection().
+        if item in self.secrets:
+            return self.secrets[item]
+        if item in self.configs:
+            return self.configs[item]
+        raise KeyError(f"Key {item!r} not found in connection {self.name!r}.")
 
     @classmethod
     def _is_scrubbed_value(cls, value):

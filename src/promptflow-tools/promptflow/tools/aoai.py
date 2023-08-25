@@ -13,13 +13,13 @@ class AzureOpenAI(ToolProvider):
     def __init__(self, connection: AzureOpenAIConnection):
         super().__init__()
         self.connection = connection
-        self._connection_dict = dict(self.connection.items())
+        self._connection_dict = {**self.connection}
 
     def calculate_cache_string_for_completion(
         self,
         **kwargs,
     ) -> str:
-        d = dict(self.connection.items())
+        d = {**self.connection}
         d.pop("api_key")
         d.update({**kwargs})
         return json.dumps(d)

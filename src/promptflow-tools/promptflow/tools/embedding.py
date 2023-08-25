@@ -19,7 +19,7 @@ class EmbeddingModel(str, Enum):
 @handle_openai_error()
 def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input: str, deployment_name: str = "",
               model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
-    connection_dict = dict(connection.items())
+    connection_dict = {**connection}
     if isinstance(connection, AzureOpenAIConnection):
         return openai.Embedding.create(
             input=input,
