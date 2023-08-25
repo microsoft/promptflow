@@ -126,6 +126,7 @@ class ToolSource:
 class ActivateCondition:
     condition: InputAssignment
     condition_value: Any
+
     @staticmethod
     def deserialize(data: dict) -> "ActivateCondition":
         result = ActivateCondition(
