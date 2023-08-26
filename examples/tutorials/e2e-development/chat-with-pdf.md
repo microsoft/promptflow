@@ -111,12 +111,15 @@ Several libraries are used in this step to build index:
 1. PyPDF2 for extraction of text from the PDF file.
 2. OpenAI python library for generating embeddings.
 3. The FAISS library is utilized to build a vector index and save it to a file. It's important to note that an additional dictionary is used to maintain the mapping from the vector index to the actual text snippet. This is because when we later attempt to query for the most relevant context, we need to locate the text snippets, not just the embedding or vector.
+The environment variables used in this step:
+- OPENAI_API_* and EMBEDDING_MODEL_DEPLOYMENT_NAME: to access the Azure OpenAI embedding model
+- CHUNK_SIZE and CHUNK_OVERLAP: controls how to split the PDF file into chunks for embedding
    
 #### Rewrite question: [rewrite_question.py](../../flows/chat/chat-with-pdf/chat_with_pdf/rewrite_question.py)
 This step is to use ChatGPT/GPT4 to rewrite the question to be better fit for finding relevant context from the vector index. The prompt file [rewrite_question.md](../../flows/chat/chat-with-pdf/chat_with_pdf/rewrite_question_prompt.md) should give you a better idea how it works. 
 
 #### Find context: [find_context.py](../../flows/chat/chat-with-pdf/chat_with_pdf/find_context.py)
-In this step we load the FAISS index and the dict that were built in the "build index" step. We then turn the question into a vector using the same embedding function in the build index step. There is a small trick in this step to make sure the context will not exceed the token limit of model input prompt ([aoai model max request tokens](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models), OpenAI has similar limit). The output of this step is the final prompt that QnA step will send to the chat model.
+In this step we load the FAISS index and the dict that were built in the "build index" step. We then turn the question into a vector using the same embedding function in the build index step. There is a small trick in this step to make sure the context will not exceed the token limit of model input prompt ([aoai model max request tokens](https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models), OpenAI has similar limit). The output of this step is the final prompt that QnA step will send to the chat model. The PROMPT_TOKEN_LIMIT environment variable decides how big the context is.
 
 #### QnA: [qna.py](../../flows/chat/chat-with-pdf/chat_with_pdf/qna.py)
 Use OpenAI's ChatGPT or GPT4 model and ChatCompletion API to get an answer with the previous conversation history and context from PDF.
@@ -156,9 +159,10 @@ def build_index_tool(pdf_path: str) -> str:
     return create_faiss_index(pdf_path)
 ```
 
-The setup_env node requires some explanation: you might recall that we use environment to manage different configurations including OpenAI API key in the console chatbot, in prompt flow we use [Connection]() to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables, so that the core code of chatbot can work as-is.
+The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection]() to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
 
 The flow looks like:
+
 <img src="../../flows/chat/chat-with-pdf/assets/multi-node-flow-chat-with-pdf.png" width="500" alt="chat with pdf flow, multi-node"/>
 
 ## Prompt flow evaluations
@@ -214,11 +218,11 @@ The output will include something like below:
 }
 ```
 
-And we developed two evaluation flows one for "[groundedness](../../flows/evaluation/eval-groundedness/)" and one for "[perceived intelligence](../../flows/evaluation/eval-perceived-intelligence/)". Reading the prompts will give you better idea what are these two metrics:
+And we developed two evaluation flows one for "[groundedness](../../flows/evaluation/eval-groundedness/)" and one for "[perceived intelligence](../../flows/evaluation/eval-perceived-intelligence/)". These two flows are using GPT models (ChatGPT or GPT4) to "grade" the answers. Reading the prompts will give you better idea what are these two metrics:
 - [groundedness prompt](../../flows/evaluation/eval-groundedness/gpt_groundedness.md)
 - [perceived intelligence prompt](../../flows/evaluation/eval-perceived-intelligence/gpt_perceived_intelligence.md)
 
-Evaluation is also a batch run - batch run of evaluation flow with the previous run as input.
+Conceptually evaluation is also a batch run - batch run of evaluation flow with the previous run as input.
 
 **eval_run.yaml:**
 ```yaml
