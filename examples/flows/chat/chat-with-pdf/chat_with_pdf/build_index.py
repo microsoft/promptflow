@@ -9,13 +9,13 @@ from utils.lock import acquire_lock
 
 
 def create_faiss_index(pdf_path: str) -> str:
-    index_persistent_path = ".index/" + pdf_path + ".index"
-    lock_path = index_persistent_path + ".lock"
-    log("Index path: " + os.path.abspath(index_persistent_path))
-
     chunk_size = int(os.environ.get("CHUNK_SIZE"))
     chunk_overlap = int(os.environ.get("CHUNK_OVERLAP"))
     log(f"Chunk size: {chunk_size}, chunk overlap: {chunk_overlap}")
+
+    index_persistent_path = ".index/" + pdf_path + f".index_{chunk_size}_{chunk_overlap}"
+    lock_path = index_persistent_path + ".lock"
+    log("Index path: " + os.path.abspath(index_persistent_path))
 
     with acquire_lock(lock_path):
         if os.path.exists(os.path.join(index_persistent_path, "index.faiss")):
