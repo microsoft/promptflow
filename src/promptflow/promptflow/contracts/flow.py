@@ -15,7 +15,7 @@ from promptflow.exceptions import ErrorTarget
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import ConditionConflictError, FailedToImportModule
+from ._errors import NodeConditionConflictError, FailedToImportModule
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -201,7 +201,7 @@ class Node:
         if "activate" in data:
             node.activate = ActivateCondition.deserialize(data["activate"])
         if node.skip and node.activate:
-            raise ConditionConflictError(f"Node {node.name} can't have both skip and activate condition.")
+            raise NodeConditionConflictError(f"Node {node.name} can't have both skip and activate condition.")
 
         return node
 
