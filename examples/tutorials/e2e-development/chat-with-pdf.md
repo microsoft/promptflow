@@ -195,7 +195,7 @@ column_mapping:
 ```
 **CLI**
 ```bash
-run_name="web_classification_"$(openssl rand -hex 12)
+run_name="chat_with_pdf_"$(openssl rand -hex 12)
 pf run create --file batch_run.yaml --stream --name $run_name
 ```
 
@@ -249,14 +249,14 @@ pf run visualize --name $eval_run_name
 ```
 
 ## Experimentation!!
-Now we've seen how to run tests/evaluations for prompt flow. And we have two metrics defined to measure the quality of our chat_with_pdf flow. We can try different settings/configurations and run the evaluations, and then compare the metrics to decide a best configuration for production deployment.
+We have now explored how to conduct tests and evaluations for prompt flow. Additionally, we have defined two metrics to gauge the performance of our chat_with_pdf flow. By trying out various settings and configurations, running evaluations, and then comparing the metrics, we can determine the optimal configuration for production deployment.
 
-A few things we can try (but not limited to):
-1. Different prompts for the rewrite_question and/or qna steps
-2. Different chunk size or chunk overlap in index building
-3. Different context limit
+There are several aspects we can experiment with, including but not limited to:
 
-These can be controlled through the "config" object in the flow inputs. If you want to experiment with #1 (different prompts) you can add properties to the config object to control that behavior - just pointing to different prompt file(s).
+Varying prompts for the rewrite_question and/or QnA steps.
+Adjusting the chunk size or chunk overlap during index building.
+Modifying the context limit.
+These elements can be managed through the "config" object in the flow inputs. If you wish to experiment with the first point (varying prompts), you can add properties to the config object to control this behavior - simply by directing it to different prompt files.
 
 Take a look at how we experiment with #3 in below test: [test_eval in tests/chat_with_pdf_test.py](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py). This test will create 6 runs in total:
 
@@ -269,7 +269,7 @@ Take a look at how we experiment with #3 in below test: [test_eval in tests/chat
 
 As you can probably tell through the names: run #3 and #4 generate metrics for run #1, run #5 and #6 generate metrics for run #2. You can compare these metrics to decide which performs better - 2K context or 3K context.
 
-NOTE: [azure_chat_with_pdf_test](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py) does the same tests but using Azure ML as backend, so you can see all the runs in a nice web portal where you can see logs and metrics comparison etc. 
+NOTE: [azure_chat_with_pdf_test](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py) does the same tests but using Azure AI as backend, so you can see all the runs in a nice web portal with all the logs and metrics comparison etc. 
 
 
 Further reading:
