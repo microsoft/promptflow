@@ -63,13 +63,7 @@ To check in your flow into your code  repository, you can easily export the flow
 
 ![Export flow folder](../media/integrate-with-llmapp-devops/flow_export.png)
 
-Additionally, you can access your workspace file system through the Azure Machine Learning notebook. Within the notebook, you can [access the compute instance terminal](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-access-terminal?view=azureml-api-2) and navigate to the ```Users/<username>/promptflow``` directory, where your flows are stored.
-
-![Compute instance](../media/integrate-with-llmapp-devops/ci_terminal_checkin.png)
-
-In the terminal, you can utilize the ```git``` command to initialize a git repository, clone your existing git repository, and push the flow folder to your code repository.
-
-For more details, you can refer to [Git integration in Azure machine learning](https://learn.microsoft.com/en-us/azure/machine-learning/concept-train-model-git-integration?view=azureml-api-2&tabs=python).
+Additionally, you can refer to [Git integration in Azure machine learning](https://learn.microsoft.com/en-us/azure/machine-learning/concept-train-model-git-integration?view=azureml-api-2&tabs=python) for more details on DevOps integration with Azure Machine Learning.
 
 ## Submitting runs to the cloud from local repository
 
@@ -449,11 +443,20 @@ In addition, if you prefer continuing to work in the Studio UI, you can directly
 
 ## CI/CD integration
 
-### Trigger flow runs in CI pipeline
+### CI: Trigger flow runs in CI pipeline
 
-@Abe to integrate example here, CI/CD in ADO and Github.
+Once you have successfully developed and tested your flow, and checked it in as the initial version, you're ready for the next tuning and testing iteration. At this stage, you can trigger flow runs, including batch testing and evaluation runs, using the Prompt Flow CLI. This could serve as an automated workflow in your Continuous Integration (CI) pipeline.
 
-### Continuous deployment
+Throughout the lifecycle of your flow iterations, several operations can be automated:
+
+* Running Prompt flow after a Pull Request
+* Running Prompt flow evaluation to ensure results are high quality
+* Registering of prompt flow models
+* Deployment of prompt flow models
+
+For a comprehensive guide on an end-to-end MLOps pipeline that executes a web classification flow, you can refer to  [Set up e2e LLMOps with Promptflow and GitHub](../go-to-production/e2e_llmops_with_promptflow.md).
+
+### CD: Continuous deployment
 
 The last step to go to production, is to deploy your flow as an online endpoint in Azure Machine Learning. This allows you to integrate your flow into your application and make it available for use.
 
