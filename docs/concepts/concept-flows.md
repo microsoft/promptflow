@@ -1,22 +1,27 @@
-In prompt flow, users have the capability to develop a LLM-based AI application by engaging in the stages of developing, testing, tuning, and deploying a flow. This comprehensive workflow allows users to harness the power of Large Language Models (LLMs) and create sophisticated AI applications with ease.
+While how LLMs work may be elusive to many developers, how LLM apps work is not - they essentially involve a series of calls to external services such as LLMs/databases/search engines, or intermedidate data processing, all glued together. Thus LLM apps are merely Directed Acyclic Graphs (DAGs) of function calls. These DAGs are flows in Prompt flow.
 
 # Flows
 
-A flow in prompt flow serves as an executable workflow that streamlines the development of your LLM-based AI application. It provides a comprehensive framework for managing data flow and processing within your application.
+A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by Prompt flow [executor]().
 
-Within a flow, nodes take center stage, representing specific tools with unique capabilities. These nodes handle data processing, task execution, and algorithmic operations, with inputs and outputs. By connecting nodes, you establish a seamless chain of operations that guides the flow of data through your application.
+A flow is represented as a YAML file and can be visualized with our [Visual Studio Code extension](). Here are a few examples:
 
-To facilitate node configuration and fine-tuning, our user interface offers a notebook-like authoring experience. This intuitive interface allows you to effortlessly modify settings and edit code snippets within nodes. Additionally, a visual representation of the workflow structure is provided through a DAG (Directed Acyclic Graph) graph. This graph showcases the connectivity and dependencies between nodes, providing a clear overview of the entire workflow.
-
-With the flow feature in prompt flow, you have the power to design, customize, and optimize the logic of your AI application. The cohesive arrangement of nodes ensures efficient data processing and effective flow management, empowering you to create robust and advanced applications.
+//TODO: add two screenshot and YAML (links?), better side-by-side
 
 ## Flow types
 
-Prompt flow offers three different flow types to cater to various user scenarios:
+Prompt flow has three flow types:
 
-- **Standard flow**: Designed for general application development, the standard flow allows users to create a flow using a wide range of built-in tools for developing LLM-based applications. It provides flexibility and versatility for developing applications across different domains.
-- **Chat flow**: Specifically tailored for conversational application development, the Chat flow builds upon the capabilities of the standard flow and provides enhanced support for chat inputs/outputs and chat history management. With native conversation mode and built-in features, users can seamlessly develop and debug their applications within a conversational context.
-- **Evaluation flow**: Designed for evaluation scenarios, the evaluation flow enables users to create a flow that takes the outputs of previous flow runs as inputs. This flow type allows users to evaluate the performance of previous run results and output relevant metrics, facilitating the assessment and improvement of their models or applications.
+- **Standard flow** and **Chat flow**: these two are for you to develop your LLM application. The primary difference between the two lies in the additional support provided by the "Chat Flow" for chat applications. For instance, you can define chat_history, chat_input, and chat_output for your flow. The prompt flow, in turn, will offer a chat-like experience (including conversation history) during the development of the flow. Moreover, it also provides a sample chat application for deployment purposes.
+- **Evaluation flow** is for you to test/evaluate the quality of your LLM application (standard/chat flow). It usually run on the outputs of standard/chat flow, and compute some metrics that can be used to determine whether the standard/chat flow performs well. E.g. is the answer accurate? is the answer fact-based?
+
+## When to use standard flow vs. chat flow?
+
+As a general guideline, if you are building a chatbot that needs to maintain conversation history, try chat flow. In most other cases, standard flow should serve your needs.
+
+Our examples should also give you an idea when to use what:
+- [examples/flows/standard](../../examples/flows/standard/)
+- [examples/flows/chat](../../examples/flows/chat/)
 
 ## Next steps
 
