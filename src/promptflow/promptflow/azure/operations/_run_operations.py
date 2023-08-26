@@ -11,7 +11,6 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
-from pathlib import Path
 from typing import Any, Dict, List, Union
 
 import pandas as pd
@@ -40,6 +39,7 @@ from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
+from promptflow._utils.flow_utils import get_flow_session_id
 from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -532,13 +532,13 @@ class RunOperations(_ScopeDependentOperations):
         return flow.path
 
     def _get_session_id(self, flow):
-        flow = load_flow(flow)
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        return f"{user_alias}_{Path(flow.code).name}"
+        flow_id = get_flow_session_id(flow_dir=flow)
+        return f"{user_alias}_{flow_id}"
 
     def _get_child_runs_from_pfs(self, run_id: str):
         """Get the child runs from the PFS."""
@@ -656,26 +656,27 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path):
+    def _resolve_automatic_runtime(self, run, flow_path, session_id):
         logger.warning(
             f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
             "it may take a while to build run time and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
         runtime_name = "automatic"
-        session_id = self._get_session_id(flow=flow_path)
         self._resolve_session(run=run, session_id=session_id)
-        return runtime_name, session_id
+        return runtime_name
 
     def _resolve_runtime(self, run, flow_path, runtime):
         runtime = run._runtime or runtime
+        session_id = self._get_session_id(flow=flow_path)
 
         if runtime:
             if not isinstance(runtime, str):
                 raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-            return runtime, None
         else:
-            return self._resolve_automatic_runtime(run=run, flow_path=flow_path)
+            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id)
+
+        return runtime, session_id
 
     def _resolve_dependencies_in_parallel(self, run, runtime):
         flow_path = run.flow

@@ -14,6 +14,7 @@ from promptflow._sdk._constants import RunStatus
 from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
+from promptflow._utils.flow_utils import get_flow_session_id
 from promptflow.azure import PFClient
 from promptflow.azure.operations import RunOperations
 
@@ -271,7 +272,6 @@ class TestFlowRun:
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
-
                 mock_request.side_effect = ServiceResponseError(
                     "Connection aborted.",
                     error=ConnectionResetError(10054, "An existing connection was forcibly closed", None, 10054, None),
@@ -342,7 +342,9 @@ class TestFlowRun:
             assert body.max_idle_time_seconds is None
             return body
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(
@@ -496,4 +498,38 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
                 column_mapping={"key": {"value": "1"}},
                 runtime=runtime,
+            )
+
+    def test_flow_id_in_submission(self, remote_client, pf, runtime):
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+
+        flow_path = f"{FLOWS_DIR}/print_env_var"
+        flow_id = get_flow_session_id(flow_path)
+
+        def submit(*args, **kwargs):
+            body = kwargs.get("body", None)
+            # session id also contains alias
+            assert flow_id in body.session_id
+            return body
+
+        # flow session id is same with or without session creation
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # no runtime provided, will use automatic runtime
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                runtime=runtime,
+            )
+
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # no runtime provided, will use automatic runtime
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
             )

@@ -1,0 +1,40 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+
+exclude: '(^docs/)|flows|examples|scripts|src/promptflow/promptflow/azure/_restclient|src/promptflow/tests/test_configs|src/promptflow-tools'
+
+repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v3.2.0
+      hooks:
+          - id: trailing-whitespace
+          - id: end-of-file-fixer
+          - id: check-yaml
+          - id: check-json
+          - id: check-merge-conflict
+    - repo: https://github.com/psf/black
+      rev: 22.3.0 # Replace by any tag/version: https://github.com/psf/black/tags
+      hooks:
+          - id: black
+            language_version: python3 # Should be a command that runs python3.6+
+            args:
+                - "--line-length=120"
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v2.3.0
+      hooks:
+          - id: flake8
+    - repo: https://github.com/hadialqattan/pycln
+      rev: v2.1.2 # Possible releases: https://github.com/hadialqattan/pycln/tags
+      hooks:
+          - id: pycln
+            name: "Clean unused python imports"
+            args: [--config=setup.cfg]
+    - repo: https://github.com/pycqa/isort
+      rev: 5.12.0
+      hooks:
+        - id: isort
+          # stages: [commit]
+          name: isort-python
+          # Use black profile for isort to avoid conflicts
+          # see https://github.com/PyCQA/isort/issues/1518
+          args: ["--profile", "black", --line-length=120]
