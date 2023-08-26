@@ -15,9 +15,10 @@ param(
 )
 
 [string] $ScriptPath = $PSCommandPath | Split-Path -Parent
-[string] $DocPath = $ScriptPath | Split-Path -Parent | Split-Path -Parent
-$DocPath = [System.IO.Path]::Combine($DocPath, "docs")
+[string] $RepoRootPath = $ScriptPath | Split-Path -Parent | Split-Path -Parent
+[string] $DocPath = [System.IO.Path]::Combine($RepoRootPath, "docs")
 [string] $TempDocPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
+[string] $PkgSrcPath = [System.IO.Path]::Combine($RepoRootPath, "src\promptflow\promptflow")
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
 
 if (-not $SkipInstall){
@@ -55,6 +56,13 @@ Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
 ProcessFiles
 
+if(!$BuildLinkCheck){
+    # Only build ref doc when it's not link check
+    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, "reference\python-library-reference")
+    Remove-Item $RefDocPath -Recurse -Force
+    Write-Host "===============Build Promptflow Reference Doc==============="
+    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath"
+}
 
 
 Write-Host "===============Build Documentation with internal=${Internal}==============="
