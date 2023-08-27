@@ -1,10 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+from unittest.mock import MagicMock
 
 import pytest
 
+from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils._url_utils import BulkRunId, BulkRunURL
+from promptflow.exceptions import UserErrorException
 
 
 @pytest.mark.unittest
@@ -30,3 +33,8 @@ class TestUtils:
         assert flow_url.experiment_id == "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5"
         assert flow_url.flow_id == "0ab9d2dd-3bac-4b68-bb28-12af959b1165"
         assert flow_url.bulk_test_id == "715efeaf-b0b4-4778-b94a-2538152b8766"
+
+    def test_forbidden_new_caller(self):
+        with pytest.raises(UserErrorException) as e:
+            FlowServiceCaller(MagicMock(), MagicMock())
+        assert "_FlowServiceCallerFactory" in str(e.value)
