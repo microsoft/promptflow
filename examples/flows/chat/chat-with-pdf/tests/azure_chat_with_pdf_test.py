@@ -28,7 +28,7 @@ class TestChatWithPDFAzure(BaseTest):
         return super().tearDown()
 
     def test_bulk_run_chat_with_pdf(self):
-        run = self.create_chat_run(runtime=self.runtime)
+        run = self.create_chat_run(runtime=self.runtime, display_name="chat_with_pdf_batch_run")
         self.pf.stream(run)  # wait for completion
 
         self.assertEqual(run.status, "Completed")

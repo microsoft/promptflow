@@ -3,12 +3,12 @@ from jinja2 import Environment, FileSystemLoader
 import os
 
 from utils.index import FAISSIndex
-from utils.aoai import AOAIEmbedding, render_with_token_limit
+from utils.oai import OAIEmbedding, render_with_token_limit
 from utils.logging import log
 
 
 def find_context(question: str, index_path: str):
-    index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=AOAIEmbedding())
+    index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=OAIEmbedding())
     index.load(path=index_path)
     snippets = index.query(question, top_k=5)
 

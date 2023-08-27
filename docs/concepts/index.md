@@ -7,6 +7,6 @@ In this section, you will learn the basic concepts of prompt flow.
 
 concept-flows
 concept-tools
-concept-variants
 concept-connections
+concept-variants
 ```
