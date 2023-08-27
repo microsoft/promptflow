@@ -13,11 +13,11 @@ Prompt flow provides 3 basic tools:
 - Python: The Python tool enables you to write custom Python functions to perform various tasks, such as fetching web pages, processing intermediate data, calling third-party APIs, and more.
 - Prompt: The Prompt tool allows you to prepare a prompt as a string for more complex use cases or for use in conjunction with other prompt tools or python tools.
 
-# More tools
+## More tools
 
 // TODO: add links to vector db tools and cognitive services tools
 
-# Custom tools
+## Custom tools
 
 You can create your own tools that can be shared with your team or anyone in the world.
 // TODO: add link to custom tool doc

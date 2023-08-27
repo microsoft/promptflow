@@ -2,9 +2,9 @@ While how LLMs work may be elusive to many developers, how LLM apps work is not 
 
 # Flows
 
-A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by Prompt flow [executor]().
+A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by Prompt flow executor.
 
-A flow is represented as a YAML file and can be visualized with our [Visual Studio Code extension](). Here are a few examples:
+A flow is represented as a YAML file and can be visualized with our [Visual Studio Code extension](../changelog/vscode-extension-change-log.md). Here are a few examples:
 
 //TODO: add two screenshot and YAML (links?), better side-by-side
 
@@ -20,8 +20,8 @@ Prompt flow has three flow types:
 As a general guideline, if you are building a chatbot that needs to maintain conversation history, try chat flow. In most other cases, standard flow should serve your needs.
 
 Our examples should also give you an idea when to use what:
-- [examples/flows/standard](../../examples/flows/standard/)
-- [examples/flows/chat](../../examples/flows/chat/)
+- [examples/flows/standard](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard)
+- [examples/flows/chat](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat)
 
 ## Next steps
 
