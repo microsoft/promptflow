@@ -164,7 +164,7 @@ fi
 ```
 
 If you plan to use OpenAI instead you can use below instead:
-```bash
+```shell
 # create connection needed by flow
 if pf connection list | grep azure_open_ai_connection; then
     echo "open_ai_connection already exists"

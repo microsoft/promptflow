@@ -40,11 +40,17 @@ class OAI:
 
         # A few sanity checks
         if openai.api_type == "azure" and openai.api_base is None:
-            raise ValueError("OPENAI_API_BASE is not set in environment variables, this is required when api_type==azure")
+            raise ValueError(
+                "OPENAI_API_BASE is not set in environment variables, this is required when api_type==azure"
+            )
         if openai.api_type == "azure" and openai.api_version is None:
-            raise ValueError("OPENAI_API_VERSION is not set in environment variables, this is required when api_type==azure")
+            raise ValueError(
+                "OPENAI_API_VERSION is not set in environment variables, this is required when api_type==azure"
+            )
         if openai.api_type == "azure" and openai.api_key.startswith("sk-"):
-            raise ValueError("OPENAI_API_KEY should not start with sk- when api_type==azure, are you using the openai key by mistake?")
+            raise ValueError(
+                "OPENAI_API_KEY should not start with sk- when api_type==azure, are you using openai key by mistake?"
+            )
 
 
 class OAIChat(OAI):

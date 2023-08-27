@@ -17,7 +17,7 @@ def setup_env(connection: Union[AzureOpenAIConnection, OpenAIConnection], config
         os.environ["OPENAI_API_BASE"] = connection.api_base
         os.environ["OPENAI_API_KEY"] = connection.api_key
         os.environ["OPENAI_API_VERSION"] = connection.api_version
-    
+
     if isinstance(connection, OpenAIConnection):
         os.environ["OPENAI_API_KEY"] = connection.api_key
         if connection.organization is not None:
