@@ -80,6 +80,7 @@ Create a .env file in this directory and populate it with the following content.
 
 Check out [example env file](.env.example).
 ```ini
+OPENAI_API_TYPE=azure
 OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
 OPENAI_API_VERSION=2023-05-15
@@ -92,15 +93,6 @@ CHUNK_OVERLAP=64
 VERBOSE=False
 ```
 Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
-
-```bash
-# create connection needed by flow
-if pf connection list | grep azure_open_ai_connection; then
-    echo "azure_open_ai_connection already exists"
-else
-    pf connection create --file azure_openai.yml --name azure_open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
-fi
-```
 
 ### Implementation of each steps
 #### Download pdf: [download.py](../../flows/chat/chat-with-pdf/chat_with_pdf/download.py)
@@ -160,6 +152,26 @@ def build_index_tool(pdf_path: str) -> str:
 ```
 
 The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection]() to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
+
+We're using Azure OpenAI in this example, below is the shell command to do so:
+```bash
+# create connection needed by flow
+if pf connection list | grep azure_open_ai_connection; then
+    echo "azure_open_ai_connection already exists"
+else
+    pf connection create --file azure_openai.yml --name azure_open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
+fi
+```
+
+If you plan to use OpenAI instead you can use below instead:
+```bash
+# create connection needed by flow
+if pf connection list | grep azure_open_ai_connection; then
+    echo "open_ai_connection already exists"
+else
+    pf connection create --file openai.yml --name open_ai_connection --set api_key=<your_api_key> organization=<your_org_id>
+fi
+```
 
 The flow looks like:
 

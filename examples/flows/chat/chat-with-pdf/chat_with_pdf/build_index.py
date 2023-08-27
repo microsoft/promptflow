@@ -2,7 +2,7 @@ import PyPDF2
 import faiss
 import os
 
-from utils.aoai import AOAIEmbedding
+from utils.oai import OAIEmbedding
 from utils.index import FAISSIndex
 from utils.logging import log
 from utils.lock import acquire_lock
@@ -42,7 +42,7 @@ def create_faiss_index(pdf_path: str) -> str:
 
         log(f"Number of segments: {len(segments)}")
 
-        index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=AOAIEmbedding())
+        index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=OAIEmbedding())
         index.insert_batch(segments)
 
         index.save(index_persistent_path)
