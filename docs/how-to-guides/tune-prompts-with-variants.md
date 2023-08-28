@@ -99,7 +99,8 @@ pf.stream(variant_run)
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-(WIP)
+![img](../media/how-to-guides/vscode_variants_folded.png)
+![img](../media/how-to-guides/vscode_variants_unfold.png)
 :::
 
 ::::

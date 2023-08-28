@@ -30,7 +30,8 @@ The expected result is as follows if the flow served successfully, and the proce
 :::
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_export.png)
+![img](../media/how-to-guides/vscode_export_as_local_app.png)
 :::
 ::::
 
@@ -55,7 +56,7 @@ Test result:
 ![img](../media/how-to-guides/test_endpoint.png)
 :::
 :::{tab-item} VS Code Extension
-[TODO]
+![img](../media/how-to-guides/vscode_start_local_app.png)
 :::
 ::::
 
@@ -72,7 +73,7 @@ pf flow export --source <path-to-your-flow-folder> --output <your-output-dir> --
 :::
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_export_as_docker.png)
 :::
 ::::
 
