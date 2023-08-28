@@ -33,7 +33,8 @@ pf flow init --flow <flow-name> --type chat
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
-TODO add screenshot
+![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_1.png)
+![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_2.png)
 
 :::
 
@@ -131,7 +132,8 @@ Promptflow CLI will generate test logs and outputs in `.promptflow`:
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
-TODO add screenshot
+![img](../media/how-to-guides/vscode_test_flow_yaml.png)
+![img](../media/how-to-guides/vscode_test_flow_visual.png)
 
 :::
 
@@ -181,7 +183,8 @@ The log and result of flow node test will be displayed in the terminal. And the 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
-TODO add screenshot
+![img](../media/how-to-guides/vscode_single_node_test.png)
+![img](../media/how-to-guides/vscode_single_node_test_visual.png)
 
 :::
 
@@ -213,7 +216,8 @@ Using this [chat flow](https://github.com/microsoft/promptflow/tree/main/example
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
-TODO add screenshot
+![img](../media/how-to-guides/vscode_interactive_chat.png)
+![img](../media/how-to-guides/vscode_interactive_chat_1.png)
 
 :::
 
@@ -226,7 +230,9 @@ Customer can debug a single python node in VScode by the extension.
 ::::{tab-set}
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-TODO add screenshot
+
+![img](../media/how-to-guides/vscode_single_node_debug_yaml.png)
+![img](../media/how-to-guides/vscode_single_node_debug_visual.png)
 
 :::
 
