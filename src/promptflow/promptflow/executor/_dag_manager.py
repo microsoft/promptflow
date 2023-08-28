@@ -43,7 +43,7 @@ class DAGManager:
         # Confirm node should be skipped
         skipped_nodes: List[Node] = []
         for node in self._pending_nodes.values():
-            if self._is_node_skipped(node):
+            if self._is_node_ready(node) and self._is_node_skipped(node):
                 self._skipped_nodes[node.name] = node
                 skipped_nodes.append(node)
         for node in skipped_nodes:
