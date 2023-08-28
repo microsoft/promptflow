@@ -4,8 +4,9 @@
 
 from dataclasses import asdict
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
+from promptflow._sdk._constants import get_list_view_type
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
@@ -15,8 +16,18 @@ run_bp = Blueprint("run", __name__, url_prefix="/run")
 
 @run_bp.route("/list", methods=["GET"])
 def list():
+    # parse query parameters
+    max_results = request.args.get("max_results", default=50, type=int)
+    all_results = request.args.get("all_results", default=False, type=bool)
+    archived_only = request.args.get("archived_only", default=False, type=bool)
+    include_archived = request.args.get("include_archived", default=False, type=bool)
+    # align with CLI behavior
+    if all_results:
+        max_results = None
+    list_view_type = get_list_view_type(archived_only=archived_only, include_archived=include_archived)
+
     op = RunOperations()
-    runs = op.list()
+    runs = op.list(max_results=max_results, list_view_type=list_view_type)
     runs_dict = [run._to_dict() for run in runs]
     return jsonify(runs_dict)
 
