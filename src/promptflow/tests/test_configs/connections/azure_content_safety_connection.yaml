@@ -1,0 +1,7 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureContentSafetyConnection.schema.json
+name: my_azure_content_safety_connection
+type: azure_content_safety  # snake case
+api_key: "<to-be-replaced>"
+endpoint: "endpoint"
+api_version: "2023-04-30-preview"
+api_type: Content Safety

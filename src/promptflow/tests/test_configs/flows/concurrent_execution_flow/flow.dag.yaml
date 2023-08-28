@@ -1,0 +1,53 @@
+name: TestPythonToolLongWaitTime
+inputs:
+  input1:
+    type: bool
+  input2:
+    type: bool
+  input3:
+    type: bool
+  input4:
+    type: bool
+outputs:
+  output:
+    type: int
+    reference: ${wait_long_1.output}
+nodes:
+- name: wait_1
+  type: python
+  source:
+    type: code
+    path: wait_short.py
+  inputs:
+      throw_exception: ${inputs.input1}
+- name: wait_2
+  type: python
+  source:
+    type: code
+    path: wait_short.py
+  inputs:
+      throw_exception: ${inputs.input2}
+- name: wait_3
+  type: python
+  source:
+    type: code
+    path: wait_short.py
+  inputs:
+      throw_exception: ${inputs.input3}
+- name: wait_4
+  type: python
+  source:
+    type: code
+    path: wait_short.py
+  inputs:
+      throw_exception: ${inputs.input4}
+- name: wait_long_1
+  type: python
+  source:
+    type: code
+    path: wait_long.py
+  inputs:
+      text_1: ${wait_1.output}
+      text_2: ${wait_2.output}
+      text_3: ${wait_3.output}
+      text_4: ${wait_4.output}

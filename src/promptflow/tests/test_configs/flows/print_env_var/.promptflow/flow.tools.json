@@ -1,0 +1,16 @@
+{
+  "package": {},
+  "code": {
+    "print_env.py": {
+      "type": "python",
+      "inputs": {
+        "key": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "function": "get_env_var"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/QdrantConnection.schema.json
+name: my_qdrant_connection
+type: qdrant
+api_key: "<to-be-replaced>"
+api_base: "endpoint"

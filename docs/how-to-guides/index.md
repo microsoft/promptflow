@@ -10,6 +10,7 @@ init-and-test-a-flow
 run-and-evaluate-a-flow
 tune-prompts-with-variants
 deploy-and-export-a-flow
+enable-streaming-mode
 manage-connections
 manage-runs
 how-to-create-and-use-your-own-tool-package

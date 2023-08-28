@@ -1,0 +1,7 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
+name: my_azure_open_ai_connection
+type: azure_open_ai  # snake case
+api_key: "******"  # Use the scrub value to test key2 not being updated
+api_base: "new_value"
+api_type: "azure"
+api_version: "2023-07-01-preview"

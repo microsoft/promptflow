@@ -126,11 +126,32 @@ Alternatively, you can test your tool package using the script below to ensure t
   1. Make sure to install the tool package in your conda environment before executing this script.
   2. Create a python file anywhere and copy the content below into it.
       ```python
+      import pkg_resources
+      import importlib
+
       def test():
-          # `collect_package_tools` gathers all tools info using the `package-tools` entry point. This ensures that your package is correctly packed and your tools are accurately collected. 
-          from promptflow.core.tools_manager import collect_package_tools
-          tools = collect_package_tools()
-          print(tools)
+          """List all package tools information using the `package-tools` entry point.
+
+          This function iterates through all entry points registered under the group "package_tools."
+          For each tool, it imports the associated module to ensure its validity and then prints
+          information about the tool.
+
+          Note:
+          - Make sure your package is correctly packed to appear in the list.
+          - The module is imported to validate its presence and correctness.
+
+          Example of tool information printed:
+          ----identifier
+          {'module': 'module_name', 'package': 'package_name', 'package_version': 'package_version', ...}
+          """
+          for entry_point in pkg_resources.iter_entry_points(group="package_tools"):
+              list_tool_func = entry_point.resolve()
+              package_tools = list_tool_func()
+
+              for identifier, tool in package_tools.items():
+                  importlib.import_module(tool["module"])  # Import the module to ensure its validity
+                  print(f"----{identifier}\n{tool}")
+
       if __name__ == "__main__":
           test()
       ```

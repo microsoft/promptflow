@@ -35,7 +35,7 @@ nodes:
     type: code
     path: setup_env.py
   inputs:
-    aoai_connection: azure_open_ai_connection
+    connection: azure_open_ai_connection
     config: ${inputs.config}
 - name: download_tool
   type: python
@@ -76,3 +76,4 @@ nodes:
   inputs:
     question: ${inputs.question}
     history: ${inputs.chat_history}
+    env_ready_signal: ${setup_env.output}

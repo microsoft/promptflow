@@ -1,336 +1,108 @@
 {
-    "package": {
-        "promptflow.tools.azure_content_safety.AzureContentSafety.analyze_text": {
-            "class_name": "AzureContentSafety",
-            "function": "analyze_text",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "AzureContentSafetyConnection"
-                    ]
-                },
-                "hate_category": {
-                    "default": "medium_sensitivity",
-                    "enum": [
-                        "disable",
-                        "low_sensitivity",
-                        "medium_sensitivity",
-                        "high_sensitivity"
-                    ],
-                    "type": [
-                        "string"
-                    ]
-                },
-                "self_harm_category": {
-                    "default": "medium_sensitivity",
-                    "enum": [
-                        "disable",
-                        "low_sensitivity",
-                        "medium_sensitivity",
-                        "high_sensitivity"
-                    ],
-                    "type": [
-                        "string"
-                    ]
-                },
-                "sexual_category": {
-                    "default": "medium_sensitivity",
-                    "enum": [
-                        "disable",
-                        "low_sensitivity",
-                        "medium_sensitivity",
-                        "high_sensitivity"
-                    ],
-                    "type": [
-                        "string"
-                    ]
-                },
-                "text": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "violence_category": {
-                    "default": "medium_sensitivity",
-                    "enum": [
-                        "disable",
-                        "low_sensitivity",
-                        "medium_sensitivity",
-                        "high_sensitivity"
-                    ],
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "module": "promptflow.tools.azure_content_safety",
-            "name": "Content Safety (Text)",
-            "description": "Use Azure Content Safety to detect harmful content.",
-            "type": "python",
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
+  "package": {},
+  "code": {
+    "setup_env.py": {
+      "type": "python",
+      "inputs": {
+        "connection": {
+          "type": [
+            "AzureOpenAIConnection",
+            "OpenAIConnection"
+          ]
         },
-        "promptflow.tools.azure_language_detector.get_language": {
-            "name": "Azure Language Detector",
-            "description": "Detect the language of the input text.",
-            "type": "python",
-            "module": "promptflow.tools.azure_language_detector",
-            "function": "get_language",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "CustomConnection"
-                    ]
-                },
-                "input_text": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
-        "promptflow.tools.azure_translator.get_translation": {
-            "name": "Azure Translator",
-            "description": "Use Azure Translator API for translating text between 130+ languages.",
-            "type": "python",
-            "module": "promptflow.tools.azure_translator",
-            "function": "get_translation",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "CustomConnection"
-                    ]
-                },
-                "input_text": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "source_language": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "target_language": {
-                    "default": "en",
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
-        "promptflow.tools.embedding.embedding": {
-            "name": "Embedding",
-            "description": "Use Open AI's embedding model to create an embedding vector representing the input text.",
-            "type": "python",
-            "module": "promptflow.tools.embedding",
-            "function": "embedding",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "AzureOpenAIConnection",
-                        "OpenAIConnection"
-                    ]
-                },
-                "deployment_name": {
-                    "type": [
-                        "string"
-                    ],
-                    "enabled_by": "connection",
-                    "enabled_by_type": [
-                        "AzureOpenAIConnection"
-                    ],
-                    "capabilities": {
-                        "completion": false,
-                        "chat_completion": false,
-                        "embeddings": true
-                    },
-                    "model_list": [
-                        "text-embedding-ada-002",
-                        "text-search-ada-doc-001",
-                        "text-search-ada-query-001"
-                    ]
-                },
-                "model": {
-                    "type": [
-                        "string"
-                    ],
-                    "enabled_by": "connection",
-                    "enabled_by_type": [
-                        "OpenAIConnection"
-                    ],
-                    "enum": [
-                        "text-embedding-ada-002",
-                        "text-search-ada-doc-001",
-                        "text-search-ada-query-001"
-                    ]
-                },
-                "input": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
-        },
-        "promptflow.tools.serpapi.SerpAPI.search": {
-            "name": "Serp API",
-            "description": "Use Serp API to obtain search results from a specific search engine.",
-            "inputs": {
-                "connection": {
-                    "type": [
-                        "SerpConnection"
-                    ]
-                },
-                "engine": {
-                    "default": "google",
-                    "enum": [
-                        "google",
-                        "bing"
-                    ],
-                    "type": [
-                        "string"
-                    ]
-                },
-                "location": {
-                    "default": "",
-                    "type": [
-                        "string"
-                    ]
-                },
-                "num": {
-                    "default": "10",
-                    "type": [
-                        "int"
-                    ]
-                },
-                "query": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "safe": {
-                    "default": "off",
-                    "enum": [
-                        "active",
-                        "off"
-                    ],
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "type": "python",
-            "module": "promptflow.tools.serpapi",
-            "class_name": "SerpAPI",
-            "function": "search",
-            "package": "promptflow-tools",
-            "package_version": "0.1.0b3"
+        "config": {
+          "type": [
+            "object"
+          ]
         }
+      },
+      "source": "setup_env.py",
+      "function": "setup_env"
     },
-    "code": {
-        "setup_env.py": {
-            "type": "python",
-            "inputs": {
-                "aoai_connection": {
-                    "type": [
-                        "AzureOpenAIConnection",
-                        "CustomConnection"
-                    ]
-                },
-                "config": {
-                    "type": [
-                        "object"
-                    ]
-                }
-            },
-            "source": "setup_env.py",
-            "function": "setup_env"
+    "download_tool.py": {
+      "type": "python",
+      "inputs": {
+        "url": {
+          "type": [
+            "string"
+          ]
         },
-        "download_tool.py": {
-            "type": "python",
-            "inputs": {
-                "url": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "env_ready_signal": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "source": "download_tool.py",
-            "function": "download_tool"
-        },
-        "build_index_tool.py": {
-            "type": "python",
-            "inputs": {
-                "pdf_path": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "source": "build_index_tool.py",
-            "function": "build_index_tool"
-        },
-        "find_context_tool.py": {
-            "type": "python",
-            "inputs": {
-                "question": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "index_path": {
-                    "type": [
-                        "string"
-                    ]
-                }
-            },
-            "source": "find_context_tool.py",
-            "function": "find_context_tool"
-        },
-        "qna_tool.py": {
-            "type": "python",
-            "inputs": {
-                "prompt": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "history": {
-                    "type": [
-                        "list"
-                    ]
-                }
-            },
-            "source": "qna_tool.py",
-            "function": "qna_tool"
-        },
-        "rewrite_question_tool.py": {
-            "type": "python",
-            "inputs": {
-                "question": {
-                    "type": [
-                        "string"
-                    ]
-                },
-                "history": {
-                    "type": [
-                        "list"
-                    ]
-                }
-            },
-            "source": "rewrite_question_tool.py",
-            "function": "rewrite_question_tool"
+        "env_ready_signal": {
+          "type": [
+            "string"
+          ]
         }
+      },
+      "source": "download_tool.py",
+      "function": "download_tool"
+    },
+    "build_index_tool.py": {
+      "type": "python",
+      "inputs": {
+        "pdf_path": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "build_index_tool.py",
+      "function": "build_index_tool"
+    },
+    "find_context_tool.py": {
+      "type": "python",
+      "inputs": {
+        "question": {
+          "type": [
+            "string"
+          ]
+        },
+        "index_path": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "find_context_tool.py",
+      "function": "find_context_tool"
+    },
+    "qna_tool.py": {
+      "type": "python",
+      "inputs": {
+        "prompt": {
+          "type": [
+            "string"
+          ]
+        },
+        "history": {
+          "type": [
+            "list"
+          ]
+        }
+      },
+      "source": "qna_tool.py",
+      "function": "qna_tool"
+    },
+    "rewrite_question_tool.py": {
+      "type": "python",
+      "inputs": {
+        "question": {
+          "type": [
+            "string"
+          ]
+        },
+        "history": {
+          "type": [
+            "list"
+          ]
+        },
+        "env_ready_signal": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "rewrite_question_tool.py",
+      "function": "rewrite_question_tool"
     }
+  }
 }

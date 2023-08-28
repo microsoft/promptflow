@@ -34,7 +34,7 @@ def to_openai_error_message(e: Exception) -> str:
 
 
 class WrappedOpenAIError(UserErrorException):
-    """Base exception raised when call openai api."""
+    """Refine error messages on top of native openai errors."""
 
     def __init__(self, ex: OpenAIError, **kwargs):
         super().__init__(target=ErrorTarget.TOOL, **kwargs)

@@ -21,6 +21,10 @@ concurrency:
   group: "pages"
   cancel-in-progress: true
 
+env:
+  packageSetupType: promptflow_open_source
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+
 jobs:
   build:
     runs-on: windows-latest
@@ -30,6 +34,21 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Conda Setup
+        uses: "./.github/actions/step_create_conda_environment"
+
+      - name: Display environment variables
+        run: |
+          echo ${{ env.packageSetupType }}
+          echo ${{ env.testWorkingDirectory }}
+        shell: bash -l {0}
+
+      - name: Dev setup
+        uses: "./.github/actions/step_sdk_setup"
+        with:
+          setupType: ${{ env.packageSetupType }}
+          scriptPath: ${{ env.testWorkingDirectory }}
 
       - name: Build Doc
         shell: powershell

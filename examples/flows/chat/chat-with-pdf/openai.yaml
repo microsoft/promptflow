@@ -1,0 +1,13 @@
+# All the values should be string type, please use "123" instead of 123 or "True" instead of True.
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: open_ai_connection
+type: open_ai
+api_key: "<open-ai-api-key>"
+organization: ""
+
+# Note: 
+# The connection information will be stored in a local database with api_key encrypted for safety.
+# Prompt flow will ONLY use the connection information (incl. keys) when instructed by you, e.g. manage connections, use connections to run flow etc.
+
+
+

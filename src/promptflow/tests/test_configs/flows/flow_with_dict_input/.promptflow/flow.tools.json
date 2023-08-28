@@ -1,0 +1,18 @@
+{
+    "package": {},
+    "code": {
+        "print_val.py": {
+            "name": "print_val.py",
+            "type": "python",
+            "inputs": {
+                "key": {
+                    "type": [
+                        "object"
+                    ]
+                }
+            },
+            "source": "print_val.py",
+            "function": "get_val"
+        }
+    }
+}
