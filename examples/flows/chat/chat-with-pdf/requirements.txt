@@ -1,4 +1,3 @@
-langchain
 PyPDF2
 faiss-cpu
 openai
