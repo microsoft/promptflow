@@ -24,7 +24,8 @@ def image_to_data_url(image_path):
 
     # Open the image and resize it
     img = Image.open(image_data)
-    img = img.resize((16, 16), Image.Resampling.LANCZOS)
+    if img.size != (16, 16):
+        img = img.resize((16, 16), Image.Resampling.LANCZOS)
 
     # Save the resized image to a data URL
     buffered = io.BytesIO()
