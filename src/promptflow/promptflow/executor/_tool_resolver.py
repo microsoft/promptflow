@@ -16,8 +16,12 @@ from promptflow._core.tool_meta_generator import (
     collect_tool_function_in_module,
     load_python_module_from_file,
 )
-from promptflow._core.tools_manager import BuiltinsManager, CustomToolSourceLoadError, collect_package_tools, \
-    connection_type_to_api_mapping
+from promptflow._core.tools_manager import (
+    BuiltinsManager,
+    CustomToolSourceLoadError,
+    collect_package_tools,
+    connection_type_to_api_mapping,
+)
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
@@ -29,7 +33,7 @@ from promptflow.executor._errors import (
     InvalidCustomLLMTool,
     InvalidSource,
     NodeInputValidationError,
-    ValueTypeUnresolved, ProviderNotFound,
+    ValueTypeUnresolved,
 )
 
 
