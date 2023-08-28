@@ -32,13 +32,8 @@ def create_faiss_index(pdf_path: str) -> str:
         for page in pdf_reader.pages:
             text += page.extract_text()
 
-        words = text.split()
-
         # Chunk the words into segments of X words with Y-word overlap, X=CHUNK_SIZE, Y=OVERLAP_SIZE
-        segments = []
-        for i in range(0, len(words), chunk_size - chunk_overlap):
-            segment = " ".join(words[i : i + chunk_size])
-            segments.append(segment)
+        segments = split_text(text, chunk_size, chunk_overlap)
 
         log(f"Number of segments: {len(segments)}")
 
@@ -49,3 +44,20 @@ def create_faiss_index(pdf_path: str) -> str:
 
         log("Index built: " + index_persistent_path)
         return index_persistent_path
+
+# Split the text into chunks with CHUNK_SIZE and CHUNK_OVERLAP as character count
+def split_text(text, chunk_size, chunk_overlap):
+    # Calculate the number of chunks
+    num_chunks = (len(text) - chunk_overlap) // (chunk_size - chunk_overlap)
+
+    # Split the text into chunks
+    chunks = []
+    for i in range(num_chunks):
+        start = i * (chunk_size - chunk_overlap)
+        end = start + chunk_size
+        chunks.append(text[start:end])
+
+    # Add the last chunk
+    chunks.append(text[num_chunks * (chunk_size - chunk_overlap):])
+
+    return chunks
