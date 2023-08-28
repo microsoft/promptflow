@@ -1,4 +1,4 @@
-name: step_sdk_setup
+name: step_sdk_setup_win
 inputs:
   scriptPath:
     required: false
@@ -13,66 +13,69 @@ runs:
   - name: Clean up installed packages
     working-directory: ${{ inputs.scriptPath }}
     continue-on-error: true
-    shell: bash -el {0}
+    shell: pwsh
     run: |-
       conda activate release-env
       pip uninstall -y promptflow promptflow-sdk promptflow-tools
   - name: 'Build and install: promptflow-tools'
-    shell: bash -el {0}
+    shell: pwsh
     run: |-
       conda activate release-env
       python ./setup.py bdist_wheel
-      cd dist
-      package=$(ls | grep '.whl')
-      eval "pip install '$package'"
+      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      pip install $package.FullName
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
   - name: 'Build and install: promptflow with extra'
     if: inputs.setupType == 'promptflow_new_extra'
-    shell: bash -el {0}
+    shell: pwsh
     run: |-
       conda activate release-env
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
-      pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
+      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      pip install $($package.FullName + "[azure]")
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow_open_source'
     if: inputs.setupType == 'promptflow_open_source'
-    shell: bash -el {0}
+    shell: pwsh
     run: |-
       conda activate release-env
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
-      pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
+      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      pip install $($package.FullName + "[azure]")
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow-sdk'
     if: inputs.setupType == 'promptflow_dev'
-    shell: bash -el {0}
+    shell: pwsh
     run: |-
       conda activate release-env
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
-      pip install ./dist/promptflow_sdk-0.0.1-py3-none-any.whl
+      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      pip install $package.FullName
       echo "########### pip freeze ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow-sdk with extra deps'
     if: inputs.setupType == 'promptflow_dev_extra'
-    shell: bash -el {0}
+    shell: pwsh
     run: |-
       conda activate release-env
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
-      pip install './dist/promptflow_sdk-0.0.1-py3-none-any.whl[azure]'
+      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      pip install $($package.FullName + "[azure]")
       echo "########### pip freeze ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
