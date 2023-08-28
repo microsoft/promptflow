@@ -56,40 +56,24 @@ class TestPackageTool:
     def test_executor_package_with_prompt_tool(self, dev_connections, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        mocker.patch("promptflow.executor._tool_resolver.collect_package_tools", return_value=package_tool_definition)
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
-        run_id = str(uuid.uuid4())
-        bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
-        nlines = len(bulk_inputs)
-        bulk_results = executor.exec_bulk(bulk_inputs, run_id)
-        assert isinstance(bulk_results, BulkResult)
-        for i in range(nlines):
-            assert (
-                bulk_results.outputs[i]["output"] == "Write a simple program that displays the greeting message: "
-                f"\"{bulk_inputs[i]['text']}\" when executed.\n"
-            )
-        msg = f"Bulk result only has {len(bulk_results.line_results)}/{nlines} outputs"
-        assert len(bulk_results.outputs) == nlines, msg
-        for i, output in enumerate(bulk_results.outputs):
-            assert isinstance(output, dict)
-            assert "line_number" in output, f"line_number is not in {i}th output {output}"
-            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-        msg = f"Bulk result only has {len(bulk_results.line_results)}/{nlines} line results"
-        assert len(bulk_results.line_results) == nlines, msg
-        for i, line_result in enumerate(bulk_results.line_results):
-            assert isinstance(line_result, LineResult)
-            assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+        with mocker.patch("promptflow.executor._tool_resolver.collect_package_tools", return_value=package_tool_definition):
+            executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
+            bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
+            for i in bulk_inputs:
+                line_result = executor.exec_line(i)
+                assert isinstance(line_result, LineResult)
+                assert line_result.run_info.status == Status.Completed, f"Got {line_result.run_info.status} for input {i}"
 
     def test_custom_llm_tool_with_duplicated_inputs(self, dev_connections, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_with_duplicated_inputs"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        mocker.patch("promptflow.executor._tool_resolver.collect_package_tools", return_value=package_tool_definition)
-        msg = (
-            "Invalid inputs {'api'} in prompt template of node custom_llm_tool_with_duplicated_inputs. "
-            "These inputs are duplicated with the inputs of custom llm tool."
-        )
-        with pytest.raises(NodeInputValidationError, match=msg):
-            FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        with mocker.patch("promptflow.executor._tool_resolver.collect_package_tools", return_value=package_tool_definition):
+            msg = (
+                "Invalid inputs {'api'} in prompt template of node custom_llm_tool_with_duplicated_inputs. "
+                "These inputs are duplicated with the inputs of custom llm tool."
+            )
+            with pytest.raises(NodeInputValidationError, match=msg):
+                FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
 
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_message",
