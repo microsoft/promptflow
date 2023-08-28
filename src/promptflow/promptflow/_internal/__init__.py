@@ -81,7 +81,6 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
-from promptflow._utils.tool_utils import create_function_source
 from promptflow._utils.utils import (
     AttrDict,
     camel_to_snake,

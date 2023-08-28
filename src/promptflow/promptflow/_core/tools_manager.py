@@ -265,7 +265,7 @@ def _register(provider_cls, collection, type):
         if hasattr(value, "__original_function"):
             name = value.__original_function.__qualname__
             value.__tool = function_to_tool_definition(
-                value, type=type, is_builtin=True, initialize_inputs=initialize_inputs
+                value, type=type, initialize_inputs=initialize_inputs
             )
             collection[name] = value.__tool
             module_logger.debug(f"Registered {name} as a builtin function")
@@ -273,7 +273,7 @@ def _register(provider_cls, collection, type):
 
 def _register_method(provider_method, collection, type):
     name = provider_method.__qualname__
-    provider_method.__tool = function_to_tool_definition(provider_method, type=type, is_builtin=True)
+    provider_method.__tool = function_to_tool_definition(provider_method, type=type)
     collection[name] = provider_method.__tool
     module_logger.debug(f"Registered {name} as {type} function")
 
