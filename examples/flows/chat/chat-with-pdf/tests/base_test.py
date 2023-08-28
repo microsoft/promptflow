@@ -24,7 +24,7 @@ class BaseTest(unittest.TestCase):
             "PROMPT_TOKEN_LIMIT": 3000,
             "MAX_COMPLETION_TOKENS": 256,
             "VERBOSE": True,
-            "CHUNK_SIZE": 256,
+            "CHUNK_SIZE": 1024,
             "CHUNK_OVERLAP": 32,
         }
         self.config_2k_context = {
@@ -33,7 +33,7 @@ class BaseTest(unittest.TestCase):
             "PROMPT_TOKEN_LIMIT": 2000,
             "MAX_COMPLETION_TOKENS": 256,
             "VERBOSE": True,
-            "CHUNK_SIZE": 256,
+            "CHUNK_SIZE": 1024,
             "CHUNK_OVERLAP": 32,
         }
 

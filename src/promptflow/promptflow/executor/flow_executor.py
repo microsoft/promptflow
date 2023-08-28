@@ -676,53 +676,6 @@ class FlowExecutor:
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
 
     @staticmethod
-    def apply_inputs_mapping_legacy(
-        inputs: Mapping[str, Mapping[str, Any]],
-        inputs_mapping: Mapping[str, str],
-    ) -> Dict[str, Any]:
-        """Apply inputs mapping to inputs for legacy contract.
-        We use different inputs mapping foramt for new contract.
-
-        For example:
-        inputs: {
-            "data": {"answer": 123, "question": "dummy"},
-            "output": {"answer": 321},
-            "baseline": {"answer": 322},
-        }
-        inputs_mapping: {
-            "question": "data.question",  # Question from the data
-            "groundtruth": "data.answer",  # Answer from the data
-            "baseline": "baseline.answer",  # Answer from the baseline
-            "answer": "output.answer",  # Answer from the output
-            "deployment_name": "text-davinci-003",  # literal value
-        }
-
-        Returns: {
-            "question": "dummy",
-            "groundtruth": 123,
-            "baseline": 322,
-            "answer": 321,
-            "deployment_name": "text-davinci-003",
-        }
-        """
-        result = {}
-        for k, v in inputs_mapping.items():
-            if "." not in v:
-                result[k] = v
-                continue
-            source, key = v.split(".", 1)
-            if source in inputs:  # Value from inputs
-                if key not in inputs[source]:
-                    raise MappingSourceNotFound(
-                        f"Failed to do input mapping for '{v}', can't find key '{key}' in dict '{source}', "
-                        + f"all keys are {inputs[source].keys()}."
-                    )
-                result[k] = inputs[source][key]
-            else:
-                result[k] = v  # Literal value
-        return result
-
-    @staticmethod
     def apply_inputs_mapping(
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
@@ -781,11 +734,10 @@ class FlowExecutor:
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
             raise MappingSourceNotFound(
-                f"The following mapping relations were not found: {', '.join(notfound_mapping_relations)}. "
-                "Please make sure that the keys and values in your inputs mapping are correct "
-                "and match the keys and values in your input data. If the mapping relation starts with '${data', "
-                "it may have been generated according to the YAML input file. "
-                "You may need to assign it manually according to your input data."
+                f"Couldn't find these mapping relations: {', '.join(notfound_mapping_relations)}. "
+                "Please make sure your input mapping keys and values match your YAML input section and input data. "
+                "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
+                "and you may need to manually assign input mapping based on your input data."
             )
         # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:

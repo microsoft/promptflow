@@ -156,20 +156,20 @@ The setup_env node requires some explanation: you might recall that we use envir
 We're using Azure OpenAI in this example, below is the shell command to do so:
 ```bash
 # create connection needed by flow
-if pf connection list | grep azure_open_ai_connection; then
-    echo "azure_open_ai_connection already exists"
+if pf connection list | grep open_ai_connection; then
+    echo "open_ai_connection already exists"
 else
-    pf connection create --file azure_openai.yml --name azure_open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
+    pf connection create --file ../../../connections/azure_openai.yml --name open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
 fi
 ```
 
 If you plan to use OpenAI instead you can use below instead:
 ```shell
 # create connection needed by flow
-if pf connection list | grep azure_open_ai_connection; then
+if pf connection list | grep open_ai_connection; then
     echo "open_ai_connection already exists"
 else
-    pf connection create --file openai.yml --name open_ai_connection --set api_key=<your_api_key> organization=<your_org_id>
+    pf connection create --file ../../../connections/openai.yml --name open_ai_connection --set api_key=<your_api_key> organization=<your_org_id>
 fi
 ```
 

@@ -28,6 +28,7 @@ from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
+from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.exceptions import UserErrorException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
@@ -102,9 +103,16 @@ class Run(YAMLTranslatableMixin):
         self._duration = kwargs.get("duration", None)
         self._portal_url = kwargs.get(RunDataKeys.PORTAL_URL, None)
         self._creation_context = kwargs.get("creation_context", None)
+        # init here to make sure those fields initialized in all branches.
+        self.flow = flow
+        self._experiment_name = None
+        self._lineage_id = None
         if self._run_source == RunInfoSources.LOCAL:
             self.flow = Path(flow).resolve().absolute()
-            self._flow_dir = self._get_flow_dir()
+            flow_dir = self._get_flow_dir()
+            # sanitize flow_dir to avoid invalid experiment name
+            self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
+            self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = kwargs.get("experiment_name", None)
@@ -357,11 +365,11 @@ class Run(YAMLTranslatableMixin):
         except Exception:
             return str(uuid.uuid4())
 
-    def _get_flow_dir(self):
+    def _get_flow_dir(self) -> Path:
         flow = Path(self.flow)
         if flow.is_dir():
-            return flow.name
-        return self.flow.parent.name
+            return flow
+        return self.flow.parent
 
     @classmethod
     def _get_schema_cls(self):
@@ -384,9 +392,6 @@ class Run(YAMLTranslatableMixin):
 
         if not variant and not self.data:
             raise UserErrorException("Either run or data should be provided")
-
-        # sanitize flow_dir to avoid invalid experiment name
-        run_experiment_name = _sanitize_python_variable_name(self._flow_dir)
 
         # parse inputs mapping
         inputs_mapping = {}
@@ -424,9 +429,10 @@ class Run(YAMLTranslatableMixin):
                     data_uri=self.data,
                 ),
                 inputs_mapping=inputs_mapping,
-                run_experiment_name=run_experiment_name,
+                run_experiment_name=self._experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
+                flow_lineage_id=self._lineage_id,
             )
         else:
             # upload via CodeOperations.create_or_update
@@ -443,9 +449,10 @@ class Run(YAMLTranslatableMixin):
                     data_uri=self.data,
                 ),
                 inputs_mapping=inputs_mapping,
-                run_experiment_name=run_experiment_name,
+                run_experiment_name=self._experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
+                flow_lineage_id=self._lineage_id,
             )
 
     def _check_run_status_is_completed(self) -> None:

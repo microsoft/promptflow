@@ -1025,6 +1025,16 @@ class ListViewType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     ARCHIVED_ONLY = "ArchivedOnly"
     ALL = "All"
 
+class LogLevel(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    TRACE = "Trace"
+    DEBUG = "Debug"
+    INFORMATION = "Information"
+    WARNING = "Warning"
+    ERROR = "Error"
+    CRITICAL = "Critical"
+    NONE = "None"
+
 class LogVerbosity(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     NOT_SET = "NotSet"
@@ -1408,6 +1418,11 @@ class Section(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     GALLERY = "Gallery"
     TEMPLATE = "Template"
 
+class SetupFlowSessionAction(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    INSTALL = "Install"
+    RESET = "Reset"
+
 class ShortSeriesHandlingConfiguration(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     AUTO = "Auto"
@@ -1467,6 +1482,27 @@ class TargetRollingWindowSizeMode(with_metaclass(CaseInsensitiveEnumMeta, str, E
 
     AUTO = "Auto"
     CUSTOM = "Custom"
+
+class TaskCreationOptions(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    NONE = "None"
+    PREFER_FAIRNESS = "PreferFairness"
+    LONG_RUNNING = "LongRunning"
+    ATTACHED_TO_PARENT = "AttachedToParent"
+    DENY_CHILD_ATTACH = "DenyChildAttach"
+    HIDE_SCHEDULER = "HideScheduler"
+    RUN_CONTINUATIONS_ASYNCHRONOUSLY = "RunContinuationsAsynchronously"
+
+class TaskStatus(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    CREATED = "Created"
+    WAITING_FOR_ACTIVATION = "WaitingForActivation"
+    WAITING_TO_RUN = "WaitingToRun"
+    RUNNING = "Running"
+    WAITING_FOR_CHILDREN_TO_COMPLETE = "WaitingForChildrenToComplete"
+    RAN_TO_COMPLETION = "RanToCompletion"
+    CANCELED = "Canceled"
+    FAULTED = "Faulted"
 
 class TaskStatusCode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

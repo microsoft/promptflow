@@ -15703,6 +15703,8 @@ class DeployFlowRequest(msrest.serialization.Model):
     :vartype skip_update_traffic_to_full: bool
     :ivar enable_streaming_response:
     :vartype enable_streaming_response: bool
+    :ivar use_flow_snapshot_to_deploy:
+    :vartype use_flow_snapshot_to_deploy: bool
     :ivar instance_type:
     :vartype instance_type: str
     :ivar instance_count:
@@ -15732,6 +15734,7 @@ class DeployFlowRequest(msrest.serialization.Model):
         'enable_model_data_collector': {'key': 'enableModelDataCollector', 'type': 'bool'},
         'skip_update_traffic_to_full': {'key': 'skipUpdateTrafficToFull', 'type': 'bool'},
         'enable_streaming_response': {'key': 'enableStreamingResponse', 'type': 'bool'},
+        'use_flow_snapshot_to_deploy': {'key': 'useFlowSnapshotToDeploy', 'type': 'bool'},
         'instance_type': {'key': 'instanceType', 'type': 'str'},
         'instance_count': {'key': 'instanceCount', 'type': 'int'},
     }
@@ -15761,6 +15764,7 @@ class DeployFlowRequest(msrest.serialization.Model):
         enable_model_data_collector: Optional[bool] = None,
         skip_update_traffic_to_full: Optional[bool] = None,
         enable_streaming_response: Optional[bool] = None,
+        use_flow_snapshot_to_deploy: Optional[bool] = None,
         instance_type: Optional[str] = None,
         instance_count: Optional[int] = None,
         **kwargs
@@ -15810,6 +15814,8 @@ class DeployFlowRequest(msrest.serialization.Model):
         :paramtype skip_update_traffic_to_full: bool
         :keyword enable_streaming_response:
         :paramtype enable_streaming_response: bool
+        :keyword use_flow_snapshot_to_deploy:
+        :paramtype use_flow_snapshot_to_deploy: bool
         :keyword instance_type:
         :paramtype instance_type: str
         :keyword instance_count:
@@ -15838,6 +15844,7 @@ class DeployFlowRequest(msrest.serialization.Model):
         self.enable_model_data_collector = enable_model_data_collector
         self.skip_update_traffic_to_full = skip_update_traffic_to_full
         self.enable_streaming_response = enable_streaming_response
+        self.use_flow_snapshot_to_deploy = use_flow_snapshot_to_deploy
         self.instance_type = instance_type
         self.instance_count = instance_count
 
@@ -36375,6 +36382,65 @@ class SegmentedResult1(msrest.serialization.Model):
         self.next_link = next_link
 
 
+class ServiceLogRequest(msrest.serialization.Model):
+    """ServiceLogRequest.
+
+    :ivar log_level: Possible values include: "Trace", "Debug", "Information", "Warning", "Error",
+     "Critical", "None".
+    :vartype log_level: str or ~flow.models.LogLevel
+    :ivar message:
+    :vartype message: str
+    """
+
+    _attribute_map = {
+        'log_level': {'key': 'logLevel', 'type': 'str'},
+        'message': {'key': 'message', 'type': 'str'},
+    }
+
+    def __init__(
+        self,
+        *,
+        log_level: Optional[Union[str, "LogLevel"]] = None,
+        message: Optional[str] = None,
+        **kwargs
+    ):
+        """
+        :keyword log_level: Possible values include: "Trace", "Debug", "Information", "Warning",
+         "Error", "Critical", "None".
+        :paramtype log_level: str or ~flow.models.LogLevel
+        :keyword message:
+        :paramtype message: str
+        """
+        super(ServiceLogRequest, self).__init__(**kwargs)
+        self.log_level = log_level
+        self.message = message
+
+
+class SetupFlowSessionRequest(msrest.serialization.Model):
+    """SetupFlowSessionRequest.
+
+    :ivar action: Possible values include: "Install", "Reset".
+    :vartype action: str or ~flow.models.SetupFlowSessionAction
+    """
+
+    _attribute_map = {
+        'action': {'key': 'action', 'type': 'str'},
+    }
+
+    def __init__(
+        self,
+        *,
+        action: Optional[Union[str, "SetupFlowSessionAction"]] = None,
+        **kwargs
+    ):
+        """
+        :keyword action: Possible values include: "Install", "Reset".
+        :paramtype action: str or ~flow.models.SetupFlowSessionAction
+        """
+        super(SetupFlowSessionRequest, self).__init__(**kwargs)
+        self.action = action
+
+
 class SharingScope(msrest.serialization.Model):
     """SharingScope.
 
@@ -38356,6 +38422,8 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
     :vartype max_idle_time_seconds: long
     :ivar output_data_store:
     :vartype output_data_store: str
+    :ivar flow_lineage_id:
+    :vartype flow_lineage_id: str
     """
 
     _attribute_map = {
@@ -38382,6 +38450,7 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
         'output_data_store': {'key': 'outputDataStore', 'type': 'str'},
+        'flow_lineage_id': {'key': 'flowLineageId', 'type': 'str'},
     }
 
     def __init__(
@@ -38410,6 +38479,7 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         vm_size: Optional[str] = None,
         max_idle_time_seconds: Optional[int] = None,
         output_data_store: Optional[str] = None,
+        flow_lineage_id: Optional[str] = None,
         **kwargs
     ):
         """
@@ -38459,6 +38529,8 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         :paramtype max_idle_time_seconds: long
         :keyword output_data_store:
         :paramtype output_data_store: str
+        :keyword flow_lineage_id:
+        :paramtype flow_lineage_id: str
         """
         super(SubmitBulkRunRequest, self).__init__(**kwargs)
         self.flow_definition_file_path = flow_definition_file_path
@@ -38484,6 +38556,7 @@ class SubmitBulkRunRequest(msrest.serialization.Model):
         self.vm_size = vm_size
         self.max_idle_time_seconds = max_idle_time_seconds
         self.output_data_store = output_data_store
+        self.flow_lineage_id = flow_lineage_id
 
 
 class SubmitFlowRequest(msrest.serialization.Model):
@@ -39437,6 +39510,82 @@ class TargetSelectorConfiguration(msrest.serialization.Model):
         self.region = region
         self.regions = regions
         self.vc_block_list = vc_block_list
+
+
+class Task(msrest.serialization.Model):
+    """Task.
+
+    Variables are only populated by the server, and will be ignored when sending a request.
+
+    :ivar id:
+    :vartype id: int
+    :ivar exception: Anything.
+    :vartype exception: any
+    :ivar status: Possible values include: "Created", "WaitingForActivation", "WaitingToRun",
+     "Running", "WaitingForChildrenToComplete", "RanToCompletion", "Canceled", "Faulted".
+    :vartype status: str or ~flow.models.TaskStatus
+    :ivar is_canceled:
+    :vartype is_canceled: bool
+    :ivar is_completed:
+    :vartype is_completed: bool
+    :ivar is_completed_successfully:
+    :vartype is_completed_successfully: bool
+    :ivar creation_options: Possible values include: "None", "PreferFairness", "LongRunning",
+     "AttachedToParent", "DenyChildAttach", "HideScheduler", "RunContinuationsAsynchronously".
+    :vartype creation_options: str or ~flow.models.TaskCreationOptions
+    :ivar async_state: Anything.
+    :vartype async_state: any
+    :ivar is_faulted:
+    :vartype is_faulted: bool
+    """
+
+    _validation = {
+        'id': {'readonly': True},
+        'exception': {'readonly': True},
+        'is_canceled': {'readonly': True},
+        'is_completed': {'readonly': True},
+        'is_completed_successfully': {'readonly': True},
+        'async_state': {'readonly': True},
+        'is_faulted': {'readonly': True},
+    }
+
+    _attribute_map = {
+        'id': {'key': 'id', 'type': 'int'},
+        'exception': {'key': 'exception', 'type': 'object'},
+        'status': {'key': 'status', 'type': 'str'},
+        'is_canceled': {'key': 'isCanceled', 'type': 'bool'},
+        'is_completed': {'key': 'isCompleted', 'type': 'bool'},
+        'is_completed_successfully': {'key': 'isCompletedSuccessfully', 'type': 'bool'},
+        'creation_options': {'key': 'creationOptions', 'type': 'str'},
+        'async_state': {'key': 'asyncState', 'type': 'object'},
+        'is_faulted': {'key': 'isFaulted', 'type': 'bool'},
+    }
+
+    def __init__(
+        self,
+        *,
+        status: Optional[Union[str, "TaskStatus"]] = None,
+        creation_options: Optional[Union[str, "TaskCreationOptions"]] = None,
+        **kwargs
+    ):
+        """
+        :keyword status: Possible values include: "Created", "WaitingForActivation", "WaitingToRun",
+         "Running", "WaitingForChildrenToComplete", "RanToCompletion", "Canceled", "Faulted".
+        :paramtype status: str or ~flow.models.TaskStatus
+        :keyword creation_options: Possible values include: "None", "PreferFairness", "LongRunning",
+         "AttachedToParent", "DenyChildAttach", "HideScheduler", "RunContinuationsAsynchronously".
+        :paramtype creation_options: str or ~flow.models.TaskCreationOptions
+        """
+        super(Task, self).__init__(**kwargs)
+        self.id = None
+        self.exception = None
+        self.status = status
+        self.is_canceled = None
+        self.is_completed = None
+        self.is_completed_successfully = None
+        self.creation_options = creation_options
+        self.async_state = None
+        self.is_faulted = None
 
 
 class TaskControlFlowInfo(msrest.serialization.Model):

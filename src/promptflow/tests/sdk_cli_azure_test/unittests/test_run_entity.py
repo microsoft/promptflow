@@ -9,7 +9,7 @@ from unittest.mock import Mock
 import pytest
 
 from promptflow._sdk.entities import Run
-from promptflow._utils.flow_utils import get_flow_session_id
+from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -63,8 +63,8 @@ class TestRun:
         flow_path = Path(f"{FLOWS_DIR}/flow_with_dict_input")
 
         # run with dict inputs
-        session_id1 = get_flow_session_id(flow_path)
-        session_id2 = get_flow_session_id(flow_path)
+        session_id1 = get_flow_lineage_id(flow_path)
+        session_id2 = get_flow_lineage_id(flow_path)
 
         assert session_id1 == session_id2
 
@@ -72,9 +72,9 @@ class TestRun:
         with TemporaryDirectory() as tmp_dir:
             shutil.copytree(f"{FLOWS_DIR}/flow_with_dict_input", f"{tmp_dir}/flow_with_dict_input")
 
-            session_id3 = get_flow_session_id(f"{tmp_dir}/flow_with_dict_input")
+            session_id3 = get_flow_lineage_id(f"{tmp_dir}/flow_with_dict_input")
 
-            session_id4 = get_flow_session_id(f"{tmp_dir}/flow_with_dict_input")
+            session_id4 = get_flow_lineage_id(f"{tmp_dir}/flow_with_dict_input")
 
             assert session_id3 == session_id4
             assert session_id3 != session_id1
