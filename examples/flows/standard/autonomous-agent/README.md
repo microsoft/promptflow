@@ -1,6 +1,6 @@
-# Summarizing Film With AutoGPT 
+# Autonomous Agent
 
-This is a flow showcasing how to construct a AutoGPT flow to autonomously figures out how to apply the given functions 
+This is a flow showcasing how to construct a AutoGPT agent with promptflow to autonomously figures out how to apply the given functions 
 to solve the goal, which is film trivia that provides accurate and up-to-date information about movies, directors, 
 actors, and more in this sample.
 
@@ -58,3 +58,6 @@ pf flow test --flow .
 # create run using command line args
 pf run create --flow . --data ./data.jsonl --stream
 ```
+
+## Disclaimer
+LLM systems are susceptible to prompt injection, and you can gain a deeper understanding of this issue in the [technical blog](https://developer.nvidia.com/blog/securing-llm-systems-against-prompt-injection/). As an illustration, the PythonREPL function might execute harmful code if provided with a malicious prompt within the provided sample. Furthermore, we cannot guarantee that implementing AST validations solely within the PythonREPL function will reliably elevate the sample's security to an enterprise level. We kindly remind you to refrain from utilizing this in a production environment.
