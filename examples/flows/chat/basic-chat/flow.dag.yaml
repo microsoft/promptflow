@@ -26,7 +26,7 @@ nodes:
     path: chat.jinja2
   api: chat
   provider: AzureOpenAI
-  connection: azure_open_ai_connection
+  connection: open_ai_connection
 node_variants: {}
 environment:
     python_requirements_txt: requirements.txt
