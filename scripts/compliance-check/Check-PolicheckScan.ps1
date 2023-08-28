@@ -10,7 +10,8 @@
 
 [CmdLetbinding()]
 param (
-[string]$policheckResult
+[string]$policheckResult,
+[string]$raiseError = $true
 )
 
 $result = Get-Content -Path $policheckResult | Measure-Object -Line;

@@ -21,6 +21,8 @@ pool:
 
 steps:
 - checkout: self
+
+# https://eng.ms/docs/microsoft-security/cloud-ecosystem-security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/sdl-azdo-extension/PoliCheck-build-task
 - task: PoliCheck@2
   inputs:
     targetType: 'F'
@@ -28,6 +30,7 @@ steps:
     optionsPE: '1'
     optionsUEPATH: '$(sourceLocation)/scripts/compliance-check/user_exclusion.xml'
     result: '$(sourceLocation)/scripts/compliance-check/result.tsv'
+    optionsXCLASS: 'Geopolitical'
 
 - task: PowerShell@2
   inputs:
@@ -43,3 +46,8 @@ steps:
     targetPath: '$(sourceLocation)/scripts/compliance-check/result.tsv'
     artifactName: 'compliance-check-result'
     publishLocation: 'pipeline'
+
+- task: CredScan@3
+  displayName: 'CredScan'
+  inputs:
+    scanFolder: '$(sourceLocation)'
