@@ -373,7 +373,7 @@ def build_flow(args):
         flow=args.source,
         output=args.output,
         format=args.format,
-        variant=args.variant,
+        node_variant=args.node_variant,
     )
     print(
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"

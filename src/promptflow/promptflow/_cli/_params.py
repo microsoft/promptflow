@@ -235,10 +235,10 @@ def add_parser_build(parent_parser, entity_name: str):
         "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
     )
     parser.add_argument(
-        "--variant",
-        "-v",
+        "--node-variant",
         type=str,
-        help="The variant to be used in flow, will use default variant if not specified.",
+        help="The variant to be used in flow in format of node_name.variant_name, "
+        "will use default variant if not specified.",
     )
     add_param_verbose(parser)
     add_param_debug(parser)
