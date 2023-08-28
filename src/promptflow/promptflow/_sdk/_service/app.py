@@ -16,7 +16,3 @@ def create_app():
     app.add_url_rule("/heartbeat", view_func=heartbeat)
     app.register_blueprint(run_bp)
     return app
-
-
-if __name__ == "__main__":
-    create_app().run(debug=True)
