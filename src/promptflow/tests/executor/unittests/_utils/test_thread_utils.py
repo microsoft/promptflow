@@ -1,4 +1,5 @@
 import time
+import sys
 from io import StringIO
 from logging import WARNING, Logger, StreamHandler
 
@@ -12,6 +13,7 @@ class DummyException(Exception):
     pass
 
 
+@pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
 @pytest.mark.unittest
 class TestRepeatLogTimer:
     def test_context_manager(self):

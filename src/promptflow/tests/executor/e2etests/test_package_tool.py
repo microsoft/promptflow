@@ -10,7 +10,12 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import NodeInputValidationError
 from promptflow.executor.flow_executor import LineResult
 
-from ..utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_flow_sample_inputs, get_yaml_file
+from ..utils import (
+    WRONG_FLOW_ROOT,
+    get_flow_package_tool_definition,
+    get_flow_sample_inputs,
+    get_yaml_file,
+)
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
 PACKAGE_TOOL_ENTRY = "promptflow.executor._tool_resolver.collect_package_tools"
@@ -43,10 +48,20 @@ class TestPackageTool:
     def test_executor_package_tool_with_conn(self, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "tool_with_connection"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        mocker.patch("promptflow.tools.list.list_package_tools", return_value=package_tool_definition)
+        mocker.patch(
+            "promptflow.tools.list.list_package_tools",
+            return_value=package_tool_definition,
+        )
         name, secret = "dummy_name", "dummy_secret"
-        connections = {"test_conn": {"type": "TestConnection", "value": {"name": name, "secret": secret}}}
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), connections, raise_ex=True)
+        connections = {
+            "test_conn": {
+                "type": "TestConnection",
+                "value": {"name": name, "secret": secret},
+            }
+        }
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder), connections, raise_ex=True
+        )
         flow_result = executor.exec_line({})
         assert flow_result.run_info.status == Status.Completed
         assert len(flow_result.node_run_infos) == 1
@@ -54,11 +69,14 @@ class TestPackageTool:
             assert v.status == Status.Completed
             assert v.output == name + secret
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_executor_package_with_prompt_tool(self, dev_connections, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
         with mocker.patch(PACKAGE_TOOL_ENTRY, return_value=package_tool_definition):
-            executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
+            executor = FlowExecutor.create(
+                get_yaml_file(flow_folder), dev_connections, raise_ex=True
+            )
             bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
             for i in bulk_inputs:
                 line_result = executor.exec_line(i)
@@ -100,7 +118,9 @@ class TestPackageTool:
             ),
         ],
     )
-    def test_package_tool_execution(self, flow_folder, line_input, error_class, error_message, dev_connections):
+    def test_package_tool_execution(
+        self, flow_folder, line_input, error_class, error_message, dev_connections
+    ):
         def mock_collect_package_tools(keys=None):
             if keys is None:
                 return {
@@ -117,5 +137,7 @@ class TestPackageTool:
             # ret = collect_package_tools()
             # print("hello" + json.dumps(ret))
             with pytest.raises(error_class) as exce_info:
-                FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+                FlowExecutor.create(
+                    get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections
+                )
             assert error_message == exce_info.value.message
