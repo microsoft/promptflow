@@ -64,10 +64,10 @@ class TestFlowExecutor:
                     "answer": "${data.output}",
                 },
                 MappingSourceNotFound,
-                "Unable to find the following mapping relations: ${baseline.output}, ${data.output}. "
-                "Ensure that the keys and values in your input mapping align with those in your input data. "
-                "If a mapping relation starts with '${data', it might have been generated from the YAML input file. "
-                "In this case, you may need to assign it manually based on your input data.",
+                "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
+                "Please make sure your input mapping keys and values match your YAML input section and input data. "
+                "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
+                "and you may need to manually assign input mapping based on your input data."
             ),
         ],
     )
