@@ -127,6 +127,8 @@ def no_readme_generation_filter(item, index, array) -> bool:
     Set each ipynb metadata no_readme_generation to "true" to skip readme generation
     """
     try:
+        if item.endswith("test.ipynb"):
+            return False
         # read in notebook
         with open(item, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -137,7 +139,7 @@ def no_readme_generation_filter(item, index, array) -> bool:
         except Exception:
             return True  # generate readme
     except Exception:
-        return False  # generate readme
+        return False  # not generate readme
 
 
 def main(input_glob, output_files=[]):

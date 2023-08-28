@@ -1,13 +1,13 @@
-In prompt flow, you can utilize connections to effectively manage credentials or secrets for APIs and data sources.
+In prompt flow, you can utilize connections to securely manage credentials or secrets for external services.
 
 # Connections
 
-Connections in prompt flow play a crucial role in establishing connections to remote APIs or data sources. They encapsulate essential information such as endpoints and secrets, ensuring secure and reliable communication.
+Connections are for storing information about how to access external services like LLMs: endpoint, api keys etc.
 
-- In local, the connections secret are encrypted persisted in your local machine.
+- In your local development environment, the connections are persisted in your local machine with keys encrypted.
 - In Azure AI, connections can be configured to be shared across the entire workspace. Secrets associated with connections are securely persisted in the corresponding Azure Key Vault, adhering to robust security and compliance standards.
 
-Prompt flow provides a variety of pre-built connections, including Azure Open AI, Open AI, etc. These pre-built connections enable seamless integration with these resources within the built-in tools. Additionally, users have the flexibility to create custom connection types using key-value pairs, empowering them to tailor the connections to their specific requirements, particularly in Python tools.
+Prompt flow provides a variety of pre-built connections, including Azure Open AI, Open AI, etc. These pre-built connections enable seamless integration with these resources within the built-in tools. Additionally, you have the flexibility to create custom connection types using key-value pairs, empowering them to tailor the connections to their specific requirements, particularly in Python tools.
 
 | Connection type                                              | Built-in tools                  |
 | ------------------------------------------------------------ | ------------------------------- |
@@ -17,7 +17,7 @@ Prompt flow provides a variety of pre-built connections, including Azure Open AI
 | [Serp](https://serpapi.com/)                                 | Serp API or Python              |
 | Custom                                                       | Python                          |
 
-By leveraging connections in prompt flow, users can easily establish and manage connections to external APIs and data sources, facilitating efficient data exchange and interaction within their AI applications.
+By leveraging connections in prompt flow, you can easily establish and manage connections to external APIs and data sources, facilitating efficient data exchange and interaction within their AI applications.
 
 ## Next steps
 

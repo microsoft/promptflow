@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from enum import Enum
 
 import openai
@@ -25,7 +24,7 @@ class OpenAI(ToolProvider):
     def __init__(self, connection: OpenAIConnection):
         super().__init__()
         self.connection = connection
-        self._connection_dict = asdict(self.connection)
+        self._connection_dict = dict(self.connection)
 
     @tool
     @handle_openai_error()

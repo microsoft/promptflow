@@ -227,7 +227,7 @@ def test_get_aoai_telemetry_headers():
     )
 
     # patch the OperationContext.get_instance method to return the mock operation context
-    with patch("promptflow.core.operation_context.OperationContext.get_instance") as mock_get_instance:
+    with patch("promptflow._core.operation_context.OperationContext.get_instance") as mock_get_instance:
         mock_get_instance.return_value = mock_operation_context
 
         # call the function under test and get the headers

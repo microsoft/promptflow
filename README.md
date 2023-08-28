@@ -1,33 +1,31 @@
-# Prompt Flow
+# Prompt flow
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-> ℹ️ **NOTE**: This project is just like AI and will evolve quickly.
-> We invite you to join us in developing the Prompt Flow together!
-> Please contribute by
-> using GitHub [Discussions](https://github.com/microsoft/promptflow/discussions),
-> opening GitHub [Issues](https://github.com/microsoft/promptflow/issues/new/choose),
-> sending us [PRs](https://github.com/microsoft/promptflow/pulls).
+> Welcome to join us to make Prompt flow better by
+> participating [discussions](https://github.com/microsoft/promptflow/discussions),
+> opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
+> submitting [PRs](https://github.com/microsoft/promptflow/pulls).
 
-**Prompt flow** is a development tool designed to streamline the entire development cycle of AI applications powered by Large Language Models (LLMs). As the momentum for LLM-based AI applications continues to grow across the globe, prompt flow provides a comprehensive solution that simplifies the process of prototyping, experimenting, iterating, and deploying your AI applications. 
+**Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality. 
 
 With prompt flow, you will be able to: 
 
-- Create executable flows that link LLMs, prompts, and Python tools through a visualized graph. 
-- Debug, share, and iterate your flows with ease through team collaboration. 
-- Create prompt variants and evaluate their performance through large-scale testing. 
-- Deploy a real-time endpoint that unlocks the full power of LLMs for your application. 
-
-You can develope your flow locally and seamlessly move the experience to azure cloud, learn more: [Azure Machine Learning prompt flow](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
-
-Prompt Flow has been released as open-source so that more pioneering developers can join us in crafting the future of how people building AI applications.
+- Create executable workflows that link LLMs, prompts, Python code and other tools together. 
+- Debug and iterate your flows, especially the interaction with LLMs with ease.
+- Evaluate your flow's quality and performance with larger datasets.
+- Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
+- Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
+- (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
 ## Get Started with Prompt flow ⚡
 
-For users: please start with our [examples](./examples/README.md) & [docs](./docs/README.md).
+Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
+- [First look at prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)
+- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)
 
-For developers: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
+Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
 ## Contributing
 
