@@ -38,7 +38,6 @@ nodes:
     url: ${inputs.url}
     text_content: ${summarize_text_content.output}
     examples: ${prepare_examples.output}
-  provider: AzureOpenAI
   connection: open_ai_connection
   api: chat
 - name: convert_to_dict
@@ -72,10 +71,8 @@ node_variants:
             max_tokens: '128'
             temperature: '0.2'
             text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
           connection: open_ai_connection
           api: chat
-          module: promptflow.tools.aoai
       variant_1:
         node:
           type: llm
@@ -87,9 +84,7 @@ node_variants:
             max_tokens: '256'
             temperature: '0.3'
             text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
           connection: open_ai_connection
           api: chat
-          module: promptflow.tools.aoai
 environment:
     python_requirements_txt: requirements.txt

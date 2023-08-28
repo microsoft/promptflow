@@ -25,7 +25,6 @@ nodes:
     type: code
     path: chat.jinja2
   api: chat
-  provider: AzureOpenAI
   connection: open_ai_connection
 node_variants: {}
 environment:
