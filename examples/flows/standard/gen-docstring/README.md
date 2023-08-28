@@ -1,10 +1,10 @@
-# Generate Python  docstring
+# Generate Python docstring
 This example can help you automatically generate Python code's docstring and return the modified code.
 
 Tools used in this flow：
 - `load_code` tool, it can load code from a file path.
   - Load content from a local file.
-  - Loading content from a remote URL, currently loading HTML content, not just code, is under repair.
+  - Loading content from a remote URL, currently loading HTML content, not just code.
 - `divide_code` tool, it can divide code into code blocks.
   - To avoid files that are too long and exceed the token limit, it is necessary to split the file.
   - Avoid using the same function (such as __init__(self)) to generate docstrings in the same one file, which may cause confusion when adding docstrings to the corresponding functions in the future.
@@ -33,7 +33,7 @@ pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_ba
 Because of in [flow.dag.yaml](flow.dag.yaml) we are using connection named `azure_open_ai_connection`.
 
 ## Execute with Promptflow
-###Execute with SDK
+### Execute with SDK
 `python main.py --source <your_file_path>`  
 **Note**: the file path should be a python file path, default is `./azure_open_ai.py`.
 
