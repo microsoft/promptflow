@@ -11,7 +11,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
 
-run_bp = Blueprint("run", __name__, url_prefix="/run")
+run_bp = Blueprint("run", __name__, url_prefix="/run/v1.0")
 
 
 @run_bp.route("/list", methods=["GET"])
