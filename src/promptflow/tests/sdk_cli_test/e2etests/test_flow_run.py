@@ -258,12 +258,6 @@ class TestFlowRun:
             )
         assert "Connection 'Not_exist' required for flow" in str(e)
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_run_reference_failed_run(self, pf):
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",

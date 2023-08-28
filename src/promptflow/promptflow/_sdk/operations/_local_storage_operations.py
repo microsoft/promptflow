@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import copy
 import datetime
 import json
 import logging
@@ -270,21 +269,34 @@ class LocalStorageOperations(AbstractRunStorage):
             json.dump(metrics, f)
 
     def dump_exception(self, exception: Exception) -> None:
+        try:
+            errors = self.get_error_messages()
+            line_runs = self._get_line_runs()
+        except Exception:
+            errors = []
+            line_runs = []
+
         if not exception:
-            return
+            # use first line run error message as exception message if no exception raised
+            error = next(iter(errors), None)
+            try:
+                message = error["error"]["message"]
+            except Exception:
+                message = (
+                    "Failed to extract error message from line runs. "
+                    f"Please check {self._outputs_path} for more info."
+                )
+        else:
+            message = str(exception)
+
         if not isinstance(exception, BulkRunException):
             # If other errors raised, pass it into PromptflowException
-            try:
-                errors = len(self.get_error_messages())
-                total = len(self._get_line_runs())
-            except Exception:
-                errors = "unknown"
-                total = "unknown"
             exception = BulkRunException(
-                message=str(exception),
+                message=message,
                 error=exception,
-                failed_lines=errors,
-                total_lines=total,
+                failed_lines=len(errors) if errors else "unknown",
+                total_lines=len(line_runs) if line_runs else "unknown",
+                additional_info={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(ExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
@@ -318,13 +330,18 @@ class LocalStorageOperations(AbstractRunStorage):
             metrics = json.load(f)
         return metrics
 
-    def get_error_messages(self) -> List[Tuple[int, dict]]:
+    def get_error_messages(self) -> List[dict]:
         error_messages = []
         with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             detail = json.load(f)
             for run in detail["flow_runs"]:
                 if run["error"] is not None:
-                    error_messages.append((run["index"], copy.deepcopy(run["error"])))
+                    error_messages.append(
+                        {
+                            "line number": run["index"],
+                            "error": run["error"],
+                        }
+                    )
         return error_messages
 
     def _get_line_runs(self):

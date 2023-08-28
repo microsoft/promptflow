@@ -71,6 +71,5 @@ class BulkRunException(PromptflowException):
     def __init__(self, *, message="", failed_lines: int, total_lines: int, module: str = None, **kwargs):
         self.failed_lines = failed_lines
         self.total_lines = total_lines
-        # TODO(2626231): aggregate error messages
         message = f"Failed to run {failed_lines}/{total_lines} lines: First error message is: {message}"
         super().__init__(message=message, target=ErrorTarget.RUNTIME, module=module, **kwargs)

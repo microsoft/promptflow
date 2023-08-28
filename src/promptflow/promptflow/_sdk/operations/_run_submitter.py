@@ -282,12 +282,14 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
-            status = Status.Completed.value
+            # The bulk run is completed only when all line results are completed.
+            if all([r.run_info.status == Status.Completed for r in bulk_result.line_results]):
+                status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
             logger.warning(f"Run {run.name} failed when executing in executor.")
             exception = e
-            # for user error, swallow stack trace and return failed run since user don't need the strack trace
+            # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):
                 # for other errors, raise it to user to help debug root cause.
                 raise e
@@ -300,7 +302,9 @@ class RunSubmitter:
             # result: outputs and metrics
             # TODO: retrieve root run system metrics from executor return, we might store it in db
             local_storage.persist_result(bulk_result)
-            local_storage.dump_exception(exception)
+            # dump exception when run failed
+            if status == Status.Failed.value:
+                local_storage.dump_exception(exception)
 
             self.run_operations.update(
                 name=run.name,
