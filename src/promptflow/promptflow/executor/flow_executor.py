@@ -781,11 +781,10 @@ class FlowExecutor:
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
             raise MappingSourceNotFound(
-                f"The following mapping relations were not found: {', '.join(notfound_mapping_relations)}. "
-                "Please make sure that the keys and values in your inputs mapping are correct "
-                "and match the keys and values in your input data. If the mapping relation starts with '${data', "
-                "it may have been generated according to the YAML input file. "
-                "You may need to assign it manually according to your input data."
+                f"Unable to find the following mapping relations: {', '.join(notfound_mapping_relations)}. "
+                "Ensure that the keys and values in your input mapping align with those in your input data. "
+                "If a mapping relation starts with '${data', it might have been generated from the YAML input file. "
+                "In this case, you may need to assign it manually based on your input data."
             )
         # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:
