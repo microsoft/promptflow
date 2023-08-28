@@ -33,6 +33,7 @@ REQUIRES = [
     "marshmallow>=3.5,<4.0.0",
     "pyyaml>=5.1.0,<7.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
+    "waitress>=2.1.2,<3.0.0",  # used to serve local service
 ]
 
 setup(
@@ -70,6 +71,7 @@ setup(
         "console_scripts": [
             "pf = promptflow._cli._pf.entry:main",
             "pfazure = promptflow._cli._pf_azure.entry:main",
+            "lpfs = promptflow._sdk._service.entry:main",
         ],
     },
     include_package_data=True,
