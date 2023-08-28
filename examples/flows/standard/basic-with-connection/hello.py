@@ -1,6 +1,5 @@
 from typing import Union
 import openai
-from dataclasses import asdict
 
 from promptflow import tool
 from promptflow.connections import CustomConnection, AzureOpenAIConnection
