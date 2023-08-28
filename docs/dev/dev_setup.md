@@ -2,8 +2,8 @@
 
 ## Set up process
 
-- First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.8.
-  `conda create -n <envname> python=3.8`.
+- First create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. Please specify python version as 3.9.
+  `conda create -n <envname> python=3.9`.
 - Activate the env you created.
 - Set environment variable `PYTHONPATH` in your new conda environment.
   `conda env config vars set PYTHONPATH=<path-to-src\promptflow>`.
@@ -15,8 +15,7 @@
 
 ### Set up your secrets
 
-Steps:
-
+`dev-connections.json.example` is a template about connections provided in `src/promptflow`. You can follow these steps to refer to this template to configure your connection for the test cases:
 1. `cd ./src/promptflow`
 2. Run the command `cp dev-connections.json.example connections.json`;
 3. Replace the values in the json file with your connection info;
@@ -112,18 +111,13 @@ Once the project gets more complicated or anytime you find it necessary to add n
 a specific feature, feel free to split the `promptflow` to more folders, for example:
 
 - tests/
-  - executor_test/
+  - <Test folder name>/
     - e2etests/
-      - test_executor.py
+      - test_xxx.py
     - unittests/
       - test_xxx.py
-  - graph_construction_test/
-    - e2etests/
-      - test_construction.py
-    - unittest/
   - test_configs/
-    - executor_requests/
-    - graph_construction_requests/
+    - <Data or config folder name>/
 
 ### Endpoint tests
 
