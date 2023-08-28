@@ -183,3 +183,6 @@ The following is an example JSON format response returned by the tool, which inc
   ]
   ```
   </details>
+
+  > [!NOTE]
+  > when legacy tools switching to code first mode, "not found" error may occur , please refer to [tool FAQ](faq.md).
