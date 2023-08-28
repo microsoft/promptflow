@@ -25,7 +25,7 @@ def test_dag_manager_operations():
     node1 = create_test_node("node1", InputAssignment("value1"))
     node2 = create_test_node("node2", InputAssignment(value="node1", value_type=InputValueType.NODE_REFERENCE))
     node3 = create_test_node("node3", InputAssignment(value="node1", value_type=InputValueType.NODE_REFERENCE))
-    dag_manager = DAGManager([node1, node2, node3])
+    dag_manager = DAGManager([node1, node2, node3], flow_inputs={})
     assert pop_ready_node_names(dag_manager) == {"node1"}
     dag_manager.complete_nodes({"node1": None})
     assert not dag_manager.completed()
@@ -37,6 +37,6 @@ def test_dag_manager_operations():
     node1 = create_test_node("node1", InputAssignment(value="node2", value_type=InputValueType.NODE_REFERENCE))
     node2 = create_test_node("node2", InputAssignment(value="node1", value_type=InputValueType.NODE_REFERENCE))
     # DAG Manager doesn't handle circular dependencies now
-    dag_manager = DAGManager([node1, node2])
+    dag_manager = DAGManager([node1, node2], flow_inputs={})
     assert pop_ready_node_names(dag_manager) == set()
     assert not dag_manager.completed()
