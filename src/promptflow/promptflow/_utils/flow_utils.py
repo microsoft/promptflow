@@ -7,10 +7,14 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
+from promptflow._sdk._logger_factory import LoggerFactory
 
-def get_flow_linage_id(flow_dir: Union[str, PathLike]):
+logger = LoggerFactory.get_logger(name=__name__)
+
+
+def get_flow_lineage_id(flow_dir: Union[str, PathLike]):
     """
-    Get the linage id for flow. The flow linage id will be same for same flow in same GIT repo or device.
+    Get the lineage id for flow. The flow lineage id will be same for same flow in same GIT repo or device.
     If the flow locates in GIT repo:
         use Repo name + relative path to flow_dir as session id
     Otherwise:
@@ -24,15 +28,17 @@ def get_flow_linage_id(flow_dir: Union[str, PathLike]):
         from git import Repo
 
         repo = Repo(flow_dir, search_parent_directories=True)
-        linage_id = f"{os.path.basename(repo.working_dir)}/{flow_dir.relative_to(repo.working_dir).as_posix()}"
+        lineage_id = f"{os.path.basename(repo.working_dir)}/{flow_dir.relative_to(repo.working_dir).as_posix()}"
+        logger.debug("Got lineage id %s from git repo.", lineage_id)
 
     except Exception:
         # failed to get repo, use device id + absolute path to flow_dir as session id
         import uuid
 
         device_id = uuid.getnode()
-        linage_id = f"{device_id}/{flow_dir.absolute().as_posix()}"
+        lineage_id = f"{device_id}/{flow_dir.absolute().as_posix()}"
+        logger.debug("Got lineage id %s from local since failed to get git info.", lineage_id)
 
     # hash the value to avoid it gets too long, and it's not user visible.
-    linage_id = hashlib.sha256(linage_id.encode()).hexdigest()
-    return linage_id
+    lineage_id = hashlib.sha256(lineage_id.encode()).hexdigest()
+    return lineage_id

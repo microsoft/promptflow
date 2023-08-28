@@ -28,7 +28,7 @@ from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import _sanitize_python_variable_name, parse_variant
 from promptflow._sdk.entities._yaml_translatable import YAMLTranslatableMixin
 from promptflow._sdk.schemas._run import RunSchema
-from promptflow._utils.flow_utils import get_flow_linage_id
+from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.exceptions import UserErrorException
 
 AZURE_RUN_TYPE_2_RUN_TYPE = {
@@ -106,13 +106,13 @@ class Run(YAMLTranslatableMixin):
         # init here to make sure those fields initialized in all branches.
         self.flow = flow
         self._experiment_name = None
-        self._linage_id = None
+        self._lineage_id = None
         if self._run_source == RunInfoSources.LOCAL:
             self.flow = Path(flow).resolve().absolute()
             flow_dir = self._get_flow_dir()
             # sanitize flow_dir to avoid invalid experiment name
             self._experiment_name = _sanitize_python_variable_name(flow_dir.name)
-            self._linage_id = get_flow_linage_id(flow_dir=flow_dir)
+            self._lineage_id = get_flow_lineage_id(flow_dir=flow_dir)
         elif self._run_source == RunInfoSources.INDEX_SERVICE:
             self._metrics = kwargs.get("metrics", {})
             self._experiment_name = kwargs.get("experiment_name", None)
@@ -432,7 +432,7 @@ class Run(YAMLTranslatableMixin):
                 run_experiment_name=self._experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
-                flow_lineage_id=self._linage_id,
+                flow_lineage_id=self._lineage_id,
             )
         else:
             # upload via CodeOperations.create_or_update
@@ -452,7 +452,7 @@ class Run(YAMLTranslatableMixin):
                 run_experiment_name=self._experiment_name,
                 environment_variables=self.environment_variables,
                 connections=self.connections,
-                flow_lineage_id=self._linage_id,
+                flow_lineage_id=self._lineage_id,
             )
 
     def _check_run_status_is_completed(self) -> None:
