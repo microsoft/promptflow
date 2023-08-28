@@ -69,7 +69,7 @@ runs:
     shell: bash -el {0}
     run: |-
       conda activate release-env
-      pip uninstall promptflow-tools
+      pip uninstall -y promptflow-tools
       python ./setup.py bdist_wheel
       cd dist
       package=$(ls | grep '.whl')
