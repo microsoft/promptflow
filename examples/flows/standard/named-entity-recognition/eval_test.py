@@ -9,9 +9,9 @@ import promptflow
 class BaseTest(unittest.TestCase):
     def setUp(self) -> None:
         root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../")
-        self.flow_path = os.path.join(root, "named_entity_recognition")
-        self.data_path = os.path.join(self.flow_path, "test_data.jsonl")
-        self.eval_match_rate_flow_path = os.path.join(root, "eval_entity_match_rate")
+        self.flow_path = os.path.join(root, "named-entity-recognition")
+        self.data_path = os.path.join(self.flow_path, "data.jsonl")
+        self.eval_match_rate_flow_path = os.path.join(root, "../evaluation/eval-entity-match-rate")
         self.all_runs_generated = []
 
         return super().setUp()
