@@ -23,7 +23,7 @@ REQUIRES = [
 setup(
     name=PACKAGE_NAME,
     version=version,
-    description="Prompt Flow Tools",
+    description="Builtin tools of prompt flow",
     author="Microsoft Corporation",
     classifiers=[
         "Programming Language :: Python :: 3",

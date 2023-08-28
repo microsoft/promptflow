@@ -1,6 +1,6 @@
 from openai.error import OpenAIError
 
-from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, infer_error_code_from_class
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException
 
 openai_error_code_ref_message = "Error reference: https://platform.openai.com/docs/guides/error-codes/api-errors"
 
@@ -34,7 +34,7 @@ def to_openai_error_message(e: Exception) -> str:
 
 
 class WrappedOpenAIError(UserErrorException):
-    """Base exception raised when call openai api."""
+    """Refine error messages on top of native openai errors."""
 
     def __init__(self, ex: OpenAIError, **kwargs):
         super().__init__(target=ErrorTarget.TOOL, **kwargs)
@@ -44,38 +44,29 @@ class WrappedOpenAIError(UserErrorException):
     def message(self):
         return str(to_openai_error_message(self._ex))
 
-    def to_dict(self, *, include_debug_info=False):
-        """Return a dict representation of the exception.
+    @property
+    def error_codes(self):
+        """The hierarchy of the error codes.
 
-        This dict specification corresponds to the specification of the Microsoft API Guidelines:
+        We follow the "Microsoft REST API Guidelines" to define error codes in a hierarchy style.
+        See the below link for details:
         https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
 
-        Note that this dict representation the "error" field in the response body of the API.
-        The whole error response is then populated in another place outside of this class.
-        """
+        This list will be converted into an error code hierarchy by the prompt flow framework.
+        For this case, it will be converted into a data structure that equivalent to:
 
-        result = {
-            "code": infer_error_code_from_class(UserErrorException),
-            "message": self.message,
-            "messageFormat": "",
-            "messageParameters": {},
-            "innerError": {
-                "code": "OpenAIError",
+            {
+                "code": "UserError",
                 "innerError": {
-                    "code": self._ex.__class__.__name__,
-                    "innerError": None
+                    "code": "OpenAIError",
+                    "innerError": {
+                        "code": self._ex.__class__.__name__,
+                        "innerError": None
+                    }
                 }
-            },
-            "referenceCode": self.reference_code
-        }
-
-        if self.additional_info:
-            result["additionalInfo"] = [{"type": k, "info": v} for k, v in self.additional_info.items()]
-
-        if include_debug_info:
-            result["debugInfo"] = self.debug_info
-
-        return result
+            }
+        """
+        return ["UserError", "OpenAIError", self._ex.__class__.__name__]
 
 
 class ExceedMaxRetryTimes(WrappedOpenAIError):

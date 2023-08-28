@@ -1,0 +1,13 @@
+# Startup script for the flow container
+{% if connection_yaml_paths %}
+{% if show_comment %}
+# hack: for some unknown reason, without this ls, the connection creation will be failed
+{% endif %}
+ls
+ls connections
+{% endif %}
+export USER_AGENT=promptflow-appservice
+{% for connection_yaml_path in connection_yaml_paths %}
+pf connection create --file /{{ connection_yaml_path }}
+{% endfor %}
+pf flow serve --source flow --host 0.0.0.0

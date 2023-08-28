@@ -4,9 +4,8 @@ from enum import Enum
 
 import requests
 
-from promptflow.core.tool import ToolProvider, tool
+from promptflow._internal import ToolProvider, tool
 from promptflow.connections import SerpConnection
-from promptflow.core.tools_manager import register_builtin_method, register_builtins
 from promptflow.exceptions import PromptflowException
 from promptflow.tools.exception import SerpAPIUserError, SerpAPISystemError
 
@@ -117,9 +116,6 @@ class SerpAPI(ToolProvider):
             raise
 
 
-register_builtins(SerpAPI)
-
-
 @tool
 def search(
         connection: SerpConnection,
@@ -136,6 +132,3 @@ def search(
         num=num,
         engine=engine,
     )
-
-
-register_builtin_method(search)

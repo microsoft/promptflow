@@ -1,0 +1,21 @@
+id: web_classification
+inputs:
+  url:
+    default: https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h
+    is_chat_input: false
+    type: string
+nodes:
+  - inputs:
+      url: ${inputs.url}
+    name: fetch_text_content_from_url
+    reduce: false
+    source:
+      path: fetch_text_content_from_url.py
+      type: code
+    type: python
+outputs:
+  text:
+    evaluation_only: false
+    is_chat_output: false
+    reference: ${fetch_text_content_from_url.output}
+    type: string

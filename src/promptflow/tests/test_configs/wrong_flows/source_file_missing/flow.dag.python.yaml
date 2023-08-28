@@ -1,0 +1,17 @@
+inputs:
+  num:
+    type: int
+outputs:
+  content:
+    type: string
+    reference: ${stringify_num.output}
+nodes:
+- name: stringify_num
+  type: python
+  source:
+    type: code
+    path: stringify_num.py
+  inputs:
+    num: ${inputs.num}
+
+

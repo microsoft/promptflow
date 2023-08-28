@@ -1,13 +1,9 @@
 import functools
-import http
 import json
 import re
-import socket
 import sys
 import time
 
-import requests
-import urllib3
 from jinja2 import Template
 from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
 from promptflow.exceptions import SystemErrorException, UserErrorException
@@ -121,23 +117,6 @@ def parse_chat(chat_str):
     return chat_list
 
 
-# Define the retriable exceptions
-retriable_exceptions = (
-    urllib3.exceptions.HTTPError,  # this is a parent class, we might not list its sub-class
-    urllib3.exceptions.MaxRetryError,
-    urllib3.exceptions.TimeoutError,
-    urllib3.exceptions.ConnectionError,
-    socket.timeout,
-    http.client.RemoteDisconnected,
-    http.client.HTTPException,
-    requests.exceptions.ConnectionError,
-    requests.exceptions.Timeout,
-    requests.exceptions.RetryError,
-    requests.exceptions.TooManyRedirects,
-    requests.exceptions.HTTPError,
-)
-
-
 def handle_openai_error(tries: int = 10, delay: float = 8.0):
     """
     A decorator function that used to handle OpenAI error.
@@ -227,14 +206,14 @@ def process_function_call(function_call):
         param = function_call
     else:
         function_call_example = json.dumps({"name": "function_name"})
-        common_tsg = f"Here is a valid example: {function_call_example}. See the guide at" \
+        common_tsg = f"Here is a valid example: {function_call_example}. See the guide at " \
                      "https://platform.openai.com/docs/api-reference/chat/create#chat/create-function_call " \
                      "or view sample 'How to call functions with chat models' in our gallery."
         try:
             param = json.loads(function_call)
         except json.JSONDecodeError:
             raise ChatAPIInvalidFunctions(
-                message=f"function_call parameter '{function_call}' is an invaild json. {common_tsg}")
+                message=f"function_call parameter '{function_call}' is an invalid json. {common_tsg}")
         except TypeError:
             raise ChatAPIInvalidFunctions(
                 message=f"function_call parameter '{function_call}' must be str, bytes or bytearray"

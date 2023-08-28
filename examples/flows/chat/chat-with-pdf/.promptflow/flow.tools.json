@@ -4,16 +4,51 @@
     "setup_env.py": {
       "type": "python",
       "inputs": {
-        "conn": {
+        "connection": {
           "type": [
-            "CustomConnection"
+            "AzureOpenAIConnection",
+            "OpenAIConnection"
+          ]
+        },
+        "config": {
+          "type": [
+            "object"
           ]
         }
       },
       "source": "setup_env.py",
       "function": "setup_env"
     },
-    "chat_with_pdf_tool.py": {
+    "download_tool.py": {
+      "type": "python",
+      "inputs": {
+        "url": {
+          "type": [
+            "string"
+          ]
+        },
+        "env_ready_signal": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "download_tool.py",
+      "function": "download_tool"
+    },
+    "build_index_tool.py": {
+      "type": "python",
+      "inputs": {
+        "pdf_path": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "build_index_tool.py",
+      "function": "build_index_tool"
+    },
+    "find_context_tool.py": {
       "type": "python",
       "inputs": {
         "question": {
@@ -21,7 +56,36 @@
             "string"
           ]
         },
-        "pdf_url": {
+        "index_path": {
+          "type": [
+            "string"
+          ]
+        }
+      },
+      "source": "find_context_tool.py",
+      "function": "find_context_tool"
+    },
+    "qna_tool.py": {
+      "type": "python",
+      "inputs": {
+        "prompt": {
+          "type": [
+            "string"
+          ]
+        },
+        "history": {
+          "type": [
+            "list"
+          ]
+        }
+      },
+      "source": "qna_tool.py",
+      "function": "qna_tool"
+    },
+    "rewrite_question_tool.py": {
+      "type": "python",
+      "inputs": {
+        "question": {
           "type": [
             "string"
           ]
@@ -31,14 +95,14 @@
             "list"
           ]
         },
-        "ready": {
+        "env_ready_signal": {
           "type": [
             "string"
           ]
         }
       },
-      "source": "chat_with_pdf_tool.py",
-      "function": "chat_with_pdf_tool"
+      "source": "rewrite_question_tool.py",
+      "function": "rewrite_question_tool"
     }
   }
 }

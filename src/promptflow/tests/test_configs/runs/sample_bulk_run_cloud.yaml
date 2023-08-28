@@ -1,0 +1,9 @@
+name: flow_run_20230629_101205
+flow: ../flows/web_classification
+data: ../datas/webClassification1.jsonl
+column_mapping:
+   url: "${data.url}"
+variant: ${summarize_text_content.variant_0}
+
+# run config: env related
+environment_variables: env_file

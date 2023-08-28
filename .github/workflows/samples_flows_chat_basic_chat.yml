@@ -9,11 +9,11 @@ on:
     - cron: "40 22 * * *" # Every day starting at 6:40 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/flows/chat/basic-chat/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_basic_chat.yml ]
   workflow_dispatch:
 
 jobs:
-  auto_generated_steps:
+  samples_readme_ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,10 +25,12 @@ jobs:
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
-        working-directory: examples/flows/chat/basic-chat
+        working-directory: examples
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [[ -e requirements.txt ]]; then
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+          fi
       - name: Prepare dev requirements
         working-directory: examples
         run: |
@@ -57,10 +59,14 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps
+      - name: Extract Steps examples/flows/chat/basic-chat/README.md
         working-directory: ${{ github.workspace }}
         run: |
           python scripts/readme/extract_steps_from_readme.py -f examples/flows/chat/basic-chat/README.md -o examples/flows/chat/basic-chat
+      - name: Cat script
+        working-directory: examples/flows/chat/basic-chat
+        run: |
+          cat bash_script.sh
       - name: Run scripts
         working-directory: examples/flows/chat/basic-chat
         run: |
@@ -70,6 +76,11 @@ jobs:
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
           bash bash_script.sh
+      - name: Pip List for Debug
+        if : ${{ always() }}
+        working-directory: examples/flows/chat/basic-chat
+        run: |
+          pip list
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3

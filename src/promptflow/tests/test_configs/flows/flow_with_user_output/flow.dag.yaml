@@ -1,0 +1,15 @@
+inputs:
+  key:
+    type: object
+outputs:
+  output:
+    type: string
+    reference: ${print_val.output.value}
+nodes:
+- name: print_val
+  type: python
+  source:
+    type: code
+    path: print_val.py
+  inputs:
+    key: ${inputs.key}

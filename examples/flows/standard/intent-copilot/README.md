@@ -1,5 +1,6 @@
 # Intent-copilot
-This example shows how to create a flow from existing langchain [code](./intent.py). 
+This example shows how to create a flow from existing langchain code.
+Reference [code](./intent.py). 
 
 ## Prerequisites
 
@@ -17,9 +18,12 @@ cat .env
 
 1. init flow directory - create promptflow folder from existing python file
 ```bash
-pf flow init --flow . --entry intent.py --function extract_intent --prompt-template user_prompt_template=user_intent_zero_shot.jinja2
+pf flow init --flow . --entry intent.py --function extract_intent --prompt-template chat_prompt=user_intent_zero_shot.jinja2
 ```
-TODO introduce the generated files
+The generated files:
+- extract_intent_tool.py: Wrap the func `extract_intent` in the `intent.py` script into a [Python Tool](https://promptflow.azurewebsites.net/tools-reference/python-tool.html).
+- flow.dag.yaml: Describes the DAG(Directed Acyclic Graph) of this flow.
+- .gitignore: File/folder in the flow to be ignored.
 
 2. create needed custom connection
 ```bash
@@ -53,12 +57,12 @@ pf run show-details --name $name -r 3
 
 ```bash
 # create evaluation run
-pf run create --flow ../../evaluation/classification-accuracy-eval --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name
+pf run create --flow ../../evaluation/eval-classification-accuracy --data ./data --column-mapping groundtruth='${data.intent}' prediction='${run.outputs.output}' --run $name
 ```
 
 ```bash
 # get the evaluation run in previous step
-eval_run_name=$(pf run list | jq '.[] | select(.name | contains("classification_accuracy_eval")) | .name'| head -n 1 | tr -d '"')
+eval_run_name=$(pf run list | jq '.[] | select(.name | contains("eval_classification_accuracy")) | .name'| head -n 1 | tr -d '"')
 # show run
 pf run show --name $eval_run_name
 # show run output

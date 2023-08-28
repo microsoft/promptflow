@@ -1,0 +1,6 @@
+flow: ../flows/print_env_var
+data: ../datas/env_var_names.jsonl
+
+# run config: env related
+environment_variables:
+   API_BASE: ${azure_open_ai_connection.api_base}

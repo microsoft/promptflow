@@ -9,11 +9,11 @@ on:
     - cron: "28 19 * * *" # Every day starting at 3:28 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/** ]
+    paths: [ examples/**, .github/workflows/samples_flowinpipeline_pipeline.yml ]
   workflow_dispatch:
 
 jobs:
-  pipeline:
+  samples_notebook_ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
