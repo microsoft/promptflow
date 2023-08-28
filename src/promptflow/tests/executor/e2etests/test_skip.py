@@ -1,14 +1,9 @@
-from pathlib import Path
-
 import pytest
 
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import FlowExecutor, LineResult
 
 from ..utils import get_flow_inputs, get_yaml_file
-
-TEST_ROOT = Path(__file__).parent.parent.parent
-FLOWS_ROOT = TEST_ROOT / "test_configs/flows"
 
 
 @pytest.mark.e2etest
