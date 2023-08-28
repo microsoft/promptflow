@@ -40,6 +40,7 @@ class TestFlowRun:
             runtime=runtime,
         )
         assert isinstance(run, Run)
+        assert run.name.startswith("web_classification")
 
     def test_run_bulk_from_yaml(self, remote_client, pf, runtime):
         run_id = str(uuid.uuid4())
