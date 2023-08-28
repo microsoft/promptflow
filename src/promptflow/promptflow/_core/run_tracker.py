@@ -329,7 +329,7 @@ class RunTracker(ThreadLocalSingleton):
         child_run_infos = self.collect_child_node_runs(run_id)
         traces = []
         for node_run_info in child_run_infos:
-            traces.extend(node_run_info.api_calls)
+            traces.extend(node_run_info.api_calls or [])
         return traces
 
     OPENAI_AGGREGATE_METRICS = ["total_tokens"]
