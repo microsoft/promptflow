@@ -39,7 +39,7 @@ from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
-from promptflow._utils.flow_utils import get_flow_session_id
+from promptflow._utils.flow_utils import get_flow_linage_id
 from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -531,7 +531,7 @@ class RunOperations(_ScopeDependentOperations):
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        flow_id = get_flow_session_id(flow_dir=flow)
+        flow_id = get_flow_linage_id(flow_dir=flow)
         return f"{user_alias}_{flow_id}"
 
     def _get_child_runs_from_pfs(self, run_id: str):
