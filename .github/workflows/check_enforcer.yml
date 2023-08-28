@@ -3,15 +3,12 @@ name: GitHub Event Handler
 on:
   check_suite:
     types: [completed]
-  pull_request:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/check_enforcer.yml'
+  issue_comment:
+    types: [created]
 
 env:
-  # head_sha: ${{ github.event.check_suite.head_sha }}
-  head_sha: ${{ github.event.pull_request.head.sha }}
+  # note that this should be ${{ github.event.pull_request.head.sha }} for pull_request events
+  head_sha: ${{ github.sha }}
 
 jobs:
   event-handler:
