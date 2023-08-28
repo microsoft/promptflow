@@ -1,0 +1,45 @@
+# Pipeline link: https://dev.azure.com/msdata/Vienna/_build?definitionId=26179&_a=summary
+parameters:
+  - name: policyCulture
+    displayName: "Policy Culture"
+    type: string
+    # The culture used to run policy check scan, can be region codes separated by comma, e.g. 'en-US,de-DE'
+    default: 'en-US'
+
+name: $(BuildDefinitionName)_$(Date:yyyyMMdd)$(Rev:.r) # Configure run or build numbers
+
+variables:
+  - name: sourceLocation
+    value: $(System.DefaultWorkingDirectory)
+
+trigger:
+  - main
+  - releases/*
+
+pool:
+  vmImage: windows-latest
+
+steps:
+- checkout: self
+- task: PoliCheck@2
+  inputs:
+    targetType: 'F'
+    targetArgument: '$(sourceLocation)'
+    optionsPE: '1'
+    optionsUEPATH: '$(sourceLocation)/scripts/compliance-check/user_exclusion.xml'
+    result: '$(sourceLocation)/scripts/compliance-check/result.tsv'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'filePath'
+    filePath: '$(sourceLocation)/scripts/compliance-check/Check-PolicheckScan.ps1'
+    arguments: >
+      -policheckResult $(sourceLocation)/scripts/compliance-check/result.tsv
+  displayName: 'Check result'
+
+- task: PublishPipelineArtifact@1
+  condition: failed()
+  inputs:
+    targetPath: '$(sourceLocation)/scripts/compliance-check/result.tsv'
+    artifactName: 'compliance-check-result'
+    publishLocation: 'pipeline'
