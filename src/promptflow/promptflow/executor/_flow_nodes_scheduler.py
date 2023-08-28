@@ -27,7 +27,7 @@ class FlowNodesScheduler:
     def execute(
         self, context: FlowExecutionContext, inputs: Dict, nodes_from_invoker: List[Node], node_concurrency: int
     ) -> Dict:
-        dag_manager = DAGManager(nodes_from_invoker)
+        dag_manager = DAGManager(nodes_from_invoker, inputs)
         node_concurrency = min(node_concurrency, DEFAULT_CONCURRENCY_FLOW)
         logger.info(f"Start to run {len(nodes_from_invoker)} nodes with concurrency level {node_concurrency}.")
 
@@ -38,8 +38,7 @@ class FlowNodesScheduler:
             max_workers=node_concurrency, initializer=set_context, initargs=(parent_context,)
         ) as executor:
             self.future_to_node: Dict[Future, Node] = {}
-            nodes_to_exec = dag_manager.pop_ready_nodes()
-            self._submit_nodes({}, executor, nodes_to_exec)
+            self._execute_nodes(dag_manager, executor)
 
             while not dag_manager.completed():
                 try:
@@ -47,9 +46,7 @@ class FlowNodesScheduler:
                     dag_manager.complete_nodes(self._collect_outputs(completed_futures))
                     for each_future in completed_futures:
                         del self.future_to_node[each_future]
-                    nodes_to_exec = dag_manager.pop_ready_nodes()
-                    if nodes_to_exec:
-                        self._submit_nodes(dag_manager.completed_nodes_outputs, executor, nodes_to_exec)
+                    self._execute_nodes(dag_manager, executor)
                 except Exception as e:
                     for unfinished_future in self.future_to_node.keys():
                         node_name = self.future_to_node[unfinished_future].name
@@ -60,6 +57,16 @@ class FlowNodesScheduler:
                     raise e
         return dag_manager.completed_nodes_outputs
 
+    def _execute_nodes(self, dag_manager: DAGManager, executor: ThreadPoolExecutor):
+        # Skip nodes and update node run info
+        nodes_to_skip = dag_manager.pop_skipped_nodes()
+        if nodes_to_skip:
+            self._skip_nodes(dag_manager, nodes_to_skip)
+        # Submit nodes that are ready to run
+        nodes_to_exec = dag_manager.pop_ready_nodes()
+        if nodes_to_exec:
+            self._submit_nodes(dag_manager.completed_nodes_outputs, executor, nodes_to_exec)
+
     def _collect_outputs(self, completed_futures: List[Future]):
         completed_nodes_outputs = {}
         for each_future in completed_futures:
@@ -68,6 +75,28 @@ class FlowNodesScheduler:
             completed_nodes_outputs[each_node.name] = each_node_result
         return completed_nodes_outputs
 
+    def _skip_nodes(self, dag_manager: DAGManager, nodes: List[Node]):
+        context = self.context.copy()
+        try:
+            context.start()
+            for each_node in nodes:
+                self._skip_single_node(context, dag_manager, each_node)
+        finally:
+            context.end()
+
+    def _skip_single_node(self, context: FlowExecutionContext, dag_manager: DAGManager, node: Node):
+        context.current_node = node
+        node_outputs = None
+        if node.skip:
+            skip_condition = _input_assignment_parser.parse_value(
+                node.skip.condition, dag_manager.completed_nodes_outputs, self.inputs)
+            if skip_condition == node.skip.condition_value:
+                node_outputs = _input_assignment_parser.parse_value(
+                    node.skip.return_value, dag_manager.completed_nodes_outputs, self.inputs)
+                dag_manager.complete_nodes({node.name: node_outputs})
+        context.skip_node(node_outputs)
+        context.current_node = None
+
     def _submit_nodes(self, nodes_outputs, executor: ThreadPoolExecutor, nodes):
         for each_node in nodes:
             future = executor.submit(self._exec_single_node_in_thread, (each_node, nodes_outputs))
@@ -75,10 +104,6 @@ class FlowNodesScheduler:
 
     def _exec_single_node_in_thread(self, args: Tuple[Node, dict]):
         node, nodes_outputs = args
-        if node.skip:
-            skip_condition = _input_assignment_parser.parse_value(node.skip.condition, nodes_outputs, self.inputs)
-            if skip_condition == node.skip.condition_value:
-                return _input_assignment_parser.parse_value(node.skip.return_value, nodes_outputs, self.inputs)
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
         context = self.context.copy()

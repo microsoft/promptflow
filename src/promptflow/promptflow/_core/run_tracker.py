@@ -127,6 +127,30 @@ class RunTracker(ThreadLocalSingleton):
         self.node_log_manager.set_node_context(run_id, node, index)
         return run_info
 
+    def skip_node_run(
+        self,
+        node,
+        flow_run_id,
+        parent_run_id,
+        run_id,
+        outputs,
+    ):
+        run_info = RunInfo(
+            node=node,
+            run_id=run_id,
+            flow_run_id=flow_run_id,
+            parent_run_id=parent_run_id,
+            status=Status.Skipped,
+            inputs=None,
+            output=outputs,
+            metrics=None,
+            error=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            result=outputs,
+        )
+        self._node_runs[run_id] = run_info
+
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
         if output:
             try:

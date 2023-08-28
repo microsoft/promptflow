@@ -174,6 +174,18 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node_name, module=f.__module__) from e
 
+    def skip_node(self, outputs=None):
+        node_run_id = self._generate_current_node_run_id()
+        flow_logger.info(f"Skipping node {self._current_node.name}. node run id: {node_run_id}")
+        parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
+        self._run_tracker.skip_node_run(
+            node=self._current_node.name,
+            flow_run_id=self._run_id,
+            parent_run_id=parent_run_id,
+            run_id=node_run_id,
+            outputs=outputs,
+        )
+
     def end(self):
         self._deactivate_in_context()
 
