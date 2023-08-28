@@ -9,7 +9,7 @@
   `conda env config vars set PYTHONPATH=<path-to-src\promptflow>`.
   Once you have set the environment variable, you have to reactivate your environment.
   `conda activate <envname>`.
-- Run `pip install -e <path-to-src\promptflow>` to install the package and dependencies.
+- In root folder, run `python scripts/building/dev_setup.py --promptflow-extra-deps azure` to install the package and dependencies.
 
 ## How to run tests
 
