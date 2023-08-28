@@ -6,11 +6,59 @@ on:
   issue_comment:
     types: [created]
 
+env:
+  # note that this should be ${{ github.event.pull_request.head.sha }} for pull_request events
+  head_sha: ${{ github.sha }}
+
 jobs:
   event-handler:
     name: ${{ github.event_name }}
     runs-on: ubuntu-latest
     steps:
-      - uses: azure/azure-sdk-actions@main
+      - uses: octokit/request-action@v2.x
+        name: Get all check status
+        id: get_check_status
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          route: GET /repos/{repo}/commits/{head_sha}/check-runs
+          repo: ${{ github.repository }}
+          head_sha: ${{ env.head_sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Dump check status
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: "status.json"
+          json: ${{ steps.get_check_status.outputs.data }}
+      
+      - name: Summarize check status
+        id: summarize_check_status
+        run: |
+          incomplete_check_count=$(jq -c '.check_runs | .[] | .status | select (.!="completed")' status.json | wc -l)
+          echo "incomplete_check_count: $incomplete_check_count"
+          
+          jq -c '.check_runs | .[] | select (.status!="completed") | .html_url' status.json | while read url; do
+            echo $url
+          done
+
+          if [ $incomplete_check_count -gt 0 ]; then
+            echo "status=pending" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: octokit/request-action@v2.x
+        name: Update the check enforcer status
+        id: update_check_enforcer_status
+        with:
+          route: POST /repos/{repo}/statuses/{head_sha}
+          repo: ${{ github.repository }}
+          head_sha: ${{ env.head_sha }}
+          # below constructs the request body
+          state: ${{ steps.summarize_check_status.outputs.status }}
+          target_url: "https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}"
+          description: "Waiting for all checks to succeed"
+          context: "https://aka.ms/azsdk/checkenforcer"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
