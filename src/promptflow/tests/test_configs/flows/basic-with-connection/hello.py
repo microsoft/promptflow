@@ -1,8 +1,6 @@
 import os
-from dataclasses import asdict
 
 import openai
-from dotenv import load_dotenv
 
 from promptflow import tool
 from promptflow.connections import AzureOpenAIConnection
@@ -63,7 +61,7 @@ def my_python_tool(
         logit_bias=logit_bias if logit_bias else {},
         user=user,
         request_timeout=30,
-        **asdict(connection),
+        **dict(connection),
     )
 
     # get first element because prompt is single.
