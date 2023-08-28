@@ -17,20 +17,22 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   executor_unit_tests:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.10"]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
       uses: actions/checkout@v3
     - name: Display and Set Environment Variables
       run: env | sort >> $GITHUB_OUTPUT
       shell: bash -el {0}
-      id: display_env
-    - name: Conda Setup
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ matrix.python-version }}
       uses: "./.github/actions/step_create_conda_environment"
-    - run: |
-        echo ${{ env.packageSetupType }}
-        echo ${{ env.testWorkingDirectory }}
-      shell: bash -l {0}
+      with:
+        pythonVersion: ${{ matrix.python-version }}
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -44,6 +46,9 @@ jobs:
       uses: "./.github/actions/step_generate_configs"
       with:
         targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v1
+      id: cpu-cores
     - name: Run Coverage Test
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
@@ -58,28 +63,45 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
           -l eastus \
           -m "all" \
-          -n 4 \
+          -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload pytest test results
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: pytest-results
+        name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
         path: 
           ${{ github.workspace }}/*.xml
-      # Use always() to always run this step to publish test results when there are test failures
-    - name: Publish Test Results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action/composite@v2
-      with:
-        check_name: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        comment_title: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        files: |
-          ${{ github.workspace }}/test-results.xml
-    - name: Generate Coverage Report
-      if: (success() || failure())
-      uses: orgoro/coverage@v3.1
-      with:
-        coverageFile: ${{ github.workspace }}/coverage.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
-        thresholdAll: 0.3
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: executor_unit_tests
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: Display and Set Environment Variables
+        run: env | sort >> $GITHUB_OUTPUT
+        shell: bash -el {0}
+        id: display_env
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+          comment_title: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+          files: "artifacts/**/test-*.xml"
+      - name: Generate Coverage Report
+        uses: orgoro/coverage@v3.1
+        with:
+          coverageFile: "artifacts/Test Results (Python 3.9) (OS ubuntu-latest)/coverage.xml"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          thresholdAll: 0.3
+

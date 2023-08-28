@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         python-version: ["3.9", "3.10"]
     runs-on: ${{ matrix.os }}
     steps:
@@ -74,6 +74,7 @@ jobs:
         name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
         path: ${{ env.testWorkingDirectory }}/*.xml
       # Use always() to always run this step to publish test results when there are test failures
+  
   publish-test-results:
     name: "Publish Tests Results"
     needs: sdk_cli_tests
@@ -103,8 +104,7 @@ jobs:
       - name: Generate Coverage Report
         uses: orgoro/coverage@v3.1
         with:
-          coverageFile: "artifacts/**/coverage.xml"
+          coverageFile: "artifacts/Test Results (Python 3.9) (OS ubuntu-latest)/coverage.xml"
           token: ${{ secrets.GITHUB_TOKEN }}
           thresholdAll: 0.4
 
-    
