@@ -29,8 +29,7 @@ git clone https://github.com/microsoft/promptflow.git
    - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
 
 5. (Optional) Install Prompt flow VS Code extension
-   - Download it from: https://aka.ms/promptflow/vsc
-   - Install from the VSIX:
+   - <TODO: update extension link in the VS Code extension marketplace>
 
 ![install_extension](../media/how-to-guides/quick-start/install_from_vsix.png)
 
