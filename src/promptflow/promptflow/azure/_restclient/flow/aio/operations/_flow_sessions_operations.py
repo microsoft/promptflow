@@ -4,7 +4,7 @@
 # Changes may cause incorrect behavior and will be lost if the code is regenerated.
 # --------------------------------------------------------------------------
 import functools
-from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
 import warnings
 
 from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, ResourceNotFoundError, map_error
@@ -96,12 +96,16 @@ class FlowSessionsOperations:
         pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 202]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('object', pipeline_response)
+        if response.status_code == 200:
+            deserialized = self._deserialize('object', pipeline_response)
+
+        if response.status_code == 202:
+            deserialized = self._deserialize('object', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
@@ -122,7 +126,7 @@ class FlowSessionsOperations:
         api_version: Optional[str] = "1.0.0",
         type: Optional[str] = None,
         **kwargs: Any
-    ) -> str:
+    ) -> Any:
         """poll_operation_status.
 
         :param subscription_id: The Azure Subscription ID.
@@ -140,11 +144,11 @@ class FlowSessionsOperations:
         :param type:
         :type type: str
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: str, or the result of cls(response)
-        :rtype: str
+        :return: any, or the result of cls(response)
+        :rtype: any
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[str]
+        cls = kwargs.pop('cls', None)  # type: ClsType[Any]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -172,7 +176,7 @@ class FlowSessionsOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('str', pipeline_response)
+        deserialized = self._deserialize('object', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
