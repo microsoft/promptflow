@@ -38,11 +38,8 @@ def my_python_tool(
 
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
-    if isinstance(connection, AzureOpenAIConnection):
-        connection_dict = asdict(connection)
-    else:
-        # custom connection is dict like object contains the configs and secrets
-        connection_dict = dict(connection)
+    # connection can be extract as a dict object contains the configs and secrets
+    connection_dict = dict(connection)
 
     response = openai.Completion.create(
         prompt=prompt,
