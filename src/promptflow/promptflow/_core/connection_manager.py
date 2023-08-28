@@ -60,7 +60,7 @@ class ConnectionManager:
                 because there are some keys just used by UX like resource id, while not used by backend.
                 """
                 if is_dataclass(connection_class):
-                    # Do not delete this branch, as embedding store connection is dataclass type.
+                    # Do not delete this branch, as promptflow_vectordb.connections is dataclass type.
                     cls_fields = {f.name: f for f in fields(connection_class)}
                     connection_value = connection_class(**{k: v for k, v in value.items() if k in cls_fields})
                     setattr(

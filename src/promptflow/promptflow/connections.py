@@ -24,6 +24,8 @@ class BingConnection:
     url: str = "https://api.bing.microsoft.com/v7.0/search"
 
 
+# We should use unified connection class everywhere.
+# Do not add new connection class definition directly here.
 OpenAIConnection = OpenAIConnection
 AzureOpenAIConnection = AzureOpenAIConnection
 AzureContentSafetyConnection = AzureContentSafetyConnection
