@@ -77,3 +77,31 @@ jobs:
     with:
       ToolsPackageVersion: ${{ needs.continuous_delivery_release.outputs.PackageVersion }}
     secrets: inherit
+
+  pre_test_manual_release_checkout_repository:
+    if: github.event_name == 'workflow_dispatch' && ${{ inputs.UploadAsLatest == "False" }}
+    runs-on: ubuntu-latest
+    name: Pre Test Manual Release Checkout Repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+  
+  pre_test_manual_release:
+    needs: pre_test_manual_release_checkout_repository
+    uses: ./.github/workflows/wheel_distributing.yml
+    name: Pre Test Manual release
+    with:
+      ReleaseType: ${{ inputs.ReleaseType }}
+      UploadAsLatest: "False"
+      SourceFolderName: ${{ inputs.SourceFolderName }}
+      ConfigsFolderPath: "scripts/distributing/configs"
+    secrets: inherit
+
+  deploy_pre_test_runtime_with_updated_tools_package:
+    needs:  pre_test_manual_release
+    uses: ./.github/workflows/tools_deploy_runtime.yml
+    name: Deploy Pre Test runtime
+    with:
+      ToolsPackageVersion: ${{ needs.pre_test_manual_release.outputs.PackageVersion }}
+    secrets: inherit
