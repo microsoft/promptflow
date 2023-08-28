@@ -16,7 +16,8 @@ from promptflow._core.tool_meta_generator import (
     collect_tool_function_in_module,
     load_python_module_from_file,
 )
-from promptflow._core.tools_manager import BuiltinsManager, CustomToolSourceLoadError, collect_package_tools
+from promptflow._core.tools_manager import BuiltinsManager, CustomToolSourceLoadError, collect_package_tools, \
+    connection_type_to_api_mapping
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
@@ -28,7 +29,7 @@ from promptflow.executor._errors import (
     InvalidCustomLLMTool,
     InvalidSource,
     NodeInputValidationError,
-    ValueTypeUnresolved,
+    ValueTypeUnresolved, ProviderNotFound,
 )
 
 
@@ -161,7 +162,19 @@ class ToolResolver:
             if k in node_inputs:
                 del node_inputs[k]
 
+    def _get_node_connection(self, node: Node):
+        connection = self._connection_manager.get(node.connection)
+        if connection is None:
+            raise ConnectionNotFound(
+                message=f"Connection {node.connection!r} not found, available connection keys "
+                f"{self._connection_manager._connections.keys()}.",
+                target=ErrorTarget.EXECUTOR,
+            )
+        return connection
+
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
+        connection = self._get_node_connection(node)
+        node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
         api_name = f"{node.provider}.{node.api}"
         tool: Tool = BuiltinsManager._load_llm_api(api_name)
         key, connection = self._resolve_llm_connection_to_inputs(node, tool)
@@ -186,13 +199,7 @@ class ToolResolver:
         return ResolvedTool(updated_node, tool, api_func, init_args)
 
     def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool) -> Node:
-        connection = self._connection_manager.get(node.connection)
-        if connection is None:
-            raise ConnectionNotFound(
-                message=f"Connection {node.connection!r} not found, available connection keys "
-                f"{self._connection_manager._connections.keys()}.",
-                target=ErrorTarget.EXECUTOR,
-            )
+        connection = self._get_node_connection(node)
         for key, input in tool.inputs.items():
             if ConnectionType.is_connection_class_name(input.type[0]):
                 if type(connection).__name__ not in input.type:

@@ -49,6 +49,10 @@ class ConnectionNotFound(InvalidRequest):
     pass
 
 
+class ProviderNotFound(InvalidRequest):
+    pass
+
+
 class InvalidBulkTestRequest(ValidationException):
     def __init__(
         self,
