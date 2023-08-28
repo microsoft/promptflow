@@ -25,10 +25,10 @@ Ensure you have created `open_ai_connection` connection before.
 pf connection show -n open_ai_connection
 ```
 
-Create connection if you haven't done that. Ensure you have put your azure open ai endpoint key in [azure_openai.yml](azure_openai.yml) file. 
+Create connection if you haven't done that. Ensure you have put your azure open ai endpoint key in [azure_openai.yml](../../../connections/azure_openai.yml) file. 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create -f azure_openai.yml --name open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
+pf connection create -f ../../../connections/azure_openai.yml --name open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
 

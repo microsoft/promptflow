@@ -37,7 +37,7 @@ pip install -r requirements.txt
 ### 1 Create Azure OpenAI or OpenAI connection
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 Note that you need to use "2023-07-01-preview" as Azure OpenAI connection API version when using function calling.
 See <a href='https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/function-calling' target='_blank'>How to use function calling with Azure OpenAI Service</a> for more details.
