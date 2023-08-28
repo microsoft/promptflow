@@ -1,5 +1,7 @@
 name: promptflow-sdk-cli-test
 on:
+  schedule:
+    - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request:
     branches: [ main ]
     paths:

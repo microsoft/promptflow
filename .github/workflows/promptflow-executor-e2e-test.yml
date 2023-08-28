@@ -1,5 +1,7 @@
 name: promptflow-executor-e2e-test
 on:
+  schedule:
+    - cron: "40 20 * * *" # Every day starting at 4:40 BJT
   pull_request:
     branches: [ main ]
     paths:
