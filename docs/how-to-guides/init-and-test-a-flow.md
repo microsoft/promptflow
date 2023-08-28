@@ -35,7 +35,6 @@ pf flow init --flow <flow-name> --type chat
 
 ![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_1.png)
 ![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_2.png)
-![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_3.png)
 
 :::
 
