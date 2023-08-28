@@ -4,6 +4,10 @@ inputs:
     required: false
     default: "scripts/building/release-env.yml"
     type: string
+  pythonVersion:
+    required: false
+    default: "3.9"
+    type: string
 runs:
   using: composite
   steps:
@@ -13,7 +17,7 @@ runs:
       miniconda-version: "latest"
       activate-environment: release-env
       environment-file: ${{ inputs.condaEnvironmentFilePath }}
-      python-version: 3.9
+      python-version: ${{ inputs.pythonVersion }}
       auto-activate-base: false
       auto-update-conda: true
   - run: |
