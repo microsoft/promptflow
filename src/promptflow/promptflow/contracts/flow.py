@@ -286,7 +286,7 @@ class Flow:
     inputs: Dict[str, FlowInputDefinition]
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
-    node_variants: Dict[str, NodeVariants]
+    node_variants: Dict[str, NodeVariants] = None
 
     def serialize(self):
         data = {
