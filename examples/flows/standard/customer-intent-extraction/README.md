@@ -1,15 +1,20 @@
-# Intent-copilot
-This example shows how to create a flow from existing langchain code.
-Reference [code](./intent.py). 
+# Customer Intent Extraction
+
+This sample is using OpenAI chat model(ChatGPT/GPT4) to identify customer intent from customer's question.
+
+By going through this sample you will learn how to create a flow from existing working code (written in LangChain in this case).
+
+This is the [existing code](./intent.py).
 
 ## Prerequisites
+Install promptflow sdk and other dependencies:
 
-install promptflow sdk and other dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-Ensure you have put enough your azure open ai endpoint key in .env file.
+Ensure you have put your azure open ai endpoint key in .env file.
+
 ```bash
 cat .env
 ```
