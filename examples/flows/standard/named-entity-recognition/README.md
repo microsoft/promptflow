@@ -1,5 +1,10 @@
 # Named Entity Recognition
-A flow that perform named entity recognition task. 
+
+[Named Entity Recognition (NER)](https://en.wikipedia.org/wiki/Named-entity_recognition) is a Natural Language Processing (NLP) task. It involves identifying and classifying named entities (such as people, organizations, locations, date expressions, percentages, etc.) in a given text. This is a crucial aspect of NLP as it helps to understand the context and extract key information from the text.
+
+ 
+
+This sample flow performs named entity recognition task using ChatGPT/GPT4 and prompts.
 
 Tools used in this flow：
 - `python` tool
