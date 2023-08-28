@@ -106,7 +106,7 @@ Currently all tests are under `src/promptflow/tests/` folder:
     - wrong_tools/
 
 When you want to add tests for a new feature, you can add new test file let's say a e2e test file `test_construction.py`
-under `tests/promptflow/e2etests/`.
+under `tests/promptflow/**/e2etests/`.
 
 Once the project gets more complicated or anytime you find it necessary to add new test folder and test configs for
 a specific feature, feel free to split the `promptflow` to more folders, for example:
