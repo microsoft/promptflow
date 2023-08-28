@@ -45,6 +45,7 @@ def create_faiss_index(pdf_path: str) -> str:
         log("Index built: " + index_persistent_path)
         return index_persistent_path
 
+
 # Split the text into chunks with CHUNK_SIZE and CHUNK_OVERLAP as character count
 def split_text(text, chunk_size, chunk_overlap):
     # Calculate the number of chunks
