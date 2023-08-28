@@ -174,7 +174,9 @@ class ToolResolver:
 
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection = self._get_node_connection(node)
-        node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
+        if not node.provider:
+            # If provider is not specified, try to resolve it from connection type
+            node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
         api_name = f"{node.provider}.{node.api}"
         tool: Tool = BuiltinsManager._load_llm_api(api_name)
         key, connection = self._resolve_llm_connection_to_inputs(node, tool)
