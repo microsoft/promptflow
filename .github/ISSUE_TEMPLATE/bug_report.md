@@ -21,7 +21,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Running Information(please complete the following information):**
- - Promptflow Package Name and Package Version using `pip list`: [e.g. promptflow[azure] == 1.0]
+ - Promptflow Package Version using `pf -v`: [e.g. 0.0.102309906]
  - Operating System: [e.g. Ubuntu 20.04, Windows 11]
  - Python Version using `python --version`: [e.g. python==3.10.12]
 
