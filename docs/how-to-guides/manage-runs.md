@@ -276,7 +276,7 @@ print(runs)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_list_runs.png)
 :::
 ::::
 
