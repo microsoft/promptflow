@@ -9,12 +9,11 @@ from typing import TYPE_CHECKING
 from azure.core.configuration import Configuration
 from azure.core.pipeline import policies
 
-from promptflow._version import VERSION
-
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
     from typing import Any, Optional
 
+VERSION = "unknown"
 
 class AzureMachineLearningDesignerServiceClientConfiguration(Configuration):
     """Configuration for AzureMachineLearningDesignerServiceClient.
