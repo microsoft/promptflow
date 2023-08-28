@@ -79,7 +79,7 @@ jobs:
     secrets: inherit
 
   pre_test_manual_release_checkout_repository:
-    if: github.event_name == 'workflow_dispatch' && ${{ inputs.UploadAsLatest == "False" }}
+    if: github.event_name == 'workflow_dispatch' && ${{ inputs.UploadAsLatest }} == "False"
     runs-on: ubuntu-latest
     name: Pre Test Manual Release Checkout Repository
 
