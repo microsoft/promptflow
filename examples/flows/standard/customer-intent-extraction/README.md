@@ -51,7 +51,7 @@ pf run create --flow . --data ./data
 # list created run
 pf run list
 # get a sample completed run name
-name=$(pf run list | jq '.[] | select(.name | contains("intent_copilot")) | .name'| head -n 1 | tr -d '"')
+name=$(pf run list | jq '.[] | select(.name | contains("customer_intent_extraction")) | .name'| head -n 1 | tr -d '"')
 # show run
 pf run show --name $name
 # show specific run detail, top 3 lines
