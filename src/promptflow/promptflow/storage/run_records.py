@@ -48,16 +48,13 @@ class NodeRunRecord:
             status=run_info.status.value,
         )
 
-    def serialize(node_record: "NodeRunRecord") -> str:
+    def serialize(self) -> str:
         """Serialize the NodeRunRecord for storage in blob.
-
-        Parameters:
-            node_record (NodeRunRecord): The NodeRunRecord to serialize.
 
         Returns:
             str: The serialized result.
         """
-        return json.dumps(asdict(node_record))
+        return json.dumps(asdict(self))
 
 
 @dataclass
@@ -104,13 +101,10 @@ class LineRunRecord:
             tags=run_info.tags,
         )
 
-    def serialize(line_record: "LineRunRecord") -> str:
+    def serialize(self) -> str:
         """Serialize the LineRunRecord for storage in blob.
-
-        Parameters:
-            line_record (LineRunRecord): The LineRunRecord to serialize.
 
         Returns:
             str: The serialized result.
         """
-        return json.dumps(asdict(line_record))
+        return json.dumps(asdict(self))
