@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'src/promptflow-tools/**'
+      - '!README.*'
+      - '!src/promptflow-tools/tests/**'
 
   workflow_dispatch:
     inputs:
