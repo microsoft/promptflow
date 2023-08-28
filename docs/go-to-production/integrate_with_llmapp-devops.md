@@ -53,6 +53,10 @@ Once the flow is created, you can navigate to the Flow Authoring Page to view an
 
 ![Flow file explorer](../media/integrate-with-llmapp-devops/flow_file_explorer.png)
 
+With "Raw file mode" switched on, you can view and edit the raw content of the files in the file editor, including the flow definition file `flow.dag.yaml` and the source files.
+![Flow day yaml](../media/integrate-with-llmapp-devops/flow_day_yaml_raw_file.png)
+![Flow source file](../media/integrate-with-llmapp-devops/flow_source_file_raw_file.png)
+
 Alternatively, you can access all the flow folders directly within the Azure Machine Learning notebook.
 
 ![Notebook userpath](../media/integrate-with-llmapp-devops/aml_notebook_userpath.png)
@@ -454,7 +458,7 @@ Throughout the lifecycle of your flow iterations, several operations can be auto
 * Registering of prompt flow models
 * Deployment of prompt flow models
 
-For a comprehensive guide on an end-to-end MLOps pipeline that executes a web classification flow, you can refer to  [Set up e2e LLMOps with Promptflow and GitHub](../go-to-production/e2e_llmops_with_promptflow.md).
+For a comprehensive guide on an end-to-end MLOps pipeline that executes a web classification flow, you can refer to  [Set up e2e LLMOps with Promptflow and GitHub](../go-to-production/e2e_llmops_with_promptflow.md), and the [GitHub demo project](https://github.com/Azure/llmops-gha-demo).
 
 ### CD: Continuous deployment
 
