@@ -29,7 +29,6 @@ nodes:
     logit_bias: ''
     question: ${inputs.question}
     chat_history: ${inputs.chat_history}
-  provider: AzureOpenAI
   connection: open_ai_connection
   api: chat
 - name: get_wiki_url
@@ -66,7 +65,6 @@ nodes:
     question: ${inputs.question}
     chat_history: ${inputs.chat_history}
     contexts: ${process_search_result.output}
-  provider: AzureOpenAI
   connection: open_ai_connection
   api: chat
 environment:
