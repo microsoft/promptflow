@@ -41,9 +41,7 @@ def get_metadata(name: str):
         lineage=run.run,
         metrics=local_storage_op.load_metrics(),
         dag=local_storage_op.load_dag_as_string(),
-        # TODO(zhengfei): investigate why this will lead to API break
-        # flow_tools_json=local_storage_op.load_flow_tools_json(),
-        flow_tools_json=None,
+        flow_tools_json=local_storage_op.load_flow_tools_json(),
     )
     return jsonify(asdict(metadata))
 
