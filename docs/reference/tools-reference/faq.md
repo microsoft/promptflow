@@ -11,10 +11,10 @@ When you update flows to code first experience, if the flow utilized the 3 tools
 To resolve the issue, you have two options:
 
 - **Option 1**
-  1. Update your runtime to latest version. 
-  2. Click on "Raw file mode" to switch to the raw code view, then open the "flow.dag.yaml" file.
+  - Update your runtime to latest version. 
+  - Click on "Raw file mode" to switch to the raw code view, then open the "flow.dag.yaml" file.
      ![img](../../media/tool/faq/switch_to_raw_file_mode.png)
-  3. Update the tool names.
+  - Update the tool names.
      ![img](../../media/tool/faq/update_tool_name.png)
      
       | Tool | New tool name |
@@ -23,8 +23,8 @@ To resolve the issue, you have two options:
       | Vector Index Lookup | promptflow_vectordb.tool.vector_index_lookup.VectorIndexLookup.search |
       | Vector DB Lookup | promptflow_vectordb.tool.vector_db_lookup.VectorDBLookup.search |
 
-  4. Save the "flow.dag.yaml"
+  - Save the "flow.dag.yaml"
 
 - **Option 2**
-  1. Update your runtime to latest version.
-  2. Remove the old tool and re-create a new tool.
+  - Update your runtime to latest version.
+  - Remove the old tool and re-create a new tool.
