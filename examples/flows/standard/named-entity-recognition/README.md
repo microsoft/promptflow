@@ -26,9 +26,9 @@ Create connection if you haven't done that. Ensure you have put your azure open 
 pf connection create -f ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
-Ensure you have created `azure_open_ai_connection` connection.
+Ensure you have created `open_ai_connection` connection.
 ```bash
-pf connection show -n azure_open_ai_connection
+pf connection show -n open_ai_connection
 ```
 
 

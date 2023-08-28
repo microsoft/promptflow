@@ -37,7 +37,7 @@ node_variants:
             temperature: '0.2'
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
-          connection: azure_open_ai_connection
+          connection: open_ai_connection
           api: completion
           module: promptflow.tools.aoai
       variant_1:
@@ -52,7 +52,7 @@ node_variants:
             temperature: '0.3'
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
-          connection: azure_open_ai_connection
+          connection: open_ai_connection
           api: completion
           module: promptflow.tools.aoai
 ```

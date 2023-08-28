@@ -256,6 +256,6 @@ nodes:
     context: ${inputs.context}
     temperature: 0
   provider: AzureOpenAI
-  connection: azure_open_ai_connection
+  connection: open_ai_connection
   api: chat
   module: promptflow.tools.aoai

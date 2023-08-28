@@ -39,7 +39,7 @@ nodes:
     text_content: ${summarize_text_content.output}
     examples: ${prepare_examples.output}
   provider: AzureOpenAI
-  connection: azure_open_ai_connection
+  connection: open_ai_connection
   api: chat
 - name: convert_to_dict
   type: python
@@ -73,7 +73,7 @@ node_variants:
             temperature: '0.2'
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
-          connection: azure_open_ai_connection
+          connection: open_ai_connection
           api: chat
           module: promptflow.tools.aoai
       variant_1:
@@ -88,7 +88,7 @@ node_variants:
             temperature: '0.3'
             text: ${fetch_text_content_from_url.output}
           provider: AzureOpenAI
-          connection: azure_open_ai_connection
+          connection: open_ai_connection
           api: chat
           module: promptflow.tools.aoai
 environment:
