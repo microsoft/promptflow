@@ -106,7 +106,5 @@ node_variants:
             best_of: '1'
             logit_bias: ''
             text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
           connection: azure_open_ai_connection
           api: completion
-          module: promptflow.tools.aoai

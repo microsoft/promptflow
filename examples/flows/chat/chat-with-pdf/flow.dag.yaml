@@ -14,7 +14,7 @@ inputs:
     type: object
     default:
       EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
-      CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo
+      CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo # change to gpt-3.5-turbo when using openai
       PROMPT_TOKEN_LIMIT: 3000
       MAX_COMPLETION_TOKENS: 256
       VERBOSE: true
@@ -35,7 +35,7 @@ nodes:
     type: code
     path: setup_env.py
   inputs:
-    aoai_connection: azure_open_ai_connection
+    connection: open_ai_connection
     config: ${inputs.config}
 - name: download_tool
   type: python

@@ -203,11 +203,18 @@ def get_list_view_type(archived_only: bool, include_archived: bool) -> ListViewT
 
 
 # run visualize constants
-VISUALIZE_HTML_TEMPLATE = Path(__file__).parent / "data" / "visualize.j2"
-CDN_LINK = "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/{filename}"
-VISUALIZE_LOCAL_VERSION = "0.0.26"
-VISUALIZE_CLOUD_VERSION = "0.0.24"
-JS_FILENAME = "bulkTestDetails.min.js"
+VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
+VIS_LIB_CDN_LINK_TMPL = (
+    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
+)
+VIS_LIB_VERSION = "0.0.26"
+VIS_PORTAL_URL_TMPL = (
+    "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
+    "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
+    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+    "&flight=promptfilestorage,PFPackageTools,PFRunList,PromptBatchRunDesignV2,PFSourceRun"
+    "&runId={names}"
+)
 
 
 class RunInfoSources(str, Enum):

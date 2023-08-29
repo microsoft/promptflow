@@ -22,7 +22,7 @@ user: What NLP tasks can it perform well?
 ## Rewritten question
 What NLP tasks can BERT perform well?
 
-Now comes the actual work - please respond with the rewritten question, nothing else.
+Now comes the actual work - please respond with the rewritten question in the same language as the question, nothing else.
 
 ## Previous conversation
 {% for item in history %}

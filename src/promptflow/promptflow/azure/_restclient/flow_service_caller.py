@@ -6,6 +6,7 @@
 # ---------------------------------------------------------
 """service_calller.py, module for interacting with the AzureML service."""
 import os
+import sys
 import time
 import uuid
 
@@ -14,7 +15,7 @@ from azure.core.pipeline.policies import RetryPolicy
 
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.exceptions import ValidationException
+from promptflow.exceptions import ValidationException, UserErrorException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -66,7 +67,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
     DEFAULT_COMPONENT_NAMESPACE_PLACEHOLDER = '-'
     DEFAULT_MODULE_WORKING_MECHANISM = 'OutputToDataset'
     DEFAULT_DATATYPE_MECHANISM = 'RegisterBuildinDataTypeOnly'
-    MODULE_CLUSTER_ADDRESS = 'MODULE_CLUSTER_ADDRESS'
+    FLOW_CLUSTER_ADDRESS = 'FLOW_CLUSTER_ADDRESS'
     WORKSPACE_INDEPENDENT_ENDPOINT_ADDRESS = 'WORKSPACE_INDEPENDENT_ENDPOINT_ADDRESS'
     DEFAULT_BASE_URL = 'https://{}.api.azureml.ms'
     MASTER_BASE_API = 'https://master.api.azureml-test.ms'
@@ -75,17 +76,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     def __init__(self, workspace, credential, base_url=None, region=None, **kwargs):
         """Initializes DesignerServiceCaller."""
+        if 'get_instance' != sys._getframe().f_back.f_code.co_name:
+            raise UserErrorException(
+                'Please use `_FlowServiceCallerFactory.get_instance()` to get service caller '
+                'instead of creating a new one.'
+            )
         super().__init__()
 
         # self._service_context = workspace.service_context
         if base_url is None:
             base_url = workspace.discovery_url.replace("discovery", "")
             # for dev test, change base url with environment variable
-            base_url = os.environ.get(self.MODULE_CLUSTER_ADDRESS, default=base_url)
-        # self._subscription_id = workspace.subscription_id
-        # self._resource_group_name = workspace.resource_group
-        # self._workspace_name = workspace.name
-        # self.auth = workspace._auth_object
+            base_url = os.environ.get(self.FLOW_CLUSTER_ADDRESS, default=base_url)
+
         self._workspace = workspace
 
         self._service_endpoint = base_url
@@ -450,88 +453,6 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 workspace_name=workspace_name,
                 headers=headers,
                 body=body,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
-
-    def get_bulk_run(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        flow_run_id,  # type: str
-        **kwargs  # type: Any
-    ):
-        self._refresh_request_id_for_telemetry()
-        headers = self._get_headers()
-        try:
-            return self.caller.bulk_runs.get_flow_run_info(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                flow_run_id=flow_run_id,
-                headers=headers,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
-
-    def get_child_runs(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        flow_run_id,  # type: str
-        index=None,  # type: Optional[int]
-        start_index=None,  # type: Optional[int]
-        end_index=None,  # type: Optional[int]
-        **kwargs  # type: Any
-    ):
-        self._refresh_request_id_for_telemetry()
-        headers = self._get_headers()
-        try:
-            return self.caller.bulk_runs.get_flow_child_runs(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                flow_run_id=flow_run_id,
-                index=index,
-                start_index=start_index,
-                end_index=end_index,
-                headers=headers,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
-
-    def get_node_runs(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        flow_run_id,  # type: str
-        node_name,  # type: str
-        index=None,  # type: Optional[int]
-        start_index=None,  # type: Optional[int]
-        end_index=None,  # type: Optional[int]
-        aggregation=False,  # type: Optional[bool]
-        **kwargs  # type: Any
-    ):
-        self._refresh_request_id_for_telemetry()
-        headers = self._get_headers()
-        try:
-            return self.caller.bulk_runs.get_flow_node_runs(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                flow_run_id=flow_run_id,
-                node_name=node_name,
-                index=index,
-                start_index=start_index,
-                end_index=end_index,
-                aggregation=aggregation,
-                headers=headers,
                 **kwargs
             )
         except HttpResponseError as e:

@@ -13,6 +13,7 @@ from pandas import DataFrame
 from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities import Run
 from promptflow.azure._load_functions import load_flow
+from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
@@ -53,11 +54,16 @@ class PFClient:
             workspace_name=workspace_name,
             **kwargs,
         )
+        workspace = self._ml_client.workspaces.get(name=self._ml_client._operation_scope.workspace_name)
+        self._service_caller = _FlowServiceCallerFactory.get_instance(
+            workspace=workspace, credential=self._ml_client._credential, **kwargs
+        )
         self._flows = FlowOperations(
             operation_scope=self._ml_client._operation_scope,
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
+            service_caller=self._service_caller,
             **kwargs,
         )
         self._runs = RunOperations(
@@ -66,6 +72,7 @@ class PFClient:
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
             flow_operations=self._flows,
+            service_caller=self._service_caller,
             **kwargs,
         )
         self._connections = ConnectionOperations(
@@ -73,6 +80,7 @@ class PFClient:
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
             credential=self._ml_client._credential,
+            service_caller=self._service_caller,
             **kwargs,
         )
 

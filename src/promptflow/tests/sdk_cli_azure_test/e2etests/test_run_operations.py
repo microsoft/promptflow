@@ -14,6 +14,7 @@ from promptflow._sdk._constants import RunStatus
 from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
+from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
 from promptflow.azure.operations import RunOperations
 
@@ -39,6 +40,7 @@ class TestFlowRun:
             runtime=runtime,
         )
         assert isinstance(run, Run)
+        assert run.name.startswith("web_classification")
 
     def test_run_bulk_from_yaml(self, remote_client, pf, runtime):
         run_id = str(uuid.uuid4())
@@ -221,27 +223,6 @@ class TestFlowRun:
         # error info will store in run dict
         assert "error" in run._to_dict()
 
-    @pytest.mark.skip(reason="visualize for cloud run will be deprecated, skip it for now.")
-    def test_visualize(self, remote_client, pf, runtime) -> None:
-        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        run1 = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=data_path,
-            column_mapping={"url": "${data.url}"},
-            variant="${summarize_text_content.variant_0}",
-            runtime=runtime,
-        )
-        remote_client.runs.stream(run=run1.name)
-        run2 = pf.run(
-            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
-            data=data_path,
-            run=run1,
-            column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-            runtime=runtime,
-        )
-        remote_client.runs.stream(run=run2.name)
-        remote_client.runs.visualize([run1, run2])
-
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification_with_additional_include",
@@ -292,7 +273,6 @@ class TestFlowRun:
             with patch.object(RequestsTransport, "send") as mock_request, patch.object(
                 FlowServiceCaller, "_set_headers_with_user_aml_token"
             ):
-
                 mock_request.side_effect = ServiceResponseError(
                     "Connection aborted.",
                     error=ConnectionResetError(10054, "An existing connection was forcibly closed", None, 10054, None),
@@ -363,7 +343,9 @@ class TestFlowRun:
             assert body.max_idle_time_seconds is None
             return body
 
-        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
             # no runtime provided, will use automatic runtime
             pf.run(
@@ -517,4 +499,41 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
                 column_mapping={"key": {"value": "1"}},
                 runtime=runtime,
+            )
+
+    def test_flow_id_in_submission(self, remote_client, pf, runtime):
+        from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+
+        flow_path = f"{FLOWS_DIR}/print_env_var"
+        flow_lineage_id = get_flow_lineage_id(flow_path)
+        flow_session_id = pf._runs._get_session_id(flow_path)
+
+        def submit(*args, **kwargs):
+            body = kwargs.get("body", None)
+            assert flow_session_id == body.session_id
+            # session id also contains alias
+            assert flow_lineage_id in flow_session_id
+            assert flow_lineage_id == body.flow_lineage_id
+            return body
+
+        # flow session id is same with or without session creation
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # no runtime provided, will use automatic runtime
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                runtime=runtime,
+            )
+
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # no runtime provided, will use automatic runtime
+            pf.run(
+                flow=flow_path,
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
             )

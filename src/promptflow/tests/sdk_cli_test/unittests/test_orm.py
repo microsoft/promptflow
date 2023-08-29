@@ -100,7 +100,7 @@ def generate_engine():
     return create_engine(f"sqlite:///{str(db_path)}", future=True)
 
 
-@pytest.mark.community_control_plane_sdk_test
+@pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestSchemaManagement:
     def test_fixed_version(self) -> None:
@@ -188,7 +188,7 @@ class TestSchemaManagement:
         assert len(entities) == 2
 
 
-@pytest.mark.community_control_plane_sdk_test
+@pytest.mark.sdk_test
 @pytest.mark.unittest
 class TestTransaction:
     def test_commit(self) -> None:

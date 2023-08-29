@@ -279,6 +279,7 @@ class ToolsLoader:
 builtins = {}
 apis = {}
 connections = {}
+connection_type_to_api_mapping = {}
 reserved_keys = {}
 
 
@@ -288,19 +289,31 @@ def _register(provider_cls, collection, type):
     if not issubclass(provider_cls, ToolProvider):
         raise Exception(f"Class {provider_cls.__name__!r} must be a subclass of promptflow.ToolProvider.")
     initialize_inputs = provider_cls.get_initialize_inputs()
+    # Build tool/provider definition
     for name, value in provider_cls.__dict__.items():
         if hasattr(value, "__original_function"):
             name = value.__original_function.__qualname__
             value.__tool = function_to_tool_definition(
-                value, type=type, is_builtin=True, initialize_inputs=initialize_inputs
+                value, type=type, initialize_inputs=initialize_inputs
             )
             collection[name] = value.__tool
             module_logger.debug(f"Registered {name} as a builtin function")
+    # Get the connection type - provider name mapping for execution use
+    # Tools/Providers related connection must have been imported
+    for param in initialize_inputs.values():
+        if not param.annotation:
+            continue
+        annotation_type_name = param.annotation.__name__
+        if annotation_type_name in connections:
+            api_name = provider_cls.__name__
+            module_logger.debug(f"Add connection type {annotation_type_name} to api {api_name} mapping")
+            connection_type_to_api_mapping[annotation_type_name] = api_name
+            break
 
 
 def _register_method(provider_method, collection, type):
     name = provider_method.__qualname__
-    provider_method.__tool = function_to_tool_definition(provider_method, type=type, is_builtin=True)
+    provider_method.__tool = function_to_tool_definition(provider_method, type=type)
     collection[name] = provider_method.__tool
     module_logger.debug(f"Registered {name} as {type} function")
 

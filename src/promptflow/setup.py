@@ -32,12 +32,13 @@ REQUIRES = [
     # We need to pin the version due to the issue: https://github.com/hwchase17/langchain/issues/5113
     "marshmallow>=3.5,<4.0.0",
     "pyyaml>=5.1.0,<7.0.0",
+    "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
 ]
 
 setup(
     name=PACKAGE_NAME,
     version=version,
-    description="PromptFlow SDK",
+    description="Prompt flow Python SDK - build high-quality LLM apps",
     license="MIT License",
     author="Microsoft Corporation",
     author_email="aml-pt-eng@microsoft.com",

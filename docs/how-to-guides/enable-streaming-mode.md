@@ -4,7 +4,7 @@ In prompt flow, you can [deploy flow as REST endpoint](./deploy-and-export-a-flo
 
 When consuming the endpoint by sending a request, the default behavior is that the online endpoint will keep waiting until the whole response is ready, and then send it back to the client. This can cause a long delay for the client and a poor user experience.
 
-To avoid this, you can use streaming when you consume the endpoints. Once streaming enabled, you don't have to wait for the whole reponse ready. Instead, the server will send back the response in chunks as they are generated. The client can then display the response progressively, with less waiting time and more interactivity.
+To avoid this, you can use streaming when you consume the endpoints. Once streaming enabled, you don't have to wait for the whole response ready. Instead, the server will send back the response in chunks as they are generated. The client can then display the response progressively, with less waiting time and more interactivity.
 
 This article will describe the scope of streaming, how streaming works, and how to consume streaming endpoints.
 

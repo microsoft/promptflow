@@ -16,7 +16,7 @@ from promptflow._core.metric_logger import add_metric_logger
 from promptflow._core.openai_injector import inject_openai_api
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunRecordNotFound, RunTracker
-from promptflow._core.tool import ToolInvoker, ToolProvider, dump, tool
+from promptflow._core.tool import ToolInvoker, ToolProvider, tool
 from promptflow._core.tool_meta_generator import (
     JinjaParsingError,
     MultipleToolsDefined,
@@ -81,7 +81,6 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
-from promptflow._utils.tool_utils import create_function_source
 from promptflow._utils.utils import (
     AttrDict,
     camel_to_snake,

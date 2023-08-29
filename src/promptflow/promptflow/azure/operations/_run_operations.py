@@ -10,10 +10,8 @@ import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict
 from functools import cached_property
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import pandas as pd
 import requests
@@ -25,35 +23,28 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import AzureMLResourceType
-from azure.ai.ml.operations import DataOperations, WorkspaceOperations
+from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from pandas import DataFrame
 
 from promptflow._sdk._constants import (
-    AZUREML_PF_RUN_PROPERTIES_LINEAGE,
     LOGGER_NAME,
+    VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
     RunDataKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import InvalidRunStatusError, RunNotFoundError
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
-from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
-from promptflow.azure._constants._flow import (
-    BASE_IMAGE,
-    CHILD_RUNS_PAGE_SIZE,
-    NODE_RUNS_PAGE_SIZE,
-    PYTHON_REQUIREMENTS_TXT,
-)
+from promptflow._utils.flow_utils import get_flow_lineage_id
+from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
-from promptflow.azure._restclient.flow.models import FlowRunInfo
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
 from promptflow.azure.operations._flow_opearations import FlowOperations
-from promptflow.contracts._run_management import RunDetail, RunMetadata, RunVisualization
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -85,22 +76,16 @@ class RunOperations(_ScopeDependentOperations):
         all_operations: OperationsContainer,
         flow_operations: FlowOperations,
         credential,
+        service_caller: FlowServiceCaller,
         **kwargs: Dict,
     ):
         super().__init__(operation_scope, operation_config)
         self._all_operations = all_operations
-        workspace = self._workspace_operations.get(name=operation_scope.workspace_name)
-        self._service_caller = FlowServiceCaller(workspace, credential, **kwargs)
+        self._service_caller = service_caller
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         self._workspace_default_datastore = self._datastore_operations.get_default().name
-
-    @property
-    def _workspace_operations(self) -> WorkspaceOperations:
-        return self._all_operations.get_operation(
-            AzureMLResourceType.WORKSPACE, lambda x: isinstance(x, WorkspaceOperations)
-        )
 
     @property
     def _data_operations(self):
@@ -541,13 +526,13 @@ class RunOperations(_ScopeDependentOperations):
         return flow.path
 
     def _get_session_id(self, flow):
-        flow = load_flow(flow)
         try:
             user_alias = get_user_alias_from_credential(self._credential)
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        return f"{user_alias}_{Path(flow.code).name}"
+        flow_id = get_flow_lineage_id(flow_dir=flow)
+        return f"{user_alias}_{flow_id}"
 
     def _get_child_runs_from_pfs(self, run_id: str):
         """Get the child runs from the PFS."""
@@ -581,95 +566,6 @@ class RunOperations(_ScopeDependentOperations):
                     outputs[k].append(v)
         return inputs, outputs
 
-    def _get_flow_runs_pagination(self, name: str) -> List[dict]:
-        # call childRuns API with pagination to avoid PFS OOM
-        # different from UX, run status should be completed here
-        flow_runs = []
-        start_index, end_index = 0, CHILD_RUNS_PAGE_SIZE - 1
-        while True:
-            current_flow_runs = self._service_caller.get_child_runs(
-                subscription_id=self._operation_scope.subscription_id,
-                resource_group_name=self._operation_scope.resource_group_name,
-                workspace_name=self._operation_scope.workspace_name,
-                flow_run_id=name,
-                start_index=start_index,
-                end_index=end_index,
-            )
-            # no data in current page
-            if len(current_flow_runs) == 0:
-                break
-            start_index, end_index = start_index + CHILD_RUNS_PAGE_SIZE, end_index + CHILD_RUNS_PAGE_SIZE
-            flow_runs += current_flow_runs
-        return flow_runs
-
-    def _get_node_runs_pagination(self, name: str, node_name: str) -> List[dict]:
-        # same as `_get_flow_runs_pagination`, call nodeRuns with pagination
-        node_runs = []
-        start_index, end_index = 0, NODE_RUNS_PAGE_SIZE - 1
-        while True:
-            current_node_runs = self._service_caller.get_node_runs(
-                subscription_id=self._operation_scope.subscription_id,
-                resource_group_name=self._operation_scope.resource_group_name,
-                workspace_name=self._operation_scope.workspace_name,
-                flow_run_id=name,
-                node_name=node_name,
-                start_index=start_index,
-                end_index=end_index,
-                aggregation=False,
-            )
-            # no data in current page
-            if len(current_node_runs) == 0:
-                break
-            start_index, end_index = start_index + NODE_RUNS_PAGE_SIZE, end_index + NODE_RUNS_PAGE_SIZE
-            node_runs += current_node_runs
-        return node_runs
-
-    def _build_detail(self, name: str, run_from_pfs: FlowRunInfo) -> RunDetail:
-        # flow runs - call childRuns
-        logger.debug("Retrieving line runs info...")
-        flow_runs = self._get_flow_runs_pagination(name)
-        # node runs - call nodeRuns/{nodeName}
-        node_runs = []
-        for node in run_from_pfs.flow_graph.nodes:
-            logger.debug(f"Retrieving node runs info for node {node.name!r}...")
-            node_runs += self._get_node_runs_pagination(name, node.name)
-        return RunDetail(flow_runs=flow_runs, node_runs=node_runs)
-
-    def _build_metadata(self, run_from_rh: Run) -> RunMetadata:
-        metadata = RunMetadata(
-            name=run_from_rh.name,
-            display_name=run_from_rh.display_name,
-            tags=run_from_rh.tags,
-            lineage=run_from_rh.properties.get(AZUREML_PF_RUN_PROPERTIES_LINEAGE),
-        )
-        return metadata
-
-    def _visualize(self, names: List[str], html_path: Optional[str] = None) -> None:
-        details, metadatas = [], []
-        print("Preparing data...")
-        for name in names:
-            # as the network request can be very time consuming, add some prints to be more friendly
-            print(f"Trying to retrieve data for run {name!r}...")
-            # check run status first; not use `_check_cloud_run_completed` to reuse run from RH
-            logger.debug("Retrieving run metadata...")
-            run_from_rh = self.get(run=name)
-            run_from_rh._check_run_status_is_completed()
-
-            run_from_pfs = self._service_caller.get_bulk_run(
-                subscription_id=self._operation_scope.subscription_id,
-                resource_group_name=self._operation_scope.resource_group_name,
-                workspace_name=self._operation_scope.workspace_name,
-                flow_run_id=name,
-            )
-            detail = self._build_detail(name, run_from_pfs)
-            metadata = self._build_metadata(run_from_rh)
-            details.append(asdict(detail))
-            metadatas.append(asdict(metadata))
-        data_for_visualize = RunVisualization(detail=details, metadata=metadatas)
-        html_string = generate_html_string(asdict(data_for_visualize), is_cloud=True)
-        # if html_path is specified, not open it in webbrowser(as it comes from VSC)
-        dump_html(html_string, html_path, open_html=html_path is None)
-
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
         """Visualize run(s).
 
@@ -684,14 +580,17 @@ class RunOperations(_ScopeDependentOperations):
             run_name = Run._validate_and_return_run_name(run)
             validated_runs.append(run_name)
 
-        html_path = kwargs.pop("html_path", None)
-        try:
-            self._visualize(validated_runs, html_path=html_path)
-        except InvalidRunStatusError as e:
-            error_message = f"Cannot visualize non-completed run. {str(e)}"
-            logger.error(error_message)
-        except Exception as e:  # pylint: disable=broad-except
-            raise e
+        subscription_id = self._operation_scope.subscription_id
+        resource_group_name = self._operation_scope.resource_group_name
+        workspace_name = self._operation_scope.workspace_name
+        names = ",".join(validated_runs)
+        portal_url = VIS_PORTAL_URL_TMPL.format(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            names=names,
+        )
+        print(f"Web View: {portal_url}")
 
     def _resolve_environment(self, run):
         from promptflow._sdk._constants import DAG_FILE_NAME
@@ -751,26 +650,27 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path):
+    def _resolve_automatic_runtime(self, run, flow_path, session_id):
         logger.warning(
             f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
             "it may take a while to build run time and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
         runtime_name = "automatic"
-        session_id = self._get_session_id(flow=flow_path)
         self._resolve_session(run=run, session_id=session_id)
-        return runtime_name, session_id
+        return runtime_name
 
     def _resolve_runtime(self, run, flow_path, runtime):
         runtime = run._runtime or runtime
+        session_id = self._get_session_id(flow=flow_path)
 
         if runtime:
             if not isinstance(runtime, str):
                 raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-            return runtime, None
         else:
-            return self._resolve_automatic_runtime(run=run, flow_path=flow_path)
+            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id)
+
+        return runtime, session_id
 
     def _resolve_dependencies_in_parallel(self, run, runtime):
         flow_path = run.flow
