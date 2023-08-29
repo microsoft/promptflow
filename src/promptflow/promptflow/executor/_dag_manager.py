@@ -88,4 +88,8 @@ class DAGManager:
 
     def completed(self) -> bool:
         """Returns True if all nodes have been processed."""
-        return all(node.name in self._completed_nodes_outputs or node.name in self._skipped_nodes for node in self._nodes)
+        return all(
+            node.name in self._completed_nodes_outputs or
+            node.name in self._skipped_nodes
+            for node in self._nodes
+        )
