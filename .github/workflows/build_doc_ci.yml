@@ -19,7 +19,7 @@ env:
 
 jobs:
   build_doc_job:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Build Doc
     steps:
       - name: Checkout Repo
@@ -28,13 +28,13 @@ jobs:
           submodules: true
 
       - name: Build Doc
-        shell: pwsh
+        shell: powershell
         working-directory: scripts/docs/
         run: ./doc_generation.ps1 -WarningAsError:$true
 
   # Note: We have this job separately because some error may missing when build link check exists.
   link_check_job:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Build Link Check
     steps:
       - name: Checkout Repo
@@ -43,13 +43,13 @@ jobs:
           submodules: true
 
       - name: Build LinkCheck
-        shell: pwsh
+        shell: powershell
         working-directory: scripts/docs/
         run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
 
   # TODO: Once we fixed all warnings in reference doc job, delete this whole job and make job "build_doc_job" to run with "-WithReferenceDoc:$true"
   build_doc_with_reference_doc_job:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Build Doc with Reference Doc
     steps:
       - name: Checkout Repo
@@ -67,8 +67,8 @@ jobs:
           scriptPath: ${{ env.testWorkingDirectory }}
 
       - name: Build doc with reference doc
-        shell: pwsh
+        shell: powershell
         working-directory: scripts/docs/
         run: |-
           conda activate ${{ env.condaEnvName }}
-          ./doc_generation.ps1 -WithReferenceDoc:$true  
+          ./doc_generation.ps1 -WithReferenceDoc:$true
