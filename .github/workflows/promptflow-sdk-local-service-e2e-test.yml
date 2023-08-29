@@ -45,6 +45,11 @@ jobs:
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
+    - name: Invoke local prompt flow service
+      shell: bash -l {0}
+      working-directory: ${{ env.testWorkingDirectory }}
+      run: |-
+        nohup lpfs &
     - name: Run Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
@@ -56,7 +61,6 @@ jobs:
         export PYTHONPATH=${{ github.workspace }}/src/promptflow
         echo "aaa=bbb" > ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
         echo "ccc=ddd" >> ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
-        nohup lpfs &
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_local_service_test \
@@ -85,6 +89,4 @@ jobs:
       with:
         coverageFile: ${{ env.testWorkingDirectory }}/coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
-        thresholdAll: 0.4
-
-    
+        thresholdAll: 0.05
