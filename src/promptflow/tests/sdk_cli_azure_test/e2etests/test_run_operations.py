@@ -14,7 +14,7 @@ from promptflow._sdk._constants import RunStatus
 from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
-from promptflow._utils.flow_utils import get_flow_session_id
+from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
 from promptflow.azure.operations import RunOperations
 
@@ -40,6 +40,7 @@ class TestFlowRun:
             runtime=runtime,
         )
         assert isinstance(run, Run)
+        assert run.name.startswith("web_classification")
 
     def test_run_bulk_from_yaml(self, remote_client, pf, runtime):
         run_id = str(uuid.uuid4())
@@ -504,12 +505,15 @@ class TestFlowRun:
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
         flow_path = f"{FLOWS_DIR}/print_env_var"
-        flow_id = get_flow_session_id(flow_path)
+        flow_lineage_id = get_flow_lineage_id(flow_path)
+        flow_session_id = pf._runs._get_session_id(flow_path)
 
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
+            assert flow_session_id == body.session_id
             # session id also contains alias
-            assert flow_id in body.session_id
+            assert flow_lineage_id in flow_session_id
+            assert flow_lineage_id == body.flow_lineage_id
             return body
 
         # flow session id is same with or without session creation

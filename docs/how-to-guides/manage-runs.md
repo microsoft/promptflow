@@ -91,7 +91,8 @@ print(result)
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-[TODO]
+![img](../media/how-to-guides/vscode_batch_run_yaml.png)
+![img](../media/how-to-guides/vscode_batch_run_visual.png)
 :::
 ::::
 
@@ -127,7 +128,7 @@ print(run)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_detail.png)
 :::
 ::::
 
@@ -165,7 +166,7 @@ print(tabulate(details.head(max_results), headers="keys", tablefmt="grid"))
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_detail.png)
 :::
 ::::
 
@@ -201,10 +202,6 @@ print(json.dumps(metrics, indent=4))
 ```
 :::
 
-:::{tab-item} VS Code Extension
-:sync: VSC
-[TODO]
-:::
 ::::
 
 ## Visualize a run
@@ -241,7 +238,7 @@ client.runs.visualize(name="<run-name>")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_actions.png)
 :::
 ::::
 
@@ -279,7 +276,7 @@ print(runs)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_list_runs.png)
 :::
 ::::
 
@@ -310,11 +307,6 @@ pf = PFClient()
 run = pf.runs.update(name="<run-name>", display_name="new_display_name")
 print(run)
 ```
-:::
-
-:::{tab-item} VS Code Extension
-:sync: VSC
-[TODO]
 :::
 ::::
 
@@ -347,7 +339,7 @@ client.runs.archive(name="<run-name>")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_run_actions.png)
 :::
 ::::
 
@@ -376,10 +368,5 @@ pf = PFClient()
 # restore a run
 client.runs.restore(name="<run-name>")
 ```
-:::
-
-:::{tab-item} VS Code Extension
-:sync: VSC
-[TODO]
 :::
 ::::

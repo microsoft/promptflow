@@ -192,6 +192,80 @@ def build_get_storage_info_request(
         **kwargs
     )
 
+
+def build_log_flow_run_event_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    flow_id,  # type: str
+    flow_run_id,  # type: str
+    runtime_version,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    accept = "application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/flowRuns/{flowRunId}/runtime/{runtimeVersion}/logEvent')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "flowId": _SERIALIZER.url("flow_id", flow_id, 'str'),
+        "flowRunId": _SERIALIZER.url("flow_run_id", flow_run_id, 'str'),
+        "runtimeVersion": _SERIALIZER.url("runtime_version", runtime_version, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="POST",
+        url=url,
+        headers=header_parameters,
+        **kwargs
+    )
+
+
+def build_update_service_logs_request(
+    subscription_id,  # type: str
+    resource_group_name,  # type: str
+    workspace_name,  # type: str
+    flow_id,  # type: str
+    bulk_run_id,  # type: str
+    **kwargs  # type: Any
+):
+    # type: (...) -> HttpRequest
+    content_type = kwargs.pop('content_type', None)  # type: Optional[str]
+
+    accept = "application/json"
+    # Construct URL
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/serviceLogs')
+    path_format_arguments = {
+        "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
+        "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
+        "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "flowId": _SERIALIZER.url("flow_id", flow_id, 'str'),
+        "bulkRunId": _SERIALIZER.url("bulk_run_id", bulk_run_id, 'str'),
+    }
+
+    url = _format_url_section(url, **path_format_arguments)
+
+    # Construct headers
+    header_parameters = kwargs.pop("headers", {})  # type: Dict[str, Any]
+    if content_type is not None:
+        header_parameters['Content-Type'] = _SERIALIZER.header("content_type", content_type, 'str')
+    header_parameters['Accept'] = _SERIALIZER.header("accept", accept, 'str')
+
+    return HttpRequest(
+        method="POST",
+        url=url,
+        headers=header_parameters,
+        **kwargs
+    )
+
 # fmt: on
 class FlowRunsAdminOperations(object):
     """FlowRunsAdminOperations operations.
@@ -525,4 +599,147 @@ class FlowRunsAdminOperations(object):
         return deserialized
 
     get_storage_info.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/storageInfo'}  # type: ignore
+
+
+    @distributed_trace
+    def log_flow_run_event(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        flow_run_id,  # type: str
+        runtime_version,  # type: str
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> str
+        """log_flow_run_event.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param flow_id:
+        :type flow_id: str
+        :param flow_run_id:
+        :type flow_run_id: str
+        :param runtime_version:
+        :type runtime_version: str
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: str, or the result of cls(response)
+        :rtype: str
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType[str]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        
+        request = build_log_flow_run_event_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_id=flow_id,
+            flow_run_id=flow_run_id,
+            runtime_version=runtime_version,
+            template_url=self.log_flow_run_event.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('str', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    log_flow_run_event.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/flowRuns/{flowRunId}/runtime/{runtimeVersion}/logEvent'}  # type: ignore
+
+
+    @distributed_trace
+    def update_service_logs(
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        bulk_run_id,  # type: str
+        body=None,  # type: Optional["_models.ServiceLogRequest"]
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> "_models.Task"
+        """update_service_logs.
+
+        :param subscription_id: The Azure Subscription ID.
+        :type subscription_id: str
+        :param resource_group_name: The Name of the resource group in which the workspace is located.
+        :type resource_group_name: str
+        :param workspace_name: The name of the workspace.
+        :type workspace_name: str
+        :param flow_id:
+        :type flow_id: str
+        :param bulk_run_id:
+        :type bulk_run_id: str
+        :param body:
+        :type body: ~flow.models.ServiceLogRequest
+        :keyword callable cls: A custom type or function that will be passed the direct response
+        :return: Task, or the result of cls(response)
+        :rtype: ~flow.models.Task
+        :raises: ~azure.core.exceptions.HttpResponseError
+        """
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.Task"]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
+
+        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+
+        if body is not None:
+            _json = self._serialize.body(body, 'ServiceLogRequest')
+        else:
+            _json = None
+
+        request = build_update_service_logs_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_id=flow_id,
+            bulk_run_id=bulk_run_id,
+            content_type=content_type,
+            json=_json,
+            template_url=self.update_service_logs.metadata['url'],
+        )
+        request = _convert_request(request)
+        request.url = self._client.format_url(request.url)
+
+        pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+
+        deserialized = self._deserialize('Task', pipeline_response)
+
+        if cls:
+            return cls(pipeline_response, deserialized, {})
+
+        return deserialized
+
+    update_service_logs.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowRunsAdmin/{flowId}/bulkRuns/{bulkRunId}/serviceLogs'}  # type: ignore
 

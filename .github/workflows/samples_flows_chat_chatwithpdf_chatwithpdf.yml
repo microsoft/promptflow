@@ -47,7 +47,7 @@ jobs:
             pf connection create --file .env --name chat_with_pdf_custom_connection
           fi
       - name: Create AOAI Connection
-        working-directory: examples/flows/chat/chat-with-pdf
+        working-directory: examples/connections
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}

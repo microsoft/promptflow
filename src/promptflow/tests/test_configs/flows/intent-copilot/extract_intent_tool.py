@@ -12,7 +12,7 @@ def extract_intent_tool(
     connection: CustomConnection) -> str:
 
     # set environment variables
-    for key, value in connection.items():
+    for key, value in dict(connection).items():
         os.environ[key] = value
 
     # call the entry function

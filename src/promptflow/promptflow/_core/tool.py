@@ -4,10 +4,8 @@
 
 import functools
 import inspect
-import json
 import logging
 from abc import ABC
-from dataclasses import asdict
 from enum import Enum
 from typing import Optional
 
@@ -61,22 +59,6 @@ def parse_all_args(argnames, args, kwargs) -> dict:
     all_args = {name: value for name, value in zip(argnames, args)}
     all_args.update(kwargs)
     return all_args
-
-
-def dump(func, name=None, description=None):
-    try:
-        if not func.__tool:
-            from promptflow._utils.tool_utils import function_to_tool_definition
-
-            func.__tool = function_to_tool_definition(func, type=ToolType.PYTHON)
-        if name:
-            func.__tool.name = name
-        if description:
-            func.__tool.description = description
-        data = asdict(func.__tool, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and k != "outputs"})
-        return json.dumps(data, indent=2)
-    except Exception as e:
-        raise Exception("Dump tool failed. ") from e
 
 
 class ToolProvider(ABC):
