@@ -153,7 +153,7 @@ class TestCli:
         # used variant_0 config, defaults using variant_1
         assert tuning_node["inputs"]["temperature"] == 0.2
 
-    def test_environment_variable_overwrite(self, local_client):
+    def test_environment_variable_overwrite(self, local_client, local_aoai_connection):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -168,7 +168,7 @@ class TestCli:
             "API_BASE=${azure_open_ai_connection.api_base}",
         )
         outputs = local_client.runs._get_outputs(run=run_id)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
         with pytest.raises(Exception) as e:
