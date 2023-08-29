@@ -65,7 +65,7 @@ class FlowNodesScheduler:
         # Submit nodes that are ready to run
         nodes_to_exec = dag_manager.pop_ready_nodes()
         if nodes_to_exec:
-            self._submit_nodes(dag_manager.completed_nodes_outputs, executor, nodes_to_exec)
+            self._submit_nodes(dag_manager.completed_nodes_outputs, dag_manager.skipped_nodes, executor, nodes_to_exec)
 
     def _collect_outputs(self, completed_futures: List[Future]):
         completed_nodes_outputs = {}
@@ -97,22 +97,20 @@ class FlowNodesScheduler:
         context.skip_node(node_outputs)
         context.current_node = None
 
-    def _submit_nodes(self, nodes_outputs, executor: ThreadPoolExecutor, nodes):
+    def _submit_nodes(self, nodes_outputs, skipped_nodes, executor: ThreadPoolExecutor, nodes):
         for each_node in nodes:
-            future = executor.submit(self._exec_single_node_in_thread, (each_node, nodes_outputs))
+            future = executor.submit(self._exec_single_node_in_thread, (each_node, nodes_outputs, skipped_nodes))
             self.future_to_node[future] = each_node
 
-    def _exec_single_node_in_thread(self, args: Tuple[Node, dict]):
-        node, nodes_outputs = args
+    def _exec_single_node_in_thread(self, args: Tuple[Node, dict, dict]):
+        node, nodes_outputs, skipped_nodes = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
         context = self.context.copy()
         try:
             context.start()
-            kwargs = {
-                name: _input_assignment_parser.parse_value(i, nodes_outputs, self.inputs)
-                for name, i in (node.inputs or {}).items()
-            }
+            kwargs = {name: _input_assignment_parser.parse_value(i, nodes_outputs, self.inputs) for name, i in (
+                node.inputs or {}).items() if not _input_assignment_parser.is_node_dependency_skipped(i, skipped_nodes)}
             f = self.tools_manager.get_tool(node.name)
             context.current_node = node
             result = f(**kwargs)

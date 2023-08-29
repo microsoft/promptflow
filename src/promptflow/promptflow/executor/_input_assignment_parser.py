@@ -13,6 +13,11 @@ from promptflow.executor._errors import (
 )
 
 
+def is_node_dependency_skipped(dependency: InputAssignment, skipped_nodes: dict) -> bool:
+    """Returns True if the dependencies of the condition are skipped."""
+    return dependency.value_type == InputValueType.NODE_REFERENCE and dependency.value in skipped_nodes
+
+
 def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
     if i.value_type == InputValueType.LITERAL:
         return i.value
