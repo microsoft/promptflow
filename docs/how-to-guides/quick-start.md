@@ -270,5 +270,5 @@ Learn more about:
 - [Initialize and test a flow](./init-and-test-a-flow.md)
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
 - [Tune prompts with variants](./tune-prompts-with-variants.md)
-- [Deploy and export a flow](./deploy-and-export-a-flow.md)
+- [Deploy a flow](./deploy-a-flow/index.md)
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)

@@ -189,4 +189,4 @@ A web browser will be opened to show the visualization result.
 
 Learn more about:
 - [Tune prompts with variants](./tune-prompts-with-variants.md)
-- [Deploy and export a flow](./deploy-and-export-a-flow.md)
+- [Deploy a flow](./deploy-a-flow/index.md)

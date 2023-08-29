@@ -41,7 +41,7 @@ This documentation site contains guides for prompt flow sdk, cli and vscode exte
     - [Initialize and test a flow](how-to-guides/init-and-test-a-flow.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow.md)<br/>
     - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
-    - [Deploy and export a flow](how-to-guides/deploy-and-export-a-flow.md)<br/>
+    - [Deploy a flow](how-to-guides/deploy-a-flow/index.md)<br/>
   "
 ```
 
