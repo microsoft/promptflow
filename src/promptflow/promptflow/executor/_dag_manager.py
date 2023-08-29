@@ -56,7 +56,6 @@ class DAGManager:
         # Update default outputs into completed_nodes_outputs for nodes meeting the skip condition
         if self._is_skip_condition_met(node):
             outputs = self._get_node_dependency_value(node.skip.return_value)
-            self.complete_nodes({node.name: outputs})
         return outputs
 
     def complete_nodes(self, nodes_outputs: Mapping[str, Any]):
@@ -87,6 +86,8 @@ class DAGManager:
         """Returns True if the node should be skipped."""
         # Skip node if the skip condition is met
         if self._is_skip_condition_met(node):
+            skip_return = self._get_node_dependency_value(node.skip.return_value)
+            self.complete_nodes({node.name: skip_return})
             return True
 
         # Skip node if the activate condition is not met
