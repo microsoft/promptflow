@@ -16,7 +16,13 @@ def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag
 def get_flow_inputs(folder_name):
     flow_folder_path = Path(FLOW_ROOT) / folder_name
     inputs = load_json(flow_folder_path / "inputs.json")
-    return inputs
+    return inputs[0] if isinstance(inputs, list) else inputs
+
+
+def get_bulk_inputs(folder_name):
+    flow_folder_path = Path(FLOW_ROOT) / folder_name
+    inputs = load_json(flow_folder_path / "inputs.json")
+    return [inputs] if isinstance(inputs, dict) else inputs
 
 
 def get_flow_sample_inputs(folder_name, root: str = FLOW_ROOT, sample_inputs_file="samples.json"):

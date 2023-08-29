@@ -3,17 +3,24 @@ import pytest
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import FlowExecutor, LineResult
 
-from ..utils import get_flow_inputs, get_yaml_file
+from ..utils import get_flow_inputs, get_yaml_file, get_bulk_inputs
 
 
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorActivate:
-    def test_activate(self, dev_connections):
+    def test_flow_run_activate(self, dev_connections):
         flow_folder = "conditional_flow_with_activate"
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         results = executor.exec_line(get_flow_inputs(flow_folder))
         self.assert_activate_flow_result(results)
+
+    @pytest.mark.skip("Skip bulk run test for now")
+    def test_bulk_run_activate(self, dev_connections):
+        flow_folder = "conditional_flow_with_activate"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        results = executor.exec_bulk(get_bulk_inputs(flow_folder))
+        print(results)
 
     def assert_activate_flow_result(self, result: LineResult):
         # Validate the flow status
