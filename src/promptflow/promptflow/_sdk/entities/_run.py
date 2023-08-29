@@ -354,11 +354,11 @@ class Run(YAMLTranslatableMixin):
     def _generate_run_name(self) -> str:
         """Generate a run name with flow_name_variant_timestamp format."""
         try:
-            flow_dir = self._get_flow_dir()
+            flow_name = self._get_flow_dir().name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             variant = parse_variant(variant)[1] if variant else "default"
-            run_name_prefix = f"{flow_dir}_{variant}"
+            run_name_prefix = f"{flow_name}_{variant}"
             # TODO(2562996): limit run name to avoid it become too long
             run_name = f"{run_name_prefix}_{timestamp}"
             return _sanitize_python_variable_name(run_name)
