@@ -325,6 +325,8 @@ class RunSubmitter:
 
     @classmethod
     def _validate_column_mapping(cls, column_mapping: dict):
+        if not column_mapping:
+            return
         if not isinstance(column_mapping, dict):
             raise UserErrorException(f"Column mapping must be a dict, got {type(column_mapping)}.")
         all_static = True
