@@ -1,19 +1,13 @@
 import pytest
 import unittest
 
-from promptflow.connections import CustomConnection
+from my_tool_package.connections import MySecondConnection
 from my_tool_package.tools.my_tool_2 import MyTool
 
 
 @pytest.fixture
-def my_custom_connection() -> CustomConnection:
-    my_custom_connection = CustomConnection(
-        {
-            "api-key" : "my-api-key",
-            "api-secret" : "my-api-secret",
-            "api-url" : "my-api-url"
-        }
-    )
+def my_custom_connection() -> MySecondConnection:
+    my_custom_connection = MySecondConnection(api_key="my_api_key")
     return my_custom_connection
 
 
@@ -25,8 +19,8 @@ def my_tool_provider(my_custom_connection) -> MyTool:
 
 class TestMyTool2:
     def test_my_tool_2(self, my_tool_provider: MyTool):
-        result = my_tool_provider.my_tool(input_text="Microsoft")
-        assert result == "Hello Microsoft"
+        result = my_tool_provider.my_tool(input_text="Hello Microsoft! ")
+        assert result == "Hello Microsoft! This is my second connection."
 
 
 # Run the unit tests
