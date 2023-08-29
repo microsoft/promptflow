@@ -9,7 +9,7 @@ def line_process(groundtruth: str, prediction: str) -> int:
     if prediction == "JSONDecodeError" or prediction.startswith("Unknown Error:"):
         processed_result = -1
         return processed_result
-    
+
     try:
         groundtruth = float(groundtruth)
         prediction = float(prediction)

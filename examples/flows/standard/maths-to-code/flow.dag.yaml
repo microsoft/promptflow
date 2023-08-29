@@ -1,5 +1,4 @@
-id: template_standard_flow
-name: Template Standard Flow
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 environment:
   python_requirements_txt: requirements.txt
 inputs:

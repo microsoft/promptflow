@@ -1,5 +1,4 @@
-id: template_eval_flow
-name: Template Evaluation Flow
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
   groundtruth:
     type: string
