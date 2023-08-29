@@ -8,12 +8,14 @@ from setuptools import find_namespace_packages, setup
 PACKAGE_NAME = "promptflow-tools"
 PACKAGE_FOLDER_PATH = "promptflow"
 
+
 def parse_requirements(file_name: str) -> List[str]:
     with open(file_name) as f:
         return [
             require.strip() for require in f
             if require.strip() and not require.startswith('#')
         ]
+
 
 # Version extraction inspired from 'requests'
 with open(os.path.join(PACKAGE_FOLDER_PATH, "version.txt"), "r") as fd:
