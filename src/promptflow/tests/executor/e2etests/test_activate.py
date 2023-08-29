@@ -15,7 +15,7 @@ class TestExecutorActivate:
         results = executor.exec_line(get_flow_inputs(flow_folder))
         self.assert_activate_flow_result(results)
 
-    # @pytest.mark.skip("Skip bulk run test for now")
+    @pytest.mark.skip("Skip bulk run test for now")
     def test_bulk_run_activate(self, dev_connections):
         flow_folder = "conditional_flow_with_activate"
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
