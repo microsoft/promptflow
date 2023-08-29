@@ -12,7 +12,6 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
-from promptflow.executor import _input_assignment_parser
 from promptflow.executor._dag_manager import DAGManager
 from promptflow.executor._errors import NoNodeExecutedError
 
@@ -92,12 +91,10 @@ class FlowNodesScheduler:
     def _skip_single_node(self, context: FlowExecutionContext, dag_manager: DAGManager, node: Node):
         context.current_node = node
         node_outputs = None
-        if node.skip:
-            skip_condition = _input_assignment_parser.parse_value(
-                node.skip.condition, dag_manager.completed_nodes_outputs, self.inputs)
+        if node.skip and not dag_manager.is_node_dependency_skipped(node.skip.condition):
+            skip_condition = dag_manager.get_node_dependency_value(node.skip.condition)
             if skip_condition == node.skip.condition_value:
-                node_outputs = _input_assignment_parser.parse_value(
-                    node.skip.return_value, dag_manager.completed_nodes_outputs, self.inputs)
+                node_outputs = dag_manager.get_node_dependency_value(node.skip.return_value)
                 dag_manager.complete_nodes({node.name: node_outputs})
         context.skip_node(node_outputs)
         context.current_node = None
@@ -115,10 +112,10 @@ class FlowNodesScheduler:
         try:
             context.start()
             kwargs = {
-                name: _input_assignment_parser.parse_value(i, dag_manager.completed_nodes_outputs, self.inputs)
+                name: dag_manager.get_node_dependency_value(i)
                 for name, i in (node.inputs or {}).items()
-                if not _input_assignment_parser.is_node_dependency_skipped(
-                    i, dag_manager.skipped_nodes, dag_manager.completed_nodes_outputs)}
+                if not dag_manager.is_node_dependency_skipped(i)
+            }
             f = self.tools_manager.get_tool(node.name)
             context.current_node = node
             result = f(**kwargs)

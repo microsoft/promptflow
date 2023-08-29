@@ -1,6 +1,6 @@
 from typing import Any, List, Mapping
 
-from promptflow.contracts.flow import InputValueType, Node
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
 
 
@@ -56,29 +56,34 @@ class DAGManager:
     def _is_node_skipped(self, node: Node) -> bool:
         """Returns True if the node should be skipped."""
         # Skip node if the skip condition is met
-        if node.skip and not _input_assignment_parser.is_node_dependency_skipped(
-                node.skip.condition, self._skipped_nodes, self._completed_nodes_outputs):
-            skip_condition = _input_assignment_parser.parse_value(
-                node.skip.condition, self._completed_nodes_outputs, self._flow_inputs)
+        if node.skip and not self.is_node_dependency_skipped(node.skip.condition):
+            skip_condition = self.get_node_dependency_value(node.skip.condition)
             if skip_condition == node.skip.condition_value:
                 return True
 
         # Skip node if the activate condition is not met
         if node.activate:
-            if _input_assignment_parser.is_node_dependency_skipped(
-                    node.activate.condition, self._skipped_nodes, self._completed_nodes_outputs):
+            if self.is_node_dependency_skipped(node.activate.condition):
                 return True
-            activate_condition = _input_assignment_parser.parse_value(
-                node.activate.condition, self._completed_nodes_outputs, self._flow_inputs)
+            activate_condition = self.get_node_dependency_value(node.activate.condition)
             if activate_condition != node.activate.condition_value:
                 return True
 
         # Skip node if all of its dependencies are skipped
         node_dependencies = [i for i in node.inputs.values()]
-        all_dependencies_skipped = node_dependencies and all(_input_assignment_parser.is_node_dependency_skipped(
-            node_dependency, self._skipped_nodes, self._completed_nodes_outputs)
-            for node_dependency in node_dependencies)
+        all_dependencies_skipped = node_dependencies and \
+            all(self.is_node_dependency_skipped(node_dependency) for node_dependency in node_dependencies)
         return all_dependencies_skipped
+
+    def get_node_dependency_value(self, node_dependency: InputAssignment):
+        return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)
+
+    def is_node_dependency_skipped(self, dependency: InputAssignment) -> bool:
+        """Returns True if the dependencies of the condition are skipped."""
+        # The node should not be skipped when its dependency is skipped by skip config and the dependency has outputs.
+        return dependency.value_type == InputValueType.NODE_REFERENCE and \
+            dependency.value in self._skipped_nodes and \
+            dependency.value not in self._completed_nodes_outputs
 
     def complete_nodes(self, nodes_outputs: Mapping[str, Any]):
         """Marks nodes as completed with the mapping from node names to their outputs."""
