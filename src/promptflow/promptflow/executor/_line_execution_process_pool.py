@@ -375,10 +375,8 @@ def get_available_max_worker_count():
     process = psutil.Process(pid)
     process_memory_info = process.memory_info()
     process_memory = process_memory_info.rss / (1024 * 1024)  # in MB
-    # We follow the limit of flow 1/3 memory in vector db, the lower limit should be 33%
-    # In order to support this flow with two degrees of parallelism, that's equal to about 70% of the available memory.
-    # Consider avoiding frequent swaps, which require leaving 30% of memory.
-    # (total_memory * 0.7 - total_memory_in_use) / process_memory = (available_memory - 0.3*total_memory) / process_memory
+    # Consider avoiding frequent swap operations, which require leaving 30% of total memory.
+    # (total_memory*0.7-total_memory_in_use)/process_memory=(available_memory-0.3*total_memory)/process_memory
     available_max_worker_count = math.floor((available_memory - 0.3 * total_memory) / process_memory)
     # Set available max worker count to 1 if it's less than 1
     if available_max_worker_count < 1:
