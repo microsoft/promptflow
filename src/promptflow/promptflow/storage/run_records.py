@@ -6,7 +6,7 @@ import json
 from dataclasses import dataclass, asdict
 from datetime import datetime
 
-from promptflow._utils import serialize
+from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 
 
