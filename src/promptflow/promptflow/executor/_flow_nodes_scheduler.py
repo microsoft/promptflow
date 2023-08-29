@@ -14,6 +14,7 @@ from promptflow._utils.utils import set_context
 from promptflow.contracts.flow import Node
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._dag_manager import DAGManager
+from promptflow.executor._errors import NoNodeExecutedError
 
 RUN_FLOW_NODES_LINEARLY = 1
 DEFAULT_CONCURRENCY_BULK = 2
@@ -42,6 +43,8 @@ class FlowNodesScheduler:
 
             while not dag_manager.completed():
                 try:
+                    if not self.future_to_node:
+                        raise NoNodeExecutedError("No nodes are ready for execution, but the flow is not completed.")
                     completed_futures, _ = futures.wait(self.future_to_node.keys(), return_when=futures.FIRST_COMPLETED)
                     dag_manager.complete_nodes(self._collect_outputs(completed_futures))
                     for each_future in completed_futures:
@@ -58,10 +61,12 @@ class FlowNodesScheduler:
         return dag_manager.completed_nodes_outputs
 
     def _execute_nodes(self, dag_manager: DAGManager, executor: ThreadPoolExecutor):
-        # Skip nodes and update node run info
+        # Skip nodes and update node run info until there are no nodes to skip
         nodes_to_skip = dag_manager.pop_skipped_nodes()
-        if nodes_to_skip:
+        while nodes_to_skip:
             self._skip_nodes(dag_manager, nodes_to_skip)
+            nodes_to_skip = dag_manager.pop_skipped_nodes()
+
         # Submit nodes that are ready to run
         nodes_to_exec = dag_manager.pop_ready_nodes()
         if nodes_to_exec:
