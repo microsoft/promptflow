@@ -82,7 +82,7 @@ After above setup process is finished. You can use `pytest` command to run test,
   - Flow run in local: `src/promptflow/tests/sdk_cli_test/e2etests/`
   - Flow run in azure: `src/promptflow/tests/sdk_cli_azure_test/e2etests/`
 - Test file name and the test case name all start with `test_`.
-- A basic test example, see [test_connection.py](../src/promptflow/tests/sdk_cli_test/e2etests/test_connection.py).
+- A basic test example, see [test_connection.py](../../src/promptflow/tests/sdk_cli_test/e2etests/test_connection.py).
 
 ### Test structure
 
