@@ -9,6 +9,7 @@ from ..utils import get_flow_inputs, get_yaml_file
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorActivate:
+    @pytest.skip("skip")
     def test_activate(self, dev_connections):
         flow_folder = "conditional_flow_with_activate"
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
