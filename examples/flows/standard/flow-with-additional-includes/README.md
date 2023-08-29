@@ -74,9 +74,9 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 ``` bash
 # create run
 pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir 
-pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
+# pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
 pfazure run create --file run.yml --runtime demo-mir
-pfazure run create --file run.yml --stream # automatic runtime
+# pfazure run create --file run.yml --stream # automatic runtime
 ```
 
 Note: Click portal_url of the run to view the final snapshot.

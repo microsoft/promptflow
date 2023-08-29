@@ -83,5 +83,5 @@ az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 pfazure run create --file run.yml --runtime demo-mir --stream
-pfazure run create --file run.yml --stream # automatic runtime
+# pfazure run create --file run.yml --stream # automatic runtime
 ```
