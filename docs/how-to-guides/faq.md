@@ -8,8 +8,14 @@
 Connection creation failed with StoreConnectionEncryptionKeyError: System keyring backend service not found in your operating system. See https://pypi.org/project/keyring/ to install requirement for different operating system, or 'pip install keyrings.alt' to use the third-party backend.
 ```
 
-Install the third-party key-ring backend.
+This error raised due to keyring can't find an available backend to store keys.
+For example [macOs Keychain](https://en.wikipedia.org/wiki/Keychain_%28software%29) and [Windows Credential Locker](https://learn.microsoft.com/en-us/windows/uwp/security/credential-locker)
+are valid keyring backends.
+
+To resolve this issue, install the third-party keyring backend or write your own keyring backend, for example:
 `pip install keyrings.alt`
+
+For more detail about keyring third-party backend, please refer to 'Third-Party Backends' in [keyring](https://pypi.org/project/keyring/).
 
 ### Pf visualize show error: "tcgetpgrp failed: Not a tty"
 
