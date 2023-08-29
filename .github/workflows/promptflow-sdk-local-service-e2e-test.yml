@@ -56,7 +56,7 @@ jobs:
         export PYTHONPATH=${{ github.workspace }}/src/promptflow
         echo "aaa=bbb" > ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
         echo "ccc=ddd" >> ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
-        nohup lpfs
+        nohup lpfs &
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_local_service_test \
