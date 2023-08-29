@@ -129,6 +129,7 @@ class FlowExecutor:
         flow = Flow.from_yaml(flow_file, working_dir=working_dir, gen_tool=False)
         if node_override:
             flow = flow.apply_node_overrides(node_override)
+        flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
 
