@@ -15,10 +15,11 @@ on:
 env:
   packageSetupType: promptflow_open_source
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  condaEnvName: release-env
 
 jobs:
   build_doc_job:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Build Doc
     steps:
       - name: Checkout Repo
@@ -27,13 +28,13 @@ jobs:
           submodules: true
 
       - name: Build Doc
-        shell: powershell
+        shell: pwsh
         working-directory: scripts/docs/
         run: ./doc_generation.ps1 -WarningAsError:$true
 
   # Note: We have this job separately because some error may missing when build link check exists.
   link_check_job:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Build Link Check
     steps:
       - name: Checkout Repo
@@ -42,13 +43,13 @@ jobs:
           submodules: true
 
       - name: Build LinkCheck
-        shell: powershell
+        shell: pwsh
         working-directory: scripts/docs/
         run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
 
   # TODO: Once we fixed all warnings in reference doc job, delete this whole job and make job "build_doc_job" to run with "-WithReferenceDoc:$true"
   build_doc_with_reference_doc_job:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     name: Build Doc with Reference Doc
     steps:
       - name: Checkout Repo
@@ -59,19 +60,15 @@ jobs:
       - name: Conda Setup
         uses: "./.github/actions/step_create_conda_environment"
 
-      - name: Display environment variables
-        run: |
-          echo ${{ env.packageSetupType }}
-          echo ${{ env.testWorkingDirectory }}
-        shell: bash -l {0}
-
       - name: Dev setup
         uses: "./.github/actions/step_sdk_setup"
         with:
           setupType: ${{ env.packageSetupType }}
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      - name: Build Doc
-        shell: powershell
+      - name: Build doc with reference doc
+        shell: pwsh
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -WithReferenceDoc:$true  
+        run: |-
+          conda activate ${{ env.condaEnvName }}
+          ./doc_generation.ps1 -WithReferenceDoc:$true  
