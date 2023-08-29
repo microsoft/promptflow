@@ -10,7 +10,7 @@ class DAGManager:
         self._flow_inputs = flow_inputs
         self._pending_nodes = {node.name: node for node in nodes}
         self._completed_nodes_outputs = {}  # node name -> output
-        self._skipped_nodes = {}
+        self._skipped_nodes = {}  # node name -> node
         # TODO: Validate the DAG to avoid circular dependencies
 
     @property
