@@ -30,7 +30,8 @@ def prepare_example():
       },
       {
         "question": "What is the sum of the powers of 3 (3^i) that are smaller than 100?",
-        "code": "{\n    \"code\": \"sum = 0\\ni = 0\nwhile 3**i < 100:\\n    sum += 3**i\\n    i += 1\\nprint(sum)\"\n}",
+        "code": "{\n    \"code\": \"sum = 0\\ni = 0\n\
+          while 3**i < 100:\\n    sum += 3**i\\n    i += 1\\nprint(sum)\"\n}",
         "answer": "40",
       },
       {
@@ -46,4 +47,4 @@ def prepare_example():
         "code": "{\n    \"code\": \"print(sum(range(1,11)))\"\n}",
         "answer": "55",
       }
-  ]
+    ]
