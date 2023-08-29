@@ -42,7 +42,5 @@ nodes:
     deployment_name: gpt-35-turbo
     question: ${inputs.math_question}
     examples: ${math_example.output}
-  provider: AzureOpenAI
   connection: open_ai_connection
   api: chat
-  module: promptflow.tools.aoai

@@ -28,9 +28,9 @@ Create connection if you haven't done that. Ensure you have put your azure open 
 pf connection create -f ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
 
-Ensure you have created `azure_open_ai_connection` connection.
+Ensure you have created `open_ai_connection` connection.
 ```bash
-pf connection show -n azure_open_ai_connection
+pf connection show -n open_ai_connection
 ```
 
 
@@ -42,14 +42,16 @@ pf connection show -n azure_open_ai_connection
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
 # test with specific input
-pf flow test --flow . --inputs text='If a rectangle has a length of 10 and width of 5, what is the area?'
+pf flow test --flow . --inputs math_question='If a rectangle has a length of 10 and width of 5, what is the area?'
 ```
 
 ### Run with multiple lines data
 
 - create run
 ```bash
-pf run create --flow . --data ./math_data.jsonl --column-mapping math_question='${data.question}' --name math_to_code_batch_run --stream
+# create a random run name
+run_name="math_to_code_"$(openssl rand -hex 12)
+pf run create --flow . --data ./math_data.jsonl --column-mapping math_question='${data.question}' --name $run_name --stream
 ```
 
 ### Get the accuracy using evaluation flow
@@ -59,8 +61,11 @@ Use [eval-accuracy-maths-to-code](../../evaluation/eval-accuracy-maths-to-code/)
 - error_rate: some case the flow cannot get number answer, for example, the generated code cannot be executed due to code parsing error of dependent package not available in conda env. Error rate is to measure the percentage of this case in test data. 
 
 ```bash
+# create a random eval run name
+eval_run_name="math_to_code_eval_run_"$(openssl rand -hex 12)
+
 # invoke accuracy and error rate evaluation against math-to-code batch run
-pf run create --flow ../../evaluation/eval-accuracy-maths-to-code/ --data ./math_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run math-to-code-batch-run --name math_to_code_eval_run --stream
+pf run create --flow ../../evaluation/eval-accuracy-maths-to-code/ --data ./math_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run $run_name --name $eval_run_name --stream
 
 # view the run details
 pf run show-details -n math_to_code_eval_run

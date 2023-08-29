@@ -1,1 +1,4 @@
-pip install sympy
+langchain
+sympy
+promptflow[azure]
+promptflow-tools
