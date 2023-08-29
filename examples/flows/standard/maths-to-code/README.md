@@ -42,12 +42,27 @@ pf connection show -n azure_open_ai_connection
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
 # test with specific input
-pf flow test --flow . --inputs text='The phone number (321) 654-0987 is no longer in service' entity_type='phone number'
+pf flow test --flow . --inputs text='If a rectangle has a length of 10 and width of 5, what is the area?'
 ```
 
-### run with multiple lines data
+### Run with multiple lines data
 
 - create run
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./math_data.jsonl --column-mapping math_question='${data.question}' --name math_to_code_batch_run --stream
+```
+
+### Get the accuracy using evaluation flow
+Use [eval-accuracy-maths-to-code](../../evaluation/eval-accuracy-maths-to-code/) to evaluate accuracy and error rate metrics against the math-to-code flow.
+
+- accuracy: if the generated code can be correctly executed and got final number answer, it will be compare with the groundtruth in the test data. For single instance, it's True if the final number equals to the groundtruth, False otherwise. Accuracy is to measure the correct percentage against test data.
+- error_rate: some case the flow cannot get number answer, for example, the generated code cannot be executed due to code parsing error of dependent package not available in conda env. Error rate is to measure the percentage of this case in test data. 
+
+```bash
+# invoke accuracy and error rate evaluation against math-to-code batch run
+pf run create --flow ../../evaluation/eval-accuracy-maths-to-code/ --data ./math_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run math-to-code-batch-run --name math_to_code_eval_run --stream
+
+# view the run details
+pf run show-details -n math_to_code_eval_run
+pf run show-metrics -n math_to_code_eval_run
 ```
