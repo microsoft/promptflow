@@ -1,12 +1,19 @@
 import os
 import re
 from io import open
-from typing import Any, Match, cast
+from typing import Any, List, Match, cast
 
 from setuptools import find_namespace_packages, setup
 
 PACKAGE_NAME = "promptflow-tools"
 PACKAGE_FOLDER_PATH = "promptflow"
+
+def parse_requirements(file_name: str) -> List[str]:
+    with open(file_name) as f:
+        return [
+            require.strip() for require in f
+            if require.strip() and not require.startswith('#')
+        ]
 
 # Version extraction inspired from 'requests'
 with open(os.path.join(PACKAGE_FOLDER_PATH, "version.txt"), "r") as fd:
@@ -16,14 +23,10 @@ with open(os.path.join(PACKAGE_FOLDER_PATH, "version.txt"), "r") as fd:
 if not version:
     raise RuntimeError("Cannot find version information")
 
-REQUIRES = [
-    "google-search-results==2.4.1",
-]
-
 setup(
     name=PACKAGE_NAME,
     version=version,
-    description="Builtin tools of prompt flow",
+    description="Prompt flow built-in tools",
     author="Microsoft Corporation",
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -31,7 +34,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     python_requires="<4.0,>=3.8",
-    install_requires=REQUIRES,
+    install_requires=parse_requirements('requirements.txt'),
     packages=find_namespace_packages(include=[f"{PACKAGE_FOLDER_PATH}.*"]),
     entry_points={
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
