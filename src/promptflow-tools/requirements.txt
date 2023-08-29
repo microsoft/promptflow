@@ -1,3 +1,2 @@
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 google-search-results==2.4.1
 promptflow
