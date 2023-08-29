@@ -49,6 +49,7 @@ jobs:
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
+        conda activate release-env
         nohup lpfs &
     - name: Run Test
       shell: bash -l {0}
