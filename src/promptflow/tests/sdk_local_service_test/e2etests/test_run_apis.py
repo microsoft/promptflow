@@ -16,6 +16,7 @@ def create_run_against_multi_line_data(client: PFClient) -> Run:
     return client.run(flow=flow, data=data, column_mapping={"url": "${data.url}"})
 
 
+@pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.e2etest
 class TestRunAPIs:
     def test_heartbeat(self, local_service_op: LocalServiceOperations) -> None:
