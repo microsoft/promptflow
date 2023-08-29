@@ -97,7 +97,11 @@ class DAGManager:
 
         # Skip node if all of its dependencies are skipped
         node_dependencies = [i for i in node.inputs.values()]
-        all_dependencies_skipped = node_dependencies and not self.get_node_valid_inputs(node)
+        all_dependencies_skipped = node_dependencies and \
+            all(
+                dependency.value_type == InputValueType.LITERAL or self._is_node_dependency_skipped(dependency)
+                for dependency in node_dependencies
+            )
         return all_dependencies_skipped
 
     def _is_skip_condition_met(self, node: Node) -> bool:
