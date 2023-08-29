@@ -1,5 +1,4 @@
 import sys
-import uuid
 from pathlib import Path
 from unittest.mock import patch
 
@@ -9,11 +8,13 @@ from promptflow._core._errors import PackageToolNotFoundError
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import NodeInputValidationError
-from promptflow.executor.flow_executor import BulkResult, LineResult
+from promptflow.executor.flow_executor import LineResult
 
 from ..utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_flow_sample_inputs, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
+PACKAGE_TOOL_ENTRY = "promptflow.executor._tool_resolver.collect_package_tools"
+
 sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 
 
@@ -56,18 +57,19 @@ class TestPackageTool:
     def test_executor_package_with_prompt_tool(self, dev_connections, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        with mocker.patch("promptflow.executor._tool_resolver.collect_package_tools", return_value=package_tool_definition):
+        with mocker.patch(PACKAGE_TOOL_ENTRY, return_value=package_tool_definition):
             executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
             bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)
             for i in bulk_inputs:
                 line_result = executor.exec_line(i)
                 assert isinstance(line_result, LineResult)
-                assert line_result.run_info.status == Status.Completed, f"Got {line_result.run_info.status} for input {i}"
+                msg = f"Got {line_result.run_info.status} for input {i}"
+                assert line_result.run_info.status == Status.Completed, msg
 
     def test_custom_llm_tool_with_duplicated_inputs(self, dev_connections, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool_with_duplicated_inputs"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        with mocker.patch("promptflow.executor._tool_resolver.collect_package_tools", return_value=package_tool_definition):
+        with mocker.patch(PACKAGE_TOOL_ENTRY, return_value=package_tool_definition):
             msg = (
                 "Invalid inputs {'api'} in prompt template of node custom_llm_tool_with_duplicated_inputs. "
                 "These inputs are duplicated with the inputs of custom llm tool."
@@ -111,7 +113,7 @@ class TestPackageTool:
 
                 return collect_package_tools(keys)
 
-        with patch("promptflow.executor._tool_resolver.collect_package_tools", side_effect=mock_collect_package_tools):
+        with patch(PACKAGE_TOOL_ENTRY, side_effect=mock_collect_package_tools):
             # ret = collect_package_tools()
             # print("hello" + json.dumps(ret))
             with pytest.raises(error_class) as exce_info:
