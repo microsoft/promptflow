@@ -126,7 +126,7 @@ class FlowExecutor:
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ) -> "FlowExecutor":
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        flow = Flow.from_yaml(flow_file, working_dir=working_dir, gen_tool=False)
+        flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         if node_override:
             flow = flow.apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()

@@ -371,10 +371,16 @@ class Flow:
         with open(working_dir / flow_file, "r") as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))
             flow._set_working_dir(working_dir)
+            flow._set_tools_loader()
         return flow
 
     def _set_working_dir(self, working_dir):
         self._working_dir = working_dir
+
+    def _set_tools_loader(self, package_tool_keys: Optional[List[str]] = None):
+        package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
+        from promptflow._core.tools_manager import ToolsLoader
+        self._tools_loader = ToolsLoader(package_tool_keys)
 
     def apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
@@ -481,8 +487,7 @@ class Flow:
             if node.connection:
                 connection_names.add(node.connection)
                 continue
-            from promptflow._core.tools_manager import ToolsLoader
-            tool = ToolsLoader.load_tool_for_node(node, self._working_dir)
+            tool = self._tools_loader.load_tool_for_node(node, self._working_dir)
             if tool:
                 connection_names.update(self._get_connection_name_from_tool(tool, node).values())
         return connection_names
@@ -492,8 +497,7 @@ class Flow:
         node = self.get_node(node_name)
         if not node:
             return []
-        from promptflow._core.tools_manager import ToolsLoader
-        tool = ToolsLoader.load_tool_for_node(node, self._working_dir)
+        tool = self._tools_loader.load_tool_for_node(node, self._working_dir)
         if tool:
             return list(self._get_connection_name_from_tool(tool, node).keys())
         return []

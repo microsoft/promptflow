@@ -17,12 +17,10 @@ from promptflow._core._errors import MissingRequiredInputs, PackageToolNotFoundE
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
-    generate_prompt_tool,
-    generate_python_tool,
     load_python_module_from_file,
 )
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -222,45 +220,42 @@ class ToolsManager:
 
 
 class ToolsLoader:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, package_tool_keys: Optional[List[str]] = None) -> None:
+        self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
 
-    @staticmethod
-    def load_tool_for_node(node: Node, working_dir: str) -> Tool:
+    def load_tool_for_node(self, node: Node, working_dir: str) -> Tool:
         if node.source is None:
             raise UserErrorException(f"Node {node.name} does not have source defined.")
         if node.type is ToolType.PYTHON:
             if node.source.type == ToolSourceType.Package:
-                return ToolsLoader.load_tool_for_package_node(node)
+                return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
-                return ToolsLoader.load_tool_for_script_node(node, working_dir)
+                _, tool = self.load_tool_for_script_node(node, working_dir)
+                return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type is ToolType.PROMPT:
             return None
         elif node.type is ToolType.LLM:
-            return ToolsLoader.load_tool_for_llm_node(node)
+            return self.load_tool_for_llm_node(node)
         elif node.type is ToolType.CUSTOM_LLM:
             if node.source.type == ToolSourceType.PackageWithPrompt:
-                return ToolsLoader.load_tool_for_package_node(node)
+                return self.load_tool_for_package_node(node)
             raise NotImplementedError(
                 f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
             )
         else:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 
-    @staticmethod
-    def load_tool_for_package_node(node: Node):
-        package_tools = collect_package_tools()
-        if node.source.tool in package_tools:
-            return Tool.deserialize(package_tools[node.source.tool])
+    def load_tool_for_package_node(self, node: Node) -> Tool:
+        if node.source.tool in self._package_tools:
+            return Tool.deserialize(self._package_tools[node.source.tool])
         raise PackageToolNotFoundError(
             f"Package tool '{node.source.tool}' is not found in the current environment. "
-            f"All available package tools are: {list(package_tools.keys())}.",
+            f"All available package tools are: {list(self._package_tools.keys())}.",
             target=ErrorTarget.EXECUTOR,
         )
 
-    @staticmethod
-    def load_tool_for_script_node(node: Node, working_dir: str):
+    def load_tool_for_script_node(self, node: Node, working_dir: str) -> Tool:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
         path = node.source.path
@@ -268,10 +263,9 @@ class ToolsLoader:
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f = collect_tool_function_in_module(m)
-        return _parse_tool_from_function(f)
+        return f, _parse_tool_from_function(f)
 
-    @staticmethod
-    def load_tool_for_llm_node(node: Node):
+    def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
         return BuiltinsManager._load_llm_api(api_name)
 
