@@ -271,7 +271,7 @@ class Flow:
         return data
 
     @staticmethod
-    def import_requisites(tools, nodes):
+    def _import_requisites(tools, nodes):
         try:
             """This function will import tools/nodes required modules to ensure type exists so flow can be executed."""
             # Import tool modules to ensure register_builtins & registered_connections executed
@@ -292,7 +292,7 @@ class Flow:
     def deserialize(data: dict) -> "Flow":
         tools = [Tool.deserialize(t) for t in data.get("tools") or []]
         nodes = [Node.deserialize(n) for n in data.get("nodes") or []]
-        Flow.import_requisites(tools, nodes)
+        Flow._import_requisites(tools, nodes)
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
         return Flow(
@@ -332,7 +332,7 @@ class Flow:
                 flow.tools.append(tool)
         return flow
 
-    def apply_node_overrides(self, node_overrides):
+    def _apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
 
         Example:
@@ -464,7 +464,7 @@ class Flow:
         # Filter None and empty string out
         return set({item for item in connection_names if item})
 
-    def replace_with_variant(self, variant_node: Node, variant_tools: list):
+    def _replace_with_variant(self, variant_node: Node, variant_tools: list):
         for index, node in enumerate(self.nodes):
             if node.name == variant_node.name:
                 self.nodes[index] = variant_node

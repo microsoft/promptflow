@@ -75,7 +75,7 @@ class FlowValidator:
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
-    def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def _resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
         """
         Resolve inputs by type if existing. Ignore missing inputs. This method is used for PRS case
 
@@ -93,7 +93,7 @@ class FlowValidator:
         return updated_inputs
 
     @staticmethod
-    def ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def _ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
         """
         Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
@@ -104,10 +104,10 @@ class FlowValidator:
             if k not in inputs:
                 message = f"Input '{k}'" if idx is None else f"Input '{k}' in line {idx}"
                 raise InputNotFound(message=f"{message} is not provided for flow.")
-        return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
+        return FlowValidator._resolve_flow_inputs_type(flow, inputs, idx)
 
     @staticmethod
-    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]):
+    def _convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]):
         """
         Filter the flow inputs for node and resolve the value by type.
 

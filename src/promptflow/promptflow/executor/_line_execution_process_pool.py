@@ -319,7 +319,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, storage):
     """This is a legacy method to create a flow executor, will be deprecated with the legacy pf portal."""
     from promptflow._core.tool import ToolInvoker
-    from promptflow.executor.tool_invoker import DefaultToolInvoker
+    from promptflow.executor._tool_invoker import DefaultToolInvoker
 
     ToolInvoker.activate(DefaultToolInvoker())
     run_tracker = RunTracker(run_storage=storage)

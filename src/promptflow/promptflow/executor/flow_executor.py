@@ -35,11 +35,12 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
+from promptflow.executor._flow_validator import FlowValidator
 from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
-from promptflow.executor.flow_validator import FlowValidator
-from promptflow.executor.tool_invoker import DefaultToolInvoker
-from promptflow.storage import AbstractRunStorage, DummyRunStorage
+from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.storage import AbstractRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -48,7 +49,7 @@ LINE_TIMEOUT_SEC = 600
 class FlowExecutor:
     """This class is used to execute a single flow for different inputs."""
 
-    DEFAULT_WORKER_COUNT = 16
+    _DEFAULT_WORKER_COUNT = 16
 
     def __init__(
         self,
@@ -77,12 +78,12 @@ class FlowExecutor:
             self._worker_count = worker_count
         else:
             try:
-                worker_count = int(os.environ.get("PF_WORKER_COUNT", self.DEFAULT_WORKER_COUNT))
+                worker_count = int(os.environ.get("PF_WORKER_COUNT", self._DEFAULT_WORKER_COUNT))
                 self._worker_count = worker_count
             except Exception:
-                self._worker_count = self.DEFAULT_WORKER_COUNT
+                self._worker_count = self._DEFAULT_WORKER_COUNT
         if self._worker_count <= 0:
-            self._worker_count = self.DEFAULT_WORKER_COUNT
+            self._worker_count = self._DEFAULT_WORKER_COUNT
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
@@ -128,7 +129,7 @@ class FlowExecutor:
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         flow = Flow.from_yaml(flow_file, working_dir=working_dir, gen_tool=False)
         if node_override:
-            flow = flow.apply_node_overrides(node_override)
+            flow = flow._apply_node_overrides(node_override)
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
 
@@ -187,7 +188,7 @@ class FlowExecutor:
         if not node.source or not node.type:
             raise ValueError(f"Node {node_name} is not a valid node in flow {flow_file}.")
 
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator._convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -243,14 +244,14 @@ class FlowExecutor:
 
         return update_environment_variables_with_connections(connections)
 
-    def convert_flow_input_types(self, inputs: dict):
-        return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
+    def _convert_flow_input_types(self, inputs: dict):
+        return FlowValidator._resolve_flow_inputs_type(self._flow, inputs)
 
-    def collect_run_infos(self):
+    def _collect_run_infos(self):
         return self._run_tracker.collect_all_run_infos_as_dicts()
 
     @property
-    def default_inputs_mapping(self):
+    def _default_inputs_mapping(self):
         return {key: f"${{data.{key}}}" for key in self._flow.inputs}
 
     @property
@@ -349,7 +350,7 @@ class FlowExecutor:
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
-            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+            FlowValidator._ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
         ]
 
         succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
@@ -549,12 +550,12 @@ class FlowExecutor:
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping):
         inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
-        resolved_inputs = self.apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
+        resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         return resolved_inputs
 
     def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
         inputs_mapping = inputs_mapping or {}
-        result_mapping = self.default_inputs_mapping
+        result_mapping = self._default_inputs_mapping
         result_mapping.update(inputs_mapping)
         return result_mapping
 
@@ -614,9 +615,9 @@ class FlowExecutor:
         aggregation_inputs = {}
         try:
             if validate_inputs:
-                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-            output, nodes_outputs = self.traverse_nodes(inputs, context)
-            output = self.stringify_generator_output(output) if not allow_generator_output else output
+                inputs = FlowValidator._ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+            output, nodes_outputs = self._traverse_nodes(inputs, context)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -631,7 +632,7 @@ class FlowExecutor:
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
-    def extract_outputs(self, nodes_outputs, flow_inputs):
+    def _extract_outputs(self, nodes_outputs, flow_inputs):
         outputs = {}
         for name, output in self._flow.outputs.items():
             if output.reference.value_type == InputValueType.LITERAL:
@@ -656,14 +657,14 @@ class FlowExecutor:
             )
         return outputs
 
-    def traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
+    def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
         nodes_outputs = self._submit_to_scheduler(context, inputs, batch_nodes)
-        outputs = self.extract_outputs(nodes_outputs, inputs)
+        outputs = self._extract_outputs(nodes_outputs, inputs)
         return outputs, nodes_outputs
 
-    def stringify_generator_output(self, outputs: dict):
+    def _stringify_generator_output(self, outputs: dict):
         for k, v in outputs.items():
             if isinstance(v, GeneratorType):
                 outputs[k] = "".join(str(chuck) for chuck in v)
@@ -676,7 +677,7 @@ class FlowExecutor:
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
 
     @staticmethod
-    def apply_inputs_mapping_legacy(
+    def _apply_inputs_mapping_legacy(
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
@@ -723,7 +724,7 @@ class FlowExecutor:
         return result
 
     @staticmethod
-    def apply_inputs_mapping(
+    def _apply_inputs_mapping(
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
@@ -787,7 +788,7 @@ class FlowExecutor:
                 "it may have been generated according to the YAML input file. "
                 "You may need to assign it manually according to your input data."
             )
-        # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
+        # For PRS scenario, _apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:
             result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
         return result
@@ -838,7 +839,7 @@ class FlowExecutor:
         return result
 
     @staticmethod
-    def apply_inputs_mapping_for_all_lines(
+    def _apply_inputs_mapping_for_all_lines(
         input_dict: Mapping[str, List[Mapping[str, Any]]],
         inputs_mapping: Mapping[str, str],
     ) -> List[Dict[str, Any]]:
@@ -884,7 +885,7 @@ class FlowExecutor:
         if len(merged_list) == 0:
             raise EmptyInputAfterMapping("Input data does not contain a complete line. Please check your input.")
 
-        result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
+        result = [FlowExecutor._apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
@@ -899,7 +900,7 @@ class FlowExecutor:
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=inject_stream_options(stream_required))
+                self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -912,10 +913,10 @@ class FlowExecutor:
         to consume the streaming outputs and merge them into a string for executor usage.
         """
         for node in self._flow.nodes:
-            self._tools_manager.wrap_tool(node.name, wrapper=ensure_node_result_is_serializable)
+            self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
 
-def inject_stream_options(should_stream: Callable[[], bool]):
+def _inject_stream_options(should_stream: Callable[[], bool]):
     """Inject the stream options to the decorated function.
 
     AzureOpenAI.completion and AzureOpenAI.chat tools support both stream and non-stream mode.
@@ -962,7 +963,7 @@ def enable_streaming_for_llm_tool(f):
     return wrapper
 
 
-def ensure_node_result_is_serializable(f):
+def _ensure_node_result_is_serializable(f):
     """Ensure the node result is serializable.
 
     Some of the nodes may return a generator of strings to create streaming outputs.
