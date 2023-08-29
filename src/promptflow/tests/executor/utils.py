@@ -43,6 +43,12 @@ def get_flow_expected_status_summary(folder_name):
     return samples_inputs
 
 
+def get_flow_expected_result(folder_name):
+    flow_folder_path = Path(FLOW_ROOT) / folder_name
+    samples_inputs = load_json(flow_folder_path / "expected_result.json")
+    return samples_inputs
+
+
 def get_flow_package_tool_definition(folder_name):
     flow_folder_path = Path(FLOW_ROOT) / folder_name
     return load_json(flow_folder_path / "package_tool_definition.json")
