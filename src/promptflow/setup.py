@@ -15,6 +15,11 @@ PACKAGE_FOLDER_PATH = Path(__file__).parent / "promptflow"
 with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), "r") as f:
     version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(1)
 
+with open("README.md", encoding="utf-8") as f:
+    readme = f.read()
+with open("CHANGELOG.md", encoding="utf-8") as f:
+    changelog = f.read()
+
 REQUIRES = [
     "openai>=0.27.8,<0.28.0",  # promptflow.core.api_injector
     "flask>=2.2.3,<3.0.0",  # Serving endpoint requirements
@@ -39,6 +44,8 @@ setup(
     name=PACKAGE_NAME,
     version=version,
     description="Prompt flow Python SDK - build high-quality LLM apps",
+    long_description_content_type="text/markdown",
+    long_description=readme + "\n\n" + changelog,
     license="MIT License",
     author="Microsoft Corporation",
     author_email="aml-pt-eng@microsoft.com",
