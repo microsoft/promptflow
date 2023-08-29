@@ -58,16 +58,16 @@ nodes:
   activate:
     when: ${incident_info_extractor.output.retriever}
     is: icm
-- name: kql_retriever
+- name: kql_tsg_retriever
   type: python
   source:
     type: code
-    path: kql_retriever.py
+    path: kql_tsg_retriever.py
   inputs:
     content: ${incident_info_extractor.output.incident_content}
   activate:
     when: ${incident_info_extractor.output.retriever}
-    is: kql
+    is: tsg
 - name: investigation_steps
   type: llm
   source:
@@ -84,11 +84,18 @@ nodes:
     logit_bias: ""
     first_method: ${icm_retriever.output}
     second_method: ${tsg_retriever.output}
-    third_method: ${kql_retriever.output}
+    third_method: ${kql_tsg_retriever.output}
   provider: AzureOpenAI
   connection: azure_open_ai_connection
   api: chat
   module: promptflow.tools.aoai
+- name: retriever_summary
+  type: python
+  source:
+    type: code
+    path: retriever_summary.py
+  inputs:
+    summary: ${investigation_steps.output}
 - name: investigation_method
   type: python
   source:
@@ -96,4 +103,4 @@ nodes:
     path: investigation_method.py
   inputs:
     method1: ${job_info_extractor.output}
-    method2: ${investigation_steps.output}
+    method2: ${retriever_summary.output}
