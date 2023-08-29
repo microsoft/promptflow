@@ -97,8 +97,8 @@ class DAGManager:
             if activate_condition != node.activate.condition_value:
                 return True
 
-        # Skip node if all of its dependencies are skipped
-        node_dependencies = [i for i in node.inputs.values() if i.value_type != InputValueType.LITERAL]
+        # Skip node if all of its node reference dependencies are skipped
+        node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
         all_dependencies_skipped = node_dependencies and all(
             self._is_node_dependency_skipped(dependency)
             for dependency in node_dependencies
