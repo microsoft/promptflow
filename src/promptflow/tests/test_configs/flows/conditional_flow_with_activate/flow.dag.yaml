@@ -1,0 +1,84 @@
+id: template_standard_flow
+name: Template Standard Flow
+inputs:
+  incident_content:
+    type: string
+  incident_id:
+    type: int
+outputs:
+  investigation_method:
+    type: string
+    reference: ${investigation_method.output}
+nodes:
+- name: incident_info_extractor
+  type: python
+  source:
+    type: code
+    path: incident_info_extractor.py
+  inputs:
+    incident: ${incident_id_extractor.output}
+- name: icm_retriever
+  type: python
+  source:
+    type: code
+    path: icm_retriever.py
+  inputs:
+    content: ${incident_info_extractor.output.incident_content}
+- name: investigation_steps
+  type: llm
+  source:
+    type: code
+    path: investigation_steps.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    temperature: 0.7
+    top_p: 1
+    stop: ""
+    max_tokens: 256
+    presence_penalty: 0
+    frequency_penalty: 0
+    logit_bias: ""
+    first_method: ${icm_retriever.output}
+    second_method: ${tsg_retriever.output}
+    third_method: ${kql_retriever.output}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+  module: promptflow.tools.aoai
+- name: incident_id_extractor
+  type: python
+  source:
+    type: code
+    path: incident_id_extractor.py
+  inputs:
+    incident_content: ${inputs.incident_content}
+    incident_id: ${inputs.incident_id}
+- name: job_info_extractor
+  type: python
+  source:
+    type: code
+    path: job_info_extractor.py
+  inputs:
+    incident_content: ${incident_id_extractor.output.incident_content}
+- name: kql_retriever
+  type: python
+  source:
+    type: code
+    path: kql_retriever.py
+  inputs:
+    content: ${incident_info_extractor.output.incident_content}
+- name: investigation_method
+  type: python
+  source:
+    type: code
+    path: investigation_method.py
+  inputs:
+    method1: ${job_info_extractor.output}
+    method2: ${investigation_steps.output}
+- name: tsg_retriever
+  type: python
+  source:
+    type: code
+    path: tsg_retriever.py
+  inputs:
+    content: ${incident_info_extractor.output.incident_content}
