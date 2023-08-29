@@ -10,6 +10,24 @@ outputs:
     type: string
     reference: ${investigation_method.output}
 nodes:
+- name: incident_id_extractor
+  type: python
+  source:
+    type: code
+    path: incident_id_extractor.py
+  inputs:
+    incident_content: ${inputs.incident_content}
+    incident_id: ${inputs.incident_id}
+- name: job_info_extractor
+  type: python
+  source:
+    type: code
+    path: job_info_extractor.py
+  inputs:
+    incident_content: ${incident_id_extractor.output.incident_content}
+  activate:
+    when: ${incident_id_extractor.output.has_incident_id}
+    is: false
 - name: incident_info_extractor
   type: python
   source:
@@ -17,6 +35,19 @@ nodes:
     path: incident_info_extractor.py
   inputs:
     incident: ${incident_id_extractor.output}
+  activate:
+    when: ${incident_id_extractor.output.has_incident_id}
+    is: true
+- name: tsg_retriever
+  type: python
+  source:
+    type: code
+    path: tsg_retriever.py
+  inputs:
+    content: ${incident_info_extractor.output.incident_content}
+  activate:
+    when: ${incident_info_extractor.output.retriever}
+    is: tsg
 - name: icm_retriever
   type: python
   source:
@@ -24,6 +55,19 @@ nodes:
     path: icm_retriever.py
   inputs:
     content: ${incident_info_extractor.output.incident_content}
+  activate:
+    when: ${incident_info_extractor.output.retriever}
+    is: icm
+- name: kql_retriever
+  type: python
+  source:
+    type: code
+    path: kql_retriever.py
+  inputs:
+    content: ${incident_info_extractor.output.incident_content}
+  activate:
+    when: ${incident_info_extractor.output.retriever}
+    is: kql
 - name: investigation_steps
   type: llm
   source:
@@ -45,28 +89,6 @@ nodes:
   connection: azure_open_ai_connection
   api: chat
   module: promptflow.tools.aoai
-- name: incident_id_extractor
-  type: python
-  source:
-    type: code
-    path: incident_id_extractor.py
-  inputs:
-    incident_content: ${inputs.incident_content}
-    incident_id: ${inputs.incident_id}
-- name: job_info_extractor
-  type: python
-  source:
-    type: code
-    path: job_info_extractor.py
-  inputs:
-    incident_content: ${incident_id_extractor.output.incident_content}
-- name: kql_retriever
-  type: python
-  source:
-    type: code
-    path: kql_retriever.py
-  inputs:
-    content: ${incident_info_extractor.output.incident_content}
 - name: investigation_method
   type: python
   source:
@@ -75,10 +97,3 @@ nodes:
   inputs:
     method1: ${job_info_extractor.output}
     method2: ${investigation_steps.output}
-- name: tsg_retriever
-  type: python
-  source:
-    type: code
-    path: tsg_retriever.py
-  inputs:
-    content: ${incident_info_extractor.output.incident_content}
