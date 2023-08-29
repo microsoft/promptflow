@@ -8,12 +8,11 @@ Your tool package should be a python package. To try it quickly, just use [my-to
 Create a new conda environment using python 3.9 or 3.10. Run below command to install PromptFlow dependencies:
 ```
 # eventually only need to install promptflow
-pip install promptflow-sdk promptflow --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow
 ```
 Install Pytest packages for running tests:
 ```
-pip install pytest
-pip install pytest-mock
+pip install pytest pytest-mock
 ```
 Clone the PromptFlow repository from GitHub using the following command:
 ```
