@@ -56,7 +56,7 @@ hello-world-proj/
 ```The points outlined below explain the purpose of each folder/file in the package. If your aim is to develop multiple tools within your package, please make sure to closely examine point 2 and 5.```
 
 1. **hello-world-proj**: This is the source directory. All of your project's source code should be placed in this directory.
-2. **hello-world/tools**: This directory contains the individual tools for your project. You tool package can contain either one tool or many tools. When adding a new tool, you should create another *_tool.py under the `tools` folder.
+2. **hello-world/tools**: This directory contains the individual tools for your project. Your tool package can contain either one tool or many tools. When adding a new tool, you should create another *_tool.py under the `tools` folder.
 3. **hello-world/tools/hello_world_tool.py**: Develop your tool within the def function. Use the `@tool` decorator to identify the function as a tool.
     > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
 4. **hello-world/tools/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
