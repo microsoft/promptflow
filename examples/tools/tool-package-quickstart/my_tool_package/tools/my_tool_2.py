@@ -1,5 +1,5 @@
 from promptflow import ToolProvider, tool
-from promptflow.connections import CustomConnection
+from my_tool_package.connections import MySecondConnection
 
 
 class MyTool(ToolProvider):
@@ -7,7 +7,7 @@ class MyTool(ToolProvider):
     Doc reference :
     """
 
-    def __init__(self, connection: CustomConnection):
+    def __init__(self, connection: MySecondConnection):
         super().__init__()
         self.connection = connection
 
@@ -15,6 +15,5 @@ class MyTool(ToolProvider):
     def my_tool(self, input_text: str) -> str:
         # Replace with your tool code.
         # Usually connection contains configs to connect to an API.
-        # Use CustomConnection is a dict. You can use it like: connection.api_key, connection.api_base
         # Not all tools need a connection. You can remove it if you don't need it.
-        return "Hello " + input_text
+        return input_text + self.connection.api_hint

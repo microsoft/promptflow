@@ -9,6 +9,7 @@ setup(
     packages=find_packages(),
     entry_points={
         "package_tools": ["my_tools = my_tool_package.tools.utils:list_package_tools"],
+        "package_connections": ["my_connections = my_tool_package.connections"],
     },
     include_package_data=True,   # This line tells setuptools to include files from MANIFEST.in
 )
