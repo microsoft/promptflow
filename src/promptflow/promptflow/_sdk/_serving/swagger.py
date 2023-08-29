@@ -46,7 +46,7 @@ def generate_swagger(flow: Flow, samples, outputs_to_remove: list) -> dict:
     swagger["info"] = {
         "title": f"Promptflow[{flow.name}] API",
         "version": "1.0.0",
-        "flow_name": str(flow.name),
+        "x-flow-name": str(flow.name),
     }
 
     swagger["components"] = {
