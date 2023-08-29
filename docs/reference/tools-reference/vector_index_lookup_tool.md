@@ -3,8 +3,9 @@
 Vector Index Lookup is a tool tailored for querying within a Azure ML Vector Index. It empowers users to extract contextually relevant information from a domain knowledge base.
 
 ## Requirements
-- promptflow-vectordb[azure] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+- pip install promptflow-vectordb[azure]
 
+  For Azure AI cloud users, the tool is installed in default image, you can use the tool without extra installation.
 ## Prerequisites
 - Please follow the instructions from sample flow `Bring your own Data QnA` to prepare a Vector Index as an input.
 - Based on where you put your Vector Index, the identity used by the promptflow runtime should be granted with certain roles. Please refer to [Steps to assign an Azure role](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-steps):
