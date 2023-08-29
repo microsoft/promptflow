@@ -26,6 +26,35 @@ jobs:
         with:
           submodules: true
 
+      - name: Build Doc
+        shell: powershell
+        working-directory: scripts/docs/
+        run: ./doc_generation.ps1 -WarningAsError:$true
+
+  # Note: We have this job separately because some error may missing when build link check exists.
+  link_check_job:
+    runs-on: windows-latest
+    name: Build Link Check
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Build LinkCheck
+        shell: powershell
+        working-directory: scripts/docs/
+        run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
+
+  build_doc_with_reference_doc_job:
+    runs-on: windows-latest
+    name: Build Doc
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
       - name: Conda Setup
         uses: "./.github/actions/step_create_conda_environment"
 
@@ -44,19 +73,4 @@ jobs:
       - name: Build Doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1  # TODO: Add "-WarningAsError:$true" back after fixing all warnings.
-
-  # Note: We have this job separately because some error may missing when build link check exists.
-  link_check_job:
-    runs-on: windows-latest
-    name: Build Link Check
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Build LinkCheck
-        shell: powershell
-        working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
+        run: ./doc_generation.ps1 -WithReferenceDoc:$true  # TODO: Once we fixed all warnings, delete this whole job and make job "build_doc_job" to run with "-WithReferenceDoc:$true"
