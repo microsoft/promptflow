@@ -8,7 +8,7 @@ Tools used in this flow：
 
 Connections used in this flow:
 
-- `azure_open_ai` connection
+- `open_ai` connection
 
 ## Prerequisites
 Install promptflow sdk and other dependencies:

@@ -44,6 +44,6 @@ nodes:
     question: ${inputs.math_question}
     examples: ${math_example.output}
   provider: AzureOpenAI
-  connection: my_azure_open_ai_connection
+  connection: open_ai_connection
   api: chat
   module: promptflow.tools.aoai
