@@ -38,7 +38,7 @@ REQUIRES = [
 setup(
     name=PACKAGE_NAME,
     version=version,
-    description="PromptFlow SDK",
+    description="Prompt flow Python SDK - build high-quality LLM apps",
     license="MIT License",
     author="Microsoft Corporation",
     author_email="aml-pt-eng@microsoft.com",
