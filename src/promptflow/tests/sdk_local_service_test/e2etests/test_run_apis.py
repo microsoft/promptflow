@@ -7,6 +7,7 @@ import pytest
 from ..utils import LocalServiceOperations
 from promptflow import PFClient
 from promptflow._sdk.entities import Run
+from promptflow._sdk.entities._connection import _Connection as Connection
 
 
 def create_run_against_multi_line_data(client: PFClient) -> Run:
@@ -21,13 +22,13 @@ class TestRunAPIs:
         response = local_service_op.heartbeat()
         assert response.status_code == 204
 
-    def test_get_run(self, pf_client: PFClient, local_service_op: LocalServiceOperations) -> None:
+    def test_get_run(self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations) -> None:
         run = create_run_against_multi_line_data(pf_client)
         response = local_service_op.get(name=run.name)
         print(response)
         assert response["name"] == run.name
 
-    def test_get_run_metadata(self, pf_client: PFClient, local_service_op: LocalServiceOperations) -> None:
+    def test_get_run_metadata(self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations) -> None:
         run = create_run_against_multi_line_data(pf_client)
         response = local_service_op.get_metadata(name=run.name)
         print(response)
