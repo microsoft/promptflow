@@ -33,13 +33,16 @@ jobs:
       - name: Summarize check status
         id: summarize_check_status
         run: |
-          status="success"
-          jq -c '.check_runs | .[] | select (.conclusion!="success") | .html_url' status.json | while read url; do
-            echo $url
-            status="pending"
+          jq -c '.check_runs[]' status.json | while read check_run; do
+            echo $check_run | jq '{name, html_url, conclusion}'
           done
 
-          echo "status=$status" >> "$GITHUB_OUTPUT"
+          pending_count=$(jq -c '.check_runs[].conclusion != "success" | select(.)' status.json | wc -l)
+          if [ $pending_count -eq 0 ]; then
+            echo "status=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=pending" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: octokit/request-action@v2.x
         name: Update the check enforcer status
