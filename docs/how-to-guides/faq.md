@@ -13,5 +13,6 @@ Install the third-party key-ring backend.
 
 ### Pf visualize show error: "tcgetpgrp failed: Not a tty"
 
-WIP
+If you are using WSL, this is a known issue for `webbrowser` under WSL; see [this issue](https://github.com/python/cpython/issues/89752) for more information. Please try to upgrade your WSL to 22.04 or later, this issue should be resolved.
 
+If you are still facing this issue with WSL 22.04 or later, or you are not even using WSL, please open an issue to us.
