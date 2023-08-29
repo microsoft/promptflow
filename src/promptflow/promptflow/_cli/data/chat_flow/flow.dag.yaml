@@ -23,7 +23,7 @@ nodes:
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
   api: chat
-  provider: AzureOpenAI
+  provider: OpenAI
   connection: open_ai_connection
 id: template_chat_flow
 name: Template Chat Flow
