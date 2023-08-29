@@ -171,9 +171,9 @@ class TestFlowRun:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         column_mapping = {
-            "groundtruth": "data.answer",
-            "prediction": "run.outputs.category",
-            "variant_id": "data.variant_id",
+            "groundtruth": "${data.answer}",
+            "prediction": "${run.outputs.category}",
+            "variant_id": "${data.variant_id}",
         }
 
         metrics = {}
@@ -190,8 +190,6 @@ class TestFlowRun:
                 run=v,
                 column_mapping=column_mapping,
             )
-
-        # TODO: compare metrics
 
     def test_submit_run_from_yaml(self, local_client, pf):
         run_id = str(uuid.uuid4())
