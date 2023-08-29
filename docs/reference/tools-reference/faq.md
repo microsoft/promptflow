@@ -2,7 +2,7 @@
 
 This article addresses frequent questions about tool usage.
 
-## VectorDB/Faiss Index/Vector Index Lookup tool rename reminder
+## Vector DB/Faiss Index/Vector Index Lookup tool rename reminder
 
 When you update flows to code first experience, if the flow utilized the 3 tools (Faiss Index Lookup, Vector Index Lookup, Vector DB Lookup), you may encounter the error message like the below:
 
