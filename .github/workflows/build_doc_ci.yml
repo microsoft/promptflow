@@ -46,9 +46,10 @@ jobs:
         working-directory: scripts/docs/
         run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
 
+  # TODO: Once we fixed all warnings in reference doc job, delete this whole job and make job "build_doc_job" to run with "-WithReferenceDoc:$true"
   build_doc_with_reference_doc_job:
     runs-on: windows-latest
-    name: Build Doc
+    name: Build Doc with Reference Doc
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2
@@ -73,4 +74,4 @@ jobs:
       - name: Build Doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -WithReferenceDoc:$true  # TODO: Once we fixed all warnings, delete this whole job and make job "build_doc_job" to run with "-WithReferenceDoc:$true"
+        run: ./doc_generation.ps1 -WithReferenceDoc:$true  

@@ -58,9 +58,10 @@ ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combin
 ProcessFiles
 
 if($WithReferenceDoc){
-    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, "reference\python-library-reference")
-    if(!Test-Path $RefDocPath){
-        throw "Reference doc path not found: $RefDocPath"
+    $RefDocRelativePath = "reference\python-library-reference"
+    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, $RefDocRelativePath)
+    if(!(Test-Path $RefDocPath)){
+        throw "Reference doc path not found. Please make sure '$RefDocRelativePath' is under '$DocPath'"
     }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
