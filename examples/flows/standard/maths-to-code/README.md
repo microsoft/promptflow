@@ -68,6 +68,6 @@ eval_run_name="math_to_code_eval_run_"$(openssl rand -hex 12)
 pf run create --flow ../../evaluation/eval-accuracy-maths-to-code/ --data ./math_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run $run_name --name $eval_run_name --stream
 
 # view the run details
-pf run show-details -n math_to_code_eval_run
-pf run show-metrics -n math_to_code_eval_run
+pf run show-details -n $eval_run_name
+pf run show-metrics -n $eval_run_name
 ```
