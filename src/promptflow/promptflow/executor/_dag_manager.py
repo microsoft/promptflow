@@ -56,10 +56,8 @@ class DAGManager:
     def _is_node_skipped(self, node: Node) -> bool:
         """Returns True if the node should be skipped."""
         # Skip node if the skip condition is met
-        if node.skip:
-            if _input_assignment_parser.is_node_dependency_skipped(
-                    node.skip.condition, self._skipped_nodes, self._completed_nodes_outputs):
-                return True
+        if node.skip and not _input_assignment_parser.is_node_dependency_skipped(
+                node.skip.condition, self._skipped_nodes, self._completed_nodes_outputs):
             skip_condition = _input_assignment_parser.parse_value(
                 node.skip.condition, self._completed_nodes_outputs, self._flow_inputs)
             if skip_condition == node.skip.condition_value:
