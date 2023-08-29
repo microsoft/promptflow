@@ -21,18 +21,27 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ["3.9", "3.10"]
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
       uses: actions/checkout@v3
     - name: Display and Set Environment Variables
-      run: env | sort >> $GITHUB_OUTPUT
+      run: |
+        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.9";
+        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.10";
+        else
+          echo "Unsupported OS: ${{ matrix.os }}";
+          exit 1;
+        fi
+        env | sort >> $GITHUB_OUTPUT
+      id: display_env
       shell: bash -el {0}
-    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ matrix.python-version }}
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
       uses: "./.github/actions/step_create_conda_environment"
       with:
-        pythonVersion: ${{ matrix.python-version }}
+        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -70,7 +79,7 @@ jobs:
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: Test Results (Python ${{ matrix.python-version }}) (OS ${{ matrix.os }})
+        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
         path: 
           ${{ github.workspace }}/*.xml
   publish-test-results:
