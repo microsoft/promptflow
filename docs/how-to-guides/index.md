@@ -14,6 +14,7 @@ enable-streaming-mode
 manage-connections
 manage-runs
 how-to-create-and-use-your-own-tool-package
+faq
 
 ```
 
