@@ -164,6 +164,7 @@ class Node:
     connection: str = None
     aggregation: bool = False
     enable_cache: bool = False
+    use_variants: bool = False
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
     skip: Optional[SkipCondition] = None
@@ -181,7 +182,7 @@ class Node:
     @staticmethod
     def deserialize(data: dict) -> "Node":
         node = Node(
-            name=data["name"],
+            name=data.get("name"),
             tool=data.get("tool"),
             inputs={name: InputAssignment.deserialize(v) for name, v in (data.get("inputs") or {}).items()},
             comment=data.get("comment", ""),
@@ -191,6 +192,7 @@ class Node:
             connection=data.get("connection", None),
             aggregation=data.get("aggregation", False) or data.get("reduce", False),  # TODO: Remove this fallback.
             enable_cache=data.get("enable_cache", False),
+            use_variants=data.get("use_variants", False),
         )
         if "source" in data:
             node.source = ToolSource.deserialize(data["source"])
@@ -271,6 +273,32 @@ class FlowOutputDefinition:
 
 
 @dataclass
+class NodeVariant:
+    node: Node
+    description: str = ""
+
+    @staticmethod
+    def deserialize(data: dict) -> "NodeVariant":
+        return NodeVariant(
+            Node.deserialize(data["node"]),
+            data.get("description", ""),
+        )
+
+
+@dataclass
+class NodeVariants:
+    default_variant_id: str  # The default variant id of the node
+    variants: Dict[str, NodeVariant]  # The variants of the node
+
+    @staticmethod
+    def deserialize(data: dict) -> "NodeVariants":
+        variants = {}
+        for variant_id, node in data["variants"].items():
+            variants[variant_id] = NodeVariant.deserialize(node)
+        return NodeVariants(default_variant_id=data.get("default_variant_id", ""), variants=variants)
+
+
+@dataclass
 class Flow:
     id: str
     name: str
@@ -278,6 +306,7 @@ class Flow:
     inputs: Dict[str, FlowInputDefinition]
     outputs: Dict[str, FlowOutputDefinition]
     tools: List[Tool]
+    node_variants: Dict[str, NodeVariants] = None
 
     def serialize(self):
         data = {
@@ -323,7 +352,29 @@ class Flow:
             {name: FlowInputDefinition.deserialize(i) for name, i in inputs.items()},
             {name: FlowOutputDefinition.deserialize(o) for name, o in outputs.items()},
             tools=tools,
+            node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
         )
+
+    def _apply_default_node_variants(self: 'Flow'):
+        self.nodes = [
+            self._apply_default_node_variant(node, self.node_variants)
+            if node.use_variants else node
+            for node in self.nodes
+        ]
+        return self
+
+    @staticmethod
+    def _apply_default_node_variant(node: Node, node_variants: Dict[str, NodeVariants]) -> Node:
+        if not node_variants:
+            return node
+        node_variant = node_variants.get(node.name)
+        if not node_variant:
+            return node
+        default_variant = node_variant.variants.get(node_variant.default_variant_id)
+        if not default_variant:
+            return node
+        default_variant.node.name = node.name
+        return default_variant.node
 
     @staticmethod
     def _resolve_working_dir(flow_file: Path, working_dir=None) -> Path:
