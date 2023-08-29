@@ -619,6 +619,7 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+            self.enable_streaming_for_llm_flow(lambda: allow_generator_output)
             output, nodes_outputs = self.traverse_nodes(inputs, context)
             output = self.stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output
