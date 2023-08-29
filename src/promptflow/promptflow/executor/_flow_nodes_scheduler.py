@@ -84,20 +84,12 @@ class FlowNodesScheduler:
         try:
             context.start()
             for each_node in nodes:
-                self._skip_single_node(context, dag_manager, each_node)
+                context.current_node = each_node
+                node_outputs = dag_manager.get_skipped_node_outputs(each_node)
+                context.skip_node(node_outputs)
+                context.current_node = None
         finally:
             context.end()
-
-    def _skip_single_node(self, context: FlowExecutionContext, dag_manager: DAGManager, node: Node):
-        context.current_node = node
-        node_outputs = None
-        if node.skip and not dag_manager.is_node_dependency_skipped(node.skip.condition):
-            skip_condition = dag_manager.get_node_dependency_value(node.skip.condition)
-            if skip_condition == node.skip.condition_value:
-                node_outputs = dag_manager.get_node_dependency_value(node.skip.return_value)
-                dag_manager.complete_nodes({node.name: node_outputs})
-        context.skip_node(node_outputs)
-        context.current_node = None
 
     def _submit_nodes(self, executor: ThreadPoolExecutor, dag_manager: DAGManager, nodes):
         for each_node in nodes:
@@ -111,11 +103,7 @@ class FlowNodesScheduler:
         context = self.context.copy()
         try:
             context.start()
-            kwargs = {
-                name: dag_manager.get_node_dependency_value(i)
-                for name, i in (node.inputs or {}).items()
-                if not dag_manager.is_node_dependency_skipped(i)
-            }
+            kwargs = dag_manager.get_node_valid_inputs(node)
             f = self.tools_manager.get_tool(node.name)
             context.current_node = node
             result = f(**kwargs)
