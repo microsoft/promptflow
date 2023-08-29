@@ -67,7 +67,7 @@ class ConnectionManager:
                 else:
                     connection_value = connection_class(**{k: v for k, v in value.items()})
                     secrets = getattr(connection_value, "secrets", {})
-                    secret_keys = secrets.keys() if isinstance(secrets, dict) else []
+                    secret_keys = list(secrets.keys()) if isinstance(secrets, dict) else []
             # Set secret keys for log scrubbing
             setattr(connection_value, CONNECTION_SECRET_KEYS, secret_keys)
             # Use this hack to make sure serialization works
