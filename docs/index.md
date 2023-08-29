@@ -21,8 +21,7 @@ With prompt flow, you will be able to:
 > Welcome to join us to make Prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
-> submitting [PRs](https://github.com/microsoft/promptflow/pulls),
-> and learn our recent [changes](./changelog/sdk-change-log.md).
+> submitting [PRs](https://github.com/microsoft/promptflow/pulls).
 
 This documentation site contains guides for prompt flow sdk, cli and vscode extension users.
 
@@ -94,10 +93,4 @@ reference/index
 :hidden:
 :maxdepth: 1
 cloud/index
-```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-changelog/index
 ```
