@@ -67,86 +67,6 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     return all_package_tools
 
 
-def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:
-    if source.type == ToolSourceType.Package:
-        package_tools = collect_package_tools()
-        if source.tool in package_tools:
-            return Tool.deserialize(package_tools[source.tool])
-        raise PackageToolNotFoundError(
-            f"Package tool '{source.tool}' is not found in the current environment. "
-            f"All available package tools are: {list(package_tools.keys())}.",
-            target=ErrorTarget.EXECUTOR,
-        )
-    else:
-        if not source.path:
-            raise NodeSourcePathEmpty(
-                target=ErrorTarget.EXECUTOR,
-                message_format="The source path of node {node_name} is not defined. Please check your flow.",
-                node_name=name,
-            )
-        with open(working_dir / source.path) as fin:
-            content = fin.read()
-        if tool_type == ToolType.PYTHON:
-            # TODO: working directory doesn't take effect when loading module.
-            return generate_python_tool(name, content, source=str(working_dir / source.path))
-        elif tool_type == ToolType.PROMPT:
-            return generate_prompt_tool(name, content, prompt_only=True)
-        elif tool_type == ToolType.LLM:
-            return generate_prompt_tool(name, content)
-        else:
-            raise NotImplementedError(f"Tool type {tool_type} is not supported yet.")
-
-
-def load_tool_for_node(node: Node, working_dir: str) -> Tool:
-    if node.source is None:
-        raise UserErrorException(f"Node {node.name} does not have source defined.")
-    if node.type is ToolType.PYTHON:
-        if node.source.type == ToolSourceType.Package:
-            return load_tool_for_package_node(node)
-        elif node.source.type == ToolSourceType.Code:
-            return load_tool_for_script_node(node, working_dir)
-        raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
-    elif node.type is ToolType.PROMPT:
-        return None
-    elif node.type is ToolType.LLM:
-        return load_tool_for_llm_node(node)
-    elif node.type is ToolType.CUSTOM_LLM:
-        if node.source.type == ToolSourceType.PackageWithPrompt:
-            return load_tool_for_package_node(node)
-        raise NotImplementedError(
-            f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
-        )
-    else:
-        raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
-
-
-def load_tool_for_package_node(node: Node):
-    package_tools = collect_package_tools()
-    if node.source.tool in package_tools:
-        return Tool.deserialize(package_tools[node.source.tool])
-    raise PackageToolNotFoundError(
-        f"Package tool '{node.source.tool}' is not found in the current environment. "
-        f"All available package tools are: {list(package_tools.keys())}.",
-        target=ErrorTarget.EXECUTOR,
-    )
-
-
-def load_tool_for_script_node(node: Node, working_dir: str):
-    if node.source.path is None:
-        raise UserErrorException(f"Node {node.name} does not have source path defined.")
-    path = node.source.path
-    m = load_python_module_from_file(working_dir / path)
-    if m is None:
-        raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-    f = collect_tool_function_in_module(m)
-    return _parse_tool_from_function(f)
-
-
-def load_tool_for_llm_node(node: Node):
-    api_name = f"{node.provider}.{node.api}"
-    return BuiltinsManager._load_llm_api(api_name)
-
-
 class BuiltinsManager:
     def __init__(self) -> None:
         pass
@@ -299,6 +219,61 @@ class ToolsManager:
         if func_name not in f_globals:
             raise MissingTargetFunction(f"Cannot find function {func_name} in the code of node {node_name}.")
         return f_globals[func_name]
+
+
+class ToolsLoader:
+    def __init__(self) -> None:
+        pass
+
+    @staticmethod
+    def load_tool_for_node(node: Node, working_dir: str) -> Tool:
+        if node.source is None:
+            raise UserErrorException(f"Node {node.name} does not have source defined.")
+        if node.type is ToolType.PYTHON:
+            if node.source.type == ToolSourceType.Package:
+                return ToolsLoader.load_tool_for_package_node(node)
+            elif node.source.type == ToolSourceType.Code:
+                return ToolsLoader.load_tool_for_script_node(node, working_dir)
+            raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
+        elif node.type is ToolType.PROMPT:
+            return None
+        elif node.type is ToolType.LLM:
+            return ToolsLoader.load_tool_for_llm_node(node)
+        elif node.type is ToolType.CUSTOM_LLM:
+            if node.source.type == ToolSourceType.PackageWithPrompt:
+                return ToolsLoader.load_tool_for_package_node(node)
+            raise NotImplementedError(
+                f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
+            )
+        else:
+            raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+
+    @staticmethod
+    def load_tool_for_package_node(node: Node):
+        package_tools = collect_package_tools()
+        if node.source.tool in package_tools:
+            return Tool.deserialize(package_tools[node.source.tool])
+        raise PackageToolNotFoundError(
+            f"Package tool '{node.source.tool}' is not found in the current environment. "
+            f"All available package tools are: {list(package_tools.keys())}.",
+            target=ErrorTarget.EXECUTOR,
+        )
+
+    @staticmethod
+    def load_tool_for_script_node(node: Node, working_dir: str):
+        if node.source.path is None:
+            raise UserErrorException(f"Node {node.name} does not have source path defined.")
+        path = node.source.path
+        m = load_python_module_from_file(working_dir / path)
+        if m is None:
+            raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
+        f = collect_tool_function_in_module(m)
+        return _parse_tool_from_function(f)
+
+    @staticmethod
+    def load_tool_for_llm_node(node: Node):
+        api_name = f"{node.provider}.{node.api}"
+        return BuiltinsManager._load_llm_api(api_name)
 
 
 builtins = {}

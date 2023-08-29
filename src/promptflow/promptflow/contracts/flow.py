@@ -315,7 +315,7 @@ class Flow:
         return working_dir
 
     @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None, gen_tool=True) -> "Flow":
+    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
@@ -431,8 +431,8 @@ class Flow:
             if node.connection:
                 connection_names.add(node.connection)
                 continue
-            from promptflow._core.tools_manager import load_tool_for_node
-            tool = load_tool_for_node(node, self._working_dir)
+            from promptflow._core.tools_manager import ToolsLoader
+            tool = ToolsLoader.load_tool_for_node(node, self._working_dir)
             if tool:
                 connection_names.update(self._get_connection_name_from_tool(tool, node).values())
         return connection_names
@@ -442,10 +442,10 @@ class Flow:
         node = self.get_node(node_name)
         if not node:
             return []
-        from promptflow._core.tools_manager import load_tool_for_node
-        tool = load_tool_for_node(node, self._working_dir)
+        from promptflow._core.tools_manager import ToolsLoader
+        tool = ToolsLoader.load_tool_for_node(node, self._working_dir)
         if tool:
-            return self._get_connection_name_from_tool(tool, node).keys()
+            return list(self._get_connection_name_from_tool(tool, node).keys())
         return []
 
     def replace_with_variant(self, variant_node: Node, variant_tools: list):

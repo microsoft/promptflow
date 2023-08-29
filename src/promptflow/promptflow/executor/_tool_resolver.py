@@ -16,7 +16,7 @@ from promptflow._core.tool_meta_generator import (
     collect_tool_function_in_module,
     load_python_module_from_file,
 )
-from promptflow._core.tools_manager import BuiltinsManager, CustomToolSourceLoadError, collect_package_tools
+from promptflow._core.tools_manager import BuiltinsManager, CustomToolSourceLoadError, ToolsLoader, collect_package_tools
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
@@ -162,8 +162,7 @@ class ToolResolver:
                 del node_inputs[k]
 
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        api_name = f"{node.provider}.{node.api}"
-        tool: Tool = BuiltinsManager._load_llm_api(api_name)
+        tool: Tool = ToolsLoader.load_tool_for_llm_node(node)
         key, connection = self._resolve_llm_connection_to_inputs(node, tool)
         updated_node = copy.deepcopy(node)
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
@@ -207,27 +206,13 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        if node.source.path is None:
-            raise UserErrorException(f"Node {node.name} does not have source path defined.")
-        path = node.source.path
-        m = load_python_module_from_file(self._working_dir / path)
-        if m is None:
-            raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f = collect_tool_function_in_module(m)
-        tool = _parse_tool_from_function(f)
+        tool: Tool = ToolsLoader.load_tool_for_script_node(node)
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool)
         return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
 
     def _resolve_package_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        if node.source.tool not in self._package_tools:
-            all_available_package_tools = collect_package_tools()
-            raise PackageToolNotFoundError(
-                f"Package tool '{node.source.tool}' is not found in the current environment. "
-                f"All available package tools are: {list(all_available_package_tools.keys())}.",
-                target=ErrorTarget.EXECUTOR,
-            )
-        tool = Tool.deserialize(self._package_tools[node.source.tool])
+        tool: Tool = ToolsLoader.load_tool_for_package_node(node)
         updated_node = copy.deepcopy(node)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
