@@ -58,7 +58,8 @@ class DAGManager:
         """Returns True if the node should be skipped."""
         # Skip node if the skip condition is met
         if node.skip:
-            if _input_assignment_parser.is_node_dependency_skipped(node.skip.condition, self._skipped_nodes):
+            if _input_assignment_parser.is_node_dependency_skipped(
+                    node.skip.condition, self._skipped_nodes, self._completed_nodes_outputs):
                 return True
             skip_condition = _input_assignment_parser.parse_value(
                 node.skip.condition, self._completed_nodes_outputs, self._flow_inputs)
@@ -67,7 +68,8 @@ class DAGManager:
 
         # Skip node if the activate condition is not met
         if node.activate:
-            if _input_assignment_parser.is_node_dependency_skipped(node.activate.condition, self._skipped_nodes):
+            if _input_assignment_parser.is_node_dependency_skipped(
+                    node.activate.condition, self._skipped_nodes, self._completed_nodes_outputs):
                 return True
             activate_condition = _input_assignment_parser.parse_value(
                 node.activate.condition, self._completed_nodes_outputs, self._flow_inputs)
@@ -78,7 +80,8 @@ class DAGManager:
         # Skip node if all of its dependencies are skipped
         node_dependencies = [i for i in node.inputs.values()]
         all_dependencies_skipped = node_dependencies and all(_input_assignment_parser.is_node_dependency_skipped(
-            node_dependency, self._skipped_nodes) for node_dependency in node_dependencies)
+            node_dependency, self._skipped_nodes, self._completed_nodes_outputs)
+            for node_dependency in node_dependencies)
         if all_dependencies_skipped:
             del self._should_completed_nodes[node.name]
             return True

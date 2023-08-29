@@ -110,7 +110,8 @@ class FlowNodesScheduler:
         try:
             context.start()
             kwargs = {name: _input_assignment_parser.parse_value(i, nodes_outputs, self.inputs) for name, i in (
-                node.inputs or {}).items() if not _input_assignment_parser.is_node_dependency_skipped(i, skipped_nodes)}
+                node.inputs or {}).items() if not _input_assignment_parser.is_node_dependency_skipped(
+                i, skipped_nodes, nodes_outputs)}
             f = self.tools_manager.get_tool(node.name)
             context.current_node = node
             result = f(**kwargs)
