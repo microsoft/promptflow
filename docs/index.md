@@ -95,9 +95,3 @@ reference/index
 :maxdepth: 1
 cloud/index
 ```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-changelog/index
-```
