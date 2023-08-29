@@ -63,12 +63,20 @@ pf run create --file run.yml --stream
 
 #### Submit run to cloud
 
+Assume we already have a connection named `open_ai_connection` in workspace.
+
+```bash
+# set default workspace
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
+```
+
 ``` bash
 # create run
-# pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
-# pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
-# pfazure run create --file run.yml --runtime demo-mir
-# pfazure run create --file run.yml --stream # serverless compute
+pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir 
+pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
+pfazure run create --file run.yml --runtime demo-mir
+pfazure run create --file run.yml --stream # automatic runtime
 ```
 
 Note: Click portal_url of the run to view the final snapshot.
