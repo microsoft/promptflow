@@ -12,15 +12,14 @@ from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 
 @dataclass
 class NodeRunRecord:
-    """Data class for storing the run record of each node during single line execution on the flow
+    """Dataclass for storing the run record of each node during single line execution on the flow
 
-    Attributes:
-        node_name (str): The name of the node.
-        line_number (int): The line number in the source file.
-        run_info (str): The information about the run.
-        start_time (datetime): The time the node started running.
-        end_time (datetime): The time the node finished running.
-        status (str): The status of the node run.
+    :param str node_name: The name of the node
+    :param int line_number: The line number in the source file
+    :param str run_info: The information about the run
+    :param datetime start_time: The time the node started running
+    :param datetime end_time: The time the node finished running
+    :param str status: The status of the node run
     """
     node_name: str
     line_number: int
@@ -33,11 +32,9 @@ class NodeRunRecord:
     def from_run_info(run_info: RunInfo) -> "NodeRunRecord":
         """Create a NodeRunRecord from a RunInfo object.
 
-        Parameters:
-            run_info (RunInfo): The run info to create the NodeRunRecord from.
-
-        Returns:
-            NodeRunRecord: The created NodeRunRecord.
+        :param RunInfo run_info: The run info to create the NodeRunRecord from
+        :return: The created NodeRunRecord
+        :rtype: NodeRunRecord
         """
         return NodeRunRecord(
             node_name=run_info.node,
@@ -51,25 +48,24 @@ class NodeRunRecord:
     def serialize(self) -> str:
         """Serialize the NodeRunRecord for storage in blob.
 
-        Returns:
-            str: The serialized result.
+        :return: The serialized result
+        :rtype: str
         """
         return json.dumps(asdict(self))
 
 
 @dataclass
 class LineRunRecord:
-    """Data class for storing the run record of single line execution on the flow.
+    """A dataclass for storing the run record of a single line execution on the flow.
 
-    Attributes:
-        line_number (int): The line number in the record.
-        run_info (str): The information about the line run.
-        start_time (datetime): The time the line started executing.
-        end_time (datetime): The time the line finished executing.
-        name (str): The name of the line.
-        description (str): The description of the line.
-        status (str): The status of the line execution.
-        tags (str): The tags associated with the line.
+    :param int line_number: The line number in the record
+    :param str run_info: The information about the line run
+    :param datetime start_time: The time the line started executing
+    :param datetime end_time: The time the line finished executing
+    :param str name: The name of the line run
+    :param str description: The description of the line run
+    :param str status: The status of the line execution
+    :param str tags: The tags associated with the line run
     """
     line_number: int
     run_info: str
@@ -84,11 +80,9 @@ class LineRunRecord:
     def from_run_info(run_info: FlowRunInfo) -> "LineRunRecord":
         """Create a LineRunRecord from a FlowRunInfo object.
 
-        Parameters:
-            run_info (FlowRunInfo): The run info to create the LineRunRecord from.
-
-        Returns:
-            LineRunRecord: The created LineRunRecord.
+        :param FlowRunInfo run_info: The run info to create the LineRunRecord from
+        :return: The created LineRunRecord
+        :rtype: LineRunRecord
         """
         return LineRunRecord(
             line_number=run_info.index,
@@ -102,9 +96,9 @@ class LineRunRecord:
         )
 
     def serialize(self) -> str:
-        """Serialize the LineRunRecord for storage in blob.
+        """Serialize the LineRunRecord for storage in a blob.
 
-        Returns:
-            str: The serialized result.
+        :return: The serialized result
+        :rtype: str
         """
         return json.dumps(asdict(self))
