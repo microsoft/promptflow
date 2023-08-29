@@ -24,7 +24,7 @@ nodes:
     question: ${inputs.question}
   api: chat
   provider: AzureOpenAI
-  connection: azure_open_ai_connection
+  connection: open_ai_connection
 id: template_chat_flow
 name: Template Chat Flow
 environment:

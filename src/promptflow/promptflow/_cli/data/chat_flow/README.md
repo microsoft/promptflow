@@ -1,6 +1,21 @@
 # Chat flow
 Chat flow is designed for conversational application development, building upon the capabilities of standard flow and providing enhanced support for chat inputs/outputs and chat history management. With chat flow, you can easily create a chatbot that handles chat input and output.
 
+## Create connection for LLM tool to use
+You can follow these steps to create a connection required by a LLM tool.
+
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file openai.yml --set api_key=<your_api_key> organization=<your_organization> --name open_ai_connection
+```
+
+Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+```bash
+# show registered connection
+pf connection show --name open_ai_connection
+```
+Please refer to [promptflow connections](https://promptflow.azurewebsites.net/community/local/manage-connections.html) for more details.
+
 ## Develop a chat flow
 Develop flow inputs and outputs
 The most important elements that differentiate a chat flow from a standard flow are **Chat Input**, **Chat History**, and **Chat Output**.
