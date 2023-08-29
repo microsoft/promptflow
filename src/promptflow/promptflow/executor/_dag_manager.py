@@ -9,7 +9,6 @@ class DAGManager:
         self._nodes = nodes
         self._flow_inputs = flow_inputs
         self._pending_nodes = {node.name: node for node in nodes}
-        self._should_completed_nodes = self._pending_nodes.copy()
         self._completed_nodes_outputs = {}  # node name -> output
         self._skipped_nodes = {}
         # TODO: Validate the DAG to avoid circular dependencies
@@ -74,7 +73,6 @@ class DAGManager:
             activate_condition = _input_assignment_parser.parse_value(
                 node.activate.condition, self._completed_nodes_outputs, self._flow_inputs)
             if activate_condition != node.activate.condition_value:
-                del self._should_completed_nodes[node.name]
                 return True
 
         # Skip node if all of its dependencies are skipped
@@ -82,11 +80,7 @@ class DAGManager:
         all_dependencies_skipped = node_dependencies and all(_input_assignment_parser.is_node_dependency_skipped(
             node_dependency, self._skipped_nodes, self._completed_nodes_outputs)
             for node_dependency in node_dependencies)
-        if all_dependencies_skipped:
-            del self._should_completed_nodes[node.name]
-            return True
-
-        return False
+        return all_dependencies_skipped
 
     def complete_nodes(self, nodes_outputs: Mapping[str, Any]):
         """Marks nodes as completed with the mapping from node names to their outputs."""
@@ -94,4 +88,4 @@ class DAGManager:
 
     def completed(self) -> bool:
         """Returns True if all nodes have been processed."""
-        return len(self._completed_nodes_outputs) == len(self._should_completed_nodes)
+        return all(node in self._completed_nodes_outputs or node in self._skipped_nodes for node in self._nodes)
