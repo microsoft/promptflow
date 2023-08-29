@@ -70,7 +70,7 @@ class FlowNodesScheduler:
         # Submit nodes that are ready to run
         nodes_to_exec = dag_manager.pop_ready_nodes()
         if nodes_to_exec:
-            self._submit_nodes(dag_manager.completed_nodes_outputs, dag_manager.skipped_nodes, executor, nodes_to_exec)
+            self._submit_nodes(executor, dag_manager, nodes_to_exec)
 
     def _collect_outputs(self, completed_futures: List[Future]):
         completed_nodes_outputs = {}
@@ -102,21 +102,23 @@ class FlowNodesScheduler:
         context.skip_node(node_outputs)
         context.current_node = None
 
-    def _submit_nodes(self, nodes_outputs, skipped_nodes, executor: ThreadPoolExecutor, nodes):
+    def _submit_nodes(self, executor: ThreadPoolExecutor, dag_manager: DAGManager, nodes):
         for each_node in nodes:
-            future = executor.submit(self._exec_single_node_in_thread, (each_node, nodes_outputs, skipped_nodes))
+            future = executor.submit(self._exec_single_node_in_thread, (each_node, dag_manager))
             self.future_to_node[future] = each_node
 
-    def _exec_single_node_in_thread(self, args: Tuple[Node, dict, dict]):
-        node, nodes_outputs, skipped_nodes = args
+    def _exec_single_node_in_thread(self, args: Tuple[Node, DAGManager]):
+        node, dag_manager = args
         # We are using same run tracker and cache manager for all threads, which may not thread safe.
         # But for bulk run scenario, we've doing this for a long time, and it works well.
         context = self.context.copy()
         try:
             context.start()
-            kwargs = {name: _input_assignment_parser.parse_value(i, nodes_outputs, self.inputs) for name, i in (
-                node.inputs or {}).items() if not _input_assignment_parser.is_node_dependency_skipped(
-                i, skipped_nodes, nodes_outputs)}
+            kwargs = {
+                name: _input_assignment_parser.parse_value(i, dag_manager.completed_nodes_outputs, self.inputs)
+                for name, i in (node.inputs or {}).items()
+                if not _input_assignment_parser.is_node_dependency_skipped(
+                    i, dag_manager.skipped_nodes, dag_manager.completed_nodes_outputs)}
             f = self.tools_manager.get_tool(node.name)
             context.current_node = node
             result = f(**kwargs)
