@@ -6,7 +6,7 @@ You can follow these steps to create a connection required by a LLM tool.
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file openai.yml --set api_key=<your_api_key> organization=<your_organization> --name open_ai_connection
+pf connection create --file openai.yaml --set api_key=<your_api_key> organization=<your_organization> --name open_ai_connection
 ```
 
 Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
