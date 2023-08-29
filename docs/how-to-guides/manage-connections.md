@@ -89,7 +89,8 @@ print(result)
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-[TODO]
+![img](../media/how-to-guides/vscode_create_connection.png)
+![img](../media/how-to-guides/vscode_create_connection_1.png)
 :::
 ::::
 
@@ -129,7 +130,7 @@ print(connection)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_update_delete_connection.png)
 :::
 ::::
 
@@ -160,7 +161,7 @@ for connection in connection_list:
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_list_connection.png)
 :::
 ::::
 
@@ -190,7 +191,7 @@ client.connections.delete(name="my_custom_connection")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
-[TODO]
+![img](../media/how-to-guides/vscode_update_delete_connection.png)
 :::
 ::::
 

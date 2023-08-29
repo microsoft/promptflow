@@ -20,7 +20,7 @@ nodes:
     type: code
     path: autogpt_easy_start.py
   inputs:
-    connection: azure_open_ai_connection
+    connection: open_ai_connection
     functions: ${functions.output}
     model_or_deployment_name: gpt-4
     system_prompt: ${system_prompt.output}

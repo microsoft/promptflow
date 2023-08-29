@@ -3,3 +3,4 @@ faiss-cpu
 openai
 jinja2
 python-dotenv
+tiktoken

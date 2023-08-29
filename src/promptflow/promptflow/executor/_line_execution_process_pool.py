@@ -1,4 +1,5 @@
 import contextvars
+import multiprocessing
 import queue
 from datetime import datetime
 from functools import partial
@@ -50,23 +51,27 @@ class LineExecutionProcessPool:
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
-        self._executor_creation_func = (
-            partial(
+        use_fork = multiprocessing.get_start_method() == "fork"
+        # When using fork, we use this method to create the executor to avoid reloading the flow
+        # which will introduce a lot more memory.
+        if use_fork:
+            self._executor_creation_func = partial(create_executor_fork, flow_executor=flow_executor)
+        elif flow_executor._flow_file:
+            self._executor_creation_func = partial(
                 FlowExecutor.create,
                 flow_file=flow_executor._flow_file,
                 connections=flow_executor._connections,
                 working_dir=flow_executor._working_dir,
                 raise_ex=False,
             )
-            if flow_executor._flow_file
-            else partial(
+        else:  # Legacy flow executor, will be deprecated with the legacy pf portal.
+            self._executor_creation_func = partial(
                 create_executor_legacy,
                 flow=flow_executor._flow,
                 connections=flow_executor._connections,
                 loaded_tools=flow_executor._loaded_tools,
                 cache_manager=flow_executor._cache_manager,
             )
-        )
         self._storage = flow_executor._run_tracker._storage
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
@@ -291,6 +296,20 @@ def _process_wrapper(
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
     else:
         exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+
+
+def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
+    run_tracker = RunTracker(run_storage=storage, run_mode=flow_executor._run_tracker._run_mode)
+    return FlowExecutor(
+        flow=flow_executor._flow,
+        connections=flow_executor._connections,
+        run_tracker=run_tracker,
+        cache_manager=flow_executor._cache_manager,
+        loaded_tools=flow_executor._loaded_tools,
+        worker_count=flow_executor._worker_count,
+        raise_ex=False,
+        line_timeout_sec=flow_executor._line_timeout_sec,
+    )
 
 
 def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
