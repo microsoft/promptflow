@@ -113,6 +113,10 @@ class FlowExecutor:
         # TODO: Improve the experience about configuring node concurrency.
         self._node_concurrency = DEFAULT_CONCURRENCY_BULK
 
+        # initialize openai stream option on aoai tool
+        self._openai_stream_option = OpenAIStreamOption(lambda: False)
+        self.inject_stream_option_on_aoai_tool()
+
     @classmethod
     def create(
         cls,
@@ -839,11 +843,12 @@ class FlowExecutor:
         result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
 
-    def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
-        """Enable the LLM node that is connected to output to return streaming results controlled by stream_required.
+    def inject_stream_option_on_aoai_tool(self):
+        """Inject stream option on aoai tool.
 
-        If the stream_required callback returns True, the LLM node will return a generator of strings.
-        Otherwise, the LLM node will return a string.
+        This function iterates over all the nodes in the flow and checks if they are llm nodes that are referenced by
+        the flow output and not by any other node. If so, it wraps the node with a stream option injector that adds the
+        stream option to the tool's parameter.
         """
         for node in self._flow.nodes:
             if (
@@ -851,7 +856,15 @@ class FlowExecutor:
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=inject_stream_options(stream_required))
+                self._tools_manager.wrap_tool(node.name, wrapper=inject_stream_options(self._openai_stream_option))
+
+    def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
+        """Enable the LLM node that is connected to output to return streaming results controlled by stream_required.
+
+        If the stream_required callback returns True, the LLM node will return a generator of strings.
+        Otherwise, the LLM node will return a string.
+        """
+        self._openai_stream_option.should_stream = stream_required
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -933,6 +946,34 @@ def ensure_node_result_is_serializable(f):
         return result
 
     return wrapper
+
+
+class OpenAIStreamOption:
+    """A class that holds a callback to determine if the openai stream mode is required.
+
+    The callback function should take no arguments and return a bool value.
+    The instance of this class can be used as a callable object that returns the result of the callback function.
+    """
+
+    def __init__(self, should_stream: Callable[[], bool]):
+        self.should_stream = should_stream
+
+    def __call__(self):
+        return self._should_stream()
+
+    @property
+    def should_stream(self):
+        return self._should_stream
+
+    @should_stream.setter
+    def should_stream(self, value: Callable[[], bool]):
+        # Check if the value is a callable callback
+        if callable(value):
+            # Assign the value to the private attribute
+            self._should_stream = value
+        else:
+            # Raise an exception or ignore the invalid value
+            raise ValueError("The value must be a callable callback")
 
 
 class InputMappingError(ValidationException):

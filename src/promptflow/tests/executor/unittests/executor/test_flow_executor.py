@@ -12,6 +12,7 @@ from promptflow.executor.flow_executor import (
     LineNumberNotAlign,
     MappingSourceNotFound,
     NoneInputsMappingIsNotSupported,
+    OpenAIStreamOption,
     enable_streaming_for_llm_tool,
     ensure_node_result_is_serializable,
     inject_stream_options,
@@ -396,3 +397,36 @@ class TestEnsureNodeResultIsSerializable:
     def test_non_streaming_tool_should_not_be_affected(self):
         func = ensure_node_result_is_serializable(non_streaming_tool)
         assert func() == 1
+
+
+class TestOpenAIStreamOption:
+    def test_true(self):
+        # Create a StreamOption instance with a lambda function that returns True
+        stream_option = OpenAIStreamOption(lambda: True)
+        # Check that calling the instance returns True
+        assert stream_option() is True
+
+    def test_false(self):
+        # Create a StreamOption instance with a lambda function that returns False
+        stream_option = OpenAIStreamOption(lambda: False)
+        # Check that calling the instance returns False
+        assert stream_option() is False
+
+    def test_dynamically_change_should_stream(self):
+        # Create a StreamOption instance with a lambda function that returns False
+        stream_option = OpenAIStreamOption(lambda: False)
+        # Check that calling the instance returns False
+        assert stream_option() is False
+        # Dynamically change the lambda function to return True
+        stream_option.should_stream = lambda: True
+        # Check that calling the instance returns True
+        assert stream_option() is True
+
+    def test_setter(self):
+        # Create a StreamOption instance with a lambda function that returns False
+        stream_option = OpenAIStreamOption(lambda: False)
+        # Check that calling the instance returns False
+        assert stream_option() is False
+        # Try to assign an invalid value to the should_stream property
+        with pytest.raises(ValueError):
+            stream_option.should_stream = "Hello"
