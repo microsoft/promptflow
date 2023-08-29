@@ -75,7 +75,11 @@ class FlowValidator:
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
-    def _resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+    def _resolve_flow_inputs_type(
+            flow: Flow,
+            inputs: Mapping[str, Any],
+            idx: Optional[int] = None,
+    ) -> Mapping[str, Any]:
         """
         Resolve inputs by type if existing. Ignore missing inputs. This method is used for PRS case
 

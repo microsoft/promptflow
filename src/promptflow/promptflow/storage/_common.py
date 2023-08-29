@@ -19,7 +19,7 @@ def reconstruct_metrics_dict(metrics: dict) -> dict:
         "accuracy.variant1": 0.9
     }
     """
-    
+
     METRIC_VALUE_KEY = "value"
     VARIANT_ID_KEY = "variant_id"
 
