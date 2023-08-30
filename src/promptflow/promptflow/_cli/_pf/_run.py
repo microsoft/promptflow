@@ -15,7 +15,7 @@ from promptflow._cli._params import (
     add_param_environment_variables,
     add_param_run_name,
     add_param_set,
-    add_parser_export,
+    add_parser_build,
     logging_params,
 )
 from promptflow._cli._utils import (
@@ -52,7 +52,7 @@ def add_run_parser(subparsers):
     add_run_visualize(subparsers)
     add_run_archive(subparsers)
     add_run_restore(subparsers)
-    add_parser_export(subparsers, "run")
+    add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
 

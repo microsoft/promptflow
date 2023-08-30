@@ -297,6 +297,7 @@ class AzureOpenAIConnection(_StrongTypeConnection):
     :param api_version: The api version, default "2023-07-01-preview".
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
@@ -341,6 +342,7 @@ class OpenAIConnection(_StrongTypeConnection):
     :param organization: The organization, optional.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.OPEN_AI
 
     def __init__(self, api_key: str, organization: str = None, **kwargs):
@@ -366,6 +368,7 @@ class SerpConnection(_StrongTypeConnection):
     :param api_key: The api key.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.SERP
 
     def __init__(self, api_key: str, **kwargs):
@@ -400,6 +403,7 @@ class QdrantConnection(_EmbeddingStoreConnection):
     :param api_base: The api base.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.QDRANT
 
     @classmethod
@@ -413,6 +417,7 @@ class WeaviateConnection(_EmbeddingStoreConnection):
     :param api_base: The api base.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.WEAVIATE
 
     @classmethod
@@ -427,6 +432,7 @@ class CognitiveSearchConnection(_StrongTypeConnection):
     :param api_version: The api version, default "2023-07-01-Preview".
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.COGNITIVE_SEARCH
 
     def __init__(self, api_key: str, api_base: str, api_version: str = "2023-07-01-Preview", **kwargs):
@@ -463,6 +469,7 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
     :param api_type: The api type, default "Content Safety".
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.AZURE_CONTENT_SAFETY
 
     def __init__(
@@ -514,6 +521,7 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
     :param api_type: The api type, default "Form Recognizer".
     :param name: Connection name.
     """
+
     # Note: FormRecognizer and ContentSafety are using CognitiveService type in ARM, so keys are the same.
     TYPE = ConnectionType.FORM_RECOGNIZER
 
@@ -533,6 +541,7 @@ class CustomConnection(_Connection):
     :param secrets: The secrets kv pairs.
     :param name: Connection name
     """
+
     TYPE = ConnectionType.CUSTOM
 
     def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):

@@ -52,7 +52,7 @@ class ConnectionOperations:
         return _Connection._from_orm_object(orm_connection)
 
     def delete(self, name: str) -> None:
-        """Get a connection entity.
+        """Delete a connection entity.
 
         :param name: Name of the connection.
         :type name: str

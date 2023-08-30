@@ -267,7 +267,7 @@ class FlowOperations:
         )
 
     @classmethod
-    def export(
+    def build(
         cls,
         flow: Union[str, PathLike],
         *,
@@ -276,7 +276,7 @@ class FlowOperations:
         node_variant: str = None,
     ):
         """
-        Export flow to other format.
+        Build flow to other format.
 
         :param flow: path to the flow directory or flow dag to export
         :type flow: Union[str, PathLike]

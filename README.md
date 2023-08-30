@@ -8,11 +8,11 @@
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > submitting [PRs](https://github.com/microsoft/promptflow/pulls).
 
-**Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality. 
+**Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
-With prompt flow, you will be able to: 
+With prompt flow, you will be able to:
 
-- Create executable workflows that link LLMs, prompts, Python code and other tools together. 
+- Create executable workflows that link LLMs, prompts, Python code and other tools together.
 - Debug and iterate your flows, especially the interaction with LLMs with ease.
 - Evaluate your flow's quality and performance with larger datasets.
 - Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
@@ -43,8 +43,8 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 ## Trademarks
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft 
-trademarks or logos is subject to and must follow 
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft
+trademarks or logos is subject to and must follow
 [Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
 Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
 Any use of third-party trademarks or logos are subject to those third-party's policies.
