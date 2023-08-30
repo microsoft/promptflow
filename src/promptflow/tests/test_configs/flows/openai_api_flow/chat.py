@@ -1,5 +1,4 @@
 import openai
-from dataclasses import asdict
 from typing import List
 
 from promptflow import tool
@@ -26,7 +25,7 @@ def chat(connection: AzureOpenAIConnection, question: str, chat_history: List) -
         stream=stream,
         stop=None,
         max_tokens=16,
-        **asdict(connection),
+        **dict(connection),
     )
 
     if stream:

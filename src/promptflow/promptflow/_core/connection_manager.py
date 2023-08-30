@@ -49,22 +49,27 @@ class ConnectionManager:
             from promptflow.connections import CustomConnection
 
             if connection_class is CustomConnection:
-                connection_value = connection_class(**value)
-                connection_value.__secret_keys = connection_dict.get("secret_keys", [])
                 # Note: CustomConnection definition can not be got, secret keys will be provided in connection dict.
-                setattr(connection_value, CONNECTION_SECRET_KEYS, connection_dict.get("secret_keys", []))
+                secret_keys = connection_dict.get("secret_keys", [])
+                secrets = {k: v for k, v in value.items() if k in secret_keys}
+                configs = {k: v for k, v in value.items() if k not in secrets}
+                connection_value = connection_class(configs=configs, secrets=secrets)
             else:
                 """
                 Note: Ignore non exists keys of connection class,
                 because there are some keys just used by UX like resource id, while not used by backend.
                 """
-                cls_fields = {f.name: f for f in fields(connection_class)} if is_dataclass(connection_class) else {}
-                connection_value = connection_class(**{k: v for k, v in value.items() if k in cls_fields})
-                setattr(
-                    connection_value,
-                    CONNECTION_SECRET_KEYS,
-                    [f.name for f in cls_fields.values() if f.type == Secret],
-                )
+                if is_dataclass(connection_class):
+                    # Do not delete this branch, as promptflow_vectordb.connections is dataclass type.
+                    cls_fields = {f.name: f for f in fields(connection_class)}
+                    connection_value = connection_class(**{k: v for k, v in value.items() if k in cls_fields})
+                    secret_keys = [f.name for f in cls_fields.values() if f.type == Secret]
+                else:
+                    connection_value = connection_class(**{k: v for k, v in value.items()})
+                    secrets = getattr(connection_value, "secrets", {})
+                    secret_keys = list(secrets.keys()) if isinstance(secrets, dict) else []
+            # Set secret keys for log scrubbing
+            setattr(connection_value, CONNECTION_SECRET_KEYS, secret_keys)
             # Use this hack to make sure serialization works
             setattr(connection_value, CONNECTION_NAME_PROPERTY, key)
             connections[key] = connection_value

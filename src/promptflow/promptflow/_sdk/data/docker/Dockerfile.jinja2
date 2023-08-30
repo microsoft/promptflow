@@ -30,7 +30,7 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
 {% else %}
     pip install promptflow \
 {% endif %}
-    promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/ && \
+    promptflow-tools && \
 {% endif %}
     conda run -n {{env.conda_env_name}} pip install keyrings.alt && \
     conda run -n {{env.conda_env_name}} pip cache purge && \

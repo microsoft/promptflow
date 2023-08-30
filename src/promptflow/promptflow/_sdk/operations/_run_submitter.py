@@ -261,7 +261,7 @@ class RunSubmitter:
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
         connections = SubmitterHelper.resolve_connections(flow=flow)
-        inputs_mapping = run.column_mapping
+        column_mapping = run.column_mapping
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
         SubmitterHelper.init_env(environment_variables=run.environment_variables)
@@ -274,7 +274,8 @@ class RunSubmitter:
         )
         # prepare data
         input_dicts = self._resolve_data(run)
-        mapped_inputs = flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        self._validate_column_mapping(column_mapping)
+        mapped_inputs = flow_executor.validate_and_apply_inputs_mapping(input_dicts, column_mapping)
         bulk_result = None
         status = Status.Failed.value
         exception = None
@@ -321,3 +322,20 @@ class RunSubmitter:
             variant_input = reverse_transpose(self.run_operations._get_inputs(run.run))
             result["run.inputs"] = variant_input
         return result
+
+    @classmethod
+    def _validate_column_mapping(cls, column_mapping: dict):
+        if not column_mapping:
+            return
+        if not isinstance(column_mapping, dict):
+            raise UserErrorException(f"Column mapping must be a dict, got {type(column_mapping)}.")
+        all_static = True
+        for v in column_mapping.values():
+            if isinstance(v, str) and v.startswith("$"):
+                all_static = False
+                break
+        if all_static:
+            raise UserErrorException(
+                "Column mapping must contain at least one mapping binding, "
+                f"current column mapping contains all static values: {column_mapping}"
+            )

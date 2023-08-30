@@ -163,11 +163,13 @@ cython_debug/
 
 # ignore
 !flow.tools.json
-.promptflow
+**/.promptflow/*
 .runs
 connection.json
 .env
 .azureml
+# dummy custom tool package example
+hello-world-proj/**
 # secrets
 **/connections.json
 

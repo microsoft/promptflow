@@ -26,7 +26,7 @@ def get_notebook_readme_description(notebook) -> str:
 
 def get_readme_description_first_sentence(readme) -> str:
     """
-    Get Each readme first sentence of first paragraph
+    Get each readme first sentence of first paragraph
     """
     try:
         with open(readme, "r", encoding="utf-8") as f:
@@ -35,6 +35,8 @@ def get_readme_description_first_sentence(readme) -> str:
             sentence = ""
             while True:
                 line = f.readline()
+                if line.startswith("#"):
+                    line = ""
                 if line.strip() == "" and sentence != "":
                     break
                 elif "." in line:

@@ -6,7 +6,7 @@ import faiss
 import pickle
 import numpy as np
 
-from .aoai import AOAIEmbedding as Embedding
+from .oai import OAIEmbedding as Embedding
 
 
 @dataclass

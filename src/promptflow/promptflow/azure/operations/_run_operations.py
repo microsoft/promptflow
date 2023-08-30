@@ -23,7 +23,7 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 from azure.ai.ml.constants._common import AzureMLResourceType
-from azure.ai.ml.operations import DataOperations, WorkspaceOperations
+from azure.ai.ml.operations import DataOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from pandas import DataFrame
 
@@ -39,7 +39,7 @@ from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
-from promptflow._utils.flow_utils import get_flow_session_id
+from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -76,22 +76,16 @@ class RunOperations(_ScopeDependentOperations):
         all_operations: OperationsContainer,
         flow_operations: FlowOperations,
         credential,
+        service_caller: FlowServiceCaller,
         **kwargs: Dict,
     ):
         super().__init__(operation_scope, operation_config)
         self._all_operations = all_operations
-        workspace = self._workspace_operations.get(name=operation_scope.workspace_name)
-        self._service_caller = FlowServiceCaller(workspace, credential, **kwargs)
+        self._service_caller = service_caller
         self._credential = credential
         self._flow_operations = flow_operations
         self._orchestrators = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         self._workspace_default_datastore = self._datastore_operations.get_default().name
-
-    @property
-    def _workspace_operations(self) -> WorkspaceOperations:
-        return self._all_operations.get_operation(
-            AzureMLResourceType.WORKSPACE, lambda x: isinstance(x, WorkspaceOperations)
-        )
 
     @property
     def _data_operations(self):
@@ -537,7 +531,7 @@ class RunOperations(_ScopeDependentOperations):
         except Exception:
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
-        flow_id = get_flow_session_id(flow_dir=flow)
+        flow_id = get_flow_lineage_id(flow_dir=flow)
         return f"{user_alias}_{flow_id}"
 
     def _get_child_runs_from_pfs(self, run_id: str):

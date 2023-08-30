@@ -20,7 +20,7 @@ from azure.ai.ml._utils._asset_utils import traverse_directory
 from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 from azure.ai.ml._utils.utils import hash_dict
 from azure.ai.ml.constants._common import SHORT_URI_FORMAT, AzureMLResourceType
-from azure.ai.ml.operations import ComponentOperations, WorkspaceOperations
+from azure.ai.ml.operations import ComponentOperations
 from azure.ai.ml.operations._code_operations import CodeOperations
 from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from azure.core.exceptions import HttpResponseError
@@ -55,23 +55,17 @@ class FlowOperations(_ScopeDependentOperations):
         operation_config: OperationConfig,
         all_operations: OperationsContainer,
         credential,
+        service_caller: FlowServiceCaller,
         **kwargs: Dict,
     ):
         super(FlowOperations, self).__init__(operation_scope, operation_config)
         self._all_operations = all_operations
-        workspace = self._workspace_operations.get(name=operation_scope.workspace_name)
-        self._service_caller = FlowServiceCaller(workspace, credential, **kwargs)
+        self._service_caller = service_caller
         self._credential = credential
 
     @property
     def _code_operations(self) -> CodeOperations:
         return self._all_operations.get_operation(AzureMLResourceType.CODE, lambda x: isinstance(x, CodeOperations))
-
-    @property
-    def _workspace_operations(self) -> WorkspaceOperations:
-        return self._all_operations.get_operation(
-            AzureMLResourceType.WORKSPACE, lambda x: isinstance(x, WorkspaceOperations)
-        )
 
     def _create_or_update(self, flow, **kwargs):
         # upload to file share
