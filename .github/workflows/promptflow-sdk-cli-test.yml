@@ -76,14 +76,14 @@ jobs:
           -m "unittest or e2etest" \
           -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
-    - name: Upload pytest test results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
-      if: ${{ always() }}
+    - name: Upload Test Results
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
-        path: ${{ env.testWorkingDirectory }}/*.xml
-      # Use always() to always run this step to publish test results when there are test failures
-  
+        path:
+          ${{ env.testWorkingDirectory }}/*.xml
+          ${{ env.testWorkingDirectory }}/htmlcov/
   publish-test-results:
     name: "Publish Tests Results"
     needs: sdk_cli_tests

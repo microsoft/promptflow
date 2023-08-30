@@ -74,13 +74,14 @@ jobs:
           -m "all" \
           -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
-    - name: Upload pytest test results
-      if: ${{ always() }}
+    - name: Upload Test Results
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
         path: 
           ${{ github.workspace }}/*.xml
+          ${{ github.workspace }}/htmlcov/
   publish-test-results:
     name: "Publish Tests Results"
     needs: executor_unit_tests
