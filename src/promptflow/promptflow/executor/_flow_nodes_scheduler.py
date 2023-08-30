@@ -26,7 +26,7 @@ class FlowNodesScheduler:
 
     def execute(
         self, context: FlowExecutionContext, inputs: Dict, nodes_from_invoker: List[Node], node_concurrency: int
-    ) -> Dict:
+    ) -> Tuple[dict, dict]:
         dag_manager = DAGManager(nodes_from_invoker, inputs)
         node_concurrency = min(node_concurrency, DEFAULT_CONCURRENCY_FLOW)
         logger.info(f"Start to run {len(nodes_from_invoker)} nodes with concurrency level {node_concurrency}.")
@@ -57,7 +57,7 @@ class FlowNodesScheduler:
                         unfinished_future.cancel()
                     # Even we raise exception here, still need to wait all running jobs finish to exit.
                     raise e
-        return dag_manager.completed_nodes_outputs
+        return dag_manager.completed_nodes_outputs, dag_manager.skipped_nodes
 
     def _execute_nodes(self, dag_manager: DAGManager, executor: ThreadPoolExecutor):
         # Skip nodes and update node run info until there are no nodes to skip

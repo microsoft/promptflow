@@ -26,6 +26,9 @@ class TestExecutorActivate:
         expected_result = get_flow_expected_result(flow_folder)
         self.assert_activate_bulk_run_result(results, expected_result)
 
+    def test_activate_wrong_flow(self, dev_connections):
+        pass
+
     def assert_activate_bulk_run_result(self, result: BulkResult, expected_result):
         # Validate the flow outputs
         for i, output in enumerate(result.outputs):

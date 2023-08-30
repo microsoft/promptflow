@@ -109,6 +109,10 @@ class NoNodeExecutedError(FlowExecutionError):
     pass
 
 
+class OutputReferenceSkipped(FlowExecutionError):
+    pass
+
+
 class InputTypeError(InvalidFlowRequest):
     pass
 
