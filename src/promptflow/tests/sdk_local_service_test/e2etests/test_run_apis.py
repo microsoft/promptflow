@@ -55,7 +55,7 @@ class TestRunAPIs:
         self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations
     ) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        detail = local_service_op.get_metadata(name=run.name)
+        detail = local_service_op.get_detail(name=run.name)
         for field in fields(RunDetail):
             assert field.name in detail
         assert isinstance(detail["flow_runs"], list)
