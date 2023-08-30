@@ -79,7 +79,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
-        path:
+        path: |
           ${{ env.testWorkingDirectory }}/*.xml
           ${{ env.testWorkingDirectory }}/htmlcov/
   publish-test-results:
