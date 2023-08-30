@@ -132,7 +132,7 @@ class TestSubmitter:
         self,
         inputs: Mapping[str, Any],
         environment_variables: dict = None,
-        stream: bool = True,
+        stream_log: bool = True,
         allow_generator_output: bool = False,
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
@@ -143,8 +143,9 @@ class TestSubmitter:
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream):
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
             flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+            flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type
@@ -156,23 +157,10 @@ class TestSubmitter:
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
+                generator_outputs = self._has_generator_outupts(line_result.ouptut)
+                if generator_outputs:
+                    logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
             return line_result
-
-    def interactive_test(self, inputs: Mapping[str, Any], environment_variables: dict = None):
-        from promptflow.executor.flow_executor import FlowExecutor
-
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
-        # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
-        environment_variables = environment_variables if environment_variables else {}
-        SubmitterHelper.init_env(environment_variables=environment_variables)
-
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=False):
-            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
-            # TODO modify to call the method in the flow server
-            flow_executor.enable_streaming_for_llm_flow(lambda: True)
-            line_result = flow_executor._exec(inputs, allow_generator_output=True)
-        return line_result
 
     def node_test(
         self,
@@ -301,9 +289,10 @@ class TestSubmitter:
                 chat_inputs, _ = self._resolve_data(inputs=inputs)
 
             with add_prefix():
-                flow_result = self.interactive_test(
+                flow_result = self.flow_test(
                     inputs=chat_inputs,
                     environment_variables=environment_variables,
+                    allow_generator_output=True,
                 )
                 self._raise_error_when_test_failed(flow_result, show_trace=True)
             node_outputs = {}
@@ -390,3 +379,8 @@ class TestSubmitter:
             if show_trace:
                 print(stack_trace)
             raise UserErrorException(f"{error_type}: {error_message}")
+
+    @staticmethod
+    def _get_generator_outputs(outputs):
+        outputs = outputs or {}
+        return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}
