@@ -134,6 +134,8 @@ class RunTracker(ThreadLocalSingleton):
         parent_run_id,
         run_id,
         outputs,
+        index,
+        variant_id,
     ):
         run_info = RunInfo(
             node=node,
@@ -148,6 +150,8 @@ class RunTracker(ThreadLocalSingleton):
             start_time=datetime.utcnow(),
             end_time=datetime.utcnow(),
             result=outputs,
+            index=index,
+            variant_id=variant_id,
             api_calls=[],
         )
         self._node_runs[run_id] = run_info

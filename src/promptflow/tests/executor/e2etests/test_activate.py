@@ -1,10 +1,17 @@
 import pytest
 
 from promptflow.contracts.run_info import Status
-from promptflow.executor.flow_executor import FlowExecutor, LineResult, BulkResult
 from promptflow.executor._errors import OutputReferenceSkipped
+from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
 
-from ..utils import get_flow_inputs, get_yaml_file, get_bulk_inputs, get_flow_expected_result, WRONG_FLOW_ROOT
+from ..utils import (
+    WRONG_FLOW_ROOT,
+    get_bulk_inputs,
+    get_flow_expected_result,
+    get_flow_expected_status_summary,
+    get_flow_inputs,
+    get_yaml_file,
+)
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -25,7 +32,8 @@ class TestExecutorActivate:
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         results = executor.exec_bulk(get_bulk_inputs(flow_folder))
         expected_result = get_flow_expected_result(flow_folder)
-        self.assert_activate_bulk_run_result(results, expected_result)
+        expected_status_summary = get_flow_expected_status_summary(flow_folder)
+        self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
 
     def test_wrong_flow_activate(self, dev_connections):
         flow_folder = "all_nodes_skipped"
@@ -35,7 +43,7 @@ class TestExecutorActivate:
         error_message = "Failed to extract output because the reference node 'third_node' has been skipped."
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
-    def assert_activate_bulk_run_result(self, result: BulkResult, expected_result):
+    def assert_activate_bulk_run_result(self, result: BulkResult, expected_result, expected_status_summary):
         # Validate the flow outputs
         for i, output in enumerate(result.outputs):
             expected_outputs = expected_result[i]["expected_outputs"].copy()
@@ -48,6 +56,10 @@ class TestExecutorActivate:
             expected_skipped_nodes = expected_result[i]["expected_skipped_nodes"]
             self.assert_activate_flow_run_result(line_result, expected_outputs, expected_skipped_nodes)
 
+        # Validate the flow status summary
+        status_summary = result.get_status_summary()
+        assert status_summary == expected_status_summary
+
     def assert_activate_flow_run_result(self, result: LineResult, expected_outputs, expected_skipped_nodes):
         # Validate the flow status
         assert result.run_info.status == Status.Completed
@@ -58,8 +70,9 @@ class TestExecutorActivate:
 
         # Validate the flow node run infos for the completed nodes
         assert len(result.node_run_infos) == 9
-        completed_nodes_run_infos = [run_info for i, run_info in result.node_run_infos.items()
-                                     if i not in expected_skipped_nodes]
+        completed_nodes_run_infos = [
+            run_info for i, run_info in result.node_run_infos.items() if i not in expected_skipped_nodes
+        ]
         assert all([node.status == Status.Completed for node in completed_nodes_run_infos])
 
         # Validate the flow node run infos for the skipped nodes

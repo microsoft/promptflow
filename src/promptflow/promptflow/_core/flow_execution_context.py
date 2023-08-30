@@ -184,6 +184,8 @@ class FlowExecutionContext(ThreadLocalSingleton):
             parent_run_id=parent_run_id,
             run_id=node_run_id,
             outputs=outputs,
+            index=self._line_number,
+            variant_id=self._variant_id,
         )
 
     def end(self):
