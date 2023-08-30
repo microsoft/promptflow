@@ -45,6 +45,10 @@ def start_local_service() -> None:
 
 def stop_local_service() -> None:
     try:
-        os.kill(int(os.getenv(LOCAL_SERVICE_PID_ENV_VAR)), signal.SIGTERM)
+        # windows does not support SIGTERM, so we need to check OS first
+        if os.name == "nt":
+            os.kill(int(os.getenv(LOCAL_SERVICE_PID_ENV_VAR)), signal.CTRL_C_EVENT)
+        else:
+            os.kill(int(os.getenv(LOCAL_SERVICE_PID_ENV_VAR)), signal.SIGTERM)
     except:  # noqa: E722
         pass
