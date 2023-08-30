@@ -12,12 +12,12 @@ from setuptools import find_packages, setup
 PACKAGE_NAME = "promptflow"
 PACKAGE_FOLDER_PATH = Path(__file__).parent / "promptflow"
 
-with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), "r") as f:
+with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), encoding="utf-8") as f:
     version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(1)
 
-with open(Path(__file__).parent.parent.parent / "README.md", encoding="utf-8") as f:
+with open("README.md", encoding="utf-8") as f:
     readme = f.read()
-with open(Path(__file__).parent / "CHANGELOG.md", encoding="utf-8") as f:
+with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
 REQUIRES = [
