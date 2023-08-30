@@ -15,6 +15,7 @@ from enum import Enum
 from os import PathLike
 from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+import zipfile
 
 import keyring
 import yaml
@@ -389,9 +390,58 @@ def _get_additional_includes(yaml_path):
     return flow_dag.get("additional_includes", [])
 
 
+def _is_folder_to_compress(path: Path) -> bool:
+    """Check if the additional include needs to compress corresponding folder as a zip.
+
+    For example, given additional include /mnt/c/hello.zip
+      1) if a file named /mnt/c/hello.zip already exists, return False (simply copy)
+      2) if a folder named /mnt/c/hello exists, return True (compress as a zip and copy)
+
+    :param path: Given path in additional include.
+    :type path: Path
+    :return: If the path need to be compressed as a zip file.
+    :rtype: bool
+    """
+    if path.suffix != ".zip":
+        return False
+    # if zip file exists, simply copy as other additional includes
+    if path.exists():
+        return False
+    # remove .zip suffix and check whether the folder exists
+    stem_path = path.parent / path.stem
+    return stem_path.is_dir()
+
+
+def _resolve_folder_to_compress(include: str, dst_path: Path) -> None:
+    """resolve the zip additional include, need to compress corresponding folder."""
+    zip_additional_include = (base_path / include).resolve()
+    folder_to_zip = zip_additional_include.parent / zip_additional_include.stem
+    zip_file = dst_path / zip_additional_include.name
+    with zipfile.ZipFile(zip_file, "w") as zf:
+        zf.write(folder_to_zip, os.path.relpath(folder_to_zip, folder_to_zip.parent))  # write root in zip
+        for root, _, files in os.walk(folder_to_zip, followlinks=True):
+            for file in files:
+                file_path = os.path.join(folder_to_zip, file)
+                zf.write(file_path, os.path.relpath(file_path, folder_to_zip.parent))
+
+
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
+    logger = logging.getLogger(LOGGER_NAME)
+
+    def additional_includes_copy(src, dst, base_path):
+        if src.is_file():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if dst.exists():
+                relative_path = dst.relative_to(temp_dir)
+                logger.warning("Found duplicate file in additional includes, "
+                               f"additional include file {src} will overwrite {relative_path}")
+            shutil.copy2(src, dst)
+        else:
+            for name in src.glob("*"):
+                additional_includes_copy(name, dst / name.name, base_path)
+
     if code_path.is_dir():
         yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
         code_path = code_path.resolve()
@@ -410,10 +460,12 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             if not src_path.exists():
                 raise ValueError(f"Unable to find additional include {item}")
 
-            if src_path.is_file():
-                shutil.copy2(src_path, dst_path)
-            if src_path.is_dir():
-                shutil.copytree(src_path, dst_path)
+            if _is_folder_to_compress(src_path):
+                _resolve_folder_to_compress(item, Path(temp_dir))
+                # early continue as the folder is compressed as a zip file
+                continue
+
+            additional_includes_copy(src_path, dst_path, temp_dir)
         yield temp_dir
 
 
