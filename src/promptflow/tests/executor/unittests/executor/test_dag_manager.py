@@ -53,14 +53,16 @@ class TestDAGManager:
         ]
         flow_inputs = {"text": "hello"}
         dag_manager = DAGManager(nodes, flow_inputs)
-        assert pop_skipped_node_names(dag_manager) == {"node1", "node2", "node4"}
+        expected_skipped_nodes = {"node1", "node2", "node4"}
+        assert pop_skipped_node_names(dag_manager) == expected_skipped_nodes
+        assert dag_manager.skipped_nodes.keys() == expected_skipped_nodes
 
     def test_complete_nodes(self):
         nodes = [create_test_node("node1", input="value1")]
         dag_manager = DAGManager(nodes, flow_inputs={})
         dag_manager.complete_nodes({"node1": {"output1": "value1"}})
-        assert len(dag_manager._completed_nodes_outputs) == 1
-        assert dag_manager._completed_nodes_outputs["node1"] == {"output1": "value1"}
+        assert len(dag_manager.completed_nodes_outputs) == 1
+        assert dag_manager.completed_nodes_outputs["node1"] == {"output1": "value1"}
 
     def test_completed(self):
         nodes = [
@@ -76,6 +78,8 @@ class TestDAGManager:
         assert pop_ready_node_names(dag_manager) == {"node2", "node3"}
         dag_manager.complete_nodes({"node2": {"output1": "value1"}})
         dag_manager.complete_nodes({"node3": {"output1": "value1"}})
+        assert dag_manager.completed_nodes_outputs.keys() == {"node1", "node2", "node3"}
+        assert dag_manager.skipped_nodes.keys() == {"node1"}
         assert dag_manager.completed()
 
     def test_get_node_valid_inputs(self):
@@ -102,5 +106,7 @@ class TestDAGManager:
         assert pop_skipped_node_names(dag_manager) == {"node1", "node2"}
         dag_manager.complete_nodes({"node3": {"output1": "value1"}})
         assert dag_manager.completed()
+        assert dag_manager.completed_nodes_outputs.keys() == {"node1", "node3"}
+        assert dag_manager.skipped_nodes.keys() == {"node1", "node2"}
         assert dag_manager.get_skipped_node_outputs(nodes[0]) == "hello"
         assert dag_manager.get_skipped_node_outputs(nodes[1]) is None
