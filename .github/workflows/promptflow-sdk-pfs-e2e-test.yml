@@ -1,5 +1,7 @@
 name: promptflow-sdk-pfs-e2e-test
 on:
+  schedule:
+    - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request:
     branches: [ main ]
     paths:
@@ -15,20 +17,31 @@ env:
   testWorkingDirectory: src/promptflow
 jobs:
   sdk_pfs_e2e_test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
       uses: actions/checkout@v3
     - name: Display and Set Environment Variables
-      run: env | sort >> $GITHUB_OUTPUT
-      shell: bash -el {0}
+      run: |
+        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.9";
+        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.10";
+        else
+          echo "Unsupported OS: ${{ matrix.os }}";
+          exit 1;
+        fi
+        env | sort >> $GITHUB_OUTPUT
       id: display_env
-    - name: Conda Setup
+      shell: bash -el {0}
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
       uses: "./.github/actions/step_create_conda_environment"
-    - run: |
-        echo ${{ env.packageSetupType }}
-        echo ${{ env.testWorkingDirectory }}
-      shell: bash -l {0}
+      with:
+        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -50,7 +63,7 @@ jobs:
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
         conda activate release-env
-        lpfs &
+        python -m promptflow._sdk._service.entry &
     - name: Run Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
@@ -68,24 +81,31 @@ jobs:
           -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_local_service_test/.coveragerc
     - name: Upload pytest test results
-      if: ${{ always() }}
+      if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: pytest-results
-        path: ${{ env.testWorkingDirectory }}/*.xml
-      # Use always() to always run this step to publish test results when there are test failures
+        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+        path: |
+          ${{ env.testWorkingDirectory }}/*.xml
+          ${{ env.testWorkingDirectory }}/htmlcov/
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: sdk_pfs_e2e_test
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    if: always()
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
     - name: Publish Test Results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      uses: "./.github/actions/step_publish_test_results"
       with:
-        check_name: "SDK PFS Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-pfs-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        comment_title: "SDK PFS Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-pfs-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        files: |
-          ${{ env.testWorkingDirectory }}/test-results.xml
-    - name: Generate Coverage Report
-      if: (success() || failure())
-      uses: orgoro/coverage@v3.1
-      with:
-        coverageFile: ${{ env.testWorkingDirectory }}/coverage.xml
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 0.4
         token: ${{ secrets.GITHUB_TOKEN }}
-        thresholdAll: 0.05
