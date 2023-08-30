@@ -1,11 +1,11 @@
-name: promptflow-sdk-local-service-e2e-test
+name: promptflow-sdk-pfs-e2e-test
 on:
   pull_request:
     branches: [ main ]
     paths:
       - src/promptflow/**
       - scripts/**
-      - .github/workflows/promptflow-sdk-local-service-e2e-test.yml
+      - .github/workflows/promptflow-sdk-pfs-e2e-test.yml
   workflow_dispatch:
 env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
@@ -14,7 +14,7 @@ env:
   packageSetupType: promptflow_new_extra
   testWorkingDirectory: src/promptflow
 jobs:
-  sdk_local_service_e2e_test:
+  sdk_pfs_e2e_test:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -45,7 +45,7 @@ jobs:
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
-    - name: Invoke local prompt flow service
+    - name: Invoke SDK PFS
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
@@ -78,8 +78,8 @@ jobs:
       if: always()
       uses: EnricoMi/publish-unit-test-result-action/composite@v2
       with:
-        check_name: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        comment_title: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+        check_name: "SDK PFS Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-pfs-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+        comment_title: "SDK PFS Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-pfs-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
         files: |
           ${{ env.testWorkingDirectory }}/test-results.xml
     - name: Generate Coverage Report
