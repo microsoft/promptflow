@@ -28,10 +28,11 @@ pip install -r requirements.txt
 ### Create connection for LLM to use
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
 ```
-Note: the [azure_openai.yml](../../../connections/azure_openai.yml) file is located in connections folder.  
-Because of in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+Note:  
+The [azure_openai.yml](../../../connections/azure_openai.yml) file is located in connections folder.  
+We are using connection named `open_ai_connection`in [flow.dag.yaml](flow.dag.yaml).
 
 ## Execute with Promptflow
 ### Execute with SDK
