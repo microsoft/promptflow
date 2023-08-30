@@ -1,6 +1,6 @@
 import json
-import uuid
 import sys
+import uuid
 from collections import namedtuple
 from unittest.mock import patch
 
@@ -41,9 +41,7 @@ class TestExecutorTelemetry:
 
             # Set user-defined properties `scenario` in context
             operation_context.scenario = "test"
-            executor = FlowExecutor.create(
-                get_yaml_file("openai_api_flow"), dev_connections
-            )
+            executor = FlowExecutor.create(get_yaml_file("openai_api_flow"), dev_connections)
 
             # exec_line case
             inputs = {"question": "What's your name?", "chat_history": []}
@@ -65,9 +63,7 @@ class TestExecutorTelemetry:
                 headers = json.loads(line.get("answer", ""))
                 assert "promptflow/" in headers.get("x-ms-useragent")
                 assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
-                assert (
-                    headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
-                )
+                assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.Batch.name
 
             # single_node case
             run_info = FlowExecutor.load_and_exec_node(
@@ -81,7 +77,4 @@ class TestExecutorTelemetry:
             headers = json.loads(run_info.output)
             assert "promptflow/" in headers.get("x-ms-useragent")
             assert headers.get("ms-azure-ai-promptflow-scenario") == "test"
-            assert (
-                headers.get("ms-azure-ai-promptflow-run-mode")
-                == RunMode.SingleNode.name
-            )
+            assert headers.get("ms-azure-ai-promptflow-run-mode") == RunMode.SingleNode.name

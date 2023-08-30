@@ -1,5 +1,5 @@
-import time
 import sys
+import time
 from io import StringIO
 from logging import WARNING, Logger, StreamHandler
 

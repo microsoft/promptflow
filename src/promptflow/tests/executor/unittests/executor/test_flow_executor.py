@@ -67,7 +67,7 @@ class TestFlowExecutor:
                 "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data. "
                 "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data."
+                "and you may need to manually assign input mapping based on your input data.",
             ),
         ],
     )

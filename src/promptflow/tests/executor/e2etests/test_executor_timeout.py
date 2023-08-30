@@ -55,10 +55,7 @@ class TestExecutor:
     def skip_serp(self, flow_folder, dev_connections):
         serp_required_flows = ["package_tools"]
         #  Real key is usually more than 32 chars
-        if (
-            flow_folder in serp_required_flows
-            and len(dev_connections.get("serp_connection", "test")) < 32
-        ):
+        if flow_folder in serp_required_flows and len(dev_connections.get("serp_connection", "test")) < 32:
             pytest.skip("serp_connection is not prepared")
 
     @pytest.mark.parametrize(
@@ -83,10 +80,7 @@ class TestExecutor:
 
         for i, line_result in enumerate(bulk_results.line_results):
             assert isinstance(line_result, LineResult)
-            assert (
-                line_result.run_info.error["message"]
-                == f"Line {i} execution timeout for exceeding 5 seconds"
-            )
+            assert line_result.run_info.error["message"] == f"Line {i} execution timeout for exceeding 5 seconds"
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
@@ -96,9 +90,7 @@ class TestExecutor:
             ONE_LINE_OF_BULK_TEST_TIMEOUT,
         ],
     )
-    def test_executor_exec_bulk_with_one_line_timeout(
-        self, flow_folder, dev_connections
-    ):
+    def test_executor_exec_bulk_with_one_line_timeout(self, flow_folder, dev_connections):
         mem_run_storage = MemoryRunStorage()
         executor = FlowExecutor.create(
             get_yaml_file(flow_folder),
@@ -133,6 +125,4 @@ class TestExecutor:
                 run_info_in_mem = mem_run_storage._node_runs[node_run_info.run_id]
                 assert serialize(node_run_info) == serialize(run_info_in_mem)
                 msg = f"Node run name {node_run_info.node} is not correct, expected {node_name}"
-                assert (
-                    mem_run_storage._node_runs[node_run_info.run_id].node == node_name
-                )
+                assert mem_run_storage._node_runs[node_run_info.run_id].node == node_name
