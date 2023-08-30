@@ -65,9 +65,7 @@ class DAGManager:
     def completed(self) -> bool:
         """Returns True if all nodes have been processed."""
         return all(
-            node.name in self._completed_nodes_outputs
-            or node.name in self._skipped_nodes
-            for node in self._nodes
+            node.name in self._completed_nodes_outputs or node.name in self._skipped_nodes for node in self._nodes
         )
 
     def _is_node_ready(self, node: Node) -> bool:
@@ -87,30 +85,34 @@ class DAGManager:
         # Skip node if the skip condition is met
         if self._is_skip_condition_met(node):
             skip_return = self._get_node_dependency_value(node.skip.return_value)
+            # This is not a good practice, but we need to update the default output of skipped node
+            # to completed_nodes_outputs. We will remove these after skip config is deprecated.
             self.complete_nodes({node.name: skip_return})
             return True
 
         # Skip node if the activate condition is not met
-        if node.activate:
-            if self._is_node_dependency_skipped(node.activate.condition):
-                return True
-            activate_condition = self._get_node_dependency_value(node.activate.condition)
-            if activate_condition != node.activate.condition_value:
-                return True
+        if node.activate and (
+            self._is_node_dependency_skipped(node.activate.condition)
+            or not self._is_condition_met(node.activate.condition, node.activate.condition_value)
+        ):
+            return True
 
         # Skip node if all of its node reference dependencies are skipped
         node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
         all_dependencies_skipped = node_dependencies and all(
-            self._is_node_dependency_skipped(dependency)
-            for dependency in node_dependencies
+            self._is_node_dependency_skipped(dependency) for dependency in node_dependencies
         )
         return all_dependencies_skipped
 
     def _is_skip_condition_met(self, node: Node) -> bool:
         if node.skip and not self._is_node_dependency_skipped(node.skip.condition):
-            skip_condition = self._get_node_dependency_value(node.skip.condition)
-            if skip_condition == node.skip.condition_value:
-                return True
+            return self._is_condition_met(node.skip.condition, node.skip.condition_value)
+        return False
+
+    def _is_condition_met(self, condition: InputAssignment, condition_value) -> bool:
+        condition = self._get_node_dependency_value(condition)
+        if condition == condition_value:
+            return True
         return False
 
     def _get_node_dependency_value(self, node_dependency: InputAssignment):
