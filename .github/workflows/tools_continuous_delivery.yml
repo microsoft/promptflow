@@ -1,11 +1,13 @@
 name: tools_continuous_delivery
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-    types:
-      - closed
+    paths:
+      - 'src/promptflow-tools/**'
+      - '!README.*'
+      - '!src/promptflow-tools/tests/**'
 
   workflow_dispatch:
     inputs:
@@ -60,7 +62,7 @@ jobs:
     secrets: inherit
 
   continuous_delivery_release:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true
+    if: github.event_name == 'push'
     uses: ./.github/workflows/wheel_distributing.yml
     name: Continuous delivery release
     with:
