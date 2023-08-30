@@ -7,12 +7,15 @@ This is an experimental feature, and may change at any time. Learn [more](https:
 ```{gallery-grid}
 :grid-columns: 1 2 2 3
 - image: ../../media/how-to-guides/local.png
+  content: "<center><b>Development server</b></center>"
   website: deploy-local.html
 
 - image: ../../media/how-to-guides/docker.png
+  content: "<center><b>Docker</b></center>"
   website: deploy-using-docker.html
   
 - image: ../../media/how-to-guides/kubernetes.png
+  content: "<center><b>Kubernetes</b></center>"
   website: deploy-using-kubernetes.html
 
 ```
