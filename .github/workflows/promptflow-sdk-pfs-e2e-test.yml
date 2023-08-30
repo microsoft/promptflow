@@ -58,12 +58,6 @@ jobs:
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
-    - name: Invoke SDK PFS
-      shell: bash -l {0}
-      working-directory: ${{ env.testWorkingDirectory }}
-      run: |-
-        conda activate release-env
-        python -m promptflow._sdk._service.entry &
     - name: Run Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}

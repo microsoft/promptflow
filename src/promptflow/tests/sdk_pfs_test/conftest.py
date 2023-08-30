@@ -6,36 +6,35 @@ import json
 from pathlib import Path
 
 import pytest
+from flask.app import Flask
 
 from promptflow import PFClient
 from promptflow._sdk.entities import AzureOpenAIConnection
 from promptflow._sdk.entities._connection import _Connection as Connection
-from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow._sdk._service.app import create_app
 
-from .utils import PFSOperations, start_pfs, stop_pfs
+from .utils import PFSOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def pfs() -> None:
-    if is_in_ci_pipeline():
-        yield
-    else:
-        start_pfs()
-        yield
-        stop_pfs()
+@pytest.fixture
+def app() -> Flask:
+    app = create_app()
+    app.config.update({"TESTING": True})
+    yield app
+
+
+@pytest.fixture
+def pfs_op(app: Flask) -> PFSOperations:
+    client = app.test_client()
+    return PFSOperations(client)
 
 
 @pytest.fixture(scope="session")
 def pf_client() -> PFClient:
     return PFClient()
-
-
-@pytest.fixture(scope="session")
-def pfs_op() -> PFSOperations:
-    return PFSOperations()
 
 
 _connection_setup = False

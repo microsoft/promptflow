@@ -6,11 +6,12 @@ from dataclasses import fields
 
 import pytest
 
-from ..utils import PFSOperations
 from promptflow import PFClient
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._connection import _Connection as Connection
 from promptflow.contracts._run_management import RunDetail, RunMetadata
+
+from ..utils import PFSOperations
 
 
 def create_run_against_multi_line_data(client: PFClient) -> Run:
