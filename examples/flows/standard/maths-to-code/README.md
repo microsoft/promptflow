@@ -1,6 +1,12 @@
 # Math to Code
 Math to Code is a project that utilizes the power of the chatGPT model to generate code that models math questions and then executes the generated code to obtain the final numerical answer.
 
+> [!NOTE]
+>
+> Building a system that generates executable code from user input with LLM is [a complex problem with potential security risks](
+https://developer.nvidia.com/blog/securing-llm-systems-against-prompt-injection/
+), this example is more of a demonstration rather than something you can directly use in production. To build such system correctly, you should address key security considerations like input validation, additional sanitization of the code generated or better run the generated code in a sandbox environment.
+
 Tools used in this flow：
 
 - `python` tool
