@@ -4,4 +4,4 @@
 
 # flake8: noqa
 from .flow_executor import FlowExecutor
-from ._flow_validator import FlowValidator
+from .flow_validator import FlowValidator

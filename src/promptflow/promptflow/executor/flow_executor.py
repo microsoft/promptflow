@@ -35,11 +35,11 @@ from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
-from promptflow.executor._flow_validator import FlowValidator
 from promptflow.executor._result import AggregationResult, BulkResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
@@ -189,7 +189,7 @@ class FlowExecutor:
         if not node.source or not node.type:
             raise ValueError(f"Node {node_name} is not a valid node in flow {flow_file}.")
 
-        converted_flow_inputs_for_node = FlowValidator._convert_flow_inputs_for_node(flow, node, flow_inputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -246,7 +246,7 @@ class FlowExecutor:
         return update_environment_variables_with_connections(connections)
 
     def _convert_flow_input_types(self, inputs: dict):
-        return FlowValidator._resolve_flow_inputs_type(self._flow, inputs)
+        return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
 
     def _collect_run_infos(self):
         return self._run_tracker.collect_all_run_infos_as_dicts()
@@ -351,7 +351,7 @@ class FlowExecutor:
 
         succeeded_batch_inputs = [batch_inputs[i] for i in succeeded]
         resolved_succeeded_batch_inputs = [
-            FlowValidator._ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
+            FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=input) for input in succeeded_batch_inputs
         ]
 
         succeeded_inputs = transpose(resolved_succeeded_batch_inputs, keys=list(self._flow.inputs.keys()))
@@ -616,7 +616,7 @@ class FlowExecutor:
         aggregation_inputs = {}
         try:
             if validate_inputs:
-                inputs = FlowValidator._ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+                inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output

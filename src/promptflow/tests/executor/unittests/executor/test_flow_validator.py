@@ -5,7 +5,7 @@ import yaml
 
 from promptflow.contracts.flow import Flow
 from promptflow.executor._errors import InvalidFlowRequest
-from promptflow.executor._flow_validator import FlowValidator
+from promptflow.executor.flow_validator import FlowValidator
 
 TEST_ROOT = Path(__file__).parent.parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/flows/"
