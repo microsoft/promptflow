@@ -533,6 +533,12 @@ class TestCli:
         assert outputs["output"] == env["API_BASE"]
         validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json")
 
+        # Test log contains user printed outputs
+        log_path = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert env["API_BASE"] in log_content
+
         run_pf_command(
             "flow",
             "test",
