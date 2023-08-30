@@ -365,6 +365,7 @@ def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, st
 def get_available_max_worker_count():
     import math
     import os
+
     import psutil
 
     pid = os.getpid()

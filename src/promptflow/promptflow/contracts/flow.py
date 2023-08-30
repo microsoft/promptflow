@@ -355,10 +355,9 @@ class Flow:
             node_variants={name: NodeVariants.deserialize(v) for name, v in (data.get("node_variants") or {}).items()},
         )
 
-    def _apply_default_node_variants(self: 'Flow'):
+    def _apply_default_node_variants(self: "Flow"):
         self.nodes = [
-            self._apply_default_node_variant(node, self.node_variants)
-            if node.use_variants else node
+            self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
             for node in self.nodes
         ]
         return self

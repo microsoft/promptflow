@@ -156,7 +156,8 @@ def get_encryption_key(generate_if_not_found: bool = False) -> str:
             raise StoreConnectionEncryptionKeyError(
                 "System keyring backend service not found in your operating system. "
                 "See https://pypi.org/project/keyring/ to install requirement for different operating system, "
-                "or 'pip install keyrings.alt' to use the third-party backend."
+                "or 'pip install keyrings.alt' to use the third-party backend. Reach more detail about this error at"
+                "https://microsoft.github.io/promptflow/how-to-guides/faq.html#connection-creation-failed-with-storeconnectionencryptionkeyerror"  # noqa: E501
             ) from e
 
     ENCRYPTION_KEY_IN_KEY_RING = _get_from_keyring()
