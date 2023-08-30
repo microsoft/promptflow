@@ -3,7 +3,7 @@ import sys
 from enum import Enum
 
 import requests
-
+# Importing from promptflow._internal is necessary as this builtin tool is promptflow internal.
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import SerpConnection
 from promptflow.exceptions import PromptflowException

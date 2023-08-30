@@ -1,3 +1,4 @@
+# Importing from promptflow._internal is necessary as this module is promptflow internal.
 from promptflow._internal import tool
 from promptflow.tools.common import render_jinja_template
 

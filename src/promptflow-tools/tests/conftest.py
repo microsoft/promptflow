@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from pytest_mock import MockerFixture  # noqa: E402
-
+# Importing from promptflow._internal is necessary as this builtin tool is promptflow internal.
 from promptflow._internal import ConnectionManager
 from promptflow.tools.aoai import AzureOpenAI
 
