@@ -1,7 +1,7 @@
 name: promptflow-sdk-cli-test
 on:
   pull_request:
-    branches: [ release/** ]
+    branches: [ main, release/** ]
     paths:
       - src/promptflow/**
       - scripts/**
