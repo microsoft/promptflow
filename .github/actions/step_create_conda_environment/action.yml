@@ -1,0 +1,23 @@
+name: step_create_conda_environment
+inputs:
+  condaEnvironmentFilePath:
+    required: false
+    default: "scripts/building/release-env.yml"
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Setup Miniconda
+    uses: conda-incubator/setup-miniconda@v2
+    with:
+      miniconda-version: "latest"
+      activate-environment: release-env
+      environment-file: ${{ inputs.condaEnvironmentFilePath }}
+      python-version: 3.9
+      auto-activate-base: false
+      auto-update-conda: true
+  - run: |
+      conda info
+      conda list
+      python --version
+    shell: bash -el {0}

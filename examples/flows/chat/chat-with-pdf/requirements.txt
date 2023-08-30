@@ -1,10 +1,8 @@
-langchain
 PyPDF2
 faiss-cpu
 openai
 jinja2
 python-dotenv
 tiktoken
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
 promptflow[azure]
 promptflow-tools

@@ -1,0 +1,25 @@
+inputs:
+  text:
+    type: string
+    default: "play"
+outputs:
+  answer:
+    type: string
+    reference: ${passthrough.output}
+nodes:
+- name: passthrough
+  type: python
+  source:
+    type: code
+    path: passthrough.py
+  inputs:
+    input: ${inputs.text}
+- name: accuracy
+  type: python
+  source:
+    type: code
+    path: accuracy.py
+  inputs:
+    answer: ${passthrough.output}
+    groundtruth: ${inputs.text}
+  aggregation: True

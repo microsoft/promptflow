@@ -1,7 +1,7 @@
 import unittest
 import promptflow
 from base_test import BaseTest
-from promptflow.executor._errors import InputNotFoundInInputsMapping
+from promptflow.exceptions import ValidationException
 
 
 class TestChatWithPDF(BaseTest):
@@ -36,51 +36,24 @@ class TestChatWithPDF(BaseTest):
 
         self.assertEqual(run.status, "Completed")
         details = self.pf.get_details(run)
-        self.assertEqual(details.shape[0], 1)
+        self.assertEqual(details.shape[0], 3)
 
     def test_eval(self):
-        run = self.create_chat_run()
-        self.pf.stream(run)  # wait for completion
-        self.assertEqual(run.status, "Completed")
-
-        display_name = 'groundedness_eval'
-        eval_run = self.create_eval_run(
-            self.eval_groundedness_flow_path,
-            run,
-            {
-                "question": "${run.inputs.question}",
-                "answer": "${run.outputs.answer}",
-                "context": "${run.outputs.context}",
-            },
-            display_name=display_name,
+        run_2k, eval_groundedness_2k, eval_pi_2k = self.run_eval_with_config(
+            self.config_2k_context,
+            display_name="chat_with_pdf_2k_context",
         )
-        self.pf.stream(eval_run)  # wait for completion
-        self.assertEqual(eval_run.status, "Completed")
-
-        details = self.pf.get_details(eval_run)
-        self.assertEqual(details.shape[0], 1)
-
-        metrics = self.pf.get_metrics(eval_run)
-        self.assertGreaterEqual(metrics["groundedness"], 0.0)
-
-        eval_run = self.create_eval_run(
-            self.eval_perceived_intelligence_flow_path,
-            run,
-            {
-                "question": "${run.inputs.question}",
-                "answer": "${run.outputs.answer}",
-                "context": "${run.outputs.context}",
-            },
-            display_name=display_name,
+        run_3k, eval_groundedness_3k, eval_pi_3k = self.run_eval_with_config(
+            self.config_3k_context,
+            display_name="chat_with_pdf_3k_context",
         )
-        self.pf.stream(eval_run)  # wait for completion
-        self.assertEqual(eval_run.status, "Completed")
 
-        details = self.pf.get_details(eval_run)
-        self.assertEqual(details.shape[0], 1)
-
-        metrics = self.pf.get_metrics(eval_run)
-        self.assertGreaterEqual(metrics["perceived_intelligence_score"], 0.0)
+        self.check_run_basics(run_2k)
+        self.check_run_basics(run_3k)
+        self.check_run_basics(eval_groundedness_2k)
+        self.check_run_basics(eval_pi_2k)
+        self.check_run_basics(eval_groundedness_3k)
+        self.check_run_basics(eval_pi_3k)
 
     def test_bulk_run_valid_mapping(self):
         run = self.create_chat_run(
@@ -95,11 +68,11 @@ class TestChatWithPDF(BaseTest):
 
         self.assertEqual(run.status, "Completed")
         details = self.pf.get_details(run)
-        self.assertEqual(details.shape[0], 1)
+        self.assertEqual(details.shape[0], 3)
 
     def test_bulk_run_mapping_missing_one_column(self):
         # in this case, run won't be created.
-        with self.assertRaises(InputNotFoundInInputsMapping):
+        with self.assertRaises(ValidationException):
             self.create_chat_run(
                 column_mapping={
                     "question": "${data.question}",
@@ -109,7 +82,7 @@ class TestChatWithPDF(BaseTest):
 
     def test_bulk_run_invalid_mapping(self):
         # in this case, run won't be created.
-        with self.assertRaises(InputNotFoundInInputsMapping):
+        with self.assertRaises(ValidationException):
             self.create_chat_run(
                 column_mapping={
                     "question": "${data.question_not_exist}",

@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+{% if env.image %}
+FROM {{env.image}}
+{% else %}
+{% if show_comment %}
+# use mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:latest? current image is based on Debian 11
+{% endif %}
+FROM docker.io/continuumio/miniconda3:latest
+{% endif %}
+
+WORKDIR /
+
+COPY ./flow /flow
+
+# create conda environment, and use as default python environment
+ENV CONDA_ENVIRONMENT_PATH=/opt/conda/envs/{{env.conda_env_name}}
+ENV CONDA_DEFAULT_ENVIRONMENT=$CONDA_ENVIRONMENT_PATH
+ENV PATH $CONDA_DEFAULT_ENVIRONMENT/bin:$PATH
+{% if env.conda_file %}
+RUN conda create -f flow/{{env.conda_file}} -q && \
+{% else %}
+RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
+{% endif %}
+    conda run -n {{env.conda_env_name}} \
+{% if env.python_requirements_txt %}
+    pip install -r /flow/{{env.python_requirements_txt}} && \
+{% else %}
+{% if env.sdk_version %}
+    pip install promptflow=={{env.sdk_version}} \
+{% else %}
+    pip install promptflow \
+{% endif %}
+    promptflow-tools && \
+{% endif %}
+    conda run -n {{env.conda_env_name}} pip install keyrings.alt && \
+    conda run -n {{env.conda_env_name}} pip cache purge && \
+    conda clean -a -y
+
+{% if env.setup_sh %}
+RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
+{% endif %}
+
+EXPOSE 8080
+
+COPY ./connections/* /connections/
+COPY ./start.sh /
+CMD ["bash", "./start.sh"]

@@ -1,0 +1,22 @@
+inputs:
+  idx:
+    type: int
+outputs:
+  output:
+    type: int
+    reference: ${my_python_tool_with_failed_line.output}
+nodes:
+- name: my_python_tool
+  type: python
+  source:
+    type: code
+    path: my_python_tool.py
+  inputs:
+    idx: ${inputs.idx}
+- name: my_python_tool_with_failed_line
+  type: python
+  source:
+    type: code
+    path: my_python_tool_with_failed_line.py
+  inputs:
+    idx: ${my_python_tool.output}

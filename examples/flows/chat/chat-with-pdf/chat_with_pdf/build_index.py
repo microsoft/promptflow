@@ -2,20 +2,20 @@ import PyPDF2
 import faiss
 import os
 
-from utils.aoai import AOAIEmbedding
+from utils.oai import OAIEmbedding
 from utils.index import FAISSIndex
 from utils.logging import log
 from utils.lock import acquire_lock
 
 
 def create_faiss_index(pdf_path: str) -> str:
-    index_persistent_path = ".index/" + pdf_path + ".index"
-    lock_path = index_persistent_path + ".lock"
-    log("Index path: " + os.path.abspath(index_persistent_path))
-
     chunk_size = int(os.environ.get("CHUNK_SIZE"))
     chunk_overlap = int(os.environ.get("CHUNK_OVERLAP"))
     log(f"Chunk size: {chunk_size}, chunk overlap: {chunk_overlap}")
+
+    index_persistent_path = ".index/" + pdf_path + f".index_{chunk_size}_{chunk_overlap}"
+    lock_path = index_persistent_path + ".lock"
+    log("Index path: " + os.path.abspath(index_persistent_path))
 
     with acquire_lock(lock_path):
         if os.path.exists(os.path.join(index_persistent_path, "index.faiss")):
@@ -32,20 +32,33 @@ def create_faiss_index(pdf_path: str) -> str:
         for page in pdf_reader.pages:
             text += page.extract_text()
 
-        words = text.split()
-
         # Chunk the words into segments of X words with Y-word overlap, X=CHUNK_SIZE, Y=OVERLAP_SIZE
-        segments = []
-        for i in range(0, len(words), chunk_size - chunk_overlap):
-            segment = " ".join(words[i : i + chunk_size])
-            segments.append(segment)
+        segments = split_text(text, chunk_size, chunk_overlap)
 
         log(f"Number of segments: {len(segments)}")
 
-        index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=AOAIEmbedding())
+        index = FAISSIndex(index=faiss.IndexFlatL2(1536), embedding=OAIEmbedding())
         index.insert_batch(segments)
 
         index.save(index_persistent_path)
 
         log("Index built: " + index_persistent_path)
         return index_persistent_path
+
+
+# Split the text into chunks with CHUNK_SIZE and CHUNK_OVERLAP as character count
+def split_text(text, chunk_size, chunk_overlap):
+    # Calculate the number of chunks
+    num_chunks = (len(text) - chunk_overlap) // (chunk_size - chunk_overlap)
+
+    # Split the text into chunks
+    chunks = []
+    for i in range(num_chunks):
+        start = i * (chunk_size - chunk_overlap)
+        end = start + chunk_size
+        chunks.append(text[start:end])
+
+    # Add the last chunk
+    chunks.append(text[num_chunks * (chunk_size - chunk_overlap):])
+
+    return chunks

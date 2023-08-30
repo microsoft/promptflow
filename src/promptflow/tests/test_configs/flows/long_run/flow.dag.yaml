@@ -1,0 +1,12 @@
+inputs: {}
+outputs:
+  output:
+    type: string
+    reference: ${long_run_node.output}
+nodes:
+- name: long_run_node
+  type: python
+  inputs: {}
+  source:
+    type: code
+    path: long_run.py

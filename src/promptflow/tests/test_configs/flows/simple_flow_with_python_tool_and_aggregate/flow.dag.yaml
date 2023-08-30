@@ -1,0 +1,28 @@
+inputs:
+  num:
+    type: int
+outputs:
+  content:
+    type: string
+    reference: ${divide_num.output}
+  aggregate_content:
+    type: string
+    reference: ${aggregate_num.output}
+nodes:
+- name: divide_num
+  type: python
+  source:
+    type: code
+    path: divide_num.py
+  inputs:
+    num: ${inputs.num}
+- name: aggregate_num
+  type: python
+  source:
+    type: code
+    path: aggregate_num.py
+  inputs:
+    num: ${divide_num.output}
+  aggregation: True
+
+

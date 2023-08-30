@@ -1,6 +1,5 @@
 from typing import Union
 import openai
-from dataclasses import asdict
 
 from promptflow import tool
 from promptflow.connections import CustomConnection, AzureOpenAIConnection
@@ -38,11 +37,8 @@ def my_python_tool(
 
     # TODO: remove below type conversion after client can pass json rather than string.
     echo = to_bool(echo)
-    if isinstance(connection, AzureOpenAIConnection):
-        connection_dict = asdict(connection)
-    else:
-        # custom connection is dict like object contains the configs and secrets
-        connection_dict = dict(connection)
+    # connection can be extract as a dict object contains the configs and secrets
+    connection_dict = dict(connection)
 
     response = openai.Completion.create(
         prompt=prompt,
@@ -64,7 +60,7 @@ def my_python_tool(
         logit_bias=logit_bias if logit_bias else {},
         user=user,
         request_timeout=30,
-        **dict(connection_dict),
+        **connection_dict,
     )
 
     # get first element because prompt is single.

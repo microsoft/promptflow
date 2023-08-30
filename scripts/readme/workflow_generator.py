@@ -57,6 +57,11 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     schedule_minute = name_hash % 60
     schedule_hour = (name_hash // 60) % 4 + 19  # 19-22 UTC
 
+    if "tutorials" in gh_working_dir:
+        path_filter = f"[ examples/**, .github/workflows/{workflow_name}.yml ]"
+    else:
+        path_filter = f"[ {gh_working_dir}/**, examples/*requirements.txt, .github/workflows/{workflow_name}.yml ]"
+
     if "chatwithpdf" in workflow_name:
         template_pdf = env.get_template("pdf_workflow.yml.jinja2")
         content = template_pdf.render(
@@ -65,7 +70,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
                 "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
-                "path_filter": "[ examples/** ]",
+                "path_filter": path_filter,
                 "crontab": f"{schedule_minute} {schedule_hour} * * *",
                 "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
             }
@@ -77,7 +82,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
                 "ci_name": "samples_notebook_ci",
                 "name": name,
                 "gh_working_dir": gh_working_dir,
-                "path_filter": "[ examples/** ]",
+                "path_filter": path_filter,
                 "crontab": f"{schedule_minute} {schedule_hour} * * *",
                 "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
             }
@@ -122,6 +127,8 @@ def no_readme_generation_filter(item, index, array) -> bool:
     Set each ipynb metadata no_readme_generation to "true" to skip readme generation
     """
     try:
+        if item.endswith("test.ipynb"):
+            return False
         # read in notebook
         with open(item, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -132,7 +139,7 @@ def no_readme_generation_filter(item, index, array) -> bool:
         except Exception:
             return True  # generate readme
     except Exception:
-        return False  # generate readme
+        return False  # not generate readme
 
 
 def main(input_glob, output_files=[]):

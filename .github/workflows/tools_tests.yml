@@ -1,4 +1,4 @@
-name: Promptflow Tools Test
+name: tools_tests
 on:
   # Triggers the workflow pull request events but only for the main branch
   pull_request:
@@ -29,18 +29,13 @@ jobs:
             echo "No changes detected in src/promptflow-tools/"
             echo "run_tests=false" >> $GITHUB_OUTPUT
           fi 
-      # Eventually only pip install promptflow and uninstall promptflow-sdk
       - name: Setup
         if: steps.check_changes.outputs.run_tests == 'true'
         run: |
           python -m pip install --upgrade pip
-          pip install promptflow-sdk promptflow --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-          pip install pytest
-          pip install pytest_mock
-          pip install azure-identity
-          pip install azure-keyvault-secrets
-
-
+          pip install promptflow
+          pip install pytest pytest_mock
+          pip install azure-identity azure-keyvault-secrets
       - name: Generate configs
         if: steps.check_changes.outputs.run_tests == 'true'
         run: |

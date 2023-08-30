@@ -1,0 +1,28 @@
+inputs:
+  history:
+    type: string
+  customer_info:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${extract_intent.output}
+nodes:
+- name: chat_prompt
+  type: prompt
+  source:
+    type: code
+    path: user_intent_zero_shot.jinja2
+  inputs:  # Please check the generated prompt inputs
+    history: ${inputs.history}
+    customer_info: ${inputs.customer_info}
+- name: extract_intent
+  type: python
+  source:
+    type: code
+    path: extract_intent_tool.py
+  inputs:
+    chat_prompt: ${chat_prompt.output}
+    connection: custom_connection
+environment:
+    python_requirements_txt: requirements.txt

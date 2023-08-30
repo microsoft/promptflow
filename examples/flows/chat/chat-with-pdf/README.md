@@ -22,10 +22,10 @@ pip install -r requirements.txt
 
 ```bash
 # create connection needed by flow
-if pf connection list | grep azure_open_ai_connection; then
-    echo "azure_open_ai_connection already exists"
+if pf connection list | grep open_ai_connection; then
+    echo "open_ai_connection already exists"
 else
-    pf connection create --file azure_openai.yml --name azure_open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
+    pf connection create --file ../../../connections/azure_openai.yml --name open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
 fi
 ```
 
@@ -36,20 +36,13 @@ fi
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs question="What is the name of the new language representation model introduced in the document?" pdf_url="https://arxiv.org/pdf/1810.04805.pdf" config="{ \
-\"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \
-\"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \
-\"PROMPT_TOKEN_LIMIT\": \"2000\", \
-\"MAX_COMPLETION_TOKENS\": \"256\", \
-\"VERBOSE\": \"True\", \
-\"CHUNK_SIZE\": \"256\", \
-\"CHUNK_OVERLAP\": \"32\" }"
+pf flow test --flow . --inputs question="What is the name of the new language representation model introduced in the document?" pdf_url="https://arxiv.org/pdf/1810.04805.pdf"
 
 # (Optional) create a random run name
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # run with multiline data, --name is optional
-pf run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --name $run_name --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config="{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }"
+pf run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config='{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }' --name $run_name
 
 # visualize run output details
 pf run visualize --name $run_name

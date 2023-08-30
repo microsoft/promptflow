@@ -21,8 +21,7 @@ With prompt flow, you will be able to:
 > Welcome to join us to make Prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
-> submitting [PRs](https://github.com/microsoft/promptflow/pulls),
-> and learn our recent [changes](./changelog/sdk-change-log.md).
+> submitting [PRs](https://github.com/microsoft/promptflow/pulls).
 
 This documentation site contains guides for prompt flow sdk, cli and vscode extension users.
 
@@ -30,9 +29,10 @@ This documentation site contains guides for prompt flow sdk, cli and vscode exte
 :grid-columns: 1 2 2 2
 - header: "🚀 Quick Start"
   content: "
-    A quick guide of how to developing and running your first prompt flow.<br/><br/>
+    How to develop and run your first prompt flow.<br/><br/>
     - [Start your prompt flow journey](how-to-guides/quick-start.md)<br/>
-    - [Run prompt flow in Azure AI](cloud/azureai/quick-start.md)<br/>
+    - [E2E development tutorial: chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)<br/>
+    - Learn more: [tutorials & samples](tutorials/index.md)<br/>
   "
 
 - header: "📒 How-to Guides"
@@ -93,10 +93,4 @@ reference/index
 :hidden:
 :maxdepth: 1
 cloud/index
-```
-
-```{toctree}
-:hidden:
-:maxdepth: 1
-changelog/index
 ```

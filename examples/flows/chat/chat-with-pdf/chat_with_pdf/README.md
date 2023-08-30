@@ -12,7 +12,6 @@ It's a console application that you start with a URL to a PDF file as argument. 
 ```
 OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
-OPENAI_API_VERSION=2023-03-15-preview
 EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
 CHAT_MODEL_DEPLOYMENT_NAME=gpt-35-turbo
 PROMPT_TOKEN_LIMIT=3000
