@@ -2,8 +2,9 @@ import pytest
 
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import FlowExecutor, LineResult, BulkResult
+from promptflow.executor._errors import OutputReferenceSkipped
 
-from ..utils import get_flow_inputs, get_yaml_file, get_bulk_inputs, get_flow_expected_result
+from ..utils import get_flow_inputs, get_yaml_file, get_bulk_inputs, get_flow_expected_result, WRONG_FLOW_ROOT
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -27,7 +28,12 @@ class TestExecutorActivate:
         self.assert_activate_bulk_run_result(results, expected_result)
 
     def test_wrong_flow_activate(self, dev_connections):
-        pass
+        flow_folder = "all_nodes_skipped"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+        with pytest.raises(OutputReferenceSkipped) as e:
+            executor.exec_line(get_flow_inputs(flow_folder, WRONG_FLOW_ROOT))
+        error_message = "Failed to extract output because the reference node 'third_node' has been skipped."
+        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     def assert_activate_bulk_run_result(self, result: BulkResult, expected_result):
         # Validate the flow outputs

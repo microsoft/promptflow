@@ -652,8 +652,8 @@ class FlowExecutor:
             if node.name not in nodes_outputs:
                 if node.name in skipped_nodes:
                     raise OutputReferenceSkipped(
-                        "Failed to extract output because the reference"
-                        f"node {output.reference.value} has been skipped.")
+                        "Failed to extract output because the reference "
+                        f"node {output.reference.value!r} has been skipped.")
                 raise ValueError(f"Node {output.reference.value} not found in results.")
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(

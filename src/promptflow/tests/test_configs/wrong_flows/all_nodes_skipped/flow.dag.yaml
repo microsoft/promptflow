@@ -1,0 +1,33 @@
+name: all_nodes_skipped
+inputs:
+  text:
+    type: string
+outputs:
+  result:
+    type: string
+    reference: ${third_node.output}
+nodes:
+- name: first_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: "hello"
+- name: second_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${first_node.output}
+- name: third_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${second_node.output}
