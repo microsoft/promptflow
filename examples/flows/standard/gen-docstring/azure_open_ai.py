@@ -18,7 +18,7 @@ class AOAI(ABC):
         openai.api_type = os.environ.get("API_TYPE")
         openai.organization = os.environ.get("ORGANIZATION")
         self.default_engine = None
-        self.engine = kwargs.pop('module', None) or os.environ.get("MODULE")
+        self.engine = kwargs.pop('model', None) or os.environ.get("MODEL")
         self.total_tokens = 4000
         self.max_tokens = kwargs.pop('max_tokens', None) or os.environ.get("MAX_TOKENS") or 1200
         if self.engine == "gpt-4-32k":

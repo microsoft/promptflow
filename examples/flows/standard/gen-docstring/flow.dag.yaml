@@ -30,7 +30,7 @@ nodes:
   inputs:
     divided: ${divide_code.output}
     connection: open_ai_connection
-    module: gpt-35-turbo
+    model: gpt-35-turbo
 - name: combine_code
   type: prompt
   source:

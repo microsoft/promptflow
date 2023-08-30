@@ -79,7 +79,7 @@ async def agenerate_docstring(divided: list[str]):
 @tool
 def generate_docstring(divided: list[str],
                        connection: Union[AzureOpenAIConnection, OpenAIConnection] = None,
-                       module: str = None):
+                       model: str = None):
     if isinstance(connection, AzureOpenAIConnection):
         os.environ["OPENAI_API_KEY"] = connection.api_key
         os.environ["OPENAI_API_BASE"] = connection.api_base
@@ -88,8 +88,8 @@ def generate_docstring(divided: list[str],
     elif isinstance(connection, OpenAIConnection):
         os.environ["OPENAI_API_KEY"] = connection.api_key
         os.environ["ORGANIZATION"] = connection.organization
-    if module:
-        os.environ["MODULE"] = module
+    if model:
+        os.environ["MODEL"] = model
 
     if sys.platform.startswith("win"):
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
