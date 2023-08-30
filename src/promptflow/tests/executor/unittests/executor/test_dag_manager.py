@@ -9,7 +9,10 @@ def create_test_node(name, input, skip=None, activate=None):
         name=name,
         tool="test_tool",
         connection="azure_open_ai_connection",
-        inputs={"test_input": input},
+        inputs={
+            "test_input": input,
+            "test_input2": InputAssignment("hello world")
+        },
         provider="test_provider",
         api="test_api",
         skip=skip,
@@ -47,7 +50,7 @@ class TestDAGManager:
                 skip=SkipCondition(
                     condition=InputAssignment(value="text", value_type=InputValueType.FLOW_INPUT),
                     condition_value="hello",
-                    return_value="skip"
+                    return_value=InputAssignment(value="text", value_type=InputValueType.FLOW_INPUT)
                 )
             ),
             create_test_node(
@@ -59,10 +62,11 @@ class TestDAGManager:
                 )
             ),
             create_test_node("node3", InputAssignment(value="node1", value_type=InputValueType.NODE_REFERENCE)),
+            create_test_node("node4", InputAssignment(value="node2", value_type=InputValueType.NODE_REFERENCE)),
         ]
         flow_inputs = {"text": "hello"}
         dag_manager = DAGManager(nodes, flow_inputs)
-        assert pop_skipped_node_names(dag_manager) == {"node1", "node2", "node3"}
+        assert pop_skipped_node_names(dag_manager) == {"node1", "node2", "node4"}
 
     def test_complete_nodes(self):
         nodes = [create_test_node("node1", InputAssignment("value1"))]
@@ -79,7 +83,7 @@ class TestDAGManager:
                 skip=SkipCondition(
                     condition=InputAssignment(value="text", value_type=InputValueType.FLOW_INPUT),
                     condition_value="hello",
-                    return_value="skip"
+                    return_value=InputAssignment(value="text", value_type=InputValueType.FLOW_INPUT)
                 )
             ),
             create_test_node(
@@ -94,21 +98,29 @@ class TestDAGManager:
         ]
         flow_inputs = {"text": "hello"}
         dag_manager = DAGManager(nodes, flow_inputs)
-        assert pop_skipped_node_names() == {"node1", "node3"}
-        assert pop_ready_node_names() == {"node2"}
-        dag_manager.complete_nodes({"node3": {"output1": "value3"}})
+        assert pop_skipped_node_names(dag_manager) == {"node1"}
+        assert pop_ready_node_names(dag_manager) == {"node2", "node3"}
+        dag_manager.complete_nodes({"node2": {"output1": "value1"}})
+        dag_manager.complete_nodes({"node3": {"output1": "value1"}})
         assert dag_manager.completed()
 
     def test_get_node_valid_inputs(self):
         nodes = [
-            Node(name="node1", inputs={}, outputs={"output1": "value1"}),
-            Node(name="node2", inputs={"input1": "node1"}, outputs={"output1": "value2"}),
-            Node(name="node3", inputs={"input1": "node2"}, outputs={"output1": "value3"}),
+            create_test_node("node1", InputAssignment("value1")),
+            create_test_node(
+                name="node2",
+                input=InputAssignment(
+                    value="node1",
+                    value_type=InputValueType.NODE_REFERENCE,
+                    section="output"
+                )
+            ),
         ]
         flow_inputs = {}
         dag_manager = DAGManager(nodes, flow_inputs)
+        dag_manager.complete_nodes({"node1": {"output1": "value1"}})
         valid_inputs = dag_manager.get_node_valid_inputs(nodes[1])
-        assert valid_inputs == {"input1": {"output1": "value1"}}
+        assert valid_inputs == {"test_input": {"output1": "value1"}, "test_input2": "hello world"}
 
     def test_get_skipped_node_outputs(self):
         nodes = [
@@ -118,7 +130,7 @@ class TestDAGManager:
                 skip=SkipCondition(
                     condition=InputAssignment(value="text", value_type=InputValueType.FLOW_INPUT),
                     condition_value="hello",
-                    return_value=InputAssignment("skip")
+                    return_value=InputAssignment(value="text", value_type=InputValueType.FLOW_INPUT),
                 )
             ),
             create_test_node(
@@ -133,8 +145,8 @@ class TestDAGManager:
         ]
         flow_inputs = {"text": "hello"}
         dag_manager = DAGManager(nodes, flow_inputs)
-        assert pop_skipped_node_names(dag_manager) == {"node1", "node2", "node3"}
+        assert pop_skipped_node_names(dag_manager) == {"node1", "node2"}
+        dag_manager.complete_nodes({"node3": {"output1": "value1"}})
         assert dag_manager.completed()
-        assert dag_manager.get_skipped_node_outputs(nodes[0]) == "skip"
+        assert dag_manager.get_skipped_node_outputs(nodes[0]) == "hello"
         assert dag_manager.get_skipped_node_outputs(nodes[1]) is None
-        assert dag_manager.get_skipped_node_outputs(nodes[2]) is None
