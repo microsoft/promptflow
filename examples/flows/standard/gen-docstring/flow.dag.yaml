@@ -29,7 +29,7 @@ nodes:
     path: generate_docstring_tool.py
   inputs:
     divided: ${divide_code.output}
-    connection: azure_open_ai_connection
+    connection: open_ai_connection
     module: gpt-35-turbo
 - name: combine_code
   type: prompt
