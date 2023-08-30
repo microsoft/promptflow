@@ -892,7 +892,7 @@ class TestCli:
                 expect_dict=expect_inputs,
             )
 
-    def test_flow_export(self):
+    def test_flow_build(self):
         source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
 
         def get_node_settings(_flow_dag_path: Path):
@@ -904,15 +904,15 @@ class TestCli:
         with tempfile.TemporaryDirectory() as temp_dir:
             run_pf_command(
                 "flow",
-                "export",
+                "build",
                 "--source",
                 source,
                 "--output",
                 temp_dir,
                 "--format",
                 "docker",
-                "--node-variant",
-                "summarize_text_content.variant_0",
+                "--variant",
+                "${summarize_text_content.variant_0}",
             )
 
             new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
