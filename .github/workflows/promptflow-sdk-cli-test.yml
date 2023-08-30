@@ -1,5 +1,7 @@
 name: promptflow-sdk-cli-test
 on:
+  schedule:
+    - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request:
     branches: [ main ]
     paths:
@@ -15,20 +17,31 @@ env:
   testWorkingDirectory: src/promptflow
 jobs:
   sdk_cli_tests:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
       uses: actions/checkout@v3
     - name: Display and Set Environment Variables
-      run: env | sort >> $GITHUB_OUTPUT
-      shell: bash -el {0}
+      run: |
+        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.9";
+        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.10";
+        else
+          echo "Unsupported OS: ${{ matrix.os }}";
+          exit 1;
+        fi
+        env | sort >> $GITHUB_OUTPUT
       id: display_env
-    - name: Conda Setup
+      shell: bash -el {0}
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
       uses: "./.github/actions/step_create_conda_environment"
-    - run: |
-        echo ${{ env.packageSetupType }}
-        echo ${{ env.testWorkingDirectory }}
-      shell: bash -l {0}
+      with:
+        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -54,8 +67,6 @@ jobs:
         az account show
         conda activate release-env
         export PYTHONPATH=${{ github.workspace }}/src/promptflow
-        echo "aaa=bbb" > ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
-        echo "ccc=ddd" >> ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
@@ -67,23 +78,28 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: pytest-results
-        path: ${{ env.testWorkingDirectory }}/*.xml
-      # Use always() to always run this step to publish test results when there are test failures
-    - name: Publish Test Results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action/composite@v2
-      with:
-        check_name: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        comment_title: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        files: |
-          ${{ env.testWorkingDirectory }}/test-results.xml
-    - name: Generate Coverage Report
-      if: (success() || failure())
-      uses: orgoro/coverage@v3.1
-      with:
-        coverageFile: ${{ env.testWorkingDirectory }}/coverage.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
-        thresholdAll: 0.4
+        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+        path: |
+          ${{ env.testWorkingDirectory }}/*.xml
+          ${{ env.testWorkingDirectory }}/htmlcov/
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: sdk_cli_tests
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    if: always()
 
-    
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 0.4
+        token: ${{ secrets.GITHUB_TOKEN }}

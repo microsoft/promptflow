@@ -1,5 +1,7 @@
 name: promptflow-executor-e2e-test
 on:
+  schedule:
+    - cron: "40 20 * * *" # Every day starting at 4:40 BJT
   pull_request:
     branches: [ main ]
     paths:
@@ -15,20 +17,31 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   executor_e2e_tests:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
       uses: actions/checkout@v3
     - name: Display and Set Environment Variables
-      run: env | sort >> $GITHUB_OUTPUT
-      shell: bash -el {0}
+      run: |
+        if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.9";
+        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.10";
+        else
+          echo "Unsupported OS: ${{ matrix.os }}";
+          exit 1;
+        fi
+        env | sort >> $GITHUB_OUTPUT
       id: display_env
-    - name: Conda Setup
+      shell: bash -el {0}
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
       uses: "./.github/actions/step_create_conda_environment"
-    - run: |
-        echo ${{ env.packageSetupType }}
-        echo ${{ env.testWorkingDirectory }}
-      shell: bash -l {0}
+      with:
+        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup"
       with:
@@ -42,6 +55,9 @@ jobs:
       uses: "./.github/actions/step_generate_configs"
       with:
         targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v1
+      id: cpu-cores
     - name: Run Coverage Test
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
@@ -57,29 +73,34 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests \
           -l eastus \
           -m "all" \
-          -n 4 \
+          -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: pytest-results
+        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
         path: |
           ${{ github.workspace }}/*.xml
           ${{ github.workspace }}/htmlcov/
-      # Use always() to always run this step to publish test results when there are test failures
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: executor_e2e_tests
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+    if: always()
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
     - name: Publish Test Results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action/composite@v2
+      uses: "./.github/actions/step_publish_test_results"
       with:
-        check_name: "Executor E2E Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        comment_title: "Executor E2E Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-e2e-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-        files: |
-          ${{ github.workspace }}/test-results.xml
-    - name: Generate Coverage Report
-      if: (success() || failure())
-      uses: orgoro/coverage@v3.1
-      with:
-        coverageFile: ${{ github.workspace }}/coverage.xml
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 0.55
         token: ${{ secrets.GITHUB_TOKEN }}
-        thresholdAll: 0.55
