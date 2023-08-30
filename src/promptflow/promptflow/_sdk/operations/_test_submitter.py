@@ -157,7 +157,7 @@ class TestSubmitter:
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
-                generator_outputs = self._has_generator_outupts(line_result.ouptut)
+                generator_outputs = self._get_generator_outputs(line_result.output)
                 if generator_outputs:
                     logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
             return line_result
@@ -292,6 +292,7 @@ class TestSubmitter:
                 flow_result = self.flow_test(
                     inputs=chat_inputs,
                     environment_variables=environment_variables,
+                    stream_log=False,
                     allow_generator_output=True,
                 )
                 self._raise_error_when_test_failed(flow_result, show_trace=True)
