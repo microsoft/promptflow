@@ -19,13 +19,13 @@ class PFSOperations:
 
     def list(self) -> List[dict]:
         # TODO: add query parameters
-        return self._client.get(f"{self.RUN_URL_PREFIX}/list").json()
+        return self._client.get(f"{self.RUN_URL_PREFIX}/list")
 
     def get(self, name: str) -> dict:
-        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}").json()
+        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}").json
 
     def get_metadata(self, name: str) -> dict:
-        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/metadata").json()
+        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/metadata").json
 
     def get_detail(self, name: str) -> dict:
-        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/detail").json()
+        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/detail").json
