@@ -96,24 +96,11 @@ jobs:
     if: always()
 
     steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts
-      - name: Display and Set Environment Variables
-        run: env | sort >> $GITHUB_OUTPUT
-        shell: bash -el {0}
-        id: display_env
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: "./.github/actions/step_publish_test_results"
         with:
-          check_name: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-          comment_title: "SDK CLI Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-sdk-cli-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-          files: "artifacts/**/test-*.xml"
-      - name: Generate Coverage Report
-        uses: orgoro/coverage@v3.1
-        with:
-          coverageFile: "artifacts/Test Results (Python 3.9) (OS ubuntu-latest)/coverage.xml"
+          osVersion: ubuntu-latest
+          pythonVersion: 3.9
+          coverageThreshold: 0.4
           token: ${{ secrets.GITHUB_TOKEN }}
-          thresholdAll: 0.4
 
