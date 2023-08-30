@@ -12,20 +12,20 @@ from promptflow._sdk.entities import AzureOpenAIConnection
 from promptflow._sdk.entities._connection import _Connection as Connection
 from promptflow._utils.utils import is_in_ci_pipeline
 
-from .utils import LocalServiceOperations, start_local_service, stop_local_service
+from .utils import PFSOperations, start_pfs, stop_pfs
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def local_service() -> None:
+def pfs() -> None:
     if is_in_ci_pipeline():
         yield
     else:
-        start_local_service()
+        start_pfs()
         yield
-        stop_local_service()
+        stop_pfs()
 
 
 @pytest.fixture(scope="session")
@@ -34,8 +34,8 @@ def pf_client() -> PFClient:
 
 
 @pytest.fixture(scope="session")
-def local_service_op() -> LocalServiceOperations:
-    return LocalServiceOperations()
+def pfs_op() -> PFSOperations:
+    return PFSOperations()
 
 
 _connection_setup = False

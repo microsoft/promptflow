@@ -6,7 +6,7 @@ from dataclasses import fields
 
 import pytest
 
-from ..utils import LocalServiceOperations
+from ..utils import PFSOperations
 from promptflow import PFClient
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._connection import _Connection as Connection
@@ -22,40 +22,40 @@ def create_run_against_multi_line_data(client: PFClient) -> Run:
 @pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.e2etest
 class TestRunAPIs:
-    def test_heartbeat(self, local_service_op: LocalServiceOperations) -> None:
-        response = local_service_op.heartbeat()
+    def test_heartbeat(self, pfs_op: PFSOperations) -> None:
+        response = pfs_op.heartbeat()
         assert response.status_code == 204
 
     def test_list_runs(
-        self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations
+        self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
     ) -> None:
         create_run_against_multi_line_data(pf_client)
-        response = local_service_op.list()
-        assert len(response) >= 1
+        runs = pfs_op.list()
+        assert len(runs) >= 1
 
     def test_get_run(
-        self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations
+        self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
     ) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        response = local_service_op.get(name=run.name)
-        assert response["name"] == run.name
-        assert response["properties"] == run.properties
+        run_from_pfs = pfs_op.get(name=run.name)
+        assert run_from_pfs["name"] == run.name
+        assert run_from_pfs["properties"] == run.properties
 
     def test_get_run_metadata(
-        self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations
+        self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
     ) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        metadata = local_service_op.get_metadata(name=run.name)
+        metadata = pfs_op.get_metadata(name=run.name)
         for field in fields(RunMetadata):
             assert field.name in metadata
         assert metadata["name"] == run.name
         assert metadata["display_name"] == run.display_name
 
     def test_get_run_detail(
-        self, pf_client: PFClient, local_aoai_connection: Connection, local_service_op: LocalServiceOperations
+        self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
     ) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        detail = local_service_op.get_detail(name=run.name)
+        detail = pfs_op.get_detail(name=run.name)
         for field in fields(RunDetail):
             assert field.name in detail
         assert isinstance(detail["flow_runs"], list)

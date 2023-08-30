@@ -9,10 +9,10 @@ from typing import List
 
 import requests
 
-LOCAL_SERVICE_PID_ENV_VAR = "LOCAL_SERVICE_PID"
+PFS_PID_ENV_VAR = "PFS_PID"
 
 
-class LocalServiceOperations:
+class PFSOperations:
     def __init__(self):
         self._host = "http://localhost:5000"
         self._run_endpoint = f"{self._host}/run/v1.0"
@@ -34,21 +34,21 @@ class LocalServiceOperations:
         return requests.get(f"{self._run_endpoint}/{name}/detail").json()
 
 
-def start_local_service() -> None:
+def start_pfs() -> None:
     proc = subprocess.Popen(
         "python -m promptflow._sdk._service.entry",
         stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
     )
-    os.environ[LOCAL_SERVICE_PID_ENV_VAR] = str(proc.pid)
+    os.environ[PFS_PID_ENV_VAR] = str(proc.pid)
 
 
-def stop_local_service() -> None:
+def stop_pfs() -> None:
     try:
         # windows does not support SIGTERM, so we need to check OS first
         if os.name == "nt":
-            os.kill(int(os.getenv(LOCAL_SERVICE_PID_ENV_VAR)), signal.CTRL_C_EVENT)
+            os.kill(int(os.getenv(PFS_PID_ENV_VAR)), signal.CTRL_C_EVENT)
         else:
-            os.kill(int(os.getenv(LOCAL_SERVICE_PID_ENV_VAR)), signal.SIGTERM)
+            os.kill(int(os.getenv(PFS_PID_ENV_VAR)), signal.SIGTERM)
     except:  # noqa: E722
         pass
