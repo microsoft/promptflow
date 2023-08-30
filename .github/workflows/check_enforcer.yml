@@ -19,15 +19,18 @@ jobs:
         run: |
           set -x
           pending_count=0
+          success_count=0
 
           while read check_run; do
-            echo $check_run | jq '{name, html_url, conclusion}'
-            if [ $(echo $check_run | jq '.conclusion == "success"') == "true" ]; then
+            if echo $check_run | grep -q '"conclusion":"success"' ; then
+              success_count=$((success_count+1))
+            else
               pending_count=$((pending_count+1))
             fi
           done <<<$(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs | jq -c '.check_runs[]')
 
           echo "Total not success test numbers: "$pending_count
+          echo "Total success test numbers: "$success_count
 
           if [ $pending_count -eq 0 ]; then
             gh api \
