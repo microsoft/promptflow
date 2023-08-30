@@ -80,16 +80,15 @@ class FlowNodesScheduler:
         return completed_nodes_outputs
 
     def _skip_nodes(self, dag_manager: DAGManager, nodes: List[Node]):
-        context = self.context.copy()
         try:
-            context.start()
+            self.context.start()
             for each_node in nodes:
-                context.current_node = each_node
+                self.context.current_node = each_node
                 node_outputs = dag_manager.get_skipped_node_outputs(each_node)
-                context.skip_node(node_outputs)
-                context.current_node = None
+                self.context.skip_node(node_outputs)
+                self.context.current_node = None
         finally:
-            context.end()
+            self.context.end()
 
     def _submit_nodes(self, executor: ThreadPoolExecutor, dag_manager: DAGManager, nodes):
         for each_node in nodes:
