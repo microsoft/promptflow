@@ -189,7 +189,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="Test the prompt flow or flow node in local.",
+        help_message="Test the prompt flow or flow node.",
         action_param_name="sub_action",
     )
 
