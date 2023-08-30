@@ -36,7 +36,7 @@ class LocalServiceOperations:
 
 def start_local_service() -> None:
     proc = subprocess.Popen(
-        "lpfs",
+        "python -m promptflow._sdk._service.entry",
         stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
     )
