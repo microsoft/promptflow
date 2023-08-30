@@ -15,7 +15,8 @@ class AOAI(ABC):
         openai.api_key = os.environ.get("OPENAI_API_KEY")
         openai.api_base = os.environ.get("OPENAI_API_BASE")
         openai.api_version = os.environ.get("OPENAI_API_VERSION")
-        openai.api_type = os.environ.get("API_TYPE") or "azure"
+        openai.api_type = os.environ.get("API_TYPE")
+        openai.organization = os.environ.get("ORGANIZATION")
         self.default_engine = None
         self.engine = kwargs.pop('module', None) or os.environ.get("MODULE")
         self.total_tokens = 4000

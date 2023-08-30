@@ -3,12 +3,13 @@ import asyncio
 import logging
 import os
 import sys
-from dataclasses import asdict
+from typing import Union
+
 from promptflow import tool
 from azure_open_ai import ChatLLM
 from divider import Divider
 from prompt import docstring_prompt, PromptLimitException
-from promptflow.connections import AzureOpenAIConnection
+from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
 
 
 def get_imports(content):
@@ -77,20 +78,16 @@ async def agenerate_docstring(divided: list[str]):
 
 @tool
 def generate_docstring(divided: list[str],
-                       connection: AzureOpenAIConnection = None,
+                       connection: Union[AzureOpenAIConnection, OpenAIConnection] = None,
                        module: str = None):
     if isinstance(connection, AzureOpenAIConnection):
-        connection_dict = asdict(connection)
-    else:
-        connection_dict = {}
-    if connection_dict.get("api_key"):
-        os.environ["OPENAI_API_KEY"] = connection_dict["api_key"]
-    if connection_dict.get("api_base"):
-        os.environ["OPENAI_API_BASE"] = connection_dict["api_base"]
-    if connection_dict.get("api_version"):
-        os.environ["OPENAI_API_VERSION"] = connection_dict["api_version"]
-    if connection_dict.get("API_TYPE"):
-        os.environ["API_TYPE"] = connection_dict["api_type"]
+        os.environ["OPENAI_API_KEY"] = connection.api_key
+        os.environ["OPENAI_API_BASE"] = connection.api_base
+        os.environ["OPENAI_API_VERSION"] = connection.api_version
+        os.environ["API_TYPE"] = connection.api_type
+    elif isinstance(connection, OpenAIConnection):
+        os.environ["OPENAI_API_KEY"] = connection.api_key
+        os.environ["ORGANIZATION"] = connection.organization
     if module:
         os.environ["MODULE"] = module
 
