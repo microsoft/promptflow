@@ -19,7 +19,7 @@ from .._vendor import _convert_request, _format_url_section
 
 if TYPE_CHECKING:
     # pylint: disable=unused-import,ungrouped-imports
-    from typing import Any, Callable, Dict, Generic, Optional, TypeVar
+    from typing import Any, Callable, Dict, Generic, Optional, TypeVar, Union
     T = TypeVar('T')
     ClsType = Optional[Callable[[PipelineResponse[HttpRequest, HttpResponse], T, Dict[str, Any]], Any]]
 
@@ -75,7 +75,7 @@ def build_poll_operation_status_request(
     api_version = kwargs.pop('api_version', "1.0.0")  # type: Optional[str]
     type = kwargs.pop('type', None)  # type: Optional[str]
 
-    accept = "text/plain, application/json"
+    accept = "application/json"
     # Construct URL
     url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/locations/{location}/operations/{operationId}')
     path_format_arguments = {
@@ -186,12 +186,16 @@ class FlowSessionsOperations(object):
         pipeline_response = self._client._pipeline.run(request, stream=False, **kwargs)
         response = pipeline_response.http_response
 
-        if response.status_code not in [200]:
+        if response.status_code not in [200, 202]:
             map_error(status_code=response.status_code, response=response, error_map=error_map)
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('object', pipeline_response)
+        if response.status_code == 200:
+            deserialized = self._deserialize('object', pipeline_response)
+
+        if response.status_code == 202:
+            deserialized = self._deserialize('object', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
@@ -213,7 +217,7 @@ class FlowSessionsOperations(object):
         type=None,  # type: Optional[str]
         **kwargs  # type: Any
     ):
-        # type: (...) -> str
+        # type: (...) -> Any
         """poll_operation_status.
 
         :param subscription_id: The Azure Subscription ID.
@@ -231,11 +235,11 @@ class FlowSessionsOperations(object):
         :param type:
         :type type: str
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: str, or the result of cls(response)
-        :rtype: str
+        :return: any, or the result of cls(response)
+        :rtype: any
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType[str]
+        cls = kwargs.pop('cls', None)  # type: ClsType[Any]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -263,7 +267,7 @@ class FlowSessionsOperations(object):
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('str', pipeline_response)
+        deserialized = self._deserialize('object', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})

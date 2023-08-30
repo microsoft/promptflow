@@ -559,6 +559,8 @@ try:
     from ._models_py3 import Seasonality
     from ._models_py3 import SecretConfiguration
     from ._models_py3 import SegmentedResult1
+    from ._models_py3 import ServiceLogRequest
+    from ._models_py3 import SetupFlowSessionRequest
     from ._models_py3 import SharingScope
     from ._models_py3 import Snapshot
     from ._models_py3 import SnapshotInfo
@@ -608,6 +610,7 @@ try:
     from ._models_py3 import TargetLags
     from ._models_py3 import TargetRollingWindowSize
     from ._models_py3 import TargetSelectorConfiguration
+    from ._models_py3 import Task
     from ._models_py3 import TaskControlFlowInfo
     from ._models_py3 import TaskReuseInfo
     from ._models_py3 import TensorflowConfiguration
@@ -1207,6 +1210,8 @@ except (SyntaxError, ImportError):
     from ._models import Seasonality  # type: ignore
     from ._models import SecretConfiguration  # type: ignore
     from ._models import SegmentedResult1  # type: ignore
+    from ._models import ServiceLogRequest  # type: ignore
+    from ._models import SetupFlowSessionRequest  # type: ignore
     from ._models import SharingScope  # type: ignore
     from ._models import Snapshot  # type: ignore
     from ._models import SnapshotInfo  # type: ignore
@@ -1256,6 +1261,7 @@ except (SyntaxError, ImportError):
     from ._models import TargetLags  # type: ignore
     from ._models import TargetRollingWindowSize  # type: ignore
     from ._models import TargetSelectorConfiguration  # type: ignore
+    from ._models import Task  # type: ignore
     from ._models import TaskControlFlowInfo  # type: ignore
     from ._models import TaskReuseInfo  # type: ignore
     from ._models import TensorflowConfiguration  # type: ignore
@@ -1424,6 +1430,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     JobType,
     KeyType,
     ListViewType,
+    LogLevel,
     LogVerbosity,
     LongRunningUpdateType,
     MLFlowAutologgerState,
@@ -1471,6 +1478,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     ScriptType,
     SeasonalityMode,
     Section,
+    SetupFlowSessionAction,
     ShortSeriesHandlingConfiguration,
     StackMetaLearnerType,
     StorageAuthType,
@@ -1480,6 +1488,8 @@ from ._azure_machine_learning_designer_service_client_enums import (
     TargetAggregationFunction,
     TargetLagsMode,
     TargetRollingWindowSizeMode,
+    TaskCreationOptions,
+    TaskStatus,
     TaskStatusCode,
     TaskType,
     ToolType,
@@ -2056,6 +2066,8 @@ __all__ = [
     'Seasonality',
     'SecretConfiguration',
     'SegmentedResult1',
+    'ServiceLogRequest',
+    'SetupFlowSessionRequest',
     'SharingScope',
     'Snapshot',
     'SnapshotInfo',
@@ -2105,6 +2117,7 @@ __all__ = [
     'TargetLags',
     'TargetRollingWindowSize',
     'TargetSelectorConfiguration',
+    'Task',
     'TaskControlFlowInfo',
     'TaskReuseInfo',
     'TensorflowConfiguration',
@@ -2271,6 +2284,7 @@ __all__ = [
     'JobType',
     'KeyType',
     'ListViewType',
+    'LogLevel',
     'LogVerbosity',
     'LongRunningUpdateType',
     'MLFlowAutologgerState',
@@ -2318,6 +2332,7 @@ __all__ = [
     'ScriptType',
     'SeasonalityMode',
     'Section',
+    'SetupFlowSessionAction',
     'ShortSeriesHandlingConfiguration',
     'StackMetaLearnerType',
     'StorageAuthType',
@@ -2327,6 +2342,8 @@ __all__ = [
     'TargetAggregationFunction',
     'TargetLagsMode',
     'TargetRollingWindowSizeMode',
+    'TaskCreationOptions',
+    'TaskStatus',
     'TaskStatusCode',
     'TaskType',
     'ToolType',

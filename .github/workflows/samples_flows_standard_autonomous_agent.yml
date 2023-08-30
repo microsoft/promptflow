@@ -6,7 +6,7 @@
 name: samples_flows_standard_autonomous_agent
 on:
   schedule:
-    - cron: "23 22 * * *" # Every day starting at 6:23 BJT
+    - cron: "11 20 * * *" # Every day starting at 4:11 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/flows/standard/autonomous-agent/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_autonomous_agent.yml ]

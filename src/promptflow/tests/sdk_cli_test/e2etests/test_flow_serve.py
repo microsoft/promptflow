@@ -15,7 +15,7 @@ def test_swagger(flow_serving_client):
         "info": {
             "title": "Promptflow[basic-with-connection] API",
             "version": "1.0.0",
-            "flow_name": "basic-with-connection",
+            "x-flow-name": "basic-with-connection",
         },
         "openapi": "3.0.0",
         "paths": {
