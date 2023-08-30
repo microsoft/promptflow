@@ -1,4 +1,4 @@
-# Run Prompt flow in Azure AI
+# Run prompt flow in Azure AI
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
@@ -17,7 +17,7 @@ Benefits of use Azure AI comparison to just run locally:
 3. A python environment, `python=3.9` is recommended.
 4. Install `promptflow` with extra dependencies and `promptflow-tools`.
 ```sh
-pip install promptflow[azure] promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow[azure] promptflow-tools
 ```
 5. Get the sample flows. 
    - Get access to the flow sample repository.

@@ -59,13 +59,14 @@ jobs:
           -m "all" \
           -n 4 \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
-    - name: Upload pytest test results
-      if: ${{ always() }}
+    - name: Upload Test Results
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results
-        path: 
+        path: |
           ${{ github.workspace }}/*.xml
+          ${{ github.workspace }}/htmlcov/
       # Use always() to always run this step to publish test results when there are test failures
     - name: Publish Test Results
       if: always()

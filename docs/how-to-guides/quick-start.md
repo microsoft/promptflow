@@ -11,7 +11,7 @@ This guide will walk you through the main user journey of prompt flow code-first
 1. A python environment, `python=3.9` is recommended.
 2. Install `promptflow` and `promptflow-tools`.
 ```sh
-pip install promptflow promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow promptflow-tools
 ```
 3. Get the sample flows. 
    - Get access to the flow sample repository.
