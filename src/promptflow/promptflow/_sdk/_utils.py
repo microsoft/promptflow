@@ -412,7 +412,7 @@ def _is_folder_to_compress(path: Path) -> bool:
     return stem_path.is_dir()
 
 
-def _resolve_folder_to_compress(include: str, dst_path: Path) -> None:
+def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -> None:
     """resolve the zip additional include, need to compress corresponding folder."""
     zip_additional_include = (base_path / include).resolve()
     folder_to_zip = zip_additional_include.parent / zip_additional_include.stem
@@ -457,13 +457,13 @@ def _merge_local_code_and_additional_includes(code_path: Path):
                 src_path = (code_path / item).resolve()
             dst_path = (Path(temp_dir) / src_path.name).resolve()
 
-            if not src_path.exists():
-                raise ValueError(f"Unable to find additional include {item}")
-
             if _is_folder_to_compress(src_path):
-                _resolve_folder_to_compress(item, Path(temp_dir))
+                _resolve_folder_to_compress(code_path, item, Path(temp_dir))
                 # early continue as the folder is compressed as a zip file
                 continue
+
+            if not src_path.exists():
+                raise ValueError(f"Unable to find additional include {item}")
 
             additional_includes_copy(src_path, dst_path, temp_dir)
         yield temp_dir
