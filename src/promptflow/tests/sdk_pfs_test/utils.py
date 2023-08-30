@@ -19,7 +19,7 @@ class PFSOperations:
 
     def list(self) -> List[dict]:
         # TODO: add query parameters
-        return self._client.get(f"{self.RUN_URL_PREFIX}/list")
+        return self._client.get(f"{self.RUN_URL_PREFIX}/list").json
 
     def get(self, name: str) -> dict:
         return self._client.get(f"{self.RUN_URL_PREFIX}/{name}").json
