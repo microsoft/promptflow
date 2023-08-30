@@ -40,6 +40,7 @@ class TestFlowRun:
             runtime=runtime,
         )
         assert isinstance(run, Run)
+        assert run.name.startswith("web_classification")
 
     def test_run_bulk_from_yaml(self, remote_client, pf, runtime):
         run_id = str(uuid.uuid4())
@@ -454,7 +455,7 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/flow_with_dict_input",
                 data=data_path,
-                column_mapping={"key": {"value": "1"}},
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime="fake_runtime",
             )
 
@@ -496,7 +497,7 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/flow_with_dict_input",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"key": {"value": "1"}},
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime=runtime,
             )
 

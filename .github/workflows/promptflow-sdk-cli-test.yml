@@ -63,8 +63,8 @@ jobs:
           -m "unittest or e2etest" \
           -n ${{ steps.cpu-cores.outputs.count }} \
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
-    - name: Upload pytest test results
-      if: ${{ always() }}
+    - name: Upload Test Results
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: pytest-results

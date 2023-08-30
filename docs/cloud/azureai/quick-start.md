@@ -1,4 +1,4 @@
-# Run Prompt flow in Azure AI
+# Run prompt flow in Azure AI
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
@@ -17,7 +17,7 @@ Benefits of use Azure AI comparison to just run locally:
 3. A python environment, `python=3.9` is recommended.
 4. Install `promptflow` with extra dependencies and `promptflow-tools`.
 ```sh
-pip install promptflow[azure] promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow[azure] promptflow-tools
 ```
 5. Get the sample flows. 
    - Get access to the flow sample repository.
@@ -33,7 +33,7 @@ git clone https://github.com/microsoft/promptflow.git
 ## Create necessary connections
 Connection helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 
-In this guide, we will use flow `web-classification` which uses connection `azure_open_ai_connection` inside, we need to set up the connection if we haven't added it before.
+In this guide, we will use flow `web-classification` which uses connection `open_ai_connection` inside, we need to set up the connection if we haven't added it before.
 
 Please go to workspace portal, click `Prompt flow` -> `Connections` -> `Create`, then follow the instruction to create your own connections. Learn more on [connections](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/concept-connections?view=azureml-api-2).
 

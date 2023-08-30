@@ -16,6 +16,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.exceptions import UserErrorException
 from promptflow.executor.flow_executor import MappingSourceNotFound
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -170,9 +171,9 @@ class TestFlowRun:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         column_mapping = {
-            "groundtruth": "data.answer",
-            "prediction": "run.outputs.category",
-            "variant_id": "data.variant_id",
+            "groundtruth": "${data.answer}",
+            "prediction": "${run.outputs.category}",
+            "variant_id": "${data.variant_id}",
         }
 
         metrics = {}
@@ -189,8 +190,6 @@ class TestFlowRun:
                 run=v,
                 column_mapping=column_mapping,
             )
-
-        # TODO: compare metrics
 
     def test_submit_run_from_yaml(self, local_client, pf):
         run_id = str(uuid.uuid4())
@@ -522,7 +521,7 @@ class TestFlowRun:
         run = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_dict_input",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
         )
         outputs = pf.runs._get_outputs(run=run)
         assert "dict" in outputs["output"][0]
@@ -535,7 +534,7 @@ class TestFlowRun:
             name=name,
             flow=f"{FLOWS_DIR}/flow_with_dict_input",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
         )
 
         # create a new run won't affect original run
@@ -544,7 +543,7 @@ class TestFlowRun:
                 name=name,
                 flow=f"{FLOWS_DIR}/flow_with_dict_input",
                 data=data_path,
-                column_mapping={"key": {"value": "1"}},
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
             )
         run = pf.runs.get(name)
         assert run.status == RunStatus.COMPLETED
@@ -594,7 +593,7 @@ class TestFlowRun:
         run = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_user_output",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
         )
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
@@ -614,3 +613,20 @@ class TestFlowRun:
         detail = pf.runs.get_details(name=run.name)
         detail.fillna("", inplace=True)
         assert len(detail) == 3
+
+    def test_flow_with_only_static_values(self, pf):
+        name = str(uuid.uuid4())
+        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=f"{FLOWS_DIR}/flow_with_dict_input",
+                data=data_path,
+                column_mapping={"key": {"value": "1"}},
+                name=name,
+            )
+
+        assert "Column mapping must contain at least one mapping binding" in str(e.value)
+        # run should not be created
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(name=name)

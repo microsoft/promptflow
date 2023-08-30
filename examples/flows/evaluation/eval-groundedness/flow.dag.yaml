@@ -38,7 +38,7 @@ inputs:
       Paraphrasing (IWP2005) . William Fedus, Ian Goodfellow, and Andrew M Dai.
       2018. Maskgan: Better text generation via \ufb01lling in the.arXiv
       preprint arXiv:1801.07736 . Dan Hendrycks and Kevin Gimpel. 2016. Bridging
-      nonlinearities and stochastic regularizers with gaus- sian error linear
+      nonlinearities and stochastic regularizers with gaussian error linear
       units. CoRR , abs\/1606.08415. Felix Hill, Kyunghyun Cho, and Anna
       Korhonen. 2016. Learning distributed representations of sentences from
       unlabelled data. In Proceedings of the 2016 Conference of the North
@@ -256,7 +256,5 @@ nodes:
     question: ${inputs.question}
     context: ${inputs.context}
     temperature: 0
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
+  connection: open_ai_connection
   api: chat
-  module: promptflow.tools.aoai

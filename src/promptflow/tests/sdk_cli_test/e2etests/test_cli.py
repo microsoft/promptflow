@@ -982,6 +982,7 @@ class TestCli:
                 f"{DATAS_DIR}/webClassification3.jsonl",
                 "--column-mapping",
                 "key=value",
+                "extra=${data.url}",
                 "--stream",
             )
         assert "user log" in f.getvalue()
@@ -1005,6 +1006,7 @@ class TestCli:
                 f"{DATAS_DIR}/webClassification3.jsonl",
                 "--column-mapping",
                 "key=value",
+                "extra=${data.url}",
             )
         assert "user log" not in f.getvalue()
         assert "error log" not in f.getvalue()

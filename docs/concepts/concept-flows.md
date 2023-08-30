@@ -4,7 +4,7 @@ While how LLMs work may be elusive to many developers, how LLM apps work is not 
 
 A flow in prompt flow is a DAG of functions (we call them [tools](./concept-tools.md)). These functions/tools connected via input/output dependencies and executed based on the topology by Prompt flow executor.
 
-A flow is represented as a YAML file and can be visualized with our [Visual Studio Code extension](../changelog/vscode-extension-change-log.md). Here are a few examples:
+A flow is represented as a YAML file and can be visualized with our Visual Studio Code extension. Here are a few examples:
 
 //TODO: add two screenshot and YAML (links?), better side-by-side
 

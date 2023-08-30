@@ -3,14 +3,52 @@ name: GitHub Event Handler
 on:
   check_suite:
     types: [completed]
-  issue_comment:
-    types: [created]
+
+env:
+  # note that this should be ${{ github.event.pull_request.head.sha }} for pull_request events
+  head_sha: ${{ github.event.check_suite.head_sha }}
 
 jobs:
   event-handler:
     name: ${{ github.event_name }}
     runs-on: ubuntu-latest
     steps:
-      - uses: azure/azure-sdk-actions@main
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Summarize check status
+        id: summarize_check_status
+        shell: bash
+        run: |
+          set -x
+          pending_count=0
+
+          while read check_run; do
+            echo $check_run | jq '{name, html_url, conclusion}'
+            if [ $(echo $check_run | jq '.conclusion == "success"') == "true" ]; then
+              pending_count=$((pending_count+1))
+            fi
+          done <<<$(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs | jq -c '.check_runs[]')
+
+          echo "Total not success test numbers: "$pending_count
+
+          if [ $pending_count -eq 0 ]; then
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
+              -f state='success' \
+              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
+              -f description='The build succeeded!' \
+              -f context='https://aka.ms/azsdk/checkenforcer' 
+          else
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
+              -f state='pending' \
+              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
+              -f description='Waiting for all checks to succeed' \
+              -f context='https://aka.ms/azsdk/checkenforcer' 
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

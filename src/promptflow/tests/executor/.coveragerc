@@ -5,3 +5,4 @@ omit =
     */promptflow/azure/*
     */promptflow/entities/*
     */promptflow/operations/*
+    *__init__.py*
