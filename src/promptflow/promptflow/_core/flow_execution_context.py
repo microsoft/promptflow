@@ -174,12 +174,12 @@ class FlowExecutionContext(ThreadLocalSingleton):
             # and shows stack trace in the error message to make it easy for user to troubleshoot.
             raise ToolExecutionError(node_name=node_name, module=f.__module__) from e
 
-    def skip_node(self, outputs=None):
-        node_run_id = self._generate_current_node_run_id()
-        flow_logger.info(f"Skipping node {self._current_node.name}. node run id: {node_run_id}")
+    def skip_node(self, node: Node, outputs=None):
+        node_run_id = self._generate_node_run_id(node)
+        flow_logger.info(f"Skipping node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
         self._run_tracker.skip_node_run(
-            node=self._current_node.name,
+            node=node.name,
             flow_run_id=self._run_id,
             parent_run_id=parent_run_id,
             run_id=node_run_id,
@@ -199,7 +199,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 logging.warning(f"Failed to persist cache result. run_id: {run_info.run_id}. Exception: {ex}")
 
     def _generate_current_node_run_id(self) -> str:
-        node = self._current_node
+        return self._generate_node_run_id(self._current_node)
+
+    def _generate_node_run_id(self, node: Node) -> str:
         if node.aggregation:
             # For reduce node, the id should be constructed by the flow run info run id
             return f"{self._run_id}_{node.name}_reduce"

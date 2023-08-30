@@ -82,11 +82,9 @@ class FlowNodesScheduler:
     def _skip_nodes(self, dag_manager: DAGManager, nodes: List[Node]):
         try:
             self.context.start()
-            for each_node in nodes:
-                self.context.current_node = each_node
-                node_outputs = dag_manager.get_skipped_node_outputs(each_node)
-                self.context.skip_node(node_outputs)
-                self.context.current_node = None
+            for node in nodes:
+                node_outputs = dag_manager.get_skipped_node_outputs(node)
+                self.context.skip_node(node, node_outputs)
         finally:
             self.context.end()
 
