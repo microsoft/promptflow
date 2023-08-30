@@ -29,7 +29,7 @@ class FlowOperations:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
-    ):
+    ) -> dict:
         """Test flow or node locally
 
         :param flow: path to flow directory to test
