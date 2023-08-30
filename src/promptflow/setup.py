@@ -78,7 +78,6 @@ setup(
         "console_scripts": [
             "pf = promptflow._cli._pf.entry:main",
             "pfazure = promptflow._cli._pf_azure.entry:main",
-            "lpfs = promptflow._sdk._service.entry:main",
         ],
     },
     include_package_data=True,
