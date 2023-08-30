@@ -263,7 +263,11 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        assert failed_run.status == "Failed"
+        # "update" run status to failed since currently all run will be completed unless there's bug
+        pf.runs.update(
+            name=failed_run.name,
+            status="Failed",
+        )
 
         run_name = str(uuid.uuid4())
         with pytest.raises(ValueError) as e:
@@ -389,12 +393,6 @@ class TestFlowRun:
         assert 'Run status: "Completed"' in out
         assert "Output path: " in out
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_stream_incomplete_run_summary(
         self, azure_open_ai_connection: AzureOpenAIConnection, local_client, capfd, pf
     ) -> None:
@@ -410,7 +408,7 @@ class TestFlowRun:
         local_client.runs.stream(run.name)
         # assert error message in stream API
         out, _ = capfd.readouterr()
-        assert 'Run status: "Failed"' in out
+        assert 'Run status: "Completed"' in out
         # won't print exception, use can get it from run._to_dict()
         # assert "failed with exception" in out
 
@@ -457,12 +455,6 @@ class TestFlowRun:
         )
         pf.visualize([run1, run2])
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_incomplete_run_visualize(
         self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient, capfd: pytest.CaptureFixture
     ) -> None:
@@ -471,9 +463,11 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        # stream run to ensure it is terminated, and it is expected to fail
-        run = pf.runs.stream(name=failed_run.name)
-        assert run.status == RunStatus.FAILED
+        # "update" run status to failed since currently all run will be completed unless there's bug
+        pf.runs.update(
+            name=failed_run.name,
+            status="Failed",
+        )
 
         # patch logger.error to print, so that we can capture the error message using capfd
         from promptflow.azure.operations import _run_operations
@@ -630,3 +624,26 @@ class TestFlowRun:
         # run should not be created
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=name)
+
+    def test_error_message_dump(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+        # even if all lines failed, the bulk run's status is completed.
+        assert failed_run.status == "Completed"
+        # error messages will store in local
+        local_storage = LocalStorageOperations(failed_run)
+
+        assert os.path.exists(local_storage._exception_path)
+        exception = local_storage.load_exception()
+        assert "Failed to run 1/1 lines: First error message is" in exception["message"]
+        # line run failures will be stored in additionalInfo
+        assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
+
+        # show run will get error message
+        run = pf.runs.get(name=failed_run.name)
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert run_dict["error"] == exception

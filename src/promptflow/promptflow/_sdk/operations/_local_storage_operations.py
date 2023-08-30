@@ -30,7 +30,7 @@ from promptflow._sdk._utils import generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
@@ -268,13 +268,26 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f)
 
-    def dump_exception(self, exception: Exception) -> None:
+    def dump_exception(self, exception: Exception = None, bulk_results: BulkResult = None) -> None:
+        """Dump exception to local storage.
+
+        :param exception: Exception raised during bulk run.
+        :param bulk_results: Bulk run outputs. If exception not raised, store line run error messages.
+        """
+        # extract line run errors
+        errors, line_runs = [], []
         try:
-            errors = self.get_error_messages()
-            line_runs = self._get_line_runs()
+            for line_result in bulk_results.line_results:
+                if line_result.run_info.error is not None:
+                    errors.append(
+                        {
+                            "line number": line_result.run_info.index,
+                            "error": line_result.run_info.error,
+                        }
+                    )
+                line_runs.append(line_result)
         except Exception:
-            errors = []
-            line_runs = []
+            pass
 
         if not exception:
             # use first line run error message as exception message if no exception raised
@@ -296,10 +309,10 @@ class LocalStorageOperations(AbstractRunStorage):
                 error=exception,
                 failed_lines=len(errors) if errors else "unknown",
                 total_lines=len(line_runs) if line_runs else "unknown",
-                additional_info={"errors": errors},
+                line_errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(ExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
+            json.dump(PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
 
     def load_exception(self) -> Dict:
         try:
@@ -329,25 +342,6 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             metrics = json.load(f)
         return metrics
-
-    def get_error_messages(self) -> List[dict]:
-        error_messages = []
-        with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            detail = json.load(f)
-            for run in detail["flow_runs"]:
-                if run["error"] is not None:
-                    error_messages.append(
-                        {
-                            "line number": run["index"],
-                            "error": run["error"],
-                        }
-                    )
-        return error_messages
-
-    def _get_line_runs(self):
-        with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            detail = json.load(f)
-        return detail["flow_runs"]
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""

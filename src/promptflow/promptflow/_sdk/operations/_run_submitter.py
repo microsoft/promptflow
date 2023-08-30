@@ -244,8 +244,11 @@ class RunSubmitter:
         if run.run is not None:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
-            if not isinstance(run.run, Run):
+            elif not isinstance(run.run, Run):
                 raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+            else:
+                # get the run again to make sure it's status is latest
+                run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
                 raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
             run.run.outputs = self.run_operations._get_outputs(run.run)
@@ -283,9 +286,8 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
-            # The bulk run is completed only when all line results are completed.
-            if all([r.run_info.status == Status.Completed for r in bulk_result.line_results]):
-                status = Status.Completed.value
+            # The bulk run is completed if the exec_bulk successfully completed.
+            status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
             logger.warning(f"Run {run.name} failed when executing in executor.")
@@ -303,9 +305,8 @@ class RunSubmitter:
             # result: outputs and metrics
             # TODO: retrieve root run system metrics from executor return, we might store it in db
             local_storage.persist_result(bulk_result)
-            # dump exception when run failed
-            if status == Status.Failed.value:
-                local_storage.dump_exception(exception)
+
+            local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
 
             self.run_operations.update(
                 name=run.name,
