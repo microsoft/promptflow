@@ -266,9 +266,7 @@ def _register(provider_cls, collection, type):
     for name, value in provider_cls.__dict__.items():
         if hasattr(value, "__original_function"):
             name = value.__original_function.__qualname__
-            value.__tool = function_to_tool_definition(
-                value, type=type, initialize_inputs=initialize_inputs
-            )
+            value.__tool = function_to_tool_definition(value, type=type, initialize_inputs=initialize_inputs)
             collection[name] = value.__tool
             module_logger.debug(f"Registered {name} as a builtin function")
     # Get the connection type - provider name mapping for execution use
