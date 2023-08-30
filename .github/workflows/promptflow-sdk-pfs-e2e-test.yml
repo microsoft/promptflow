@@ -75,11 +75,11 @@ jobs:
         export PYTHONPATH=${{ github.workspace }}/src/promptflow
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_local_service_test \
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test \
           -l eastus \
           -m "unittest or e2etest" \
           -n ${{ steps.cpu-cores.outputs.count }} \
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_local_service_test/.coveragerc
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test/.coveragerc
     - name: Upload pytest test results
       if: always()
       uses: actions/upload-artifact@v3
