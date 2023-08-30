@@ -203,7 +203,7 @@ class Node:
         if "activate" in data:
             node.activate = ActivateCondition.deserialize(data["activate"])
         if node.skip and node.activate:
-            raise NodeConditionConflictError(f"Node {node.name} can't have both skip and activate condition.")
+            raise NodeConditionConflictError(f"Node {node.name!r} can't have both skip and activate condition.")
 
         return node
 
