@@ -50,7 +50,7 @@ jobs:
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
         conda activate release-env
-        nohup lpfs &
+        lpfs &
     - name: Run Test
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
@@ -60,8 +60,6 @@ jobs:
         az account show
         conda activate release-env
         export PYTHONPATH=${{ github.workspace }}/src/promptflow
-        echo "aaa=bbb" > ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
-        echo "ccc=ddd" >> ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_local_service_test \
