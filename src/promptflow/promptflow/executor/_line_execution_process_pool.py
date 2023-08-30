@@ -375,8 +375,7 @@ def get_available_max_worker_count():
     process = psutil.Process(pid)
     process_memory_info = process.memory_info()
     process_memory = process_memory_info.rss / (1024 * 1024)  # in MB
-    # Consider avoiding frequent swap operations, which require leaving 30% of total memory.
-    # (total_memory*0.7-total_memory_in_use)/process_memory=(available_memory-0.3*total_memory)/process_memory
+    # To ensure system stability, reserve memory for system usage.
     available_max_worker_count = math.floor((available_memory - 0.3 * total_memory) / process_memory)
     # Set available max worker count to 1 if it's less than 1
     if available_max_worker_count < 1:
