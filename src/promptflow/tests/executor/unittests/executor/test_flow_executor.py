@@ -49,7 +49,7 @@ class TestFlowExecutor:
         ],
     )
     def test_apply_inputs_mapping(self, inputs, inputs_mapping, expected):
-        result = FlowExecutor._apply_inputs_mapping(inputs, inputs_mapping)
+        result = FlowExecutor.apply_inputs_mapping(inputs, inputs_mapping)
         assert expected == result, "Expected: {}, Actual: {}".format(expected, result)
 
     @pytest.mark.parametrize(
@@ -73,7 +73,7 @@ class TestFlowExecutor:
     )
     def test_apply_inputs_mapping_error(self, inputs, inputs_mapping, error_code, error_message):
         with pytest.raises(error_code) as e:
-            FlowExecutor._apply_inputs_mapping(inputs, inputs_mapping)
+            FlowExecutor.apply_inputs_mapping(inputs, inputs_mapping)
         assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(

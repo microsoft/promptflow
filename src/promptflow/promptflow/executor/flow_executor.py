@@ -245,11 +245,14 @@ class FlowExecutor:
 
         return update_environment_variables_with_connections(connections)
 
-    def _convert_flow_input_types(self, inputs: dict):
-        return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
+    def convert_flow_input_types(self, inputs: dict):
+        """
+        Convert flow inputs type if existing. Ignore missing inputs.
 
-    def _collect_run_infos(self):
-        return self._run_tracker.collect_all_run_infos_as_dicts()
+        return:
+            type converted inputs
+        """
+        return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
 
     @property
     def _default_inputs_mapping(self):
@@ -678,7 +681,7 @@ class FlowExecutor:
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
 
     @staticmethod
-    def _apply_inputs_mapping(
+    def apply_inputs_mapping(
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
@@ -741,7 +744,7 @@ class FlowExecutor:
                 "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
                 "and you may need to manually assign input mapping based on your input data."
             )
-        # For PRS scenario, _apply_inputs_mapping will be used for exec_line and line_number is not necessary.
+        # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:
             result[LINE_NUMBER_KEY] = inputs[LINE_NUMBER_KEY]
         return result
@@ -838,7 +841,7 @@ class FlowExecutor:
         if len(merged_list) == 0:
             raise EmptyInputAfterMapping("Input data does not contain a complete line. Please check your input.")
 
-        result = [FlowExecutor._apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
+        result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):

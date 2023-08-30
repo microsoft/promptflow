@@ -301,13 +301,13 @@ class TestExecutor:
     )
     def test_convert_flow_input_types(self, flow_folder, dev_connections) -> None:
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
-        ret = executor._convert_flow_input_types(inputs={"num": "11"})
+        ret = executor.convert_flow_input_types(inputs={"num": "11"})
         assert ret == {"num": 11}
-        ret = executor._convert_flow_input_types(inputs={"text": "12", "num": "11"})
+        ret = executor.convert_flow_input_types(inputs={"text": "12", "num": "11"})
         assert ret == {"text": "12", "num": 11}
         with pytest.raises(InputTypeError):
-            ret = executor._convert_flow_input_types(inputs={"num": "hello"})
-            executor._convert_flow_input_types(inputs={"num": "hello"})
+            ret = executor.convert_flow_input_types(inputs={"num": "hello"})
+            executor.convert_flow_input_types(inputs={"num": "hello"})
 
     def test_chat_flow_stream_mode(self, dev_connections) -> None:
         executor = FlowExecutor.create(get_yaml_file("python_stream_tools", FLOW_ROOT), dev_connections)
