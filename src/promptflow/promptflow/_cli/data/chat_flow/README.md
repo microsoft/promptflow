@@ -4,6 +4,8 @@ Chat flow is designed for conversational application development, building upon 
 ## Create connection for LLM tool to use
 You can follow these steps to create a connection required by a LLM tool.
 
+Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
+
 ```bash
 # Override keys with --set to avoid yaml file changes
 pf connection create --file openai.yaml --set api_key=<your_api_key> organization=<your_organization> --name open_ai_connection
@@ -14,10 +16,10 @@ Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_co
 # show registered connection
 pf connection show --name open_ai_connection
 ```
-Please refer to [promptflow connections](https://promptflow.azurewebsites.net/community/local/manage-connections.html) for more details.
+Please refer to connections [document](https://promptflow.azurewebsites.net/community/local/manage-connections.html) and [example](https://github.com/microsoft/promptflow/tree/main/examples/connections) for more details.
 
 ## Develop a chat flow
-Develop flow inputs and outputs
+
 The most important elements that differentiate a chat flow from a standard flow are **Chat Input**, **Chat History**, and **Chat Output**.
 
 - **Chat Input**: Chat input refers to the messages or queries submitted by users to the chatbot. Effectively handling chat input is crucial for a successful conversation, as it involves understanding user intentions, extracting relevant information, and triggering appropriate responses.
