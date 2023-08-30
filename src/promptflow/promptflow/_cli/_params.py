@@ -221,28 +221,28 @@ def add_param_workspace(parser):
     )
 
 
-def add_parser_export(parent_parser, entity_name: str):
-    description = f"Export a {entity_name} as a docker image or a package."
+def add_parser_build(parent_parser, entity_name: str):
+    description = f"Build a {entity_name} as a docker image or a package."
     parser = parent_parser.add_parser(
-        "export",
+        "build",
         description=description,
-        epilog=f"pf {entity_name} export --source <source> --output <output> --format " f"docker|package",
+        epilog=f"pf {entity_name} build --source <source> --output <output> --format " f"docker|package",
         help=description,
     )
     add_param_source(parser)
-    parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path for exported.")
+    parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path.")
     parser.add_argument(
-        "--format", "-f", required=True, type=str, help="The format to export in.", choices=["docker", "package"]
+        "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
     )
     parser.add_argument(
         "--variant",
         "-v",
         type=str,
-        help="The variant to be used in exported flow, will use default variant if not specified.",
+        help="The variant to be used in flow, will use default variant if not specified.",
     )
     add_param_verbose(parser)
     add_param_debug(parser)
-    parser.set_defaults(sub_action="export")
+    parser.set_defaults(sub_action="build")
 
 
 def add_param_debug(parser):

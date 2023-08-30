@@ -80,7 +80,7 @@ def setup_connections(azure_open_ai_connection: AzureOpenAIConnection):
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowLocalOperations:
-    def test_flow_export_as_docker(self, pf) -> None:
+    def test_flow_build_as_docker(self, pf) -> None:
         source = f"{FLOWS_DIR}/intent-copilot"
 
         output_path = f"{FLOWS_DIR}/export/linux"
@@ -91,7 +91,7 @@ class TestFlowLocalOperations:
 
         with mock.patch("promptflow._sdk.operations._flow_operations.generate_random_string") as mock_random_string:
             mock_random_string.return_value = "dummy1"
-            pf.flows.export(
+            pf.flows.build(
                 flow=source,
                 output=output_path,
                 format="docker",
@@ -110,10 +110,10 @@ class TestFlowLocalOperations:
 
         # e2e_test_docker_build_and_run(output_path)
 
-    def test_flow_export_as_docker_with_additional_includes(self, pf) -> None:
+    def test_flow_build_as_docker_with_additional_includes(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
         with tempfile.TemporaryDirectory() as temp_dir:
-            pf.flows.export(
+            pf.flows.build(
                 flow=source,
                 output=temp_dir,
                 format="docker",
@@ -130,11 +130,11 @@ class TestFlowLocalOperations:
                 assert target_path.is_file()
                 assert target_path.read_text() == additional_include_path.read_text()
 
-    def test_flow_export_as_docker_with_variant(self, pf) -> None:
+    def test_flow_build_as_docker_with_variant(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            pf.flows.export(
+            pf.flows.build(
                 flow=source,
                 output=temp_dir,
                 format="docker",
