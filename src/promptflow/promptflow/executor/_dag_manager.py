@@ -105,15 +105,15 @@ class DAGManager:
         return all_dependencies_skipped
 
     def _is_skip_condition_met(self, node: Node) -> bool:
-        if node.skip and not self._is_node_dependency_skipped(node.skip.condition):
-            return self._is_condition_met(node.skip.condition, node.skip.condition_value)
-        return False
+        return (
+            node.skip
+            and not self._is_node_dependency_skipped(node.skip.condition)
+            and self._is_condition_met(node.skip.condition, node.skip.condition_value)
+        )
 
     def _is_condition_met(self, condition: InputAssignment, condition_value) -> bool:
         condition = self._get_node_dependency_value(condition)
-        if condition == condition_value:
-            return True
-        return False
+        return condition == condition_value
 
     def _get_node_dependency_value(self, node_dependency: InputAssignment):
         return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)
