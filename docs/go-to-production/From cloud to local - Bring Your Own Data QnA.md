@@ -103,7 +103,7 @@ Click the promptflow extension icon to go to the promptflow management central p
 3. Jump to the "search_question_from_indexed_docs" node, which consume the Vector Index Lookup Tool in this flow. Check the path of your indexed docs you specify. All public accessible path is supported, such as: `https://github.com/Azure/azureml-assets/tree/main/assets/promptflow/data/faiss-index-lookup/faiss_index_sample`.
 
    > [!NOTE]
-   > If your indexed docs is stored in the workspace bind Azure blob storage (the path in your workspace is as the screenshot below), the local consume of it need Azure authentication.
+   > If your indexed docs is the data asset in your workspace (the path in your workspace is as the screenshot below), the local consume of it need Azure authentication.
    >
    > Before run the flow, make sure you have `az login` and connect to the Azure machine learning workspace.
    >
