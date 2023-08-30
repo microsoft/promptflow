@@ -33,6 +33,7 @@ runs:
       comment_title: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
   - name: Generate Coverage Report
+    if: ${{ inputs.coverageThreshold != 0 }}
     uses: orgoro/coverage@v3.1
     with:
       coverageFile: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
