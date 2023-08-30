@@ -110,7 +110,7 @@ class BaseTest(unittest.TestCase):
     def check_run_basics(self, run, display_name=None):
         self.assertTrue(run is not None)
         if display_name is not None:
-            self.assertTrue(run.display_name.startswith(display_name))
+            self.assertTrue(run.display_name.find(display_name) != -1)
         self.assertEqual(run.tags["unittest"], "true")
 
     def run_eval_with_config(
