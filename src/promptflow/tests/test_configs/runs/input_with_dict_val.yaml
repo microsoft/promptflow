@@ -4,4 +4,4 @@ column_mapping:
    key:
       val1: 1
       val2: 2
-
+   url: ${data.url}
