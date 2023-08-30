@@ -377,8 +377,15 @@ def get_available_max_worker_count():
     process_memory = process_memory_info.rss / (1024 * 1024)  # in MB
     # To ensure system stability, reserve memory for system usage.
     available_max_worker_count = math.floor((available_memory - 0.3 * total_memory) / process_memory)
-    # Set available max worker count to 1 if it's less than 1
     if available_max_worker_count < 1:
+        # For the case of vector db, at most 1/3 of the memory will be used, which is 33% of the memory
+        # In this scenario, the "available_max_worker_count" may be 0, which will cause an error
+        # "Number of processes must be at least 1" when creating ThreadPool
+        # So set "available_max_worker_count" to 1 if it's less than 1
+        # TODO: For the case of vector db, Optimize execution logic
+        # 1. Let the main process not consume memory because it does not actually invoke
+        # 2. When the degree of parallelism is 1, main process executes the task directly and not
+        #  create the child process
         logger.warning(f"Available max worker count {available_max_worker_count} is less than 1, set it to 1.")
         available_max_worker_count = 1
     logger.info(
