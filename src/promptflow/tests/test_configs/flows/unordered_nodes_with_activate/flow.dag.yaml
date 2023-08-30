@@ -2,6 +2,8 @@ name: node_wrong_order
 inputs:
   text:
     type: string
+  skip:
+    type: bool
 outputs:
   result:
     type: string
@@ -28,3 +30,6 @@ nodes:
     path: test.py
   inputs:
     text: ${first_node}
+  activate:
+    when: ${inputs.skip}
+    is: true

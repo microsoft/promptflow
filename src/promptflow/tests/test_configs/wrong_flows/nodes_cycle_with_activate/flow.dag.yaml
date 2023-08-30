@@ -1,19 +1,12 @@
-name: node_wrong_order
+name: node_cycle_with_activate
 inputs:
   text:
     type: string
 outputs:
   result:
     type: string
-    reference: ${third_node}
+    reference: ${second_node}
 nodes:
-- name: third_node
-  type: python
-  source:
-    type: code
-    path: test.py
-  inputs:
-    text: ${second_node}
 - name: first_node
   type: python
   source:
@@ -21,6 +14,10 @@ nodes:
     path: test.py
   inputs:
     text: ${inputs.text}
+  activate:
+    when: ${second_node.output}
+    is: true
+  aggregation: true
 - name: second_node
   type: python
   source:
@@ -28,3 +25,4 @@ nodes:
     path: test.py
   inputs:
     text: ${first_node}
+  aggregation: true
