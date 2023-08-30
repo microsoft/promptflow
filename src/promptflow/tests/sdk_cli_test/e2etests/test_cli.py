@@ -254,6 +254,9 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            previous_log_content = f.read()
 
         # Test without input
         run_pf_command(
@@ -264,6 +267,10 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert previous_log_content not in log_content
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
