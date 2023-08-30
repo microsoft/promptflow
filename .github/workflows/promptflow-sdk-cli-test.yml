@@ -67,8 +67,6 @@ jobs:
         az account show
         conda activate release-env
         export PYTHONPATH=${{ github.workspace }}/src/promptflow
-        echo "aaa=bbb" > ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
-        echo "ccc=ddd" >> ${{ github.workspace }}/src/promptflow/tests/test_configs/connections/.env
         python "../../scripts/building/run_coverage_tests.py" \
           -p promptflow \
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test \
@@ -96,11 +94,12 @@ jobs:
     if: always()
 
     steps:
-      - name: Publish Test Results
-        uses: "./.github/actions/step_publish_test_results"
-        with:
-          osVersion: ubuntu-latest
-          pythonVersion: 3.9
-          coverageThreshold: 0.4
-          token: ${{ secrets.GITHUB_TOKEN }}
-
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 0.4
+        token: ${{ secrets.GITHUB_TOKEN }}

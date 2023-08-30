@@ -95,10 +95,12 @@ jobs:
     if: always()
 
     steps:
-      - name: Publish Test Results
-        uses: "./.github/actions/step_publish_test_results"
-        with:
-          osVersion: ubuntu-latest
-          pythonVersion: 3.9
-          coverageThreshold: 0.55
-          token: ${{ secrets.GITHUB_TOKEN }}
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 0.55
+        token: ${{ secrets.GITHUB_TOKEN }}
