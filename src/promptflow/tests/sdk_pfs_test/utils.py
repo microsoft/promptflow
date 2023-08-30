@@ -4,7 +4,7 @@
 
 from typing import List
 
-from flask.testing import FlaskClient, TestResponse
+from flask.testing import FlaskClient
 
 
 class PFSOperations:
@@ -14,7 +14,7 @@ class PFSOperations:
     def __init__(self, client: FlaskClient):
         self._client = client
 
-    def heartbeat(self) -> TestResponse:
+    def heartbeat(self):
         return self._client.get("/heartbeat")
 
     def list(self) -> List[dict]:
