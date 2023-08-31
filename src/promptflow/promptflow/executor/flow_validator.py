@@ -31,7 +31,10 @@ class FlowValidator:
                 if i.value_type != InputValueType.NODE_REFERENCE:
                     continue
                 if i.value not in dependencies:
-                    msg = f"Node '{n.name}' references node '{i.value}' which is not in the flow '{flow.name}'."
+                    msg = (
+                        f"Node '{n.name}' references a non-existent node '{i.value}' in flow '{flow.name}'. "
+                        f"Please review your flow YAML to ensure that the node name is accurately specified."
+                    )
                     raise NodeReferenceNotFound(message=msg)
                 dependencies[n.name].add(i.value)
         sorted_nodes = []
@@ -42,7 +45,12 @@ class FlowValidator:
             )
             node_to_pick = next(available_nodes_iterator, None)
             if not node_to_pick:
-                raise NodeCircularDependency(message=f"There is a circular dependency in the flow '{flow.name}'.")
+                remaining_nodes = set(dependencies.keys()) - picked
+                raise NodeCircularDependency(
+                    message=f"Node circular dependency has been detected among the nodes in the flow '{flow.name}'. "
+                    f"Kindly review the reference relationships for the nodes {remaining_nodes} "
+                    f"and resolve the circular reference issue in the flow YAML."
+                )
             sorted_nodes.append(node_to_pick)
             picked.add(node_to_pick.name)
         if any(n1.name != n2.name for n1, n2 in zip(flow.nodes, sorted_nodes)):
@@ -62,7 +70,9 @@ class FlowValidator:
         for node in flow.nodes:
             if node.name in node_names:
                 raise DuplicateNodeName(
-                    message=f"Node name '{node.name}' is duplicated in the flow '{flow.name}'.",
+                    message=f"Node with name '{node.name}' appears more than once in the node definitions in the "
+                    f"flow '{flow.name}', which is not allowed. To address this issue, please review your "
+                    f"flow YAML and either rename or remove nodes with identical names.",
                 )
             node_names.add(node.name)
         for node in flow.nodes:
@@ -70,7 +80,12 @@ class FlowValidator:
                 if v.value_type != InputValueType.FLOW_INPUT:
                     continue
                 if v.value not in flow.inputs:
-                    msg = f"Node '{node.name}' references flow input '{v.value}' which is not in the flow."
+                    msg = (
+                        f"Node '{node.name}' references flow input '{v.value}' which is not defined in "
+                        f"flow '{flow.name}'. To resolve this issue, please review your flow YAML, "
+                        f"ensuring that you either add the missing flow inputs or adjust node reference "
+                        f"to the correct flow input."
+                    )
                     raise InputReferenceNotFound(message=msg)
         return FlowValidator._ensure_nodes_order(flow)
 
