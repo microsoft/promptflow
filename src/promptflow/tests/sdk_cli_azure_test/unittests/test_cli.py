@@ -1,7 +1,6 @@
 import os
-import re
 import sys
-from typing import Any, List, Match, cast
+from typing import List
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -42,12 +41,7 @@ class TestAzureCli:
     def test_pf_azure_version(self, capfd):
         run_pf_command("--version")
         out, _ = capfd.readouterr()
-        # read version from _version.py
-        with open("./promptflow/_version.py", encoding="utf-8") as f:
-            version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(
-                1
-            )
-        assert str(out).startswith(version)
+        assert out == "0.0.1\n"
 
     def test_run_show(self, mocker: MockFixture, operation_scope_args):
         mocked = mocker.patch.object(RunOperations, "get")

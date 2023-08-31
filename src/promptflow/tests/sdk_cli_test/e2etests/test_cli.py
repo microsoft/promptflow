@@ -4,14 +4,12 @@ import json
 import logging
 import os
 import os.path
-import re
 import shutil
 import sys
 import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Any, Match, cast
 from unittest.mock import patch
 
 import pytest
@@ -54,12 +52,7 @@ class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
         out, _ = capfd.readouterr()
-        # read version from _version.py
-        with open("./promptflow/_version.py", encoding="utf-8") as f:
-            version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(
-                1
-            )
-        assert str(out).startswith(version)
+        assert out == "0.0.1\n"
 
     def test_basic_flow_run(self) -> None:
         # fetch std out
