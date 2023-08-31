@@ -36,7 +36,7 @@ class DAGManager:
         # Confirm node should be skipped
         skipped_nodes: List[Node] = []
         for node in self._pending_nodes.values():
-            if self._is_node_ready(node) and self._is_node_skipped(node):
+            if self._is_node_ready(node) and self._is_node_skippable(node):
                 self._skipped_nodes[node.name] = node
                 skipped_nodes.append(node)
         for node in skipped_nodes:
@@ -80,7 +80,7 @@ class DAGManager:
                 return False
         return True
 
-    def _is_node_skipped(self, node: Node) -> bool:
+    def _is_node_skippable(self, node: Node) -> bool:
         """Returns True if the node should be skipped."""
         # Skip node if the skip condition is met
         if self._is_skip_condition_met(node):
