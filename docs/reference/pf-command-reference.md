@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
 
-Manage local prompt flow resources with the prompt flow CLI.
+Manage prompt flow resources with the prompt flow CLI.
 
 | Command | Description |
 | --- | --- |
@@ -19,7 +19,7 @@ Manage promptflow flow flows.
 | Command | Description |
 | --- | --- |
 | [pf flow init](#pf-flow-init) | Initialize a prompt flow directory. |
-| [pf flow test](#pf-flow-test) | Test the prompt flow or flow node in local. |
+| [pf flow test](#pf-flow-test) | Test the prompt flow or flow node. |
 | [pf flow serve](#pf-flow-serve) | Serving a flow as an endpoint. |
 
 ### pf flow init
@@ -84,7 +84,7 @@ Automatic yes to all prompts; assume 'yes' as answer to all prompts and run non-
 
 ### pf flow test
 
-Test the prompt flow or flow node in local.
+Test the prompt flow or flow node.
 
 ```bash
 pf flow test --flow
@@ -343,7 +343,7 @@ Manage prompt flow runs.
 | [pf run create](#pf-run-create) | Create a run. |
 | [pf run update](#pf-run-update) | Update a run metadata, including display name, description and tags. |
 | [pf run stream](#pf-run-stream) | Stream run logs to the console. |
-| [pf run list](#pf-run-list) | List runs locally. |
+| [pf run list](#pf-run-list) | List runs. |
 | [pf run show](#pf-run-show) | Show details for a run. |
 | [pf run show-details](#pf-run-show-details) | Preview a run's intput(s) and output(s). |
 | [pf run show-metrics](#pf-run-show-metrics) | Print run metrics to the console. |
@@ -475,7 +475,7 @@ Name of the run.
 
 ### pf run list
 
-List runs locally.
+List runs.
 
 ```bash
 pf run list [--all-results]

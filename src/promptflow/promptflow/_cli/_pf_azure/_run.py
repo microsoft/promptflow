@@ -79,7 +79,7 @@ def add_parser_run_list(subparsers):
     epilog = """
 Examples:
 
-# List runs status locally:
+# List runs status:
 pfazure run list
 # List most recent 10 runs status:
 pfazure run list --max-results 10

@@ -195,7 +195,7 @@ def add_run_list(subparsers):
     epilog = """
 Examples:
 
-# List runs status locally:
+# List runs status:
 pf run list
 # List most recent 10 runs status:
 pf run list --max-results 10
@@ -260,7 +260,7 @@ pf run list --output table
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="List runs locally.",
+        help_message="List runs.",
         action_param_name="sub_action",
     )
 
