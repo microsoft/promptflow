@@ -482,7 +482,11 @@ class Flow:
 
     def get_connection_names(self):
         connection_names = set({})
-        for node in self.nodes:
+        nodes = [
+            self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
+            for node in self.nodes
+        ]
+        for node in nodes:
             if node.connection:
                 connection_names.add(node.connection)
                 continue
@@ -496,6 +500,8 @@ class Flow:
         node = self.get_node(node_name)
         if not node:
             return []
+        if node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
         tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node, self._working_dir)
         if tool:
             return list(self._get_connection_name_from_tool(tool, node).keys())
