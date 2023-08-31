@@ -435,7 +435,10 @@ def _merge_local_code_and_additional_includes(code_path: Path):
         if src.is_file():
             dst.parent.mkdir(parents=True, exist_ok=True)
             if dst.exists():
-                relative_path = dst.relative_to(temp_dir)
+                try:
+                    relative_path = dst.relative_to(temp_dir)
+                except Exception:
+                    relative_path = dst
                 logger.warning("Found duplicate file in additional includes, "
                                f"additional include file {src} will overwrite {relative_path}")
             shutil.copy2(src, dst)
