@@ -153,7 +153,7 @@ jobs:
       uses: "./.github/actions/step_publish_test_results"
       with:
         osVersion: ubuntu-latest
-        pythonVersion: 3.9
+        pythonVersion: 3.11
         coverageThreshold: 0.3
         testName: promptflow-executor-unit-test
         token: ${{ secrets.GITHUB_TOKEN }}
