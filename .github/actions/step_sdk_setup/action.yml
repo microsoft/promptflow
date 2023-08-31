@@ -5,7 +5,7 @@ inputs:
     type: string
   setupType:
     required: false
-    default: promptflow
+    default: promptflow_with_extra
     type: string
 runs:
   using: composite
@@ -28,8 +28,8 @@ runs:
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
-  - name: 'Build and install: promptflow'
-    if: inputs.setupType == 'promptflow'
+  - name: 'Build and install: promptflow with extra'
+    if: inputs.setupType == 'promptflow_with_extra'
     shell: bash -el {0}
     run: |-
       conda activate release-env
