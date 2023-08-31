@@ -3,7 +3,7 @@
 ## CLI
 
 ```shell
-# run with local eval
+# run with eval
 ## Note: cloud evaluation doesn't support specify input or output now
 pf eval --variants "BULK_TEST_URL1, BULK_TEST_URL2" --flow ../classification_accuracy_evaluation --input ./data/denormalized-flat.jsonl --column-mapping "k1=v1,k2=v2" --runtime pfci
 # run with bulitin eval

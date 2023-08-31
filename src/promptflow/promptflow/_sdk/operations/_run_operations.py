@@ -37,7 +37,7 @@ class RunOperations:
         *,
         list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
     ) -> List[Run]:
-        """List runs locally.
+        """List runs.
 
         :param max_results: Max number of results to return. Default: MAX_RUN_LIST_RESULTS.
         :type max_results: Optional[int]

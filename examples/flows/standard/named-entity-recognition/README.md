@@ -37,9 +37,9 @@ pf connection show -n open_ai_connection
 ```
 
 
-## Run flow in local
+## Run flow
 
-### Run locally with single line input
+### Run with single line input
 
 ```bash
 # test with default input value in flow.dag.yaml
