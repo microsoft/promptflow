@@ -55,9 +55,10 @@ class TestCli:
         run_pf_command("--version")
         out, err = capfd.readouterr()
         # read version from _version.py
-        version_path = "./promptflow/_version.py"
-        with open(version_path, encoding="utf-8") as f:
-            version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(1)
+        with open("./promptflow/_version.py", encoding="utf-8") as f:
+            version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(
+                1
+            )
         assert str(out).startswith(version)
 
     def test_basic_flow_run(self) -> None:
