@@ -50,7 +50,9 @@ runs:
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
-      pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
+      wheel_file=$(ls ./dist | grep 'promptflow')
+      echo "########### wheel file: $wheel_file ###########"
+      pip install "./dist/$wheel_file[azure]"
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
