@@ -9,8 +9,8 @@
 - First preview version with major CLI & SDK features.
 
 ### Features added
-- **pf flow**: init/test/serve/build
-- **pf run**: create/update/stream/list/show/show-details/show-metrics/visualize/archive/restore/build
+- **pf flow**: init/test/serve/export
+- **pf run**: create/update/stream/list/show/show-details/show-metrics/visualize/archive/restore/export
 - **pf connection**: create/update/show/list/delete
 - Azure AI support:
     - **pfazure run**: create/list/stream/show/show-details/show-metrics/visualize
