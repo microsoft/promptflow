@@ -6,6 +6,7 @@ import importlib
 import importlib.util
 import logging
 import traceback
+from azure.core.exceptions import ClientAuthenticationError
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Tuple, Union
@@ -19,6 +20,7 @@ from promptflow._core.tool_meta_generator import (
     generate_python_tool,
     load_python_module_from_file,
 )
+from promptflow._utils.retry_utils import retry
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
@@ -117,6 +119,7 @@ class BuiltinsManager:
         return BuiltinsManager._load_package_tool(tool.name, tool.module, tool.class_name, tool.function, node_inputs)
 
     @staticmethod
+    @retry(ClientAuthenticationError, tries=5, delay=3, backoff=1, logger=module_logger)
     def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]):
         """Load package in tool with given import path and node inputs."""
         m = importlib.import_module(module_name)
