@@ -9,32 +9,36 @@ This guide will walk you through the fist step using of prompt flow code-first e
 **Prerequisite** - To make the most of this tutorial, you'll need:
 
 - Know how to program with Python :)
-- _A basic understanding of Machine Learning can be beneficial, but it's not mandatory._
+- A basic understanding of Machine Learning can be beneficial, but it's not mandatory._
 
 
 **Learning Objectives** - Upon completing this tutorial, you should learn how to:
-- Setup your dev environment to run prompt flow
-    - Setup A Python environment
+- Setup your python environment to run prompt flow
+    - Setup a Python environment
 - Clone a sample flow & understand what's a flow
     - A local clone of the [Prompt Flow repository](https://github.com/microsoft/promptflow)
     - Understand the structure of prompt flow directory
-- Test the flow with your custom inputs 
+- Test the flow with your customized inputs 
     - Understand how to edit the flow using visual editor or yaml
     - Test the flow using your favorite experience: CLI, SDK or VS Code Extension.
 
 
 ## Set up your dev environment
 
-1. A python environment, `python=3.9` is recommended.
-TODO how to install conda
-how to select conda from vscode. maybe a screenshot.
+1. A python environment with version `python=3.9`. It's recommended to use python environment manager [miniconda](https://docs.conda.io/en/latest/miniconda.html), but you can also use other alternatives like `virtualenv`. After you have installed miniconda, run below commands to create a python environment
+```bash
+conda create --name promptflow_env python=3.9
+conda activate promptflow_env
+```
 
 2. Install `promptflow` and `promptflow-tools`.
 ```sh
 pip install promptflow promptflow-tools
 ```
-TODO Check CLI/SDK install success.
+
+3. Check the installation.
 ```bash
+# should print promptflow version, e.g. "0.1.0b3"
 pf -v
 ```
 
@@ -53,7 +57,6 @@ A flow in prompt flow serves as an executable workflow that streamlines the deve
 
 ```bash
 git clone https://github.com/microsoft/promptflow.git
-
 ```
 
 ### Understand flow directory
@@ -65,30 +68,47 @@ cd promptflow/examples/flows/standard/web-classification
 
 A flow directory is a directory that contains all contents of a flow.
 
-TODO add screenshot of directory
+![flow_dir](../media/how-to-guides/quick-start/flow_directory.png)
 
 ### Understand the flow yaml
 The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the DAG(Directed Acyclic Graph) of a flow. The flow dag of this sample likes below:
 
 ![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
 
-### Using VS Code Extension to visualize the flow
-Note: VS Code Extension is optional but highly ...
+This graph is rendered by VS Code extension `Prompt flow` which will be introduced in the next section.
 
-Prerequisites for VS Code extension.
+### Using VS Code Extension to visualize the flow
+_Note: VS Code Extension is optional but highly recommended._
+
+1. Prerequisites for VS Code extension.
    - Install latest stable version of [VS Code](https://code.visualstudio.com/)
    - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
 
-Install Prompt flow VS Code extension
+2. Install Prompt flow VS Code extension
    - <TODO: update extension link in the VS Code extension marketplace>
 ![install_extension](../media/how-to-guides/quick-start/install_from_vsix.png)
-Open dag in vscode. (code & visual)
+
+3. Select python interpreter
+   
+   ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
+   
+   ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_1.png)
+
+
+4. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
+   
+   ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
+
+   ![vscode](../media/how-to-guides/quick-start/vs_code_dag_1.png)
+
 
 
 ## Develop and test your flow
 
-### How to edit the flow: change the input of the flow
-TODO add description here.
+### How to edit the flow
+
+To test your flow with varying input data, you have the option to modify the default input. If you are well-versed with the structure, you may also add or remove nodes to alter the flow's arrangement.
+
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
@@ -96,14 +116,8 @@ inputs:
     type: string
     # change the default value of input url here
     default: https://play.google.com/store/apps/details?id=com.twitter.android
+...
 ```
-
-::::{tab-set}
-
-:::{tab-item} CLI
-:sync: CLI
-
-![q_0](../media/how-to-guides/quick-start/flow-directory-and-dag-yaml.png)
 
 ### Create necessary connections
 
@@ -118,7 +132,7 @@ In this guide, we will use flow [web-classification](https://github.com/microsof
 
 Firstly we need a connection yaml file `connection.yaml`:
 
-If you are using Azure Open AI, prepare your resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+If you are using Azure Open AI, prepare your resource follow with this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
 name: open_ai_connection
@@ -146,6 +160,7 @@ pf connection create -f connection.yaml
 More command details can be found in [CLI reference](../reference/pf-command-reference.md)
 
 :::
+
 :::{tab-item} SDK
 :sync: SDK
 
@@ -159,7 +174,7 @@ from promptflow.entities import AzureOpenAIConnection
 pf = PFClient()
 
 try:
-    conn_name = "azure_open_ai_connection"
+    conn_name = "open_ai_connection"
     conn = pf.connections.get(name=conn_name)
     print("using existing connection")
 except:
@@ -181,17 +196,34 @@ print(conn)
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
-Find the "connections" section on the Prompt flow left side bar. The "Create connection" button is on the top right.
 
-![vsc_add_connection](../media/how-to-guides/quick-start/vsc-add-connection.png)
-TODO add more screenshot.
+
+1. Click the promptflow icon to enter promptflow control panel
+
+    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_0.png)
+
+2. Create your connection.
+
+    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_1.png)
+    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_2.png)
+    ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_3.png)
+
 
 :::
 
 ::::
 
 ### Test the flow
-Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/standard/`
+Assuming you are in working directory `promptflow/examples/flows/standard/`
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+Change the default input to the value you want to test.
+
+![q_0](../media/how-to-guides/quick-start/flow-directory-and-dag-yaml.png)
 
 ```sh
 pf flow test --flow web-classification  # "web-classification" is the directory name
@@ -242,83 +274,6 @@ Click the run flow button on the top of the visual editor to trigger flow test.
 ::::
 
 See more details in [Initialize and test a flow](./init-and-test-a-flow.md).
-
-## Create a new run
-TODO move this to the other run page.
-
-After the flow run successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
-
-::::{tab-set}
-
-:::{tab-item} CLI
-:sync: CLI
-
-Create the run with flow and data, can add `--stream` to stream the run.
-```sh
-pf run create --flow web-classification --data web-classification/data.jsonl --stream 
-```
-
-You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
-
-
-![q_0](../media/how-to-guides/quick-start/flow-run-create-output-cli.png)
-
-
-With a run name, you can easily view or visualize the run details using below commands:
-
-```sh
-pf run show-details -n my_first_run
-pf run visualize -n my_first_run
-```
-
-![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-cli.png)
-
-![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
-
-More details can be found with `pf run --help`
-
-:::
-:::{tab-item} SDK
-:sync: SDK
-
-```python
-# Set flow path and run input data
-flow = "web-classification" # set the flow directory
-data= "web-classification/data.jsonl" # set the data file
-
-# create a run, stream it until it's finished
-base_run = pf.run(
-    flow=flow,
-    data=data,
-    stream=True,
-)
-
-# get the inputs/outputs details of a finished run.
-details = pf.get_details(base_run)
-details.head(10)
-
-# visualize the run in a web browser
-pf.visualize(base_run)
-```
-
-![q_0](../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
-
-![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-sdk.png)
-![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
-
-:::
-
-:::{tab-item} VS Code Extension
-:sync: VS Code Extension
-Use the code lens action on the top of the yaml editor to trigger batch run
-![dag_yaml_flow_test](../media/how-to-guides/quick-start/batch_run_dag_yaml.png)
-
-
-Click the bulk test button on the top of the visual editor to trigger flow test.
-![visual_editor_flow_test](../media/how-to-guides/quick-start/bulk_run_visual_editor.png)
-:::
-
-::::
 
 ## Next steps
 
