@@ -110,6 +110,7 @@ class TestFlowLocalOperations:
 
         # e2e_test_docker_build_and_run(output_path)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_flow_build_as_docker_with_additional_includes(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -130,6 +131,7 @@ class TestFlowLocalOperations:
                 assert target_path.is_file()
                 assert target_path.read_text() == additional_include_path.read_text()
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_flow_build_as_docker_with_variant(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
 

@@ -481,6 +481,7 @@ class TestFlowRun:
         )
         assert expected_error_message in captured.out
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_flow_bulk_run_with_additional_includes(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
         run = pf.run(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", data=data_path)

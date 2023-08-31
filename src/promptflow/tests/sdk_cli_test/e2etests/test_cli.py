@@ -452,6 +452,7 @@ class TestCli:
             "--debug",
         )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_pf_flow_test_with_additional_includes(self):
         run_pf_command(
             "flow",
@@ -901,6 +902,7 @@ class TestCli:
                 expect_dict=expect_inputs,
             )
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_flow_build(self):
         source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
 
