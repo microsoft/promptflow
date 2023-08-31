@@ -268,7 +268,7 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f)
 
-    def dump_exception(self, exception: Exception = None, bulk_results: BulkResult = None) -> None:
+    def dump_exception(self, exception: Exception, bulk_results: BulkResult) -> None:
         """Dump exception to local storage.
 
         :param exception: Exception raised during bulk run.
@@ -289,9 +289,13 @@ class LocalStorageOperations(AbstractRunStorage):
         except Exception:
             pass
 
-        if not exception:
+        # won't dump exception if errors not found in bulk_results
+        if not errors:
+            return
+
+        if exception is None:
             # use first line run error message as exception message if no exception raised
-            error = next(iter(errors), None)
+            error = errors[0]
             try:
                 message = error["error"]["message"]
             except Exception:
