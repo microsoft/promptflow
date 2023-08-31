@@ -431,20 +431,17 @@ def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
     logger = logging.getLogger(LOGGER_NAME)
 
-    def additional_includes_copy(src, dst, base_path):
+    def additional_includes_copy(src, relative_path, target_dir):
         if src.is_file():
+            dst = Path(target_dir) / relative_path
             dst.parent.mkdir(parents=True, exist_ok=True)
             if dst.exists():
-                try:
-                    relative_path = dst.relative_to(Path(temp_dir).resolve())
-                except Exception:
-                    relative_path = dst
                 logger.warning("Found duplicate file in additional includes, "
                                f"additional include file {src} will overwrite {relative_path}")
             shutil.copy2(src, dst)
         else:
             for name in src.glob("*"):
-                additional_includes_copy(name, dst / name.name, base_path)
+                additional_includes_copy(name, Path(relative_path) / name.name, target_dir)
 
     if code_path.is_dir():
         yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
@@ -459,7 +456,6 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             src_path = Path(item)
             if not src_path.is_absolute():
                 src_path = (code_path / item).resolve()
-            dst_path = (Path(temp_dir) / src_path.name).resolve()
 
             if _is_folder_to_compress(src_path):
                 _resolve_folder_to_compress(code_path, item, Path(temp_dir))
@@ -469,7 +465,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             if not src_path.exists():
                 raise ValueError(f"Unable to find additional include {item}")
 
-            additional_includes_copy(src_path, dst_path, temp_dir)
+            additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
 
 
