@@ -9,7 +9,7 @@ from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import Flow, InputValueType, Node
 from promptflow.executor._errors import (
     DuplicateNodeName,
-    EmptyOutputError,
+    EmptyOutputReference,
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
@@ -158,8 +158,11 @@ class FlowValidator:
         updated_outputs = {}
         for k, v in flow.outputs.items():
             if v.reference.value_type == InputValueType.LITERAL and v.reference.value == "":
-                msg = f"Output '{k}' is empty."
-                raise EmptyOutputError(message=msg)
+                msg = (
+                    f"The reference is not specified for the output '{k}' in the flow '{flow.name}'. "
+                    f"To rectify this, ensure that you accurately specify the reference in the flow YAML."
+                )
+                raise EmptyOutputReference(message=msg)
             if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
                 msg = f"Output '{k}' references flow input '{v.reference.value}' which is not in the flow."
                 raise OutputReferenceNotFound(message=msg)
