@@ -1,0 +1,48 @@
+This is the docstring style of sphinx:
+"""Description of the function.
+
+:param [ParamName]: [ParamDescription](, defaults to [DefaultParamVal].)
+:type [ParamName]: [ParamType](, optional)
+...
+:raises [ErrorType]: [ErrorDescription]
+...
+:return: [ReturnDescription]
+:rtype: [ReturnType]
+"""
+
+Note:
+For custom class types, please use the full path, for example:
+"~azure.ai.ml.entities._inputs_outputs.Input" is full path for "Input" because of "from azure.ai.ml.entities._inputs_outputs import Input, Output"
+"~import_node.Import" is full path for "Import" because of "import import_node.Import"
+
+Complete function docstring example:
+from azure.ai.ml.entities._inputs_outputs import Input, Output
+from azure.ai.ml.constants import JobType
+def output(input: Input, import_node: Import, startHnd=1, endHnd=None, uuids=None) -> Output:
+    """Create an Output object.
+
+    :param input: The input object.
+    :type input: ~azure.ai.ml.entities._inputs_outputs.Input
+    :param import_node: The Import object.
+    :type import_node: ~import_node.Import
+    :param startHnd: Start index, defaults to 1
+    :type startHnd: int, optional
+    :param endHnd: End index, defaults to None
+    :type endHnd: int, optional
+
+    :return: The Output object.
+    :rtype: ~azure.ai.ml.entities._inputs_outputs.Output
+    """
+    pass
+
+Here's some code for you:
+{{module}}
+{{code}}
+
+Please follow the sphinx style and refer above complete function docstring example, then output the docstring for the following class/functions.
+Please replace "{docstring}" with the actual docstring.
+{% for func in functions %}
+{{func}}
+{docstring}
+pass
+{% endfor %}
