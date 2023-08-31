@@ -315,7 +315,8 @@ def test_flow(args):
             inputs=inputs,
             environment_variables=environment_variables,
             variant=args.variant,
-            node=args.node
+            node=args.node,
+            allow_generator_output=False,
         )
         # Dump flow/node test info
         flow = load_flow(args.flow)
