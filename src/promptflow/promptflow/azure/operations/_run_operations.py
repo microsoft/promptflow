@@ -650,10 +650,10 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path, session_id):
+    def _resolve_automatic_runtime(self, run, session_id):
         logger.warning(
-            f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
-            "it may take a while to build run time and request may fail with timeout error. "
+            "Using automatic runtime, if it's first time you're using automatic runtime, "
+            "it may take a while to build runtime and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
         runtime_name = "automatic"
@@ -668,7 +668,7 @@ class RunOperations(_ScopeDependentOperations):
             if not isinstance(runtime, str):
                 raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         else:
-            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id)
+            runtime = self._resolve_automatic_runtime(run=run, session_id=session_id)
 
         return runtime, session_id
 

@@ -16,6 +16,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
+from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 from promptflow.azure.operations import RunOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -537,3 +538,17 @@ class TestFlowRun:
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
+
+    def test_automatic_runtime_creation_failure(self, pf):
+
+        with pytest.raises(FlowRequestException) as e:
+            pf.runs._resolve_runtime(
+                run=Run(
+                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    resources={"instance_type": "not_exist"},
+                ),
+                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                runtime=None,
+            )
+        assert "Session creation failed for" in str(e.value)
