@@ -219,9 +219,11 @@ class TestSubmitter:
             sys.stdout.write = write
 
         def show_node_log_and_output(node_run_infos, show_node_output):
+            """Show stdout and output of nodes."""
             node_outputs = {}
             for node_name, node_result in node_run_infos.items():
-                pattern = "\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
+                # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
+                pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
                 node_logs = re.sub(pattern, "", node_result.logs["stdout"])
                 if node_logs:
                     for log in node_logs.rstrip("\n").split("\n"):
@@ -314,6 +316,7 @@ class TestSubmitter:
                 stream_log=False,
                 allow_generator_output=True,
             )
+            self._raise_error_when_test_failed(flow_result, show_trace=True)
             node_outputs = show_node_log_and_output(flow_result.node_run_infos, show_step_output)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
@@ -325,19 +328,6 @@ class TestSubmitter:
             chat_history.append(history)
             flow_result = resolve_generator(flow_result, flow_outputs, node_outputs)
             self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
-
-    def _get_streaming_nodes(self):
-        """Get streaming node that is llm node and the node output is only referenced by flow output."""
-        # TODO remove it after executor exposing this method.
-        streaming_nodes = []
-        for node in self.dataplane_flow.nodes:
-            if (
-                self.dataplane_flow.is_llm_node(node)
-                and self.dataplane_flow.is_referenced_by_flow_output(node)
-                and not self.dataplane_flow.is_referenced_by_other_node(node)
-            ):
-                streaming_nodes.append(node)
-        return streaming_nodes
 
     @staticmethod
     def _dump_result(flow_folder, prefix, flow_result=None, node_result=None):
