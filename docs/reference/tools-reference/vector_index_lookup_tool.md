@@ -32,7 +32,7 @@ The following is an example for JSON format response returned by the tool, which
 | Field Name | Type | Description |
 | ---- | ---- | ----------- |
 | text | string | Text of the entity |
-| score | float | Depends on index type defined in Vector Index. Might be value of distance or similarity |
+| score | float | Depends on index type defined in Vector Index. If index type is Faiss, score is L2 distance. If index type is Azure Cognitive Search, score is similarity. |
 | metadata | dict | Customized key-value pairs provided by user when create the index |
 | original_entity | dict | Depends on index type defined in Vector Index. The original response json from search REST API|
 

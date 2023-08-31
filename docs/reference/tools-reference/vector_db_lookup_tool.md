@@ -77,9 +77,9 @@ The following is an example JSON format response returned by the tool, which inc
   | Field Name | Type | Description |
   | ---- | ---- | ----------- |
   | original_entity | dict | the original response json from search REST API|
-  | score | float |  score from the original entity, which evaluates the similarity between vectors |
-  | text | string | text of the entity, the text field name is specified in input|
-  | vector | list | vector of the entity, the vector field name is specified in input |
+  | score | float |  @search.score from the original entity, which evaluates the similarity between the entity and the query vector |
+  | text | string | text of the entity, which specified in the text field of input|
+  | vector | list | vector of the entity, the vector field name iis consistent with input |
   <details>
     <summary>Output</summary>
     
@@ -109,8 +109,8 @@ The following is an example JSON format response returned by the tool, which inc
   | ---- | ---- | ----------- |
   | original_entity | dict | the original response json from search REST API|
   | metadata | dict | payload from the original entity|
-  | score | float | score from the original entity, which evaluates the similarity between vectors|
-  | text | string | text of the payload, the text field name is consistent with input|
+  | score | float | score from the original entity, which evaluates the similarity between the entity and the query vector|
+  | text | string | text of the payload, which specified in the text field of input|
   | vector | list | vector of the entity|
 
   <details>
@@ -145,8 +145,8 @@ The following is an example JSON format response returned by the tool, which inc
   | Field Name | Type | Description |
   | ---- | ---- | ----------- |
   | original_entity | dict | the original response json from search REST API|
-  | score | float | certainty from the original entity, which evaluates the similarity between vectors|
-  | text | string | text in the metadata, the text field name is consistent with input|
+  | score | float | certainty from the original entity, which evaluates the similarity between the entity and the query vector|
+  | text | string | text in the metadata, which specified in the text field of input|
   | vector | list | vector of the entity|
 
   <details>
