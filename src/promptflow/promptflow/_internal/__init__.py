@@ -33,7 +33,7 @@ from promptflow._core.tools_manager import (
     CustomPythonToolLoadError,
     EmptyCodeInCustomTool,
     MissingTargetFunction,
-    ToolsLoader,
+    ToolLoader,
     ToolsManager,
     builtins,
     collect_package_tools,

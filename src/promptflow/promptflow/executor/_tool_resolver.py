@@ -12,7 +12,7 @@ from typing import Callable, List, Optional
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import (
     BuiltinsManager,
-    ToolsLoader,
+    ToolLoader,
     connection_type_to_api_mapping,
 )
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
@@ -47,7 +47,7 @@ class ToolResolver:
             from promptflow.tools import aoai, openai  # noqa: F401
         except ImportError:
             pass
-        self._tools_loader = ToolsLoader(package_tool_keys=package_tool_keys)
+        self._tool_loader = ToolLoader(package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
 
@@ -174,7 +174,7 @@ class ToolResolver:
         if not node.provider:
             # If provider is not specified, try to resolve it from connection type
             node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
-        tool: Tool = self._tools_loader.load_tool_for_llm_node(node)
+        tool: Tool = self._tool_loader.load_tool_for_llm_node(node)
         key, connection = self._resolve_llm_connection_to_inputs(node, tool)
         updated_node = copy.deepcopy(node)
         updated_node.inputs[key] = InputAssignment(value=connection, value_type=InputValueType.LITERAL)
@@ -212,13 +212,13 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        f, tool = self._tools_loader.load_tool_for_script_node(node, self._working_dir)
+        f, tool = self._tool_loader.load_tool_for_script_node(node, self._working_dir)
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool)
         return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
 
     def _resolve_package_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        tool: Tool = self._tools_loader.load_tool_for_package_node(node)
+        tool: Tool = self._tool_loader.load_tool_for_package_node(node)
         updated_node = copy.deepcopy(node)
         if convert_input_types:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)

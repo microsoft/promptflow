@@ -219,7 +219,7 @@ class ToolsManager:
         return f_globals[func_name]
 
 
-class ToolsLoader:
+class ToolLoader:
     def __init__(self, package_tool_keys: Optional[List[str]] = None) -> None:
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
 
