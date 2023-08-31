@@ -31,7 +31,7 @@ class DAGManager:
             del self._pending_nodes[node.name]
         return ready_nodes
 
-    def pop_skipped_nodes(self) -> List[Node]:
+    def pop_skippable_nodes(self) -> List[Node]:
         """Returns a list of nodes that are skipped, and removes them from the list of nodes to be processed."""
         # Confirm node should be skipped
         skipped_nodes: List[Node] = []

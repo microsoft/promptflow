@@ -25,7 +25,7 @@ def pop_ready_node_names(dag_manager: DAGManager):
 
 
 def pop_skipped_node_names(dag_manager: DAGManager):
-    return {node.name for node in dag_manager.pop_skipped_nodes()}
+    return {node.name for node in dag_manager.pop_skippable_nodes()}
 
 
 @pytest.mark.unittest
