@@ -13,7 +13,7 @@ PACKAGE_NAME = "promptflow"
 PACKAGE_FOLDER_PATH = Path(__file__).parent / "promptflow"
 
 version = "0.0.1"
-if os.getenv("IS_IN_BUILD_PIPELINE") == "true":
+if os.getenv("USE_VERSION_IN_VERSION_PY") == "true":
     with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), encoding="utf-8") as f:
         version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(1)
 
