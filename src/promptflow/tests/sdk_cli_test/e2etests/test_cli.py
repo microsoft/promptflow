@@ -153,7 +153,7 @@ class TestCli:
         # used variant_0 config, defaults using variant_1
         assert tuning_node["inputs"]["temperature"] == 0.2
 
-    def test_environment_variable_overwrite(self, local_client):
+    def test_environment_variable_overwrite(self, local_client, local_aoai_connection):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -168,7 +168,7 @@ class TestCli:
             "API_BASE=${azure_open_ai_connection.api_base}",
         )
         outputs = local_client.runs._get_outputs(run=run_id)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
         with pytest.raises(Exception) as e:
@@ -254,6 +254,9 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            previous_log_content = f.read()
 
         # Test without input
         run_pf_command(
@@ -264,6 +267,10 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert previous_log_content not in log_content
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -525,6 +532,12 @@ class TestCli:
             outputs = json.load(f)
         assert outputs["output"] == env["API_BASE"]
         validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json")
+
+        # Test log contains user printed outputs
+        log_path = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert env["API_BASE"] in log_content
 
         run_pf_command(
             "flow",
@@ -879,20 +892,36 @@ class TestCli:
                 expect_dict=expect_inputs,
             )
 
-    @pytest.mark.skip(reason="TODO: fix this test")
-    def test_flow_export(self):
-        flows_dir = "./tests/test_configs/flows"
+    def test_flow_build(self):
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
+
+        def get_node_settings(_flow_dag_path: Path):
+            flow_dag = yaml.safe_load(_flow_dag_path.read_text())
+            target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
+            target_node.pop("name")
+            return target_node
+
         with tempfile.TemporaryDirectory() as temp_dir:
             run_pf_command(
                 "flow",
-                "export",
+                "build",
                 "--source",
-                os.path.join(flows_dir, "intent-copilot"),
+                source,
                 "--output",
                 temp_dir,
                 "--format",
                 "docker",
+                "--variant",
+                "${summarize_text_content.variant_0}",
             )
+
+            new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
+            flow_dag = yaml.safe_load(Path(source).read_text())
+            assert (
+                get_node_settings(new_flow_dag_path)
+                == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
+            )
+            assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -982,6 +1011,7 @@ class TestCli:
                 f"{DATAS_DIR}/webClassification3.jsonl",
                 "--column-mapping",
                 "key=value",
+                "extra=${data.url}",
                 "--stream",
             )
         assert "user log" in f.getvalue()
@@ -1005,6 +1035,7 @@ class TestCli:
                 f"{DATAS_DIR}/webClassification3.jsonl",
                 "--column-mapping",
                 "key=value",
+                "extra=${data.url}",
             )
         assert "user log" not in f.getvalue()
         assert "error log" not in f.getvalue()

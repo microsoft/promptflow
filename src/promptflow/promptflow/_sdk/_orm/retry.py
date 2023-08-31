@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 
 import time
-
 from functools import partial, wraps
 from typing import Tuple, Union
+
 from sqlalchemy.exc import OperationalError
 
 

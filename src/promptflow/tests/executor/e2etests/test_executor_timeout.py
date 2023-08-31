@@ -65,7 +65,12 @@ class TestExecutor:
         ],
     )
     def test_executor_exec_bulk_with_timeout(self, flow_folder, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True, line_timeout_sec=5)
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            raise_ex=True,
+            line_timeout_sec=5,
+        )
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs()
         nlines = len(bulk_inputs)
@@ -88,7 +93,11 @@ class TestExecutor:
     def test_executor_exec_bulk_with_one_line_timeout(self, flow_folder, dev_connections):
         mem_run_storage = MemoryRunStorage()
         executor = FlowExecutor.create(
-            get_yaml_file(flow_folder), dev_connections, raise_ex=False, storage=mem_run_storage, line_timeout_sec=15
+            get_yaml_file(flow_folder),
+            dev_connections,
+            raise_ex=False,
+            storage=mem_run_storage,
+            line_timeout_sec=15,
         )
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs(flow_folder=flow_folder)

@@ -37,7 +37,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import BulkResult
-from promptflow.storage.run_storage import AbstractRunStorage
+from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -75,7 +75,15 @@ class LoggerOperations(LogContext):
     def __enter__(self):
         log_path = Path(self.log_path)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_path.touch(exist_ok=True)
+        if log_path.exists():
+            # Clean up previous log content
+            try:
+                with open(log_path, 'w') as file:
+                    file.truncate(0)
+            except Exception as e:
+                logger.warning(f"Failed to clean up the previous log content because {e}")
+        else:
+            log_path.touch(exist_ok=True)
 
         for _logger in self._get_execute_loggers_list():
             for handler in _logger.handlers:

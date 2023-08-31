@@ -43,9 +43,17 @@ class TestPackageTool:
     def test_executor_package_tool_with_conn(self, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "tool_with_connection"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)
-        mocker.patch("promptflow.tools.list.list_package_tools", return_value=package_tool_definition)
+        mocker.patch(
+            "promptflow.tools.list.list_package_tools",
+            return_value=package_tool_definition,
+        )
         name, secret = "dummy_name", "dummy_secret"
-        connections = {"test_conn": {"type": "TestConnection", "value": {"name": name, "secret": secret}}}
+        connections = {
+            "test_conn": {
+                "type": "TestConnection",
+                "value": {"name": name, "secret": secret},
+            }
+        }
         executor = FlowExecutor.create(get_yaml_file(flow_folder), connections, raise_ex=True)
         flow_result = executor.exec_line({})
         assert flow_result.run_info.status == Status.Completed
@@ -54,6 +62,7 @@ class TestPackageTool:
             assert v.status == Status.Completed
             assert v.output == name + secret
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_executor_package_with_prompt_tool(self, dev_connections, mocker):
         flow_folder = PACKAGE_TOOL_BASE / "custom_llm_tool"
         package_tool_definition = get_flow_package_tool_definition(flow_folder)

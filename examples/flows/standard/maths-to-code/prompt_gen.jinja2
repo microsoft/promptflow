@@ -1,0 +1,25 @@
+system:
+I want you to act as a Math expert specializing in Algebra, Geometry, and Calculus. Given the question, develop python code to model the user's question.
+The python code will print the result at the end.
+Please generate executable python code, your reply will be in JSON format, something like:
+{
+    "code": "print(1+1)"
+}
+
+user:
+This a set of examples including question and the final answer:
+{% for ex in examples %}
+QUESTION: {{ ex.question }}
+CODE:
+{{ ex.code }}
+
+{% endfor %}
+
+Now come to the real task, make sure return a valid json. The json should contain a key named "code" and the value is the python code. For example:
+{
+    "code": "print(1+1)"
+}
+QUESTION: {{ question }}
+CODE:
+
+

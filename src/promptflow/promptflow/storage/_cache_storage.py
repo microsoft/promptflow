@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
 from promptflow.contracts.run_info import RunInfo
-from promptflow.storage.sqlite_client import INDEX, PRIMARY_KEY, SqliteClient
+from promptflow.storage._sqlite_client import INDEX, PRIMARY_KEY, SqliteClient
 
 
 @dataclass
