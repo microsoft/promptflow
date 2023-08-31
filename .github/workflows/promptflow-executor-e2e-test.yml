@@ -104,5 +104,5 @@ jobs:
         testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.55
+        coverageThreshold: 0.6
         token: ${{ secrets.GITHUB_TOKEN }}
