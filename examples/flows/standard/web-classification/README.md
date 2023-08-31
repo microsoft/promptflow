@@ -33,7 +33,7 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 If you using OpenAI, sign up account [OpenAI website](https://openai.com/), login and [find personal API key](https://platform.openai.com/account/api-keys).
 
 ```shell
-pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key> organization=<your_organization>
+pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key>
 ```
 
 ### 2. Configure the flow with your connection
