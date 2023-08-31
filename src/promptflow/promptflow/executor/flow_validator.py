@@ -164,12 +164,20 @@ class FlowValidator:
                 )
                 raise EmptyOutputReference(message=msg)
             if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
-                msg = f"Output '{k}' references flow input '{v.reference.value}' which is not in the flow."
+                msg = (
+                    f"The output '{k}' references non-existent flow input '{v.reference.value}' in flow '{flow.name}'. "
+                    f"please carefully review your flow YAML "
+                    f"and correct the reference definition for the output in question."
+                )
                 raise OutputReferenceNotFound(message=msg)
             if v.reference.value_type == InputValueType.NODE_REFERENCE:
                 node = flow.get_node(v.reference.value)
                 if node is None:
-                    msg = f"Output '{k}' references node '{v.reference.value}' which is not in the flow '{flow.name}'."
+                    msg = (
+                        f"The output '{k}' references non-existent node '{v.reference.value}' in flow '{flow.name}'. "
+                        f"To resolve this issue, please carefully review your flow YAML "
+                        f"and correct the reference definition for the output in question."
+                    )
                     raise OutputReferenceNotFound(message=msg)
                 if node.aggregation:
                     msg = f"Output '{k}' references a reduce node '{v.reference.value}', will not take effect."
