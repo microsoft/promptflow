@@ -44,6 +44,8 @@ class DAGManager:
         return skipped_nodes
 
     def get_node_valid_inputs(self, node: Node) -> Mapping[str, Any]:
+        """Returns the valid inputs for the node, including the flow inputs, literal values and
+        the outputs of completed nodes."""
         return {
             name: self._get_node_dependency_value(i)
             for name, i in (node.inputs or {}).items()
