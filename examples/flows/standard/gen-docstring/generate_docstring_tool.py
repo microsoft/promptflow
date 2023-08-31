@@ -53,8 +53,6 @@ async def agenerate_docstring(divided: list[str]):
             if len(divided_tmp) > 1:
                 divided.extend(list(reversed(divided_tmp)))
                 continue
-            else:
-                logging.warning('The code is too long, will not generate docstring.')
         except Exception as e:
             logging.warning(e)
         all_divided.append(item)

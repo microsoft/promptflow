@@ -7,7 +7,7 @@ class Settings:
         "py": r"(?<!.)(class|def)",
     }
     divide_func = {
-        "py": r"((\n {,6})|^)(class|def)\s+(\w+)\s*(\([^)]*\))?\s*(->\s*\w+:|:) *"
+        "py": r"((\n {,6})|^)(class|def)\s+(\S+(?=\())\s*(\([^)]*\))?(\s*->\s*\S+:|:) *"
     }
 
 
@@ -33,10 +33,15 @@ class Divider:
         Divide the content into two parts, but ensure that the function body is not split.
         """
         _, pos = Divider.get_functions_and_pos(text)
-        if len(pos) > 1:
+        if len(pos) > 1:  # Divide the code into two parts and every part start with a function.
             i = len(pos) // 2
             return [text[0:pos[i][0]], text[pos[i][0]:]]
-        return text
+        if len(pos) == 1:  # Divide the code into two parts, [function define + body, other body].
+            body = text[pos[0][1]:]
+            body_lines = body.split('\n')
+            body_ten_lines = '\n'.join(body_lines[0:10])
+            return [text[0:pos[0][1]] + body_ten_lines, body[len(body_ten_lines):]]
+        return [text]
 
     @classmethod
     def get_functions_and_pos(cls, text):
