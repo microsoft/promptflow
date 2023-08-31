@@ -2,4 +2,4 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection
 name: open_ai_connection
 type: open_ai
 api_key: "<user-input>"
-organization: "org"
+organization: "" # optional
