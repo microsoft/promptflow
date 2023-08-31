@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
 import contextlib
+import re
 import json
 import logging
 import sys
@@ -217,6 +218,25 @@ class TestSubmitter:
             yield
             sys.stdout.write = write
 
+        def show_node_log_and_output(node_run_infos, show_node_output):
+            node_outputs = {}
+            for node_name, node_result in node_run_infos.items():
+                pattern = "\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
+                node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+                if node_logs:
+                    for log in node_logs.rstrip("\n").split("\n"):
+                        print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                        print(log)
+                if show_node_output:
+                    print(f"{Fore.CYAN}{node_name}: ", end="")
+                    # TODO executor return a type string of generator
+                    node_output = node_result.output
+                    if isinstance(node_result.output, GeneratorType):
+                        node_output = "".join(get_generator_values(node_result.output))
+                    print(f"{Fore.LIGHTWHITE_EX}{node_output}")
+                    node_outputs[node_name] = node_output
+            return node_outputs
+
         def print_chat_output(output):
             chat_output = output
             if isinstance(output, Iterable):
@@ -288,27 +308,13 @@ class TestSubmitter:
             with change_logger_level(level=logging.WARNING):
                 chat_inputs, _ = self._resolve_data(inputs=inputs)
 
-            with add_prefix():
-                flow_result = self.flow_test(
-                    inputs=chat_inputs,
-                    environment_variables=environment_variables,
-                    stream_log=False,
-                    allow_generator_output=True,
-                )
-                self._raise_error_when_test_failed(flow_result, show_trace=True)
-            node_outputs = {}
-            if show_step_output:
-                for node_name, node_result in flow_result.node_run_infos.items():
-                    print(f"{Fore.CYAN}{node_name}: ", end="")
-                    try:
-                        # TODO executor return a type string of generator
-                        node_output = node_result.output
-                        if isinstance(node_result.output, GeneratorType):
-                            node_output = "".join(get_generator_values(node_result.output))
-                        print(f"{Fore.LIGHTWHITE_EX}{json.dumps(node_output, indent=4)}")
-                    except Exception:  # pylint: disable=broad-except
-                        print(f"{Fore.LIGHTWHITE_EX}{node_output}")
-                    node_outputs[node_name] = node_output
+            flow_result = self.flow_test(
+                inputs=chat_inputs,
+                environment_variables=environment_variables,
+                stream_log=False,
+                allow_generator_output=True,
+            )
+            node_outputs = show_node_log_and_output(flow_result.node_run_infos, show_step_output)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
             chat_output = get_generator_values(flow_result.output[output_name])

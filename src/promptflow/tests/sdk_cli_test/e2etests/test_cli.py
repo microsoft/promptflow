@@ -754,7 +754,7 @@ class TestCli:
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
         # TODO Checkout user code stdout
-        # assert "print:" in outerr.out
+        assert "[show_answer]: print:" in outerr.out
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
