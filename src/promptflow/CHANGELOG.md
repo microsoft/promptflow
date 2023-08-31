@@ -1,10 +1,22 @@
 # Release History
 
-## v0.1.0b3 (2023.08.30)
+## 0.1.0b4 (Unreleased)
+
+### Features added
+
+- Support lineage and display name shown in visualize run page.
+
+### Bugs Fixed
+
+### Breaking Changes
+
+### Other Changes
+
+## 0.1.0b3 (2023.08.30)
 
 - Minor bug fixes.
 
-## v0.1.0b2 (2023.08.29)
+## 0.1.0b2 (2023.08.29)
 
 - First preview version with major CLI & SDK features.
 
@@ -16,6 +28,6 @@
     - **pfazure run**: create/list/stream/show/show-details/show-metrics/visualize
 
 
-## v0.1.0b1 (2023.07.20)
+## 0.1.0b1 (2023.07.20)
 
 - Stub version in Pypi.
