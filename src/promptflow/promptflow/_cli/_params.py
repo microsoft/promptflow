@@ -221,6 +221,15 @@ def add_param_workspace(parser):
     )
 
 
+def add_param_variant(parser):
+    parser.add_argument(
+        "--variant",
+        "-v",
+        type=str,
+        help="The variant to be used in flow, will use default variant if not specified.",
+    )
+
+
 def add_parser_build(parent_parser, entity_name: str):
     description = f"Build a {entity_name} as a docker image or a package."
     parser = parent_parser.add_parser(
@@ -234,13 +243,8 @@ def add_parser_build(parent_parser, entity_name: str):
     parser.add_argument(
         "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
     )
-    parser.add_argument(
-        "--variant",
-        "-v",
-        type=str,
-        help="The variant to be used in flow in format of ${TUNING_NODE.VARIANT}, "
-        "will use default variant if not specified.",
-    )
+    # TODO: shall we use add_param_variants here even if we support 1 variant only for now?
+    add_param_variant(parser)
     add_param_verbose(parser)
     add_param_debug(parser)
     parser.set_defaults(sub_action="build")

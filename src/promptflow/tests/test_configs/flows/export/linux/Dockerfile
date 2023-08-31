@@ -16,7 +16,6 @@ RUN conda create -n promptflow-serve python=3.9.16 pip=23.0.1 -q -y && \
     conda run -n promptflow-serve pip cache purge && \
     conda clean -a -y
 
-RUN conda run -n promptflow-serve sh /flow/setup.sh
 
 EXPOSE 8080
 

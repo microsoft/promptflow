@@ -2,16 +2,28 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import json
+import shutil
+import tempfile
+from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
 from typing import List, Union
 
 import yaml
 
-from promptflow._sdk._constants import CHAT_HISTORY, DAG_FILE_NAME, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._constants import (
+    BASE_PATH_CONTEXT_KEY,
+    CHAT_HISTORY,
+    DAG_FILE_NAME,
+    DEFAULT_ENCODING,
+    FLOW_TOOLS_JSON,
+    LOCAL_MGMT_DB_PATH,
+    PROMPT_FLOW_DIR_NAME,
+)
 from promptflow._sdk._utils import (
     copy_tree_respect_template_and_ignore_file,
     dump_yaml,
+    generate_flow_tools_json,
     generate_random_string,
     parse_variant,
 )
@@ -181,8 +193,6 @@ class FlowOperations:
         # TODO: deserialize dag with structured class here to avoid using so many magic strings
         env_obj = flow_info.get("environment", {})
 
-        from importlib.metadata import version
-
         env_obj["sdk_version"] = version("promptflow")
         # version 0.0.1 is the dev version of promptflow
         if env_obj["sdk_version"] == "0.0.1":
@@ -216,8 +226,8 @@ class FlowOperations:
         else:
             secret_dict = connection_yaml
 
-        secret_env_vars = [f"{connection.name}_{secret_key}".upper() for secret_key in connection.secrets]
-        for secret_key, secret_env in zip(connection.secrets, secret_env_vars):
+        env_var_names = [f"{connection.name}_{secret_key}".upper() for secret_key in connection.secrets]
+        for secret_key, secret_env in zip(connection.secrets, env_var_names):
             secret_dict[secret_key] = "${env:" + secret_env + "}"
 
         for key in ["created_date", "last_modified_date"]:
@@ -235,7 +245,7 @@ class FlowOperations:
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
-        return secret_env_vars
+        return env_var_names
 
     @classmethod
     def _migrate_connections(cls, connection_names: List[str], output_dir: Path):
@@ -244,25 +254,76 @@ class FlowOperations:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         local_client = PFClient()
-        connection_paths, secret_env_vars = [], {}
+        connection_paths, env_var_names = [], {}
         for connection_name in connection_names:
             connection = local_client.connections.get(name=connection_name, with_secrets=True)
             connection_paths.append(output_dir / f"{connection_name}.yaml")
-            for secret_env_var in cls._dump_connection(
+            for env_var_name in cls._dump_connection(
                 connection,
                 connection_paths[-1],
             ):
-                if secret_env_var in secret_env_vars:
+                if env_var_name in env_var_names:
                     raise RuntimeError(
                         f"environment variable name conflict: connection {connection_name} and "
-                        f"{secret_env_vars[secret_env_var]} on {secret_env_var}"
+                        f"{env_var_names[env_var_name]} on {env_var_name}"
                     )
-                secret_env_vars[secret_env_var] = connection_name
+                env_var_names[env_var_name] = connection_name
 
-        return connection_paths, list(secret_env_vars.keys())
+        return connection_paths, list(env_var_names.keys())
 
     @classmethod
-    def _export_to_docker(cls, flow_dag_path: Path, output_dir: Path, *, connection_paths: List[Path], flow_name: str):
+    def _export_flow_connections(
+        cls,
+        flow_dag_path: Path,
+        *,
+        output_dir: Path,
+    ):
+        from promptflow.contracts.flow import Flow as ExecutableFlow
+
+        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
+
+        return cls._migrate_connections(
+            connection_names=executable.get_connection_names(),
+            output_dir=output_dir,
+        )
+
+    @classmethod
+    def _build_flow(
+        cls,
+        flow_dag_path: Path,
+        *,
+        output: Union[str, PathLike],
+        tuning_node: str = None,
+        node_variant: str = None,
+        update_flow_tools_json: bool = True,
+    ):
+
+        flow_copy_target = Path(output)
+        flow_copy_target.mkdir(parents=True, exist_ok=True)
+
+        # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
+        with variant_overwrite_context(flow_dag_path, tuning_node=tuning_node, variant=node_variant) as temp_flow:
+            # TODO: avoid copy for twice
+            copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
+        if update_flow_tools_json:
+            generate_flow_tools_json(flow_copy_target)
+        return flow_copy_target / flow_dag_path.name
+
+    @classmethod
+    def _export_to_docker(
+        cls,
+        flow_dag_path: Path,
+        output_dir: Path,
+        *,
+        env_var_names: List[str],
+        connection_paths: List[Path],
+        flow_name: str,
+    ):
+        (output_dir / "settings.json").write_text(
+            data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
+            encoding="utf-8",
+        )
+
         environment_config = cls._build_environment_config(flow_dag_path)
 
         # TODO: make below strings constants
@@ -321,31 +382,79 @@ class FlowOperations:
         else:
             tuning_node, node_variant = None, None
 
-        flow_copy_target = output_dir / "flow"
-        flow_copy_target.mkdir(parents=True, exist_ok=True)
+        new_flow_dag_path = cls._build_flow(
+            flow_dag_path=flow_dag_path,
+            output=output_dir / "flow",
+            tuning_node=tuning_node,
+            node_variant=node_variant,
+        )
 
-        # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
-        # TODO: avoid copy for twice
-        with variant_overwrite_context(flow_dag_path, tuning_node=tuning_node, variant=node_variant) as temp_flow:
-            from promptflow.contracts.flow import Flow as ExecutableFlow
+        # use new flow dag path below as origin one may miss additional includes
+        connection_paths, env_var_names = cls._export_flow_connections(
+            flow_dag_path=new_flow_dag_path,
+            output_dir=output_dir / "connections",
+        )
 
-            executable = ExecutableFlow.from_yaml(flow_file=temp_flow.path, working_dir=temp_flow.code)
-
-            connection_paths, secret_env_vars = cls._migrate_connections(
-                connection_names=executable.get_connection_names(),
-                output_dir=output_dir / "connections",
+        if format == "docker":
+            cls._export_to_docker(
+                flow_dag_path=new_flow_dag_path,
+                output_dir=output_dir,
+                connection_paths=connection_paths,
+                flow_name=flow_dag_path.parent.stem,
+                env_var_names=env_var_names,
             )
-            (output_dir / "settings.json").write_text(
-                data=json.dumps({secret_env_var: "" for secret_env_var in secret_env_vars}, indent=2),
-                encoding="utf-8",
+
+    @classmethod
+    def validate(cls, flow: Union[str, PathLike], variant: str = None):
+        """
+        Validate flow.
+
+        :param flow: path to the flow directory or flow dag to export
+        :type flow: Union[str, PathLike]
+        :param variant: node variant in format of {node_name}.{variant_name},
+            will use default variant if not specified.
+        :type variant: str
+        :return: no return
+        :rtype: None
+        """
+        from promptflow._sdk._load_functions import load_flow
+
+        flow_path = Path(flow)
+        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
+            flow_dag_path = flow_path / DAG_FILE_NAME
+        else:
+            flow_dag_path = flow_path
+
+        if not flow_dag_path.is_file():
+            raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
+
+        if variant:
+            tuning_node, node_variant = parse_variant(variant)
+        else:
+            tuning_node, node_variant = None, None
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir, "flow")
+            # TODO: do not copy flow directory when no additional includes provided
+            new_flow_dag_path = cls._build_flow(
+                flow_dag_path=flow_dag_path,
+                output=output_dir,
+                tuning_node=tuning_node,
+                node_variant=node_variant,
             )
+            flow_obj = load_flow(new_flow_dag_path)
+            # check if all python modules are loadable
+            flow_obj._init_executable()
+            # validate schema
+            flow_dag_obj = yaml.safe_load(new_flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+            from promptflow._sdk.schemas._flow import FlowSchema
 
-            copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
+            FlowSchema(context={BASE_PATH_CONTEXT_KEY: new_flow_dag_path.parent}).validate(flow_dag_obj)
 
-            if format == "docker":
-                cls._export_to_docker(
-                    flow_dag_path=temp_flow.path,
-                    output_dir=output_dir,
-                    connection_paths=connection_paths,
-                    flow_name=flow_dag_path.parent.stem,
-                )
+            flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+            flow_tools_json_path.parent.mkdir(parents=True, exist_ok=True)
+            # generate flow tools json for the flow and copy it back
+            shutil.copyfile(
+                src=new_flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON,
+                dst=flow_tools_json_path,
+            )

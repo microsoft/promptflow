@@ -1,12 +1,14 @@
 import os.path
 import shutil
 import tempfile
+from importlib.metadata import version
 from pathlib import Path
 
 import mock
 import pytest
 import yaml
 
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.connections import AzureOpenAIConnection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -76,6 +78,191 @@ def setup_connections(azure_open_ai_connection: AzureOpenAIConnection):
     )
 
 
+@pytest.fixture
+def expected_flow_tools_json() -> dict:
+    """Expected flow.tools.json for flow web_classification_with_additional_include"""
+    tools_version = version("promptflow-tools")
+    return {
+        "code": {
+            "classify_with_llm.jinja2": {
+                "inputs": {
+                    "examples": {"type": ["string"]},
+                    "text_content": {"type": ["string"]},
+                    "url": {"type": ["string"]},
+                },
+                "source": "classify_with_llm.jinja2",
+                "type": "llm",
+            },
+            "convert_to_dict.py": {
+                "function": "convert_to_dict",
+                "inputs": {"input_str": {"type": ["string"]}},
+                "source": "convert_to_dict.py",
+                "type": "python",
+            },
+            "fetch_text_content_from_url.py": {
+                "function": "fetch_text_content_from_url",
+                "inputs": {"url": {"type": ["string"]}},
+                "source": "fetch_text_content_from_url.py",
+                "type": "python",
+            },
+            "prepare_examples.py": {
+                "function": "prepare_examples",
+                "source": "prepare_examples.py",
+                "type": "python",
+            },
+            "summarize_text_content.jinja2": {
+                "inputs": {"text": {"type": ["string"]}},
+                "source": "summarize_text_content.jinja2",
+                "type": "llm",
+            },
+        },
+        "package": {
+            "promptflow.tools.azure_content_safety.AzureContentSafety.analyze_text": {
+                "class_name": "AzureContentSafety",
+                "description": "Use Azure Content Safety to detect harmful content.",
+                "function": "analyze_text",
+                "inputs": {
+                    "connection": {"type": ["AzureContentSafetyConnection"]},
+                    "hate_category": {
+                        "default": "medium_sensitivity",
+                        "enum": ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+                        "type": ["string"],
+                    },
+                    "self_harm_category": {
+                        "default": "medium_sensitivity",
+                        "enum": ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+                        "type": ["string"],
+                    },
+                    "sexual_category": {
+                        "default": "medium_sensitivity",
+                        "enum": ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+                        "type": ["string"],
+                    },
+                    "text": {"type": ["string"]},
+                    "violence_category": {
+                        "default": "medium_sensitivity",
+                        "enum": ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+                        "type": ["string"],
+                    },
+                },
+                "module": "promptflow.tools.azure_content_safety",
+                "name": "Content " "Safety " "(Text)",
+                "package": "promptflow-tools",
+                "package_version": tools_version,
+                "type": "python",
+            },
+            "promptflow.tools.azure_language_detector.get_language": {
+                "description": "Detect " "the " "language " "of " "the " "input " "text.",
+                "function": "get_language",
+                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_text": {"type": ["string"]}},
+                "module": "promptflow.tools.azure_language_detector",
+                "name": "Azure " "Language " "Detector",
+                "package": "promptflow-tools",
+                "package_version": tools_version,
+                "type": "python",
+            },
+            "promptflow.tools.azure_translator.get_translation": {
+                "description": "Use "
+                "Azure "
+                "Translator "
+                "API "
+                "for "
+                "translating "
+                "text "
+                "between "
+                "130+ "
+                "languages.",
+                "function": "get_translation",
+                "inputs": {
+                    "connection": {"type": ["CustomConnection"]},
+                    "input_text": {"type": ["string"]},
+                    "source_language": {"type": ["string"]},
+                    "target_language": {"default": "en", "type": ["string"]},
+                },
+                "module": "promptflow.tools.azure_translator",
+                "name": "Azure " "Translator",
+                "package": "promptflow-tools",
+                "package_version": tools_version,
+                "type": "python",
+            },
+            "promptflow.tools.embedding.embedding": {
+                "description": "Use Open "
+                "AI's "
+                "embedding "
+                "model to "
+                "create "
+                "an "
+                "embedding "
+                "vector "
+                "representing "
+                "the "
+                "input "
+                "text.",
+                "function": "embedding",
+                "inputs": {
+                    "connection": {"type": ["AzureOpenAIConnection", "OpenAIConnection"]},
+                    "deployment_name": {
+                        "capabilities": {"chat_completion": False, "completion": False, "embeddings": True},
+                        "enabled_by": "connection",
+                        "enabled_by_type": ["AzureOpenAIConnection"],
+                        "model_list": [
+                            "text-embedding-ada-002",
+                            "text-search-ada-doc-001",
+                            "text-search-ada-query-001",
+                        ],
+                        "type": ["string"],
+                    },
+                    "input": {"type": ["string"]},
+                    "model": {
+                        "enabled_by": "connection",
+                        "enabled_by_type": ["OpenAIConnection"],
+                        "enum": [
+                            "text-embedding-ada-002",
+                            "text-search-ada-doc-001",
+                            "text-search-ada-query-001",
+                        ],
+                        "type": ["string"],
+                    },
+                },
+                "module": "promptflow.tools.embedding",
+                "name": "Embedding",
+                "package": "promptflow-tools",
+                "package_version": tools_version,
+                "type": "python",
+            },
+            "promptflow.tools.serpapi.SerpAPI.search": {
+                "class_name": "SerpAPI",
+                "description": "Use "
+                "Serp "
+                "API "
+                "to "
+                "obtain "
+                "search "
+                "results "
+                "from "
+                "a "
+                "specific "
+                "search "
+                "engine.",
+                "function": "search",
+                "inputs": {
+                    "connection": {"type": ["SerpConnection"]},
+                    "engine": {"default": "google", "enum": ["google", "bing"], "type": ["string"]},
+                    "location": {"default": "", "type": ["string"]},
+                    "num": {"default": "10", "type": ["int"]},
+                    "query": {"type": ["string"]},
+                    "safe": {"default": "off", "enum": ["active", "off"], "type": ["string"]},
+                },
+                "module": "promptflow.tools.serpapi",
+                "name": "Serp API",
+                "package": "promptflow-tools",
+                "package_version": tools_version,
+                "type": "python",
+            },
+        },
+    }
+
+
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_connections")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
@@ -99,8 +286,6 @@ class TestFlowLocalOperations:
             assert mock_random_string.call_count == 1
 
         # check if .amlignore works
-        assert os.path.isfile(f"{source}/.promptflow/flow.tools.json")
-        assert not (Path(output_path) / "flow" / ".promptflow" / "flow.tools.json").exists()
         assert os.path.isdir(f"{source}/data")
         assert not (Path(output_path) / "flow" / "data").exists()
 
@@ -146,3 +331,29 @@ class TestFlowLocalOperations:
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
             target_node.pop("name")
             assert target_node == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
+
+    def test_flow_build_generate_flow_tools_json(self, pf, expected_flow_tools_json) -> None:
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pf.flows.build(
+                flow=source,
+                output=temp_dir,
+                variant="${summarize_text_content.variant_0}",
+            )
+
+            flow_tools_path = Path(temp_dir) / "flow" / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+            assert flow_tools_path.is_file()
+            assert yaml.safe_load(flow_tools_path.read_text()) == expected_flow_tools_json
+
+    def test_flow_validate_generate_flow_tools_json(self, pf, expected_flow_tools_json) -> None:
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include"
+
+        flow_tools_path = Path(source) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        flow_tools_path.unlink(missing_ok=True)
+        pf.flows.validate(
+            flow=source,
+            variant="${summarize_text_content.variant_0}",
+        )
+        assert flow_tools_path.is_file()
+        assert yaml.safe_load(flow_tools_path.read_text()) == expected_flow_tools_json

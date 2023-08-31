@@ -19,6 +19,7 @@ from promptflow._cli._params import (
     add_param_inputs,
     add_param_prompt_template,
     add_param_source,
+    add_param_variant,
     add_param_yes,
     add_parser_build,
     logging_params,
@@ -49,6 +50,7 @@ def add_flow_parser(subparsers):
     add_parser_test_flow(flow_subparsers)
     add_parser_serve_flow(flow_subparsers)
     add_parser_build(flow_subparsers, "flow")
+    add_parser_validate_flow(flow_subparsers)
     flow_parser.set_defaults(action="flow")
 
 
@@ -66,6 +68,8 @@ def dispatch_flow_commands(args: argparse.Namespace):
         serve_flow(args)
     elif args.sub_action == "build":
         build_flow(args)
+    elif args.sub_action == "validate":
+        validate_flow(args)
 
 
 def add_parser_init_flow(subparsers):
@@ -140,6 +144,31 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
         + logging_params,
         subparsers=subparsers,
         help_message="Serving a flow as an endpoint.",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_validate_flow(subparsers):
+    """Add flow validate parser to the pf flow subparsers."""
+    epilog = """  # noqa: E501
+Examples:
+
+# Validate flow
+pf flow validate --source <path_to_flow>
+# Validate flow with specified variant:
+pf flow validate --source <path_to_flow> --variant ${node_name.variant_name}
+"""
+    activate_action(
+        name="validate",
+        description="Validate a flow and generate flow.tools.json for the flow.",
+        epilog=epilog,
+        add_params=[
+            add_param_source,
+            # TODO: shall we use variants instead of variant here?
+            add_param_variant,
+        ],
+        subparsers=subparsers,
+        help_message="Validate a flow. Will raise error if the flow is not valid.",
         action_param_name="sub_action",
     )
 
@@ -367,6 +396,22 @@ def serve_flow(args):
 
 
 def build_flow(args):
+    """
+    i. `pf flow build --source <flow_folder> --output <output_folder> --variant <variant>`
+    ii. `pf flow build --source <flow_folder> --format docker --output <output_folder> --variant <variant>`
+    iii. `pf flow build --source <flow_folder> --format executable --output <output_folder> --variant <variant>`
+
+    # default to resolve variant and update flow.dag.yaml, support this in case customer want to keep the
+    variants for continuous development
+    # we can delay this before receiving specific customer request
+    v. `pf flow build --source <flow_folder> --output <output_folder> --keep-variants`
+
+    output structure:
+    flow/
+    .connections/
+    Dockerfile|executable.exe
+    ...
+    """
     pf_client = PFClient()
 
     pf_client.flows.build(
@@ -379,4 +424,14 @@ def build_flow(args):
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"
         f"please check {Path(args.output).joinpath('README.md').absolute().as_posix()} "
         f"for how to use it."
+    )
+
+
+def validate_flow(args):
+    pf_client = PFClient()
+
+    pf_client.flows.validate(
+        flow=args.source,
+        # TODO: it's a little weird to have variant here, but we can't generate correct flow.tools.json without it
+        variant=args.variant,
     )
