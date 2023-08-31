@@ -14,11 +14,12 @@ A flow can be deployed across multiple platforms, such as a local development se
 - image: ../../media/how-to-guides/kubernetes.png
   content: "<center><b>Kubernetes</b></center>"
   website: deploy-using-kubernetes.html
+ 
+- image: ../../media/how-to-guides/appservice.png
+  content: "<center><b>Azure App Service</b></center>"
+  website: ../../cloud/azureai/deploy-to-azure-appservice.html
 
 ```
-
-We also support deploy promptflow with azure services:
-- [Deploy to Azure App Service](../../cloud/azureai/deploy-to-azure-appservice.md)
 
 ```{toctree}
 :maxdepth: 1
