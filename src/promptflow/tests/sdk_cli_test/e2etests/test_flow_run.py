@@ -302,7 +302,7 @@ class TestFlowRun:
             source=f"{RUNS_DIR}/run_with_env.yaml",
         )
         outputs = local_client.runs._get_outputs(run=run)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_pf_run_with_env_overwrite(self, local_client, local_aoai_connection, pf):
         run = pf.run(
@@ -311,7 +311,7 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         outputs = local_client.runs._get_outputs(run=run)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_eval_run_not_exist(self, pf):
         name = str(uuid.uuid4())

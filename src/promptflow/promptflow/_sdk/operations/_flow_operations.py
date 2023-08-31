@@ -9,7 +9,12 @@ from typing import List, Union
 import yaml
 
 from promptflow._sdk._constants import CHAT_HISTORY, DAG_FILE_NAME, LOCAL_MGMT_DB_PATH
-from promptflow._sdk._utils import copy_tree_respect_template_and_ignore_file, dump_yaml, generate_random_string
+from promptflow._sdk._utils import (
+    copy_tree_respect_template_and_ignore_file,
+    dump_yaml,
+    generate_random_string,
+    parse_variant,
+)
 from promptflow._sdk.operations._run_submitter import variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
 from promptflow.exceptions import UserErrorException
@@ -273,7 +278,7 @@ class FlowOperations:
         *,
         output: Union[str, PathLike],
         format: str = "docker",
-        node_variant: str = None,
+        variant: str = None,
     ):
         """
         Build flow to other format.
@@ -284,9 +289,9 @@ class FlowOperations:
         :type format: str
         :param output: output directory
         :type output: Union[str, PathLike]
-        :param node_variant: node variant in format of {node_name}.{variant_name},
+        :param variant: node variant in format of {node_name}.{variant_name},
             will use default variant if not specified.
-        :type node_variant: str
+        :type variant: str
         :return: no return
         :rtype: None
         """
@@ -305,17 +310,17 @@ class FlowOperations:
         if format not in ["docker"]:
             raise ValueError(f"Unsupported export format: {format}")
 
-        if node_variant:
-            node_name, variant_name = node_variant.split(".", 1)
+        if variant:
+            tuning_node, node_variant = parse_variant(variant)
         else:
-            node_name, variant_name = None, None
+            tuning_node, node_variant = None, None
 
         flow_copy_target = output_dir / "flow"
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
         # TODO: avoid copy for twice
-        with variant_overwrite_context(flow_dag_path, tuning_node=node_name, variant=variant_name) as temp_flow:
+        with variant_overwrite_context(flow_dag_path, tuning_node=tuning_node, variant=node_variant) as temp_flow:
             from promptflow.contracts.flow import Flow as ExecutableFlow
 
             executable = ExecutableFlow.from_yaml(flow_file=temp_flow.path, working_dir=temp_flow.code)
