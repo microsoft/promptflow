@@ -7,7 +7,7 @@ class Settings:
         "py": r"(?<!.)(class|def)",
     }
     divide_func = {
-        "py": r"((\n {,6})|^)(class|def)\s+(\S+(?=\())\s*(\([^)]*\))?(\s*->\s*\S+:|:) *"
+        "py": r"((\n {,6})|^)(class|def)\s+(\S+(?=\())\s*(\([^)]*\))?\s*(->[^:]*:|:) *"
     }
 
 
