@@ -1,0 +1,21 @@
+id: template_standard_flow
+name: Template Standard Flow
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  text:
+    type: string
+    default: "Hello microsoft! "
+outputs:
+  output:
+    type: string
+    reference: ${my_python_node.output}
+nodes:
+- name: my_python_node
+  type: python
+  source:
+    type: code
+    path: my_python_node.py
+  inputs:
+    connection: my_custom_connection
+    input1: ${inputs.text}

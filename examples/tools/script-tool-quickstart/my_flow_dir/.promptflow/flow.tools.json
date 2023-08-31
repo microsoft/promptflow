@@ -1,0 +1,22 @@
+{
+  "package": {},
+  "code": {
+    "my_python_node.py": {
+      "type": "python",
+      "inputs": {
+        "input1": {
+          "type": [
+            "string"
+          ]
+        },
+        "connection": {
+          "type": [
+            "MyCustomConnection"
+          ]
+        }
+      },
+      "source": "my_python_node.py",
+      "function": "my_python_tool"
+    }
+  }
+}
