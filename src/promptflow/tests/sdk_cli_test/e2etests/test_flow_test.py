@@ -1,11 +1,11 @@
+import logging
 from pathlib import Path
 from types import GeneratorType
-import logging
 
 import pytest
 
-from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -73,6 +73,7 @@ class TestFlowTest:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
+    @pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
         inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)
