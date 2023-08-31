@@ -1,5 +1,12 @@
 name: step_publish_test_results
 inputs:
+  testActionFileName:
+    required: required
+    type: string
+  testResultTitle:
+    required: false
+    default: "Test Result"
+    type: string
   osVersion:
     required: false
     default: "ubuntu-latest"
@@ -29,8 +36,8 @@ runs:
   - name: Publish Test Results
     uses: EnricoMi/publish-unit-test-result-action@v2
     with:
-      check_name: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-      comment_title: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+      check_name: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+      comment_title: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
   - name: Generate Coverage Report
     uses: orgoro/coverage@v3.1
