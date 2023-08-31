@@ -4,37 +4,108 @@
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
 
-This guide will walk you through the main user journey of prompt flow code-first experience. You will learn how to create and develop your first prompt flow, test and run it with large set of data.
+This guide will walk you through the fist step using of prompt flow code-first experience. 
 
-## Prerequisites
+**Prerequisite** - To make the most of this tutorial, you'll need:
+
+- Know how to program with Python :)
+- _A basic understanding of Machine Learning can be beneficial, but it's not mandatory._
+
+
+**Learning Objectives** - Upon completing this tutorial, you should learn how to:
+- Setup your dev environment to run prompt flow
+    - Setup A Python environment
+- Clone a sample flow & understand what's a flow
+    - A local clone of the [Prompt Flow repository](https://github.com/microsoft/promptflow)
+    - Understand the structure of prompt flow directory
+- Test the flow with your custom inputs 
+    - Understand how to edit the flow using visual editor or yaml
+    - Test the flow using your favorite experience: CLI, SDK or VS Code Extension.
+
+
+## Set up your dev environment
 
 1. A python environment, `python=3.9` is recommended.
+TODO how to install conda
+how to select conda from vscode. maybe a screenshot.
+
 2. Install `promptflow` and `promptflow-tools`.
 ```sh
 pip install promptflow promptflow-tools
 ```
-3. Get the sample flows. 
-   - Get access to the flow sample repository.
-        - Make sure you have joined Microsoft org: [Microsoft (github.com)](https://github.com/microsoft)
-          - Link to join: [Home | Microsoft Open Source Management](https://repos.opensource.microsoft.com/)
-        - Request access to this team: [prompt flow users · microsoft Team (github.com)](https://github.com/orgs/microsoft/teams/prompt-flow-users)
-        - Ask a maintainer to approve your request.
-    - Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
-```sh
-git clone https://github.com/microsoft/promptflow.git
+TODO Check CLI/SDK install success.
+```bash
+pf -v
 ```
 
-4. (Optional) Prerequisites for VS Code extension.
+## Understand what's a flow
+
+A flow in prompt flow serves as an executable workflow that streamlines the development of your LLM-based AI application. It provides a comprehensive framework for managing data flow and processing within your application. See [Flows](../../concepts/concept-flows.md) for more details.
+
+### Get the flow sample
+
+- Get access to the flow sample repository.
+    - Make sure you have joined Microsoft org: [Microsoft (github.com)](https://github.com/microsoft)
+        - Link to join: [Home | Microsoft Open Source Management](https://repos.opensource.microsoft.com/)
+    - Request access to this team: [prompt flow users · microsoft Team (github.com)](https://github.com/orgs/microsoft/teams/prompt-flow-users)
+    - Ask a maintainer to approve your request.
+- Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
+
+```bash
+git clone https://github.com/microsoft/promptflow.git
+
+```
+
+### Understand flow directory
+The sample used in this tutorial is the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) flow, which categorizes URLs into several predefined classes. Classification is a traditional machine learning task, and this sample illustrates how to perform classification using GPT and prompts.
+
+```bash
+cd promptflow/examples/flows/standard/web-classification
+```
+
+A flow directory is a directory that contains all contents of a flow.
+
+TODO add screenshot of directory
+
+### Understand the flow yaml
+The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the DAG(Directed Acyclic Graph) of a flow. The flow dag of this sample likes below:
+
+![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
+
+### Using VS Code Extension to visualize the flow
+Note: VS Code Extension is optional but highly ...
+
+Prerequisites for VS Code extension.
    - Install latest stable version of [VS Code](https://code.visualstudio.com/)
    - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
 
-5. (Optional) Install Prompt flow VS Code extension
+Install Prompt flow VS Code extension
    - <TODO: update extension link in the VS Code extension marketplace>
-
 ![install_extension](../media/how-to-guides/quick-start/install_from_vsix.png)
+Open dag in vscode. (code & visual)
 
 
-## Create necessary connections
+## Develop and test your flow
+
+### How to edit the flow: change the input of the flow
+TODO add description here.
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  url:
+    type: string
+    # change the default value of input url here
+    default: https://play.google.com/store/apps/details?id=com.twitter.android
+```
+
+::::{tab-set}
+
+:::{tab-item} CLI
+:sync: CLI
+
+![q_0](../media/how-to-guides/quick-start/flow-directory-and-dag-yaml.png)
+
+### Create necessary connections
 
 The connection helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety. See [Manage connections](./manage-connections.md) for more details.
 
@@ -64,7 +135,7 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConne
 name: open_ai_connection
 type: azure_open_ai
 api_key: <test_key>
-organization: ""
+organization: "" # optional
 ```
 Then we can use CLI command to create the connection.
 
@@ -113,28 +184,13 @@ print(conn)
 Find the "connections" section on the Prompt flow left side bar. The "Create connection" button is on the top right.
 
 ![vsc_add_connection](../media/how-to-guides/quick-start/vsc-add-connection.png)
+TODO add more screenshot.
+
 :::
 
 ::::
 
-## Develop and test your flow
-A flow in prompt flow serves as an executable workflow that streamlines the development of your LLM-based AI application. It provides a comprehensive framework for managing data flow and processing within your application. See [Flows](../../concepts/concept-flows.md) for more details.
-
-In this guide, we use [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) sample to walk you through the main user journey, it's a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
-
-
-A flow directory is a directory that contains all contents of a flow. The entry file is `flow.dag.yaml` which describes the DAG(Directed Acyclic Graph) of a flow. The flow dag of this sample likes below:
-
-![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
-
-::::{tab-set}
-
-:::{tab-item} CLI
-:sync: CLI
-
-![q_0](../media/how-to-guides/quick-start/flow-directory-and-dag-yaml.png)
-
-
+### Test the flow
 Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/standard/`
 
 ```sh
@@ -188,6 +244,7 @@ Click the run flow button on the top of the visual editor to trigger flow test.
 See more details in [Initialize and test a flow](./init-and-test-a-flow.md).
 
 ## Create a new run
+TODO move this to the other run page.
 
 After the flow run successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
 
@@ -265,10 +322,13 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ## Next steps
 
-Learn more about:
-- [Manage connections](./manage-connections.md)
-- [Initialize and test a flow](./init-and-test-a-flow.md)
-- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
-- [Tune prompts with variants](./tune-prompts-with-variants.md)
-- [Deploy and export a flow](./deploy-and-export-a-flow.md)
-- [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)
+Learn more on how to:
+- [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
+- [Deploy a flow](./deploy-and-export-a-flow.md): how to deploy the flow as a web app.
+- [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
+- [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
+
+And you can also check our [examples](https://github.com/microsoft/promptflow/tree/main/examples), especially:
+- [Getting Started with Prompt Flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
+- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): go through an end-to-end tutorial on how to develop a chat application with prompt flow.
