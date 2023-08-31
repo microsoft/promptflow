@@ -28,7 +28,7 @@ With prompt flow, you will be able to:
 
 ## Get Started with Prompt flow ⚡
 
-#### Installation
+### Installation
 
 A python environment, `python=3.9` is recommended.
 
@@ -42,7 +42,7 @@ Prompt flow provide an extension in VS code for visualizing and editing your flo
 
 ![vsc install](examples/tutorials/quick-start/media/vsc.png)
 
-#### Create the connection to store your OpenAI API key
+### Create the connection to store your OpenAI API key
 
 Prompt flow offers a **safe** way to manage credentials or secrets for LLM APIs, that is **Connection**!
 
@@ -54,7 +54,7 @@ pf connection create -f .env --name open_ai_connection
 
 In case you haven't set up the environment variable yet, don't worry! You can refer to [how to create a connection]() from scratch.
 
-#### Initialize a prompt flow from template
+### Initialize a prompt flow from template
 
 ```sh
 pf flow init --flow my_chatbot --type chat
@@ -62,9 +62,9 @@ pf flow init --flow my_chatbot --type chat
 
 This command will create a new **flow folder** named "my_chatbot" using the "chat" template.
 
-Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes). [More flow samples]()
+Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes). [More flow samples](examples/flows)
 
-#### Quick test your flow
+### Quick test your flow
 
 Open the `flow.dag.yaml` file in the "my_chatbot" flow folder, specify the connection name you created in the previous step in the `connection` field, specify the model name in the `model` field, for example:
 
@@ -104,7 +104,7 @@ answer=list(flow_output['answer'])
 print(f"Flow outputs: {''.join(answer)}")
 ```
 
-#### Test the tune quality of the generated prompt
+### Test the tune quality of the generated prompt
 
 Do you have confidence in the quality of the generated prompt? As we know, the randomness of the LLMs always makes the generated answer not stable. Only one test is not enough to evaluate the quality of the prompt, usually we need to test it with a larger dataset and evaluate the performance of the generations with the groundtruth.
 
