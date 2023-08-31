@@ -127,7 +127,7 @@ jobs:
     - name: Build wheel
       uses: "./.github/actions/step_sdk_setup_win"
       with:
-        setupType: ${{ env.packageSetupType }}
+        setupType: promptflow_with_extra
         scriptPath: ${{ env.testWorkingDirectory }}
     - name: Azure Login
       uses: azure/login@v1
