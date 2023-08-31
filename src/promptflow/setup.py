@@ -14,6 +14,13 @@ PACKAGE_FOLDER_PATH = Path(__file__).parent / "promptflow"
 
 with open(os.path.join(PACKAGE_FOLDER_PATH, "_version.py"), encoding="utf-8") as f:
     version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(1)
+# add suffix for non-production builds
+if os.getenv("IS_IN_PYPI_RELEASE_PIPELINE") == "true":
+    pass
+elif os.getenv("IS_IN_PRIVATE_RELEASE_PIPELINE") == "true":
+    version = f"{version}.test"
+else:
+    version = f"{version}.dev"
 
 with open("README.md", encoding="utf-8") as f:
     readme = f.read()
