@@ -1,6 +1,10 @@
 # Release History
 
-## v0.1.0b2 (2022.08.29)
+## v0.1.0b3 (2023.08.30)
+
+- Minor bug fixes.
+
+## v0.1.0b2 (2023.08.29)
 
 - First preview version with major CLI & SDK features.
 
@@ -12,6 +16,6 @@
     - **pfazure run**: create/list/stream/show/show-details/show-metrics/visualize
 
 
-## v0.1.0b1 (2022.07.20)
+## v0.1.0b1 (2023.07.20)
 
 - Stub version in Pypi.

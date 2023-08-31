@@ -17,7 +17,8 @@ from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
-from promptflow.storage import AbstractRunStorage, DummyRunStorage
+from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import DummyRunStorage
 
 
 class RunTracker(ThreadLocalSingleton):

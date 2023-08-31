@@ -34,19 +34,25 @@ class FlowOperations:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
-    ):
+    ) -> dict:
         """Test flow or node
 
         :param flow: path to flow directory to test
+        :type flow: Union[str, PathLike]
         :param inputs: Input data for the flow test
+        :type inputs: dict
         :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
            if not specified.
+        :type variant: str
         :param node: If specified it will only test this node, else it will test the flow.
+        :type node: str
         :param environment_variables: Environment variables to set by specifying a property path and value.
            Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
+        :type environment_variables: dict
         :return: The result of flow or node
+        :rtype: dict
         """
         result = self._test(
             flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables

@@ -633,6 +633,15 @@ class TestCli:
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
             assert ignore_file_path.exists()
             ignore_file_path.unlink()
+
+            # Only azure openai connection in test env
+            with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "r") as f:
+                flow_dict = yaml.safe_load(f)
+            flow_dict["nodes"][0]["provider"] = "AzureOpenAI"
+            flow_dict["nodes"][0]["connection"] = "azure_open_ai_connection"
+            with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "w") as f:
+                yaml.dump(flow_dict, f)
+
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 

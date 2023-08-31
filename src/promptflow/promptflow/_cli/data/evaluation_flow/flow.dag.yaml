@@ -24,7 +24,5 @@ nodes:
   inputs:
     processed_results: ${line_process.output}
   aggregation: true
-id: template_eval_flow
-name: Template Evaluation Flow
 environment:
   python_requirements_txt: requirements.txt
