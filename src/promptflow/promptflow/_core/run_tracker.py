@@ -364,28 +364,23 @@ class RunTracker(ThreadLocalSingleton):
         status_summary = {}
         line_status = {}
         for run_info in node_run_infos:
+            node_name = run_info.node
             if run_info.index is not None:
                 if run_info.index not in line_status.keys():
                     line_status[run_info.index] = True
 
                 line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
                     Status.Completed,
-                    Status.Failed,
+                    Status.Skipped,
                 )
 
-                node_name = run_info.node
-                if f"__pf__.nodes.{node_name}.completed" not in status_summary.keys():
-                    status_summary[f"__pf__.nodes.{node_name}.completed"] = 0
-                    status_summary[f"__pf__.nodes.{node_name}.skipped"] = 0
-                    status_summary[f"__pf__.nodes.{node_name}.failed"] = 0
-
-                # Only consider Completed and Failed status, because the UX only support two status.
+                # Only consider Completed, Skipped and Failed status, because the UX only support three status.
                 if run_info.status in (Status.Completed, Status.Skipped, Status.Failed):
-                    status_summary[f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"] += 1
+                    node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
+                    status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
 
             # For reduce node, the index is None.
             else:
-                node_name = run_info.node
                 status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
         status_summary["__pf__.lines.completed"] = sum(line_status.values())

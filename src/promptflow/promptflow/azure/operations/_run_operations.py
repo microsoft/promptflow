@@ -312,9 +312,15 @@ class RunOperations(_ScopeDependentOperations):
     def _is_system_metric(metric: str) -> bool:
         """Check if the metric is system metric.
 
-        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.failed, __pf__.nodes.xx.completed
+        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.skipped,
+        __pf__.lines.failed, __pf__.nodes.xx.completed
         """
-        return metric.endswith(".completed") or metric.endswith(".failed") or metric.endswith(".is_completed")
+        return (
+            metric.endswith(".completed")
+            or metric.endswith(".skipped")
+            or metric.endswith(".failed")
+            or metric.endswith(".is_completed")
+        )
 
     def get(self, run: str, **kwargs) -> Run:
         """Get a run.
