@@ -436,7 +436,7 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             dst.parent.mkdir(parents=True, exist_ok=True)
             if dst.exists():
                 try:
-                    relative_path = dst.relative_to(temp_dir)
+                    relative_path = dst.relative_to(Path(temp_dir).resolve())
                 except Exception:
                     relative_path = dst
                 logger.warning("Found duplicate file in additional includes, "
