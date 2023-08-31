@@ -53,7 +53,7 @@ def run_pf_command(*args, cwd=None):
 class TestCli:
     def test_pf_version(self, capfd):
         run_pf_command("--version")
-        out, err = capfd.readouterr()
+        out, _ = capfd.readouterr()
         # read version from _version.py
         with open("./promptflow/_version.py", encoding="utf-8") as f:
             version = cast(Match[Any], re.search(r'^VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE)).group(
