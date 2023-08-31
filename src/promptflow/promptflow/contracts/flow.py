@@ -487,7 +487,7 @@ class Flow:
             if node.connection:
                 connection_names.add(node.connection)
                 continue
-            tool = self._tools_loader.load_tool_for_node(node, self._working_dir)
+            tool = self.get_tool(node.tool) or self._tools_loader.load_tool_for_node(node, self._working_dir)
             if tool:
                 connection_names.update(self._get_connection_name_from_tool(tool, node).values())
         return connection_names
@@ -497,7 +497,7 @@ class Flow:
         node = self.get_node(node_name)
         if not node:
             return []
-        tool = self._tools_loader.load_tool_for_node(node, self._working_dir)
+        tool = self.get_tool(node.tool) or self._tools_loader.load_tool_for_node(node, self._working_dir)
         if tool:
             return list(self._get_connection_name_from_tool(tool, node).keys())
         return []
