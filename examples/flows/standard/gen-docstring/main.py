@@ -7,7 +7,7 @@ from promptflow import PFClient
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="The code path of code that need to generate docstring.")
-    parser.add_argument("--source", help="Path for the code file", default=r'C:\Users\chenyzhang\code\azure-sdk-for-python\sdk\ml\azure-ai-ml\azure\ai\ml\_ml_client.py')
+    parser.add_argument("--source", help="Path for the code file", default='./azure_open_ai.py')
     args = parser.parse_args()
 
     pf = PFClient()
