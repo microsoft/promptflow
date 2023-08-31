@@ -25,18 +25,18 @@ This guide will walk you through the fist step using of prompt flow code-first e
 
 ## Set up your dev environment
 
-1. A python environment with version `python=3.9`. It's recommended to use python environment manager [miniconda](https://docs.conda.io/en/latest/miniconda.html), but you can also use other alternatives like `virtualenv`. After you have installed miniconda, run below commands to create a python environment
+1. A python environment with version `python=3.9`. It's recommended to use python environment manager [miniconda](https://docs.conda.io/en/latest/miniconda.html). After you have installed miniconda, run below commands to create a python environment
 ```bash
-conda create --name promptflow_env python=3.9
-conda activate promptflow_env
+conda create --name pf-examples python=3.9
+conda activate pf-examples
 ```
 
-2. Install `promptflow` and `promptflow-tools`.
+1. Install `promptflow` and `promptflow-tools`.
 ```sh
 pip install promptflow promptflow-tools
 ```
 
-3. Check the installation.
+1. Check the installation.
 ```bash
 # should print promptflow version, e.g. "0.1.0b3"
 pf -v
@@ -48,12 +48,7 @@ A flow in prompt flow serves as an executable workflow that streamlines the deve
 
 ### Get the flow sample
 
-- Get access to the flow sample repository.
-    - Make sure you have joined Microsoft org: [Microsoft (github.com)](https://github.com/microsoft)
-        - Link to join: [Home | Microsoft Open Source Management](https://repos.opensource.microsoft.com/)
-    - Request access to this team: [prompt flow users · microsoft Team (github.com)](https://github.com/orgs/microsoft/teams/prompt-flow-users)
-    - Ask a maintainer to approve your request.
-- Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
+Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
 
 ```bash
 git clone https://github.com/microsoft/promptflow.git
@@ -66,7 +61,12 @@ The sample used in this tutorial is the [web-classification](https://github.com/
 cd promptflow/examples/flows/standard/web-classification
 ```
 
-A flow directory is a directory that contains all contents of a flow.
+A flow directory is a directory that contains all contents of a flow. Structure of flow folder:
+- **flow.dag.yaml**: The flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
+- **.promptflow/flow.tools.json**: It contains all package tools meta that references in `flow.dag.yaml`.
+- **Source code files (.py, .jinja2)**: User managed, the code scripts that references by tools.
+- **requirements.txt**: Python package dependencies for this flow.
+
 
 ![flow_dir](../media/how-to-guides/quick-start/flow_directory.png)
 
@@ -85,21 +85,21 @@ _Note: VS Code Extension is optional but highly recommended._
    - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
 
 2. Install Prompt flow VS Code extension
-   - <TODO: update extension link in the VS Code extension marketplace>
-![install_extension](../media/how-to-guides/quick-start/install_from_vsix.png)
 
-3. Select python interpreter
+    ![install_extension](../media/how-to-guides/quick-start/vs_code_install.png)
+
+1. Select python interpreter
+
+    ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
    
-   ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
+    ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_1.png)
+
+
+2. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
    
-   ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_1.png)
+    ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
 
-
-4. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
-   
-   ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
-
-   ![vscode](../media/how-to-guides/quick-start/vs_code_dag_1.png)
+    ![vscode](../media/how-to-guides/quick-start/vs_code_dag_1.png)
 
 
 
