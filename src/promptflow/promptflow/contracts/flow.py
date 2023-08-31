@@ -380,6 +380,14 @@ class Flow:
                 tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
                 node.tool = tool.name
                 flow.tools.append(tool)
+        if flow.node_variants:
+            # Generate tools for node variants
+            for node_variant in flow.node_variants.values():
+                for variant in node_variant.variants.values():
+                    node = variant.node
+                    tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
+                    node.tool = tool.name
+                    flow.tools.append(tool)
         return flow
 
     def _apply_node_overrides(self, node_overrides):

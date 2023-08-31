@@ -21,4 +21,4 @@ class TestFlowContract:
         # Connection input exists only in python node
         variant_python_node_flow_path = TEST_CONFIG / "flows" / "flow_with_dict_input_with_variant"
         flow = Flow.from_yaml(variant_python_node_flow_path / "flow.dag.yaml")
-        assert flow.get_connection_input_names_for_node("print_val") == {"mock_custom_connection"}
+        assert flow.get_connection_input_names_for_node("print_val") == ["conn"]
