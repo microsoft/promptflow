@@ -71,7 +71,7 @@ A flow directory is a directory that contains all contents of a flow. Structure 
 ![flow_dir](../media/how-to-guides/quick-start/flow_directory.png)
 
 ### Understand the flow yaml
-The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the DAG(Directed Acyclic Graph) of a flow. The flow dag of this sample likes below:
+The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. The flow dag of this sample likes below:
 
 ![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
 
@@ -186,6 +186,13 @@ except:
         api_version="<test_version>",
     )
 
+    # use this if you have an existing OpenAI account
+    # from promptflow.entities import OpenAIConnection
+    # connection = OpenAIConnection(
+    #     name=conn_name,
+    #     api_key="<user-input>",
+    # )
+
     conn = pf.connections.create_or_update(connection)
     print("successfully created connection")
 
@@ -205,7 +212,9 @@ print(conn)
 2. Create your connection.
 
     ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_1.png)
+
     ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_2.png)
+
     ![vsc_add_connection](../media/how-to-guides/quick-start/vs_code_connection_3.png)
 
 
@@ -264,7 +273,7 @@ print(f"Node outputs: {node_result}")
 :sync: VS Code Extension
 
 Use the code lens action on the top of the yaml editor to trigger flow test
-![dag_yaml_flow_test](../media/how-to-guides/quick-start/run_flow_dag_yaml.png)
+![dag_yaml_flow_test](../media/how-to-guides/quick-start/test_flow_dag_yaml.gif)
 
 
 Click the run flow button on the top of the visual editor to trigger flow test.
