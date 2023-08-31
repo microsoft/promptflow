@@ -291,6 +291,8 @@ class _StrongTypeConnection(_Connection):
 
 class AzureOpenAIConnection(_StrongTypeConnection):
     """
+    Azure Open AI connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param api_type: The api type, default "azure".
@@ -313,33 +315,41 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     @property
     def api_base(self):
+        """Return the connection api base."""
         return self.configs.get("api_base")
 
     @api_base.setter
     def api_base(self, value):
+        """Set the connection api base."""
         self.configs["api_base"] = value
 
     @property
     def api_type(self):
+        """Return the connection api type."""
         return self.configs.get("api_type")
 
     @api_type.setter
     def api_type(self, value):
+        """Set the connection api type."""
         self.configs["api_type"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
 
 class OpenAIConnection(_StrongTypeConnection):
     """
+    Open AI connection.
+
     :param api_key: The api key.
-    :param organization: The organization, optional.
+    :param organization: The unique identifier for your organization which can be used in API requests.
     :param name: Connection name.
     """
 
@@ -356,15 +366,19 @@ class OpenAIConnection(_StrongTypeConnection):
 
     @property
     def organization(self):
+        """Return the connection organization."""
         return self.configs.get("organization")
 
     @organization.setter
     def organization(self, value):
+        """Set the connection organization."""
         self.configs["organization"] = value
 
 
 class SerpConnection(_StrongTypeConnection):
     """
+    Serp connection.
+
     :param api_key: The api key.
     :param name: Connection name.
     """
@@ -399,6 +413,8 @@ class _EmbeddingStoreConnection(_StrongTypeConnection):
 
 class QdrantConnection(_EmbeddingStoreConnection):
     """
+    Qdrant connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param name: Connection name.
@@ -413,6 +429,8 @@ class QdrantConnection(_EmbeddingStoreConnection):
 
 class WeaviateConnection(_EmbeddingStoreConnection):
     """
+    Weaviate connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param name: Connection name.
@@ -427,6 +445,8 @@ class WeaviateConnection(_EmbeddingStoreConnection):
 
 class CognitiveSearchConnection(_StrongTypeConnection):
     """
+    Cognitive Search connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param api_version: The api version, default "2023-07-01-Preview".
@@ -446,23 +466,29 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
     @property
     def api_base(self):
+        """Return the connection api base."""
         return self.configs.get("api_base")
 
     @api_base.setter
     def api_base(self, value):
+        """Set the connection api base."""
         self.configs["api_base"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):
     """
+    Azure Content Safety connection.
+
     :param api_key: The api key.
     :param endpoint: The api endpoint.
     :param api_version: The api version, default "2023-04-30-preview".
@@ -490,31 +516,39 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
 
     @property
     def endpoint(self):
+        """Return the connection endpoint."""
         return self.configs.get("endpoint")
 
     @endpoint.setter
     def endpoint(self, value):
+        """Set the connection endpoint."""
         self.configs["endpoint"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
     @property
     def api_type(self):
+        """Return the connection api type."""
         return self.configs.get("api_type")
 
     @api_type.setter
     def api_type(self, value):
+        """Set the connection api type."""
         self.configs["api_type"] = value
 
 
 class FormRecognizerConnection(AzureContentSafetyConnection):
     """
+    Form Recognizer connection.
+
     :param api_key: The api key.
     :param endpoint: The api endpoint.
     :param api_version: The api version, default "2023-07-31".
