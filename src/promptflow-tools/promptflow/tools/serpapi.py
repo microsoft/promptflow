@@ -3,7 +3,8 @@ import sys
 from enum import Enum
 
 import requests
-
+# Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
+# since the code here is in promptflow namespace as well
 from promptflow._internal import ToolProvider, tool
 from promptflow.connections import SerpConnection
 from promptflow.exceptions import PromptflowException

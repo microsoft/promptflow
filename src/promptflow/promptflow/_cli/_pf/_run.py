@@ -15,7 +15,7 @@ from promptflow._cli._params import (
     add_param_environment_variables,
     add_param_run_name,
     add_param_set,
-    add_parser_export,
+    add_parser_build,
     logging_params,
 )
 from promptflow._cli._utils import (
@@ -52,7 +52,7 @@ def add_run_parser(subparsers):
     add_run_visualize(subparsers)
     add_run_archive(subparsers)
     add_run_restore(subparsers)
-    add_parser_export(subparsers, "run")
+    add_parser_build(subparsers, "run")
     run_parser.set_defaults(action="run")
 
 
@@ -195,7 +195,7 @@ def add_run_list(subparsers):
     epilog = """
 Examples:
 
-# List runs status locally:
+# List runs status:
 pf run list
 # List most recent 10 runs status:
 pf run list --max-results 10
@@ -260,7 +260,7 @@ pf run list --output table
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="List runs locally.",
+        help_message="List runs.",
         action_param_name="sub_action",
     )
 

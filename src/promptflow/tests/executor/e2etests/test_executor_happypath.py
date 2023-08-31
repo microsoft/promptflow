@@ -331,3 +331,14 @@ class TestExecutor:
         flow_run_info = line_result.run_info
         assert flow_run_info.status == Status.Completed
         assert flow_run_info.error is None
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            "web_classification",
+        ],
+    )
+    def test_executor_creation_with_default_variants(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        flow_result = executor.exec_line(self.get_line_inputs())
+        assert flow_result.run_info.status == Status.Completed
