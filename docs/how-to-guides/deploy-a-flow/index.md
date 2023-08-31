@@ -1,8 +1,5 @@
 # Deploy a flow
-
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
-:::
+A flow can be deployed across multiple platforms, such as a local development service, within a Docker container, onto a Kubernetes cluster, etc.
 
 ```{gallery-grid}
 :grid-columns: 1 2 2 3

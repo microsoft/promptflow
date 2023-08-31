@@ -1,6 +1,35 @@
 # Deploy a flow using Docker
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+:::
 
-## Exported Dockerfile structure
+There are two steps to deploy a flow using docker:
+1. Build the flow as docker format.
+2. Build and run the docker image.
+ 
+## Build a flow as docker format
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+Use the command below to build a flow as docker format:
+```bash
+pf flow build --source <path-to-your-flow-folder> --output <your-output-dir> --format docker
+```
+:::
+:::{tab-item} VS Code Extension
+:sync: VSC
+
+Click the button below to build a flow as docker format:
+![img](../../media/how-to-guides/vscode_export_as_docker.png)
+:::
+::::
+
+Note that all dependent connections must be created before exporting as docker.
+
+
+### Docker format folder structure
 
 Exported Dockerfile & its dependencies are located in the same folder. The structure is as below:
 - flow: the folder contains all the flow files
@@ -9,9 +38,8 @@ Exported Dockerfile & its dependencies are located in the same folder. The struc
   - ...
 - Dockerfile: the dockerfile to build the image
 - start.sh: the script used in `CMD` of `Dockerfile` to start the service
-- deploy.sh & deploy.ps1: the script to deploy the docker image to Azure App Service
 - settings.json: a json file to store the settings of the docker image
-- README.md: the readme file to describe how to use the dockerfile
+- README.md: Simple introduction of the files
 
 ## Deploy with Docker
 ### Build Docker image
@@ -67,3 +95,7 @@ After start the service, you can use curl to test it:
 ```bash
 curl http://localhost:8080/score --data '{"text":"Hello world!"}' -X POST  -H "Content-Type: application/json"
 ```
+
+## Next steps
+- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
+- See how to [deploy a flow using kubernetes](deploy-using-kubernetes.md).

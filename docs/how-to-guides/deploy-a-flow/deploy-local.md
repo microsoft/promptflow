@@ -1,5 +1,9 @@
 # Local deploy a flow
-After build a flow and test it properly, the flow can be served as a http endpoint.
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+:::
+
+After create a flow and test it properly, the flow can be served as a http endpoint.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -50,39 +54,12 @@ Test result:
 ![img](../../media/how-to-guides/test_endpoint.png)
 :::
 :::{tab-item} VS Code Extension
+:sync: VSC
 ![img](../../media/how-to-guides/vscode_start_local_app.png)
 :::
 ::::
 
-
-## Export a flow
-
-Besides starting the service directly, a flow can also be exported as a sharable folder with a Dockerfile and its dependencies.
-
-::::{tab-set}
-:::{tab-item} CLI
-:sync: CLI
-```bash
-pf flow export --source <path-to-your-flow-folder> --output <your-output-dir> --format docker
-```
-:::
-:::{tab-item} VS Code Extension
-:sync: VSC
-![img](../../media/how-to-guides/vscode_export_as_docker.png)
-:::
-::::
-
-You'll be asked to input a secret encryption key when running this command, 
-which needs to be provided when you run the built docker image.
-You can also provide the key via `--encryption-key` directly or passing it with a file via `--encryption-key-file`.
-
-Note that all dependent connections must be created before exporting as docker.
-
-More details about how to use the exported docker can be seen in `<your-output-dir>/README.md`. 
-
-## Deploy a flow
-[WIP]
-
 ## Next steps
-- Try the deploy and export example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
-
+- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
+- See how to [deploy a flow using docker](deploy-using-docker.md).
+- See how to [deploy a flow using kubernetes](deploy-using-kubernetes.md).
