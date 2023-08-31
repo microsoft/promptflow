@@ -156,7 +156,7 @@ jobs:
           -l eastus `
           -m "unittest or e2etest" `
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv ${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
+        mv ${{ github.workspace }}/${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
     - name: Run Executor E2E Test
       if : ${{ matrix.testType == 'executor-e2e' }}
       shell: pwsh

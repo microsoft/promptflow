@@ -10,9 +10,6 @@ on:
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
 env:
-  TENANT_ID: "${{ secrets.TENANT_ID }}"
-  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
-  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
   packageSetupType: promptflow_open_source
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
@@ -28,9 +25,9 @@ jobs:
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.9";
-        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
           export pyVersion="3.10";
+        elif [ "macos-latest" == "${{ matrix.os }}" ]; then
+          export pyVersion="3.11";
         else
           echo "Unsupported OS: ${{ matrix.os }}";
           exit 1;
@@ -83,6 +80,63 @@ jobs:
         path: |
           ${{ github.workspace }}/*.xml
           ${{ github.workspace }}/htmlcov/
+  executor_e2e_tests_win:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Display and Set Environment Variables
+      run: 
+        export pyVersion="3.9";
+        env | sort >> $GITHUB_OUTPUT
+      shell: bash -el {0}
+      id: display_env
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+      uses: "./.github/actions/step_create_conda_environment"
+      with:
+        pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
+    - name: Build wheel
+      uses: "./.github/actions/step_sdk_setup_win"
+      with:
+        setupType: ${{ env.packageSetupType }}
+        scriptPath: ${{ env.testWorkingDirectory }}
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Generate Configs
+      uses: "./.github/actions/step_generate_configs"
+      with:
+        targetFolder: ${{ env.testWorkingDirectory }}
+    - name: Get number of CPU cores
+      uses: SimenB/github-actions-cpu-cores@v1
+      id: cpu-cores
+    - name: Run Coverage Test
+      shell: pwsh
+      working-directory: ${{ github.workspace }}
+      run: |-
+        $env:IS_IN_CI_PIPELINE = "true"
+        az account show
+        conda activate release-env
+        $env:PYTHONPATH = "${{ github.workspace }}\\src\\promptflow"
+        pip install langchain
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ github.workspace }}/src/promptflow/promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
+          -l eastus `
+          -m "all" `
+          -n ${{ steps.cpu-cores.outputs.count }} `
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+    - name: Upload pytest test results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+        path: ${{ env.testWorkingDirectory }}/*.xml
   publish-test-results:
     name: "Publish Tests Results"
     needs: executor_e2e_tests
@@ -101,6 +155,7 @@ jobs:
       uses: "./.github/actions/step_publish_test_results"
       with:
         osVersion: ubuntu-latest
-        pythonVersion: 3.9
+        pythonVersion: 3.10
         coverageThreshold: 0.55
+        testName: promptflow-executor-e2e-test
         token: ${{ secrets.GITHUB_TOKEN }}

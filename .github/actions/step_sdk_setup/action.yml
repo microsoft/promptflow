@@ -1,4 +1,4 @@
-name: pipelines_templates_steps_template_sdk_setup_step
+name: step_sdk_setup
 inputs:
   scriptPath:
     required: false
