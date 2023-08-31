@@ -45,7 +45,8 @@ class FlowValidator:
             )
             node_to_pick = next(available_nodes_iterator, None)
             if not node_to_pick:
-                remaining_nodes = set(dependencies.keys()) - picked
+                # Figure out the nodes names with circular dependency problem alphabetically
+                remaining_nodes = sorted(list(set(dependencies.keys()) - picked))
                 raise NodeCircularDependency(
                     message=f"Node circular dependency has been detected among the nodes in the flow '{flow.name}'. "
                     f"Kindly review the reference relationships for the nodes {remaining_nodes} "

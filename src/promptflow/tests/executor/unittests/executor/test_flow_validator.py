@@ -28,14 +28,31 @@ class TestFlowValidator:
     @pytest.mark.parametrize(
         "flow_folder, error_message",
         [
-            ("nodes_cycle", "There is a circular dependency in the flow 'node_cycle'."),
+            (
+                "nodes_cycle",
+                (
+                    "Node circular dependency has been detected among the nodes in the flow "
+                    "'node_cycle'. Kindly review the reference relationships for the nodes "
+                    "['first_node', 'second_node'] and resolve the circular reference issue in "
+                    "the flow YAML."
+                ),
+            ),
             (
                 "nodes_cycle_with_skip",
-                "There is a circular dependency in the flow 'node_cycle_with_skip'.",
+                (
+                    "Node circular dependency has been detected among the nodes in the flow "
+                    "'node_cycle_with_skip'. Kindly review the reference relationships for the "
+                    "nodes ['first_node', 'second_node'] and resolve the circular reference issue "
+                    "in the flow YAML."
+                ),
             ),
             (
                 "wrong_node_reference",
-                "Node 'second_node' references node 'third_node' which is not in the flow 'node_wrong_reference'.",
+                (
+                    "Node 'second_node' references a non-existent node 'third_node' in flow "
+                    "'node_wrong_reference'. Please review your flow YAML to ensure that the node "
+                    "name is accurately specified."
+                ),
             ),
         ],
     )
