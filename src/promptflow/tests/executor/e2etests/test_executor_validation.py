@@ -10,7 +10,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
     ConnectionNotFound,
     DuplicateNodeName,
-    EmptyOutputError,
+    EmptyOutputReference,
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
@@ -38,7 +38,7 @@ class TestValidation:
             ("node_reference_not_found", "flow.dag.yaml", NodeReferenceNotFound),
             ("node_circular_dependency", "flow.dag.yaml", NodeCircularDependency),
             ("flow_input_reference_invalid", "flow.dag.yaml", InputReferenceNotFound),
-            ("flow_output_reference_invalid", "flow.dag.yaml", EmptyOutputError),
+            ("flow_output_reference_invalid", "flow.dag.yaml", EmptyOutputReference),
         ],
     )
     def test_executor_create(self, flow_folder, yml_file, error_class, dev_connections):
