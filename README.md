@@ -64,7 +64,7 @@ This command will create a new **flow folder** named "my_chatbot" using the "cha
 
 Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes). [More flow samples](examples/flows)
 
-### Quick test your flow
+### 4 - Quick test your flow
 
 Open the `flow.dag.yaml` file in the "my_chatbot" flow folder, specify the connection name you created in the previous step in the `connection` field, specify the model name in the `model` field, for example:
 
