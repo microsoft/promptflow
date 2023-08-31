@@ -5,5 +5,5 @@ class FailedToImportModule(UserErrorException):
     pass
 
 
-class NodeConditionConflictError(ValidationException):
+class NodeConditionConflict(ValidationException):
     pass
