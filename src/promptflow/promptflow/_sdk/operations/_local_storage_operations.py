@@ -37,7 +37,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import BulkResult
-from promptflow.storage.run_storage import AbstractRunStorage
+from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
