@@ -138,7 +138,7 @@ class TestFlowLocalOperations:
                 flow=source,
                 output=temp_dir,
                 format="docker",
-                node_variant="summarize_text_content.variant_0",
+                variant="${summarize_text_content.variant_0}",
             )
 
             new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")

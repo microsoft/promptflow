@@ -32,9 +32,9 @@ pf connection create -f ../../../connections/azure_openai.yml --name open_ai_con
 ```
 
 
-## Run flow in local
+## Run flow
 
-### Run locally with single line input
+### Run with single line input
 
 ```bash
 # test with default input value in flow.dag.yaml

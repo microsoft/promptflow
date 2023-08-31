@@ -154,7 +154,7 @@ class PFClient:
         node: str = None,
         environment_variables: dict = None,
     ):
-        """Test flow or node locally
+        """Test flow or node
 
         :param flow: path to flow directory to test
         :param inputs: Input data for the flow test

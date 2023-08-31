@@ -29,9 +29,9 @@ Ensure you have created `basic_custom_connection` connection.
 pf connection show -n basic_custom_connection
 ```
 
-## Run flow in local
+## Run flow
 
-### Run locally with single line input
+### Run with single line input
 
 ```bash
 # test with default input value in flow.dag.yaml

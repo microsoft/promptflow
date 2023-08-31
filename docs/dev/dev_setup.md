@@ -76,10 +76,10 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 - Put all test data/configs under `src/promptflow/tests/test_configs`.
 - Write unit tests:
-  - Flow run in local: `src/promptflow/tests/sdk_cli_test/unittest/`
+  - Flow run: `src/promptflow/tests/sdk_cli_test/unittest/`
   - Flow run in azure: `src/promptflow/tests/sdk_cli_azure_test/unittest/`
 - Write e2e tests:
-  - Flow run in local: `src/promptflow/tests/sdk_cli_test/e2etests/`
+  - Flow run: `src/promptflow/tests/sdk_cli_test/e2etests/`
   - Flow run in azure: `src/promptflow/tests/sdk_cli_azure_test/e2etests/`
 - Test file name and the test case name all start with `test_`.
 - A basic test example, see [test_connection.py](../../src/promptflow/tests/sdk_cli_test/e2etests/test_connection.py).

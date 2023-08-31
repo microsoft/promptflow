@@ -18,7 +18,7 @@ class ConnectionOperations:
         max_results: int = MAX_LIST_CLI_RESULTS,
         all_results: bool = False,
     ) -> List[_Connection]:
-        """List connections locally.
+        """List connections.
 
         :param max_results: Max number of results to return.
         :type max_results: int
