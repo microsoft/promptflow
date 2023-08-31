@@ -1,21 +1,23 @@
 # Next Items
-0. Run it locally
+0. Run it
 1. "Validate" Flow - create promptflow folder with assets (like yaml)
   ```
   pf init .
   ```
   `fast_api` precedent or `mlflow`
   vscode extension with a selection
-2. run (locally / cloud)
+
+2. run
   ```
   pf validate ...
   ```
-  for testing container locally
+  for testing container
 
   ```
   pf run ...--name my_flow_thingie
   ```
   for testing in the cloud
+
 3. bulk run / batch run
 ```
 pf batch --input ./data/denormalized-flat.jsonl --output ./my_output_file.jsonl

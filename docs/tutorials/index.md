@@ -4,7 +4,7 @@ This section contains a collection of flow samples and step-by-step tutorials.
 
 |Area|<div style="width:250px">Sample</div>|Description|
 |--|--|--|
-|SDK|[First look at prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)| A quickstart tutorial to run a flow locally and evaluate it.
+|SDK|[First look at prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)| A quickstart tutorial to run a flow and evaluate it.
 |CLI|[Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)| E2E develop a simple flow that mimic the functionality of retrieval of relevant information from the PDF to generate an answer with GPT.
 |SDK|[Chat with PDF - test, evaluation and experimentation](https://github.com/microsoft/promptflow/blob/main/examples/flows/chat/chat-with-pdf/chat-with-pdf.ipynb)| We will walk you through how to use prompt flow Python SDK to test, evaluate and experiment with the "Chat with PDF" flow.
 |SDK|[Connection management](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb)| Manage various types of connections using sdk

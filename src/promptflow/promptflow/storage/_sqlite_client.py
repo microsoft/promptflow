@@ -47,7 +47,7 @@ class SqliteClient:
     def create_table_if_not_exists(
         cls, db_folder_path: str, db_name: str, class_: type, in_memory: bool = False, timeout_seconds: int = 30
     ) -> TableInfo:
-        """Create db table if not exists. If table exists, check if columns are consistent with input class_.
+        """Create db table if not exists. If table exists, check if columns are consistent with input `class_`.
 
         Note that this method involves disk io, it is not safe to be invoked concurrently.
         """

@@ -3,62 +3,55 @@ name: GitHub Event Handler
 on:
   check_suite:
     types: [completed]
-  issue_comment:
-    types: [created]
 
 env:
   # note that this should be ${{ github.event.pull_request.head.sha }} for pull_request events
-  head_sha: ${{ github.sha }}
+  head_sha: ${{ github.event.check_suite.head_sha }}
 
 jobs:
   event-handler:
     name: ${{ github.event_name }}
     runs-on: ubuntu-latest
     steps:
-      - uses: octokit/request-action@v2.x
-        name: Get all check status
-        id: get_check_status
-        with:
-          route: GET /repos/{repo}/commits/{head_sha}/check-runs
-          repo: ${{ github.repository }}
-          head_sha: ${{ env.head_sha }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Dump check status
-        id: create-json
-        uses: jsdaniell/create-json@v1.2.2
-        with:
-          name: "status.json"
-          json: ${{ steps.get_check_status.outputs.data }}
-      
       - name: Summarize check status
         id: summarize_check_status
+        shell: bash
         run: |
-          incomplete_check_count=$(jq -c '.check_runs | .[] | .status | select (.!="completed")' status.json | wc -l)
-          echo "incomplete_check_count: $incomplete_check_count"
-          
-          jq -c '.check_runs | .[] | select (.status!="completed") | .html_url' status.json | while read url; do
-            echo $url
-          done
+          set -x
+          pending_count=0
+          success_count=0
 
-          if [ $incomplete_check_count -gt 0 ]; then
-            echo "status=pending" >> "$GITHUB_OUTPUT"
+          while read check_run; do
+            if echo $check_run | grep -q '"conclusion":"success"' ; then
+              success_count=$((success_count+1))
+            else
+              pending_count=$((pending_count+1))
+            fi
+          done <<<$(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs | jq -c '.check_runs[]')
+
+          echo "Total not success test numbers: "$pending_count
+          echo "Total success test numbers: "$success_count
+
+          if [ $pending_count -eq 0 ]; then
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
+              -f state='success' \
+              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
+              -f description='The build succeeded!' \
+              -f context='https://aka.ms/azsdk/checkenforcer' 
           else
-            echo "status=success" >> "$GITHUB_OUTPUT"
+            gh api \
+              --method POST \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
+              -f state='pending' \
+              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
+              -f description='Waiting for all checks to succeed' \
+              -f context='https://aka.ms/azsdk/checkenforcer' 
           fi
-
-      - uses: octokit/request-action@v2.x
-        name: Update the check enforcer status
-        id: update_check_enforcer_status
-        with:
-          route: POST /repos/{repo}/statuses/{head_sha}
-          repo: ${{ github.repository }}
-          head_sha: ${{ env.head_sha }}
-          # below constructs the request body
-          state: ${{ steps.summarize_check_status.outputs.status }}
-          target_url: "https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}"
-          description: "Waiting for all checks to succeed"
-          context: "https://aka.ms/azsdk/checkenforcer"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

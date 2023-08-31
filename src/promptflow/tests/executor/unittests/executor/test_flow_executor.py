@@ -13,8 +13,8 @@ from promptflow.executor.flow_executor import (
     MappingSourceNotFound,
     NoneInputsMappingIsNotSupported,
     enable_streaming_for_llm_tool,
-    ensure_node_result_is_serializable,
-    inject_stream_options,
+    _ensure_node_result_is_serializable,
+    _inject_stream_options,
 )
 from promptflow.tools.aoai import AzureOpenAI, chat, completion
 
@@ -67,7 +67,7 @@ class TestFlowExecutor:
                 "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data. "
                 "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data."
+                "and you may need to manually assign input mapping based on your input data.",
             ),
         ],
     )
@@ -302,7 +302,7 @@ class TestFlowExecutor:
     )
     def test_inputs_mapping_for_all_lines_error(self, inputs, inputs_mapping, error_code, error_message):
         with pytest.raises(error_code) as e:
-            FlowExecutor.apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
+            FlowExecutor._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
 
@@ -347,7 +347,7 @@ class TestEnableStreamForLLMTool:
 
     def test_inject_stream_options_no_stream_param(self):
         # Test that the function does not wrap the decorated function if it has no stream parameter
-        func = inject_stream_options(lambda: True)(func_without_stream_parameter)
+        func = _inject_stream_options(lambda: True)(func_without_stream_parameter)
         assert func == func_without_stream_parameter
 
         result = func(a=1, b=2)
@@ -355,7 +355,7 @@ class TestEnableStreamForLLMTool:
 
     def test_inject_stream_options_with_stream_param(self):
         # Test that the function wraps the decorated function and injects the stream option
-        func = inject_stream_options(lambda: True)(func_with_stream_parameter)
+        func = _inject_stream_options(lambda: True)(func_with_stream_parameter)
         assert func != func_with_stream_parameter
 
         result = func(a=1, b=2)
@@ -368,7 +368,7 @@ class TestEnableStreamForLLMTool:
         # Test that the function uses the should_stream callable to determine the stream option
         should_stream = Mock(return_value=True)
 
-        func = inject_stream_options(should_stream)(func_with_stream_parameter)
+        func = _inject_stream_options(should_stream)(func_with_stream_parameter)
         result = func(a=1, b=2)
         assert result == (3, True)
 
@@ -390,9 +390,9 @@ def non_streaming_tool():
 
 class TestEnsureNodeResultIsSerializable:
     def test_streaming_tool_should_be_consumed_and_merged(self):
-        func = ensure_node_result_is_serializable(streaming_tool)
+        func = _ensure_node_result_is_serializable(streaming_tool)
         assert func() == "0123456789"
 
     def test_non_streaming_tool_should_not_be_affected(self):
-        func = ensure_node_result_is_serializable(non_streaming_tool)
+        func = _ensure_node_result_is_serializable(non_streaming_tool)
         assert func() == 1
