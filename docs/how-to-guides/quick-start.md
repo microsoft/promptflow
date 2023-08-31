@@ -31,12 +31,12 @@ conda create --name pf-examples python=3.9
 conda activate pf-examples
 ```
 
-1. Install `promptflow` and `promptflow-tools`.
+2. Install `promptflow` and `promptflow-tools`.
 ```sh
 pip install promptflow promptflow-tools
 ```
 
-1. Check the installation.
+3. Check the installation.
 ```bash
 # should print promptflow version, e.g. "0.1.0b3"
 pf -v
@@ -69,6 +69,12 @@ A flow directory is a directory that contains all contents of a flow. Structure 
 
 
 ![flow_dir](../media/how-to-guides/quick-start/flow_directory.png)
+
+In order to run this specific flow, you need to install its requirements first.
+
+```sh
+pip install -r requirements.txt
+```
 
 ### Understand the flow yaml
 The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. The flow dag of this sample likes below:

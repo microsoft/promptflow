@@ -47,6 +47,14 @@ Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/
 :::{tab-item} CLI
 :sync: CLI
 
+Use `az login` to login so promptflow can get your credential.
+
+```sh
+az login
+```
+
+Submit a run to workspace.
+
 ```sh
 pfazure run create --subscription <my_sub> -g <my_resource_group> -w <my_workspace> --flow web-classification --data web-classification/data.jsonl --stream 
 ```
