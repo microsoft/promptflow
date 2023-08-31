@@ -127,7 +127,7 @@ inputs:
 
 ### Create necessary connections
 
-The connection helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety. See [Manage connections](./manage-connections.md) for more details.
+The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 
 In this guide, we will use flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) which uses connection `open_ai_connection` inside, we need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
 
@@ -228,6 +228,8 @@ print(conn)
 
 ::::
 
+Learn more on more actions like delete conection in: [Manage connections](./manage-connections.md).
+
 ### Test the flow
 Assuming you are in working directory `promptflow/examples/flows/standard/`
 
@@ -288,7 +290,7 @@ Click the run flow button on the top of the visual editor to trigger flow test.
 
 ::::
 
-See more details in [Initialize and test a flow](./init-and-test-a-flow.md).
+See more details of this topic in [Initialize and test a flow](./init-and-test-a-flow.md).
 
 ## Next steps
 
