@@ -46,7 +46,7 @@ async def agenerate_docstring(divided: list[str]):
     while len(divided):
         item = divided.pop()
         try:
-            llm.validate_tokens(llm.create_prompt(docstring_prompt(item, module=modules)))
+            llm.validate_tokens(llm.create_prompt(docstring_prompt(code=item, module=modules)))
         except PromptLimitException as e:
             logging.warning(e.message + ', will divide the code into two parts.')
             divided_tmp = Divider.divide_half(item)
@@ -60,11 +60,13 @@ async def agenerate_docstring(divided: list[str]):
         all_divided.append(item)
 
     tasks = []
+    last_code = ''
     for item in all_divided:
         if Divider.has_class_or_func(item):
-            tasks.append(llm.aquery(docstring_prompt(item, module=modules)))
+            tasks.append(llm.aquery(docstring_prompt(last_code=last_code, code=item, module=modules)))
         else:  # If the code has not function or class, no need to generate docstring.
             tasks.append(asyncio.sleep(0))
+        last_code = item
     res_doc = await asyncio.gather(*tasks)
     new_code = []
     for i in range(len(all_divided)):
