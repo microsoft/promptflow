@@ -53,6 +53,10 @@ linkcheck_ignore = [
     r"https://aka\.ms/acs-doc",
     r"https://github\.com/microsoft/promptflow",
     r"https://platform\.openai\.com/",
+    # These are used in card links, .md can't be resolved.
+    "deploy-local.html",
+    "deploy-using-docker.html",
+    "deploy-using-kubernetes.html",
 ]
 
 linkcheck_exclude_documents = ["contributing"]
