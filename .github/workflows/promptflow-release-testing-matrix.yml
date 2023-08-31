@@ -47,7 +47,7 @@ jobs:
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
     - name: Run SDK CLI Test
-      if : ${{ matrix.testType }} == "sdk-cli"
+      if : ${{ matrix.testType == 'sdk-cli' }}
       shell: bash -l {0}
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
@@ -64,7 +64,7 @@ jobs:
           -n ${{ steps.cpu-cores.outputs.count }}
         mv ${{ github.workspace }}/${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
     - name: Run Executor E2E Test
-      if : ${{ matrix.testType }} == "executor-e2e"
+      if : ${{ matrix.testType == 'executor-e2e' }} 
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |-
@@ -82,7 +82,7 @@ jobs:
           -n ${{ steps.cpu-cores.outputs.count }}
         mv ./test-results.xml ./test-results-executor-e2e.xml
     - name: Run Executor Unit Test
-      if : ${{ matrix.testType }} == "executor-unit"
+      if : ${{ matrix.testType == 'executor-unit' }}
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |-
@@ -141,7 +141,7 @@ jobs:
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
     - name: Run SDK CLI Test
-      if : ${{ matrix.testType }} == "sdk-cli"
+      if : ${{ matrix.testType == 'sdk-cli' }}
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
       run: |-
@@ -157,7 +157,7 @@ jobs:
           -n ${{ steps.cpu-cores.outputs.count }}
         mv ${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
     - name: Run Executor E2E Test
-      if : ${{ matrix.testType }} == "executor-e2e"
+      if : ${{ matrix.testType == 'executor-e2e' }}
       shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |-
@@ -174,7 +174,7 @@ jobs:
           -n ${{ steps.cpu-cores.outputs.count }}
         mv ./test-results.xml ./test-results-executor-e2e.xml
     - name: Run Executor Unit Test
-      if : ${{ matrix.testType }} == "executor-unit"
+      if : ${{ matrix.testType == 'executor-unit' }}
       shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |-

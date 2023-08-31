@@ -10,9 +10,6 @@ on:
       - .github/workflows/promptflow-executor-unit-test.yml
   workflow_dispatch:
 env:
-  TENANT_ID: "${{ secrets.TENANT_ID }}"
-  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
-  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
   packageSetupType: promptflow_open_source
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
