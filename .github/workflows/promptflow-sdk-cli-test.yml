@@ -162,4 +162,5 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 0.4
+        testName: promptflow-sdk-cli-test
         token: ${{ secrets.GITHUB_TOKEN }}

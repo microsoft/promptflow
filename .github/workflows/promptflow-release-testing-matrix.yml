@@ -1,4 +1,4 @@
-name: promptflow-sdk-cli-test
+name: promptflow-release-testing-matrix
 on:
   pull_request:
     branches: [ main, release/** ]
@@ -60,7 +60,7 @@ jobs:
           -l eastus \
           -m "unittest or e2etest" \
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv ${{ env.testWorkingDirectory }}\test-results.xml ${{ github.workspace }}\test-results-sdk-cli.xml
+        mv ${{ github.workspace }}/${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
     - name: Run Executor E2E Test
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
@@ -77,7 +77,7 @@ jobs:
           -l eastus \
           -m "all" \
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv .\test-results.xml .\test-results-executor-e2e.xml
+        mv ./test-results.xml ./test-results-executor-e2e.xml
     - name: Run Executor Unit Test
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
@@ -93,7 +93,7 @@ jobs:
           -l eastus \
           -m "all" \
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv .\test-results.xml .\test-results-executor-unit.xml
+        mv ./test-results.xml ./test-results-executor-unit.xml
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
@@ -149,7 +149,7 @@ jobs:
           -l eastus `
           -m "unittest or e2etest" `
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv ${{ env.testWorkingDirectory }}\test-results.xml ${{ github.workspace }}\test-results-sdk-cli.xml
+        mv ${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
     - name: Run Executor E2E Test
       shell: pwsh
       working-directory: ${{ github.workspace }}
@@ -165,7 +165,7 @@ jobs:
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv .\test-results.xml .\test-results-executor-e2e.xml
+        mv ./test-results.xml ./test-results-executor-e2e.xml
     - name: Run Executor Unit Test
       shell: pwsh
       working-directory: ${{ github.workspace }}
@@ -180,7 +180,7 @@ jobs:
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv .\test-results.xml .\test-results-executor-unit.xml
+        mv ./test-results.xml ./test-results-executor-unit.xml
     - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
@@ -208,5 +208,6 @@ jobs:
       with:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
+        testName: promptflow-release-testing-matrix
         token: ${{ secrets.GITHUB_TOKEN }}
         coverageThreshold: 0

@@ -160,4 +160,5 @@ jobs:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 0.55
+        testName: promptflow-executor-e2e-test
         token: ${{ secrets.GITHUB_TOKEN }}

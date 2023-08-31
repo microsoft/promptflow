@@ -12,6 +12,10 @@ inputs:
     required: false
     default: "0.3"
     type: string
+  testName:
+    required: false
+    default: "promptflow-executor-unit-test"
+    type: string
   token:
     description: 'A Github PAT'
     required: true
@@ -29,8 +33,8 @@ runs:
   - name: Publish Test Results
     uses: EnricoMi/publish-unit-test-result-action@v2
     with:
-      check_name: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-      comment_title: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+      check_name: "Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testName }}.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+      comment_title: "Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testName }}.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
   - name: Generate Coverage Report
     if: ${{ inputs.coverageThreshold != 0 }}
