@@ -154,7 +154,7 @@ class PFClient:
         node: str = None,
         environment_variables: dict = None,
     ) -> dict:
-        """Test flow or node locally
+        """Test flow or node
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]

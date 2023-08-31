@@ -53,7 +53,7 @@ jobs:
       - name: Build Doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1
+        run: ./doc_generation.ps1 -WithReferenceDoc:$true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1

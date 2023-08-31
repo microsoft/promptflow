@@ -24,11 +24,11 @@ class _DummyCallableClassForLazyImportError:
 
 # TODO: avoid import azure.ai.ml if promptflow.azure.configure is not called
 try:
-    from azure.ai.ml import load_component, MLClient
+    from azure.ai.ml import MLClient, load_component
     from azure.ai.ml.entities import Component
-    from azure.ai.ml.entities._load_functions import load_common
     from azure.ai.ml.entities._assets import Code
     from azure.ai.ml.entities._component._additional_includes import AdditionalIncludesMixin
+    from azure.ai.ml.entities._load_functions import load_common
 except ImportError:
 
     class load_component(_DummyCallableClassForLazyImportError):
@@ -48,6 +48,7 @@ except ImportError:
 
     class AdditionalIncludesMixin(_DummyCallableClassForLazyImportError):
         pass
+
 
 __all__ = [
     "load_component",
