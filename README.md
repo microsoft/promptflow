@@ -1,25 +1,122 @@
 # Prompt flow
+![banner](examples/tutorials/quick-start/media/banner.png)
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-> Welcome to join us to make Prompt flow better by
-> participating [discussions](https://github.com/microsoft/promptflow/discussions),
-> opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
-> submitting [PRs](https://github.com/microsoft/promptflow/pulls).
+<h5>Facilitate high quality LLM-native apps to production</h5>
+
+> Welcome to join us to make Prompt flow!
+
+[Documentacion](https://expert-adventure-197jp7v.pages.github.io/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/YyYYRwkq) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
 
 **Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
 With prompt flow, you will be able to:
 
-- Create executable workflows that link LLMs, prompts, Python code and other tools together.
-- Debug and iterate your flows, especially the interaction with LLMs with ease.
-- Evaluate your flow's quality and performance with larger datasets.
-- Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
-- Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
-- (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+- **LLM-native apps power workflow**
+    - Create executable workflows that link LLMs, prompts, Python code and other tools together.
+    - Debug and iterate your flows, especially the interaction with LLMs with ease.
+- **Facilitate high quality in development cycle**
+    - Evaluate your flow's quality and performance with larger datasets.
+    - Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
+    - Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
+- **Enterprise security and scalability**
+    - (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+
+------
 
 ## Get Started with Prompt flow ⚡
+
+#### Installation
+
+A python environment, `python=3.9` is recommended.
+
+```sh
+pip install promptflow promptflow-tools
+```
+
+(Optional to install) Prompt flow VS Code extension - Flow Designer
+
+Prompt flow provide an extension in VS code for visualizing and editing your flows. You can search it in VS code extension marketplace to install.
+
+![vsc install](examples/tutorials/quick-start/media/vsc.png)
+
+#### Create the connection to store your OpenAI API key
+
+Prompt flow offers a **safe** way to manage credentials or secrets for LLM APIs, that is **Connection**!
+
+Assuming you have already stored your OpenAI API key in a local environment variable named "OPENAI_API_KEY" within a `.env` file, you can effortlessly convert it into a Prompt flow connection by executing the following command in your terminal:
+
+```sh
+pf connection create -f .env --name open_ai_connection
+```
+
+In case you haven't set up the environment variable yet, don't worry! You can refer to [how to create a connection]() from scratch.
+
+#### Initialize a prompt flow from template
+
+```sh
+pf flow init --flow my_chatbot --type chat
+```
+
+This command will create a new **flow folder** named "my_chatbot" using the "chat" template.
+
+Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes). [More flow samples]()
+
+#### Quick test your flow
+
+Open the `flow.dag.yaml` file in the "my_chatbot" flow folder, specify the connection name you created in the previous step in the `connection` field, specify the model name in the `model` field, for example:
+
+```yaml
+  ......
+  inputs:
+    chat_history: ${inputs.chat_history}
+    max_tokens: 256
+    question: ${inputs.question}
+    temperature: 0
+    model: gpt-3.5-turbo
+  connection: open_ai_connection
+  ......
+```
+
+Now you want the flow to answer a math question correctly. Open the `chat.jinia2` file in the folder, replace the **system prompt** with the following prompt:
+
+```jinja2
+system:
+You are a helpful assistant. Please output the result number only.
+```
+
+Run the following python code to test your prompt:
+
+```python
+import promptflow as pf
+from promptflow import PFClient
+
+pf_client=PFClient()
+
+# specify the path to the flow folder
+my_flow_path = "<my_chatbot>"
+
+# Test flow,  question is the input of the flow, let it to calculate the math question.
+flow_output=pf_client.test(flow = my_flow_path, inputs={"question": "Compute $\\dbinom{16}{5}$."} )
+answer=list(flow_output['answer'])
+print(f"Flow outputs: {''.join(answer)}")
+```
+
+#### Test the tune quality of the generated prompt
+
+Do you have confidence in the quality of the generated prompt? As we know, the randomness of the LLMs always makes the generated answer not stable. Only one test is not enough to evaluate the quality of the prompt, usually we need to test it with a larger dataset and evaluate the performance of the generations with the groundtruth.
+
+**Trailer!**
+
+With prompt flow, just spending only 10 minutes, you can test your multiple prompt variants (different versions) with a larger dataset and evaluate the accuracy of the generations with the groundtruth. You will get the following results:
+
+![real case](examples/tutorials/quick-start/media/realcase.png)
+
+👉[Try to test this quick start case!](examples/tutorials/quick-start/prompt_tunning_case.md)
+
+## Develop guide
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
 - [First look at prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)
