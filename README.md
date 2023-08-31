@@ -4,11 +4,11 @@
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-<h5>Facilitate high quality LLM-native apps to production</h5>
+<h2>Facilitate high quality LLM-native apps to production</h2>
 
 > Welcome to join us to make Prompt flow!
 
-[Documentacion](https://expert-adventure-197jp7v.pages.github.io/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/YyYYRwkq) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
+[Documentacion](https://expert-adventure-197jp7v.pages.github.io/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/YyYYRwkq) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
 
 **Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
