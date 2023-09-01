@@ -262,3 +262,6 @@ class RunDataKeys:
 
 
 SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
+
+
+BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
