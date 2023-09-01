@@ -84,9 +84,7 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
 
 2. Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)
 
-    ![install_extension](../media/how-to-guides/quick-start/vs_code_install.png)
-
-1. Select python interpreter
+3. Select python interpreter
 
     ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
    
@@ -96,10 +94,6 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
 2. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
    
     ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
-
-    ![vscode](../media/how-to-guides/quick-start/vs_code_dag_1.png)
-
-
 
 ## Develop and test your flow
 
@@ -291,7 +285,7 @@ See more details of this topic in [Initialize and test a flow](./init-and-test-a
 Learn more on how to:
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
-- [Deploy a flow](./deploy-and-export-a-flow.md): how to deploy the flow as a web app.
+- [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
 - [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
 
