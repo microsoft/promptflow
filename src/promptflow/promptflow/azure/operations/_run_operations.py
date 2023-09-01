@@ -535,7 +535,7 @@ class RunOperations(_ScopeDependentOperations):
         session_id = f"{user_alias}_{flow_id}"
         # hash and truncate to avoid the session id getting too long
         # backend has a 64 bit limit for session id.
-        session_id = str(hash(session_id))[:32]
+        session_id = str(hash(session_id))[:48]
         return session_id
 
     def _get_child_runs_from_pfs(self, run_id: str):
