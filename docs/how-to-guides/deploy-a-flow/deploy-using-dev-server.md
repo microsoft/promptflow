@@ -29,6 +29,7 @@ The expected result is as follows if the flow served successfully, and the proce
 :sync: VSC
 ![img](../../media/how-to-guides/vscode_export.png)
 ![img](../../media/how-to-guides/vscode_export_as_local_app.png)
+![img](../../media/how-to-guides/vscode_start_local_app.png)
 :::
 ::::
 
@@ -46,9 +47,8 @@ You could open another terminal to test the endpoint with the following command:
 Invoke-WebRequest -URI http://localhost:8080/score -Body '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -Method POST  -ContentType "application/json"
 ```
 :::
-:::{tab-item} VS Code Extension
-:sync: VSC
-![img](../../media/how-to-guides/vscode_start_local_app.png)
+:::{tab-item} Test Page
+![img](../../media/how-to-guides/deploy_flow_test_page.png)
 :::
 ::::
 
