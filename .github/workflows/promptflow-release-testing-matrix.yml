@@ -1,12 +1,6 @@
 name: promptflow-release-testing-matrix
 on:
-  pull_request:
-    branches: [ main, release/** ]
-    paths:
-      - src/promptflow/**
-      - scripts/**
-      - .github/workflows/promptflow-release-testing-matrix.yml
-  workflow_dispatch:
+  repository_dispatch:
 env:
   packageSetupType: promptflow_new_extra
   testWorkingDirectory: src/promptflow
@@ -16,8 +10,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        testType: [sdk-cli, executor-e2e, executor-unit]
-        pythonVersion: [3.9]
+        testType: [sdk-cli, executor]
+        pythonVersion: [3.9, 3.10, 3.11]
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -63,8 +57,8 @@ jobs:
           -m "unittest or e2etest" \
           -n ${{ steps.cpu-cores.outputs.count }}
         mv ${{ github.workspace }}/${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
-    - name: Run Executor E2E Test
-      if : ${{ matrix.testType == 'executor-e2e' }} 
+    - name: Run Executor Test
+      if : ${{ matrix.testType == 'executor' }}
       shell: bash -l {0}
       working-directory: ${{ github.workspace }}
       run: |-
@@ -76,28 +70,11 @@ jobs:
         pip install langchain
         python scripts/building/run_coverage_tests.py \
           -p ${{ github.workspace }}/src/promptflow/promptflow \
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests \
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
           -l eastus \
           -m "all" \
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv ./test-results.xml ./test-results-executor-e2e.xml
-    - name: Run Executor Unit Test
-      if : ${{ matrix.testType == 'executor-unit' }}
-      shell: bash -l {0}
-      working-directory: ${{ github.workspace }}
-      run: |-
-        set -x -e
-        export IS_IN_CI_PIPELINE="true"
-        az account show
-        conda activate release-env
-        export PYTHONPATH=${{ github.workspace }}/src/promptflow
-        python scripts/building/run_coverage_tests.py \
-          -p ${{ github.workspace }}/src/promptflow/promptflow \
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests \
-          -l eastus \
-          -m "all" \
-          -n ${{ steps.cpu-cores.outputs.count }}
-        mv ./test-results.xml ./test-results-executor-unit.xml
+        mv ./test-results.xml ./test-results-executor.xml
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
@@ -156,8 +133,8 @@ jobs:
           -m "unittest or e2etest" `
           -n ${{ steps.cpu-cores.outputs.count }}
         mv ${{ env.testWorkingDirectory }}/test-results.xml ${{ github.workspace }}/test-results-sdk-cli.xml
-    - name: Run Executor E2E Test
-      if : ${{ matrix.testType == 'executor-e2e' }}
+    - name: Run Executor Test
+      if : ${{ matrix.testType == 'executor' }}
       shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |-
@@ -168,27 +145,11 @@ jobs:
         pip install langchain
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}
-        mv ./test-results.xml ./test-results-executor-e2e.xml
-    - name: Run Executor Unit Test
-      if : ${{ matrix.testType == 'executor-unit' }}
-      shell: pwsh
-      working-directory: ${{ github.workspace }}
-      run: |-
-        $env:IS_IN_CI_PIPELINE = "true"
-        az account show
-        conda activate release-env
-        $env:PYTHONPATH = "${{ github.workspace }}\\src\\promptflow"
-        python scripts/building/run_coverage_tests.py `
-          -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
-          -l eastus `
-          -m "all" `
-          -n ${{ steps.cpu-cores.outputs.count }}
-        mv ./test-results.xml ./test-results-executor-unit.xml
+        mv ./test-results.xml ./test-results-executor.xml
     - name: Upload pytest test results (Python ${{ matrix.pythonVersion }}) (OS ${{ matrix.os }})
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
