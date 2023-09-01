@@ -233,10 +233,6 @@ class ToolLoader:
                 _, tool = self.load_tool_for_script_node(node, working_dir)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
-        elif node.type is ToolType.PROMPT:
-            return None
-        elif node.type is ToolType.LLM:
-            return self.load_tool_for_llm_node(node)
         elif node.type is ToolType.CUSTOM_LLM:
             if node.source.type == ToolSourceType.PackageWithPrompt:
                 return self.load_tool_for_package_node(node)

@@ -490,6 +490,8 @@ class Flow:
             if node.connection:
                 connection_names.add(node.connection)
                 continue
+            if node.type == ToolType.PROMPT:
+                continue
             tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node, self._working_dir)
             if tool:
                 connection_names.update(self._get_connection_name_from_tool(tool, node).values())
@@ -498,7 +500,7 @@ class Flow:
     def get_connection_input_names_for_node(self, node_name):
         """Return connection input names."""
         node = self.get_node(node_name)
-        if not node:
+        if not node or node.type == ToolType.PROMPT:
             return []
         if node.use_variants:
             node = self._apply_default_node_variant(node, self.node_variants)
