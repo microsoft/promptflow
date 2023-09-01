@@ -69,7 +69,7 @@ class TestExecutor:
             get_yaml_file(flow_folder),
             dev_connections,
             raise_ex=True,
-            line_timeout_sec=5,
+            line_timeout_sec=1,
         )
         run_id = str(uuid.uuid4())
         bulk_inputs = self.get_bulk_inputs()
@@ -80,7 +80,7 @@ class TestExecutor:
 
         for i, line_result in enumerate(bulk_results.line_results):
             assert isinstance(line_result, LineResult)
-            assert line_result.run_info.error["message"] == f"Line {i} execution timeout for exceeding 5 seconds"
+            assert line_result.run_info.error["message"] == f"Line {i} execution timeout for exceeding 1 seconds"
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
