@@ -538,7 +538,11 @@ class RunOperations(_ScopeDependentOperations):
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
         flow_id = get_flow_lineage_id(flow_dir=flow)
-        return f"{user_alias}_{flow_id}"
+        session_id = f"{user_alias}_{flow_id}"
+        # hash and truncate to avoid the session id getting too long
+        # backend has a 64 bit limit for session id.
+        session_id = str(hash(session_id))[:48]
+        return session_id
 
     def _get_child_runs_from_pfs(self, run_id: str):
         """Get the child runs from the PFS."""
