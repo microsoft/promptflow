@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 
 from promptflow._core.tools_manager import register_connections
 from promptflow._sdk.entities import (
@@ -37,4 +37,6 @@ __all__ = [
     "CustomConnection",
 ]
 
-register_connections([v for v in globals().values() if (isinstance(v, type) and issubclass(v, _Connection))])
+register_connections(
+    [v for v in globals().values() if is_dataclass(v) or (isinstance(v, type) and issubclass(v, _Connection))]
+)
