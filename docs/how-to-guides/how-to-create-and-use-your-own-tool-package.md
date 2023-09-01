@@ -101,7 +101,7 @@ hello-world-proj/
   If you only want to put it on Test PyPI, upload your package by running `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`. Once your package is uploaded to Test PyPI, others can install it using pip by running `pip install --index-url https://test.pypi.org/simple/ your-package-name`.
 
 ## Use your tool from VSCode Extension
-* Step1: Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow&ssr=false#overview). 
+* Step1: Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). 
 
 * Step2: Go to terminal and install your tool package in conda environment of the extension. Assume your conda env name is `prompt-flow`.
    ```
