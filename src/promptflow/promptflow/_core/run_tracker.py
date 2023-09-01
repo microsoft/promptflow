@@ -128,7 +128,7 @@ class RunTracker(ThreadLocalSingleton):
         self.node_log_manager.set_node_context(run_id, node, index)
         return run_info
 
-    def skip_node_run(
+    def bypass_node_run(
         self,
         node,
         flow_run_id,

@@ -179,7 +179,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         node_run_id = self._generate_node_run_id(node)
         flow_logger.info(f"Bypassing node {node.name}. node run id: {node_run_id}")
         parent_run_id = f"{self._run_id}_{self._line_number}" if self._line_number is not None else self._run_id
-        self._run_tracker.skip_node_run(
+        self._run_tracker.bypass_node_run(
             node=node.name,
             flow_run_id=self._run_id,
             parent_run_id=parent_run_id,
