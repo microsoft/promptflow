@@ -103,7 +103,7 @@ Run the following command to test your prompt:
 
 ```sh
 # test with flow inputs
-!pf flow test --flow my_chatbot --inputs question="Compute $\\dbinom{16}{5}$."
+pf flow test --flow my_chatbot --inputs question="Compute $\\dbinom{16}{5}$."
 ```
 
 ## 🏃‍♂️Facilitating High-Quality with Prompt Flow🏃‍♀️
