@@ -12,7 +12,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         testType: [sdk-cli, executor]
-        pythonVersion: [3.9, 3.10, 3.11]
+        pythonVersion: ['3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -89,7 +89,7 @@ jobs:
       matrix:
         os: [windows-latest]
         testType: [sdk-cli, executor-e2e, executor-unit]
-        pythonVersion: [3.9]
+        pythonVersion: ['3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -176,8 +176,6 @@ jobs:
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
-        osVersion: ubuntu-latest
-        pythonVersion: 3.9
         testActionFileName: promptflow-release-testing-matrix.yml
         testResultTitle: Release Test Matrix
         token: ${{ secrets.GITHUB_TOKEN }}
