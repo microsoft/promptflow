@@ -107,8 +107,12 @@ user:
 Run the following command to test your prompt on a single input question:
 
 ```sh
-pf flow test --flow my_chatbot --inputs question="James has 7 apples. 4 of them are red, and 3 of them are green. If he chooses 2 apples at random, what is the probability that both the apples he chooses are green?"
+pf flow test --flow my_chatbot --interactive
 ```
+
+Input the math question in the `User` section, for example, "James has 7 apples. 4 of them are red, and 3 of them are green. If he chooses 2 apples at random, what is the probability that both the apples he chooses are green?"
+
+Click `Ctrl + C` to end the interactive testing.
 
 ## Improve Quality with Prompt Flow 🏃‍♂️
 
@@ -119,7 +123,7 @@ LLMs are known for their random nature, resulting in unstable generated answers.
 |  With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cost!| <div style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;"><img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/></div>|  
 | --- | --- |  
 
-👉[Try to test and tune the prompt!](examples/tutorials/quick-start/prompt_tunning_case.md)
+👉[Try to test and tune the prompt!](examples/tutorials/quick-start/tune-your-prompt.md)
 
 ## More Tutorial
 
