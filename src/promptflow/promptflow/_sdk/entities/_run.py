@@ -126,9 +126,6 @@ class Run(YAMLTranslatableMixin):
         self._resources = kwargs.get("resources", None)
         # default run name: flow directory name + timestamp
         self.name = name or self._generate_run_name()
-        # default to use name if display_name is not provided
-        if not self.display_name:
-            self.display_name = self.name
 
     @property
     def created_on(self) -> str:
@@ -252,13 +249,15 @@ class Run(YAMLTranslatableMixin):
         )
 
     def _to_orm_object(self) -> ORMRun:
+        """Convert current run entity to ORM object."""
+        display_name = self._generate_display_name()
         return ORMRun(
             name=self.name,
             created_on=self.created_on,
             status=self.status,
             start_time=self._start_time.isoformat() if self._start_time else None,
             end_time=self._end_time.isoformat() if self._end_time else None,
-            display_name=self.display_name,
+            display_name=display_name,
             description=self.description,
             tags=json.dumps(self.tags) if self.tags else None,
             properties=json.dumps(self.properties),
@@ -365,6 +364,25 @@ class Run(YAMLTranslatableMixin):
         except Exception:
             return str(uuid.uuid4())
 
+    def _get_default_display_name(self) -> str:
+        display_name = self.display_name
+        if not display_name:
+            display_name = self._get_flow_dir().name
+        return display_name
+
+    def _generate_display_name(self) -> str:
+        # generate display name to align with PFS behavior
+
+        display_name = self._get_default_display_name()
+        time_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
+        if self.run:
+            display_name = f"{self.run.display_name}-{display_name}-{time_stamp}"
+        else:
+            variant = self.variant
+            variant = parse_variant(variant)[1] if variant else "default"
+            display_name = f"{display_name}-{variant}-{time_stamp}"
+        return display_name
+
     def _get_flow_dir(self) -> Path:
         flow = Path(self.flow)
         if flow.is_dir():
@@ -420,7 +438,8 @@ class Run(YAMLTranslatableMixin):
                 flow_definition_data_store_name=path_uri.datastore,
                 flow_definition_blob_path=path_uri.path,
                 run_id=self.name,
-                run_display_name=self.display_name,
+                # will use user provided display name since PFS will have special logic to update it.
+                run_display_name=self._get_default_display_name(),
                 description=self.description,
                 tags=self.tags,
                 node_variant=self.variant,
@@ -440,7 +459,7 @@ class Run(YAMLTranslatableMixin):
             return SubmitBulkRunRequest(
                 flow_definition_data_uri=str(self.flow),
                 run_id=self.name,
-                run_display_name=self.display_name,
+                run_display_name=self._get_default_display_name(),
                 description=self.description,
                 tags=self.tags,
                 node_variant=self.variant,
