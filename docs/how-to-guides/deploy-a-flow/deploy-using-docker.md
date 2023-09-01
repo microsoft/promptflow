@@ -100,5 +100,5 @@ curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/a
 ```
 
 ## Next steps
-- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
+- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/docker).
 - See how to [deploy a flow using kubernetes](deploy-using-kubernetes.md).

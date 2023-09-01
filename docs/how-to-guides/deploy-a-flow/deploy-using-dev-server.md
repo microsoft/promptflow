@@ -53,6 +53,6 @@ Invoke-WebRequest -URI http://localhost:8080/score -Body '{"url":"https://play.g
 ::::
 
 ## Next steps
-- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
+- Try the example [here](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/).
 - See how to [deploy a flow using docker](deploy-using-docker.md).
 - See how to [deploy a flow using kubernetes](deploy-using-kubernetes.md).

@@ -76,3 +76,6 @@ Tips:
 - Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream).
 - Reach advanced deployment tools at https://$name.scm.azurewebsites.net/.
 - Reach more details about app service at https://learn.microsoft.com/azure/app-service/.
+
+## Next steps
+- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/azure-app-service).
