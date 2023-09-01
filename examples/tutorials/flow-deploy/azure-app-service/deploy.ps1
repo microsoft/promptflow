@@ -22,16 +22,16 @@ The app subscription, default using az account subscription.
 verbose mode.
 
 .EXAMPLE
-PS> .\deploy.ps1 -Path <folder-path> -i <image_tag> -r <registry> -n <app_name> -g <resource_group>
+PS> .\deploy.ps1 -Path <folder-path> -name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group>
 .EXAMPLE
-PS> .\deploy.ps1 -Path <folder-path> -i <image_tag> -r <registry> -n <app_name> -g <resource_group> -Subscription "xxxx-xxxx-xxxx-xxxx-xxxx" -Verbose
+PS> .\deploy.ps1 -Path <folder-path> -name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group> -Subscription "xxxx-xxxx-xxxx-xxxx-xxxx" -Verbose
 #>
 [CmdletBinding()]
 param(
     [string]$Path,
     [Alias("i", "image_tag")][string]$ImageTag,
     [Alias("r")][string]$Registry,
-    [Alias("n")][string]$Name = "intent-copilot-dummy1",
+    [Alias("n")][string]$Name,
     [Alias("l")][string]$Location = "eastus",
     [string]$Sku = "F1",
     [Alias("g", "resource_group")][string]$ResourceGroup,
@@ -61,6 +61,14 @@ Write-Host "image_tag: $ImageTag"
 if (!$Registry) {
     Write-Host "***************************"
     Write-Host "* Error: registry is required.*"
+    Write-Host "***************************"
+    exit
+}
+
+# fail if name not provided
+if (!$Name) {
+    Write-Host "***************************"
+    Write-Host "* Error: name is required.*"
     Write-Host "***************************"
     exit
 }

@@ -24,7 +24,6 @@ fi
 
 location="eastus"
 sku="F1"
-name="intent-copilot-dummy1"
 verbose=false
 
 ####################### Parse and validate args ############################
@@ -89,6 +88,13 @@ fi
 if [ -z "$registry_name" ]; then
     printf "***************************\n"
     printf "* Error: registry is required.*\n"
+    printf "***************************\n"
+fi
+
+# fail if name not provided
+if [ -z "$name" ]; then
+    printf "***************************\n"
+    printf "* Error: name is required.*\n"
     printf "***************************\n"
 fi
 
