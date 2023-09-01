@@ -1,7 +1,7 @@
 inputs:
-  user_chat_history:
+  chat_history:
     type: list
-    is_chat_history: true
+    is_chat_history: false
   question:
     type: string
     is_chat_input: true
@@ -16,7 +16,7 @@ nodes:
     deployment_name: gpt-35-turbo
     max_tokens: "256"
     temperature: "0.7"
-    chat_history: ${inputs.user_chat_history}
+    chat_history: ${inputs.chat_history}
     question: ${inputs.question}
   name: chat_node
   type: llm

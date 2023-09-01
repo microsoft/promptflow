@@ -119,8 +119,10 @@ class FlowOperations:
         """
         chat_inputs = [item for item in flow.inputs.values() if item.is_chat_input]
         chat_outputs = [item for item in flow.outputs.values() if item.is_chat_output]
-        chat_history = next(iter([input_name for input_name, value in flow.inputs.items() if value.is_chat_history]), None)
-        if not chat_history and CHAT_HISTORY in flow.inputs and flow.inputs[CHAT_HISTORY] != False:
+        chat_history = next(
+            iter([input_name for input_name, value in flow.inputs.items() if value.is_chat_history]), None)
+        if not chat_history and CHAT_HISTORY in flow.inputs and \
+                flow.inputs[CHAT_HISTORY].is_chat_history is not False:
             chat_history = CHAT_HISTORY
         is_chat_flow, error_msg = True, ""
         if len(chat_inputs) != 1:

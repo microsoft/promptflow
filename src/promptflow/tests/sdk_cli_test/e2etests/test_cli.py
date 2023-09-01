@@ -805,7 +805,7 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
 
-    def test_flow_test_with_user_defined_chat_history(self, monkeypatch):
+    def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
         def mock_input(*args, **kwargs):
@@ -826,6 +826,19 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+        # Test is_chat_history is set False
+        with pytest.raises(SystemExit):
+            chat_list = ["hi", "what is chat gpt?"]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_without_defined_chat_history",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     def test_flow_test_inputs(self, capsys, caplog):
         # Flow test missing required inputs
