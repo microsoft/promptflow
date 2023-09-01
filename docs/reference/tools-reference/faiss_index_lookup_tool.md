@@ -86,6 +86,3 @@ The following is an example for JSON format response returned by the tool, which
 
 ```
 </details>
-
-  > [!NOTE]
-  > when legacy tools switching to code first mode, "not found" error may occur, please refer to [Vector DB/Faiss Index/Vector Index Lookup tool rename reminder](faq.md).
