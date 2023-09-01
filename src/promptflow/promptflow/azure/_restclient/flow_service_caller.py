@@ -464,7 +464,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         resource_group_name,  # type: str
         workspace_name,  # type: str
         session_id,  # type: str
-        body=None,  # type: Optional["_models.CreateFlowSessionRequest"]
+        body,  # type: Optional["_models.CreateFlowSessionRequest"]
         **kwargs  # type: Any
     ):
         from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, \
@@ -475,6 +475,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             _models
         )
         from promptflow.azure._constants._flow import SESSION_CREATION_TIMEOUT_SECONDS
+        from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 
         self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
@@ -490,10 +491,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
             content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
-            if body is not None:
-                _json = self.caller.flow_sessions._serialize.body(body, 'CreateFlowSessionRequest')
-            else:
-                _json = None
+            _json = self.caller.flow_sessions._serialize.body(body, 'CreateFlowSessionRequest')
 
             request = build_create_flow_session_request(
                 subscription_id=subscription_id,
@@ -518,8 +516,13 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 raise HttpResponseError(response=response, model=error)
             if response.status_code == 200:
                 return
+            action = body.action or SetupFlowSessionAction.INSTALL.value
+            if action == SetupFlowSessionAction.INSTALL.value:
+                action = "creation"
+            else:
+                action = "reset"
 
-            logger.info("Start polling until session is ready...")
+            logger.info(f"Start polling until session {action} is complted...")
             # start polling status here.
             if "azure-asyncoperation" not in response.headers:
                 raise FlowRequestException(
@@ -534,18 +537,18 @@ class FlowServiceCaller(RequestTelemetryMixin):
             timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
             while status != "Succeeded":
                 if time_run + sleep_period > timeout_seconds:
-                    message = f"Timeout when creating session {session_id} for automatic runtime.\n" \
-                              "Please resubmit the flow later."
+                    message = f"Timeout for session {action} {session_id} for automatic runtime.\n" \
+                              "Please retry later."
                     raise Exception(message)
                 time_run += sleep_period
                 time.sleep(sleep_period)
                 status = self.poll_operation_status(url=polling_url, **kwargs)
                 logger.debug(f"Current polling status: {status}")
                 if time_run % 30 == 0:
-                    logger.info(f"Waiting for session warm-up, current status: {status}")
+                    logger.info(f"Waiting for session {action}, current status: {status}")
                 else:
-                    logger.debug(f"Waiting for session warm-up, current status: {status}")
-            logger.info(f"Session creation finished with status {status}.")
+                    logger.debug(f"Waiting for session {action}, current status: {status}")
+            logger.info(f"Session {action} finished with status {status}.")
         except HttpResponseError as e:
             raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
