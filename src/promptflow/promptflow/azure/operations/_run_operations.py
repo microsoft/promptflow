@@ -42,6 +42,7 @@ from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
+from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
 from promptflow.azure.operations._flow_opearations import FlowOperations
@@ -169,8 +170,9 @@ class RunOperations(_ScopeDependentOperations):
 
     def create_or_update(self, run: Run, **kwargs) -> Run:
         stream = kwargs.pop("stream", False)
+        reset = kwargs.pop("reset_runtime", False)
 
-        rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"))
+        rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
         self._service_caller.submit_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
@@ -616,7 +618,7 @@ class RunOperations(_ScopeDependentOperations):
             environment[PYTHON_REQUIREMENTS_TXT] = requirements
         return environment
 
-    def _resolve_session(self, run, session_id):
+    def _resolve_session(self, run, session_id, reset=None):
         from promptflow.azure._restclient.flow.models import CreateFlowSessionRequest
 
         if run._resources is not None:
@@ -642,6 +644,18 @@ class RunOperations(_ScopeDependentOperations):
             python_pip_requirements=pip_requirements,
             base_image=base_image,
         )
+        if reset:
+            # if reset is set, will reset it before creating again.
+            logger.warning(f"Resetting session {session_id} before creating it.")
+            request.action = SetupFlowSessionAction.RESET
+            self._service_caller.create_flow_session(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                session_id=session_id,
+                body=request,
+            )
+        request.action = SetupFlowSessionAction.INSTALL
         self._service_caller.create_flow_session(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
@@ -650,17 +664,17 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path, session_id):
+    def _resolve_automatic_runtime(self, run, flow_path, session_id, reset=None):
         logger.warning(
             f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
             "it may take a while to build run time and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
         runtime_name = "automatic"
-        self._resolve_session(run=run, session_id=session_id)
+        self._resolve_session(run=run, session_id=session_id, reset=reset)
         return runtime_name
 
-    def _resolve_runtime(self, run, flow_path, runtime):
+    def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
         session_id = self._get_session_id(flow=flow_path)
 
@@ -668,17 +682,17 @@ class RunOperations(_ScopeDependentOperations):
             if not isinstance(runtime, str):
                 raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         else:
-            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id)
+            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id, reset=reset)
 
         return runtime, session_id
 
-    def _resolve_dependencies_in_parallel(self, run, runtime):
+    def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
         flow_path = run.flow
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
                 pool.submit(self._resolve_flow, run=run),
-                pool.submit(self._resolve_runtime, run=run, flow_path=flow_path, runtime=runtime),
+                pool.submit(self._resolve_runtime, run=run, flow_path=flow_path, runtime=runtime, reset=reset),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]
