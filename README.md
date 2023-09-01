@@ -8,29 +8,34 @@
 
 > Welcome to join us to make Prompt flow!
 
-[Documentacion](https://expert-adventure-197jp7v.pages.github.io/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/bnXr6kxs) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
+[Documentacion](https://microsoft.github.io/promptflow) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/bnXr6kxs) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
 
 **Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
 With prompt flow, you will be able to:
 
-- **LLM-native apps power workflow**
+- **Create and Iteratively Develop Flow**
     - Create executable workflows that link LLMs, prompts, Python code and other tools together.
     - Debug and iterate your flows, especially the interaction with LLMs with ease.
-- **Facilitate high quality in development cycle**
+- **Evaluate Flow Quality and Performance**
     - Evaluate your flow's quality and performance with larger datasets.
     - Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
     - Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
-- **Enterprise security and scalability**
-    - (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+- (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+
+### Concept Overview
+
+![concept](examples/tutorials/quick-start/media/concept.png)
+Learn more about the concept of Prompt flow [here](https://microsoft.github.io/promptflow/concepts/index.html).
 
 ------
 
 ## Get Started with Prompt flow ⚡
 
-### ①- Installation
+### ① - Installation
 
-A python environment, `python=3.9` is recommended.
+> [!Important] 
+> A python environment, `python=3.9` is recommended.
 
 ```sh
 pip install promptflow promptflow-tools
@@ -38,13 +43,20 @@ pip install promptflow promptflow-tools
 
 (Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/><font color="darkblue"><b>Prompt flow VS Code extension</b></font>  - Flow Designer
 
-Prompt flow provides an extension in VS Code for visualizing and editing your flows. You can search for it in the VS Code extension marketplace to install it.
+Prompt flow provides an extension in VS Code for visualizing and editing your flows. You can install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
 ### ② - Create the connection to store your OpenAI API key
 
-Prompt flow offers a **safe** way to manage credentials or secrets for LLM APIs, that is **Connection**!
+Create a folder for this quick start testing:
 
-We need a connection yaml file connection.yaml:
+```sh
+mkdir pf-test
+```
+```sh
+cd pf-test
+```
+
+Create a yaml file `connection.yaml` in `pf-test` folder to define the connection:
   
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
@@ -53,7 +65,7 @@ type: open_ai
 api_key: <test_key>
 ```
 
-Then we can use CLI command to create the connection.
+Run the following CLI command to create the connection:
 
 ```sh
 pf connection create -f connection.yaml
@@ -73,59 +85,46 @@ This command will create a new **flow folder** named "my_chatbot" using the "cha
 
 ### ④ - Quick test your flow
 
-Open the `flow.dag.yaml` file in the "my_chatbot" flow folder, specify the connection name you created in the previous step in the `connection` field, specify the model name in the `model` field, for example:
+Let your chatbot complete a specific task of solving a math problem, you need to inform the LLM about the task and target in your prompt.
 
-```yaml
-  ......
-  inputs:
-    model: gpt-4
-    temperature: 0
-    top_p: 1
-    max_tokens: 256
-    presence_penalty: 0
-    frequency_penalty: 0
-    chat_history: ${inputs.chat_history}
-    question: ${inputs.question}
-    model: gpt-4
-  connection: open_ai_connection
-  provider: OpenAI
-  ......
-```
-
-Now you want the flow to answer a math question correctly. Open the `chat.jinia2` file in the folder, replace the **system prompt** with the following prompt:
+Open the `chat.jinia2` file in the folder, overwrite the file content with the following prompt (tasks and targets are highlighted in the system prompt):
 
 ```jinja2
 system:
-You are a helpful assistant. Please output the result number only.
+You are an assistant specialized in math computation. Your task is to solve math problems. Please provide the result number only in your response. 
+
+{% for item in chat_history %}
+user:
+{{item.inputs.question}}
+assistant:
+{{item.outputs.answer}}
+{% endfor %}
+
+user:
+{{question}}
 ```
 
-Run the following command to test your prompt:
+Run the following command to test your prompt on a single input question:
 
 ```sh
-# test with flow inputs
-pf flow test --flow my_chatbot --inputs question="Compute $\\dbinom{16}{5}$."
+pf flow test --flow my_chatbot --inputs question="James has 7 apples. 4 of them are red, and 3 of them are green. If he chooses 2 apples at random, what is the probability that both the apples he chooses are green?"
 ```
 
-## 🏃‍♂️Facilitating High-Quality with Prompt Flow🏃‍♀️
+## Improve Quality with Prompt Flow 🏃‍♂️
 
 LLMs are known for their random nature, resulting in unstable generated answers. Fine-tuning the prompt can further enhance the reliability of the generated outputs. To accurately assess the quality of fine-tuned, testing with a larger dataset and comparing generated outputs to the ground truth is essential.  the prompt can further enhance the reliability of the generated outputs.
 
-<h4><font color="Darkblue"> Tunning </font> + <font color="brown"> Batch Testing</font> + <font color="purple">Evaluation</font> = <font color="green">High Quality</font></h4>
+<h3> Tunning  +  Batch Testing + Evaluation = High Quality</h3>
 
-<div class="columns">
-  <div class="column">
-    With prompt flow, in 10 minutes, test various prompts on multi-row inputs and evaluate the accuracy of the generated outputs against the ground truth. Find the best prompt for target accuracy and token cost effortlessly!
-  </div>
-  <div class="column">
-     <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" style="width:100%;"/>
-  </div>
-</div>
+|  With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cos!| <div style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;"><img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/></div>|  
+| --- | --- |  
 
-👉[Try to test this quick start case!](examples/tutorials/quick-start/prompt_tunning_case.md)
+👉[Try to test and tune the prompt!](examples/tutorials/quick-start/prompt_tunning_case.md)
 
-## Development Guide
+## More Tutorial
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
+
 - [First look at prompt flow](https://expert-adventure-197jp7v.pages.github.io/how-to-guides/quick-start.html)
 - [E2E Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)
 

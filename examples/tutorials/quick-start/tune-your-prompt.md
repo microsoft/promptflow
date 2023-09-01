@@ -3,7 +3,7 @@
 ## Evaluate the quality of your prompt
 Let's have a quick test with a larger dataset in prompt flow! 
 
-> Click to [download the test dataset](./test_data.jsonl), then put it under the pf-test folder.
+> Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), then put it under the pf-test folder.
 
 Run the following command to test your prompt in 20 lines input questions:
 > [!Note]
@@ -46,12 +46,12 @@ To improve the quality of your prompt, you can quickly start an experiment to te
 
 > Click to download the [prompt tuning case](./src/my_chat_variant.zip), then put it under the pf-test folder.
 
-In the case flow, you can see 3 prompt variants in the flow.dag.yaml file, which point to 3 jinjia files. We leverage the Chain of Thought (CoT) prompt engineering method to modify the prompt. Try to inspire LLM's reasoning ability by feeding few-shot CoT examples. 
+In the case flow, you can see 3 prompt variants in the flow.dag.yaml file, which point to 3 jinjia files. We leverage the Chain of Thought (CoT) prompt engineering method to modify the prompt. Try to inspire LLM's reasoning ability by feeding few-shot CoT examples.
 
-Variant_0 is the origin prompt
+Variant_0: the origin prompt
 ```
 system:
-You are a helpful assistant. Please output the result number only.
+You are an assistant specialized in math computation. Your task is to solve math problems. Please provide the result number only in your response.
 {% for item in chat_history %}
 user:
 {{item.inputs.question}}
@@ -61,7 +61,8 @@ assistant:
 user:
 {{question}}
 ```
-Variant_1 add 2 CoT examples
+
+Variant_1: 2 CoT examples
 ```
 system:
 You are a helpful assistant. Help me with some mathematics problems of counting and probability. Think step by step and output as json format.
@@ -84,7 +85,7 @@ user:
 {{question}}
 ```
 
-Variant_2 add 6 CoT examples.
+Variant_2 : 6 CoT examples.
 ```
 system:
 You are a helpful assistant. Help me with some mathematics problems of counting and probability. Think step by step and output as json format.
