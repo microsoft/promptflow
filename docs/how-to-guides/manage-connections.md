@@ -88,7 +88,7 @@ print(result)
 :::
 
 :::{tab-item} VS Code Extension
-:sync: VS Code Extension
+:sync: VSC
 ![img](../media/how-to-guides/vscode_create_connection.png)
 ![img](../media/how-to-guides/vscode_create_connection_1.png)
 :::
