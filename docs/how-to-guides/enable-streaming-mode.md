@@ -38,17 +38,18 @@ If you want to use the streaming mode, you need to create a flow that has a node
 In this guide, we will use the ["Chat with Wikipedia"](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-wikipedia) sample flow as an example. This flow processes the user’s question, searches Wikipedia for relevant articles, and answers the question with information from the articles. It uses streaming mode to show the progress of the answer generation.
 
 ![chat_wikipedia.png](../media/how-to-guides/how-to-enable-streaming-mode/chat_wikipedia_center.png)
+
 ## Deploy the flow as an online endpoint
 
 To use the streaming mode, you need to deploy your flow as an online endpoint. This will allow you to send requests and receive responses from your flow in real time.
 
-Follow [this guide](./deploy-a-flow/index.md) to deploy your flow as an online endpoint.
+- You can follow [this guide](./deploy-a-flow/index.md) to deploy your flow using docker, development server, or Kubernetes.
+- You can also deploy your flow to an Azure Machine Learning managed online endpoint by following [this document](https://learn.microsoft.com/azure/machine-learning/prompt-flow/how-to-deploy-for-real-time-inference?view=azureml-api-2).
 
-> [!NOTE]
-> 
-> You can follow this document to deploy an [online endpoint](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-deploy-for-real-time-inference?view=azureml-api-2).
-> Please deploy with runtime environment version later than version `20230816.v10`.
-> You can check your runtime version and update runtime in the run time detail page.
+    > [!NOTE]
+    > 
+    > For streaming support, please deploy with runtime environment version later than version `20230816.v10`.
+    > You can check your runtime version and update runtime in the run time detail page.
 
 ## Understand the streaming process
 
