@@ -3,10 +3,11 @@ name: Create promptflow release branch
 on:
   workflow_dispatch:
     inputs:
+      # specify when trigger
+      # expected format: 0.1.0b1 or 1.0.0
       release_version:
         description: Release version
         required: true
-        default: "0.1.0b1"  # specify when trigger
         type: string
   repository_dispatch:
 
