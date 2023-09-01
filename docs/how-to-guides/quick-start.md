@@ -25,10 +25,10 @@ This guide will walk you through the fist step using of prompt flow code-first e
 
 ## Set up your dev environment
 
-1. A python environment with version `python=3.9`. It's recommended to use python environment manager [miniconda](https://docs.conda.io/en/latest/miniconda.html). After you have installed miniconda, run below commands to create a python environment
+1. A python environment with version `python=3.9` or higher version like 3.10. It's recommended to use python environment manager [miniconda](https://docs.conda.io/en/latest/miniconda.html). After you have installed miniconda, run below commands to create a python environment:
 ```bash
-conda create --name pf-examples python=3.9
-conda activate pf-examples
+conda create --name pf python=3.9
+conda activate pf
 ```
 
 2. Install `promptflow` and `promptflow-tools`.
@@ -44,7 +44,7 @@ pf -v
 
 ## Understand what's a flow
 
-A flow in prompt flow serves as an executable workflow that streamlines the development of your LLM-based AI application. It provides a comprehensive framework for managing data flow and processing within your application. See [Flows](../../concepts/concept-flows.md) for more details.
+A flow, represented as a YAML file, is a DAG of functions, which connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
 
 ### Get the flow sample
 
@@ -84,7 +84,7 @@ The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/micro
 This graph is rendered by VS Code extension `Prompt flow` which will be introduced in the next section.
 
 ### Using VS Code Extension to visualize the flow
-_Note: VS Code Extension is optional but highly recommended._
+_Note: Prompt flow VS Code Extension is highly recommended for flow development and debugging._
 
 1. Prerequisites for VS Code extension.
    - Install latest stable version of [VS Code](https://code.visualstudio.com/)
@@ -303,4 +303,4 @@ Learn more on how to:
 
 And you can also check our [examples](https://github.com/microsoft/promptflow/tree/main/examples), especially:
 - [Getting Started with Prompt Flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb): the notebook covering the python sdk experience for sample introduced in this doc.
-- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): go through an end-to-end tutorial on how to develop a chat application with prompt flow.
+- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
