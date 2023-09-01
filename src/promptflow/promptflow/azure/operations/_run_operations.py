@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import concurrent
 import copy
+import hashlib
 import json
 import logging
 import os
@@ -541,7 +542,8 @@ class RunOperations(_ScopeDependentOperations):
         session_id = f"{user_alias}_{flow_id}"
         # hash and truncate to avoid the session id getting too long
         # backend has a 64 bit limit for session id.
-        session_id = str(hash(session_id))[:48]
+        # use hexdigest to avoid non-ascii characters in session id
+        session_id = str(hashlib.sha256(session_id.encode()).hexdigest())[:48]
         return session_id
 
     def _get_child_runs_from_pfs(self, run_id: str):
@@ -662,7 +664,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _resolve_automatic_runtime(self, run, session_id):
         logger.warning(
-            f"Using {AUTOMATIC_RUNTIME}, if it's first time you're using automatic runtime, "
+            f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
             "it may take a while to build runtime and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
