@@ -10,7 +10,7 @@ on:
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
 env:
-  packageSetupType: promptflow_open_source
+  packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   executor_e2e_tests:
