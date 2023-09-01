@@ -1,17 +1,38 @@
 # Deploy flow using Azure App Service
 
 [Azure App Service](https://learn.microsoft.com/azure/app-service/) is an HTTP-based service for hosting web applications, REST APIs, and mobile back ends.
-Promptflow has provided scripts (`deploy.sh` for bash and `deploy.ps1` for powershell) to help deploy the docker image to Azure App Service.
+The scripts (`deploy.sh` for bash and `deploy.ps1` for powershell) under this folder are here to help deploy the docker image to Azure App Service.
+
+This example demos how to deploy [web-classification](../../flows/standard/web-classification/README.md) deploy a flow using Azure App Service.
+
+## Build a flow as docker format app
+
+Use the command below to build a flow as docker format app:
+
+```bash
+pf flow build --source ../../flows/standard/web-classification --output build --format docker
+```
+
+Note that all dependent connections must be created before building as docker.
+
+## Deploy with Azure App Service
+The two scripts will do the following things:
+1. Create a resource group if not exists.
+2. Build and push the image to docker registry.
+3. Create an app service plan with the give sku.
+4. Create an app with specified name, set the deployment container image to the pushed docker image.
+5. Set up the environment variables for the app.
 
 Example command to use bash script:
 ```bash
-bash deploy.sh --path <> -i <image_tag> -r "promptflow.azurecr.io" -g <resource_group>
+bash deploy.sh --path build -i <image_tag> --name my_app_23d8m -r <docker registery> -g <resource_group>
 ```
 
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> -r "promptflow.azurecr.io" -g <resource_group>
+.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registery> -g <resource_group>
 ```
+Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 
 See the full parameters by `bash deploy.sh -h` or `.\deploy.ps1 -h`.
 

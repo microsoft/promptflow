@@ -22,9 +22,9 @@ The app subscription, default using az account subscription.
 verbose mode.
 
 .EXAMPLE
-PS> .\deploy.ps1 -Path <folder-path> -name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group>
+PS> .\deploy.ps1 -Path <folder-path> -Name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group>
 .EXAMPLE
-PS> .\deploy.ps1 -Path <folder-path> -name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group> -Subscription "xxxx-xxxx-xxxx-xxxx-xxxx" -Verbose
+PS> .\deploy.ps1 -Path <folder-path> -Name my_app_23d8m -i <image_tag> -r <registry> -n <app_name> -g <resource_group> -Subscription "xxxx-xxxx-xxxx-xxxx-xxxx" -Verbose
 #>
 [CmdletBinding()]
 param(
