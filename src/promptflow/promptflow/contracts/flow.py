@@ -15,7 +15,7 @@ from promptflow.exceptions import ErrorTarget
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule
+from ._errors import FailedToImportModule, NodeConditionConflict
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -123,6 +123,20 @@ class ToolSource:
 
 
 @dataclass
+class ActivateCondition:
+    condition: InputAssignment
+    condition_value: Any
+
+    @staticmethod
+    def deserialize(data: dict) -> "ActivateCondition":
+        result = ActivateCondition(
+            condition=InputAssignment.deserialize(data["when"]),
+            condition_value=data["is"],
+        )
+        return result
+
+
+@dataclass
 class SkipCondition:
     condition: InputAssignment
     condition_value: Any
@@ -154,6 +168,7 @@ class Node:
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
     skip: Optional[SkipCondition] = None
+    activate: Optional[ActivateCondition] = None
 
     def serialize(self):
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v})
@@ -185,6 +200,11 @@ class Node:
             node.type = ToolType(data["type"])
         if "skip" in data:
             node.skip = SkipCondition.deserialize(data["skip"])
+        if "activate" in data:
+            node.activate = ActivateCondition.deserialize(data["activate"])
+        if node.skip and node.activate:
+            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
+
         return node
 
 

@@ -1,19 +1,12 @@
-name: node_wrong_order
+name: all_nodes_bypassed
 inputs:
   text:
     type: string
 outputs:
   result:
     type: string
-    reference: ${third_node}
+    reference: ${third_node.output}
 nodes:
-- name: third_node
-  type: python
-  source:
-    type: code
-    path: test.py
-  inputs:
-    text: ${second_node}
 - name: first_node
   type: python
   source:
@@ -21,10 +14,20 @@ nodes:
     path: test.py
   inputs:
     text: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: "hello"
 - name: second_node
   type: python
   source:
     type: code
     path: test.py
   inputs:
-    text: ${first_node}
+    text: ${first_node.output}
+- name: third_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${second_node.output}
