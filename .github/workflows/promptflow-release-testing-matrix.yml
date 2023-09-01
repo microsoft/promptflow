@@ -1,6 +1,6 @@
 name: promptflow-release-testing-matrix
 on:
-  repository_dispatch:
+  workflow_call:
 env:
   packageSetupType: promptflow_new_extra
   testWorkingDirectory: src/promptflow
