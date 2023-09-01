@@ -99,7 +99,9 @@ jobs:
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
+        testActionFileName: promptflow-executor-unit-test.yml
+        testResultTitle: Executor Unit Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.3
+        coverageThreshold: 0.5
         token: ${{ secrets.GITHUB_TOKEN }}
