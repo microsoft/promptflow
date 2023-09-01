@@ -82,7 +82,7 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
    - Install latest stable version of [VS Code](https://code.visualstudio.com/)
    - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
 
-2. Install Prompt flow VS Code extension
+2. Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow&ssr=false#overview)
 
     ![install_extension](../media/how-to-guides/quick-start/vs_code_install.png)
 
