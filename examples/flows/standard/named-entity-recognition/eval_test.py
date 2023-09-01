@@ -53,7 +53,7 @@ class TestEvalAzure(BaseTest):
                 "text": "${data.text}",
                 "entity_type": "${data.entity_type}"
             },
-            connections={"NER_LLM": {"connection": "azure_open_ai_connection"}},
+            connections={"NER_LLM": {"connection": "open_ai_connection"}},
             runtime="chat_with_pdf_runtime",
             display_name="ner_bulk_run",
             tags={"unittest": "true"},

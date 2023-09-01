@@ -1,0 +1,20 @@
+{"question": "What is the sum of 5 and 3?", "groundtruth": "8", "answer": "8"}
+{"question": "Subtract 7 from 10.", "groundtruth": "3", "answer": "3"}
+{"question": "Multiply 6 by 4.", "groundtruth": "24", "answer": "24"}
+{"question": "Divide 20 by 5.", "groundtruth": "4", "answer": "4"}
+{"question": "What is the square of 7?", "groundtruth": "49", "answer": "49"}
+{"question": "What is the square root of 81?", "groundtruth": "9", "answer": "9"}
+{"question": "If a rectangle has a length of 10 and width of 5, what is the area?", "groundtruth": "50", "answer": "50"}
+{"question": "A circle has a radius of 7, what is the area? (Use 3.14 for pi)", "groundtruth": "153.86", "answer": "153.871"}
+{"question": "Solve for x in the equation 2x + 3 = 9.", "groundtruth": "3", "answer": "3"}
+{"question": "What is the value of x if 5x = 25?", "groundtruth": "5", "answer": "5"}
+{"question": "A car travels 200 miles in 4 hours. What is the average speed of the car?", "groundtruth": "50", "answer": "50"}
+{"question": "A car travels at a speed of 60 mph. How long will it take to travel 180 miles?", "groundtruth": "3", "answer": "3"}
+{"question": "If a car travels at a speed of 40 mph for 2 hours, how far will it travel?","groundtruth": "80", "answer": "80"}
+{"question":"A rectangle has length = 10 cm and width = 5 cm. What is its area?", "groundtruth":"50", "answer": "50"}
+{"question":"A circle has radius = 7 cm. What is its circumference? (Use pi =3.14)", "groundtruth":"43.96", "answer": "43.959"}
+{"question":"A triangle has base =10 cm and height =5 cm. What is its area?", "groundtruth":"25", "answer": "25"}
+{"question":"What is the slope of the line that passes through (2,3) and (4,7)?", "groundtruth":"2", "answer": "2"}
+{"question":"The distance between A and B is 2000km, A is moving towards B with speed 80km/hour, meanwhile B is moving towards A with speed 120km/hour, how many hours later A and B can meet?", "groundtruth":"10", "answer": "10"}
+{"question":"The lengths of the two perpendicular sides of a right triangle are 6cm and 8cm. What is the length of the hypotenuse?", "groundtruth": "10", "answer": "10"}
+{"question":"A is running with average speed 10km/hour, A already run half hour. B start to chase A along the same route with average speed 15km/hour, how many hours B will take to meet A?", "groundtruth":"1", "answer": "2"}

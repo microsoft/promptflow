@@ -23,15 +23,21 @@ pip install -r requirements.txt
 
 ### 1. Setup connection
 
-Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+If you are using Azure Open AI, prepare your resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base>
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
+
+If you using OpenAI, sign up account [OpenAI website](https://openai.com/), login and [find personal API key](https://platform.openai.com/account/api-keys).
+
+```shell
+pf connection create --file ../../../connections/openai.yml --set api_key=<your_api_key>
 ```
 
 ### 2. Configure the flow with your connection
-`flow.dag.yaml` is already configured with connection named `azure_open_ai_connection`.
+`flow.dag.yaml` is already configured with connection named `open_ai_connection`.
 
 ### 3. Test flow with single line data
 

@@ -20,7 +20,5 @@ nodes:
     path: hello.py
   inputs:
     input1: ${hello_prompt.output}
-id: template_standard_flow
-name: Template Standard Flow
 environment:
   python_requirements_txt: requirements.txt

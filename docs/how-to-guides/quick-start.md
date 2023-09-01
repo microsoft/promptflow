@@ -11,7 +11,7 @@ This guide will walk you through the main user journey of prompt flow code-first
 1. A python environment, `python=3.9` is recommended.
 2. Install `promptflow` and `promptflow-tools`.
 ```sh
-pip install promptflow promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow promptflow-tools
 ```
 3. Get the sample flows. 
    - Get access to the flow sample repository.
@@ -38,7 +38,7 @@ git clone https://github.com/microsoft/promptflow.git
 
 The connection helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety. See [Manage connections](./manage-connections.md) for more details.
 
-In this guide, we will use flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) which uses connection `azure_open_ai_connection` inside, we need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
+In this guide, we will use flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) which uses connection `open_ai_connection` inside, we need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
 
 ::::{tab-set}
 
@@ -46,9 +46,11 @@ In this guide, we will use flow [web-classification](https://github.com/microsof
 :sync: CLI
 
 Firstly we need a connection yaml file `connection.yaml`:
+
+If you are using Azure Open AI, prepare your resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
-name: azure_open_ai_connection
+name: open_ai_connection
 type: azure_open_ai
 api_key: <test_key>
 api_base: <test_base>
@@ -56,6 +58,14 @@ api_type: azure
 api_version: <test_version>
 ```
 
+If you are using OpenAI, sign up account via [OpenAI website](https://openai.com/), login and [find personal API key](https://platform.openai.com/account/api-keys), then use this yaml:
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
+name: open_ai_connection
+type: azure_open_ai
+api_key: <test_key>
+organization: ""
+```
 Then we can use CLI command to create the connection.
 
 ```sh

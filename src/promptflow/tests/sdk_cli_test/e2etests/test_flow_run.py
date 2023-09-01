@@ -16,6 +16,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
+from promptflow.exceptions import UserErrorException
 from promptflow.executor.flow_executor import MappingSourceNotFound
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -170,9 +171,9 @@ class TestFlowRun:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         column_mapping = {
-            "groundtruth": "data.answer",
-            "prediction": "run.outputs.category",
-            "variant_id": "data.variant_id",
+            "groundtruth": "${data.answer}",
+            "prediction": "${run.outputs.category}",
+            "variant_id": "${data.variant_id}",
         }
 
         metrics = {}
@@ -189,8 +190,6 @@ class TestFlowRun:
                 run=v,
                 column_mapping=column_mapping,
             )
-
-        # TODO: compare metrics
 
     def test_submit_run_from_yaml(self, local_client, pf):
         run_id = str(uuid.uuid4())
@@ -258,19 +257,17 @@ class TestFlowRun:
             )
         assert "Connection 'Not_exist' required for flow" in str(e)
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_run_reference_failed_run(self, pf):
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        assert failed_run.status == "Failed"
+        # "update" run status to failed since currently all run will be completed unless there's bug
+        pf.runs.update(
+            name=failed_run.name,
+            status="Failed",
+        )
 
         run_name = str(uuid.uuid4())
         with pytest.raises(ValueError) as e:
@@ -303,7 +300,7 @@ class TestFlowRun:
             source=f"{RUNS_DIR}/run_with_env.yaml",
         )
         outputs = local_client.runs._get_outputs(run=run)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_pf_run_with_env_overwrite(self, local_client, local_aoai_connection, pf):
         run = pf.run(
@@ -312,7 +309,7 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         outputs = local_client.runs._get_outputs(run=run)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_eval_run_not_exist(self, pf):
         name = str(uuid.uuid4())
@@ -396,12 +393,6 @@ class TestFlowRun:
         assert 'Run status: "Completed"' in out
         assert "Output path: " in out
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_stream_incomplete_run_summary(
         self, azure_open_ai_connection: AzureOpenAIConnection, local_client, capfd, pf
     ) -> None:
@@ -417,7 +408,7 @@ class TestFlowRun:
         local_client.runs.stream(run.name)
         # assert error message in stream API
         out, _ = capfd.readouterr()
-        assert 'Run status: "Failed"' in out
+        assert 'Run status: "Completed"' in out
         # won't print exception, use can get it from run._to_dict()
         # assert "failed with exception" in out
 
@@ -464,12 +455,6 @@ class TestFlowRun:
         )
         pf.visualize([run1, run2])
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_incomplete_run_visualize(
         self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient, capfd: pytest.CaptureFixture
     ) -> None:
@@ -478,9 +463,11 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        # stream run to ensure it is terminated, and it is expected to fail
-        run = pf.runs.stream(name=failed_run.name)
-        assert run.status == RunStatus.FAILED
+        # "update" run status to failed since currently all run will be completed unless there's bug
+        pf.runs.update(
+            name=failed_run.name,
+            status="Failed",
+        )
 
         # patch logger.error to print, so that we can capture the error message using capfd
         from promptflow.azure.operations import _run_operations
@@ -528,7 +515,7 @@ class TestFlowRun:
         run = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_dict_input",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
         )
         outputs = pf.runs._get_outputs(run=run)
         assert "dict" in outputs["output"][0]
@@ -541,7 +528,7 @@ class TestFlowRun:
             name=name,
             flow=f"{FLOWS_DIR}/flow_with_dict_input",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
         )
 
         # create a new run won't affect original run
@@ -550,7 +537,7 @@ class TestFlowRun:
                 name=name,
                 flow=f"{FLOWS_DIR}/flow_with_dict_input",
                 data=data_path,
-                column_mapping={"key": {"value": "1"}},
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
             )
         run = pf.runs.get(name)
         assert run.status == RunStatus.COMPLETED
@@ -600,7 +587,7 @@ class TestFlowRun:
         run = pf.run(
             flow=f"{FLOWS_DIR}/flow_with_user_output",
             data=data_path,
-            column_mapping={"key": {"value": "1"}},
+            column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
         )
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
@@ -620,3 +607,43 @@ class TestFlowRun:
         detail = pf.runs.get_details(name=run.name)
         detail.fillna("", inplace=True)
         assert len(detail) == 3
+
+    def test_flow_with_only_static_values(self, pf):
+        name = str(uuid.uuid4())
+        data_path = f"{DATAS_DIR}/webClassification3.jsonl"
+
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=f"{FLOWS_DIR}/flow_with_dict_input",
+                data=data_path,
+                column_mapping={"key": {"value": "1"}},
+                name=name,
+            )
+
+        assert "Column mapping must contain at least one mapping binding" in str(e.value)
+        # run should not be created
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(name=name)
+
+    def test_error_message_dump(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+        # even if all lines failed, the bulk run's status is completed.
+        assert failed_run.status == "Completed"
+        # error messages will store in local
+        local_storage = LocalStorageOperations(failed_run)
+
+        assert os.path.exists(local_storage._exception_path)
+        exception = local_storage.load_exception()
+        assert "Failed to run 1/1 lines: First error message is" in exception["message"]
+        # line run failures will be stored in additionalInfo
+        assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
+
+        # show run will get error message
+        run = pf.runs.get(name=failed_run.name)
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert run_dict["error"] == exception

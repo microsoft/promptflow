@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
 
-From this document, customer can initialize a flow and test it locally.
+From this document, customer can initialize a flow and test it.
 
 ## Initialize flow
 
@@ -59,28 +59,28 @@ Promptflow CLI can generate the yaml definitions needed for prompt flow from the
 pf flow init --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-tempate>
 ```
 
-Take [intent-copilot](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/intent-copilot) for example, which demonstrating how to convert a langchain code into a prompt flow.
+Take [customer-intent-extraction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/customer-intent-extraction) for example, which demonstrating how to convert a langchain code into a prompt flow.
 
 ![init_output](../media/how-to-guides/init-and-test-a-flow/flow_init_output.png)
 
 In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/tools.json`  and `extract_intent_tool.py`, it is a python tool in the flow.
 
 ![init_files](../media/how-to-guides/init-and-test-a-flow/flow_init_files.png)
-## Test a flow locally
+## Test a flow
 
-Promptflow also provides ways to test the initialized flow or flow node locally. It will help you quickly test your flow.
+Promptflow also provides ways to test the initialized flow or flow node. It will help you quickly test your flow.
 
 
 ### Test flow
 
-Customer can use CLI or VS Code extension to test the flow locally.
+Customer can use CLI or VS Code extension to test the flow.
 
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
 
 ```bash
-# Test flow in local
+# Test flow
 pf flow test --flow <flow-name>
 
 # Test flow with specified variant
@@ -143,7 +143,7 @@ Promptflow CLI will generate test logs and outputs in `.promptflow`:
 
 ### Test a single node in the flow
 
-Customer can test a single python node in the flow locally. It will use customer provides date or the default value of the node as input. It will only use customer specified node to execute with the input.
+Customer can test a single python node in the flow. It will use customer provides date or the default value of the node as input. It will only use customer specified node to execute with the input.
 
 ::::{tab-set}
 :::{tab-item} CLI
@@ -152,7 +152,7 @@ Customer can test a single python node in the flow locally. It will use customer
 Customer can execute this command to test the flow.
 
 ```bash
-# Test flow node in local
+# Test flow node
 pf flow test --flow <flow-name> --node <node-name>
 ```
 

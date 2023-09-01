@@ -11,7 +11,8 @@ PS> ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true -SkipInstall
 param(
     [switch]$SkipInstall,
     [switch]$WarningAsError = $false,
-    [switch]$BuildLinkCheck = $false
+    [switch]$BuildLinkCheck = $false,
+    [switch]$WithReferenceDoc = $false
 )
 
 [string] $ScriptPath = $PSCommandPath | Split-Path -Parent
@@ -56,9 +57,12 @@ Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
 ProcessFiles
 
-if(!$BuildLinkCheck){
-    # Only build ref doc when it's not link check
-    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, "reference\python-library-reference")
+if($WithReferenceDoc){
+    $RefDocRelativePath = "reference\python-library-reference"
+    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, $RefDocRelativePath)
+    if(!(Test-Path $RefDocPath)){
+        throw "Reference doc path not found. Please make sure '$RefDocRelativePath' is under '$DocPath'"
+    }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
     sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath"

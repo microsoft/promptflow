@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import copy
 import datetime
 import json
 import logging
@@ -31,13 +30,13 @@ from promptflow._sdk._utils import generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.exception_utils import ExceptionPresenter
+from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.executor.flow_executor import BulkResult
-from promptflow.storage.run_storage import AbstractRunStorage
+from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -75,7 +74,15 @@ class LoggerOperations(LogContext):
     def __enter__(self):
         log_path = Path(self.log_path)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        log_path.touch(exist_ok=True)
+        if log_path.exists():
+            # Clean up previous log content
+            try:
+                with open(log_path, 'w') as file:
+                    file.truncate(0)
+            except Exception as e:
+                logger.warning(f"Failed to clean up the previous log content because {e}")
+        else:
+            log_path.touch(exist_ok=True)
 
         for _logger in self._get_execute_loggers_list():
             for handler in _logger.handlers:
@@ -269,25 +276,55 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             json.dump(metrics, f)
 
-    def dump_exception(self, exception: Exception) -> None:
-        if not exception:
+    def dump_exception(self, exception: Exception, bulk_results: BulkResult) -> None:
+        """Dump exception to local storage.
+
+        :param exception: Exception raised during bulk run.
+        :param bulk_results: Bulk run outputs. If exception not raised, store line run error messages.
+        """
+        # extract line run errors
+        errors, line_runs = [], []
+        try:
+            for line_result in bulk_results.line_results:
+                if line_result.run_info.error is not None:
+                    errors.append(
+                        {
+                            "line number": line_result.run_info.index,
+                            "error": line_result.run_info.error,
+                        }
+                    )
+                line_runs.append(line_result)
+        except Exception:
+            pass
+
+        # won't dump exception if errors not found in bulk_results
+        if not errors:
             return
+
+        if exception is None:
+            # use first line run error message as exception message if no exception raised
+            error = errors[0]
+            try:
+                message = error["error"]["message"]
+            except Exception:
+                message = (
+                    "Failed to extract error message from line runs. "
+                    f"Please check {self._outputs_path} for more info."
+                )
+        else:
+            message = str(exception)
+
         if not isinstance(exception, BulkRunException):
             # If other errors raised, pass it into PromptflowException
-            try:
-                errors = len(self.get_error_messages())
-                total = len(self._get_line_runs())
-            except Exception:
-                errors = "unknown"
-                total = "unknown"
             exception = BulkRunException(
-                message=str(exception),
+                message=message,
                 error=exception,
-                failed_lines=errors,
-                total_lines=total,
+                failed_lines=len(errors) if errors else "unknown",
+                total_lines=len(line_runs) if line_runs else "unknown",
+                line_errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(ExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
+            json.dump(PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
 
     def load_exception(self) -> Dict:
         try:
@@ -317,20 +354,6 @@ class LocalStorageOperations(AbstractRunStorage):
         with open(self._metrics_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             metrics = json.load(f)
         return metrics
-
-    def get_error_messages(self) -> List[Tuple[int, dict]]:
-        error_messages = []
-        with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            detail = json.load(f)
-            for run in detail["flow_runs"]:
-                if run["error"] is not None:
-                    error_messages.append((run["index"], copy.deepcopy(run["error"])))
-        return error_messages
-
-    def _get_line_runs(self):
-        with open(self._detail_path, mode="r", encoding=DEFAULT_ENCODING) as f:
-            detail = json.load(f)
-        return detail["flow_runs"]
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""

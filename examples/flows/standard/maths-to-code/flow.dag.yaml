@@ -1,0 +1,46 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  math_question:
+    type: string
+    default: If a rectangle has a length of 10 and width of 5, what is the area?
+outputs:
+  code:
+    type: string
+    reference: ${code_refine.output}
+  answer:
+    type: string
+    reference: ${final_code_execution.output}
+nodes:
+- name: final_code_execution
+  type: python
+  source:
+    type: code
+    path: code_execution.py
+  inputs:
+    code_snippet: ${code_refine.output}
+- name: math_example
+  type: python
+  source:
+    type: code
+    path: math_example.py
+  inputs: {}
+- name: code_refine
+  type: python
+  source:
+    type: code
+    path: code_refine.py
+  inputs:
+    original_code: ${code_gen.output}
+- name: code_gen
+  type: llm
+  source:
+    type: code
+    path: ask_llm.jinja2
+  inputs:
+    deployment_name: gpt-35-turbo
+    question: ${inputs.math_question}
+    examples: ${math_example.output}
+  connection: open_ai_connection
+  api: chat

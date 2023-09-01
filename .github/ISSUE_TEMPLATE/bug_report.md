@@ -12,7 +12,7 @@ A clear and concise description of the bug.
 
 **How To Reproduce the bug**
 Steps to reproduce the behavior, how frequent can you experience the bug:
-1. 
+1.
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
