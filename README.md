@@ -116,7 +116,7 @@ LLMs are known for their random nature, resulting in unstable generated answers.
 
 <h3> Tunning  +  Batch Testing + Evaluation = High Quality</h3>
 
-|  With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cos!| <div style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;"><img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/></div>|  
+|  With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cost!| <div style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;"><img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/></div>|  
 | --- | --- |  
 
 👉[Try to test and tune the prompt!](examples/tutorials/quick-start/prompt_tunning_case.md)
