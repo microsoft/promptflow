@@ -133,7 +133,7 @@ class FlowValidator:
     @staticmethod
     def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]):
         """
-        Filter the flow inputs for node and resolve the value by type.InputTypeError
+        Filter the flow inputs for node and resolve the value by type.
 
         return:
             the resolved flow inputs which are needed by the node only
