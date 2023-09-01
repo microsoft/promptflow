@@ -1,4 +1,4 @@
-name: all_nodes_skipped
+name: all_nodes_bypassed
 inputs:
   text:
     type: string

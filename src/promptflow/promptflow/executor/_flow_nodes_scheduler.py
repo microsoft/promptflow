@@ -57,14 +57,14 @@ class FlowNodesScheduler:
                         unfinished_future.cancel()
                     # Even we raise exception here, still need to wait all running jobs finish to exit.
                     raise e
-        return dag_manager.completed_nodes_outputs, dag_manager.skipped_nodes
+        return dag_manager.completed_nodes_outputs, dag_manager.bypassed_nodes
 
     def _execute_nodes(self, dag_manager: DAGManager, executor: ThreadPoolExecutor):
         # Skip nodes and update node run info until there are no nodes to skip
-        nodes_to_skip = dag_manager.pop_skippable_nodes()
+        nodes_to_skip = dag_manager.pop_bypassable_nodes()
         while nodes_to_skip:
-            self._skip_nodes(dag_manager, nodes_to_skip)
-            nodes_to_skip = dag_manager.pop_skippable_nodes()
+            self._bypass_nodes(dag_manager, nodes_to_skip)
+            nodes_to_skip = dag_manager.pop_bypassable_nodes()
 
         # Submit nodes that are ready to run
         nodes_to_exec = dag_manager.pop_ready_nodes()
@@ -79,12 +79,12 @@ class FlowNodesScheduler:
             completed_nodes_outputs[each_node.name] = each_node_result
         return completed_nodes_outputs
 
-    def _skip_nodes(self, dag_manager: DAGManager, nodes: List[Node]):
+    def _bypass_nodes(self, dag_manager: DAGManager, nodes: List[Node]):
         try:
             self.context.start()
             for node in nodes:
-                node_outputs = dag_manager.get_skipped_node_outputs(node)
-                self.context.skip_node(node, node_outputs)
+                node_outputs = dag_manager.get_bypassed_node_outputs(node)
+                self.context.bypass_node(node, node_outputs)
         finally:
             self.context.end()
 

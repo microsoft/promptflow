@@ -6,7 +6,7 @@
                 "second": "Execute incident info extractor"
             }
         },
-        "expected_skipped_nodes":["job_info_extractor", "icm_retriever"]
+        "expected_bypassed_nodes":["job_info_extractor", "icm_retriever"]
     },
     {
         "expected_outputs":{
@@ -15,7 +15,7 @@
                 "second": "Skip incident info extractor"
             }
         },
-        "expected_skipped_nodes":["incident_info_extractor", "icm_retriever", "kql_tsg_retriever", "tsg_retriever", "investigation_steps", "retriever_summary"]
+        "expected_bypassed_nodes":["incident_info_extractor", "icm_retriever", "kql_tsg_retriever", "tsg_retriever", "investigation_steps", "retriever_summary"]
     },
     {
         "expected_outputs":{
@@ -24,6 +24,6 @@
                 "second": "Execute incident info extractor"
             }
         },
-        "expected_skipped_nodes":["job_info_extractor", "kql_tsg_retriever", "tsg_retriever"]
+        "expected_bypassed_nodes":["job_info_extractor", "kql_tsg_retriever", "tsg_retriever"]
     }
 ]

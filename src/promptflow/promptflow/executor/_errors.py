@@ -109,7 +109,7 @@ class NoNodeExecutedError(FlowExecutionError):
     pass
 
 
-class OutputReferenceSkipped(FlowExecutionError):
+class OutputReferenceBypassed(FlowExecutionError):
     pass
 
 

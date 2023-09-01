@@ -29,7 +29,7 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import NodeConcurrencyNotFound, OutputReferenceSkipped
+from promptflow.executor._errors import NodeConcurrencyNotFound, OutputReferenceBypassed
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -636,7 +636,7 @@ class FlowExecutor:
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
-    def _extract_outputs(self, nodes_outputs, skipped_nodes, flow_inputs):
+    def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}
         for name, output in self._flow.outputs.items():
             if output.reference.value_type == InputValueType.LITERAL:
@@ -654,10 +654,10 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                if node.name in skipped_nodes:
-                    raise OutputReferenceSkipped(
+                if node.name in bypassed_nodes:
+                    raise OutputReferenceBypassed(
                         "Failed to extract output because the reference "
-                        f"node {output.reference.value!r} has been skipped."
+                        f"node {output.reference.value!r} has been bypassed."
                     )
                 raise ValueError(f"Node {output.reference.value} not found in results.")
             node_result = nodes_outputs[output.reference.value]
@@ -669,8 +669,8 @@ class FlowExecutor:
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
-        nodes_outputs, skipped_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
-        outputs = self._extract_outputs(nodes_outputs, skipped_nodes, inputs)
+        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):

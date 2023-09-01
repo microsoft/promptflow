@@ -10,7 +10,7 @@ class DAGManager:
         self._flow_inputs = flow_inputs
         self._pending_nodes = {node.name: node for node in nodes}
         self._completed_nodes_outputs = {}  # node name -> output
-        self._skipped_nodes = {}  # node name -> node
+        self._bypassed_nodes = {}  # node name -> node
         # TODO: Validate the DAG to avoid circular dependencies
 
     @property
@@ -18,8 +18,8 @@ class DAGManager:
         return self._completed_nodes_outputs
 
     @property
-    def skipped_nodes(self) -> Mapping[str, Node]:
-        return self._skipped_nodes
+    def bypassed_nodes(self) -> Mapping[str, Node]:
+        return self._bypassed_nodes
 
     def pop_ready_nodes(self) -> List[Node]:
         """Returns a list of node names that are ready, and removes them from the list of nodes to be processed."""
@@ -31,17 +31,17 @@ class DAGManager:
             del self._pending_nodes[node.name]
         return ready_nodes
 
-    def pop_skippable_nodes(self) -> List[Node]:
-        """Returns a list of nodes that are skipped, and removes them from the list of nodes to be processed."""
-        # Confirm node should be skipped
-        skipped_nodes: List[Node] = []
+    def pop_bypassable_nodes(self) -> List[Node]:
+        """Returns a list of nodes that are bypassed, and removes them from the list of nodes to be processed."""
+        # Confirm node should be bypassed
+        bypassed_nodes: List[Node] = []
         for node in self._pending_nodes.values():
-            if self._is_node_ready(node) and self._is_node_skippable(node):
-                self._skipped_nodes[node.name] = node
-                skipped_nodes.append(node)
-        for node in skipped_nodes:
+            if self._is_node_ready(node) and self._is_node_bypassable(node):
+                self._bypassed_nodes[node.name] = node
+                bypassed_nodes.append(node)
+        for node in bypassed_nodes:
             del self._pending_nodes[node.name]
-        return skipped_nodes
+        return bypassed_nodes
 
     def get_node_valid_inputs(self, node: Node) -> Mapping[str, Any]:
         """Returns the valid inputs for the node, including the flow inputs, literal values and
@@ -49,11 +49,11 @@ class DAGManager:
         return {
             name: self._get_node_dependency_value(i)
             for name, i in (node.inputs or {}).items()
-            if not self._is_node_dependency_skipped(i)
+            if not self._is_node_dependency_bypassed(i)
         }
 
-    def get_skipped_node_outputs(self, node: Node):
-        """Returns the outputs of the skipped node."""
+    def get_bypassed_node_outputs(self, node: Node):
+        """Returns the outputs of the bypassed node."""
         outputs = None
         # Update default outputs into completed_nodes_outputs for nodes meeting the skip condition
         if self._is_skip_condition_met(node):
@@ -67,7 +67,7 @@ class DAGManager:
     def completed(self) -> bool:
         """Returns True if all nodes have been processed."""
         return all(
-            node.name in self._completed_nodes_outputs or node.name in self._skipped_nodes for node in self._nodes
+            node.name in self._completed_nodes_outputs or node.name in self._bypassed_nodes for node in self._nodes
         )
 
     def _is_node_ready(self, node: Node) -> bool:
@@ -77,39 +77,39 @@ class DAGManager:
             if (
                 node_dependency.value_type == InputValueType.NODE_REFERENCE
                 and node_dependency.value not in self._completed_nodes_outputs
-                and node_dependency.value not in self._skipped_nodes
+                and node_dependency.value not in self._bypassed_nodes
             ):
                 return False
         return True
 
-    def _is_node_skippable(self, node: Node) -> bool:
-        """Returns True if the node should be skipped."""
-        # Skip node if the skip condition is met
+    def _is_node_bypassable(self, node: Node) -> bool:
+        """Returns True if the node should be bypassed."""
+        # Bypass node if the skip condition is met
         if self._is_skip_condition_met(node):
             skip_return = self._get_node_dependency_value(node.skip.return_value)
-            # This is not a good practice, but we need to update the default output of skipped node
+            # This is not a good practice, but we need to update the default output of bypassed node
             # to completed_nodes_outputs. We will remove these after skip config is deprecated.
             self.complete_nodes({node.name: skip_return})
             return True
 
-        # Skip node if the activate condition is not met
+        # Bypass node if the activate condition is not met
         if node.activate and (
-            self._is_node_dependency_skipped(node.activate.condition)
+            self._is_node_dependency_bypassed(node.activate.condition)
             or not self._is_condition_met(node.activate.condition, node.activate.condition_value)
         ):
             return True
 
-        # Skip node if all of its node reference dependencies are skipped
+        # Bypass node if all of its node reference dependencies are bypassed
         node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
-        all_dependencies_skipped = node_dependencies and all(
-            self._is_node_dependency_skipped(dependency) for dependency in node_dependencies
+        all_dependencies_bypassed = node_dependencies and all(
+            self._is_node_dependency_bypassed(dependency) for dependency in node_dependencies
         )
-        return all_dependencies_skipped
+        return all_dependencies_bypassed
 
     def _is_skip_condition_met(self, node: Node) -> bool:
         return (
             node.skip
-            and not self._is_node_dependency_skipped(node.skip.condition)
+            and not self._is_node_dependency_bypassed(node.skip.condition)
             and self._is_condition_met(node.skip.condition, node.skip.condition_value)
         )
 
@@ -120,11 +120,11 @@ class DAGManager:
     def _get_node_dependency_value(self, node_dependency: InputAssignment):
         return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)
 
-    def _is_node_dependency_skipped(self, dependency: InputAssignment) -> bool:
-        """Returns True if the dependencies of the condition are skipped."""
-        # The node should not be skipped when its dependency is skipped by skip config and the dependency has outputs
+    def _is_node_dependency_bypassed(self, dependency: InputAssignment) -> bool:
+        """Returns True if the dependencies of the condition are bypassed."""
+        # The node should not be bypassed when its dependency is bypassed by skip config and the dependency has outputs
         return (
             dependency.value_type == InputValueType.NODE_REFERENCE
-            and dependency.value in self._skipped_nodes
+            and dependency.value in self._bypassed_nodes
             and dependency.value not in self._completed_nodes_outputs
         )
