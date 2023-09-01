@@ -400,6 +400,14 @@ class Flow:
                 tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
                 node.tool = tool.name
                 flow.tools.append(tool)
+        if flow.node_variants:
+            # Generate tools for node variants
+            for node_variant in flow.node_variants.values():
+                for variant in node_variant.variants.values():
+                    node = variant.node
+                    tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
+                    node.tool = tool.name
+                    flow.tools.append(tool)
         return flow
 
     def _apply_node_overrides(self, node_overrides):
@@ -489,6 +497,8 @@ class Flow:
         node = self.get_node(node_name)
         if not node:
             return []
+        if node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
         result = []
         value_types = set({v.value for v in ValueType.__members__.values()})
         tool = self.get_tool(node.tool)
@@ -508,7 +518,11 @@ class Flow:
         connection_names = set({})
         tool_metas = {tool.name: tool for tool in self.tools}
         value_types = set({v.value for v in ValueType.__members__.values()})
-        for node in self.nodes:
+        nodes = [
+            self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
+            for node in self.nodes
+        ]
+        for node in nodes:
             if node.connection:
                 # Some node has a separate field for connection.
                 connection_names.add(node.connection)

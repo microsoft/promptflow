@@ -5,11 +5,11 @@ Faiss Index Lookup is a tool tailored for querying within a user-provided Faiss-
 ## Requirements
 - For Azure Machine Learning users, 
 
-  promptflow-vectordb[azure] --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+  promptflow-vectordb[azure]
 
 - For Community users not having dependency on Azure,
 
-  pip install promptflow-vectordb --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+  pip install promptflow-vectordb
 
 ## Prerequisites
 ### For Azure Machine Learning users,

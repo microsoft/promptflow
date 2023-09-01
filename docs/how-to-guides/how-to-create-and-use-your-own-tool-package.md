@@ -101,18 +101,15 @@ hello-world-proj/
   If you only want to put it on Test PyPI, upload your package by running `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`. Once your package is uploaded to Test PyPI, others can install it using pip by running `pip install --index-url https://test.pypi.org/simple/ your-package-name`.
 
 ## Use your tool from VSCode Extension
-* Step1: Download the latest version [Prompt flow extension](https://aka.ms/promptflow/vsc). In the future, the extension will be available in the marketplace and you can skip this step.
+* Step1: Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). 
 
-* Step2: Install the extension in VSCode via "Install from VSIX":
-![install-vsix](../media/contributing/install-vsix.png)
-
-* Step3: Go to terminal and install your tool package in conda environment of the extension. By default, the conda env name is `prompt-flow`.
+* Step2: Go to terminal and install your tool package in conda environment of the extension. Assume your conda env name is `prompt-flow`.
    ```
    (local_test) PS D:\projects\promptflow\tool-package-quickstart> conda activate prompt-flow
    (prompt-flow) PS D:\projects\promptflow\tool-package-quickstart> pip install .\dist\my_tools_package-0.0.1-py3-none-any.whl
    ``` 
 
-* Step4: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
+* Step3: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
 ![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
 
 
