@@ -15,6 +15,7 @@ from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
 from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
@@ -533,9 +534,10 @@ class FlowServiceCaller(RequestTelemetryMixin):
             sleep_period = 5
             status = None
             timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
-            while status not in ["Succeeded", "Failed"]:
+            # InProgress is only known non-terminal status for now.
+            while status in ["InProgress"]:
                 if time_run + sleep_period > timeout_seconds:
-                    message = f"Timeout when creating session {session_id} for automatic runtime.\n" \
+                    message = f"Timeout when creating session {session_id} for {AUTOMATIC_RUNTIME}.\n" \
                               "Please resubmit the flow later."
                     raise Exception(message)
                 time_run += sleep_period
@@ -558,6 +560,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
                     pass
                 raise FlowRequestException(
                     f"Session creation failed for {session_id}. \n"
+                    f"Session creation status: {status}. \n"
                     f"Request id: {headers['x-ms-client-request-id']}. \n"
                     f"{json.dumps(response, indent=2)}."
                 )
