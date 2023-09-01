@@ -768,6 +768,19 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
+        # Test streaming output
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
         # Validate terminal output
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--interactive", "--verbose")

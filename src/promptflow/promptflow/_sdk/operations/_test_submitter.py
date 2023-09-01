@@ -6,11 +6,10 @@ import contextlib
 import re
 import json
 import logging
-import sys
 import time
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
 from promptflow._sdk._constants import CHAT_HISTORY, LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import parse_variant
@@ -205,22 +204,8 @@ class TestSubmitter:
             yield
             logger.setLevel(origin_level)
 
-        @contextlib.contextmanager
-        def add_prefix():
-            write = sys.stdout.write
-
-            def prefix_output(*args, **kwargs):
-                if args[0].strip():
-                    write(f"{Fore.LIGHTBLUE_EX}[{self.dataplane_flow.name}]: ")
-                write(*args, **kwargs)
-
-            sys.stdout.write = prefix_output
-            yield
-            sys.stdout.write = write
-
         def show_node_log_and_output(node_run_infos, show_node_output):
             """Show stdout and output of nodes."""
-            node_outputs = {}
             for node_name, node_result in node_run_infos.items():
                 # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
                 pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
@@ -234,41 +219,34 @@ class TestSubmitter:
                     # TODO executor return a type string of generator
                     node_output = node_result.output
                     if isinstance(node_result.output, GeneratorType):
-                        node_output = "".join(get_generator_values(node_result.output))
+                        node_output = "".join(get_result_output(node_output))
                     print(f"{Fore.LIGHTWHITE_EX}{node_output}")
-                    node_outputs[node_name] = node_output
-            return node_outputs
 
         def print_chat_output(output):
-            chat_output = output
-            if isinstance(output, Iterable):
-                chat_output = ""
-                for event in output:
+            if isinstance(output, GeneratorType):
+                for event in get_result_output(output):
                     print(event, end="")
                     # For better animation effects
                     time.sleep(0.01)
-                    chat_output += event
                 # Print a new line at the end of the response
                 print()
             else:
-                print(chat_output)
-            return chat_output
+                print(output)
 
-        def get_generator_values(generator):
-            if isinstance(generator, GeneratorType):
-                if generator not in generator_record:
-                    generator_record[generator] = list(generator)
-                return generator_record[generator]
-            else:
-                return generator
+        def get_result_output(output):
+            if isinstance(output, GeneratorType):
+                if output in generator_record:
+                    output = iter(generator_record[output].items)
+                else:
+                    proxy = output.gi_frame.f_locals["proxy"]
+                    generator_record[output] = proxy
+            return output
 
-        def resolve_generator(flow_result, flow_outputs, node_outputs):
-            flow_outputs = flow_outputs or {}
-            node_outputs = node_outputs or {}
+        def resolve_generator(flow_result):
             # resolve generator in flow result
             for k, v in flow_result.run_info.output.items():
                 if isinstance(v, GeneratorType):
-                    flow_output = flow_outputs.get(k, "".join(v))
+                    flow_output = "".join(get_result_output(v))
                     flow_result.run_info.output[k] = flow_output
                     flow_result.run_info.result[k] = flow_output
                     flow_result.output[k] = flow_output
@@ -276,7 +254,7 @@ class TestSubmitter:
             # resolve generator in node outputs
             for node_name, node in flow_result.node_run_infos.items():
                 if isinstance(node.output, GeneratorType):
-                    node_output = node_outputs.get(node_name, "".join(node.output))
+                    node_output = "".join(get_result_output(node.output))
                     node.output = node_output
                     node.result = node_output
 
@@ -317,16 +295,14 @@ class TestSubmitter:
                 allow_generator_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
-            node_outputs = show_node_log_and_output(flow_result.node_run_infos, show_step_output)
+            show_node_log_and_output(flow_result.node_run_infos, show_step_output)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
-            chat_output = get_generator_values(flow_result.output[output_name])
-            chat_output = print_chat_output(chat_output)
+            print_chat_output(flow_result.output[output_name])
+            flow_result = resolve_generator(flow_result)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
-            flow_outputs[output_name] = chat_output
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
-            flow_result = resolve_generator(flow_result, flow_outputs, node_outputs)
             self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 
     @staticmethod
