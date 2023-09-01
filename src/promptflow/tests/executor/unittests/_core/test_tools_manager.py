@@ -4,7 +4,7 @@ import pytest
 
 from promptflow import tool
 from promptflow._core._errors import PackageToolNotFoundError
-from promptflow._core.tools_manager import APINotFound, ToolLoader
+from promptflow._core.tools_manager import ToolLoader
 from promptflow.contracts.flow import Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
@@ -69,15 +69,6 @@ class TestToolLoader:
         with pytest.raises(PackageToolNotFoundError) as ex:
             tool_loader.load_tool_for_node(node, working_dir)
             assert str(ex.value) == msg
-
-    def test_load_tool_for_llm_node(self):
-        tool_loader = ToolLoader()
-        node: Node = Node(
-            name="test", tool="test_tool", inputs={}, type=ToolType.LLM,
-            provider="Test", api="invalid_api",
-            source=ToolSource(type=ToolSourceType.Package, tool="test_tool"))
-        with pytest.raises(APINotFound, match="The API 'Test.invalid_api' is not found."):
-            tool_loader.load_tool_for_node(node, "test_working_dir")
 
     def test_load_tool_for_script_node(self):
         tool_loader = ToolLoader()
