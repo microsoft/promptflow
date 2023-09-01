@@ -5,7 +5,7 @@ A flow can be deployed across multiple platforms, such as a local development se
 :grid-columns: 1 2 2 3
 - image: ../../media/how-to-guides/local.png
   content: "<center><b>Development server</b></center>"
-  website: deploy-local.html
+  website: deploy-using-dev-server.html
 
 - image: ../../media/how-to-guides/docker.png
   content: "<center><b>Docker</b></center>"
@@ -25,7 +25,7 @@ A flow can be deployed across multiple platforms, such as a local development se
 :maxdepth: 1
 :hidden:
 
-deploy-local
+deploy-using-dev-server
 deploy-using-docker
 deploy-using-kubernetes
 ```

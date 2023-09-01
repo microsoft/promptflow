@@ -1,4 +1,4 @@
-# Local deploy a flow
+# Deploy a flow using development server
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
