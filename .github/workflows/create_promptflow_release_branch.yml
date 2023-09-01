@@ -7,7 +7,6 @@ on:
         description: Release version
         required: true
         type: string
-  repository_dispatch:
 
 jobs:
   create_release_branch:
