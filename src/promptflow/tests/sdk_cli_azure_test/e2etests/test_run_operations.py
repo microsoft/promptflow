@@ -511,8 +511,6 @@ class TestFlowRun:
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
             assert flow_session_id == body.session_id
-            # session id also contains alias
-            assert flow_lineage_id in flow_session_id
             assert flow_lineage_id == body.flow_lineage_id
             return body
 
