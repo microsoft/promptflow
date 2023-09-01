@@ -49,7 +49,11 @@ class TestFlowValidator:
             ),
             (
                 "nodes_cycle_with_activate",
-                "There is a circular dependency in the flow 'node_cycle_with_activate'.",
+                (
+                    "Node circular dependency has been detected among the nodes in your flow. "
+                    "Kindly review the reference relationships for the nodes ['first_node', "
+                    "'second_node'] and resolve the circular reference issue in the flow."
+                ),
             ),
             (
                 "wrong_node_reference",
