@@ -100,7 +100,9 @@ jobs:
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
+        testActionFileName: promptflow-executor-e2e-test.yml
+        testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.55
+        coverageThreshold: 0.7
         token: ${{ secrets.GITHUB_TOKEN }}
