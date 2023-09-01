@@ -77,5 +77,5 @@ class TestExecutorActivate:
 
         # Validate the flow node run infos for the skipped nodes
         skipped_nodes_run_infos = [result.node_run_infos[i] for i in expected_skipped_nodes]
-        assert all([node.status == Status.Skipped for node in skipped_nodes_run_infos])
+        assert all([node.status == Status.Bypassed for node in skipped_nodes_run_infos])
         assert all([node.output is None for node in skipped_nodes_run_infos])

@@ -13,7 +13,7 @@ class Status(Enum):
     Preparing = "Preparing"
     Completed = "Completed"
     Failed = "Failed"
-    Skipped = "Skipped"
+    Bypassed = "Bypassed"
     Canceled = "Canceled"
     NotStarted = "NotStarted"
     CancelRequested = "CancelRequested"
@@ -22,7 +22,7 @@ class Status(Enum):
     def is_terminated(status):
         if isinstance(status, Status):
             status = status.value
-        return status in {s.value for s in {Status.Completed, Status.Failed, Status.Skipped, Status.Canceled}}
+        return status in {s.value for s in {Status.Completed, Status.Failed, Status.Bypassed, Status.Canceled}}
 
 
 @dataclass

@@ -143,7 +143,7 @@ class RunTracker(ThreadLocalSingleton):
             run_id=run_id,
             flow_run_id=flow_run_id,
             parent_run_id=parent_run_id,
-            status=Status.Skipped,
+            status=Status.Bypassed,
             inputs=None,
             output=outputs,
             metrics=None,
@@ -372,11 +372,11 @@ class RunTracker(ThreadLocalSingleton):
 
                 line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
                     Status.Completed,
-                    Status.Skipped,
+                    Status.Bypassed,
                 )
 
-                # Only consider Completed, Skipped and Failed status, because the UX only support three status.
-                if run_info.status in (Status.Completed, Status.Skipped, Status.Failed):
+                # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
+                if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
                     node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
                     status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
 

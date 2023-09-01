@@ -28,7 +28,7 @@ class TestExecutorSkip:
         assert node_run_info.output == {"is_even": True, "message": "10 is even number, skip the next node"}
 
         node_run_info = result.node_run_infos["conditional_node"]
-        assert node_run_info.status == Status.Skipped
+        assert node_run_info.status == Status.Bypassed
         assert node_run_info.output == "10 is even number, skip the next node"
 
         node_run_info = result.node_run_infos["print_result"]
