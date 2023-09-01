@@ -19,10 +19,6 @@ inputs:
     required: false
     default: "0.3"
     type: string
-  testName:
-    required: false
-    default: "promptflow-executor-unit-test"
-    type: string
   token:
     description: 'A Github PAT'
     required: true
