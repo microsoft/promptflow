@@ -250,23 +250,18 @@ class TestFlowLocalOperations:
         flow_tools_path.unlink(missing_ok=True)
         validation_result = pf.flows.validate(flow=source)
 
-        assert "nodes" in validation_result
-        load_error = validation_result["nodes"].pop("prepare_examples.py")[0]
-        assert "Failed to load python module from file" in load_error
+        assert "tool-meta" in validation_result
+        assert "Failed to load python module from file" in validation_result["tool-meta"].pop("prepare_examples.py", "")
+        assert "Meta file not found" in validation_result["tool-meta"].pop("summarize_text_content.jinja2", "")
         assert validation_result == {
             "inputs": {"url": {"value": {"type": ["Missing data for required " "field."]}}},
-            "nodes": {
-                "summarize_text_content.jinja2": [
-                    "Meta file not found, " "path " "'summarize_text_content.jinja2', " "type 'llm'."
-                ],
-            },
+            "tool-meta": {},
             "outputs": {"category": {"value": {"type": ["Missing data for " "required field."]}}},
         }
 
         assert flow_tools_path.is_file()
         flow_tools = yaml.safe_load(flow_tools_path.read_text())
         assert "code" in flow_tools
-        assert flow_tools["code"].pop("prepare_examples.py") == load_error
         assert flow_tools["code"] == {
             "classify_with_llm.jinja2": {
                 "inputs": {
@@ -289,9 +284,6 @@ class TestFlowLocalOperations:
                 "source": "fetch_text_content_from_url.py",
                 "type": "python",
             },
-            "summarize_text_content.jinja2": "Meta file not found, path "
-            "'summarize_text_content.jinja2', type "
-            "'llm'.",
             "summarize_text_content__variant_1.jinja2": {
                 "inputs": {"text": {"type": ["string"]}},
                 "source": "summarize_text_content__variant_1.jinja2",

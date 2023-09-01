@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import contextlib
 import json
-from collections import defaultdict
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -419,7 +418,7 @@ class FlowOperations:
             yield flow_dag_path
 
     @classmethod
-    def validate(cls, flow: Union[str, PathLike], *, raise_error: bool = False) -> dict:
+    def validate(cls, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> dict:
         """
         Validate flow.
 
@@ -454,17 +453,29 @@ class FlowOperations:
                 raise_error=False,
                 include_errors_in_output=True,
             )
-            for node_name, message in flow_tools["code"].items():
-                if isinstance(message, str):
-                    if "nodes" not in validation_result:
-                        validation_result["nodes"] = defaultdict(list)
-                    validation_result["nodes"][node_name].append(message)
+            tools_errors = {}
+            if "code" in flow_tools:
+                nodes_with_error = [
+                    node_name for node_name, message in flow_tools["code"].items() if isinstance(message, str)
+                ]
+                for node_name in nodes_with_error:
+                    tools_errors[node_name] = flow_tools["code"].pop(node_name)
 
         # generate flow tools json
-        flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        flow_tools_json_path = kwargs.pop("flow_tools_json_path", None)
+        if not flow_tools_json_path:
+            flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        else:
+            flow_tools_json_path = Path(flow_tools_json_path)
+
         flow_tools_json_path.parent.mkdir(parents=True, exist_ok=True)
         with open(flow_tools_json_path, "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(flow_tools, f, indent=4)
+
+        if kwargs.pop("tools_only", False):
+            validation_result = tools_errors
+        elif tools_errors:
+            validation_result["tool-meta"] = tools_errors
 
         if validation_result and raise_error:
             raise UserErrorException(
