@@ -5,7 +5,7 @@ inputs:
     type: string
   setupType:
     required: false
-    default: promptflow_new_extra
+    default: promptflow_with_extra
     type: string
 runs:
   using: composite
@@ -29,7 +29,7 @@ runs:
       pip freeze
     working-directory: src/promptflow-tools
   - name: 'Build and install: promptflow with extra'
-    if: inputs.setupType == 'promptflow_new_extra'
+    if: inputs.setupType == 'promptflow_with_extra'
     shell: bash -el {0}
     run: |-
       conda activate release-env
@@ -37,20 +37,9 @@ runs:
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
-      pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
-      echo "########### pip freeze (After) ###########"
-      pip freeze
-    working-directory: ${{ inputs.scriptPath }}
-  - name: 'Build and install: promptflow_open_source'
-    if: inputs.setupType == 'promptflow_open_source'
-    shell: bash -el {0}
-    run: |-
-      conda activate release-env
-      pip install -r ./dev_requirements.txt
-      echo "########### pip list (Before) ###########"
-      pip list
-      python ./setup.py bdist_wheel
-      pip install './dist/promptflow-0.0.1-py3-none-any.whl[azure]'
+      wheel_file=$(ls ./dist | grep 'promptflow')
+      echo "########### wheel file: $wheel_file ###########"
+      pip install "./dist/$wheel_file[azure]"
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}

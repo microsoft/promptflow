@@ -10,8 +10,8 @@ on:
       - .github/workflows/promptflow-sdk-cli-test.yml
   workflow_dispatch:
 env:
-  packageSetupType: promptflow_new_extra
-  testWorkingDirectory: src/promptflow
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   sdk_cli_tests:
     strategy:
