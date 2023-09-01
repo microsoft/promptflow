@@ -8,7 +8,7 @@
 
 > Welcome to join us to make Prompt flow!
 
-[Documentacion](https://expert-adventure-197jp7v.pages.github.io/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/YyYYRwkq) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
+[Documentacion](https://expert-adventure-197jp7v.pages.github.io/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/bnXr6kxs) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
 
 **Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
@@ -28,7 +28,7 @@ With prompt flow, you will be able to:
 
 ## Get Started with Prompt flow ⚡
 
-### 1 - Installation
+### ①- Installation
 
 A python environment, `python=3.9` is recommended.
 
@@ -36,13 +36,11 @@ A python environment, `python=3.9` is recommended.
 pip install promptflow promptflow-tools
 ```
 
-(Optional to install) Prompt flow VS Code extension - Flow Designer
+(Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/><font color="darkblue"><b>Prompt flow VS Code extension</b></font>  - Flow Designer
 
-Prompt flow provide an extension in VS code for visualizing and editing your flows. You can search it in VS code extension marketplace to install.
+Prompt flow provides an extension in VS Code for visualizing and editing your flows. You can search for it in the VS Code extension marketplace to install it.
 
-![vsc install](examples/tutorials/quick-start/media/vsc.png)
-
-### 2 - Create the connection to store your OpenAI API key
+### ② - Create the connection to store your OpenAI API key
 
 Prompt flow offers a **safe** way to manage credentials or secrets for LLM APIs, that is **Connection**!
 
@@ -61,7 +59,9 @@ Then we can use CLI command to create the connection.
 pf connection create -f connection.yaml
 ```
 
-### 3 - Initialize a prompt flow from template
+### ③ - Initialize a prompt flow from template
+
+Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes).
 
 ```sh
 pf flow init --flow my_chatbot --type chat
@@ -69,21 +69,26 @@ pf flow init --flow my_chatbot --type chat
 
 This command will create a new **flow folder** named "my_chatbot" using the "chat" template.
 
-Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes). [More flow samples](examples/flows)
+> You can choose to directly run our sample flows. Click to start your [Get started with web classification flow](examples/flows/standard/web-classification/README.md) journey!
 
-### 4 - Quick test your flow
+### ④ - Quick test your flow
 
 Open the `flow.dag.yaml` file in the "my_chatbot" flow folder, specify the connection name you created in the previous step in the `connection` field, specify the model name in the `model` field, for example:
 
 ```yaml
   ......
   inputs:
-    chat_history: ${inputs.chat_history}
-    max_tokens: 256
-    question: ${inputs.question}
+    model: gpt-4
     temperature: 0
+    top_p: 1
+    max_tokens: 256
+    presence_penalty: 0
+    frequency_penalty: 0
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
     model: gpt-4
   connection: open_ai_connection
+  provider: OpenAI
   ......
 ```
 
@@ -101,23 +106,28 @@ Run the following command to test your prompt:
 !pf flow test --flow my_chatbot --inputs question="Compute $\\dbinom{16}{5}$."
 ```
 
-### Next Step - Tune your prompt and evaluate the quality
+## 🏃‍♂️Facilitating High-Quality with Prompt Flow🏃‍♀️
 
-As we know, the randomness of the LLMs always makes the generated answer not stable. Only one test is not enough to evaluate the quality of the prompt, usually we need to test it with a larger dataset and evaluate the performance of the generations with the groundtruth.
+LLMs are known for their random nature, resulting in unstable generated answers. Fine-tuning the prompt can further enhance the reliability of the generated outputs. To accurately assess the quality of fine-tuned, testing with a larger dataset and comparing generated outputs to the ground truth is essential.  the prompt can further enhance the reliability of the generated outputs.
 
-**Trailer!**
+<h4><font color="Darkblue"> Tunning </font> + <font color="brown"> Batch Testing</font> + <font color="purple">Evaluation</font> = <font color="green">High Quality</font></h4>
 
-With prompt flow, just spending only 10 minutes, you can test your multiple prompt variants (different versions) with a larger dataset and evaluate the accuracy of the generations with the groundtruth. You will get the following results:
-
-![real case](examples/tutorials/quick-start/media/realcase.png)
+<div class="columns">
+  <div class="column">
+    With prompt flow, in 10 minutes, test various prompts on multi-row inputs and evaluate the accuracy of the generated outputs against the ground truth. Find the best prompt for target accuracy and token cost effortlessly!
+  </div>
+  <div class="column">
+     <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" style="width:100%;"/>
+  </div>
+</div>
 
 👉[Try to test this quick start case!](examples/tutorials/quick-start/prompt_tunning_case.md)
 
-## Develop guide
+## Development Guide
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
-- [First look at prompt flow](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart.ipynb)
-- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)
+- [First look at prompt flow](https://expert-adventure-197jp7v.pages.github.io/how-to-guides/quick-start.html)
+- [E2E Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)
 
 Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
