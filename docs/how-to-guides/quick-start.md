@@ -84,9 +84,7 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
 
 2. Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)
 
-    ![install_extension](../media/how-to-guides/quick-start/vs_code_install.png)
-
-1. Select python interpreter
+3. Select python interpreter
 
     ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
    
@@ -96,10 +94,6 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
 2. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
    
     ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
-
-    ![vscode](../media/how-to-guides/quick-start/vs_code_dag_1.png)
-
-
 
 ## Develop and test your flow
 
