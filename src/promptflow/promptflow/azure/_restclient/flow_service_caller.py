@@ -5,6 +5,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 """service_calller.py, module for interacting with the AzureML service."""
+import json
 import os
 import sys
 import time
@@ -14,17 +15,18 @@ from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
 from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.exceptions import ValidationException, UserErrorException
+from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
 logger = LoggerFactory.get_logger(name=__name__)
 
 
-class FlowRequestException(Exception):
+class FlowRequestException(PromptflowException):
     """FlowRequestException."""
 
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message, **kwargs):
+        super().__init__(message, **kwargs)
 
 
 class TelemetryMixin(object):
@@ -535,20 +537,36 @@ class FlowServiceCaller(RequestTelemetryMixin):
             sleep_period = 5
             status = None
             timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
-            while status != "Succeeded":
+            # InProgress is only known non-terminal status for now.
+            while status in [None, "InProgress"]:
                 if time_run + sleep_period > timeout_seconds:
-                    message = f"Timeout for session {action} {session_id} for automatic runtime.\n" \
-                              "Please retry later."
+                    message = f"Timeout for session {action} {session_id} for {AUTOMATIC_RUNTIME}.\n" \
+                              "Please resubmit the flow later."
                     raise Exception(message)
                 time_run += sleep_period
                 time.sleep(sleep_period)
-                status = self.poll_operation_status(url=polling_url, **kwargs)
+                response = self.poll_operation_status(url=polling_url, **kwargs)
+                status = response["status"]
                 logger.debug(f"Current polling status: {status}")
                 if time_run % 30 == 0:
                     logger.info(f"Waiting for session {action}, current status: {status}")
                 else:
-                    logger.debug(f"Waiting for session {action}, current status: {status}")
-            logger.info(f"Session {action} finished with status {status}.")
+                    logger.debug(f"Waiting for session warm-up, current status: {status}")
+
+            if status == "Succeeded":
+                logger.info(f"Session {action} finished with status {status}.")
+            else:
+                # refine response error message
+                try:
+                    response["error"]["message"] = json.loads(response["error"]["message"])
+                except Exception:
+                    pass
+                raise FlowRequestException(
+                    f"Session {action} failed for {session_id}. \n"
+                    f"Session {action} status: {status}. \n"
+                    f"Request id: {headers['x-ms-client-request-id']}. \n"
+                    f"{json.dumps(response, indent=2)}."
+                )
         except HttpResponseError as e:
             raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
@@ -588,7 +606,6 @@ class FlowServiceCaller(RequestTelemetryMixin):
                     f"Status not found in response. Request id: {headers['x-ms-client-request-id']}. "
                     f"Response headers: {response.headers}."
                 )
-            status = deserialized["status"]
-            return status
+            return deserialized
         except HttpResponseError as e:
             raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e

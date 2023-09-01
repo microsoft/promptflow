@@ -40,7 +40,7 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -314,9 +314,15 @@ class RunOperations(_ScopeDependentOperations):
     def _is_system_metric(metric: str) -> bool:
         """Check if the metric is system metric.
 
-        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.failed, __pf__.nodes.xx.completed
+        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.bypassed,
+        __pf__.lines.failed, __pf__.nodes.xx.completed
         """
-        return metric.endswith(".completed") or metric.endswith(".failed") or metric.endswith(".is_completed")
+        return (
+            metric.endswith(".completed")
+            or metric.endswith(".bypassed")
+            or metric.endswith(".failed")
+            or metric.endswith(".is_completed")
+        )
 
     def get(self, run: str, **kwargs) -> Run:
         """Get a run.
@@ -534,7 +540,11 @@ class RunOperations(_ScopeDependentOperations):
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
         flow_id = get_flow_lineage_id(flow_dir=flow)
-        return f"{user_alias}_{flow_id}"
+        session_id = f"{user_alias}_{flow_id}"
+        # hash and truncate to avoid the session id getting too long
+        # backend has a 64 bit limit for session id.
+        session_id = str(hash(session_id))[:48]
+        return session_id
 
     def _get_child_runs_from_pfs(self, run_id: str):
         """Get the child runs from the PFS."""
@@ -664,10 +674,10 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path, session_id, reset=None):
+    def _resolve_automatic_runtime(self, run, session_id, reset=None):
         logger.warning(
-            f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
-            "it may take a while to build run time and request may fail with timeout error. "
+            f"Using {AUTOMATIC_RUNTIME}, if it's first time you're using automatic runtime, "
+            "it may take a while to build runtime and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
         runtime_name = "automatic"
@@ -682,7 +692,7 @@ class RunOperations(_ScopeDependentOperations):
             if not isinstance(runtime, str):
                 raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         else:
-            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id, reset=reset)
+            runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
 
         return runtime, session_id
 
