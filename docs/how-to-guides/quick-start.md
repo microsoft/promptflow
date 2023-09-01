@@ -291,7 +291,7 @@ See more details of this topic in [Initialize and test a flow](./init-and-test-a
 Learn more on how to:
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
-- [Deploy a flow](./deploy-and-export-a-flow.md): how to deploy the flow as a web app.
+- [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
 - [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
 

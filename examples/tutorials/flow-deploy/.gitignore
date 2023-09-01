@@ -1,4 +1,4 @@
 *.sqlite
-linux/flow
-linux/connections
-linux/settings.json
+**/build/flow
+**/build/connections
+**/build/settings.json
