@@ -30,7 +30,14 @@ jobs:
             echo "workflow triggered by REST API, parse release version from request body..."
             release_version="${{ github.event.client_payload.release_version }}"
           fi
-          echo "configured release version: $release_version"
+
+          if [[ "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?$ ]]; then
+            echo "configured release version: $release_version"
+          else
+            echo "configured release version: $release_version"
+            exit 1
+          fi
+
 
           release_branch_name="release/promptflow/$release_version"
           echo "release branch name: $release_branch_name, checking out..."
