@@ -535,7 +535,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             status = None
             timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
             # InProgress is only known non-terminal status for now.
-            while status in ["InProgress"]:
+            while status in [None, "InProgress"]:
                 if time_run + sleep_period > timeout_seconds:
                     message = f"Timeout when creating session {session_id} for {AUTOMATIC_RUNTIME}.\n" \
                               "Please resubmit the flow later."
