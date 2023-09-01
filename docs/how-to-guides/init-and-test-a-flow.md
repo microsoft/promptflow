@@ -223,6 +223,10 @@ Using this [chat flow](https://github.com/microsoft/promptflow/tree/main/example
 
 ::::
 
+When the LLM node in the chat flow that is connected to the flow output, the flow result will be streamed in the terminal as shown below.
+
+![streaming_output](../media/how-to-guides/init-and-test-a-flow/streaming_output.gif)
+
 ### Debug a single node in the flow
 
 Customer can debug a single python node in VScode by the extension.
