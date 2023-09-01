@@ -93,13 +93,19 @@ class TestValidation:
             (
                 "simple_flow_with_python_tool",
                 [{"num11": "22"}],
-                "Input 'num' in line 0 is not provided for flow.",
+                (
+                    "The value for flow input 'num' is not provided in line 0 of input data. "
+                    "Please review your input data or remove this input in your flow if it's no longer needed."
+                ),
                 "InputNotFound",
             ),
             (
                 "simple_flow_with_python_tool",
                 [{"num": "hello"}],
-                "Input 'num' in line 0 for flow 'default_flow' of value hello is not type int.",
+                (
+                    "The value 'hello' for flow input 'num' in line 0 of input data does not match the expected "
+                    "type 'int'. Please review the input data or adjust the input type of 'num' in your flow."
+                ),
                 "InputTypeError",
             ),
         ],

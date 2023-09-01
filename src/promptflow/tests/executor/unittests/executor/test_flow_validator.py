@@ -31,8 +31,8 @@ class TestFlowValidator:
             (
                 "nodes_cycle",
                 (
-                    "Node circular dependency has been detected among the nodes in the flow "
-                    "'node_cycle'. Kindly review the reference relationships for the nodes "
+                    "Node circular dependency has been detected among the nodes in your flow. "
+                    "Kindly review the reference relationships for the nodes "
                     "['first_node', 'second_node'] and resolve the circular reference issue in "
                     "the flow YAML."
                 ),
@@ -40,8 +40,8 @@ class TestFlowValidator:
             (
                 "nodes_cycle_with_skip",
                 (
-                    "Node circular dependency has been detected among the nodes in the flow "
-                    "'node_cycle_with_skip'. Kindly review the reference relationships for the "
+                    "Node circular dependency has been detected among the nodes in your flow. "
+                    "Kindly review the reference relationships for the "
                     "nodes ['first_node', 'second_node'] and resolve the circular reference issue "
                     "in the flow YAML."
                 ),
@@ -49,8 +49,8 @@ class TestFlowValidator:
             (
                 "wrong_node_reference",
                 (
-                    "Node 'second_node' references a non-existent node 'third_node' in flow "
-                    "'node_wrong_reference'. Please review your flow YAML to ensure that the node "
+                    "Node 'second_node' references a non-existent node 'third_node' in your flow. "
+                    "Please review your flow YAML to ensure that the node "
                     "name is accurately specified."
                 ),
             ),
