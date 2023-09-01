@@ -33,7 +33,7 @@ class FlowValidator:
                 if i.value not in dependencies:
                     msg = (
                         f"Node '{n.name}' references a non-existent node '{i.value}' in your flow. "
-                        f"Please review your flow YAML to ensure that the node name is accurately specified."
+                        f"Please review your flow to ensure that the node name is accurately specified."
                     )
                     raise NodeReferenceNotFound(message=msg)
                 dependencies[n.name].add(i.value)
@@ -50,7 +50,7 @@ class FlowValidator:
                 raise NodeCircularDependency(
                     message=f"Node circular dependency has been detected among the nodes in your flow. "
                     f"Kindly review the reference relationships for the nodes {remaining_nodes} "
-                    f"and resolve the circular reference issue in the flow YAML."
+                    f"and resolve the circular reference issue in the flow."
                 )
             sorted_nodes.append(node_to_pick)
             picked.add(node_to_pick.name)
@@ -73,7 +73,7 @@ class FlowValidator:
                 raise DuplicateNodeName(
                     message=f"Node with name '{node.name}' appears more than once in the node definitions in your "
                     f"flow, which is not allowed. To address this issue, please review your "
-                    f"flow YAML and either rename or remove nodes with identical names.",
+                    f"flow and either rename or remove nodes with identical names.",
                 )
             node_names.add(node.name)
         for node in flow.nodes:
@@ -83,7 +83,7 @@ class FlowValidator:
                 if v.value not in flow.inputs:
                     msg = (
                         f"Node '{node.name}' references flow input '{v.value}' which is not defined in your "
-                        f"flow. To resolve this issue, please review your flow YAML, "
+                        f"flow. To resolve this issue, please review your flow, "
                         f"ensuring that you either add the missing flow inputs or adjust node reference "
                         f"to the correct flow input."
                     )
@@ -169,13 +169,13 @@ class FlowValidator:
             if v.reference.value_type == InputValueType.LITERAL and v.reference.value == "":
                 msg = (
                     f"The reference is not specified for the output '{k}' in the flow. "
-                    f"To rectify this, ensure that you accurately specify the reference in the flow YAML."
+                    f"To rectify this, ensure that you accurately specify the reference in the flow."
                 )
                 raise EmptyOutputReference(message=msg)
             if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
                 msg = (
                     f"The output '{k}' references non-existent flow input '{v.reference.value}' in your flow. "
-                    f"please carefully review your flow YAML "
+                    f"please carefully review your flow "
                     f"and correct the reference definition for the output in question."
                 )
                 raise OutputReferenceNotFound(message=msg)
@@ -184,7 +184,7 @@ class FlowValidator:
                 if node is None:
                     msg = (
                         f"The output '{k}' references non-existent node '{v.reference.value}' in your flow. "
-                        f"To resolve this issue, please carefully review your flow YAML "
+                        f"To resolve this issue, please carefully review your flow "
                         f"and correct the reference definition for the output in question."
                     )
                     raise OutputReferenceNotFound(message=msg)
