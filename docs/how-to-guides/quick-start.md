@@ -1,26 +1,18 @@
 # Quick start
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
-:::
-
 This guide will walk you through the fist step using of prompt flow code-first experience. 
 
 **Prerequisite** - To make the most of this tutorial, you'll need:
 
 - Know how to program with Python :)
-- A basic understanding of Machine Learning can be beneficial, but it's not mandatory._
+- A basic understanding of Machine Learning can be beneficial, but it's not mandatory.
 
 
 **Learning Objectives** - Upon completing this tutorial, you should learn how to:
 - Setup your python environment to run prompt flow
-    - Setup a Python environment
 - Clone a sample flow & understand what's a flow
-    - A local clone of the [Prompt Flow repository](https://github.com/microsoft/promptflow)
-    - Understand the structure of prompt flow directory
-- Test the flow with your customized inputs 
-    - Understand how to edit the flow using visual editor or yaml
-    - Test the flow using your favorite experience: CLI, SDK or VS Code Extension.
+- Understand how to edit the flow using visual editor or yaml
+- Test the flow using your favorite experience: CLI, SDK or VS Code Extension.
 
 
 ## Set up your dev environment
@@ -81,7 +73,7 @@ The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/micro
 
 ![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
 
-This graph is rendered by VS Code extension `Prompt flow` which will be introduced in the next section.
+This graph is rendered by VS Code extension which will be introduced in the next section.
 
 ### Using VS Code Extension to visualize the flow
 _Note: Prompt flow VS Code Extension is highly recommended for flow development and debugging._
@@ -129,7 +121,9 @@ inputs:
 
 The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 
-In this guide, we will use flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) which uses connection `open_ai_connection` inside, we need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
+The sample flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) uses connection `open_ai_connection` inside, e.g. `classify_with_llm` node needs to talk to `llm` using the connection. 
+
+We need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
 
 ::::{tab-set}
 
@@ -163,7 +157,7 @@ Then we can use CLI command to create the connection.
 pf connection create -f connection.yaml
 ```
 
-More command details can be found in [CLI reference](../reference/pf-command-reference.md)
+More command details can be found in [CLI reference](../reference/pf-command-reference.md).
 
 :::
 
