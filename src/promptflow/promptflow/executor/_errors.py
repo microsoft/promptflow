@@ -85,7 +85,7 @@ class DuplicateNodeName(InvalidFlowRequest):
     pass
 
 
-class EmptyOutputError(InvalidFlowRequest):
+class EmptyOutputReference(InvalidFlowRequest):
     pass
 
 
