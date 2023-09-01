@@ -387,7 +387,7 @@ class Run(YAMLTranslatableMixin):
         flow = Path(self.flow)
         if flow.is_dir():
             return flow
-        return self.flow.parent
+        return flow.parent
 
     @classmethod
     def _get_schema_cls(self):
