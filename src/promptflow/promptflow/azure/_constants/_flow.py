@@ -24,3 +24,5 @@ NODE_RUNS_PAGE_SIZE = 25
 SESSION_CREATION_TIMEOUT_SECONDS = 10 * 60  # 10 minutes
 PYTHON_REQUIREMENTS_TXT = "python_requirements_txt"
 BASE_IMAGE = "image"
+
+AUTOMATIC_RUNTIME = "automatic runtime"

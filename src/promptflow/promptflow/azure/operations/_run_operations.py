@@ -40,7 +40,7 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
@@ -660,10 +660,10 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path, session_id):
+    def _resolve_automatic_runtime(self, run, session_id):
         logger.warning(
-            f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
-            "it may take a while to build run time and request may fail with timeout error. "
+            f"Using {AUTOMATIC_RUNTIME}, if it's first time you're using automatic runtime, "
+            "it may take a while to build runtime and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
         runtime_name = "automatic"
@@ -678,7 +678,7 @@ class RunOperations(_ScopeDependentOperations):
             if not isinstance(runtime, str):
                 raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         else:
-            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id)
+            runtime = self._resolve_automatic_runtime(run=run, session_id=session_id)
 
         return runtime, session_id
 
