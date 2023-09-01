@@ -3,7 +3,7 @@
 This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
 :::
 
-After create a flow and test it properly, the flow can be served as a http endpoint.
+Once you have created and thoroughly tested a flow, you can use it as an HTTP endpoint.
 
 ::::{tab-set}
 :::{tab-item} CLI

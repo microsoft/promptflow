@@ -24,8 +24,8 @@ To go through this tutorial you should:
    pip install -r requirements.txt
 ```
 
-2. Install VS code extension (optional but highly recommended)
-   // TODO
+2. Install [VS code extension](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html) (optional but highly recommended)
+
 
 ## Console chatbot chat_with_pdf
 A typical RAG application has two steps:
@@ -299,4 +299,59 @@ python -m unittest discover -s tests -p '*_test.py'
 ```
 
 ## Deployment
-//TODO: command line and screenshot of pf flow export and deploy to different cloud platforms
+The flow can be deployed across multiple platforms, such as a local development service, within a Docker container, onto a Kubernetes cluster, etc.
+
+The following sections will guide you through the process of deploying the flow to a Docker container, for more details about
+the other choices, please refer to [flow deploy docs](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/index.html).
+
+
+### Build a flow as docker format app
+
+Use the command below to build a flow as docker format app:
+
+```bash
+pf flow build --source ../../flows/chat/chat-with-pdf/ --output build --format docker
+```
+
+### Deploy with Docker
+#### Build Docker image
+
+Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
+
+Run the command below to build image:
+
+```bash
+docker build build -t chat-with-pdf-serve
+```
+
+#### Run Docker image
+
+Run the docker image will start a service to serve the flow inside the container. 
+
+##### Connections
+If the service involves connections, all related connections will be exported as yaml files and recreated in containers.
+Secrets in connections won't be exported directly. Instead, we will export them as a reference to environment variables:
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+type: open_ai
+name: open_ai_connection
+module: promptflow.connections
+api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
+```
+You'll need to set up the environment variables in the container to make the connections work.
+
+#### Run with `docker run`
+
+
+You can run the docker image directly set via below commands:
+```bash
+# The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
+docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> chat-with-pdf-serve
+```
+
+#### Test the endpoint
+After start the service, you can use curl to test it:
+
+```bash
+curl http://localhost:8080/score --data '{"question":"what is BERT?", "chat_history": [], "pdf_url": "https://arxiv.org/pdf/1810.04805.pdf", "config": {"EMBEDDING_MODEL_DEPLOYMENT_NAME": "text-embedding-ada-002", "CHAT_MODEL_DEPLOYMENT_NAME": "gpt-35-turbo", "PROMPT_TOKEN_LIMIT": 3000, "MAX_COMPLETION_TOKENS": 256, "VERBOSE": true, "CHUNK_SIZE": 1024, "CHUNK_OVERLAP": 64}}' -X POST  -H "Content-Type: application/json"
+```

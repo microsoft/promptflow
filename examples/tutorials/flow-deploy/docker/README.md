@@ -10,14 +10,14 @@ Use the command below to build a flow as docker format app:
 pf flow build --source ../../flows/standard/web-classification --output build --format docker
 ```
 
-Note that all dependent connections must be created before exporting as docker.
+Note that all dependent connections must be created before building as docker.
 
 ## Deploy with Docker
 ### Build Docker image
 
 Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
 
-After cd to the output directory, run the command below:
+Run the command below to build image:
 
 ```bash
 docker build build -t web-classification-serve

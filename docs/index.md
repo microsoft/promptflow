@@ -67,8 +67,8 @@ Reach more details about concepts and tools of prompt flow.
 
 ```{toctree}
 :hidden:
-:maxdepth: 2
-concepts/index
+:maxdepth: 1
+how-to-guides/quick-start
 ```
 
 ```{toctree}
@@ -81,6 +81,12 @@ how-to-guides/index
 :hidden:
 :maxdepth: 1
 tutorials/index
+```
+
+```{toctree}
+:hidden:
+:maxdepth: 2
+concepts/index
 ```
 
 ```{toctree}
