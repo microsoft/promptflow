@@ -46,13 +46,20 @@ Prompt flow provide an extension in VS code for visualizing and editing your flo
 
 Prompt flow offers a **safe** way to manage credentials or secrets for LLM APIs, that is **Connection**!
 
-Assuming you have already stored your OpenAI API key in a local environment variable named "OPENAI_API_KEY" within a `.env` file, you can effortlessly convert it into a Prompt flow connection by executing the following command in your terminal:
-
-```sh
-pf connection create -f .env --name open_ai_connection
+We need a connection yaml file connection.yaml:
+  
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: open_ai_connection
+type: open_ai
+api_key: <test_key>
 ```
 
-In case you haven't set up the environment variable yet, don't worry! You can refer to [how to create a connection]() from scratch.
+Then we can use CLI command to create the connection.
+
+```sh
+pf connection create -f connection.yaml
+```
 
 ### 3 - Initialize a prompt flow from template
 
@@ -75,7 +82,7 @@ Open the `flow.dag.yaml` file in the "my_chatbot" flow folder, specify the conne
     max_tokens: 256
     question: ${inputs.question}
     temperature: 0
-    model: gpt-3.5-turbo
+    model: gpt-4
   connection: open_ai_connection
   ......
 ```
@@ -87,21 +94,11 @@ system:
 You are a helpful assistant. Please output the result number only.
 ```
 
-Run the following python code to test your prompt:
+Run the following command to test your prompt:
 
-```python
-import promptflow as pf
-from promptflow import PFClient
-
-pf_client=PFClient()
-
-# specify the path to the flow folder
-my_flow_path = "<my_chatbot>"
-
-# Test flow,  question is the input of the flow, let it to calculate the math question.
-flow_output=pf_client.test(flow = my_flow_path, inputs={"question": "Compute $\\dbinom{16}{5}$."} )
-answer=list(flow_output['answer'])
-print(f"Flow outputs: {''.join(answer)}")
+```sh
+# test with flow inputs
+!pf flow test --flow my_chatbot --inputs question="Compute $\\dbinom{16}{5}$."
 ```
 
 ### Next Step - Test the tune quality of the generated prompt

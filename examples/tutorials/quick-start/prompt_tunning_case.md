@@ -9,10 +9,9 @@ Click to download the [test dataset]().
 Run the following python code to test your prompt in 10 lines input questions:
 
 ```python
-import promptflow as pf
 from promptflow import PFClient
 
-pf_client=PFClient()
+pf = PFClient()
 
 # specify the path to the flow folder
 my_flow_path = "<my_chatbot>"
@@ -22,7 +21,7 @@ my_data_path = "<my_data>"
 # create a run
 base_run = pf.run(
     flow=my_flow_path,
-    data=data_path,
+    data=my_data_path,
     column_mapping={  # map the url field from the data to the url input of the flow
       "question": "${data.question}",
       "chat_history": [],
