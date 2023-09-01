@@ -6,6 +6,7 @@
 # ---------------------------------------------------------
 """service_calller.py, module for interacting with the AzureML service."""
 import json
+import logging
 import os
 import sys
 import time
@@ -14,12 +15,11 @@ import uuid
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
-logger = LoggerFactory.get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
 class FlowRequestException(PromptflowException):
