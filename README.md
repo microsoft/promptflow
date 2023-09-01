@@ -101,9 +101,9 @@ Run the following command to test your prompt:
 !pf flow test --flow my_chatbot --inputs question="Compute $\\dbinom{16}{5}$."
 ```
 
-### Next Step - Test the tune quality of the generated prompt
+### Next Step - Tune your prompt and evaluate the quality
 
-Do you have confidence in the quality of the generated prompt? As we know, the randomness of the LLMs always makes the generated answer not stable. Only one test is not enough to evaluate the quality of the prompt, usually we need to test it with a larger dataset and evaluate the performance of the generations with the groundtruth.
+As we know, the randomness of the LLMs always makes the generated answer not stable. Only one test is not enough to evaluate the quality of the prompt, usually we need to test it with a larger dataset and evaluate the performance of the generations with the groundtruth.
 
 **Trailer!**
 
