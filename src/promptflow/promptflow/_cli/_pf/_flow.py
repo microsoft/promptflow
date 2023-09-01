@@ -19,7 +19,6 @@ from promptflow._cli._params import (
     add_param_inputs,
     add_param_prompt_template,
     add_param_source,
-    add_param_variant,
     add_param_yes,
     add_parser_build,
     logging_params,
@@ -155,8 +154,6 @@ Examples:
 
 # Validate flow
 pf flow validate --source <path_to_flow>
-# Validate flow with specified variant:
-pf flow validate --source <path_to_flow> --variant ${node_name.variant_name}
 """
     activate_action(
         name="validate",
@@ -164,8 +161,6 @@ pf flow validate --source <path_to_flow> --variant ${node_name.variant_name}
         epilog=epilog,
         add_params=[
             add_param_source,
-            # TODO: shall we use variants instead of variant here?
-            add_param_variant,
         ],
         subparsers=subparsers,
         help_message="Validate a flow. Will raise error if the flow is not valid.",
@@ -430,8 +425,11 @@ def build_flow(args):
 def validate_flow(args):
     pf_client = PFClient()
 
-    pf_client.flows.validate(
+    validation_result = pf_client.flows.validate(
         flow=args.source,
-        # TODO: it's a little weird to have variant here, but we can't generate correct flow.tools.json without it
-        variant=args.variant,
     )
+    if not validation_result:
+        print(f"Flow {Path(args.source).absolute().as_posix()} is valid.")
+    else:
+        print(f"Flow {Path(args.source).absolute().as_posix()} is invalid:\n{json.dumps(validation_result, indent=4)}")
+        exit(1)

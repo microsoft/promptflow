@@ -1,13 +1,13 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import contextlib
 import json
-import shutil
-import tempfile
+from collections import defaultdict
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import List, Union
+from typing import Iterable, List, Union
 
 import yaml
 
@@ -21,15 +21,17 @@ from promptflow._sdk._constants import (
     PROMPT_FLOW_DIR_NAME,
 )
 from promptflow._sdk._utils import (
+    _get_additional_includes,
+    _merge_local_code_and_additional_includes,
     copy_tree_respect_template_and_ignore_file,
     dump_yaml,
     generate_flow_tools_json,
     generate_random_string,
     parse_variant,
 )
-from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
-from promptflow.exceptions import UserErrorException
+from promptflow.exceptions import ErrorTarget, UserErrorException
 
 
 class FlowOperations:
@@ -405,19 +407,29 @@ class FlowOperations:
             )
 
     @classmethod
-    def validate(cls, flow: Union[str, PathLike], variant: str = None):
+    @contextlib.contextmanager
+    def _resolve_additional_includes(cls, flow_dag_path: Path) -> Iterable[Path]:
+        if _get_additional_includes(flow_dag_path):
+            # Merge the flow folder and additional includes to temp folder.
+            # TODO: support a flow_dag_path with a name different from flow.dag.yaml
+            with _merge_local_code_and_additional_includes(code_path=flow_dag_path.parent) as temp_dir:
+                remove_additional_includes(Path(temp_dir))
+                yield Path(temp_dir) / flow_dag_path.name
+        else:
+            yield flow_dag_path
+
+    @classmethod
+    def validate(cls, flow: Union[str, PathLike], *, raise_error: bool = False) -> dict:
         """
         Validate flow.
 
         :param flow: path to the flow directory or flow dag to export
         :type flow: Union[str, PathLike]
-        :param variant: node variant in format of {node_name}.{variant_name},
-            will use default variant if not specified.
-        :type variant: str
-        :return: no return
-        :rtype: None
+        :param raise_error: whether raise error when validation failed
+        :type raise_error: bool
+        :return: dict of validation result
+        :rtype: dict
         """
-        from promptflow._sdk._load_functions import load_flow
 
         flow_path = Path(flow)
         if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
@@ -428,33 +440,37 @@ class FlowOperations:
         if not flow_dag_path.is_file():
             raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
 
-        if variant:
-            tuning_node, node_variant = parse_variant(variant)
-        else:
-            tuning_node, node_variant = None, None
+        # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
+        flow_dag_obj = yaml.safe_load(flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+        from promptflow._sdk.schemas._flow import FlowSchema
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            output_dir = Path(temp_dir, "flow")
-            # TODO: do not copy flow directory when no additional includes provided
-            new_flow_dag_path = cls._build_flow(
-                flow_dag_path=flow_dag_path,
-                output=output_dir,
-                tuning_node=tuning_node,
-                node_variant=node_variant,
+        # TODO: check path existence of additional_includes in FlowSchema
+        validation_result = FlowSchema(context={BASE_PATH_CONTEXT_KEY: flow_dag_path.parent}).validate(flow_dag_obj)
+
+        with cls._resolve_additional_includes(flow_dag_path) as new_flow_dag_path:
+            flow_tools = generate_flow_tools_json(
+                flow_directory=new_flow_dag_path.parent,
+                dump=False,
+                raise_error=False,
+                include_errors_in_output=True,
             )
-            flow_obj = load_flow(new_flow_dag_path)
-            # check if all python modules are loadable
-            flow_obj._init_executable()
-            # validate schema
-            flow_dag_obj = yaml.safe_load(new_flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
-            from promptflow._sdk.schemas._flow import FlowSchema
+            for node_name, message in flow_tools["code"].items():
+                if isinstance(message, str):
+                    if "nodes" not in validation_result:
+                        validation_result["nodes"] = defaultdict(list)
+                    validation_result["nodes"][node_name].append(message)
 
-            FlowSchema(context={BASE_PATH_CONTEXT_KEY: new_flow_dag_path.parent}).validate(flow_dag_obj)
+        # generate flow tools json
+        flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        flow_tools_json_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(flow_tools_json_path, "w", encoding=DEFAULT_ENCODING) as f:
+            json.dump(flow_tools, f, indent=4)
 
-            flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-            flow_tools_json_path.parent.mkdir(parents=True, exist_ok=True)
-            # generate flow tools json for the flow and copy it back
-            shutil.copyfile(
-                src=new_flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON,
-                dst=flow_tools_json_path,
+        if validation_result and raise_error:
+            raise UserErrorException(
+                "Validation failed:\n%s" % json.dumps(validation_result, indent=4),
+                target=ErrorTarget.CONTROL_PLANE_SDK,
             )
+
+        # TODO: convert return value to a ValidationResult object
+        return validation_result

@@ -10,12 +10,12 @@ import os
 import re
 import shutil
 import tempfile
+import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from os import PathLike
 from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
-import zipfile
 
 import keyring
 import yaml
@@ -436,8 +436,10 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             dst = Path(target_dir) / relative_path
             dst.parent.mkdir(parents=True, exist_ok=True)
             if dst.exists():
-                logger.warning("Found duplicate file in additional includes, "
-                               f"additional include file {src} will overwrite {relative_path}")
+                logger.warning(
+                    "Found duplicate file in additional includes, "
+                    f"additional include file {src} will overwrite {relative_path}"
+                )
             shutil.copy2(src, dst)
         else:
             for name in src.glob("*"):
@@ -529,6 +531,8 @@ def _generate_tool_meta(
     tools: List[Tuple[str, str]],
     raise_error: bool,
     timeout: int,
+    *,
+    include_errors_in_output: bool = False,
 ) -> Dict[str, dict]:
     logger = logging.getLogger(LOGGER_NAME)
     # use multi process generate to avoid system path disturb
@@ -567,7 +571,10 @@ def _generate_tool_meta(
         if source not in res and source not in errors:
             errors[source] = f"Generate meta timeout for source {source!r}."
     for source in errors:
-        logger.warning(f"Generate meta for source {source!r} failed: {errors[source]}.")
+        if include_errors_in_output:
+            res[source] = errors[source]
+        else:
+            logger.warning(f"Generate meta for source {source!r} failed: {errors[source]}.")
     if raise_error and len(errors) > 0:
         error_message = "Generate meta failed, detail error(s):\n" + json.dumps(errors, indent=4)
         raise GenerateFlowToolsJsonError(error_message)
@@ -591,6 +598,8 @@ def generate_flow_tools_json(
     dump: bool = True,
     raise_error: bool = True,
     timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    *,
+    include_errors_in_output: bool = False,
 ) -> dict:
     """Generate flow.tools.json for a flow directory.
 
@@ -605,27 +614,33 @@ def generate_flow_tools_json(
         data = yaml.safe_load(f)
     tools = []  # List[Tuple[source_file, tool_type]]
     for node in data[NODES]:
-        if "source" in node:
+        if "source" in node and "type" in node:
             if node["source"]["type"] != "code":
-                continue
-            if not (flow_directory / node["source"]["path"]).exists():
-                continue
-            tools.append((node["source"]["path"], node["type"].lower()))
+                pass
+            # should get message if source file not exists
+            else:
+                tools.append((node["source"]["path"], node["type"].lower()))
         # understand DAG to parse variants
-        elif node.get(USE_VARIANTS) is True:
+        # TODO: should we allow source to appear both in node and node variants?
+        if node.get(USE_VARIANTS) is True:
             node_variants = data[NODE_VARIANTS][node["name"]]
             for variant_id in node_variants[VARIANTS]:
                 current_node = node_variants[VARIANTS][variant_id][NODE]
-                if current_node["source"]["type"] != "code":
+                if "source" not in current_node or "type" not in current_node["source"]:
                     continue
-                if not (flow_directory / current_node["source"]["path"]).exists():
-                    continue
+                # should get message if source file not exists
                 tools.append((current_node["source"]["path"], current_node["type"].lower()))
 
     # generate content
     flow_tools = {
         "package": _generate_package_tools(),
-        "code": _generate_tool_meta(flow_directory, tools, raise_error=raise_error, timeout=timeout),
+        "code": _generate_tool_meta(
+            flow_directory,
+            tools,
+            raise_error=raise_error,
+            timeout=timeout,
+            include_errors_in_output=include_errors_in_output,
+        ),
     }
 
     if dump:
