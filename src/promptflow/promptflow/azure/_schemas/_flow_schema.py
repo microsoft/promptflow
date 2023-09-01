@@ -5,7 +5,7 @@ import json
 import logging
 from pathlib import Path
 
-from azure.ai.ml._schema import YamlFileSchema, UnionField
+from azure.ai.ml._schema import UnionField, YamlFileSchema
 from azure.ai.ml._schema.core.fields import LocalPathField
 from marshmallow import fields, post_load
 

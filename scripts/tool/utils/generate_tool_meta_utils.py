@@ -8,6 +8,8 @@ from dataclasses import asdict
 from utils.tool_utils import function_to_interface
 
 from promptflow.contracts.tool import Tool, ToolType
+# Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
+# since the code here is in promptflow namespace as well
 from promptflow._internal import ToolProvider
 from promptflow.exceptions import ErrorTarget, UserErrorException
 

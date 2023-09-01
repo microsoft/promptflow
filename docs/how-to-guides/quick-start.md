@@ -64,7 +64,7 @@ $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConne
 name: open_ai_connection
 type: azure_open_ai
 api_key: <test_key>
-organization: "<your_org>"
+organization: ""
 ```
 Then we can use CLI command to create the connection.
 

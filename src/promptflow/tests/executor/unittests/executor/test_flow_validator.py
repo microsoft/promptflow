@@ -5,7 +5,7 @@ from promptflow.contracts.flow import Flow
 from promptflow.executor._errors import InvalidFlowRequest
 from promptflow.executor.flow_validator import FlowValidator
 
-from ...utils import get_yaml_file, WRONG_FLOW_ROOT
+from ...utils import WRONG_FLOW_ROOT, get_yaml_file
 
 
 @pytest.mark.unittest
@@ -28,10 +28,7 @@ class TestFlowValidator:
     @pytest.mark.parametrize(
         "flow_folder, error_message",
         [
-            (
-                "nodes_cycle",
-                "There is a circular dependency in the flow 'node_cycle'."
-            ),
+            ("nodes_cycle", "There is a circular dependency in the flow 'node_cycle'."),
             (
                 "nodes_cycle_with_skip",
                 "There is a circular dependency in the flow 'node_cycle_with_skip'.",

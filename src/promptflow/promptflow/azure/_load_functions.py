@@ -5,7 +5,6 @@ from os import PathLike
 from pathlib import Path
 from typing import IO, AnyStr, Optional, Union
 
-
 from ._utils import is_arm_id
 
 

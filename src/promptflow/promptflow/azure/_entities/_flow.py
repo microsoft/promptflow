@@ -1,17 +1,18 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import os.path
 from contextlib import contextmanager
 from os import PathLike
 from pathlib import Path
-import logging
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
-from promptflow.azure._ml import Code, AdditionalIncludesMixin
 from promptflow._sdk._constants import DAG_FILE_NAME
-from .._constants._flow import DEFAULT_STORAGE
+from promptflow.azure._ml import AdditionalIncludesMixin, Code
+
 from ..._sdk._utils import PromptflowIgnoreFile
+from .._constants._flow import DEFAULT_STORAGE
 
 # pylint: disable=redefined-builtin, unused-argument, f-string-without-interpolation
 
@@ -20,7 +21,6 @@ logger = logging.getLogger(__name__)
 
 
 class Flow(AdditionalIncludesMixin):
-
     def __init__(
         self,
         path: Union[str, PathLike],
@@ -61,6 +61,7 @@ class Flow(AdditionalIncludesMixin):
         For flow, its additional include need to be read from dag with a helper function.
         """
         from promptflow._sdk._utils import _get_additional_includes
+
         return _get_additional_includes(os.path.join(self.code, self.path))
 
     # endregion

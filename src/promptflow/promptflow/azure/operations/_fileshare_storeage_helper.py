@@ -4,9 +4,8 @@
 import os
 from collections import defaultdict
 from multiprocessing import Lock
-
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 from azure.ai.ml._artifacts._fileshare_storage_helper import FileStorageClient
 from azure.ai.ml._utils._asset_utils import (
@@ -16,12 +15,11 @@ from azure.ai.ml._utils._asset_utils import (
     get_directory_size,
 )
 from azure.core.exceptions import ResourceExistsError
-from azure.storage.fileshare import ShareDirectoryClient, DirectoryProperties
+from azure.storage.fileshare import DirectoryProperties, ShareDirectoryClient
 
 from promptflow._sdk._vendor import get_upload_files_from_folder
-from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 from promptflow.azure._constants._flow import PROMPTFLOW_FILE_SHARE_DIR
-
+from promptflow.azure._utils.gerneral import get_user_alias_from_credential
 
 uploading_lock = defaultdict(Lock)
 
@@ -94,14 +92,14 @@ class FlowFileStorageClient(FileStorageClient):
         return artifact_info
 
     def upload_file(
-            self,
-            source: str,
-            dest: str,
-            show_progress: Optional[bool] = None,
-            msg: Optional[str] = None,
-            in_directory: bool = False,
-            subdirectory_client: Optional[ShareDirectoryClient] = None,
-            callback: Optional[Any] = None,
+        self,
+        source: str,
+        dest: str,
+        show_progress: Optional[bool] = None,
+        msg: Optional[str] = None,
+        in_directory: bool = False,
+        subdirectory_client: Optional[ShareDirectoryClient] = None,
+        callback: Optional[Any] = None,
     ) -> None:
         """ " Upload a single file to a path inside the file system
         directory."""
@@ -143,12 +141,12 @@ class FlowFileStorageClient(FileStorageClient):
         self.uploaded_file_count = self.uploaded_file_count + 1
 
     def upload_dir(
-            self,
-            source: str,
-            dest: str,
-            msg: str,
-            show_progress: bool,
-            ignore_file: IgnoreFile,
+        self,
+        source: str,
+        dest: str,
+        msg: str,
+        show_progress: bool,
+        ignore_file: IgnoreFile,
     ) -> None:
         """Upload a directory to a path inside the fileshare directory."""
         subdir = self.directory_client.create_subdirectory(dest)

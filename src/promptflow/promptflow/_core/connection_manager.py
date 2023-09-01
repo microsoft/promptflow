@@ -16,7 +16,7 @@ from promptflow.contracts.types import Secret
 
 
 class ConnectionManager:
-    """This class will be used for construction mode to run flow locally. Do not include it into tool code."""
+    """This class will be used for construction mode to run flow. Do not include it into tool code."""
 
     instance = None
 

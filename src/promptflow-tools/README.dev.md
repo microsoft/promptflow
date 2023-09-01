@@ -7,7 +7,7 @@ pip install -r requirements.txt
 pip install pytest pytest-mock
 ```
 
-## Run tests locally
+## Run tests
 
 - Create connection config file by `cp connections.json.example connections.json`.
 - Fill in fields manually in `connections.json`.
