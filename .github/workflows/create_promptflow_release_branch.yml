@@ -6,6 +6,7 @@ on:
       release_version:
         description: Release version
         required: true
+        type: string
 
 jobs:
   create_release_branch:
@@ -17,14 +18,14 @@ jobs:
         run: |
           set -x -e
 
-          release_branch_name="release/promptflow/${{ github.event.inputs.release_version }}"
+          release_branch_name="release/promptflow/${{ inputs.release_version }}"
           git checkout -b $release_branch_name
 
           echo "Replacing version in src/promptflow/promptflow/_version.py..."
-          sed -i "s/0.0.1/${{ github.event.inputs.release_version }}/g" src/promptflow/promptflow/_version.py
+          sed -i "s/0.0.1/${{ inputs.release_version }}/g" src/promptflow/promptflow/_version.py
           echo "Replaced src/promptflow/promptflow/_version.py:"
           cat src/promptflow/promptflow/_version.py
 
           git add src/promptflow/promptflow/_version.py
-          git commit -m "Create release branch for version ${{ github.event.inputs.release_version }}"
-          git push --set-upstream origin ${{ github.event.inputs.release_version }}
+          git commit -m "create promptflow release branch for version ${{ inputs.release_version }}"
+          git push --set-upstream origin $release_branch_name
