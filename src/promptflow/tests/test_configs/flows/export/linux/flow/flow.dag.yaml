@@ -1,30 +1,28 @@
 inputs:
   customer_info:
     type: string
-  history:
-    type: list
+  chat_history:
+    type: string
 outputs:
   output:
     type: string
     reference: ${extract_intent.output}
 nodes:
-- name: user_prompt_template
+- name: chat_prompt
   type: prompt
   source:
     type: code
-    path: user_intent_zero_shot.md
-  inputs:
-    mock: mock  # This is added manually, related: https://msdata.visualstudio.com/Vienna/_workitems/edit/2476802
+    path: user_intent_zero_shot.jinja2
+  inputs:  # Please check the generated prompt inputs
+    customer_info: ${inputs.customer_info}
+    chat_history: ${inputs.chat_history}
 - name: extract_intent
   type: python
   source:
     type: code
     path: extract_intent_tool.py
   inputs:
-    customer_info: ${inputs.customer_info}
-    history: ${inputs.history}
-    user_prompt_template: ${user_prompt_template.output}
+    chat_prompt: ${chat_prompt.output}
     connection: custom_connection
 environment:
-  setup_sh: setup.sh
-  python_requirements_txt: requirements_txt
+    python_requirements_txt: requirements_txt
