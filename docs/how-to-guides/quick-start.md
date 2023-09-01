@@ -1,4 +1,4 @@
-# Quickstart
+# Quick Start
 
 This guide will walk you through the fist step using of prompt flow code-first experience. 
 

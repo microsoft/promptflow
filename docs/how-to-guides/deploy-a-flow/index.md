@@ -1,5 +1,5 @@
 # Deploy a flow
-A flow can be deployed across multiple platforms, such as a local development service, within a Docker container, onto a Kubernetes cluster, etc.
+A flow can be deployed to multiple platforms, such as a local development service, Docker container, Kubernetes cluster, etc.
 
 ```{gallery-grid}
 :grid-columns: 1 2 2 3
@@ -15,11 +15,20 @@ A flow can be deployed across multiple platforms, such as a local development se
   content: "<center><b>Kubernetes</b></center>"
   website: deploy-using-kubernetes.html
  
+```
+
+We also provide guides to deploy to cloud, such as azure app service:
+
+```{gallery-grid}
+:grid-columns: 1 2 2 3
+
 - image: ../../media/how-to-guides/appservice.png
   content: "<center><b>Azure App Service</b></center>"
   website: ../../cloud/azureai/deploy-to-azure-appservice.html
 
 ```
+
+We are working on more official deployment guides for other hosting providers, and welcome user submitted guides.
 
 ```{toctree}
 :maxdepth: 1

@@ -24,7 +24,7 @@ To go through this tutorial you should:
    pip install -r requirements.txt
 ```
 
-2. Install [VS code extension](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html) (optional but highly recommended)
+2. Install and configure [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) follow [Quick Start Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html). (_This extension is optional but highly recommended for flow development and debugging._)
 
 
 ## Console chatbot chat_with_pdf
@@ -129,7 +129,7 @@ Appropriate tooling is essential for facilitating this experimentation and fine-
 - Running a few examples and manually verifying the results.
 - Running larger scale tests with a formal approach (using metrics) to assess your app's quality.
 
-You may have already learned how to create a prompt flow from scratch. Building a prompt flow from existing code is also straightforward. You can construct a [chat flow]() either by composing the YAML file or using the visual editor of [Visual Studio Code extension]() and create a few wrappers for existing code. 
+You may have already learned how to create a prompt flow from scratch. Building a prompt flow from existing code is also straightforward. You can construct a chat flow either by composing the YAML file or using the visual editor of [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) and create a few wrappers for existing code. 
 
 Check out below:
 - [flow.dag.yaml](../../flows/chat/chat-with-pdf/flow.dag.yaml)
@@ -151,7 +151,7 @@ def build_index_tool(pdf_path: str) -> str:
     return create_faiss_index(pdf_path)
 ```
 
-The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection]() to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
+The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection](https://microsoft.github.io/promptflow/concepts/concept-connections.html) to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
 
 We're using Azure OpenAI in this example, below is the shell command to do so:
 ```bash
@@ -178,9 +178,9 @@ The flow looks like:
 <img src="../../flows/chat/chat-with-pdf/assets/multi-node-flow-chat-with-pdf.png" width="500" alt="chat with pdf flow, multi-node"/>
 
 ## Prompt flow evaluations
-Now the prompt flow for chat_with_pdf is created, you might have already run/debug flow through the [Visual Studio Code extension](). It's time to do some testing and evaluation, which starts with:
+Now the prompt flow for chat_with_pdf is created, you might have already run/debug flow through the Visual Studio Code extension. It's time to do some testing and evaluation, which starts with:
 1. Create a test dataset which contains a few question and pdf_url pairs.
-2. Use existing [evaluation flows]() or develop new evaluation flows to generate metrics.
+2. Use existing [evaluation flows](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation) or develop new evaluation flows to generate metrics.
 
 A small dataset can be found here: [bert-paper-qna.jsonl](../../flows/chat/chat-with-pdf/data/bert-paper-qna.jsonl) which contains around 10 questions for the BERT paper.
 
