@@ -8,13 +8,12 @@ After create a flow and test it properly, the flow can be served as a http endpo
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
-We are going to use the [basic-with-connection flow](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic-with-connection) as
+We are going to use the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) as
 an example to show how to deploy a flow.
 
-Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could simply create it by running the follow command.
-```bash
-pf connection create -f .\custom.yml --set configs.api_base=https://<to-be-replaced>.openai.azure.com/ secrets.api_key=<to-be-replaced>
-```
+Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
+refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification#1-setup-connection).
+
 
 The following CLI commands allows you serve a flow folder as an endpoint. By running this command, a [flask](https://flask.palletsprojects.com/en/) app will start in the environment where command is executed, please ensure all prerequisites required by flow have been installed.
 ```bash
@@ -38,20 +37,14 @@ The expected result is as follows if the flow served successfully, and the proce
 :::{tab-item} Bash
 You could open another terminal to test the endpoint with the following command:
 ```bash
-curl http://localhost:8080/score --data '{"text":"Hello world!"}' -X POST  -H "Content-Type: application/json"
+curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
 ```
-Test result:
-
-![img](../../media/how-to-guides/test_endpoint_bash.png)
 :::
 :::{tab-item} PowerShell
 You could open another terminal to test the endpoint with the following command:
 ```powershell
-Invoke-WebRequest -URI http://localhost:8080/score -Body '{"text":"Hello world!"}' -Method POST  -ContentType "application/json"
+Invoke-WebRequest -URI http://localhost:8080/score -Body '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -Method POST  -ContentType "application/json"
 ```
-Test result:
-
-![img](../../media/how-to-guides/test_endpoint.png)
 :::
 :::{tab-item} VS Code Extension
 :sync: VSC

@@ -42,6 +42,22 @@ Exported Dockerfile & its dependencies are located in the same folder. The struc
 - README.md: Simple introduction of the files
 
 ## Deploy with Docker
+We are going to use the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) as
+an example to show how to deploy with docker.
+
+Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
+refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification#1-setup-connection).
+
+## Build a flow as docker format app
+
+Use the command below to build a flow as docker format app:
+
+```bash
+pf flow build --source ../../flows/standard/web-classification --output build --format docker
+```
+
+Note that all dependent connections must be created before exporting as docker.
+
 ### Build Docker image
 
 Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
@@ -49,51 +65,38 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 After cd to the output directory, run the command below:
 
 ```bash
-docker build . -t promptflow-serve
+docker build build -t web-classification-serve
 ```
 
 ### Run Docker image
 
-Run the docker image will start a service to serve the flow inside the container. Service will listen on port 8080.
-You can map the port to any port on the host machine as you want.
+Run the docker image will start a service to serve the flow inside the container. 
 
+#### Connections
 If the service involves connections, all related connections will be exported as yaml files and recreated in containers.
-
 Secrets in connections won't be exported directly. Instead, we will export them as a reference to environment variables:
-
 ```yaml
-configs:
-  AZURE_OPENAI_API_BASE: xxx
-  CHAT_DEPLOYMENT_NAME: xxx
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+type: open_ai
+name: open_ai_connection
 module: promptflow.connections
-name: custom_connection
-secrets:
-  AZURE_OPENAI_API_KEY: ${env:<connection-name>_<secret-key>}
-type: custom
+api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
-
 You'll need to set up the environment variables in the container to make the connections work.
 
 ### Run with `docker run`
 
 You can run the docker image directly set via below commands:
-
 ```bash
-docker run -p 8080:8080 -e <connection-name>_<secret-key>=<secret-value> promptflow-serve
-```
-
-As explain in previously, secrets in connections will be passed to container via environment variables.
-You can set up multiple environment variables for multiple connection secrets:
-
-```bash
-docker run -p 8080:8080 -e <connection-name-1>_<secret-key>=<secret-value-1> -e <connection-name-2>_<secret-key>=<secret-value-2> promptflow-serve
+# The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
+docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> web-classification-serve
 ```
 
 ### Test the endpoint
 After start the service, you can use curl to test it:
 
 ```bash
-curl http://localhost:8080/score --data '{"text":"Hello world!"}' -X POST  -H "Content-Type: application/json"
+curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
 ```
 
 ## Next steps
