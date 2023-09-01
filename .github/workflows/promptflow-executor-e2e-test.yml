@@ -25,9 +25,9 @@ jobs:
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.10";
+          export pyVersion="3.9";
         elif [ "macos-latest" == "${{ matrix.os }}" ]; then
-          export pyVersion="3.11";
+          export pyVersion="3.10";
         else
           echo "Unsupported OS: ${{ matrix.os }}";
           exit 1;
@@ -99,6 +99,6 @@ jobs:
         testActionFileName: promptflow-executor-e2e-test.yml
         testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
-        pythonVersion: '3.10'
+        pythonVersion: 3.9
         coverageThreshold: 0.7
         token: ${{ secrets.GITHUB_TOKEN }}
