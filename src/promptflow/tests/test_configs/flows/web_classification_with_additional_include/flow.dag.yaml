@@ -136,3 +136,6 @@ additional_includes:
   - ../external_files/convert_to_dict.py
   - ../external_files/fetch_text_content_from_url.py
   - ../external_files/summarize_text_content.jinja2
+  - ../external_files/summarize_text_content.jinja2
+  - ../external_files
+  - ../external_files

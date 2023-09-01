@@ -15,7 +15,7 @@ from promptflow.exceptions import ErrorTarget
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule
+from ._errors import FailedToImportModule, NodeConditionConflict
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -123,6 +123,20 @@ class ToolSource:
 
 
 @dataclass
+class ActivateCondition:
+    condition: InputAssignment
+    condition_value: Any
+
+    @staticmethod
+    def deserialize(data: dict) -> "ActivateCondition":
+        result = ActivateCondition(
+            condition=InputAssignment.deserialize(data["when"]),
+            condition_value=data["is"],
+        )
+        return result
+
+
+@dataclass
 class SkipCondition:
     condition: InputAssignment
     condition_value: Any
@@ -154,6 +168,7 @@ class Node:
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
     skip: Optional[SkipCondition] = None
+    activate: Optional[ActivateCondition] = None
 
     def serialize(self):
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v})
@@ -185,6 +200,11 @@ class Node:
             node.type = ToolType(data["type"])
         if "skip" in data:
             node.skip = SkipCondition.deserialize(data["skip"])
+        if "activate" in data:
+            node.activate = ActivateCondition.deserialize(data["activate"])
+        if node.skip and node.activate:
+            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
+
         return node
 
 
@@ -380,6 +400,14 @@ class Flow:
                 tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
                 node.tool = tool.name
                 flow.tools.append(tool)
+        if flow.node_variants:
+            # Generate tools for node variants
+            for node_variant in flow.node_variants.values():
+                for variant in node_variant.variants.values():
+                    node = variant.node
+                    tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
+                    node.tool = tool.name
+                    flow.tools.append(tool)
         return flow
 
     def _apply_node_overrides(self, node_overrides):
@@ -469,6 +497,8 @@ class Flow:
         node = self.get_node(node_name)
         if not node:
             return []
+        if node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
         result = []
         value_types = set({v.value for v in ValueType.__members__.values()})
         tool = self.get_tool(node.tool)
@@ -488,7 +518,11 @@ class Flow:
         connection_names = set({})
         tool_metas = {tool.name: tool for tool in self.tools}
         value_types = set({v.value for v in ValueType.__members__.values()})
-        for node in self.nodes:
+        nodes = [
+            self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
+            for node in self.nodes
+        ]
+        for node in nodes:
             if node.connection:
                 # Some node has a separate field for connection.
                 connection_names.add(node.connection)

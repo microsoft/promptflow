@@ -27,6 +27,8 @@ class FlowValidator:
             inputs_list = [i for i in n.inputs.values()]
             if n.skip:
                 inputs_list.extend([n.skip.condition, n.skip.return_value])
+            if n.activate:
+                inputs_list.extend([n.activate.condition])
             for i in inputs_list:
                 if i.value_type != InputValueType.NODE_REFERENCE:
                     continue

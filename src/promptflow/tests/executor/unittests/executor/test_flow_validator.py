@@ -15,6 +15,7 @@ class TestFlowValidator:
         [
             ("unordered_nodes", ["first_node", "second_node", "third_node"]),
             ("unordered_nodes_with_skip", ["first_node", "second_node", "third_node"]),
+            ("unordered_nodes_with_activate", ["first_node", "second_node", "third_node"]),
         ],
     )
     def test_ensure_nodes_order(self, flow_folder, expected_node_order):
@@ -45,6 +46,10 @@ class TestFlowValidator:
                     "nodes ['first_node', 'second_node'] and resolve the circular reference issue "
                     "in the flow."
                 ),
+            ),
+            (
+                "nodes_cycle_with_activate",
+                "There is a circular dependency in the flow 'node_cycle_with_activate'.",
             ),
             (
                 "wrong_node_reference",

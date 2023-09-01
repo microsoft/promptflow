@@ -1,3 +1,5 @@
+# Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
+# since the code here is in promptflow namespace as well
 from promptflow._internal import tool
 from promptflow.tools.common import render_jinja_template
 

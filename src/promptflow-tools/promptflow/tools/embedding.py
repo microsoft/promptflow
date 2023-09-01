@@ -4,6 +4,8 @@ from typing import Union
 import openai
 
 from promptflow.connections import AzureOpenAIConnection, OpenAIConnection
+# Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
+# since the code here is in promptflow namespace as well
 from promptflow._internal import tool
 from promptflow.tools.common import handle_openai_error
 from promptflow.tools.exception import InvalidConnectionType

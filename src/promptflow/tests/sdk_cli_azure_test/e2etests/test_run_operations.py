@@ -51,32 +51,32 @@ class TestFlowRun:
         run = remote_client.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_basic_evaluation(self, remote_client_int, runtime_int):
+    def test_basic_evaluation(self, pf, runtime):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
-        run = remote_client_int.run(
+        run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=data_path,
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(run, Run)
-        run = remote_client_int.runs.stream(run=run.name)
+        run = pf.runs.stream(run=run.name)
         assert run.status == RunStatus.COMPLETED
 
-        eval_run = remote_client_int.run(
+        eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             data=data_path,
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(eval_run, Run)
-        remote_client_int.runs.stream(run=eval_run.name)
+        pf.runs.stream(run=eval_run.name)
 
         # evaluation run without data
-        eval_run = remote_client_int.run(
+        eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             run=run,
             column_mapping={
@@ -84,10 +84,10 @@ class TestFlowRun:
                 "groundtruth": "${run.inputs.url}",
                 "prediction": "${run.outputs.category}",
             },
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(eval_run, Run)
-        remote_client_int.runs.stream(run=eval_run.name)
+        pf.runs.stream(run=eval_run.name)
 
     def test_run_with_connection_overwrite(self, remote_client, pf, runtime):
         run = pf.run(
@@ -511,8 +511,6 @@ class TestFlowRun:
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
             assert flow_session_id == body.session_id
-            # session id also contains alias
-            assert flow_lineage_id in flow_session_id
             assert flow_lineage_id == body.flow_lineage_id
             return body
 

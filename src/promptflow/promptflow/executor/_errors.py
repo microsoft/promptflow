@@ -105,6 +105,14 @@ class InputNotFoundFromAncestorNodeOutput(FlowExecutionError):
     pass
 
 
+class NoNodeExecutedError(FlowExecutionError):
+    pass
+
+
+class OutputReferenceBypassed(FlowExecutionError):
+    pass
+
+
 class InputTypeError(InvalidFlowRequest):
     pass
 

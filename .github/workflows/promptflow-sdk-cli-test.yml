@@ -13,8 +13,8 @@ env:
   TENANT_ID: "${{ secrets.TENANT_ID }}"
   CLIENT_ID: "${{ secrets.CLIENT_ID }}"
   CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-  packageSetupType: promptflow_new_extra
-  testWorkingDirectory: src/promptflow
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   sdk_cli_tests:
     strategy:
@@ -99,6 +99,8 @@ jobs:
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
+        testActionFileName: promptflow-sdk-cli-test.yml
+        testResultTitle: SDK CLI Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
         coverageThreshold: 0.4
