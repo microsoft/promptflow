@@ -53,15 +53,3 @@ runs:
       echo "########### pip freeze ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
-  - name: 'Build and install: promptflow-sdk with extra deps'
-    if: inputs.setupType == 'promptflow_dev_extra'
-    shell: pwsh
-    run: |-
-      conda activate release-env
-      pip install -r ./dev_requirements.txt
-      python ./setup.py bdist_wheel
-      $package = ls dist | ? { $_.Name.Contains('.whl')}
-      pip install $($package.FullName + "[azure]")
-      echo "########### pip freeze ###########"
-      pip freeze
-    working-directory: ${{ inputs.scriptPath }}
