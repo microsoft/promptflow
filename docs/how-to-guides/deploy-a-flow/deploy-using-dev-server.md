@@ -48,6 +48,7 @@ Invoke-WebRequest -URI http://localhost:8080/score -Body '{"url":"https://play.g
 ```
 :::
 :::{tab-item} Test Page
+The development server has a built-in web page you can use to test the flow. Open 'http://localhost:8080' in your browser.
 ![img](../../media/how-to-guides/deploy_flow_test_page.png)
 :::
 ::::

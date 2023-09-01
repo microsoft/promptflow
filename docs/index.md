@@ -11,19 +11,19 @@ html_theme.sidebar_secondary.remove: true
 
 With prompt flow, you will be able to: 
 
-- Create executable workflows that link LLMs, prompts, Python code and other tools together. 
-- Debug and iterate your flows, especially the interaction with LLMs with ease.
-- Evaluate your flow's quality and performance with larger datasets.
-- Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
-- Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
-- (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
+- **Create [flows](./concepts/concept-flows.md)** that link [LLMs](./reference/tools-reference/llm-tool.md), [prompts](./reference/tools-reference/prompt-tool.md), [Python](./reference/tools-reference/python-tool.md) code and other [tools](./concepts/concept-tools.md) together in a executable workflow. 
+- **Debug and iterate your flows**, especially the interaction with LLMs with ease.
+- **Evaluate your flows**, calculate quality and performance metrics with larger datasets.
+- **Integrate the testing and evaluation into your CI/CD system** to ensure quality of your flow.
+- **Deploy your flows** to the serving platform you choose or integrate into your app's code base easily.
+- (Optional but highly recommended) **Collaborate with your team** by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
 > Welcome to join us to make Prompt flow better by
 > participating [discussions](https://github.com/microsoft/promptflow/discussions),
 > opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
 > submitting [PRs](https://github.com/microsoft/promptflow/pulls).
 
-This documentation site contains guides for prompt flow sdk, cli and vscode extension users.
+This documentation site contains guides for prompt flow [sdk, cli](https://pypi.org/project/promptflow/) and [vscode extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) users.
 
 ```{gallery-grid}
 :grid-columns: 1 2 2 2
@@ -45,7 +45,6 @@ This documentation site contains guides for prompt flow sdk, cli and vscode exte
   "
 ```
 
-Reach more details about concepts and tools of prompt flow.
 ```{gallery-grid}
 :grid-columns: 1 2 2 2
 - header: "📑 Concepts"
@@ -61,6 +60,7 @@ Reach more details about concepts and tools of prompt flow.
   content: "
     Reference provides technical information about prompt flow API.<br/><br/>
     - Command line Interface reference: [pf](reference/pf-command-reference.md)<br/>
+    - Python library reference: [promptflow](reference/python-library-reference/promptflow.md)<br/>
     - Tool reference: [LLM Tool](reference/tools-reference/llm-tool.md), [Python Tool](reference/tools-reference/python-tool.md), [Prompt Tool](reference/tools-reference/prompt-tool.md)<br/>
   "
 ```

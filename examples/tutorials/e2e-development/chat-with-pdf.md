@@ -309,7 +309,7 @@ the other choices, please refer to [flow deploy docs](https://microsoft.github.i
 
 Use the command below to build a flow as docker format app:
 
-```bash
+```shell
 pf flow build --source . --output build --format docker
 ```
 
@@ -354,7 +354,7 @@ After start the service, you can open the test page at `http://localhost:8080/` 
 
 ![test-page](../../flows/chat/chat-with-pdf/assets/chat_with_pdf_test_page.png)
 
-or use curl to test it:
+or use curl to test it from cli:
 
 ```shell
 curl http://localhost:8080/score --data '{"question":"what is BERT?", "chat_history": [], "pdf_url": "https://arxiv.org/pdf/1810.04805.pdf", "config": {"EMBEDDING_MODEL_DEPLOYMENT_NAME": "text-embedding-ada-002", "CHAT_MODEL_DEPLOYMENT_NAME": "gpt-35-turbo", "PROMPT_TOKEN_LIMIT": 3000, "MAX_COMPLETION_TOKENS": 256, "VERBOSE": true, "CHUNK_SIZE": 1024, "CHUNK_OVERLAP": 64}}' -X POST  -H "Content-Type: application/json"
