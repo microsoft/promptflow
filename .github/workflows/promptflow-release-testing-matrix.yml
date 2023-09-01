@@ -217,6 +217,7 @@ jobs:
       with:
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        testName: promptflow-release-testing-matrix
+        testActionFileName: promptflow-release-testing-matrix.yml
+        testResultTitle: Release Test Matrix
         token: ${{ secrets.GITHUB_TOKEN }}
         coverageThreshold: 0
