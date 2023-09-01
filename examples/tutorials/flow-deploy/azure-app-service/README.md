@@ -24,7 +24,7 @@ The two scripts will do the following things:
 5. Set up the environment variables for the app.
 
 Example command to use bash script:
-```bash
+```shell
 bash deploy.sh --path build -i <image_tag> --name my_app_23d8m -r <docker registery> -g <resource_group>
 ```
 
@@ -36,8 +36,19 @@ Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 
 See the full parameters by `bash deploy.sh -h` or `.\deploy.ps1 -h`.
 
+## View and test the web app
+The web app can be found via [azure portal](https://ms.portal.azure.com/) 
+
+![img](assets/azure_portal_img.png)
+
 After the app created, you will need to go to https://ms.portal.azure.com/ find the app and set up the environment variables
 at (Settings>Configuration) or (Settings>Environment variables), then restart the app.
+
+![img](assets/set_env_var.png)
+
+Browse the app at Overview and see the test page:
+
+![img](assets/test_page.png)
 
 Tips:
 - Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream).

@@ -310,7 +310,7 @@ the other choices, please refer to [flow deploy docs](https://microsoft.github.i
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../flows/chat/chat-with-pdf/ --output build --format docker
+pf flow build --source . --output build --format docker
 ```
 
 ### Deploy with Docker
@@ -320,7 +320,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 
 Run the command below to build image:
 
-```bash
+```shell
 docker build build -t chat-with-pdf-serve
 ```
 
@@ -344,14 +344,19 @@ You'll need to set up the environment variables in the container to make the con
 
 
 You can run the docker image directly set via below commands:
-```bash
+```shell
 # The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
 docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> chat-with-pdf-serve
 ```
 
 #### Test the endpoint
-After start the service, you can use curl to test it:
+After start the service, you can open the test page at `http://localhost:8080/` and test it:
 
-```bash
+![test-page](../../flows/chat/chat-with-pdf/assets/chat_with_pdf_test_page.png)
+
+or use curl to test it:
+
+```shell
 curl http://localhost:8080/score --data '{"question":"what is BERT?", "chat_history": [], "pdf_url": "https://arxiv.org/pdf/1810.04805.pdf", "config": {"EMBEDDING_MODEL_DEPLOYMENT_NAME": "text-embedding-ada-002", "CHAT_MODEL_DEPLOYMENT_NAME": "gpt-35-turbo", "PROMPT_TOKEN_LIMIT": 3000, "MAX_COMPLETION_TOKENS": 256, "VERBOSE": true, "CHUNK_SIZE": 1024, "CHUNK_OVERLAP": 64}}' -X POST  -H "Content-Type: application/json"
 ```
+![test-endpoint](../../flows/chat/chat-with-pdf/assets/chat_with_pdf_test_endpoint.png)
