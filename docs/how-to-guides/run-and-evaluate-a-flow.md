@@ -6,7 +6,11 @@ This is an experimental feature, and may change at any time. Learn [more](https:
 
 After you have developed and tested the flow in [init and test a flow](./init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
-## Create a bulk run
+
+
+## Create a batch run
+
+Since you have run your flow successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
 
 A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (E.g. `pf run list`)
 
@@ -19,61 +23,69 @@ To begin with the guide, git clone the sample repository(above flow link) and se
 :::{tab-item} CLI
 :sync: CLI
 
+Create the run with flow and data, can add `--stream` to stream the run.
 ```sh
-pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --name my_first_run --stream
+pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --stream 
 ```
 
-You can specify the run name with `--name my_first_run`, otherwise there will be a generated run name that contains flow name and timestamp, something like `web_classification_default_20230804_143634_056856`
+You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
 
-With a run name, you can easily stream or view the run details using below commands:
+
+![q_0](../media/how-to-guides/quick-start/flow-run-create-output-cli.png)
+
+
+With a run name, you can easily view or visualize the run details using below commands:
 
 ```sh
-pf run stream -n my_first_run  # same as "--stream" in command "run create"
 pf run show-details -n my_first_run
-pf run show-metrics -n my_first_run
+pf run visualize -n my_first_run
 ```
+
+![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-cli.png)
+
+![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
+
+More details can be found with `pf run --help`
 
 :::
-
 :::{tab-item} SDK
 :sync: SDK
 
 ```python
-from promptflow import PFClient
-
-pf = PFClient()
+# Set flow path and run input data
 flow = "standard/web-classification" # set the flow directory
 data= "standard/web-classification/data.jsonl" # set the data file
 
-# create a run
+# create a run, stream it until it's finished
 base_run = pf.run(
     flow=flow,
     data=data,
+    stream=True,
 )
-
-# stream the run until it's finished
-pf.stream(base_run)
 
 # get the inputs/outputs details of a finished run.
 details = pf.get_details(base_run)
 details.head(10)
 
-# view the metrics of the run
-metrics = pf.get_metrics(base_run)
-print(json.dumps(metrics, indent=4))
-
-# visualize both the base run
+# visualize the run in a web browser
 pf.visualize(base_run)
-
 ```
 
+![q_0](../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
+
+![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-sdk.png)
+![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
 :::
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
-![img](../media/how-to-guides/vscode_batch_run_yaml.png)
-![img](../media/how-to-guides/vscode_batch_run_visual.png)
+Use the code lens action on the top of the yaml editor to trigger batch run
+![dag_yaml_flow_test](../media/how-to-guides/quick-start/batch_run_dag_yaml.png)
+
+
+Click the bulk test button on the top of the visual editor to trigger flow test.
+![visual_editor_flow_test](../media/how-to-guides/quick-start/bulk_run_visual_editor.png)
 :::
 
 ::::
