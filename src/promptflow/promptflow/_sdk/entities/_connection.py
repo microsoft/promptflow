@@ -349,7 +349,7 @@ class OpenAIConnection(_StrongTypeConnection):
     Open AI connection.
 
     :param api_key: The api key.
-    :param organization: The unique identifier for your organization which can be used in API requests.
+    :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :param name: Connection name.
     """
 
