@@ -769,6 +769,7 @@ class TestCli:
         assert detail_path.exists()
 
         # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
         run_pf_command(
             "flow",
             "test",

@@ -223,7 +223,7 @@ Using this [chat flow](https://github.com/microsoft/promptflow/tree/main/example
 
 ::::
 
-When the LLM node in the chat flow that is connected to the flow output, the flow result will be streamed in the terminal as shown below.
+When the [LLM node](https://promptflow.azurewebsites.net/tools-reference/llm-tool.html) in the chat flow that is connected to the flow output, Promptflow SDK streams the results of the LLM node. The flow result will be streamed in the terminal as shown below.
 
 ![streaming_output](../media/how-to-guides/init-and-test-a-flow/streaming_output.gif)
 
