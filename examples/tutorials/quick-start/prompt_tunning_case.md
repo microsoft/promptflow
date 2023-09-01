@@ -4,55 +4,40 @@
 
 Do you have confidence in the quality of the generated prompt? Let's have a quick test with a larger dataset in prompt flow!
 
-Click to download the [test dataset]().
+Run the following command to test your prompt in 10 lines input questions:
 
-Run the following python code to test your prompt in 10 lines input questions:
+> Click to [download the test dataset](). Specify the path to the flow and test dataset in the command.
 
-```python
-from promptflow import PFClient
+```sh
 
-pf = PFClient()
-
-# specify the path to the flow folder
-my_flow_path = "<my_chatbot>"
-# specify the path to the dataset
-my_data_path = "<my_data>"
-
-# create a run
-base_run = pf.run(
-    flow=my_flow_path,
-    data=my_data_path,
-    column_mapping={  # map the url field from the data to the url input of the flow
-      "question": "${data.question}",
-      "chat_history": [],
-    }
-)
-
-# get the inputs/outputs details of a finished run.
-details = pf.get_details(base_run)
-details.head(5)
+```sh
+pf run create --flow <my_chatbot> --data <test_data.jsonl> --column-mapping question="${data.question}" chat_history=[] --name base_run --stream
 ```
 
-Then calculate the accuracy of the answers by running the specific flow for evaluation. Click to download the [evaluation flow]().
-
-```python
-# specify the path to the evaluation flow folder
-my_evaluation_flow_path = "<my_evaluation_flow>"
-
-# run the flow with existing run
-eval_run = pf.run(
-    flow = my_eval_flow_path,
-    data= my_data_path,
-    run = base_run,
-    column_mapping={
-        "groundtruth": "${data.groundtruth}",
-        "answer": "${run.outputs.answer}",
-    },  # map the url field from the data to the url input of the flow
-)
-
-# visualize the run in a web browser
-pf.visualize([base_run, eval_run])
+Then get details of the base_run:
+```sh
+pf run show-details -n base_run
 ```
+
+Then calculate the accuracy of the answers by running the specific flow for **evaluation**.  Run the following command to evaluate the output of previous run:
+
+> Click to [download the evaluation flow](). Specify the path to the evaluation flow and test dataset in the command.
+
+```sh
+pf run create --flow <eval-accuracy> --data <test_data.jsonl> --column-mapping groundtruth="${data.groundtruth}" answer="${run.outputs.answer}" --run base_run --name eval_run --stream
+```
+
+Then get metrics of the eval_run:
+```sh
+pf run show-metrics -n eval_run
+```
+
+You can visualize and compare the output of base_run and eval_run in a web browser:
+
+```sh
+pf run visualize -n "base_run,eval_run"
+```
+
 
 Opps! The accuracy is not good enough. Only 35% accuracy! I need to tune the prompt for better performance.
 
