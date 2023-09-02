@@ -69,7 +69,6 @@ Run the following command to chat with your flow. Input your math question in th
 ```sh
 pf flow test --flow my_chatbot --interactive
 ```
-Next step: Let's start prompt tuning, testing, and evaluating on a real-world case to see the improvements in output reliability!
 
 ## Tutorial
 
@@ -79,7 +78,7 @@ LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve out
 
 Prototype ➡️ Tunning  ➕  Batch Testing ➕ Evaluation ➡️ Ensure high quality before production
 
-| Spare only 10 minutes to quickly grasp (👉[Try the easy case!](examples/tutorials/quick-start/tune-your-prompt.md) ) how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓)| <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/>|  
+| Spare only 10 minutes to quickly grasp (👉[Try the easy case!](examples/tutorials/quick-start/tune-your-prompt.md) ) how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓)| <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="1500px"/>|  
 | :------ | :------: |
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
