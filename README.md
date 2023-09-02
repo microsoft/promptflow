@@ -114,18 +114,18 @@ Input the math question in the `User` section, for example, "James has 7 apples.
 
 Click `Ctrl + C` to end the interactive testing.
 
-## Improve Quality with Prompt Flow 🏃‍♂️
+## Prompt Flow value: Improve Quality 🏃‍♂️
 
 LLMs are known for their random nature, resulting in unstable generated answers. Fine-tuning the prompt can further enhance the reliability of the generated outputs. To accurately assess the quality of fine-tuned, testing with a larger dataset and comparing generated outputs to the ground truth is essential.  the prompt can further enhance the reliability of the generated outputs.
 
-<h3> Tunning  +  Batch Testing + Evaluation = High Quality</h3>
+<h3> Prototype ▶ Tunning  ➕  Batch Testing ➕ Evaluation ▶ Facilitate high quality LLM-native apps to production</h3>
+ 
+| With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cost!| <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/>|  
+| :------ | :------: |
 
-|  With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cost!| <div style="padding: 20px; border: 1px solid #ccc; border-radius: 5px;"><img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/></div>|  
-| --- | --- |  
+👉[Try to tune the prompt, test and evaluate it!](examples/tutorials/quick-start/tune-your-prompt.md)
 
-👉[Try to test and tune the prompt!](examples/tutorials/quick-start/tune-your-prompt.md)
-
-## More Tutorial
+## Tutorial
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
 

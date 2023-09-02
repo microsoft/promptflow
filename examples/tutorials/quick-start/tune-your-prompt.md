@@ -1,16 +1,56 @@
 # Tutorial: Prompt tuning and evaluation
 
-## Evaluate the quality of your prompt
-Let's have a quick test with a larger dataset in prompt flow!
+## Prerequisite
 
-> Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), then put it under the pf-test folder.
+Before proceeding with this tutorial, please ensure that you have completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) tutorial.
+
+In this tutorial, we will be also using the `my_chatbot` flow as an example. Please make sure to keep this flow in the `pf-test` folder within your environment.
+
+```sh
+cd pf-test
+```
+
+## Evaluate the quality of your prompt
+
+Let's do a quick test of the `my_chatbot` flow using a larger dataset.
+
+> Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), then place it in the pf-test folder as well.
+
+The dataset is a JSONL file containing 20 lines of test data, including the input question, ground truth for numerical answer and reasoning. Here's an example:
+
+```json
+{
+    "question": "Determine the number of ways to arrange the letters of the word PROOF.", // input question
+    "answer": "60", // ground truth for numerical answer
+    "raw_answer": "There are two O's and five total letters, so the answer is $\\dfrac{5!}{2!} = \\boxed{60}$." // ground truth for reasoning
+}
+
+```
 
 Run the following command to test your prompt in 20 lines input questions:
+
 > [!Note]
-> The run name is unique. If 'base_run' has already existed, please give a new name by '--name' 
+> For CMD users, please use double quotes instead of single quotes in the column-mapping argument (e.g. `--column-mapping question="${data.question}"`) . Shell users can use either single or double quotes.
+>
+> For CMD users, please use the absolute path of the test dataset (e.g. `--data C:\Users\test\pf-test\test_data.jsonl`) and flow folder (e.g. `--flow C:\Users\test\pf-test\my_chatbot`).
 
 ```sh
 pf run create --flow my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --stream
+```
+
+> [!Note]
+> The run name is unique. If 'base_run' has already existed, please specify a new name in `--name`. Or you can run without `--name` specified, will generate a random run name, and you can get it via the log output. For example:
+```
+......
+2023-09-02 16:16:24 +0800   98288 execution          INFO     Process 0 queue empty, exit.
+2023-09-02 16:16:25 +0800   98288 execution          INFO     Process 4 queue empty, exit.
+======= Run Summary =======
+
+Run name: "my_chatbot_default_20230902_161602_591557"
+Run status: "Completed"
+Start time: "2023-09-02 16:16:02.336443"
+Duration: "0:00:22.832404"
+......
 ```
 
 You can see the run details by:
@@ -52,7 +92,7 @@ We leverage the Chain of Thought (CoT) prompt engineering method to modify the p
 Variant_0: the origin prompt
 ```
 system:
-You are an assistant specialized in math computation. Your task is to solve math problems. Please provide the result number only in your response.
+You are a helpful assistant. Help me with some mathematics problems of counting and probability. Please provide the result number only in your response.
 {% for item in chat_history %}
 user:
 {{item.inputs.question}}
@@ -64,6 +104,7 @@ user:
 ```
 
 Variant_1: 2 CoT examples
+
 ```
 system:
 You are a helpful assistant. Help me with some mathematics problems of counting and probability. Think step by step and output as json format.
