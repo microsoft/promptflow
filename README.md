@@ -5,8 +5,6 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-<h2>Facilitate high quality LLM-native apps to production</h2>
-
 > Welcome to join us to make Prompt flow!
 
 [Documentacion](https://microsoft.github.io/promptflow) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/bnXr6kxs) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
@@ -30,11 +28,9 @@ With prompt flow, you will be able to:
 Learn more about the concept of Prompt flow [here](https://microsoft.github.io/promptflow/concepts/index.html).
 
 ------
-
 ## Get Started with Prompt flow ⚡
 
-### ① - Installation
-
+### Install
 > [!Important] 
 > A python environment, `python=3.9` is recommended.
 
@@ -42,22 +38,10 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 pip install promptflow promptflow-tools
 ```
 
-(Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/><font color="darkblue"><b>Prompt flow VS Code extension</b></font>  - Flow Designer
+(Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/><font color="darkblue"><b>Prompt flow VS Code extension</b></font> from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-Prompt flow provides an extension in VS Code for visualizing and editing your flows. You can install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
-
-### ② - Create the connection to store your OpenAI API key
-
-Create a folder for this quick start testing:
-
-```sh
-mkdir pf-test
-```
-```sh
-cd pf-test
-```
-
-Create a yaml file `connection.yaml` in `pf-test` folder to define the connection:
+### Create the connection to store your OpenAI API key
+Create a yaml file `connection.yaml` to define the connection:
   
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
@@ -71,62 +55,32 @@ Run the following CLI command to create the connection:
 ```sh
 pf connection create -f connection.yaml
 ```
+### Initialize a prompt flow from chat template
 
-### ③ - Initialize a prompt flow from template
-
-Prompt flow currently supports three types of flow templates: `standard` (default), `chat`(suitable for chat scenarios) and `evaluation`(suitable for evaluation purposes).
+Run the following CLI command to initialize a prompt flow from chat template, which will create a new **flow folder** named "my_chatbot":
 
 ```sh
 pf flow init --flow my_chatbot --type chat
 ```
+### Chat with your flow
 
-This command will create a new **flow folder** named "my_chatbot" using the "chat" template.
-
-> You can choose to directly run our sample flows. Click to start your [Get started with web classification flow](examples/flows/standard/web-classification/README.md) journey!
-
-### ④ - Quick test your flow
-
-Let your chatbot complete a specific task of solving a math problem, you need to inform the LLM about the task and target in your prompt.
-
-Open the `chat.jinia2` file in the folder, overwrite the file content with the following prompt (tasks and targets are highlighted in the system prompt):
-
-```jinja2
-system:
-You are an assistant specialized in math computation. Your task is to solve math problems. Please provide the result number only in your response. 
-
-{% for item in chat_history %}
-user:
-{{item.inputs.question}}
-assistant:
-{{item.outputs.answer}}
-{% endfor %}
-
-user:
-{{question}}
-```
-
-Run the following command to test your prompt on a single input question:
+Run the following command to chat with your flow. Input your math question in the `User` section. Click `Ctrl + C` to finsih the test:
 
 ```sh
 pf flow test --flow my_chatbot --interactive
 ```
-
-Input the math question in the `User` section, for example, "James has 7 apples. 4 of them are red, and 3 of them are green. If he chooses 2 apples at random, what is the probability that both the apples he chooses are green?"
-
-Click `Ctrl + C` to end the interactive testing.
-
-## Prompt Flow value: Improve Quality 🏃‍♂️
-
-LLMs are known for their random nature, resulting in unstable generated answers. Fine-tuning the prompt can further enhance the reliability of the generated outputs. To accurately assess the quality of fine-tuned, testing with a larger dataset and comparing generated outputs to the ground truth is essential.  the prompt can further enhance the reliability of the generated outputs.
-
-<h3> Prototype ▶ Tunning  ➕  Batch Testing ➕ Evaluation ▶ Facilitate high quality LLM-native apps to production</h3>
- 
-| With prompt flow, in 10 minutes, test various prompts on multi-row inputs, evaluate accuracy against ground truth, and find the best prompt for target accuracy and token cost!| <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/>|  
-| :------ | :------: |
-
-👉[Try to tune the prompt, test and evaluate it!](examples/tutorials/quick-start/tune-your-prompt.md)
+Next step: Let's start prompt tuning, testing, and evaluating on a real-world case to see the improvements in output reliability!
 
 ## Tutorial
+
+### Value in Evaluation and Quality Improvement 🏃‍♂️
+
+LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability. Testing with larger datasets and comparing outputs to the ground truth is crucial for accurate quality assessment.
+
+Prototype ➡️ Tunning  ➕  Batch Testing ➕ Evaluation ➡️ Ensure high quality before production
+
+| Spare only 10 minutes to quickly grasp (👉[Try the easy case!](examples/tutorials/quick-start/tune-your-prompt.md) ) how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓)| <img src="examples/tutorials/quick-start/media/realcase.png" alt="alt text" width="2000px"/>|  
+| :------ | :------: |
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
 - [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.

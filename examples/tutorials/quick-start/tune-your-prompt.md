@@ -4,11 +4,16 @@
 
 Before proceeding with this tutorial, please ensure that you have completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) tutorial.
 
-In this tutorial, we will be also using the `my_chatbot` flow as an example. Please make sure to keep this flow in the `pf-test` folder within your environment.
+In this tutorial, we;ll be also using the `my_chatbot` flow as our example.  Start by creating a `pf-test` folder and place your `my_chatbot` flow folder within it.
 
 ```sh
+mkdir pf-test
 cd pf-test
+mv <path-to-the-my_chatbot-folder> .  # move your my_chatbot flow folder into pf-test
 ```
+
+> [!Note]
+> For the purpose of swift testing, this tutorial uses CLI commands.
 
 ## Evaluate the quality of your prompt
 
