@@ -49,6 +49,7 @@ def add_flow_parser(subparsers):
     add_parser_test_flow(flow_subparsers)
     add_parser_serve_flow(flow_subparsers)
     add_parser_build(flow_subparsers, "flow")
+    add_parser_validate_flow(flow_subparsers)
     flow_parser.set_defaults(action="flow")
 
 
@@ -66,6 +67,8 @@ def dispatch_flow_commands(args: argparse.Namespace):
         serve_flow(args)
     elif args.sub_action == "build":
         build_flow(args)
+    elif args.sub_action == "validate":
+        validate_flow(args)
 
 
 def add_parser_init_flow(subparsers):
@@ -109,14 +112,14 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
 
 def add_parser_serve_flow(subparsers):
     """Add flow serve parser to the pf flow subparsers."""
-    epilog = """  # noqa: E501
+    epilog = """
 Examples:
 
 # Serve flow as an endpoint:
 pf flow serve --source <path_to_flow>
 # Serve flow as an endpoint with specific port and host:
 pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment-variables key1="`${my_connection.api_key}" key2="value2"
-"""
+"""  # noqa: E501
     add_param_port = lambda parser: parser.add_argument(  # noqa: E731
         "--port", type=int, default=8080, help="The port on which endpoint to run."
     )
@@ -140,6 +143,37 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
         + logging_params,
         subparsers=subparsers,
         help_message="Serving a flow as an endpoint.",
+        action_param_name="sub_action",
+    )
+
+
+def add_parser_validate_flow(subparsers):
+    """Add flow validate parser to the pf flow subparsers."""
+    epilog = """
+Examples:
+
+# Validate flow
+pf flow validate --source <path_to_flow>
+"""  # noqa: E501
+    activate_action(
+        name="validate",
+        description="Validate a flow and generate flow.tools.json for the flow.",
+        epilog=epilog,
+        add_params=[
+            add_param_source,
+            lambda parser: parser.add_argument(  # noqa: E731
+                "--flow-tools-json-path",
+                type=str,
+                help=argparse.SUPPRESS,
+            ),
+            lambda parser: parser.add_argument(  # noqa: E731
+                "--tools-only",
+                action=argparse.BooleanOptionalAction,
+                help=argparse.SUPPRESS,
+            ),
+        ],
+        subparsers=subparsers,
+        help_message="Validate a flow. Will raise error if the flow is not valid.",
         action_param_name="sub_action",
     )
 
@@ -367,6 +401,22 @@ def serve_flow(args):
 
 
 def build_flow(args):
+    """
+    i. `pf flow build --source <flow_folder> --output <output_folder> --variant <variant>`
+    ii. `pf flow build --source <flow_folder> --format docker --output <output_folder> --variant <variant>`
+    iii. `pf flow build --source <flow_folder> --format executable --output <output_folder> --variant <variant>`
+
+    # default to resolve variant and update flow.dag.yaml, support this in case customer want to keep the
+    variants for continuous development
+    # we can delay this before receiving specific customer request
+    v. `pf flow build --source <flow_folder> --output <output_folder> --keep-variants`
+
+    output structure:
+    flow/
+    .connections/
+    Dockerfile|executable.exe
+    ...
+    """
     pf_client = PFClient()
 
     pf_client.flows.build(
@@ -380,3 +430,16 @@ def build_flow(args):
         f"please check {Path(args.output).joinpath('README.md').absolute().as_posix()} "
         f"for how to use it."
     )
+
+
+def validate_flow(args):
+    pf_client = PFClient()
+
+    validation_result = pf_client.flows.validate(
+        flow=args.source,
+        flow_tools_json_path=args.flow_tools_json_path,
+        tools_only=args.tools_only,
+    )
+    if validation_result:
+        print(json.dumps(validation_result, indent=4))
+        exit(1)
