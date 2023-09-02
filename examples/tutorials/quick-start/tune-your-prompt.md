@@ -1,7 +1,7 @@
-# Tutorial: Prompt tuning case
+# Tutorial: Prompt tuning and evaluation
 
 ## Evaluate the quality of your prompt
-Let's have a quick test with a larger dataset in prompt flow! 
+Let's have a quick test with a larger dataset in prompt flow!
 
 > Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), then put it under the pf-test folder.
 
@@ -37,16 +37,17 @@ You can visualize and compare the output of base_run and eval_run in a web brows
 pf run visualize -n 'base_run,eval_run'
 ```
 
+Opps! The accuracy is not good enough. It's time to tune your prompt for higher accuracy!
 
-Opps! The accuracy is not good enough. Only 35% accuracy! I need to tune the prompt for better performance.
-
-## Tune your prompt 
+## Tune your prompt
 
 To improve the quality of your prompt, you can quickly start an experiment to test your ideas.
 
-> Click to download the [prompt tuning case](./src/my_chat_variant.zip), then put it under the pf-test folder.
+> Click to [download the prompt tuning case](./src/my_chat_variant.zip), unzip it, then put the `my_chat_variant` folder under the pf-test folder.
 
-In the case flow, you can see 3 prompt variants in the flow.dag.yaml file, which point to 3 jinjia files. We leverage the Chain of Thought (CoT) prompt engineering method to modify the prompt. Try to inspire LLM's reasoning ability by feeding few-shot CoT examples.
+In the sample flow, you can see 3 Jinjia files: `chat.jinja2`, `chat_variant_1.jinja2` and `chat_variant_2.jinja2`. They are 3 prompt variants.
+
+We leverage the Chain of Thought (CoT) prompt engineering method to modify the prompt. Try to inspire LLM's reasoning ability by feeding few-shot CoT examples.
 
 Variant_0: the origin prompt
 ```
@@ -89,7 +90,9 @@ Variant_2 : 6 CoT examples.
 ```
 system:
 You are a helpful assistant. Help me with some mathematics problems of counting and probability. Think step by step and output as json format.
+
 Here are some examples:
+
 user:
 A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
 assistant:
@@ -124,18 +127,39 @@ user:
 {{question}}
 ```
 
-Run the command below to get the experiment results, then you can get the visualization of the experiment results.
-Test variant_0:
+## Test and evaluate your prompt variants
+
+First, you need to modify your flow to add two more prompt variants into the chat node, in addition to the existed default one. In the flow.dag.yaml file, you can see 3 variants definition of the `chat` node, which point to these 3 Jinjia files.
+
+Run the CLI command below to start the experiment: test all variants, evaluate them, get the visualized comparison results of the experiment.
+
+Test and evaluate variant_0:
 ```sh
-pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_0}' --stream --name my_first_variant_run
+pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_0}' --stream --name my_variant_0_run
 ```
-Test variant_1:
 ```sh
-pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_1}' --stream --name my_first_variant_run
-```
-Test variant_2:
-```sh
-pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_2}' --stream --name my_first_variant_run
+pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
 ```
 
-Excellent! Now you can get the experiment results of your prompts, balance their performances and token costs, and choose the prompt that is most suitable for your needs.
+Test and evaluate variant_1:
+```sh
+pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_1}' --stream --name my_variant_1_run
+```
+```sh
+pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
+```
+
+Test and evaluate variant_2:
+```sh
+pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_2}' --stream --name my_variant_2_run
+```
+```sh
+pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
+```
+
+Visualize the results:
+```sh
+pf run visualize -n 'my_variant_0_run,eval_variant_0_run,my_variant_1_run,eval_variant_1_run,my_variant_2_run,eval_variant_2_run'
+```
+
+Excellent! Now you can click the html link, to get the experiment results of your prompts, balance their performances and token costs, and choose the prompt that is most suitable for your needs.
