@@ -31,6 +31,7 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 ## Get Started with Prompt flow ⚡
 
 ### Install
+
 > ℹ️ A python environment, `python=3.9` is recommended.
 
 ```sh
@@ -55,6 +56,7 @@ To finalize the connection setup, run the following CLI command:
 ```sh
 pf connection create -f connection.yaml
 ```
+
 ### Initialize a Prompt Flow Using the Chat Template
 
 Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it:
@@ -64,6 +66,7 @@ Use the following CLI command to initiate a prompt flow from a chat template. Th
 ```sh
 pf flow init --flow ./my_chatbot --type chat
 ```
+
 ### Chat with Your Flow
  
 You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session:
