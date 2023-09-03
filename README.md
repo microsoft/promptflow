@@ -31,44 +31,53 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 ## Get Started with Prompt flow ⚡
 
 ### Install
-> [!Important] 
-> A python environment, `python=3.9` is recommended.
+> ℹ️ A python environment, `python=3.9` is recommended.
 
 ```sh
 pip install promptflow promptflow-tools
 ```
 
-(Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/><font color="darkblue"><b>Prompt flow VS Code extension</b></font> from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
+(Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-### Create the connection to store your OpenAI API key
-Create a yaml file `connection.yaml` to define the connection:
-  
+### Set Up Connection for Your OpenAI API Key
+
+Let's start by preparing a dedicated folder for this quick start and a yaml file `connection.yaml` to define the connection:
+
+```sh
+mkdir pf-test
+cd pf-test
+touch connection.yaml
+```
+Open the `connection.yaml` file. Paste the following connection configuration into the file, name this connection as `open_ai_connection`, and replace `<your_openai_key>` with your OpenAI API key:
+
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
 name: open_ai_connection
 type: open_ai
-api_key: <test_key>
+api_key: <your_openai_key>
 ```
 
-Run the following CLI command to create the connection:
+To finalize the connection setup, run the following CLI command:
 
 ```sh
 pf connection create -f connection.yaml
 ```
-### Initialize a prompt flow from chat template
+### Initialize a Prompt Flow Using the Chat Template
 
-Run the following CLI command to initialize a prompt flow from chat template, which will create a new **flow folder** named "my_chatbot":
+Use the following CLI command to initiate a prompt flow from a chat template. This action will create a new flow folder called "my_chatbot":
 
 ```sh
 pf flow init --flow my_chatbot --type chat
 ```
-### Chat with your flow
-
-Run the following command to chat with your flow. Input your math question in the `User` section. Click `Ctrl + C` to finsih the test:
+### Chat with Your Flow
+ 
+You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session:
 
 ```sh
 pf flow test --flow my_chatbot --interactive
 ```
+
+What's Next? Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 
 ## Tutorial
 
