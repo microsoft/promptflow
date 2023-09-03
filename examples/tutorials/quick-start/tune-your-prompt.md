@@ -141,7 +141,7 @@ This can show the line by line input and output of the run:
 
 Next, run an **evaluation flow** to calculate the accuracy of the answers based on the previous run:
 
-> 📥 Click to [download the evaluation flow](./src/eval_accuracy.zip), unzip it, then put the flow folder in the pf-test folder.
+> 📥 Click to [download the evaluation flow](./src/eval_accuracy.zip), unzip it, then put the flow folder in the `pf-test` folder.
 
 ```sh
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
@@ -172,7 +172,7 @@ Opps! The accuracy isn't satisfactory. It's time to fine-tune your prompt for hi
 ## Fine-tuning your prompt and evaluate the improvement
 
 To improve the quality of your prompt, you can conduct an experiment to test your ideas.
-> 📥 Click to [download the chat flow](./src/my_chatbot_variant.zip). Unzip it and place the `my_chatbot_variant` folder inside the pf-test folder.
+> 📥 Click to [download the chat flow](./src/my_chatbot_variant.zip). Unzip it and place the `my_chatbot_variant` folder inside the `pf-test` folder.
 
 In this sample flow, you'll find three Jinja files: `chat.jinja2`, `chat_variant_1.jinja2` and `chat_variant_2.jinja2`. These represent three prompt variants.
 
@@ -344,7 +344,7 @@ Excellent! Now you can compare their performances and token costs, and choose th
 
 Great! Now you can compare their performances and token costs to choose the prompt that best suits your needs. Upon comparison, we can observe that variant_1 and variant_2 have the similar accuracy. However, variant_1 stands out as the better choice due to its lower token cost (2 few-shots vs. 6 few-shots).
 
-![result](media/realcase.png)
+<img src="media/realcase.png" alt="comparison resutl" width=65%/>
 
 It is evident that adding more CoT examples in the prompt does not necessarily improve the accuracy further. Instead, we should identify the optimal point where the number of shots maximizes accuracy while minimizing cost.
 
