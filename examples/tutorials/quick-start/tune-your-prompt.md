@@ -262,27 +262,35 @@ First, you need to modify your flow to add two more prompt variants into the cha
 
 Run the CLI command below to start the experiment: test all variants, evaluate them, get the visualized comparison results of the experiment.
 
+> ℹ️ By default, the connection is set to `open_ai_connection` and and the model is set to `gpt-4` for each variant, as specified in the `flow.dag.yaml` file. However, you have the flexibility to specify a different connection and model by adding `--connections chat.connection=<your_connection_name> chat.model=<model_name>` in the test run command.
+
 Test and evaluate variant_0:
 ```sh
+# Test-run
 pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
 ```
 ```sh
+# Evaluate-run
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
 ```
 
 Test and evaluate variant_1:
 ```sh
+# Test-run
 pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
 ```
 ```sh
+# Evaluate-run
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
 ```
 
 Test and evaluate variant_2:
 ```sh
+# Test-run
 pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
 ```
 ```sh
+# Evaluate-run
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
 ```
 
