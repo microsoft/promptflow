@@ -136,6 +136,7 @@ This can show the line by line input and output of the run:
 |    |               | the word        |               |               |
 |    |               | PROOF.          |               |               |
 +----+---------------+-----------------+---------------+---------------+
+| .. | ...           | ...             |...            | ...           |
 ```
 
 Next, run an **evaluation flow** to calculate the accuracy of the answers based on the previous run:
@@ -171,7 +172,7 @@ Opps! The accuracy isn't satisfactory. It's time to fine-tune your prompt for hi
 ## Fine-tuning your prompt and evaluate the improvement
 
 To improve the quality of your prompt, you can conduct an experiment to test your ideas.
-Click to [download the chat flow](./src/my_chat_variant.zip). Unzip it and place the `my_chatbot_variant` folder inside the pf-test folder.
+> 📥 Click to [download the chat flow](./src/my_chatbot_variant.zip). Unzip it and place the `my_chatbot_variant` folder inside the pf-test folder.
 
 In this sample flow, you'll find three Jinja files: `chat.jinja2`, `chat_variant_1.jinja2` and `chat_variant_2.jinja2`. These represent three prompt variants.
 
