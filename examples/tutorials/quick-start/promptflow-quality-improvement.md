@@ -31,24 +31,24 @@ Run the following command to test the flow with a simple math problem:
 ```sh
 pf flow test --flow ./my_chatbot_origin --inputs question=1+1=?
 ```
-Then you will get the following output, for example:
+This will yield the following output:
 ```sh
 {
     "answer": "2"
 }
 ```
 
-You can test it with a complex math problem, such as:
+Sometime, the question may be challenging. Now, let's test it with a complex math problem, such as:
 
 @Jieting to put a nagtive example here, and refine the following description.
 
-But you can see that the LLM doesn't calculate the answer correctly. You may be curious about what's the excact performance of the flow with other math problems.
+The answer is incorrect! If the flow fails to produce the correct answer, this is a cue for you to question the flow's overall performance with other math problems.
 
-Next, let's test it with more questions and evaluate the quality of the flow.
+In the next step, we will test the flow with a wider variety of questions to better evaluate its quality.
 
 ## Evaluate the quality of your prompt
 
-To evaluate the performance of the flow, you can use a larger dataset for testing.
+With prompt flow, you can quickly trigger a batch-run to test your prompt with a larger dataset, and evaluate the quality of the answers.
 
 There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries, including the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one line example:
 
@@ -74,7 +74,7 @@ pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping questi
 > pf run create --flow C:\Users\test\pf-test\my_chatbot_origin --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 > ```
 
-> ⚠ The run name must be unique.Please specify a new name in `--name`. 
+> ⚠ The run name must be unique. Please specify a new name in `--name`. <br> 
 > If you see "Run 'base_run' already exists.", you can specify another name. But please remember the name you specified, because you'll need it in the next step.
 
 
