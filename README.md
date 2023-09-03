@@ -41,14 +41,7 @@ pip install promptflow promptflow-tools
 
 ### Set Up Connection for Your OpenAI API Key
 
-Let's start by preparing a dedicated folder for this quick start and a yaml file `connection.yaml` to define the connection:
-
-```sh
-mkdir pf-test
-cd pf-test
-touch connection.yaml
-```
-Open the `connection.yaml` file. Paste the following connection configuration into the file, name this connection as `open_ai_connection`, and replace `<your_openai_key>` with your OpenAI API key:
+Let's create a yaml file `connection.yaml` to define the connection. Then open it, paste the following connection configuration into the file, name this connection as `open_ai_connection`, and replace `<your_openai_key>` with your OpenAI API key:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
@@ -64,20 +57,22 @@ pf connection create -f connection.yaml
 ```
 ### Initialize a Prompt Flow Using the Chat Template
 
-Use the following CLI command to initiate a prompt flow from a chat template. This action will create a new flow folder called "my_chatbot":
+Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it:
+
+> The `--flow` argument is used to specify the path to the flow folder.
 
 ```sh
-pf flow init --flow my_chatbot --type chat
+pf flow init --flow ./my_chatbot --type chat
 ```
 ### Chat with Your Flow
  
 You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session:
 
 ```sh
-pf flow test --flow my_chatbot --interactive
+pf flow test --flow ./my_chatbot --interactive
 ```
 
-What's Next? Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
+What's Next? Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow's value.
 
 ## Tutorial
 

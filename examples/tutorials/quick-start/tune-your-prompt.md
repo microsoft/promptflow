@@ -2,26 +2,63 @@
 
 ## Prerequisite
 
-Before proceeding with this tutorial, please ensure that you have completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) tutorial.
+Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) tutorial.
 
-In this tutorial, we;ll be also using the `my_chatbot` flow as our example.  Start by creating a `pf-test` folder and place your `my_chatbot` flow folder within it.
+This tutorial also uses the `my_chatbot flow` as an example. To begin, create a `pf-test` folder and initialize `my_chatbot` within it:
 
 ```sh
 mkdir pf-test
 cd pf-test
-mv <path-to-the-my_chatbot-folder> .  # move your my_chatbot flow folder into pf-test
+pf flow init --flow ./my_chatbot --type chat  # initiate a flow using the chat template
 ```
 
 > [!Note]
-> For the purpose of swift testing, this tutorial uses CLI commands.
+> For expedited testing, this tutorial utilizes CLI command.
+
+## Customize the Flow for a Specific Task
+ 
+To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. For this, we'll tweak the prompt in `chat.jinja2` file in the my_chatbot folder.
+
+Open `chat.jinja2` and overwrite its content with the following prompt. Note that tasks and targets are highlighted in the system prompt:
+
+```jinja2
+system:
+You are an assistant specialized in math computation. Your task is to solve math problems. Please provide the result number only in your response.  
+
+{% for item in chat_history %}
+user:
+{{item.inputs.question}}
+assistant:
+{{item.outputs.answer}}
+{% endfor %}
+
+user:
+{{question}}
+```
+
+You should see an output similar to the following:
+
+```sh
+pf flow test --flow ./my_chatbot --inputs question=1+1=?
+```
+Then you will get the following output, for example:
+```sh
+2023-09-03 12:29:55 +0800   12296 execution          INFO     Start to run 1 nodes with concurrency level 16.
+2023-09-03 12:29:55 +0800   12296 execution.flow     INFO     Executing node chat. node run id: a82c6ac7-c099-4505-a5e0-82e0e4359962_chat_0
+2023-09-03 12:29:56 +0800   12296 execution.flow     INFO     Node chat completes.
+{
+    "answer": "2"
+}
+```
+Congratulations! The LLM has successfully solved the math problem and returned the numerical answer.
 
 ## Evaluate the quality of your prompt
 
-Let's do a quick test of the `my_chatbot` flow using a larger dataset.
+To evaluate the performance of the flow, you can use a larger dataset for testing.
 
-> Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), then place it in the pf-test folder as well.
+> Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), and place it in the `pf-test` folder.
 
-The dataset is a JSONL file containing 20 lines of test data, including the input question, ground truth for numerical answer and reasoning. Here's an example:
+The dataset is a JSONL file containing 20 test data entries, which include the input question, the ground truth for numerical answer, and the reasoning. Here's an example:
 
 ```json
 {
@@ -32,22 +69,26 @@ The dataset is a JSONL file containing 20 lines of test data, including the inpu
 
 ```
 
-Run the following command to test your prompt in 20 lines input questions:
+Run the following command to test your prompt with this dataset:
 
 > [!Note]
-> For CMD users, please use double quotes instead of single quotes in the column-mapping argument (e.g. `--column-mapping question="${data.question}"`) . Shell users can use either single or double quotes.
->
-> For CMD users, please use the absolute path of the test dataset (e.g. `--data C:\Users\test\pf-test\test_data.jsonl`) and flow folder (e.g. `--flow C:\Users\test\pf-test\my_chatbot`).
+> For CMD users:
+> * Please use double quotes instead of single quotes in the column-mapping argument (e.g. `--column-mapping question="${data.question}"`). Shell users can use either single or double quotes. 
+> * CMD users should also use the absolute path (e.g., `--data C:\Users\test\pf-test\test_data.jsonl`and `--flow C:\Users\test\pf-test\my_chatbot`).
+
+
 
 ```sh
 pf run create --flow my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --stream
 ```
 
 > [!Note]
-> The run name is unique. If 'base_run' has already existed, please specify a new name in `--name`. Or you can run without `--name` specified, will generate a random run name, and you can get it via the log output. For example:
+> The run name must be unique. If 'base_run' already exists, please specify a new name in `--name`. You can run the command without specifying `--name` to generate a random run name, which you can find in the log output.
+
+The log output should be like this:
+
 ```
 ......
-2023-09-02 16:16:24 +0800   98288 execution          INFO     Process 0 queue empty, exit.
 2023-09-02 16:16:25 +0800   98288 execution          INFO     Process 4 queue empty, exit.
 ======= Run Summary =======
 
@@ -58,14 +99,16 @@ Duration: "0:00:22.832404"
 ......
 ```
 
-You can see the run details by:
+To see the run details, run the following command:
 ```sh
 pf run show-details -n base_run
 ```
 
 Then, run a specific flow for **evaluation** to calculate the accuracy of the answers based on previous run:
 
-> Click to [download the evaluation flow](./src/eval_accuracy.zip), then put it under the pf-test folder.
+Next, run an **evaluation flow** to calculate the accuracy of the answers based on the previous run:
+
+> Click to [download the evaluation flow](./src/eval_accuracy.zip), unzip it, then put the flow folder in the pf-test folder.
 
 ```sh
 pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
@@ -82,17 +125,16 @@ You can visualize and compare the output of base_run and eval_run in a web brows
 pf run visualize -n 'base_run,eval_run'
 ```
 
-Opps! The accuracy is not good enough. It's time to tune your prompt for higher accuracy!
+Opps! The accuracy isn't satisfactory. It's time to fine-tune your prompt for higher quality!
 
-## Tune your prompt
+## Fine-tuning your prompt
 
-To improve the quality of your prompt, you can quickly start an experiment to test your ideas.
+To improve the quality of your prompt, you can conduct an experiment to test your ideas.
+Click to [download the prompt tuning case](./src/my_chat_variant.zip). Unzip it and place the `my_chat_variant` folder inside the pf-test folder.
 
-> Click to [download the prompt tuning case](./src/my_chat_variant.zip), unzip it, then put the `my_chat_variant` folder under the pf-test folder.
+In this sample flow, you'll find three Jinja files: `chat.jinja2`, `chat_variant_1.jinja2` and `chat_variant_2.jinja2`. These represent three prompt variants.
 
-In the sample flow, you can see 3 Jinjia files: `chat.jinja2`, `chat_variant_1.jinja2` and `chat_variant_2.jinja2`. They are 3 prompt variants.
-
-We leverage the Chain of Thought (CoT) prompt engineering method to modify the prompt. Try to inspire LLM's reasoning ability by feeding few-shot CoT examples.
+We leverage the Chain of Thought (CoT) prompt engineering method to adjust the prompt. The goal is to activate the Language Model's reasoning capability of the questions, by providing a few CoT examples.
 
 Variant_0: the origin prompt
 ```
