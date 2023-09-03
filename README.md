@@ -84,7 +84,7 @@ LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve out
 
 Prototype ➡️ Tunning  ➕  Batch Testing ➕ Evaluation ➡️ Ensure high quality before production
 
-| Spare only 15 minutes to quickly grasp how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓) 👉[Try the easy case!](examples/tutorials/quick-start/tune-your-prompt.md) | <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
+| Spare only 15 minutes to quickly grasp how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓) 👉[Try the easy case!](examples/tutorials/quick-start/promptflow-quality-improvement.md) | <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
 | :------ | :------: |
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
