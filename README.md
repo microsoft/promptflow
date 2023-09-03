@@ -38,8 +38,6 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 pip install promptflow promptflow-tools
 ```
 
-(Optional) Install <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
-
 ### Set Up Connection for Your OpenAI API Key
 
 Let's create a yaml file `connection.yaml` to define the connection. Then open it, paste the following connection configuration into the file, name this connection as `open_ai_connection`, and replace `<your_openai_key>` with your OpenAI API key:
@@ -56,6 +54,7 @@ To finalize the connection setup, run the following CLI command:
 ```sh
 pf connection create -f connection.yaml
 ```
+More details about connection setup can be found [here](https://microsoft.github.io/concepts/concept-connections.html).
 
 ### Initialize a Prompt Flow Using the Chat Template
 
@@ -85,7 +84,7 @@ LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve out
 
 Prototype ➡️ Tunning  ➕  Batch Testing ➕ Evaluation ➡️ Ensure high quality before production
 
-| Spare only 10 minutes to quickly grasp (👉[Try the easy case!](examples/tutorials/quick-start/tune-your-prompt.md) ) how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓)| <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
+| Spare only 15 minutes to quickly grasp how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓) 👉[Try the easy case!](examples/tutorials/quick-start/tune-your-prompt.md) | <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
 | :------ | :------: |
 
 Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
@@ -93,6 +92,16 @@ Develop your LLM apps with Prompt flow: please start with our [docs](https://mic
 - [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
 
 Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
+
+## VS Code Extension
+
+Besides the SDK, we also provide a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** to help you develop your flow in an interactive way with an User Interface.
+
+![vsc extension](docs/media/how-to-guides/quick-start/vscode-flow-dag.png)
+
+Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). 
+
+Get started with the extension: [VS Code Extension](https://microsoft.github.io/how-to-guides/quick-start.html#using-vs-code-extension-to-visualize-the-flow)
 
 ## Contributing
 

@@ -1,71 +1,48 @@
-# Tutorial: Prompt tuning and evaluation
+# Tutorial: How prompt flow helps on quality improvement
 
 ## Prerequisite
 
-Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) tutorial.
+Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance.
 
-This tutorial also uses the `my_chatbot flow` as an example. To begin, create a `pf-test` folder and initialize `my_chatbot` within it:
+Click to [download the samples](./pf-test.zip), unzip it, and go into the `pf-test` folder, where contains the sample flow and test data we'll use in this tutorial:
 
 ```sh
-mkdir pf-test
 cd pf-test
-pf flow init --flow ./my_chatbot --type chat  # initiate a flow using the chat template
+ls
 ```
+> ℹ️ For testing quickly, this tutorial uses CLI command.
 
-> ℹ️ For expedited testing, this tutorial utilizes CLI command.
+Next, let's get started with customizing the flow for a specific task.
 
 ## Customize the Flow for a Specific Task
- 
-To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. For this, we'll tweak the prompt in `chat.jinja2` file in the my_chatbot folder.
 
-Open `chat.jinja2` and overwrite its content with the following prompt. Note that tasks and targets are highlighted in the system prompt:
+In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
+ 
+To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
 
 ```jinja2
 system:
-You are an assistant to calculate the answer to the provided math problems. Please return the final numerical answer only, without any accompanying reasoning or explanation.
-
-{% for item in chat_history %}
-user:
-{{item.inputs.question}}
-assistant:
-{{item.outputs.answer}}
-{% endfor %}
-
-user:
-{{question}}
+You are an assistant to calculate the answer to the provided math problems. 
+Please return the final numerical answer only, without any accompanying reasoning or explanation.
 ```
 
-You should see an output similar to the following:
+Run the following command to test the flow with a simple math problem:
 
 ```sh
-pf flow test --flow ./my_chatbot --inputs question=1+1=?
+pf flow test --flow ./my_chatbot_origin --inputs question=1+1=?
 ```
 Then you will get the following output, for example:
 ```sh
-2023-09-03 14:21:23 +0800   77320 execution          INFO     Start to run 1 nodes with concurrency level 16.
-2023-09-03 14:21:23 +0800   77320 execution.flow     INFO     Executing node chat. node run id: 990b3eb7-396d-474d-baf3-0123ab1d3705_chat_0
-2023-09-03 14:21:25 +0800   77320 execution.flow     INFO     Node chat completes.
 {
     "answer": "2"
 }
 ```
 
-You can test it with a complex math problem again, such as:
+You can test it with a complex math problem, such as:
 
-```sh
-pf flow test --flow ./my_chatbot --inputs question="James has 7 apples. 4 of them are red, and 3 of them are green. If he chooses 2 apples at random, what is the probability that both the apples he chooses are green?"
-```
-The output should be like this:
-```sh
-2023-09-03 14:22:36 +0800   59596 execution          INFO     Start to run 1 nodes with concurrency level 16.
-2023-09-03 14:22:36 +0800   59596 execution.flow     INFO     Executing node chat. node run id: f4e15bdb-3392-4c88-b02e-7af42ddc9f68_chat_0
-2023-09-03 14:22:37 +0800   59596 execution.flow     INFO     Node chat completes.
-{
-    "answer": "1/21"
-}
-```
+@Jieting to put a nagtive example here, and refine the following description.
 
-Congratulations! The LLM has successfully solved the math problem and returned the numerical answer.
+But you can see that the LLM doesn't calculate the answer correctly. You may be curious about what's the excact performance of the flow with other math problems.
 
 Next, let's test it with more questions and evaluate the quality of the flow.
 
@@ -73,52 +50,41 @@ Next, let's test it with more questions and evaluate the quality of the flow.
 
 To evaluate the performance of the flow, you can use a larger dataset for testing.
 
-> 📥 Click to [download the test dataset](./tune-your-prompt-samples/test_data.jsonl), and place it in the `pf-test` folder.
-
-The dataset is a JSONL file containing 20 test data entries, which include the input question, the ground truth for numerical answer, and the reasoning. Here's an example:
+There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries, including the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one line example:
 
 ```json
 {
-    "question": "Determine the number of ways to arrange the letters of the word PROOF.", // input question
-    "answer": "60", // ground truth for numerical answer
-    "raw_answer": "There are two O's and five total letters, so the answer is $\\dfrac{5!}{2!} = \\boxed{60}$." // ground truth for reasoning
+    "question": "Determine the number of ways to arrange the letters of the word PROOF.", 
+    "answer": "60", 
+    "raw_answer": "There are two O's and five total letters, so the answer is $\\dfrac{5!}{2!} = \\boxed{60}$." 
 }
 
 ```
 
 Run the following command to test your prompt with this dataset:
 
-The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results:
+>The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results:
 
 ```sh
 pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 ```
 
-> 🧰 Troubleshooting:
-> * UserErrorException: Column mapping must contain at least one mapping binding.
->   * (For CMD users) Try to use double quotes instead of single quotes in the `column-mapping` argument (e.g. `--column-mapping question="${data.question}"`).
-> * RunExistsError: Run 'base_run' already exists.
->     * The run name must be unique.Please specify a new name in `--name`. You can run the command without specifying `--name` to generate a random run name, which you can find in the log output, in `Run name` section.
-> * CMD users should also use the absolute path (e.g., `--data C:\Users\test\pf-test\test_data.jsonl`and `--flow C:\Users\test\pf-test\my_chatbot`).
+> ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
+> ```sh 
+> pf run create --flow C:\Users\test\pf-test\my_chatbot_origin --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
+> ```
 
-The log output should be like this:
+> ⚠ The run name must be unique.Please specify a new name in `--name`. 
+> If you see "Run 'base_run' already exists.", you can specify another name. But please remember the name you specified, because you'll need it in the next step.
 
-```
-......
-2023-09-02 16:16:25 +0800   98288 execution          INFO     Process 4 queue empty, exit.
-======= Run Summary =======
 
-Run name: "my_chatbot_default_20230902_161602_591557"
-Run status: "Completed"
-Start time: "2023-09-02 16:16:02.336443"
-Duration: "0:00:22.832404"
-......
-```
+When it completes, you can run the following command to see the details of results:
+> Specify the run name of your completed run in `--name` argument:
 
-To see the run details, run the following command, specify the run name of your completed run in `--name` argument:
 ```sh
 pf run show-details --name base_run
 ```
+
 This can show the line by line input and output of the run:
 ```
 +----+---------------+-----------------+---------------+---------------+
@@ -139,9 +105,9 @@ This can show the line by line input and output of the run:
 | .. | ...           | ...             |...            | ...           |
 ```
 
-Next, run an **evaluation flow** to calculate the accuracy of the answers based on the previous run:
+Next, create an **evaluation run** to calculate the accuracy of the answers based on the previous run.
 
-> 📥 Click to [download the evaluation flow](./src/eval_accuracy.zip), unzip it, then put the flow folder in the `pf-test` folder.
+In the `pf-test` folder, you can see a `eval_accuracy` folder, which represents an evaluation flow. We'll use this flow to evaluate the accuracy of the answers.
 
 ```sh
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
@@ -157,6 +123,10 @@ You can visualize and compare the output line by line of `base_run` and `eval_ru
 ```sh
 pf run visualize --name 'base_run,eval_run'
 ```
+> ⚠ For Windows CMD users, please use double quotes instead of single quotes in the `--name` argument. The command should be like this:
+> ```sh
+> pf run visualize --name "base_run,eval_run"
+> ```
 
 Because of the randomness of the LLM, the accuracy may vary. For example, in my run, the metrics are as follows:
 
@@ -171,33 +141,22 @@ Opps! The accuracy isn't satisfactory. It's time to fine-tune your prompt for hi
 
 ## Fine-tuning your prompt and evaluate the improvement
 
-To improve the quality of your prompt, you can conduct an experiment to test your ideas.
-> 📥 Click to [download the chat flow](./src/my_chatbot_variant.zip). Unzip it and place the `my_chatbot_variant` folder inside the `pf-test` folder.
+In the `pf-test` folder, you can see a `my_chatbot_variant` folder, which represents a flow with two additional prompt variants compared to the original `my_chatbot_origin`. 
 
-In this sample flow, you'll find three Jinja files: `chat.jinja2`, `chat_variant_1.jinja2` and `chat_variant_2.jinja2`. These represent three prompt variants.
+In this sample flow, you'll find three Jinja files: 
+* `chat.jinja2` is the original prompt as same as the one in `my_chatbot_origin`.
+* `chat_variant_1.jinja2` and `chat_variant_2.jinja2` are the 2 additional prompt variants.
 
 We leverage the Chain of Thought (CoT) prompt engineering method to adjust the prompt. The goal is to activate the Language Model's reasoning capability of the questions, by providing a few CoT examples.
-
-Variant_0: the origin prompt
-```
-system:
-You are a helpful assistant. Help me with some mathematics problems of counting and probability. Please provide the result number only in your response.
-{% for item in chat_history %}
-user:
-{{item.inputs.question}}
-assistant:
-{{item.outputs.answer}}
-{% endfor %}
-user:
-{{question}}
-```
 
 Variant_1: 2 CoT examples
 
 ```
 system:
-You are a helpful assistant. Help me with some mathematics problems of counting and probability. Think step by step and output as json format.
-Here are some examples:
+You are an assistant to calculate the answer to the provided math problems.
+Please think step by step.
+Return the final numerical answer only and any accompanying reasoning or explanation seperately as json format.
+
 user:
 A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
 assistant:
@@ -219,9 +178,9 @@ user:
 Variant_2 : 6 CoT examples.
 ```
 system:
-You are a helpful assistant. Help me with some mathematics problems of counting and probability. Think step by step and output as json format.
-
-Here are some examples:
+You are an assistant to calculate the answer to the provided math problems.
+Please think step by step.
+Return the final numerical answer only and any accompanying reasoning or explanation seperately as json format.
 
 user:
 A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
@@ -256,6 +215,8 @@ assistant:
 user:
 {{question}}
 ```
+
+These two jinjia files are specified in the `flow.dag.yaml` file, which defines the flow structure. You can see that the `chat` node has 3 variants, which point to these 3 Jinjia files.
 
 ## Test and evaluate your prompt variants
 
@@ -325,10 +286,6 @@ Visualize the results:
 ```sh
 pf run visualize --name 'my_variant_0_run,eval_variant_0_run,my_variant_1_run,eval_variant_1_run,my_variant_2_run,eval_variant_2_run'
 ```
-
-> 🧰 Troubleshooting:
-> * RunNotFoundError: Run name "'my_variant_0_run" cannot be found..
->   * (For CMD users) Try to use double quotes instead of single quotes in the `--name` argument.
 
 Click the HTML link, to get the experiment results. Click on column in the **Output** table will allow you to view the snapshot of each line.
 
