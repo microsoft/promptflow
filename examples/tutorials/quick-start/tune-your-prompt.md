@@ -79,7 +79,7 @@ Run the following command to test your prompt with this dataset:
 
 
 ```sh
-pf run create --flow my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --stream
+pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --stream
 ```
 
 > [!Note]
@@ -111,7 +111,7 @@ Next, run an **evaluation flow** to calculate the accuracy of the answers based 
 > Click to [download the evaluation flow](./src/eval_accuracy.zip), unzip it, then put the flow folder in the pf-test folder.
 
 ```sh
-pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
+pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
 ```
 
 Then get metrics of the eval_run:
@@ -223,26 +223,26 @@ Run the CLI command below to start the experiment: test all variants, evaluate t
 
 Test and evaluate variant_0:
 ```sh
-pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_0}' --stream --name my_variant_0_run
+pf run create --flow ./my_chat_variant --data test_data.jsonl --variant '${chat.variant_0}' --stream --name my_variant_0_run
 ```
 ```sh
-pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
+pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
 ```
 
 Test and evaluate variant_1:
 ```sh
-pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_1}' --stream --name my_variant_1_run
+pf run create --flow ./my_chat_variant --data test_data.jsonl --variant '${chat.variant_1}' --stream --name my_variant_1_run
 ```
 ```sh
-pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
+pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
 ```
 
 Test and evaluate variant_2:
 ```sh
-pf run create --flow my_chat_variant --data test_data.jsonl --variant '${chat.variant_2}' --stream --name my_variant_2_run
+pf run create --flow ./my_chat_variant --data test_data.jsonl --variant '${chat.variant_2}' --stream --name my_variant_2_run
 ```
 ```sh
-pf run create --flow eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
+pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
 ```
 
 Visualize the results:
