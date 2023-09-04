@@ -54,16 +54,6 @@ refer to [Setup connection for web-classifiction](https://github.com/microsoft/p
 
 Additionally, please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions.
 
-## Build a flow as docker format app
-
-Use the command below to build a flow as docker format app:
-
-```bash
-pf flow build --source ../../examples/flows/standard/web-classification --output build --format docker
-```
-
-Note that all dependent connections must be created before exporting as docker.
-
 ### Build Docker image
 
 Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `web-classification-serve`.
@@ -71,7 +61,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 Then run the command below:
 
 ```bash
-cd build
+cd <your-output-dir>
 docker build . -t web-classification-serve
 ```
 
@@ -87,32 +77,14 @@ docker push <your-docker-hub-id>/web-classification-serve
 ```
 
 ### Create Kubernetes deployment yaml.
-The Kubernetes deployment yaml file serves as a blueprint for orchestrating your docker container within a Kubernetes pod. It meticulously outlines essential details, including the container image, port configurations, environment variables, and various settings. Presented below is a basic deployment template for your convenience, which you can effortlessly tailor to your specific requirements.
+The Kubernetes deployment yaml file serves as a blueprint for orchestrating your docker container within a Kubernetes pod. It meticulously outlines essential details, including the container image, port configurations, environment variables, and various settings. We have presented a [basic deployment template](../../../examples/tutorials/flow-deploy/kubernetes/deployment.yaml) for your convenience, which you can effortlessly tailor to your specific requirements.
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: web-classification-serve-app
-spec:
-  selector:
-    matchLabels:
-      app: web-classification-serve-app
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: web-classification-serve-app
-    spec:
-      containers:
-      - name: web-classification-serve-container
-        image: <your-docker-hub-id>/web-classification-serve-update
-        ports:
-        - containerPort: <container_port>
+You need encode the secret using base64 firstly and input the encoded value as 'open-ai-connection-api-key' in the deployment configuration, for example:
+```bash
+echo -n 'secret' | base64
 ```
 
-
-### Apply the Deployment.
+### Apply the deployment.
 Before you can deploy your application, ensure that you have set up a Kubernetes cluster and installed [kubectl](https://kubernetes.io/docs/reference/kubectl/) if it's not already installed. In this documentation, we will use [Minikube](https://minikube.sigs.k8s.io/docs/) as an example. To start the cluster, execute the following command:
 ```bash
 minikube start
@@ -124,9 +96,12 @@ kubectl apply -f deployment.yaml
 This command will create the necessary pods to run your application within the cluster.
 
 
-### Access the container shell to initiate the service
-Prior to testing the endpoint, we must launch a service within the container to serve the flow.
+### Retrieve flow service logs of the container
+The kubectl logs command is used to retrieve the logs of a container running within a pod, which can be useful for debugging, monitoring, and troubleshooting applications deployed in a Kubernetes cluster.
 
+```bash
+kubectl -n <your-namespace> logs <pod-name>
+```
 #### Connections
 If the service involves connections, all related connections will be exported as yaml files and recreated in containers.
 Secrets in connections won't be exported directly. Instead, we will export them as a reference to environment variables:
@@ -139,25 +114,28 @@ api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ```
 You'll need to set up the environment variables in the container to make the connections work.
 
-#### Run with `kubectl exec`
-The ```kubectl exec -it``` command is a commonly used command in Kubernetes for executing commands inside a running container. To commence the service, utilize the following commands:
-```bash
-kubectl exec -it <pod_name> -- /bin/bash -c "export OPEN_AI_CONNECTION_API_KEY=<secret-value> && ./start.sh"
-```
-
 ### Test the endpoint
-Once you've started the service, you can establish a connection between a local port and a port on the pod. This allows you to conveniently test the endpoint from your local terminal.
-To achieve this, execute the following command:
+- Option1:
 
-```bash
-kubectl port-forward <pod_name> <local_port>:<container_port>
-```
-With the port forwarding in place, you can use the curl command to initiate the endpoint test:
+  Once you've started the service, you can establish a connection between a local port and a port on the pod. This allows you to conveniently test the endpoint from your local terminal.
+  To achieve this, execute the following command:
 
-```bash
-curl http://localhost:<local_port>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
-```
+  ```bash
+  kubectl port-forward <pod_name> <local_port>:<container_port>
+  ```
+  With the port forwarding in place, you can use the curl command to initiate the endpoint test:
 
+  ```bash
+  curl http://localhost:<local_port>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
+  ```
 
+- Option2:
+  ```minikube service web-classification-service --url -n <your-namespace>``` runs as a process, creating a tunnel to the cluster. The command exposes the service directly to any program running on the host operating system.
+
+  The command above will generate a URL, which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint: 
+
+    ```bash
+  curl http://<url-above>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
+  ```
 ## Next steps
 - Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
