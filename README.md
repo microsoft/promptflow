@@ -56,14 +56,6 @@ pf flow init --flow ./my_chatbot --type chat
 Navigate to the `my_chatbot` folder, you can find a yaml file named `openai.yaml` file, which is the definition of the connection to store your Open AI key.
 </details>
 
-
-Establish the connection by running:
-
-```sh
-# Override keys with --set to avoid yaml file changes
-pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key>
-```
-
 > <details>
 > <summary>For Azure Open AI, follow the respective setup guide.</summary>
 > 
@@ -81,9 +73,17 @@ pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key
 > 
 > Establish the connection by running:
 > ```sh
-> pf connection create --file azure_openai.yaml
+> pf connection create --file ./my_chatbot/azure_openai.yaml
 > ```
 > </details>
+
+For Open AI connection, directly establish the connection by running:
+
+
+```sh
+# Override keys with --set to avoid yaml file changes
+pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key>
+```
 
 <details>
 <summary><b>Chat with your flow</b></summary>
