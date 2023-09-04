@@ -17,8 +17,7 @@ Prompt flow provides 3 basic tools:
 
 Our partners also contributes other useful tools for advanced scenarios, here are some links:
 - [Vector DB Lookup](../reference/tools-reference/vector_db_lookup_tool.md): vector search tool that allows users to search top k similar vectors from vector database.
-- [Vector Index Lookup](../reference/tools-reference/vector_index_lookup_tool.md): querying within a Azure ML Vector Index
-- [Faiss Index Lookup](../reference/tools-reference/faiss_index_lookup_tool.md): querying within a user-provided Faiss-based vector store
+- [Faiss Index Lookup](../reference/tools-reference/faiss_index_lookup_tool.md): querying within a user-provided Faiss-based vector store.
 
 ## Custom tools
 

@@ -3,13 +3,12 @@
 # ---------------------------------------------------------
 
 import argparse
-import getpass
 import json
 import logging
 from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
-from promptflow._cli._utils import activate_action, confirm, exception_handler
+from promptflow._cli._utils import activate_action, confirm, exception_handler, print_yellow_warning, get_secret_input
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
@@ -149,7 +148,12 @@ def validate_and_interactive_get_secrets(connection, is_update=False):
         if not missing_secrets_prompt:
             print(prompt)
             missing_secrets_prompt = True
-        connection.secrets[name] = getpass.getpass(prompt=f"{name}: ")
+        while True:
+            secret = get_secret_input(prompt=f"{name}: ")
+            if secret:
+                break
+            print_yellow_warning("Secret can't be empty.")
+        connection.secrets[name] = secret
     if missing_secrets_prompt:
         print("=================== Required secrets collected ===================")
     return connection

@@ -157,7 +157,7 @@ def get_encryption_key(generate_if_not_found: bool = False) -> str:
             raise StoreConnectionEncryptionKeyError(
                 "System keyring backend service not found in your operating system. "
                 "See https://pypi.org/project/keyring/ to install requirement for different operating system, "
-                "or 'pip install keyrings.alt' to use the third-party backend. Reach more detail about this error at"
+                "or 'pip install keyrings.alt' to use the third-party backend. Reach more detail about this error at "
                 "https://microsoft.github.io/promptflow/how-to-guides/faq.html#connection-creation-failed-with-storeconnectionencryptionkeyerror"  # noqa: E501
             ) from e
 
@@ -239,9 +239,22 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
 
 
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value
+
+
 def parse_variant(variant: str) -> Tuple[str, str]:
     variant_regex = r"\${([^.]+).([^}]+)}"
-    match = re.match(variant_regex, variant)
+    match = re.match(variant_regex, strip_quotation(variant))
     if match:
         return match.group(1), match.group(2)
     else:
