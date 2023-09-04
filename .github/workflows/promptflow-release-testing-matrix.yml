@@ -2,10 +2,22 @@ name: promptflow-release-testing-matrix
 on:
   workflow_call:
   workflow_dispatch:
+    inputs:
+      id:
+        description: Identifier for the workflow run
+        required: false
+        type: string
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: src/promptflow
 jobs:
+  id:
+    runs-on: ubuntu-latest
+    steps:
+      - name: workflow run id - ${{ inputs.id }}
+        run: |
+          set -x -e
+          echo "workflow run id: ${{ inputs.id }}"
   all_tests:
     strategy:
       fail-fast: false
