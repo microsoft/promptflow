@@ -6,7 +6,6 @@
 ls
 ls connections
 {% endif %}
-export USER_AGENT=promptflow-appservice
 {% for connection_yaml_path in connection_yaml_paths %}
 pf connection create --file /{{ connection_yaml_path }}
 {% endfor %}

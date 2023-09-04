@@ -29,7 +29,7 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import NodeConcurrencyNotFound
+from promptflow.executor._errors import NodeConcurrencyNotFound, OutputReferenceBypassed
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -38,9 +38,9 @@ from promptflow.executor._flow_nodes_scheduler import (
 from promptflow.executor._result import AggregationResult, BulkResult, LineResult
 from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
-from promptflow.storage._run_storage import DummyRunStorage
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import DummyRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -636,7 +636,7 @@ class FlowExecutor:
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
-    def _extract_outputs(self, nodes_outputs, flow_inputs):
+    def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}
         for name, output in self._flow.outputs.items():
             if output.reference.value_type == InputValueType.LITERAL:
@@ -654,6 +654,11 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
+                if node.name in bypassed_nodes:
+                    raise OutputReferenceBypassed(
+                        "Failed to extract output because the reference "
+                        f"node {output.reference.value!r} has been bypassed."
+                    )
                 raise ValueError(f"Node {output.reference.value} not found in results.")
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
@@ -664,8 +669,8 @@ class FlowExecutor:
     def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
-        nodes_outputs = self._submit_to_scheduler(context, inputs, batch_nodes)
-        outputs = self._extract_outputs(nodes_outputs, inputs)
+        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):
@@ -675,7 +680,7 @@ class FlowExecutor:
 
         return outputs
 
-    def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> dict:
+    def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
             raise NodeConcurrencyNotFound("Need to set node concurrency as using flow executor.")
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)

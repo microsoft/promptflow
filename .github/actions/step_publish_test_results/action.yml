@@ -40,6 +40,7 @@ runs:
       comment_title: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
   - name: Generate Coverage Report
+    if: ${{ inputs.coverageThreshold != 0 }}
     uses: orgoro/coverage@v3.1
     with:
       coverageFile: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
