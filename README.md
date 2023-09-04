@@ -1,5 +1,5 @@
 # Prompt flow
-![banner](examples/tutorials/quick-start/media/banner.png)
+![banner](examples/tutorials/quick-start/media/PF_banner.png)
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
@@ -82,36 +82,58 @@ What's Next? Continue with the **Tutorial**  👇 section to delve deeper into P
 
 ## Tutorial 🏃‍♂️
 
-### Evaluation and Quality Improvement 
+LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth.
 
-LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth. The process is as follows:
+Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps:
 
-Prototype ➡️ Tunning  ➕  Batch Testing ➕ Evaluation ➡️ Ensure high quality before production
+#### Step 1 - Prototyping and Developing
 
-| Invest just 15 minutes to understand how Prompt Flow accelerates prompt tuning, testing, and evaluation, to find an ideal prompt (accuracy ↑,token ↓) 👉[Try the easy case!](examples/tutorials/quick-start/promptflow-quality-improvement.md) | <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
-| :------ | :------: |
+Begin developing your LLM apps with our comprehensive [Step-by-Step Guide]((https://microsoft.github.io/promptflow/how-to-guides/quick-start.html))
 
-### Develop your LLM apps with Prompt flow
+<details>
+<summary> <b>Detailed description</b> (click to toggle the content)</summary>
+This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
+<img src="docs/media/how-to-guides/quick-start/vscode-flow-dag.png" alt="comparison resutl"/>
+</details>
+
+
+#### Step 2 - Quality Improvement
+Try the [15-mins Easy Case](examples/tutorials/quick-start/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation
+
+<details>
+<summary> <b>Detailed description</b> (click to toggle the content)</summary>
+Invest just 15 minutes to understand how prompt flow accelerates prompt tuning, testing, and evaluation, to find an ideal prompt (accuracy ↑,token ↓)
+<img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl">
+</details>
+
+#### Step 3 - Deploy and Monitor for Production
+Go through the end-to-end use case [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)
+
+<details>
+<summary> <b>Detailed description</b> (click to toggle the content)</summary>
+This is an end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+<img src="examples/flows/chat/chat-with-pdf/assets/edge-chat-pdf.png" alt="comparison resutl">
+</details>
+
+#### Additional Resources
+
+You can find more examples [here](./examples/README.md).
+
+We always welcome contributions of new use cases!
+
+Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
 #### VS Code Extension
-
-
 
 In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** for an interactive and user-friendly flow development experience.
 
 Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-| Develop your LLM apps with Prompt flow, please start with our [Get Started Step-by-Step with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A comprehensive walkthrough on invoke your first flow run. | <img src="docs/media/how-to-guides/quick-start/vscode-flow-dag.png" alt="comparison resutl" width="1000px"/>|  
-| :------ | :------: |
-
-### Use Case: Chat with PDF 
-
-| [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics. | <img src="examples/flows/chat/chat-with-pdf/assets/edge-chat-pdf.png" alt="comparison resutl" width="1000px"/>|  
-| :------ | :------: |
-
-You can find more examples [here](./examples/README.md). Welcome to contribute use case to us! 
-
-Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
+<details>
+<summary> <b>Demo</b> (click to toggle the content)</summary>
+This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
+<img src="docs/media/how-to-guides/quick-start/vscode-flow-dag.png" alt="comparison resutl"/>
+</details>
 
 ## Contributing
 
