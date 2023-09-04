@@ -40,11 +40,16 @@ This will yield the following output:
 
 Sometime, the question may be challenging. Now, let's test it with a complex math problem, such as:
 
-@Jieting to put a nagtive example here, and refine the following description.
-
-The answer is incorrect! If the flow fails to produce the correct answer, this is a cue for you to question the flow's overall performance with other math problems.
-
-In the next step, we will test the flow with a wider variety of questions to better evaluate its quality.
+```sh
+pf flow test --flow ./my_chatbot_origin --inputs question=We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?
+```
+The output is:
+```sh
+{
+    "answer": "-1"
+}
+```
+However, the correct answer is 5. The output answer is incorrect! It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
 
 ## Evaluate the quality of your prompt
 
@@ -149,14 +154,14 @@ In this sample flow, you'll find three Jinja files:
 
 We leverage the Chain of Thought (CoT) prompt engineering method to adjust the prompt. The goal is to activate the Language Model's reasoning capability of the questions, by providing a few CoT examples.
 
-Variant_1: 2 CoT examples
+<details>
+<summary>Variant_1: 2 CoT examples</summary>
 
 ```
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
-Return the final numerical answer only and any accompanying reasoning or explanation seperately as json format.
-
+Return the final numerical answer only and any accompanying reasoning or explanation seperately as json format. <br>
 user:
 A jar contains two red marbles, three green marbles, ten white marbles and no other marbles. Two marbles are randomly drawn from this jar without replacement. What is the probability that these two marbles drawn will both be red? Express your answer as a common fraction.
 assistant:
@@ -168,8 +173,11 @@ assistant:
 
 ......
 ```
+</details>
 
-Variant_2 : 6 CoT examples.
+<details>
+<summary>Variant_2 : 6 CoT examples.</summary>
+
 ```
 system:
 You are an assistant to calculate the answer to the provided math problems.
@@ -203,6 +211,7 @@ assistant:
 
 ......
 ```
+</details>
 
 These two jinjia files are specified in the `flow.dag.yaml` file, which defines the flow structure. You can see that the `chat` node has 3 variants, which point to these 3 Jinjia files.
 
