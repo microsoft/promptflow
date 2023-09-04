@@ -19,10 +19,10 @@ Next, let's get started with customizing the flow for a specific task.
 
 In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
 
-<details>
-<summary>For Azure Open AI, please modify the `flow.dag.yaml` file</summary>
-
-> Replace the connection name with you created previously, and change the 'model' to 'deployment_name'.
+><details>
+><summary>For Azure Open AI, please modify the `flow.dag.yaml` file</summary>
+>
+> Replace the connection name with the connection you created previously, and change the 'model' to 'deployment_name'.
 > ```yaml
 >nodes:
 >- name: chat
