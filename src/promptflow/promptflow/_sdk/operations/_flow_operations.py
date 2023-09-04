@@ -6,7 +6,7 @@ import json
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import Iterable, List, Union
+from typing import Iterable, List, Tuple, Union
 
 import yaml
 
@@ -133,9 +133,13 @@ class FlowOperations:
         chat_inputs = [item for item in flow.inputs.values() if item.is_chat_input]
         chat_outputs = [item for item in flow.outputs.values() if item.is_chat_output]
         chat_history_input_name = next(
-            iter([input_name for input_name, value in flow.inputs.items() if value.is_chat_history]), None)
-        if not chat_history_input_name and CHAT_HISTORY in flow.inputs and \
-                flow.inputs[CHAT_HISTORY].is_chat_history is not False:
+            iter([input_name for input_name, value in flow.inputs.items() if value.is_chat_history]), None
+        )
+        if (
+            not chat_history_input_name
+            and CHAT_HISTORY in flow.inputs
+            and flow.inputs[CHAT_HISTORY].is_chat_history is not False
+        ):
             chat_history_input_name = CHAT_HISTORY
         is_chat_flow, error_msg = True, ""
         if len(chat_inputs) != 1:
@@ -439,8 +443,7 @@ class FlowOperations:
         else:
             yield flow_dag_path
 
-    @classmethod
-    def validate(cls, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> dict:
+    def validate(self, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> dict:
         """
         Validate flow.
 
@@ -468,7 +471,7 @@ class FlowOperations:
         # TODO: check path existence of additional_includes in FlowSchema
         validation_result = FlowSchema(context={BASE_PATH_CONTEXT_KEY: flow_dag_path.parent}).validate(flow_dag_obj)
 
-        with cls._resolve_additional_includes(flow_dag_path) as new_flow_dag_path:
+        with self._resolve_additional_includes(flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
                 flow_directory=new_flow_dag_path.parent,
                 dump=False,
@@ -507,3 +510,75 @@ class FlowOperations:
 
         # TODO: convert return value to a ValidationResult object
         return validation_result
+
+    def _generate_tools_meta(
+        self,
+        flow: Union[str, PathLike],
+        *,
+        source_name: str = None,
+    ) -> Tuple[dict, dict]:
+        """Generate flow tools meta for a specific flow or a specific node in the flow.
+
+        This is a private interface for vscode extension, so do not change the interface unless necessary.
+        Sample output:
+        (
+            {
+                "convert_to_dict.py": {
+                    "type": "python",
+                    "inputs": {
+                        "input_str": {
+                            "type": [
+                                "string"
+                            ]
+                        }
+                    },
+                    "source": "convert_to_dict.py",
+                    "function": "convert_to_dict"
+                }
+            },
+            {
+                "summarize_text_content__variant_1.jinja2": "File not found: summarize_text_content__variant_1.jinja2"
+            }
+        )
+
+        Usage:
+        from promptflow import PFClient
+        PFClient().flows._generate_tools_meta(flow="flow.dag.yaml", source_name="convert_to_dict.py")
+
+        :param flow: path to the flow directory or flow dag to export
+        :type flow: Union[str, PathLike]
+        :param source_name: source name to generate tools meta. If not specified, generate tools meta for all sources.
+        :type source_name: str
+        :return: dict of tools meta and dict of tools errors
+        :rtype: Tuple[dict, dict]
+        """
+        flow_path = Path(flow)
+        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
+            flow_dag_path = flow_path / DAG_FILE_NAME
+        else:
+            flow_dag_path = flow_path
+
+        if not flow_dag_path.is_file():
+            raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
+
+        with self._resolve_additional_includes(flow_dag_path) as new_flow_dag_path:
+            flow_tools = generate_flow_tools_json(
+                flow_directory=new_flow_dag_path.parent,
+                dump=False,
+                raise_error=False,
+                include_errors_in_output=True,
+            )
+
+        # TODO: do you need flow.tools.json['package']?
+        flow_tools_meta = flow_tools.pop("code", {})
+        if source_name:
+            if source_name not in flow_tools_meta:
+                raise ValueError(f"Source {source_name} does not exist in flow {flow_dag_path.as_posix()}")
+            flow_tools_meta = {source_name: flow_tools_meta[source_name]}
+
+        tools_errors = {}
+        nodes_with_error = [node_name for node_name, message in flow_tools_meta.items() if isinstance(message, str)]
+        for node_name in nodes_with_error:
+            tools_errors[node_name] = flow_tools_meta.pop(node_name)
+
+        return flow_tools_meta, tools_errors
