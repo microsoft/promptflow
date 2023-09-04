@@ -18,7 +18,24 @@ Next, let's get started with customizing the flow for a specific task.
 ## Customize the Flow for a Specific Task
 
 In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
- 
+
+> ⚠ For Azure Open AI, please modify the `flow.dag.yaml` file. Replace the connection name with you created previously, and change the 'model' to 'deployment_name'.
+> ```yaml
+>nodes:
+>- name: chat
+>  type: llm
+>  source:
+>    type: code
+>    path: chat.jinja2
+>  inputs:
+>    deployment_name: gpt-4
+>    max_tokens: '256'
+>    temperature: '0.7'
+>    chat_history: ${inputs.chat_history}
+>    question: ${inputs.question}
+>  api: chat
+>  connection: azure_open_ai_connection
+> ```
 To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
 
 ```
