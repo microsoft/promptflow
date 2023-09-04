@@ -240,7 +240,12 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
 
 
 def strip_quotation(value):
-    return value.strip("'").strip("\"")
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value
 
 
 def parse_variant(variant: str) -> Tuple[str, str]:
