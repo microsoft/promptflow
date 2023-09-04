@@ -86,7 +86,7 @@ LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve out
 
 Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps:
 
-#### Step 1 - Prototyping and Developing
+### Step 1 - Prototyping and Developing
 
 Begin developing your LLM apps with our comprehensive [Step-by-Step Guide]((https://microsoft.github.io/promptflow/how-to-guides/quick-start.html))
 
@@ -97,7 +97,7 @@ This is a detailed walkthrough step-by-step to create your own flow from scratch
 </details>
 
 
-#### Step 2 - Quality Improvement
+### Step 2 - Quality Improvement
 Try the [15-mins Easy Case](examples/tutorials/quick-start/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation
 
 <details>
@@ -106,7 +106,7 @@ Invest just 15 minutes to understand how prompt flow accelerates prompt tuning, 
 <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl">
 </details>
 
-#### Step 3 - Deploy and Monitor for Production
+### Step 3 - Deploy and Monitor for Production
 Go through the end-to-end use case [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)
 
 <details>
@@ -115,7 +115,7 @@ This is an end-to-end tutorial on how to build a high quality chat application w
 <img src="examples/flows/chat/chat-with-pdf/assets/edge-chat-pdf.png" alt="comparison resutl">
 </details>
 
-#### Additional Resources
+### Additional Resources
 
 You can find more examples [here](./examples/README.md).
 
@@ -123,7 +123,7 @@ We always welcome contributions of new use cases!
 
 Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-#### VS Code Extension
+### VS Code Extension
 
 In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** for an interactive and user-friendly flow development experience.
 
