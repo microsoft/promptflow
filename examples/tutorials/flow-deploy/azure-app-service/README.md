@@ -9,13 +9,18 @@ We will use [web-classification](../../flows/standard/web-classification/README.
 
 ## Build a flow as docker format app
 
+Note that all dependent connections must be created before building as docker.
+```bash
+# create connection if not created before
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
+
 Use the command below to build a flow as docker format app:
 
 ```bash
 pf flow build --source ../../../flows/standard/web-classification --output build --format docker
 ```
 
-Note that all dependent connections must be created before building as docker.
 
 ## Deploy with Azure App Service
 The two scripts will do the following things:
