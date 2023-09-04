@@ -303,7 +303,13 @@ class FlowOperations:
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
-        with variant_overwrite_context(flow_dag_path, tuning_node=tuning_node, variant=node_variant) as temp_flow:
+        # TODO: shall we pop "node_variants" unless keep-variants is specified?
+        with variant_overwrite_context(
+            flow_dag_path,
+            tuning_node=tuning_node,
+            variant=node_variant,
+            drop_node_variants=True,
+        ) as temp_flow:
             # TODO: avoid copy for twice
             copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
         if update_flow_tools_json:
@@ -347,6 +353,7 @@ class FlowOperations:
         output: Union[str, PathLike],
         format: str = "docker",
         variant: str = None,
+        **kwargs,
     ):
         """
         Build flow to other format.
@@ -383,12 +390,21 @@ class FlowOperations:
         else:
             tuning_node, node_variant = None, None
 
+        flow_only = kwargs.pop("flow_only", False)
+        if flow_only:
+            output_flow_dir = output_dir
+        else:
+            output_flow_dir = output_dir / "flow"
+
         new_flow_dag_path = cls._build_flow(
             flow_dag_path=flow_dag_path,
-            output=output_dir / "flow",
+            output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
         )
+
+        if flow_only:
+            return
 
         # use new flow dag path below as origin one may miss additional includes
         connection_paths, env_var_names = cls._export_flow_connections(

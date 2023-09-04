@@ -424,6 +424,7 @@ def build_flow(args):
         output=args.output,
         format=args.format,
         variant=args.variant,
+        flow_only=args.flow_only,
     )
     print(
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"
