@@ -3,7 +3,7 @@
 ## 0.1.0b4 (2023.09.04)
 
 ### Features added
-- **pf flow validate**: validate a flow definition file
+- Support `pf flow build` commands
 
 ## 0.1.0b3 (2023.08.30)
 
