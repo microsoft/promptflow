@@ -9,7 +9,7 @@ This section contains a collection of flow samples and step-by-step tutorials.
 |SDK|[Chat with PDF - test, evaluation and experimentation](https://github.com/microsoft/promptflow/blob/main/examples/flows/chat/chat-with-pdf/chat-with-pdf.ipynb)| We will walk you through how to use prompt flow Python SDK to test, evaluate and experiment with the "Chat with PDF" flow.
 |SDK|[Connection management](https://github.com/microsoft/promptflow/blob/main/examples/connections/connection.ipynb)| Manage various types of connections using sdk
 |CLI|[Working with connection](https://github.com/microsoft/promptflow/blob/main/examples/connections/README.md)| Manage various types of connections using cli
-|SDK|[Run prompt flow in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart-azure.ipynb)| A quickstart tutorial to run a flow in Azure AI and evaluate it.
+|SDK|[Run prompt flow in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/get-started/quickstart-azure.ipynb)| A quick start tutorial to run a flow in Azure AI and evaluate it.
 |SDK|[Flow run management in Azure AI](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/run-management/cloud-run-management.ipynb)| Flow run management in azure AI
 
 

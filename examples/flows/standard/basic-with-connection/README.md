@@ -70,7 +70,7 @@ pf run show-details --name $name
 pf run visualize --name $name
 ```
 
-### Run with connection overwrite
+### Run with connection override
 
 Ensure you have created `open_ai_connection` connection before.
 
@@ -90,7 +90,7 @@ Run flow with newly created connection.
 pf run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --stream
 ```
 
-### Run in cloud with connection overwrite
+### Run in cloud with connection override
 
 Ensure you have created `open_ai_connection` connection in cloud. Reference [this notebook](../../../tutorials/get-started/quickstart-azure.ipynb) on how to create connections in cloud with UI.
 

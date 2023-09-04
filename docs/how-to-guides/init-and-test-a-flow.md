@@ -1,7 +1,7 @@
 # Initialize and test a flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
 From this document, customer can initialize a flow and test it.

@@ -221,6 +221,15 @@ def add_param_workspace(parser):
     )
 
 
+def add_param_variant(parser):
+    parser.add_argument(
+        "--variant",
+        "-v",
+        type=str,
+        help="The variant to be used in flow, will use default variant if not specified.",
+    )
+
+
 def add_parser_build(parent_parser, entity_name: str):
     description = f"Build a {entity_name} as a docker image or a package."
     parser = parent_parser.add_parser(
@@ -231,16 +240,14 @@ def add_parser_build(parent_parser, entity_name: str):
     )
     add_param_source(parser)
     parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path.")
+    parser.add_argument("--format", "-f", type=str, help="The format to build with.", choices=["docker", "executable"])
+    # this is a hidden parameter for `mldesigner compile` command
     parser.add_argument(
-        "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
+        "--flow-only",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
-    parser.add_argument(
-        "--variant",
-        "-v",
-        type=str,
-        help="The variant to be used in flow in format of ${TUNING_NODE.VARIANT}, "
-        "will use default variant if not specified.",
-    )
+    add_param_variant(parser)
     add_param_verbose(parser)
     add_param_debug(parser)
     parser.set_defaults(sub_action="build")

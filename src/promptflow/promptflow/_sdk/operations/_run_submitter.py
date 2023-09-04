@@ -61,7 +61,7 @@ def _load_flow_dag(flow_path: Path):
     return flow_path, flow_dag
 
 
-def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None):
+def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
 
     # check tuning_node & variant
@@ -75,7 +75,7 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
         except KeyError as e:
             raise InvalidFlowError(f"Variant {variant} not found for node {tuning_node}") from e
     try:
-        node_variants = flow_dag.get(NODE_VARIANTS, {})
+        node_variants = flow_dag.pop(NODE_VARIANTS, {}) if drop_node_variants else flow_dag.get(NODE_VARIANTS, {})
         updated_nodes = []
         for node in flow_dag.get(NODES, []):
             if not node.get(USE_VARIANTS, False):
@@ -157,7 +157,14 @@ def remove_additional_includes(flow_path: Path):
 
 
 @contextlib.contextmanager
-def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant: str = None, connections: dict = None):
+def variant_overwrite_context(
+    flow_path: Path,
+    tuning_node: str = None,
+    variant: str = None,
+    connections: dict = None,
+    *,
+    drop_node_variants: bool = False,
+):
     """Override variant and connections in the flow."""
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
     flow_dag_path, _ = _load_flow_dag(flow_path)
@@ -166,7 +173,7 @@ def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant:
         # Merge the flow folder and additional includes to temp folder.
         with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
             # always overwrite variant since we need to overwrite default variant if not specified.
-            overwrite_variant(Path(temp_dir), tuning_node, variant)
+            overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
             remove_additional_includes(Path(temp_dir))
             flow = Flow.load(temp_dir)
@@ -177,7 +184,7 @@ def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dag_file = Path(temp_dir) / DAG_FILE_NAME
             shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
-            overwrite_variant(Path(temp_dir), tuning_node, variant)
+            overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
             flow = Flow(code=flow_dir_path, path=temp_dag_file)
             yield flow

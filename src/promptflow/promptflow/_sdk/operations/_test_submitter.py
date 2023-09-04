@@ -11,7 +11,7 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Iterable, Mapping
 
-from promptflow._sdk._constants import CHAT_HISTORY, LOGGER_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
@@ -200,7 +200,7 @@ class TestSubmitter:
             )
             return result
 
-    def _chat_flow(self, inputs, environment_variables: dict = None, show_step_output=False):
+    def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
         Interact with Chat Flow. Do the following:
             1. Combine chat_history and user input as the input for each round of the chat flow.
@@ -296,7 +296,7 @@ class TestSubmitter:
                 break
             inputs = inputs or {}
             inputs[input_name] = input_value
-            inputs[CHAT_HISTORY] = chat_history
+            inputs[chat_history_name] = chat_history
             with change_logger_level(level=logging.WARNING):
                 chat_inputs, _ = self._resolve_data(inputs=inputs)
 

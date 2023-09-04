@@ -1,6 +1,7 @@
 inputs:
   chat_history:
     type: list
+    is_chat_history: true
     default: []
   question:
     type: string

@@ -1,6 +1,6 @@
 # Deploy a flow using Docker
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 There are two steps to deploy a flow using docker:
@@ -62,7 +62,7 @@ Note that all dependent connections must be created before exporting as docker.
 
 Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
 
-After cd to the output directory, run the command below:
+Run the command below to build image:
 
 ```bash
 docker build build -t web-classification-serve
@@ -100,5 +100,5 @@ curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/a
 ```
 
 ## Next steps
-- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
+- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/docker).
 - See how to [deploy a flow using kubernetes](deploy-using-kubernetes.md).
