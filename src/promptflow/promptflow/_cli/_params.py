@@ -11,11 +11,13 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
         super(AppendToDictAction, self).__call__(parser, namespace, action, option_string)
 
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
+        from promptflow._sdk._utils import strip_quotation
+
         kwargs = {}
         for item in values:
             try:
-                key, value = item.split("=", 1)
-                kwargs[key] = value
+                key, value = strip_quotation(item).split("=", 1)
+                kwargs[key] = strip_quotation(value)
             except ValueError:
                 raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
         return kwargs

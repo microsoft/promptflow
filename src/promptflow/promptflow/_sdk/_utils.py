@@ -239,9 +239,13 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
 
 
+def strip_quotation(value):
+    return value.strip("'").strip("\"")
+
+
 def parse_variant(variant: str) -> Tuple[str, str]:
     variant_regex = r"\${([^.]+).([^}]+)}"
-    match = re.match(variant_regex, variant)
+    match = re.match(variant_regex, strip_quotation(variant))
     if match:
         return match.group(1), match.group(2)
     else:

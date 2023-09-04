@@ -94,8 +94,8 @@ class TestCli:
                 "--flow",
                 f"{FLOWS_DIR}/classification_accuracy_evaluation",
                 "--column-mapping",
-                "groundtruth=${data.answer}",
-                "prediction=${run.outputs.category}",
+                "'groundtruth=${data.answer}'",
+                "prediction='${run.outputs.category}'",
                 "variant_id=${data.variant_id}",
                 "--data",
                 f"{DATAS_DIR}/webClassification3.jsonl",
@@ -309,7 +309,7 @@ class TestCli:
                 "answer=Channel",
                 "evidence=Url",
                 "--variant",
-                "${summarize_text_content.variant_1}",
+                "'${summarize_text_content.variant_1}'",
             )
             output_path = Path(temp_dir) / ".promptflow" / "flow-summarize_text_content-variant_1.output.json"
             assert output_path.exists()
