@@ -29,7 +29,7 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import NodeConcurrencyNotFound, OutputReferenceBypassed
+from promptflow.executor._errors import NodeConcurrencyNotFound, NodeOutputNotFound, OutputReferenceBypassed
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -659,7 +659,7 @@ class FlowExecutor:
                         "Failed to extract output because the reference "
                         f"node {output.reference.value!r} has been bypassed."
                     )
-                raise ValueError(f"Node {output.reference.value} not found in results.")
+                raise NodeOutputNotFound(f"Node {output.reference.value} not found in results.")
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
                 output.reference.value, node_result, output.reference.property

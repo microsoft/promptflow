@@ -113,6 +113,10 @@ class OutputReferenceBypassed(FlowExecutionError):
     pass
 
 
+class NodeOutputNotFound(FlowExecutionError):
+    pass
+
+
 class InputTypeError(InvalidFlowRequest):
     pass
 
