@@ -68,9 +68,10 @@ Note that all dependent connections must be created before exporting as docker.
 
 Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `web-classification-serve`.
 
-After cd to the output directory, run the command below:
+Then run the command below:
 
 ```bash
+cd build
 docker build . -t web-classification-serve
 ```
 
