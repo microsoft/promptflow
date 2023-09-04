@@ -481,6 +481,7 @@ class TestExceptions:
             r"Traceback \(most recent call last\):\n"
             r'  File ".*test_exception_utils.py", line .*, in code_with_bug\n'
             r"    1 / 0\n"
+            r"(.*\n)?"
             r"ZeroDivisionError: division by zero\n",
             e.value.tool_traceback,
         )
