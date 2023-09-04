@@ -119,7 +119,7 @@ In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/medi
 <details>
 <summary> <b>Demo</b> (click to toggle the content)</summary>
 This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
-<img src="docs/media/how-to-guides/quick-start/vscode-flow-dag.png" alt="comparison resutl"/>
+<img src="examples\tutorials\quick-start\media\vscdemo.gif" alt="vsc extension"/>
 </details>
 
 ### Learn from Use Cases
