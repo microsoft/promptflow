@@ -1,4 +1,5 @@
 # Tutorial: How prompt flow helps on quality improvement
+This is a tutorial about how to improve the flow quality by tuning prompts and evaluation.
 
 ## Prerequisite
 
@@ -20,7 +21,7 @@ In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represen
  
 To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
 
-```jinja2
+```json
 system:
 You are an assistant to calculate the answer to the provided math problems. 
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
@@ -32,7 +33,7 @@ Run the following command to test the flow with a simple math problem:
 pf flow test --flow ./my_chatbot_origin --inputs question=1+1=?
 ```
 This will yield the following output:
-```sh
+```json
 {
     "answer": "2"
 }
@@ -43,8 +44,9 @@ Sometime, the question may be challenging. Now, let's test it with a complex mat
 ```sh
 pf flow test --flow ./my_chatbot_origin --inputs question=We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?
 ```
+
 The output is:
-```sh
+```json
 {
     "answer": "-1"
 }
@@ -55,7 +57,7 @@ However, the correct answer is 5. The output answer is incorrect! It indicates t
 
 With prompt flow, you can quickly trigger a batch-run to test your prompt with a larger dataset, and evaluate the quality of the answers.
 
-There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries, including the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one line example:
+There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries, a subset of [the Math Dataset](https://github.com/hendrycks/math/). It includes the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one example:
 
 ```json
 {
@@ -135,7 +137,7 @@ pf run visualize --name 'base_run,eval_run'
 
 Because of the randomness of the LLM, the accuracy may vary. For example, in my run, the metrics are as follows:
 
-```
+```json
 {
     "accuracy": 0.35,
     "error_rate": 0.65
@@ -157,7 +159,7 @@ We leverage the Chain of Thought (CoT) prompt engineering method to adjust the p
 <details>
 <summary>Variant_1: 2 CoT examples</summary>
 
-```
+```sh
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
@@ -178,7 +180,7 @@ assistant:
 <details>
 <summary>Variant_2 : 6 CoT examples.</summary>
 
-```
+```sh
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
@@ -261,7 +263,7 @@ pf run show-metrics --name eval_variant_2_run
 ```
 
 You may get the familiar output like this:
-```sh
+```json
 # eval_variant_0_run
 {
     "accuracy": 0.3, 
