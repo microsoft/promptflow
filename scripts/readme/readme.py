@@ -93,7 +93,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         # For workflows, open ipynb as raw json and
         # setup description at .metadata.description
         description = get_notebook_readme_description(workflow_telemetry.notebook)
-        notebook_path = gh_working_dir.replace("examples/", "")
+        notebook_path = gh_working_dir.replace("examples/", "") + f"/{notebook_name}"
         if gh_working_dir.startswith("examples/flows/standard"):
             flows["notebooks"].append(
                 {
