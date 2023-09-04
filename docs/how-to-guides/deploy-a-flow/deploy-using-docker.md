@@ -4,7 +4,7 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 :::
 
 There are two steps to deploy a flow using docker:
-1. Build the flow as docker format.
+1. Build the flow in docker format.
 2. Build and run the docker image.
  
 ## Build a flow as docker format
@@ -57,6 +57,8 @@ pf flow build --source ../../flows/standard/web-classification --output build --
 ```
 
 Note that all dependent connections must be created before exporting as docker.
+
+You can refer to [Build a flow](../build-a-flow.md) for more details about `pf flow builf`.
 
 ### Build Docker image
 
