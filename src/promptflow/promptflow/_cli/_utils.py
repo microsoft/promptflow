@@ -349,3 +349,63 @@ def exception_handler(command: str):
         return wrapper
 
     return decorator
+
+
+def get_secret_input(prompt, mask="*"):
+    """Get secret input with mask printed on screen in CLI.
+
+    Provide better handling for control characters:
+    - Handle Ctrl-C as KeyboardInterrupt
+    - Ignore control characters and print warning message.
+    """
+    if not isinstance(prompt, str):
+        raise TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
+    if not isinstance(mask, str):
+        raise TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
+    if len(mask) != 1:
+        raise ValueError("mask argument must be a one-character str")
+
+    if sys.platform == "win32":
+        # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:
+        from msvcrt import getch  # type: ignore
+    else:  # macOS and Linux
+        import tty
+        import termios
+
+        def getch():
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(sys.stdin.fileno())
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            return ch
+
+    secret_input = []
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+
+    while True:
+        key = ord(getch())
+        if key == 13:  # Enter key pressed.
+            sys.stdout.write("\n")
+            return "".join(secret_input)
+        elif key == 3:  # Ctrl-C pressed.
+            raise KeyboardInterrupt()
+        elif key in (8, 127):  # Backspace/Del key erases previous output.
+            if len(secret_input) > 0:
+                # Erases previous character.
+                sys.stdout.write("\b \b")  # \b doesn't erase the character, it just moves the cursor back.
+                sys.stdout.flush()
+                secret_input = secret_input[:-1]
+        elif 0 <= key <= 31:
+            print_yellow_warning(f"\nIgnore control character: {key}.")
+            sys.stdout.write(prompt + mask * len(secret_input))
+            sys.stdout.flush()
+        else:
+            # display the mask character.
+            char = chr(key)
+            sys.stdout.write(mask)
+            sys.stdout.flush()
+            secret_input.append(char)
