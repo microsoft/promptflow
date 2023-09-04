@@ -1,5 +1,5 @@
 # Deploy flow using Kubernetes
-This example demos how to deploy [web-classification](../../flows/standard/web-classification/README.md) as a Kubernetes app.
+This example demos how to deploy [web-classification](../../../flows/standard/web-classification/README.md) as a Kubernetes app.
 
 ## Build a flow as docker format app
 
