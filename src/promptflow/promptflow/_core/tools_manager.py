@@ -17,10 +17,12 @@ from promptflow._core._errors import MissingRequiredInputs, PackageToolNotFoundE
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
+    generate_prompt_tool,
+    generate_python_tool,
     load_python_module_from_file,
 )
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
@@ -63,6 +65,36 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             )
             module_logger.warning(msg)
     return all_package_tools
+
+
+def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:
+    if source.type == ToolSourceType.Package:
+        package_tools = collect_package_tools()
+        if source.tool in package_tools:
+            return Tool.deserialize(package_tools[source.tool])
+        raise PackageToolNotFoundError(
+            f"Package tool '{source.tool}' is not found in the current environment. "
+            f"All available package tools are: {list(package_tools.keys())}.",
+            target=ErrorTarget.EXECUTOR,
+        )
+    else:
+        if not source.path:
+            raise NodeSourcePathEmpty(
+                target=ErrorTarget.EXECUTOR,
+                message_format="The source path of node {node_name} is not defined. Please check your flow.",
+                node_name=name,
+            )
+        with open(working_dir / source.path) as fin:
+            content = fin.read()
+        if tool_type == ToolType.PYTHON:
+            # TODO: working directory doesn't take effect when loading module.
+            return generate_python_tool(name, content, source=str(working_dir / source.path))
+        elif tool_type == ToolType.PROMPT:
+            return generate_prompt_tool(name, content, prompt_only=True)
+        elif tool_type == ToolType.LLM:
+            return generate_prompt_tool(name, content)
+        else:
+            raise NotImplementedError(f"Tool type {tool_type} is not supported yet.")
 
 
 class BuiltinsManager:
@@ -220,17 +252,18 @@ class ToolsManager:
 
 
 class ToolLoader:
-    def __init__(self, package_tool_keys: Optional[List[str]] = None) -> None:
+    def __init__(self, working_dir: str, package_tool_keys: Optional[List[str]] = None) -> None:
+        self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
 
-    def load_tool_for_node(self, node: Node, working_dir: str) -> Tool:
+    def load_tool_for_node(self, node: Node) -> Tool:
         if node.source is None:
             raise UserErrorException(f"Node {node.name} does not have source defined.")
         if node.type is ToolType.PYTHON:
             if node.source.type == ToolSourceType.Package:
                 return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
-                _, tool = self.load_tool_for_script_node(node, working_dir)
+                _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type is ToolType.CUSTOM_LLM:
@@ -251,11 +284,11 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node, working_dir: str) -> Tool:
+    def load_tool_for_script_node(self, node: Node) -> tuple:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
         path = node.source.path
-        m = load_python_module_from_file(working_dir / path)
+        m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f = collect_tool_function_in_module(m)

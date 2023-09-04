@@ -47,7 +47,7 @@ class ToolResolver:
             from promptflow.tools import aoai, openai  # noqa: F401
         except ImportError:
             pass
-        self._tool_loader = ToolLoader(package_tool_keys=package_tool_keys)
+        self._tool_loader = ToolLoader(working_dir, package_tool_keys=package_tool_keys)
         self._working_dir = working_dir
         self._connection_manager = ConnectionManager(connections)
 
@@ -212,7 +212,7 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        f, tool = self._tool_loader.load_tool_for_script_node(node, self._working_dir)
+        f, tool = self._tool_loader.load_tool_for_script_node(node)
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool)
         return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
