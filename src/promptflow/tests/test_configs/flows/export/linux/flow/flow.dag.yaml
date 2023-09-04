@@ -13,7 +13,7 @@ nodes:
   source:
     type: code
     path: user_intent_zero_shot.jinja2
-  inputs:
+  inputs:  # Please check the generated prompt inputs
     customer_info: ${inputs.customer_info}
     chat_history: ${inputs.chat_history}
 - name: extract_intent
@@ -25,4 +25,4 @@ nodes:
     chat_prompt: ${chat_prompt.output}
     connection: custom_connection
 environment:
-  python_requirements_txt: requirements_txt
+    python_requirements_txt: requirements_txt

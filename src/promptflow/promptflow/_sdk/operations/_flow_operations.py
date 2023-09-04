@@ -17,7 +17,6 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     LOCAL_MGMT_DB_PATH,
-    NODE_VARIANTS,
     PROMPT_FLOW_DIR_NAME,
 )
 from promptflow._sdk._utils import (
@@ -304,19 +303,15 @@ class FlowOperations:
         flow_copy_target.mkdir(parents=True, exist_ok=True)
 
         # resolve additional includes and copy flow directory first to guarantee there is a final flow directory
-        with variant_overwrite_context(flow_dag_path, tuning_node=tuning_node, variant=node_variant) as temp_flow:
+        # TODO: shall we pop "node_variants" unless keep-variants is specified?
+        with variant_overwrite_context(
+            flow_dag_path,
+            tuning_node=tuning_node,
+            variant=node_variant,
+            drop_node_variants=True,
+        ) as temp_flow:
             # TODO: avoid copy for twice
             copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
-            # TODO: shall we pop "node_variants" unless keep-variants is specified?
-            # TODO: reorganize flow dag content update logic
-            flow_dag_content = yaml.safe_load(
-                (flow_copy_target / flow_dag_path.name).read_text(encoding=DEFAULT_ENCODING)
-            )
-            flow_dag_content.pop(NODE_VARIANTS, None)
-            (flow_copy_target / flow_dag_path.name).write_text(
-                data=dump_yaml(flow_dag_content, sort_keys=False),
-                encoding=DEFAULT_ENCODING,
-            )
         if update_flow_tools_json:
             generate_flow_tools_json(flow_copy_target)
         return flow_copy_target / flow_dag_path.name
