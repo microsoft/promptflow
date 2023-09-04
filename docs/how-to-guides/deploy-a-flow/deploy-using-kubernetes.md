@@ -7,7 +7,7 @@ There are five steps to deploy a flow using Kubernetes:
 1. Build the flow as docker format.
 2. Build the docker image.
 3. Push container image to a registry.
-4. Create Kubernetes deployment yaml
+4. Create Kubernetes deployment yaml.
 5. Apply the deployment.
 
 
