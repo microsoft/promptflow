@@ -57,7 +57,7 @@ However, the correct answer is 5. The output answer is incorrect! It indicates t
 
 With prompt flow, you can quickly trigger a batch-run to test your prompt with a larger dataset, and evaluate the quality of the answers.
 
-There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries, a subset of [the Math Dataset](https://github.com/hendrycks/math/). It includes the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one example:
+There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries (a subset of [the Math Dataset](https://github.com/hendrycks/math/)). It includes the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one example:
 
 ```json
 {
