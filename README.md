@@ -41,8 +41,6 @@ pip install promptflow promptflow-tools
 ### Set Up Connection for Your API Key
 
 Create a yaml file `connection.yaml` to define the connection.
-<details>
-<summary> <b>connection.yaml</b> (click to toggle the yaml content)</summary>
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
@@ -50,7 +48,6 @@ name: open_ai_connection # name of the connection
 type: open_ai
 api_key: <your_openai_key> # replace with your OpenAI API key
 ```
-</details>
 
 Run the following CLI command to create the connection:
 
@@ -119,7 +116,9 @@ In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/medi
 <details>
 <summary> <b>Demo</b> (click to toggle the content)</summary>
 This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
-<img src="examples\tutorials\quick-start\media\vscdemo.gif" alt="vsc extension"/>
+
+[![vsc extension](https://img.youtube.com/vi/GmhasXd7sj4/0.jpg)](https://youtu.be/GmhasXd7sj4)
+
 </details>
 
 ### Learn from Use Cases
