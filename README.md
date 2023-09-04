@@ -117,17 +117,13 @@ This is an end-to-end tutorial on how to build a high quality chat application w
 
 ### Additional Resources
 
-You can find more examples [here](./examples/README.md).
-
-We always welcome contributions of new use cases!
+You can find more examples [here](./examples/README.md). We always welcome contributions of new use cases!
 
 Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
 ### VS Code Extension
 
-In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** for an interactive and user-friendly flow development experience.
-
-Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
+In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** for an interactive and user-friendly flow development experience. Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
 <details>
 <summary> <b>Demo</b> (click to toggle the content)</summary>
