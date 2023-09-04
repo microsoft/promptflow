@@ -1,7 +1,7 @@
 # Run and evaluate a flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
 After you have developed and tested the flow in [init and test a flow](./init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.

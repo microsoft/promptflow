@@ -5,7 +5,6 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 ```{toctree}
 :maxdepth: 1
 
-quick-start
 init-and-test-a-flow
 run-and-evaluate-a-flow
 tune-prompts-with-variants

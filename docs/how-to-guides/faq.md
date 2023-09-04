@@ -1,5 +1,16 @@
 # Frequency asked questions (FAQ)
 
+## General ##
+
+### Stable vs experimental
+
+Prompt flow provides both stable and experimental features in the same SDK.
+
+|Feature status | Description | 
+|----------------|----------------|
+Stable features	| **Production ready** <br/><br/> These features are recommended for most use cases and production environments. They are updated less frequently then experimental features.|
+Experimental features | **Developmental**  <br/><br/> These features are newly developed capabilities & updates that may not be ready or fully tested for production usage. While the features are typically functional, they can include some breaking changes. Experimental features are used to iron out SDK breaking bugs, and will only receive updates for the duration of the testing period. Experimental features are also referred to as features that are in **preview**. <br/> As the name indicates, the experimental (preview) features are for experimenting and is **not considered bug free or stable**. For this reason, we only recommend experimental features to advanced users who wish to try out early versions of capabilities and updates, and intend to participate in the reporting of bugs and glitches.
+
 ## Troubleshooting ##
 
 ### Connection creation failed with StoreConnectionEncryptionKeyError

@@ -1,0 +1,23 @@
+name: node_condition_conflict
+inputs:
+  text:
+    type: string
+outputs:
+  result:
+    type: string
+    reference: ${test_node}
+nodes:
+- name: test_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${inputs.text}
+  skip:
+    when: ${inputs.text}
+    is: true
+    return: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: true

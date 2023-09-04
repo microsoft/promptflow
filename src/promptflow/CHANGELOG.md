@@ -1,10 +1,15 @@
 # Release History
 
+## v0.1.0b4 (upcoming)
+
+### Features added
+- **pf flow validate**: validate a flow definition file
+
 ## v0.1.0b3 (2023.08.30)
 
 - Minor bug fixes.
 
-## v0.1.0b2 (2023.08.29)
+## v0.1.0b2 (2022.08.29)
 
 - First preview version with major CLI & SDK features.
 
