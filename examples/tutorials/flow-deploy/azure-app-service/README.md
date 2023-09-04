@@ -44,11 +44,11 @@ Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 See the full parameters by `bash deploy.sh -h` or `.\deploy.ps1 -h`.
 
 ## View and test the web app
-The web app can be found via [azure portal](https://ms.portal.azure.com/) 
+The web app can be found via [azure portal](https://portal.azure.com/) 
 
 ![img](assets/azure_portal_img.png)
 
-After the app created, you will need to go to https://ms.portal.azure.com/ find the app and set up the environment variables
+After the app created, you will need to go to https://portal.azure.com/ find the app and set up the environment variables
 at (Settings>Configuration) or (Settings>Environment variables), then restart the app.
 
 ![img](assets/set_env_var.png)
