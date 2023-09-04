@@ -42,7 +42,7 @@ pip install promptflow promptflow-tools
 
 Create a yaml file `connection.yaml` to define the connection.
 <details>
-<summary> <b>connection.yaml</b> (click to toggle the content)</summary>
+<summary> <b>connection.yaml</b> (click to toggle the yaml content)</summary>
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
@@ -61,34 +61,46 @@ More details about connection can be found [here](https://microsoft.github.io/co
 
 ### Quick Start from a Template
 
-**Initialize a prompt flow using the chat template.**
+<details>
+<summary><b>Initialize a prompt flow using the chat template.</b> (click to toggle the detailed introduction of the command)</summary>
 
 Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it:
 
 > The `--flow` argument is used to specify the path to the flow folder.
 
+</details>
+
 ```sh
 pf flow init --flow ./my_chatbot --type chat
 ```
-**Chat with your flow**
+
+<details>
+<summary><b>Chat with your flow</b> (click to toggle the detailed introduction of the command)</summary>
  
-You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session:
+You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session.
+
+</details>
 
 ```sh
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-**What's Next? How prompt flow help to bring "High Quality" to you?**
+**What's Next? Ensuring ”High Quality“ with Prompt Flow**
+
+Before deploying your application to production, it is crucial to evaluate its quality.
+
+<details>
+<summary><b> Why is quality evaluation so important?</b></summary>
 
 LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth.
 
-Try the [15-mins Easy Case](examples/tutorials/quick-start/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation
+During fine-tuning the prompt, we also consider to strike a balance between the accuracy and the token cost of the LLM.
 
-<details>
-<summary> <b>Detailed description</b> (click to toggle the content)</summary>
-Invest just 15 minutes to understand how prompt flow accelerates prompt tuning, testing, and evaluation, to find an ideal prompt (accuracy ↑,token ↓)
+Invest just 15 minutes to understand how prompt flow accelerates prompt tuning, testing, and evaluation, to find an ideal prompt **(accuracy ↑,token ↓)**
 <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width=80%>
 </details>
+
+Try the [15-mins Easy Case](examples/tutorials/quick-start/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation ➡ Quality ready for production.
 
 Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 
@@ -98,7 +110,7 @@ Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to p
 
 ### Develop your own LLM apps
 
-Begin with our comprehensive [Step-by-Step Guide]((https://microsoft.github.io/promptflow/how-to-guides/quick-start.html)): This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
+Begin with our comprehensive [Step-by-Step Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
 
 #### VS Code Extension
 
