@@ -231,7 +231,7 @@ def add_param_variant(parser):
 
 
 def add_parser_build(parent_parser, entity_name: str):
-    description = f"Build a {entity_name} as a docker image or a package."
+    description = f"Build a {entity_name} for further sharing or deployment."
     parser = parent_parser.add_parser(
         "build",
         description=description,
@@ -248,8 +248,9 @@ def add_parser_build(parent_parser, entity_name: str):
         help=argparse.SUPPRESS,
     )
     add_param_variant(parser)
-    add_param_verbose(parser)
-    add_param_debug(parser)
+    # they haven't been used in following code
+    # add_param_verbose(parser)
+    # add_param_debug(parser)
     parser.set_defaults(sub_action="build")
 
 

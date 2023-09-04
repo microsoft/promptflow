@@ -166,6 +166,51 @@ Start a interactive chat session for chat flow.
 
 Displays the output for each step in the chat flow.
 
+### pf flow build
+
+Build a flow for further sharing or deployment.
+
+```bash
+pf flow build --source
+              --output
+              --format
+              [--variant]
+```
+
+#### Examples
+
+Build a flow as docker, which can be built into Docker image via `docker build`.
+
+```bash
+pf flow build --source <path-to-flow> --output <output-path> --format docker
+```
+
+Build a flow as docker with specific variant.
+
+```bash
+pf flow build --source <path-to-flow> --output <output-path> --format docker --variant '${node_name.variant_name}'
+```
+
+#### Required Parameter
+
+`--source`
+
+The flow or run source to be used.
+
+`--output`
+
+The folder to output built flow. Need to be empty or not existed.
+
+`--format`
+
+The format to build flow into
+
+#### Optional Parameters
+
+`--variant`
+
+Node & variant name in format of ${node_name.variant_name}.
+
 ### pf flow serve
 
 Serving a flow as an endpoint.
