@@ -86,6 +86,8 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
+        # --param "key=value" key="value"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             run_pf_command(
