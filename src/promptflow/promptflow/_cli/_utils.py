@@ -400,7 +400,8 @@ def get_secret_input(prompt, mask="*"):
                 sys.stdout.flush()
                 secret_input = secret_input[:-1]
         elif 0 <= key <= 31:
-            print_yellow_warning(f"\nIgnore control character: {key}.")
+            msg = "\nThe last user input got ignored as it is control character."
+            print_yellow_warning(msg)
             sys.stdout.write(prompt + mask * len(secret_input))
             sys.stdout.flush()
         else:

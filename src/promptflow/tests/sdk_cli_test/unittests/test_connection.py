@@ -245,7 +245,7 @@ secrets:
             name="test_connection",
             secrets={"key1": SCRUBBED_VALUE, "key2": "", "key3": "<no-change>", "key4": "<user-input>", "key5": "**"},
         )
-        with patch("promptflow._cli._utils.get_secret_input", new=lambda prompt: "test_value"):
+        with patch("promptflow._cli._pf._connection.get_secret_input", new=lambda prompt: "test_value"):
             validate_and_interactive_get_secrets(connection, is_update=False)
         assert connection.secrets == {
             "key1": "test_value",
@@ -260,7 +260,7 @@ secrets:
             name="test_connection",
             secrets={"key1": SCRUBBED_VALUE, "key2": "", "key3": "<no-change>", "key4": "<user-input>", "key5": "**"},
         )
-        with patch("promptflow._cli._utils.get_secret_input", new=lambda prompt: "test_value"):
+        with patch("promptflow._cli._pf._connection.get_secret_input", new=lambda prompt: "test_value"):
             validate_and_interactive_get_secrets(connection, is_update=True)
         assert connection.secrets == {
             "key1": SCRUBBED_VALUE,
