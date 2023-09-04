@@ -487,19 +487,13 @@ class FlowOperations:
                     tools_errors[node_name] = flow_tools["code"].pop(node_name)
 
         # generate flow tools json
-        flow_tools_json_path = kwargs.pop("flow_tools_json_path", None)
-        if not flow_tools_json_path:
-            flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-        else:
-            flow_tools_json_path = Path(flow_tools_json_path)
+        flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
 
         flow_tools_json_path.parent.mkdir(parents=True, exist_ok=True)
         with open(flow_tools_json_path, "w", encoding=DEFAULT_ENCODING) as f:
             json.dump(flow_tools, f, indent=4)
 
-        if kwargs.pop("tools_only", False):
-            validation_result = tools_errors
-        elif tools_errors:
+        if tools_errors:
             validation_result["tool-meta"] = tools_errors
 
         if validation_result and raise_error:

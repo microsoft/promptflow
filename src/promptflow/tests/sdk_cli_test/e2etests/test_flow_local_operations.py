@@ -321,3 +321,56 @@ class TestFlowLocalOperations:
                 "type": "llm",
             },
         }
+
+    def test_flow_generate_tools_meta(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_invalid"
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source)
+        assert tools_meta == {
+            "classify_with_llm.jinja2": {
+                "inputs": {
+                    "examples": {"type": ["string"]},
+                    "text_content": {"type": ["string"]},
+                    "url": {"type": ["string"]},
+                },
+                "source": "classify_with_llm.jinja2",
+                "type": "llm",
+            },
+            "convert_to_dict.py": {
+                "function": "convert_to_dict",
+                "inputs": {"input_str": {"type": ["string"]}},
+                "source": "convert_to_dict.py",
+                "type": "python",
+            },
+            "fetch_text_content_from_url.py": {
+                "function": "fetch_text_content_from_url",
+                "inputs": {"url": {"type": ["string"]}},
+                "source": "fetch_text_content_from_url.py",
+                "type": "python",
+            },
+            "summarize_text_content__variant_1.jinja2": {
+                "inputs": {"text": {"type": ["string"]}},
+                "source": "summarize_text_content__variant_1.jinja2",
+                "type": "llm",
+            },
+        }
+
+        assert "Failed to load python module from file" in tools_error.pop("prepare_examples.py", "")
+        assert "Meta file not found" in tools_error.pop("summarize_text_content.jinja2", "")
+        assert tools_error == {}
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source, source_name="summarize_text_content.jinja2")
+        assert tools_meta == {}
+        assert "Meta file not found" in tools_error.pop("summarize_text_content.jinja2", "")
+        assert tools_error == {}
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source, source_name="fetch_text_content_from_url.py")
+        assert tools_meta == {
+            "fetch_text_content_from_url.py": {
+                "function": "fetch_text_content_from_url",
+                "inputs": {"url": {"type": ["string"]}},
+                "source": "fetch_text_content_from_url.py",
+                "type": "python",
+            },
+        }
+        assert tools_error == {}
