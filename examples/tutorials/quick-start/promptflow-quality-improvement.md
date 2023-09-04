@@ -9,7 +9,6 @@ Click to [download the samples](./pf-test.zip), unzip it, and go into the `pf-te
 
 ```sh
 cd pf-test
-ls
 ```
 > ℹ️ For testing quickly, this tutorial uses CLI command.
 
@@ -21,7 +20,7 @@ In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represen
  
 To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
 
-```json
+```
 system:
 You are an assistant to calculate the answer to the provided math problems. 
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
@@ -30,7 +29,7 @@ Please return the final numerical answer only, without any accompanying reasonin
 Run the following command to test the flow with a simple math problem:
 
 ```sh
-pf flow test --flow ./my_chatbot_origin --inputs question=1+1=?
+pf flow test --flow ./my_chatbot_origin --inputs question="1+1=?"
 ```
 This will yield the following output:
 ```json
@@ -42,7 +41,7 @@ This will yield the following output:
 Sometime, the question may be challenging. Now, let's test it with a complex math problem, such as:
 
 ```sh
-pf flow test --flow ./my_chatbot_origin --inputs question=We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?
+pf flow test --flow ./my_chatbot_origin --inputs question="We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?"
 ```
 
 The output is:
@@ -263,7 +262,7 @@ pf run show-metrics --name eval_variant_2_run
 ```
 
 You may get the familiar output like this:
-```json
+```
 # eval_variant_0_run
 {
     "accuracy": 0.3, 
