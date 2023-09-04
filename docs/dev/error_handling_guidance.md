@@ -132,9 +132,13 @@ raise MultipleToolsDefined(
 Error messages principals:
 
 * **Human**:
+
  Concise, Clear, understandable
+
 * **Helpful**:
+
 Informative, Actionable, with constructive suggestions
+
 * **Humble**:
 Kindly, without blame and judgement
 
