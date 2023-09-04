@@ -21,7 +21,6 @@ jobs:
     steps:
       - name: workflow run id - ${{ inputs.id }}
         run: |
-          set -x -e
           echo "workflow run id: ${{ inputs.id }}"
   all_tests:
     strategy:
