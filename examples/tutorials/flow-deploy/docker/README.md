@@ -1,6 +1,7 @@
 # Deploy a flow using Docker
 
-This example demos how to deploy [web-classification](../../flows/standard/web-classification/README.md) as a docker app.
+This example demos how to deploy flow as a docker app. 
+We will use [web-classification](../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 ## Build a flow as docker format app
 
@@ -19,7 +20,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 
 Run the command below to build image:
 
-```bash
+```shell
 docker build build -t web-classification-serve
 ```
 
@@ -43,7 +44,7 @@ You'll need to set up the environment variables in the container to make the con
 
 
 You can run the docker image directly set via below commands:
-```bash
+```shell
 # The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
 docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> web-classification-serve
 ```
@@ -51,6 +52,6 @@ docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> web-classif
 ### Test the endpoint
 After start the service, you can use curl to test it:
 
-```bash
+```shell
 curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
 ```
