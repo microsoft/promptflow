@@ -7,7 +7,7 @@ import mock
 import pytest
 import yaml
 
-from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, NODE_VARIANTS, PROMPT_FLOW_DIR_NAME, USE_VARIANTS
 from promptflow.connections import AzureOpenAIConnection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -129,8 +129,39 @@ class TestFlowLocalOperations:
                 assert target_path.is_file()
                 assert target_path.read_text() == additional_include_path.read_text()
 
+    def test_flow_build_flow_only(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pf.flows.build(
+                flow=source,
+                output=temp_dir,
+                format="docker",
+                flow_only=True,
+            )
+
+            for additional_include in [
+                "../external_files/convert_to_dict.py",
+                "../external_files/fetch_text_content_from_url.py",
+                "../external_files/summarize_text_content.jinja2",
+            ]:
+                additional_include_path = Path(source, additional_include)
+                target_path = Path(temp_dir, additional_include_path.name)
+
+                assert target_path.is_file()
+                assert target_path.read_text() == additional_include_path.read_text()
+
+            assert Path(temp_dir, PROMPT_FLOW_DIR_NAME, FLOW_TOOLS_JSON).is_file()
+
+            with open(Path(temp_dir, "flow.dag.yaml"), "r", encoding="utf-8") as f:
+                flow_dag_content = yaml.safe_load(f)
+                assert NODE_VARIANTS not in flow_dag_content
+                assert "additional_includes" not in flow_dag_content
+                assert not any([USE_VARIANTS in node for node in flow_dag_content["nodes"]])
+
     def test_flow_build_as_docker_with_variant(self, pf) -> None:
         source = f"{FLOWS_DIR}/web_classification_with_additional_include"
+        flow_dag_path = Path(source, "flow.dag.yaml")
+        flow_dag = yaml.safe_load(flow_dag_path.read_text())
 
         with tempfile.TemporaryDirectory() as temp_dir:
             pf.flows.build(
@@ -141,8 +172,8 @@ class TestFlowLocalOperations:
             )
 
             new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
-            flow_dag = yaml.safe_load(new_flow_dag_path.read_text())
-            target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
+            new_flow_dag = yaml.safe_load(new_flow_dag_path.read_text())
+            target_node = next(filter(lambda x: x["name"] == "summarize_text_content", new_flow_dag["nodes"]))
             target_node.pop("name")
             assert target_node == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
 

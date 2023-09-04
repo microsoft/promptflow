@@ -17,6 +17,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     LOCAL_MGMT_DB_PATH,
+    NODE_VARIANTS,
     PROMPT_FLOW_DIR_NAME,
 )
 from promptflow._sdk._utils import (
@@ -306,6 +307,16 @@ class FlowOperations:
         with variant_overwrite_context(flow_dag_path, tuning_node=tuning_node, variant=node_variant) as temp_flow:
             # TODO: avoid copy for twice
             copy_tree_respect_template_and_ignore_file(temp_flow.code, flow_copy_target)
+            # TODO: shall we pop "node_variants" unless keep-variants is specified?
+            # TODO: reorganize flow dag content update logic
+            flow_dag_content = yaml.safe_load(
+                (flow_copy_target / flow_dag_path.name).read_text(encoding=DEFAULT_ENCODING)
+            )
+            flow_dag_content.pop(NODE_VARIANTS, None)
+            (flow_copy_target / flow_dag_path.name).write_text(
+                data=dump_yaml(flow_dag_content, sort_keys=False),
+                encoding=DEFAULT_ENCODING,
+            )
         if update_flow_tools_json:
             generate_flow_tools_json(flow_copy_target)
         return flow_copy_target / flow_dag_path.name
@@ -347,6 +358,7 @@ class FlowOperations:
         output: Union[str, PathLike],
         format: str = "docker",
         variant: str = None,
+        **kwargs,
     ):
         """
         Build flow to other format.
@@ -383,12 +395,21 @@ class FlowOperations:
         else:
             tuning_node, node_variant = None, None
 
+        flow_only = kwargs.pop("flow_only", False)
+        if flow_only:
+            output_flow_dir = output_dir
+        else:
+            output_flow_dir = output_dir / "flow"
+
         new_flow_dag_path = cls._build_flow(
             flow_dag_path=flow_dag_path,
-            output=output_dir / "flow",
+            output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
         )
+
+        if flow_only:
+            return
 
         # use new flow dag path below as origin one may miss additional includes
         connection_paths, env_var_names = cls._export_flow_connections(

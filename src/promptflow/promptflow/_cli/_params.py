@@ -240,10 +240,13 @@ def add_parser_build(parent_parser, entity_name: str):
     )
     add_param_source(parser)
     parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path.")
+    parser.add_argument("--format", "-f", type=str, help="The format to build with.", choices=["docker", "executable"])
+    # this is a hidden parameter for `mldesigner compile` command
     parser.add_argument(
-        "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
+        "--flow-only",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
-    # TODO: shall we use add_param_variants here even if we support 1 variant only for now?
     add_param_variant(parser)
     add_param_verbose(parser)
     add_param_debug(parser)
