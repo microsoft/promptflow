@@ -139,7 +139,6 @@ class TestCLIUtils:
         }
         assert args.dict[0] == expect_dict
 
-
     def test_build_sorted_column_widths_tuple_list(self) -> None:
         columns = ["col1", "col2", "col3"]
         values1 = {"col1": 1, "col2": 4, "col3": 3}

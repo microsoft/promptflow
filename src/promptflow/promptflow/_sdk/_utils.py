@@ -240,6 +240,10 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
 
 
 def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
     if value.startswith('"') and value.endswith('"'):
         return value[1:-1]
     elif value.startswith("'") and value.endswith("'"):
