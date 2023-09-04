@@ -22,7 +22,7 @@ In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represen
 ><details>
 ><summary>For Azure Open AI, please modify the `flow.dag.yaml` file</summary>
 >
-> Replace the connection name with the connection you created previously, and change the 'model' to 'deployment_name'.
+> Replace the 'node:' section with following content, specify the 'connection_name' to your Azure Open AI connection, and specify the 'deployment_name' to the model deployment you'd like to use.
 > ```yaml
 >nodes:
 >- name: chat
@@ -31,13 +31,13 @@ In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represen
 >    type: code
 >    path: chat.jinja2
 >  inputs:
->    deployment_name: gpt-4
+>    deployment_name: <your_azure_open_ai_deployment_name>
 >    max_tokens: '256'
 >    temperature: '0.7'
 >    chat_history: ${inputs.chat_history}
 >    question: ${inputs.question}
 >  api: chat
->  connection: azure_open_ai_connection
+>  connection: <your_azure_open_ai_connection_name>
 > ```
 </details>
 To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:

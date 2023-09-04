@@ -93,7 +93,7 @@ In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flo
 
 > <details>
 > <summary>For Azure Open AI users, modify this file accordingly.</summary>
-> For Azure Open AI, please replace it with the connection name you created in the previous step, and specify the deployment name you'd like to use.
+> Replace the 'node:' section with following content and specify the 'deployment_name' to the model deployment you'd like to use.
 >
 > ```yaml
 > nodes:
