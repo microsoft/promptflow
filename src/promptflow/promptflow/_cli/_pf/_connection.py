@@ -3,13 +3,13 @@
 # ---------------------------------------------------------
 
 import argparse
-import getpass
 import json
 import logging
+import sys
 from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
-from promptflow._cli._utils import activate_action, confirm, exception_handler
+from promptflow._cli._utils import activate_action, confirm, exception_handler, print_yellow_warning
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
@@ -135,6 +135,61 @@ pf connection list
     )
 
 
+def get_secret_input(prompt, mask="*"):
+    """get secret input with mask printed on screen."""
+    if not isinstance(prompt, str):
+        raise TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
+    if not isinstance(mask, str):
+        raise TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
+    if len(mask) != 1:
+        raise ValueError("mask argument must be a one-character str")
+
+    if sys.platform == "win32":
+        # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:
+        from msvcrt import getch  # type: ignore
+    else:  # macOS and Linux
+        import tty
+        import termios
+
+        def getch():
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(sys.stdin.fileno())
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            return ch
+
+    secret_input = []
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+
+    while True:
+        key = ord(getch())
+        if key == 13:  # Enter key pressed.
+            sys.stdout.write("\n")
+            return "".join(secret_input)
+        elif key == 3:  # Ctrl-C pressed.
+            raise KeyboardInterrupt()
+        elif key in (8, 127):  # Backspace/Del key erases previous output.
+            if len(secret_input) > 0:
+                # Erases previous character.
+                sys.stdout.write("\b \b")  # \b doesn't erase the character, it just moves the cursor back.
+                sys.stdout.flush()
+                secret_input = secret_input[:-1]
+        elif 0 <= key <= 31:
+            print_yellow_warning(f"\nIgnore control character: {key}.")
+            sys.stdout.write(prompt + mask * len(secret_input))
+            sys.stdout.flush()
+        else:
+            # display the mask character.
+            char = chr(key)
+            sys.stdout.write(mask)
+            sys.stdout.flush()
+            secret_input.append(char)
+
+
 def validate_and_interactive_get_secrets(connection, is_update=False):
     """Validate the connection and interactive get secrets if no secrets is provided."""
     prompt = "=================== Please input required secrets ==================="
@@ -149,7 +204,12 @@ def validate_and_interactive_get_secrets(connection, is_update=False):
         if not missing_secrets_prompt:
             print(prompt)
             missing_secrets_prompt = True
-        connection.secrets[name] = getpass.getpass(prompt=f"{name}: ")
+        while True:
+            secret = get_secret_input(prompt=f"{name}: ")
+            if secret:
+                break
+            print_yellow_warning("Secret can't be empty.")
+        connection.secrets[name] = secret
     if missing_secrets_prompt:
         print("=================== Required secrets collected ===================")
     return connection

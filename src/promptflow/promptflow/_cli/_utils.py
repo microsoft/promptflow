@@ -21,7 +21,7 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._utils import print_red_error
+from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
