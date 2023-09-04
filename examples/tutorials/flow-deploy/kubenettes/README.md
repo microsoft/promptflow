@@ -6,7 +6,7 @@ This example demos how to deploy [web-classification](../../flows/standard/web-c
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../examples/flows/standard/web-classification --output build --format docker
+pf flow build --source ../../flows/standard/web-classification --output build --format docker
 ```
 
 Note that all dependent connections must be created before exporting as docker.
