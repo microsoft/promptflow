@@ -248,9 +248,8 @@ def add_parser_build(parent_parser, entity_name: str):
         help=argparse.SUPPRESS,
     )
     add_param_variant(parser)
-    # they haven't been used in following code
-    # add_param_verbose(parser)
-    # add_param_debug(parser)
+    add_param_verbose(parser)
+    add_param_debug(parser)
     parser.set_defaults(sub_action="build")
 
 

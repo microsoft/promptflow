@@ -175,6 +175,8 @@ pf flow build --source
               --output
               --format
               [--variant]
+              [--verbose]
+              [--debug]
 ```
 
 #### Examples
@@ -210,6 +212,14 @@ The format to build flow into
 `--variant`
 
 Node & variant name in format of ${node_name.variant_name}.
+
+`--verbose`
+
+Show more details for each step during build.
+
+`--debug`
+
+Show debug information during build.
 
 ### pf flow serve
 
