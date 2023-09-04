@@ -230,6 +230,8 @@ pf flow serve --source
               [--port]
               [--host]
               [--environment-variables]
+              [--verbose]
+              [--debug]
 ```
 
 #### Examples
@@ -265,6 +267,14 @@ The host of endpoint.
 `--environment-variables`
 
 Environment variables to set by specifying a property path and value. Example: --environment-variable key1="\`${my_connection.api_key}\`" key2="value2". The value reference to connection keys will be resolved to the actual value, and all environment variables specified will be set into `os.environ`.
+
+`--verbose`
+
+Show more details for each step during serve.
+
+`--debug`
+
+Show debug information during serve.
 
 ## pf connection
 
