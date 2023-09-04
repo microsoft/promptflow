@@ -3,6 +3,11 @@ on:
   workflow_call:
   workflow_dispatch:
     inputs:
+      # can leave empty when trigger manually
+      # GitHub Actions API for trigger does not return workflow run id
+      # there we reference below Stack Overflow solution:
+      # https://stackoverflow.com/a/69500478
+      # which adds an identifier in workflow run jobs and can be used for filter
       id:
         description: Identifier for the workflow run
         required: false
