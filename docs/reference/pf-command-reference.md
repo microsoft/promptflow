@@ -20,6 +20,7 @@ Manage promptflow flow flows.
 | --- | --- |
 | [pf flow init](#pf-flow-init) | Initialize a prompt flow directory. |
 | [pf flow test](#pf-flow-test) | Test the prompt flow or flow node. |
+| [pf flow build](#pf-flow-build) | Build a flow for further sharing or deployment. |
 | [pf flow serve](#pf-flow-serve) | Serving a flow as an endpoint. |
 
 ### pf flow init
