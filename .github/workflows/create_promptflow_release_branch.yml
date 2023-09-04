@@ -15,7 +15,7 @@ on:
       # https://stackoverflow.com/a/69500478
       # which adds an identifier in workflow run jobs and can be used for filter
       id:
-        description: Indentifier for the workflow run
+        description: Identifier for the workflow run
         required: false
         type: string
 
