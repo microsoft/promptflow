@@ -4,7 +4,6 @@ Faiss Index Lookup is a tool tailored for querying within a user-provided Faiss-
 
 ## Requirements
 - For AzureML users, the tool is installed in default image, you can use the tool without extra installation.
-  
 - For local users, if your index is stored in local path,
   
   `pip install promptflow-vectordb`

@@ -7,6 +7,7 @@ import mock
 import pytest
 import yaml
 
+from promptflow._sdk._constants import FLOW_TOOLS_JSON, PROMPT_FLOW_DIR_NAME
 from promptflow.connections import AzureOpenAIConnection
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -99,8 +100,6 @@ class TestFlowLocalOperations:
             assert mock_random_string.call_count == 1
 
         # check if .amlignore works
-        assert os.path.isfile(f"{source}/.promptflow/flow.tools.json")
-        assert not (Path(output_path) / "flow" / ".promptflow" / "flow.tools.json").exists()
         assert os.path.isdir(f"{source}/data")
         assert not (Path(output_path) / "flow" / "data").exists()
 
@@ -146,3 +145,148 @@ class TestFlowLocalOperations:
             target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
             target_node.pop("name")
             assert target_node == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
+
+    def test_flow_build_generate_flow_tools_json(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include"
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pf.flows.build(
+                flow=source,
+                output=temp_dir,
+                variant="${summarize_text_content.variant_0}",
+            )
+
+            flow_tools_path = Path(temp_dir) / "flow" / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+            assert flow_tools_path.is_file()
+            # package in flow.tools.json is not determined by the flow, so we don't check it here
+            assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
+                "classify_with_llm.jinja2": {
+                    "inputs": {
+                        "examples": {"type": ["string"]},
+                        "text_content": {"type": ["string"]},
+                        "url": {"type": ["string"]},
+                    },
+                    "source": "classify_with_llm.jinja2",
+                    "type": "llm",
+                },
+                "convert_to_dict.py": {
+                    "function": "convert_to_dict",
+                    "inputs": {"input_str": {"type": ["string"]}},
+                    "source": "convert_to_dict.py",
+                    "type": "python",
+                },
+                "fetch_text_content_from_url.py": {
+                    "function": "fetch_text_content_from_url",
+                    "inputs": {"url": {"type": ["string"]}},
+                    "source": "fetch_text_content_from_url.py",
+                    "type": "python",
+                },
+                "prepare_examples.py": {
+                    "function": "prepare_examples",
+                    "source": "prepare_examples.py",
+                    "type": "python",
+                },
+                "summarize_text_content.jinja2": {
+                    "inputs": {"text": {"type": ["string"]}},
+                    "source": "summarize_text_content.jinja2",
+                    "type": "llm",
+                },
+            }
+
+    def test_flow_validate_generate_flow_tools_json(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include"
+
+        flow_tools_path = Path(source) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        flow_tools_path.unlink(missing_ok=True)
+        validation_result = pf.flows.validate(flow=source)
+
+        assert validation_result == {}
+
+        assert flow_tools_path.is_file()
+        # package in flow.tools.json is not determined by the flow, so we don't check it here
+        assert yaml.safe_load(flow_tools_path.read_text())["code"] == {
+            "classify_with_llm.jinja2": {
+                "inputs": {
+                    "examples": {"type": ["string"]},
+                    "text_content": {"type": ["string"]},
+                    "url": {"type": ["string"]},
+                },
+                "source": "classify_with_llm.jinja2",
+                "type": "llm",
+            },
+            "convert_to_dict.py": {
+                "function": "convert_to_dict",
+                "inputs": {"input_str": {"type": ["string"]}},
+                "source": "convert_to_dict.py",
+                "type": "python",
+            },
+            "fetch_text_content_from_url.py": {
+                "function": "fetch_text_content_from_url",
+                "inputs": {"url": {"type": ["string"]}},
+                "source": "fetch_text_content_from_url.py",
+                "type": "python",
+            },
+            "prepare_examples.py": {
+                "function": "prepare_examples",
+                "source": "prepare_examples.py",
+                "type": "python",
+            },
+            "summarize_text_content.jinja2": {
+                "inputs": {"text": {"type": ["string"]}},
+                "source": "summarize_text_content.jinja2",
+                "type": "llm",
+            },
+            "summarize_text_content__variant_1.jinja2": {
+                "inputs": {"text": {"type": ["string"]}},
+                "source": "summarize_text_content__variant_1.jinja2",
+                "type": "llm",
+            },
+        }
+
+    def test_flow_validation_failed(self, pf) -> None:
+        source = f"{FLOWS_DIR}/web_classification_invalid"
+
+        flow_tools_path = Path(source) / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        flow_tools_path.unlink(missing_ok=True)
+        validation_result = pf.flows.validate(flow=source)
+
+        assert "tool-meta" in validation_result
+        assert "Failed to load python module from file" in validation_result["tool-meta"].pop("prepare_examples.py", "")
+        assert "Meta file not found" in validation_result["tool-meta"].pop("summarize_text_content.jinja2", "")
+        assert validation_result == {
+            "inputs": {"url": {"value": {"type": ["Missing data for required " "field."]}}},
+            "tool-meta": {},
+            "outputs": {"category": {"value": {"type": ["Missing data for " "required field."]}}},
+        }
+
+        assert flow_tools_path.is_file()
+        flow_tools = yaml.safe_load(flow_tools_path.read_text())
+        assert "code" in flow_tools
+        assert flow_tools["code"] == {
+            "classify_with_llm.jinja2": {
+                "inputs": {
+                    "examples": {"type": ["string"]},
+                    "text_content": {"type": ["string"]},
+                    "url": {"type": ["string"]},
+                },
+                "source": "classify_with_llm.jinja2",
+                "type": "llm",
+            },
+            "convert_to_dict.py": {
+                "function": "convert_to_dict",
+                "inputs": {"input_str": {"type": ["string"]}},
+                "source": "convert_to_dict.py",
+                "type": "python",
+            },
+            "fetch_text_content_from_url.py": {
+                "function": "fetch_text_content_from_url",
+                "inputs": {"url": {"type": ["string"]}},
+                "source": "fetch_text_content_from_url.py",
+                "type": "python",
+            },
+            "summarize_text_content__variant_1.jinja2": {
+                "inputs": {"text": {"type": ["string"]}},
+                "source": "summarize_text_content__variant_1.jinja2",
+                "type": "llm",
+            },
+        }

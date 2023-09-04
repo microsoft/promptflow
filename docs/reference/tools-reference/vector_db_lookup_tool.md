@@ -13,7 +13,7 @@ This tool will support more vector databases.
 ## Requirements
 - For AzureML users, the tool is installed in default image, you can use the tool without extra installation.
 - For local users,
-  
+
   `pip install promptflow-vectordb`
 
 ## Prerequisites
