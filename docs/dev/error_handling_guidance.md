@@ -133,14 +133,15 @@ Error messages principals:
 
 * **Human**:
 
- Concise, Clear, understandable
+    Concise, Clear, understandable
 
 * **Helpful**:
 
-Informative, Actionable, with constructive suggestions
+    Informative, Actionable, with constructive suggestions
 
 * **Humble**:
-Kindly, without blame and judgement
+    
+    Kindly, without blame and judgement
 
 For PromptFlow, to fit in with above principals, the error message(format) shall corporate below segments at least:
 
