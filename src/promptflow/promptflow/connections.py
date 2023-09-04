@@ -1,7 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
 from dataclasses import dataclass, is_dataclass
 
 from promptflow._core.tools_manager import register_connections
@@ -26,13 +25,17 @@ class BingConnection:
 
 # We should use unified connection class everywhere.
 # Do not add new connection class definition directly here.
-OpenAIConnection = OpenAIConnection
-AzureOpenAIConnection = AzureOpenAIConnection
-AzureContentSafetyConnection = AzureContentSafetyConnection
-SerpConnection = SerpConnection
-CognitiveSearchConnection = CognitiveSearchConnection
-FormRecognizerConnection = FormRecognizerConnection
-CustomConnection = CustomConnection
+# !!!Attention!!!: Do not add external package connections here.
+
+__all__ = [
+    "OpenAIConnection",
+    "AzureOpenAIConnection",
+    "AzureContentSafetyConnection",
+    "SerpConnection",
+    "CognitiveSearchConnection",
+    "FormRecognizerConnection",
+    "CustomConnection",
+]
 
 register_connections(
     [v for v in globals().values() if is_dataclass(v) or (isinstance(v, type) and issubclass(v, _Connection))]

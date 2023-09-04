@@ -85,7 +85,7 @@ class DuplicateNodeName(InvalidFlowRequest):
     pass
 
 
-class EmptyOutputError(InvalidFlowRequest):
+class EmptyOutputReference(InvalidFlowRequest):
     pass
 
 
@@ -102,6 +102,14 @@ class InputNotFound(InvalidFlowRequest):
 
 
 class InputNotFoundFromAncestorNodeOutput(FlowExecutionError):
+    pass
+
+
+class NoNodeExecutedError(FlowExecutionError):
+    pass
+
+
+class OutputReferenceBypassed(FlowExecutionError):
     pass
 
 

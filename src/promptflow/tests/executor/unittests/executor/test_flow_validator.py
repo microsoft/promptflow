@@ -15,6 +15,7 @@ class TestFlowValidator:
         [
             ("unordered_nodes", ["first_node", "second_node", "third_node"]),
             ("unordered_nodes_with_skip", ["first_node", "second_node", "third_node"]),
+            ("unordered_nodes_with_activate", ["first_node", "second_node", "third_node"]),
         ],
     )
     def test_ensure_nodes_order(self, flow_folder, expected_node_order):
@@ -28,14 +29,39 @@ class TestFlowValidator:
     @pytest.mark.parametrize(
         "flow_folder, error_message",
         [
-            ("nodes_cycle", "There is a circular dependency in the flow 'node_cycle'."),
+            (
+                "nodes_cycle",
+                (
+                    "Node circular dependency has been detected among the nodes in your flow. "
+                    "Kindly review the reference relationships for the nodes "
+                    "['first_node', 'second_node'] and resolve the circular reference issue in "
+                    "the flow."
+                ),
+            ),
             (
                 "nodes_cycle_with_skip",
-                "There is a circular dependency in the flow 'node_cycle_with_skip'.",
+                (
+                    "Node circular dependency has been detected among the nodes in your flow. "
+                    "Kindly review the reference relationships for the "
+                    "nodes ['first_node', 'second_node'] and resolve the circular reference issue "
+                    "in the flow."
+                ),
+            ),
+            (
+                "nodes_cycle_with_activate",
+                (
+                    "Node circular dependency has been detected among the nodes in your flow. "
+                    "Kindly review the reference relationships for the nodes ['first_node', "
+                    "'second_node'] and resolve the circular reference issue in the flow."
+                ),
             ),
             (
                 "wrong_node_reference",
-                "Node 'second_node' references node 'third_node' which is not in the flow 'node_wrong_reference'.",
+                (
+                    "Node 'second_node' references a non-existent node 'third_node' in your flow. "
+                    "Please review your flow to ensure that the node "
+                    "name is accurately specified."
+                ),
             ),
         ],
     )
