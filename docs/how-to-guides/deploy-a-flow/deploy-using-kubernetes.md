@@ -3,12 +3,11 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-There are five steps to deploy a flow using Kubernetes:
+There are four steps to deploy a flow using Kubernetes:
 1. Build the flow as docker format.
 2. Build the docker image.
-3. Push container image to a registry.
-4. Create Kubernetes deployment yaml.
-5. Apply the deployment.
+3. Create Kubernetes deployment yaml.
+4. Apply the deployment.
 
 
 ## Build a flow as docker format
@@ -16,6 +15,13 @@ There are five steps to deploy a flow using Kubernetes:
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
+## Build a flow as docker format
+
+Note that all dependent connections must be created before building as docker.
+```bash
+# create connection if not created before
+pf connection create --file ../../../examples/connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
 
 Use the command below to build a flow as docker format:
 ```bash
@@ -31,7 +37,6 @@ Click the button below to build a flow as docker format:
 ::::
 
 Note that all dependent connections must be created before exporting as docker.
-
 
 ### Docker format folder structure
 
@@ -65,23 +70,12 @@ cd <your-output-dir>
 docker build . -t web-classification-serve
 ```
 
-### Push the container image to a registry.
-After building the image, it's essential to tag it with the appropriate name for your container registry. For example:
-```bash
-docker tag web-classification-serve <your-docker-hub-id>/web-classification-serve
-```
-Once you've successfully logged into the container registry, you can push the tagged docker image to enable public access and usage.
-```bash
-docker login <your-docker-hub-id>
-docker push <your-docker-hub-id>/web-classification-serve
-```
-
 ### Create Kubernetes deployment yaml.
 The Kubernetes deployment yaml file serves as a blueprint for orchestrating your docker container within a Kubernetes pod. It meticulously outlines essential details, including the container image, port configurations, environment variables, and various settings. We have presented a [basic deployment template](../../../examples/tutorials/flow-deploy/kubernetes/deployment.yaml) for your convenience, which you can effortlessly tailor to your specific requirements.
 
 You need encode the secret using base64 firstly and input the encoded value as 'open-ai-connection-api-key' in the deployment configuration, for example:
 ```bash
-echo -n 'secret' | base64
+echo -n <your_api_key> | base64
 ```
 
 ### Apply the deployment.
@@ -138,4 +132,4 @@ You'll need to set up the environment variables in the container to make the con
   curl http://<url-above>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
   ```
 ## Next steps
-- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy/deploy.md).
+- Try the example [here](../../../examples/tutorials/flow-deploy/kubernetes/README.md).
