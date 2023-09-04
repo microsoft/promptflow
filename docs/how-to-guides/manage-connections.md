@@ -89,6 +89,9 @@ print(result)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
+
+On the VS Code primary sidebar > prompt flow pane. You can find the connections pane to manage your local connections. Click the "+" icon on the top right of it and follow the popped out instructions to create your new connection.
+
 ![img](../media/how-to-guides/vscode_create_connection.png)
 ![img](../media/how-to-guides/vscode_create_connection_1.png)
 :::
@@ -130,6 +133,8 @@ print(connection)
 
 :::{tab-item} VS Code Extension
 :sync: VSC
+
+On the VS Code primary sidebar > prompt flow pane. You can find the connections pane to manage your local connections. Right click the item of the connection list to update or delete your connections.
 ![img](../media/how-to-guides/vscode_update_delete_connection.png)
 :::
 ::::
@@ -191,6 +196,8 @@ client.connections.delete(name="my_custom_connection")
 
 :::{tab-item} VS Code Extension
 :sync: VSC
+
+On the VS Code primary sidebar > prompt flow pane. You can find the connections pane to manage your local connections. Right click the item of the connection list to update or delete your connections.
 ![img](../media/how-to-guides/vscode_update_delete_connection.png)
 :::
 ::::

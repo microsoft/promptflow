@@ -191,6 +191,9 @@ A web browser will be opened to show the visualization result.
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
+
+There are actions to trigger local batch runs. To perform an evaluation you can use the run against "existing runs" actions.
+
 ![img](../media/how-to-guides/vscode_against_run.png)
 ![img](../media/how-to-guides/vscode_against_run_2.png)
 :::
