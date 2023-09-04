@@ -1,6 +1,6 @@
 # Deploy a flow using Docker
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 There are two steps to deploy a flow using docker:

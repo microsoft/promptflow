@@ -1,6 +1,6 @@
 # Deploy a flow using development server
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 Once you have created and thoroughly tested a flow, you can use it as an HTTP endpoint.
@@ -27,8 +27,11 @@ The expected result is as follows if the flow served successfully, and the proce
 :::
 :::{tab-item} VS Code Extension
 :sync: VSC
+In visual editor, choose:
 ![img](../../media/how-to-guides/vscode_export.png)
+then choose format:
 ![img](../../media/how-to-guides/vscode_export_as_local_app.png)
+then in yaml editor:
 ![img](../../media/how-to-guides/vscode_start_local_app.png)
 :::
 ::::

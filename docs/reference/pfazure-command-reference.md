@@ -1,7 +1,7 @@
 # pfazure
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
 Manage prompt flow resources on Azure with the prompt flow CLI.
