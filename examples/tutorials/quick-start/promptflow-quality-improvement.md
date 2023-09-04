@@ -1,6 +1,17 @@
 # Tutorial: How prompt flow helps on quality improvement
 
-This is a tutorial about how to improve the flow quality by tuning prompts and evaluation.
+This tutorial is designed to enhance your understanding of improving flow quality through prompt tuning and evaluation.
+
+Embark on a journey to overcome the inherent randomness of Language Models (LLMs) and enhance output reliability through **prompt fine-tuning** with this comprehensive tutorial. Explore how Prompt Flow can simplify this process, enabling you to swiftly build high-quality, LLM-native apps.
+
+Prompt fine-tuning involves optimizing the input prompts given to an LLM. This strategic adjustment helps the model to focus on specific information needed for a task, thereby improving the accuracy and reliability of the LLM's responses.
+
+When we talk about "high quality", it's not just about accuracy. It's equally important to strike a balance between the accuracy and the token cost of the LLM. Spend just 15 minutes with us to discover how prompt flow expedites the process of prompt tuning, testing, and evaluation, guiding you towards finding the ideal prompt **(accuracy ↑,token ↓)**
+
+ 
+
+<img src="media/realcase.png" alt="comparison resutl" width=60%>
+
 
 ## Prerequisite
 
@@ -72,7 +83,7 @@ The output is:
     "answer": "-1"
 }
 ```
-However, the correct answer is 5. The output answer is incorrect! It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
+However, the correct answer is 5 (Don't be suprised if you got the correct answer, as the randoness of LLM). The output answer is incorrect! It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
 
 ## Evaluate the quality of your prompt
 
