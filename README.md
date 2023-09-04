@@ -30,7 +30,7 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 ------
 ## Get Started with Prompt flow ⚡
 
-### Install
+### Installation
 
 > ℹ️ A python environment, `python=3.9` is recommended.
 
@@ -38,25 +38,30 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 pip install promptflow promptflow-tools
 ```
 
-### Set Up Connection for Your OpenAI API Key
+### Set Up Connection for Your API Key
 
-Let's create a yaml file `connection.yaml` to define the connection. Then open it, paste the following connection configuration into the file, name this connection as `open_ai_connection`, and replace `<your_openai_key>` with your OpenAI API key:
+Create a yaml file `connection.yaml` to define the connection.
+<details>
+<summary> <b>connection.yaml</b> (click to toggle the content)</summary>
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
-name: open_ai_connection
+name: open_ai_connection # name of the connection
 type: open_ai
-api_key: <your_openai_key>
+api_key: <your_openai_key> # replace with your OpenAI API key
 ```
+</details>
 
-To finalize the connection setup, run the following CLI command:
+Run the following CLI command to create the connection:
 
 ```sh
 pf connection create -f connection.yaml
 ```
-More details about connection setup can be found [here](https://microsoft.github.io/concepts/concept-connections.html).
+More details about connection can be found [here](https://microsoft.github.io/concepts/concept-connections.html).
 
-### Initialize a Prompt Flow Using the Chat Template
+### Quick Start from a Template
+
+**Initialize a prompt flow using the chat template.**
 
 Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it:
 
@@ -65,8 +70,7 @@ Use the following CLI command to initiate a prompt flow from a chat template. Th
 ```sh
 pf flow init --flow ./my_chatbot --type chat
 ```
-
-### Chat with Your Flow
+**Chat with your flow**
  
 You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session:
 
@@ -76,32 +80,38 @@ pf flow test --flow ./my_chatbot --interactive
 
 What's Next? Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow's value.
 
-## Tutorial
+## Tutorial 🏃‍♂️
 
-### Value in Evaluation and Quality Improvement 🏃‍♂️
+### Evaluation and Quality Improvement 
 
-LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability. Testing with larger datasets and comparing outputs to the ground truth is crucial for accurate quality assessment.
+LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth. The process is as follows:
 
 Prototype ➡️ Tunning  ➕  Batch Testing ➕ Evaluation ➡️ Ensure high quality before production
 
-| Spare only 15 minutes to quickly grasp how prompt flow accelerate prompt tuning, testing, and evaluation.Find your ideal prompt (accuracy ↑,token ↓) 👉[Try the easy case!](examples/tutorials/quick-start/promptflow-quality-improvement.md) | <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
+| Invest just 15 minutes to understand how Prompt Flow accelerates prompt tuning, testing, and evaluation, to find an ideal prompt (accuracy ↑,token ↓) 👉[Try the easy case!](examples/tutorials/quick-start/promptflow-quality-improvement.md) | <img src="examples/tutorials/quick-start/media/realcase.png" alt="comparison resutl" width="1000px"/>|  
 | :------ | :------: |
 
-Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
-- [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
-- [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+### Develop your LLM apps with Prompt flow
+
+#### VS Code Extension
+
+
+
+In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** for an interactive and user-friendly flow development experience.
+
+Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
+
+| Develop your LLM apps with Prompt flow, please start with our [Get Started Step-by-Step with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A comprehensive walkthrough on invoke your first flow run. | <img src="docs/media/how-to-guides/quick-start/vscode-flow-dag.png" alt="comparison resutl" width="1000px"/>|  
+| :------ | :------: |
+
+### Use Case: Chat with PDF 
+
+| [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics. | <img src="examples/flows/chat/chat-with-pdf/assets/edge-chat-pdf.png" alt="comparison resutl" width="1000px"/>|  
+| :------ | :------: |
+
+You can find more examples [here](./examples/README.md). Welcome to contribute use case to us! 
 
 Contribute to Prompt flow: please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
-
-## VS Code Extension
-
-Besides the SDK, we also provide a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** to help you develop your flow in an interactive way with an User Interface.
-
-![vsc extension](docs/media/how-to-guides/quick-start/vscode-flow-dag.png)
-
-Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). 
-
-Get started with the extension: [VS Code Extension](https://microsoft.github.io/how-to-guides/quick-start.html#using-vs-code-extension-to-visualize-the-flow)
 
 ## Contributing
 
