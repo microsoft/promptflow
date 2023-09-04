@@ -6,7 +6,7 @@ This is a tutorial about how to improve the flow quality by tuning prompts and e
 
 Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance.
 
-Click to [download the samples](./pf-test.zip), unzip it, and go into the `pf-test` folder, where contains the sample flow and test data we'll use in this tutorial:
+Click to [download the samples](./pf-test.zip), unzip it to folder `pf-test`, where contains the sample flow and test data we'll use in this tutorial. Go into the `pf-test` folder:
 
 ```sh
 cd pf-test
@@ -94,11 +94,11 @@ Run the following command to test your prompt with this dataset:
 >The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
 
 ```sh
-pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
+pf run create --flow ./my_chatbot_origin --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 ```
 > ⚠ For Azure Open AI, run the following command instead:
 > ```sh
-> pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
+> pf run create --flow ./my_chatbot_origin --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
 > ```
 
 > ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
@@ -169,7 +169,7 @@ Because of the randomness of the LLM, the accuracy may vary. For example, in my 
 }
 ```
 
-Opps! The accuracy isn't satisfactory. It's time to fine-tune your prompt for higher quality!
+Oops! The accuracy isn't satisfactory. It's time to fine-tune your prompt for higher quality!
 
 ## Fine-tuning your prompt and evaluate the improvement
 
@@ -250,32 +250,22 @@ Run the CLI command below to start the experiment: test all variants, evaluate t
 
 > ℹ️ By default, the connection is set to `open_ai_connection` and and the model is set to `gpt-4` for each variant, as specified in the `flow.dag.yaml` file. However, you have the flexibility to specify a different connection and model by adding `--connections chat.connection=<your_connection_name> chat.model=<model_name>` in the test run command.
 
-Test and evaluate variant_0:
 ```sh
+# Test and evaluate variant_0:
 # Test-run
 pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
-```
-```sh
 # Evaluate-run
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
-```
 
-Test and evaluate variant_1:
-```sh
+# Test and evaluate variant_1:
 # Test-run
 pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
-```
-```sh
 # Evaluate-run
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
-```
 
-Test and evaluate variant_2:
-```sh
+# Test and evaluate variant_2:
 # Test-run
 pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
-```
-```sh
 # Evaluate-run
 pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
 ```
