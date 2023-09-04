@@ -1,0 +1,55 @@
+name: Create promptflow release branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      # specify when trigger
+      # expected format: 0.1.0b1 or 1.0.0
+      release_version:
+        description: Release version
+        required: true
+        type: string
+  repository_dispatch:
+
+jobs:
+  create_release_branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: create branch
+        run: |
+          set -x -e
+
+          if [ -z "${{ github.event.client_payload.release_version }}" ]; then
+            echo "workflow triggered manually, get release version from inputs..."
+            release_version="${{ inputs.release_version }}"
+          else
+            echo "workflow triggered by REST API, parse release version from request body..."
+            release_version="${{ github.event.client_payload.release_version }}"
+          fi
+
+          if [[ "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?$ ]]; then
+            echo "configured release version: $release_version"
+          else
+            echo "configured release version: $release_version"
+            exit 1
+          fi
+
+
+          release_branch_name="release/promptflow/$release_version"
+          echo "release branch name: $release_branch_name, checking out..."
+          git checkout -b $release_branch_name
+
+          echo "replacing version in src/promptflow/promptflow/_version.py..."
+          sed -i "s/0.0.1/$release_version/g" src/promptflow/promptflow/_version.py
+          echo "replaced src/promptflow/promptflow/_version.py:"
+          cat src/promptflow/promptflow/_version.py
+
+          git add src/promptflow/promptflow/_version.py
+          git config --global user.name 'promptflow release'
+          git config --global user.email 'aml-pt-eng@microsoft.com'
+          git commit -m "create promptflow release branch for version $release_version"
+          git push --set-upstream origin $release_branch_name

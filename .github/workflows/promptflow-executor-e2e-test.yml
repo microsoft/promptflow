@@ -10,10 +10,7 @@ on:
       - .github/workflows/promptflow-executor-e2e-test.yml
   workflow_dispatch:
 env:
-  TENANT_ID: "${{ secrets.TENANT_ID }}"
-  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
-  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-  packageSetupType: promptflow_open_source
+  packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 jobs:
   executor_e2e_tests:
@@ -93,14 +90,15 @@ jobs:
       contents: read
       issues: read
     if: always()
-
     steps:
     - name: checkout
       uses: actions/checkout@v3
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
+        testActionFileName: promptflow-executor-e2e-test.yml
+        testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.55
+        coverageThreshold: 0.7
         token: ${{ secrets.GITHUB_TOKEN }}
