@@ -87,7 +87,7 @@ metadata:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: open-ai-connection-api-secret
+  name: open-ai-connection-api-key
   namespace: <your-namespace>
 type: Opaque
 data:
@@ -132,7 +132,7 @@ spec:
         - name: OPEN_AI_CONNECTION_API_KEY
           valueFrom:
             secretKeyRef:
-              name: open-ai-connection-api-secret
+              name: open-ai-connection-api-key
               key: open-ai-connection-api-key
 ```
 
