@@ -126,7 +126,7 @@ class TestToolResolver:
             tool_resolver._convert_node_literal_input_types(node, tool)
         if (
             (sys.version_info.major == 3)
-            and (sys.version_info.minor == 11)
+            and (sys.version_info.minor >= 11)
             and ((sys.platform == "linux") or (sys.platform == "darwin"))
         ):
             # Python >= 3.11 has a different error message on linux and macos
