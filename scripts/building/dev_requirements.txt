@@ -1,0 +1,10 @@
+setuptools
+twine==4.0.0
+portalocker~=1.2
+setuptools_rust
+pytest
+pytest-xdist
+pytest-sugar
+pytest-timeout
+azure-keyvault
+azure-identity

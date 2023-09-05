@@ -20,7 +20,6 @@ runs:
   - name: 'Build and install: promptflow-tools'
     shell: pwsh
     run: |-
-      conda activate release-env
       python ./setup.py bdist_wheel
       $package = ls dist | ? { $_.Name.Contains('.whl')}
       pip install $package.FullName
@@ -31,7 +30,6 @@ runs:
     if: inputs.setupType == 'promptflow_with_extra'
     shell: pwsh
     run: |-
-      conda activate release-env
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
@@ -45,7 +43,6 @@ runs:
     if: inputs.setupType == 'promptflow_dev'
     shell: pwsh
     run: |-
-      conda activate release-env
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
       $package = ls dist | ? { $_.Name.Contains('.whl')}

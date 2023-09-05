@@ -1,0 +1,21 @@
+name: step_create_conda_environment
+inputs:
+  pipFilePath:
+    required: false
+    default: "scripts/building/dev_requirements.txt"
+    type: string
+  pythonVersion:
+    required: false
+    default: "3.9"
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Set up Python
+    uses: actions/setup-python@v4
+    with:
+      python-version: ${{ inputs.pythonVersion }}
+  - run: |
+      python -m pip install --upgrade pip
+      pip install -r ${{ inputs.condaEnvironmentFilePath }}
+    shell: pwsh

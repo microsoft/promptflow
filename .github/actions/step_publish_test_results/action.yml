@@ -22,6 +22,10 @@ inputs:
   token:
     description: 'A Github PAT'
     required: true
+  context:
+    description: 'The context of the status'
+    required: false
+    default: 'test/sdk_cli'
 runs:
   using: composite
   steps:
@@ -46,3 +50,14 @@ runs:
       coverageFile: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
       token: ${{ inputs.token }}
       thresholdAll: ${{ inputs.coverageThreshold }}
+  - name: Sending Status
+    run: |-
+      gh api \
+        --method POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
+        -f state='success' \
+        -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
+        -f description='The build succeeded!' \
+        -f context='${{ inputs.context }}'
