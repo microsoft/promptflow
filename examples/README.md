@@ -101,4 +101,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Reference
 
-* [Promptflow documentation](https://microsoft.github.io/promptflow)
+* [Promptflow documentation](https://microsoft.github.io/promptflow/)
