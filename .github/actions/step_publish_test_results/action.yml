@@ -62,3 +62,5 @@ runs:
         -f description='The build succeeded!' \
         -f context='${{ inputs.context }}'
     shell: bash -el {0}
+    env:
+      GITHUB_TOKEN: ${{ inputs.token }}
