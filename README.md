@@ -40,17 +40,9 @@ pip install promptflow promptflow-tools
 
 This section will guide you quick start with Prompt flow from creating a simple chat flow from template.
 
-### Initialize a prompt flow using the chat template
+### Initialize a prompt flow
 
-<details>
-<summary>Click to toggle the detailed introduction of the command</summary>
-
-Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it.
-
-You can find a flow.dag.yaml file which is the flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
-
-> The `--flow` argument is used to specify the path to the flow folder.
-</details>
+Initiate a prompt flow from **chat template** by running the following CLI command. This will create a new **flow folder** named `my_chatbot` and initiate flow files within it. The `--flow` argument is the path to the flow folder.
 
 ```sh
 pf flow init --flow ./my_chatbot --type chat
@@ -79,7 +71,7 @@ pf connection create --file openai.yaml --set api_key=<your_api_key>
 <details>
 <summary>For <a herf="https://azure.microsoft.com/en-us/products/ai-services/openai-service-b">Azure Open AI</a>, click to toggle the setup.</summary>
 
-Create a new yaml file `azure_openai.yaml` in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
+Create a new yaml file `azure_openai.yaml` with following template in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
@@ -102,7 +94,7 @@ pf connection create --file azure_openai.yaml
 Note in `flow.dag.yaml` we are using connection named `open_ai_connection`.
 
 <details>
-<summary>For Azure Open AI, click to toggle the modification</summary>
+<summary>For Azure Open AI, click to toggle the modification on flow.dag.yaml</summary>
 Navigate to the `my_chatbot` folder, you can find a `flow.dag.yaml` file, which is the definition of the flow, including the inputs/outputs, tools, nodes, connection of llm node, etc.
 
 For Azure Open AI, please replace it with the connection name you created in the previous step.
@@ -125,18 +117,21 @@ nodes:
 ```
 
 </details>
-Interact with it by running (press "Ctrl + C" to end the session):
+
+You can interact with your chatbot via:
 
 ```sh
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-### What's Next? Improve Your Chatbot on a specific task
+Press `Ctrl + C` to end the session.
 
-Ensuring "High Quality” of your chat bot with Prompt Flow.
+The prototyping of your chatbot is done! 🎉 What's next?
+
+### Ensuring "High Quality” in production scenarios
 
 <details>
-<summary><b> Before deploying your application to production, it is crucial to evaluate its quality. </b> Click to toggle why is it so important?</summary>
+<summary><b> Before deploying your application to production, it is crucial to evaluate its quality. </b> Why is this crucial? </summary>
 
 LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth.
 
