@@ -2,13 +2,13 @@
 kind: Namespace
 apiVersion: v1
 metadata:
-  name: <your-namespace>
+  name: web-classification
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: open-ai-connection-api-secret
-  namespace: <your-namespace>
+  namespace: web-classification
 type: Opaque
 data:
   open-ai-connection-api-key: <encoded_secret>
@@ -17,7 +17,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: web-classification-service
-  namespace: <your-namespace>
+  namespace: web-classification
 spec:
   type: NodePort
   ports:
@@ -32,7 +32,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: web-classification-serve-app
-  namespace: <your-namespace>
+  namespace: web-classification
 spec:
   selector:
     matchLabels:
@@ -44,7 +44,7 @@ spec:
     spec:
       containers:
       - name: web-classification-serve-container
-        image: <your-docker-image>
+        image: web-classification-serve
         imagePullPolicy: Never
         ports:
         - containerPort: 8080
