@@ -9,7 +9,7 @@
 
 > Welcome to join us to make Prompt flow!
 
-[Documentacion](https://microsoft.github.io/promptflow/) • [Quick Start](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/quick-start.md)  • [Discord](https://discord.gg/bnXr6kxs) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
+[Documentacion](https://microsoft.github.io/promptflow/) • [Issues](https://github.com/microsoft/promptflow/issues/new/choose)  • [Discord](https://discord.gg/bnXr6kxs) •  [Discussions](https://github.com/microsoft/promptflow/discussions) • [Contribute PRs](https://github.com/microsoft/promptflow/pulls).
 
 **Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
@@ -26,8 +26,7 @@ With prompt flow, you will be able to:
 
 ### Concept Overview
 
-![concept](examples/tutorials/quick-start/media/concept.png)
-Learn more about the concept of Prompt flow [here](https://microsoft.github.io/promptflow/concepts/concept-connections.html).
+[![concept](examples/tutorials/quick-start/media/concept.png)](https://microsoft.github.io/promptflow/concepts/concept-connections.html)
 
 ------
 
