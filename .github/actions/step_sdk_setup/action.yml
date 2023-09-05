@@ -21,7 +21,7 @@ runs:
     shell: pwsh
     run: |-
       python ./setup.py bdist_wheel
-      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
       pip install $package.FullName
       echo "########### pip freeze (After) ###########"
       pip freeze
@@ -34,7 +34,7 @@ runs:
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
-      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
       pip install $($package.FullName + "[azure]")
       echo "########### pip freeze (After) ###########"
       pip freeze
@@ -45,7 +45,7 @@ runs:
     run: |-
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
-      $package = ls dist | ? { $_.Name.Contains('.whl')}
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
       pip install $package.FullName
       echo "########### pip freeze ###########"
       pip freeze
