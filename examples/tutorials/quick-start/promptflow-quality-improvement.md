@@ -1,4 +1,5 @@
 # Tutorial: How prompt flow helps on quality improvement
+
 This is a tutorial about how to improve the flow quality by tuning prompts and evaluation.
 
 ## Prerequisite
@@ -69,11 +70,15 @@ There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset co
 
 Run the following command to test your prompt with this dataset:
 
->The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results:
+>The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
 
 ```sh
 pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 ```
+> ⚠ For Azure Open AI, run the following command instead:
+> ```sh
+> pf run create --flow ./my_chatbot --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
+> ```
 
 > ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
 > ```sh 
