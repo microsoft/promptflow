@@ -33,7 +33,7 @@ docker build . -t web-classification-serve
 ### Create Kubernetes deployment yaml.
 The Kubernetes deployment yaml file acts as a guide for managing your docker container in a Kubernetes pod. It clearly specifies important information like the container image, port configurations, environment variables, and various settings. Below, you'll find a simple deployment template that you can easily customize to meet your needs.
 
-You need encode the secret using base64 firstly and input the encoded value as 'open-ai-connection-api-key' in the deployment configuration, for example:
+**Note**: You need encode the secret using base64 firstly and input the <encoded_secret> as 'open-ai-connection-api-key' in the deployment configuration. For example, you can run below commands in linux:
 ```shell
 encoded_secret=$(echo -n <your_api_key> | base64)
 ```
@@ -108,6 +108,8 @@ kubectl apply -f deployment.yaml
 ```
 This command will create the necessary pods to run your application within the cluster.
 
+**Note**: You need replace <pod_name> below with your specific pod_name. You can retrieve it by running `kubectl get pods -n web-classification`.
+
 ### Retrieve flow service logs of the container
 The kubectl logs command is used to retrieve the logs of a container running within a pod, which can be useful for debugging, monitoring, and troubleshooting applications deployed in a Kubernetes cluster.
 
@@ -148,6 +150,7 @@ You'll need to set up the environment variables in the container to make the con
 
   The command above will retrieve the URL of a service running within a Minikube Kubernetes cluster (e.g. http://<ip>:<assigned_port>), which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint: 
 
+  **Note**: Minikube will use its own external port instead of nodePort to listen to the service. So please substitute <assigned_port> with the port obtained above.
     ```shell
   curl http://localhost:<assigned_port>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
   ```
