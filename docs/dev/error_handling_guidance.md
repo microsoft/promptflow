@@ -157,20 +157,22 @@ For PromptFlow, to fit in with above principals, the error message(format) shall
 
 ### Samples
 
-1. Brief example to explain what is the issue in your flow submission. Provide directions on how to resolve it by list the problematic nodes names for further review.
 
->*"Node circular dependency has been detected among the nodes in your flow. Kindly review the reference relationships for the nodes **['divide_num', 'divide_num_1', 'divide_num_2']** and resolve the circular reference issue in the flow."*
-
-
-2. Concise example to accurately locate the essence of problem with nodes, input name/value and line information. Suggest further step as well.
-
-> *The value '**hello**' for flow input '**num**' in line **0** of input data does not match the expected type '**int**'. Please review the input data or adjust the input type of '**num**' in your flow.*
+1. Flow Definition Error：Node circular
 
 
-3. Great example to include what kind of rule the client shall follow when specifying chat role format. Also point out the issues in current prompt specification. Finally, it highlights on how to get the api work with helpful link and step.
+>*"Flow is defined incorrectly. Error: Node circular dependency has been detected among the nodes in your flow. Solution: Please Kindly review the reference relationships for the nodes **['divide_num', 'divide_num_1', 'divide_num_2']** and resolve the circular reference issue in the flow."*
 
->*The Chat API requires a specific format for prompt definition, and the prompt should include separate lines as role delimiters: '**assistant**:',
-'**user**:','**system**:','**function**:'. Current parsed role '**what is your name**' does not meet the requirement. If you intend to use the Completion API, please select the appropriate API type and deployment name. If you do intend to use the Chat API, please refer to the guideline at **https://aka.ms/pfdoc/chat-prompt** or view the samples in our gallery that contain '**Chat**' in the name.*
+
+2. Input Data Error: Type not match
+
+
+> "*The input for flow is incorrect. Error: The value '**hello**' for flow input '**num**' in line **0** of input data does not match the expected type '**int**'. Please review the input data or adjust the input type of '**num**' in your flow.*"
+
+
+3. File not found Error
+
+>"*The file '**connections.json**' could not be located at '**/var/tmp/**'. This file is crucial for connection definition for flow execution. Please ensure that the missing file is provisioned in its designated location.*"
 
 ## Define your error codes
 
