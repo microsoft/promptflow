@@ -216,7 +216,7 @@ print(conn)
 
 ::::
 
-Learn more on more actions like delete conection in: [Manage connections](./manage-connections.md).
+Learn more on more actions like delete connection in: [Manage connections](./manage-connections.md).
 
 ### Test the flow
 Assuming you are in working directory `promptflow/examples/flows/standard/`
