@@ -5,7 +5,7 @@ This example demos how to deploy a flow using Azure App Service.
 [Azure App Service](https://learn.microsoft.com/azure/app-service/) is an HTTP-based service for hosting web applications, REST APIs, and mobile back ends.
 The scripts (`deploy.sh` for bash and `deploy.ps1` for powershell) under this folder are here to help deploy the docker image to Azure App Service.
 
-We will use [web-classification](../../flows/standard/web-classification/README.md) as example in this tutorial.
+We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 ## Build a flow as docker format app
 
