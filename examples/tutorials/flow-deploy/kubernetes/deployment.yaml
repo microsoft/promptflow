@@ -11,7 +11,7 @@ metadata:
   namespace: <your-namespace>
 type: Opaque
 data:
-  open-ai-connection-api-key: <base64-encoded-value>
+  open-ai-connection-api-key: <encoded_secret>
 ---
 apiVersion: v1
 kind: Service

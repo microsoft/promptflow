@@ -74,7 +74,7 @@ The Kubernetes deployment yaml file serves as a blueprint for orchestrating your
 
 You need encode the secret using base64 firstly and input the encoded value as 'open-ai-connection-api-key' in the deployment configuration, for example:
 ```bash
-echo -n <your_api_key> | base64
+encoded_secret=$(echo -n <your_api_key> | base64)
 ```
 
 ```yaml
@@ -91,7 +91,7 @@ metadata:
   namespace: <your-namespace>
 type: Opaque
 data:
-  open-ai-connection-api-key: <base64-encoded-value>
+  open-ai-connection-api-key: <encoded_secret>
 ---
 apiVersion: v1
 kind: Service
@@ -183,12 +183,13 @@ You'll need to set up the environment variables in the container to make the con
 
 - Option2:
 
-  ```minikube service web-classification-service --url -n <your-namespace>``` runs as a process, creating a tunnel to the cluster. The command exposes the service directly to any program running on the host operating system.
+  `minikube service web-classification-service --url -n <your-namespace>` runs as a process, creating a tunnel to the cluster. The command exposes the service directly to any program running on the host operating system.
 
-  The command above will generate a URL, which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint: 
+  The command above will retrieve the URL of a service running within a Minikube Kubernetes cluster (e.g. http://<ip>:<assigned_port>), which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint: 
 
     ```bash
-  curl http://<url-above>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
+  curl http://localhost:<assigned_port>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
   ```
+
 ## Next steps
 - Try the example [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/kubenettes).
