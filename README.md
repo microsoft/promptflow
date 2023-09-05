@@ -30,7 +30,8 @@ Learn more about the concept of Prompt flow [here](https://microsoft.github.io/p
 ------
 
 ## Installation
-> ℹ️ A python environment, `python=3.9` is recommended.
+
+Ensure you have a python environment, `python=3.9` is recommended.
 
 ```sh
 pip install promptflow promptflow-tools
@@ -38,11 +39,9 @@ pip install promptflow promptflow-tools
 
 ## Quick Start ⚡
 
-This section will guide you quick start with Prompt flow from creating a simple chat flow from template.
+### Initialize a Prompt Flow
 
-### Initialize a prompt flow
-
-Initiate a prompt flow from **chat template** by running the following CLI command. This will create a new **flow folder** named `my_chatbot` and initiate flow files within it. The `--flow` argument is the path to the flow folder.
+To initiate a prompt flow from a chat template, use the following command. It creates a new **flow folder** named `my_chatbot` and generates the necessary flow files within it. The `--flow` argument is the path to the flow folder.
 
 ```sh
 pf flow init --flow ./my_chatbot --type chat
@@ -50,26 +49,17 @@ pf flow init --flow ./my_chatbot --type chat
 
 ### Setup a connection for your API key
 
-Navigate to the `my_chatbot` folder, you can find a `openai.yaml` file, which is the connection configuration file.
-<details>
-<summary>Click to toggle the yaml.</summary>
-
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
-name: open_ai_connection # name of the connection
-type: open_ai # Open AI 
-api_key: "<user-input>" # replace with your OpenAI API key
-```
-</details>
+Navigate to the `my_chatbot` folder, you can find a yaml file named `openai.yaml` file, which is the definition of the connection to store your Open AI key.
 
 Establish the connection by running:
+
 ```sh
 # Override keys with --set to avoid yaml file changes
 pf connection create --file openai.yaml --set api_key=<your_api_key>
 ```
 
 <details>
-<summary>For <a herf="https://azure.microsoft.com/en-us/products/ai-services/openai-service-b">Azure Open AI</a>, click to toggle the setup.</summary>
+<summary>For Azure Open AI, follow the respective setup guide.</summary>
 
 Create a new yaml file `azure_openai.yaml` with following template in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
 
@@ -91,11 +81,11 @@ pf connection create --file azure_openai.yaml
 
 ### Chat with your flow
 
-Note in `flow.dag.yaml` we are using connection named `open_ai_connection`.
+In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flow, including inputs/outputs, tools, nodes, etc. Note we're using the connection named `open_ai_connection` in the `chat` node.
 
 <details>
-<summary>For Azure Open AI, click to toggle the modification on flow.dag.yaml</summary>
-Navigate to the `my_chatbot` folder, you can find a `flow.dag.yaml` file, which is the definition of the flow, including the inputs/outputs, tools, nodes, connection of llm node, etc.
+<summary>For Azure Open AI users, modify this file accordingly.</summary>
+
 
 For Azure Open AI, please replace it with the connection name you created in the previous step.
 
@@ -126,7 +116,7 @@ pf flow test --flow ./my_chatbot --interactive
 
 Press `Ctrl + C` to end the session.
 
-The prototyping of your chatbot is done! 🎉 What's next?
+Congratulations! You have now prototyped your chatbot! 🎉 What's next?
 
 ### Ensuring "High Quality” in production scenarios
 
@@ -151,11 +141,11 @@ Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to p
 
 ### Develop your own LLM apps
 
-Begin with our comprehensive [Step-by-Step Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
+Start with [Step-by-Step Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): It provides a detailed walkthrough to create and run your own flow.
 
-#### VS Code Extension
+#### <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="30"/> VS Code Extension
 
-In addition to the SDK, we offer a <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="25"/>**Prompt flow VS Code extension** for an interactive and user-friendly flow development experience. Install it from [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
+We also offer a VS Code extension for an interactive flow development experience with UI. You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
 <details>
 <summary> <b>Demo</b> (click to toggle the content)</summary>
@@ -167,12 +157,13 @@ This is a detailed walkthrough step-by-step to create your own flow from scratch
 
 ### Learn from Use Cases
 
-Go through the tutorial of a practical use case, [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): This is an end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
-* You can find more examples [here](./examples/README.md). We always welcome contributions of new use cases!
+Learning from [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): It's an end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+
+* More examples can be found [here](./examples/README.md). We welcome contributions of new use cases!
 
 ### Setup for Contributors
 
-Contribute to Prompt flow, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
+If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
 Next Step! Continue with the **Contributing**  👇 section to to contribute to Prompt flow.
 
