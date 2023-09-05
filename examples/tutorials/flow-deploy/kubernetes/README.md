@@ -1,5 +1,6 @@
 # Deploy flow using Kubernetes
-This example demos how to deploy [web-classification](../../../flows/standard/web-classification/README.md) as a Kubernetes app.
+This example demos how to deploy flow as a Kubernetes app. 
+We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 Please ensure you have [create the connection](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/manage-connections.md) required by flow, if not, you could
 refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification#1-setup-connection). 
