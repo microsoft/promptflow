@@ -190,4 +190,4 @@ You'll need to set up the environment variables in the container to make the con
   curl http://<url-above>/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
   ```
 ## Next steps
-- Try the example [here](../../../examples/tutorials/flow-deploy/kubernetes/README.md).
+- Try the example [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/kubenettes).
