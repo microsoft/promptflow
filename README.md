@@ -143,7 +143,7 @@ Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to p
 
 Start with [Step-by-Step Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): It provides a detailed walkthrough to create and run your own flow.
 
-#### <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="alt text" width="30"/> VS Code Extension
+#### VS Code Extension <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="30"/> 
 
 We also offer a VS Code extension for an interactive flow development experience with UI. You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
