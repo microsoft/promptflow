@@ -233,7 +233,7 @@ def add_param_variant(parser):
 
 
 def add_parser_build(parent_parser, entity_name: str):
-    description = f"Build a {entity_name} as a docker image or a package."
+    description = f"Build a {entity_name} for further sharing or deployment."
     parser = parent_parser.add_parser(
         "build",
         description=description,

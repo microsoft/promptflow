@@ -1,6 +1,6 @@
 # Promptflow documentation contribute guidelines
 
-This folder contains the source code for [prompt flow documentation site](https://microsoft.github.io/promptflow). 
+This folder contains the source code for [prompt flow documentation site](https://microsoft.github.io/promptflow/). 
 
 This readme file will not be included in above doc site. It keeps a guide for promptflow documentation contributors.
 

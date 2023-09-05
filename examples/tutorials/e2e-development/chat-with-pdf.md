@@ -309,7 +309,7 @@ the other choices, please refer to [flow deploy docs](https://microsoft.github.i
 
 Use the command below to build a flow as docker format app:
 
-```shell
+```bash
 pf flow build --source . --output build --format docker
 ```
 
