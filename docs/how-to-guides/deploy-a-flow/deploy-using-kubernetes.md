@@ -182,6 +182,7 @@ You'll need to set up the environment variables in the container to make the con
   ```
 
 - Option2:
+
   ```minikube service web-classification-service --url -n <your-namespace>``` runs as a process, creating a tunnel to the cluster. The command exposes the service directly to any program running on the host operating system.
 
   The command above will generate a URL, which you can click to interact with the flow service in your web browser. Alternatively, you can use the following command to test the endpoint: 
