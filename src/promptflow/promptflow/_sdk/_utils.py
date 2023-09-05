@@ -64,6 +64,8 @@ def snake_to_camel(name):
 def find_type_in_override(params_override: Optional[list] = None) -> Optional[str]:
     params_override = params_override or []
     for override in params_override:
+        if CommonYamlFields.CUSTOM_TYPE in override:
+            return override[CommonYamlFields.CUSTOM_TYPE]
         if CommonYamlFields.TYPE in override:
             return override[CommonYamlFields.TYPE]
     return None

@@ -176,6 +176,16 @@ class ConnectionType:
         return val in connections.values()
 
     @staticmethod
+    def is_custom_strong_type(val):
+        # Use this condition to filter redundant imports
+        if not ConnectionType.is_connection_value(val):
+            return False
+
+        from promptflow._sdk.entities import CustomStrongTypeConnection
+
+        return issubclass(val, CustomStrongTypeConnection)
+
+    @staticmethod
     def serialize_conn(connection: Any) -> dict:
         """Serialize the given connection.
 
