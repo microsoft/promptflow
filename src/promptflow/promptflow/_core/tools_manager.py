@@ -2,8 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from dataclasses import fields
 import importlib
 import importlib.util
+import inspect
+from jinja2 import Template
 import logging
 import traceback
 from functools import partial
@@ -23,7 +26,7 @@ from promptflow._core.tool_meta_generator import (
 )
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import Tool, ToolType
+from promptflow.contracts.tool import Tool, ToolType, ConnectionType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 module_logger = logging.getLogger(__name__)
@@ -65,6 +68,107 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             )
             module_logger.warning(msg)
     return all_package_tools
+
+
+def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
+    """Collect all tools and custom strong type connections from all installed packages."""
+    all_package_tools = {}
+    all_package_connection_specs = {}
+    all_package_connection_templates = {}
+    if keys is not None:
+        keys = set(keys)
+    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+        try:
+            list_tool_func = entry_point.resolve()
+            package_tools = list_tool_func()
+            for identifier, tool in package_tools.items():
+                #  Only load required tools to avoid unnecessary loading when keys is provided
+                if isinstance(keys, set) and identifier not in keys:
+                    continue
+                m = tool["module"]
+                module = importlib.import_module(m)  # Import the module to make sure it is valid
+                tool["package"] = entry_point.dist.project_name
+                tool["package_version"] = entry_point.dist.version
+                all_package_tools[identifier] = tool
+
+                if m.startswith("promptflow"):
+                    continue
+
+                # Get custom strong type connection definition
+                custom_strong_type_connections_classes = [obj for name, obj in inspect.getmembers(module) if inspect.isclass(obj) and ConnectionType.is_custom_strong_type_connection(obj)]
+
+                if custom_strong_type_connections_classes is not None:
+                    for cls in custom_strong_type_connections_classes:
+                        identifier = f"{cls.__module__}.{cls.__name__}"
+                        connection_spec = generate_custom_strong_type_connection_spec(cls, entry_point.dist.project_name, entry_point.dist.version)
+                        all_package_connection_specs[identifier] = connection_spec
+                        all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version)
+        except Exception as e:
+            msg = (
+                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                + f" traceback: {traceback.format_exc()}"
+            )
+            module_logger.warning(msg)
+
+    return all_package_tools, all_package_connection_specs, all_package_connection_templates
+
+
+def generate_custom_strong_type_connection_spec(cls, package, package_version):
+    connection_spec = {
+        "connectionCategory": "CustomKeys",
+        "flowValueType": "CustomConnection",
+        "connectionType": cls.__name__,
+        "ConnectionTypeDisplayName": cls.__name__,
+        "configSpecs": [],
+        "module": cls.__module__,
+        "package": package,
+        "package_version": package_version
+    }
+
+    for field in fields(cls):
+        spec = {
+            "name": field.name,
+            "displayName": field.name.replace("_", " ").title(),
+            "configValueType": field.type.__name__,
+            "isOptional": field.default is not None,
+        }
+        connection_spec["configSpecs"].append(spec)
+    return connection_spec
+
+
+def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
+    connection_template_str = """
+    name: <connection-name>  
+    type: custom
+    custom_type: {{ custom_type }}
+    module: {{ module }}
+    package: {{ package }}
+    package_version: {{ package_version }}
+    configs:  
+      {% for key, value in configs.items() %}  
+      {{ key }}: "{{ value -}}"{% endfor %}  
+    secrets:  # must-have{% for key, value in secrets.items() %}  
+      {{ key }}: "{{ value -}}"{% endfor %}  
+    """
+
+    configs = {}
+    secrets = {}
+    connection_template = Template(connection_template_str)
+    for spec in connection_spec["configSpecs"]:
+        if spec["configValueType"] == "Secret":
+            secrets[spec["name"]] = "<" + spec["name"].replace("_", "-") + ">"
+        else:
+            configs[spec["name"]] = "<" + spec["name"].replace("_", "-") + ">"
+
+    data = {
+        "custom_type": cls.__name__,
+        "module": cls.__module__,
+        "package": package,
+        "package_version": package_version,
+        "configs": configs,
+        "secrets": secrets}
+
+    return connection_template.render(data)
 
 
 def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:

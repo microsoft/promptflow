@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import copy
 
-from marshmallow import fields, pre_dump
+from marshmallow import fields, pre_dump, validates, ValidationError
 
 from promptflow._sdk._constants import ConnectionType
 from promptflow._sdk.schemas._base import YamlFileSchema
@@ -111,3 +111,38 @@ class CustomConnectionSchema(ConnectionSchema):
     configs = fields.Dict(keys=fields.Str(), values=fields.Str())
     # Secrets is a must-have field for CustomConnection
     secrets = fields.Dict(keys=fields.Str(), values=fields.Str(), required=True)
+
+
+class CustomStrongTypeConnectionSchema(YamlFileSchema):
+    name = fields.Str(attribute="name")
+    module = fields.Str(required=True)
+    type = StringTransformedEnum(allowed_values=camel_to_snake(ConnectionType.CUSTOM), required=True)
+    custom_type = fields.Str(required=True)
+    configs = fields.Dict(keys=fields.Str(), values=fields.Str())
+    # Secrets is a must-have field for CustomConnection
+    secrets = fields.Dict(keys=fields.Str(), values=fields.Str(), required=True)
+
+    created_date = fields.Str(dump_only=True)
+    last_modified_date = fields.Str(dump_only=True)
+    expiry_time = fields.Str(dump_only=True)
+
+    @validates('module')
+    def validate_module(self, value):
+        if 'connection_spec' in self.context and value != self.context["connection_spec"]["module"]:
+            raise ValidationError(f'Unknown module type {value}. Supported: {self.context["connection_spec"]["module"]}')
+
+    @validates('custom_type')
+    def validate_custom_type(self, value):
+        if 'connection_spec' in self.context and value != self.context['connection_spec']["connectionType"]:
+            raise ValidationError(f'Unknown connection type {value}. Supported: {self.context["connection_spec"]["connectionType"]}')
+
+    @pre_dump
+    def _pre_dump(self, data, **kwargs):
+        from promptflow._sdk.entities._connection import _Connection
+
+        if not isinstance(data, _Connection):
+            return data
+        # Update the type replica of the connection object to match schema
+        copied = copy.deepcopy(data)
+        copied.type = camel_to_snake(copied.type)
+        return copied

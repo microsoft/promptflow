@@ -15,6 +15,8 @@ from promptflow._sdk._constants import (
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
     ConnectionType,
+    CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE,
+    CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE,
 )
 from promptflow._sdk._errors import UnsecureConnectionError
 from promptflow._sdk._logger_factory import LoggerFactory
@@ -38,6 +40,7 @@ from promptflow._sdk.schemas._connection import (
     QdrantConnectionSchema,
     SerpConnectionSchema,
     WeaviateConnectionSchema,
+    CustomStrongTypeConnectionSchema,
 )
 
 logger = LoggerFactory.get_logger(name=__name__)
@@ -156,12 +159,25 @@ class _Connection(YAMLTranslatableMixin):
     # pylint: disable=unused-argument
     def _resolve_cls_and_type(cls, data, params_override=None):
         type_in_override = find_type_in_override(params_override)
-        type_str = type_in_override or data.get("type")
+        type_str = type_in_override or data.get("custom_type") or data.get("type")
         if type_str is None:
             raise ValueError("type is required for connection.")
         type_str = cls._casting_type(type_str)
         type_cls = _supported_types.get(type_str)
         if type_cls is None:
+            if data.get("type") == "custom" and (data.get("custom_type") is not None or data.get("configs").get(CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE) is not None):
+                return _CustomStrongTypeConnection, type_str
+            raise ValueError(
+                f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
+            )
+        return type_cls, type_str
+
+    @classmethod
+    def _build_cls_from_spec(cls, spec):
+        type_str = spec.get("type")
+        type_str = cls._casting_type(type_str)
+        type_cls = _supported_types.get(type_str)
+        if type_cls is None and spec.get("custom_type") is None:
             raise ValueError(
                 f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
             )
@@ -194,6 +210,7 @@ class _Connection(YAMLTranslatableMixin):
         data: Dict = None,
         yaml_path: Union[PathLike, str] = None,
         params_override: list = None,
+        connection_spec = None,
         **kwargs,
     ) -> "_Connection":
         """Load a job object from a yaml file.
@@ -219,6 +236,8 @@ class _Connection(YAMLTranslatableMixin):
             BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent if yaml_path else Path("../../azure/_entities/"),
             PARAMS_OVERRIDE_KEY: params_override,
         }
+        if connection_spec:
+            context["connection_spec"] = connection_spec
         connection_type, type_str = cls._resolve_cls_and_type(data, params_override)
         connection = connection_type._load_from_dict(
             data=data,
@@ -251,6 +270,17 @@ class _Connection(YAMLTranslatableMixin):
 
 
 class _StrongTypeConnection(_Connection):
+    def __init__(
+            self,
+            module: str,
+            name: str = "default_connection",
+            configs: Dict[str, str] = None,
+            secrets: Dict[str, str] = None,
+            **kwargs,
+    ):
+        super().__init__(name=name, module=module, configs=configs, secrets=secrets, **kwargs)
+        self.custom_type = kwargs.get("custom_type", None)
+
     def _to_orm_object(self):
         # Both keys & secrets will be stored in configs for strong type connection.
         secrets = self._validate_and_encrypt_secrets()
@@ -287,6 +317,64 @@ class _StrongTypeConnection(_Connection):
     @api_key.setter
     def api_key(self, value):
         self.secrets["api_key"] = value
+
+
+class _CustomStrongTypeConnection(_Connection):
+    TYPE = ConnectionType.CUSTOM
+
+    def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
+        if not secrets:
+            raise ValueError(
+                "Secrets is required for custom connection, "
+                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                "to initialize custom connection."
+            )
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+        self.custom_type = kwargs.get("custom_type", None)
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return CustomStrongTypeConnectionSchema
+
+    def _to_orm_object(self):
+        # Both keys & secrets will be set in custom configs with value type specified for custom connection.
+        custom_configs = {
+            CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE: {"configValueType": ConfigValueType.STRING.value, "value": self.custom_type},
+            CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE: {"configValueType": ConfigValueType.STRING.value, "value": self.module}
+        }
+        custom_configs.update(
+            {k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()}
+        )
+        encrypted_secrets = self._validate_and_encrypt_secrets()
+        custom_configs.update(
+            {k: {"configValueType": ConfigValueType.SECRET.value, "value": v} for k, v in encrypted_secrets.items()}
+        )
+
+        return ORMConnection(
+            connectionName=self.name,
+            connectionType=self.type.value,
+            configs="{}",
+            customConfigs=json.dumps(custom_configs),
+            expiryTime=self.expiry_time,
+            createdDate=self.created_date,
+            lastModifiedDate=self.last_modified_date,
+        )
+
+    @classmethod
+    def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
+        # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
+        # Both keys & secrets will be stored in configs for strong type connection.
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
+        obj = type_cls(
+            name=orm_object.connectionName,
+            expiry_time=orm_object.expiryTime,
+            created_date=orm_object.createdDate,
+            last_modified_date=orm_object.lastModifiedDate,
+            **json.loads(orm_object.configs),
+        )
+        obj.secrets = {k: decrypt_secret_value(obj.name, v) for k, v in obj.secrets.items()}
+        obj._secrets = {**obj.secrets}
+        return obj
 
 
 class AzureOpenAIConnection(_StrongTypeConnection):

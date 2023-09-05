@@ -9,7 +9,7 @@ from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
 from promptflow._cli._utils import activate_action, confirm, exception_handler, print_yellow_warning, get_secret_input
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._constants import LOGGER_NAME, ConnectionType, CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
@@ -194,20 +194,29 @@ def list_connection():
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
 
 
-def _upsert_connection_from_file(file, params_override=None):
+def _upsert_connection_from_file(file, params_override=None, connection_spec = None):
     # Note: This function is used for pfutil, do not edit it.
     params_override = params_override or []
     params_override.append(load_yaml(file))
-    connection = load_connection(source=file, params_override=params_override)
-    existing_connection = _client.connections.get(connection.name, raise_error=False)
+    new_connection = load_connection(source=file, params_override=params_override, connection_spec=connection_spec)
+    existing_connection = _client.connections.get(new_connection.name, raise_error=False)
+
+    # Thow exception if the existing connection is custom-defined strong type, while the new connection is not custom-defined
+    existing_custom_type = existing_connection._to_dict().get("configs").get(CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE)
+    if existing_custom_type != new_connection.custom_type:
+        raise Exception(
+            f"Connection {new_connection.name} with type custom and custom_type {existing_custom_type} already exists. "
+            f"Please specify the same custom_type in the yaml file."
+        )
+
     if existing_connection:
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         validate_and_interactive_get_secrets(connection, is_update=True)
         # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
         connection._secrets = existing_connection._secrets
     else:
-        validate_and_interactive_get_secrets(connection)
-    connection = _client.connections.create_or_update(connection)
+        validate_and_interactive_get_secrets(new_connection)
+    connection = _client.connections.create_or_update(new_connection)
     return connection
 
 

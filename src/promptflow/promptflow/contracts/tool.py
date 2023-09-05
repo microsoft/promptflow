@@ -5,6 +5,7 @@
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
+import inspect
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY
@@ -122,6 +123,19 @@ class ConnectionType:
 
         val = type(val) if not isinstance(val, type) else val
         return val in connections.values()
+
+    @staticmethod
+    def is_builtin_connection(type_name: str):
+        import promptflow.connections
+
+        for name, obj in inspect.getmembers(promptflow.connections):
+            if inspect.isclass(obj) and name == type_name:
+                return True
+        return False
+
+    @staticmethod
+    def is_custom_strong_type_connection(val):
+        return ConnectionType.is_connection_value(val) and not ConnectionType.is_builtin_connection(val.__name__)
 
     @staticmethod
     def serialize_conn(connection):
