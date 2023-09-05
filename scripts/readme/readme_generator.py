@@ -23,6 +23,9 @@ def no_readme_generation_filter(item: Path, index, array) -> bool:
     If there is no steps in the readme, then no generation
     """
     try:
+        if 'build' in str(item):  # skip build folder
+            return False
+
         full_text = readme_parser(item.relative_to(ReadmeStepsManage.git_base_dir()))
         if full_text == "":
             return False

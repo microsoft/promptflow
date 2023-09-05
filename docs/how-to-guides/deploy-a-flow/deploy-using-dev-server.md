@@ -1,6 +1,6 @@
 # Deploy a flow using development server
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 Once you have created and thoroughly tested a flow, you can use it as an HTTP endpoint.
@@ -12,7 +12,7 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy a flow.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification#1-setup-connection).
+refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
 
 The following CLI commands allows you serve a flow folder as an endpoint. By running this command, a [flask](https://flask.palletsprojects.com/en/) app will start in the environment where command is executed, please ensure all prerequisites required by flow have been installed.
@@ -27,8 +27,11 @@ The expected result is as follows if the flow served successfully, and the proce
 :::
 :::{tab-item} VS Code Extension
 :sync: VSC
+In visual editor, choose:
 ![img](../../media/how-to-guides/vscode_export.png)
+then choose format:
 ![img](../../media/how-to-guides/vscode_export_as_local_app.png)
+then in yaml editor:
 ![img](../../media/how-to-guides/vscode_start_local_app.png)
 :::
 ::::
