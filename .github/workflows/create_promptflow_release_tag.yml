@@ -1,0 +1,33 @@
+name: Create promptflow release tag
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_release_tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: create branch
+        run: |
+          set -x -e
+
+          branch_name=$(git rev-parse --abbrev-ref HEAD)
+          echo "branch name: $branch_name"
+          release_version=${string#release/promptflow/}
+          echo "release version: $release_version"
+
+          echo "replacing version in src/promptflow/promptflow/_version.py..."
+          sed -i "s/0.0.1/$release_version/g" src/promptflow/promptflow/_version.py
+          echo "replaced src/promptflow/promptflow/_version.py:"
+          cat src/promptflow/promptflow/_version.py
+
+          git config --global user.name 'promptflow release'
+          git config --global user.email 'aml-pt-eng@microsoft.com'
+          git push --set-upstream origin $branch_name
+
+          git tag promptflow_$release_version
+          git push origin --tags
