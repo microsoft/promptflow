@@ -21,7 +21,7 @@ jobs:
           pending_count=0
 
           while read check_run; do
-            if echo $check_run | grep -q '^triage$|^flake8$|^license/cla$' ; then
+            if echo $check_run | grep -q '"triage"|"flake8"|"license/cla"' ; then
               continue
             else:
               pending_count=$((pending_count+1))
