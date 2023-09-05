@@ -71,11 +71,70 @@ docker build . -t web-classification-serve
 ```
 
 ### Create Kubernetes deployment yaml.
-The Kubernetes deployment yaml file serves as a blueprint for orchestrating your docker container within a Kubernetes pod. It meticulously outlines essential details, including the container image, port configurations, environment variables, and various settings. We have presented a [basic deployment template](../../../examples/tutorials/flow-deploy/kubernetes/deployment.yaml) for your convenience, which you can effortlessly tailor to your specific requirements.
+The Kubernetes deployment yaml file serves as a blueprint for orchestrating your docker container within a Kubernetes pod. It meticulously outlines essential details, including the container image, port configurations, environment variables, and various settings. Presented below is a basic deployment template for your convenience, which you can effortlessly tailor to your specific requirements.
 
 You need encode the secret using base64 firstly and input the encoded value as 'open-ai-connection-api-key' in the deployment configuration, for example:
 ```bash
 echo -n <your_api_key> | base64
+```
+
+```yaml
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: <your-namespace>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: open-ai-connection-api-secret
+  namespace: <your-namespace>
+type: Opaque
+data:
+  open-ai-connection-api-key: <base64-encoded-value>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-classification-service
+  namespace: <your-namespace>
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    nodePort: 30123
+  selector:
+    app: web-classification-serve-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-classification-serve-app
+  namespace: <your-namespace>
+spec:
+  selector:
+    matchLabels:
+      app: web-classification-serve-app
+  template:
+    metadata:
+      labels:
+        app: web-classification-serve-app
+    spec:
+      containers:
+      - name: web-classification-serve-container
+        image: <your-docker-image>
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OPEN_AI_CONNECTION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: open-ai-connection-api-secret
+              key: open-ai-connection-api-key
 ```
 
 ### Apply the deployment.
