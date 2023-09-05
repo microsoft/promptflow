@@ -7,5 +7,5 @@ import time
 def my_python_tool_with_failed_line(idx: int, mod=5) -> int:
     if idx % mod == 0:
         while True:
-            time.sleep(10)
+            time.sleep(60)
     return idx

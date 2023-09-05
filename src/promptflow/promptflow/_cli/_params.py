@@ -11,11 +11,13 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
         super(AppendToDictAction, self).__call__(parser, namespace, action, option_string)
 
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
+        from promptflow._sdk._utils import strip_quotation
+
         kwargs = {}
         for item in values:
             try:
-                key, value = item.split("=", 1)
-                kwargs[key] = value
+                key, value = strip_quotation(item).split("=", 1)
+                kwargs[key] = strip_quotation(value)
             except ValueError:
                 raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
         return kwargs
@@ -231,7 +233,7 @@ def add_param_variant(parser):
 
 
 def add_parser_build(parent_parser, entity_name: str):
-    description = f"Build a {entity_name} as a docker image or a package."
+    description = f"Build a {entity_name} for further sharing or deployment."
     parser = parent_parser.add_parser(
         "build",
         description=description,
@@ -240,10 +242,13 @@ def add_parser_build(parent_parser, entity_name: str):
     )
     add_param_source(parser)
     parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path.")
+    parser.add_argument("--format", "-f", type=str, help="The format to build with.", choices=["docker", "executable"])
+    # this is a hidden parameter for `mldesigner compile` command
     parser.add_argument(
-        "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
+        "--flow-only",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
-    # TODO: shall we use add_param_variants here even if we support 1 variant only for now?
     add_param_variant(parser)
     add_param_verbose(parser)
     add_param_debug(parser)

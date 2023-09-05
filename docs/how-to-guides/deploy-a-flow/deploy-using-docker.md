@@ -1,6 +1,6 @@
 # Deploy a flow using Docker
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 There are two steps to deploy a flow using docker:
@@ -46,7 +46,7 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy with docker.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification#1-setup-connection).
+refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
 ## Build a flow as docker format app
 
