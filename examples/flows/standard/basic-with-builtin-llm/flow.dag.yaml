@@ -20,6 +20,7 @@ nodes:
   inputs:
     prompt: ${hello_prompt.output}
     deployment_name: gpt-35-turbo
+    model: gpt-3.5-turbo
     max_tokens: '120'
   source:
     type: code

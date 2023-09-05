@@ -251,6 +251,7 @@ nodes:
     path: gpt_groundedness.md
   inputs:
     deployment_name: gpt-35-turbo
+    model: gpt-3.5-turbo
     max_tokens: 5
     answer: ${inputs.answer}
     question: ${inputs.question}
