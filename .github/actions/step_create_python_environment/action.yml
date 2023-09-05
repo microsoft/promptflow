@@ -17,5 +17,5 @@ runs:
       python-version: ${{ inputs.pythonVersion }}
   - run: |
       python -m pip install --upgrade pip
-      pip install -r ${{ inputs.condaEnvironmentFilePath }}
+      pip install -r ${{ inputs.pipFilePath }}
     shell: pwsh
