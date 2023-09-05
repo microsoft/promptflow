@@ -40,7 +40,7 @@ pip install promptflow promptflow-tools
 
 This section will guide you quick start with Prompt flow from creating a simple chat flow from template.
 
-#### Initialize a prompt flow using the chat template
+### Initialize a prompt flow using the chat template
 
 <details>
 <summary>Click to toggle the detailed introduction of the command</summary>
@@ -56,9 +56,11 @@ You can find a flow.dag.yaml file which is the flow definition with inputs/outpu
 pf flow init --flow ./my_chatbot --type chat
 ```
 
-#### Setup a connection for your API key
+### Setup a connection for your API key
 
-Go to the `my_chatbot` folder, open the yaml file `openai.yaml` which is the connection definition yaml file. Replace the `api_key` with your own OpenAI API key:
+Navigate to the `my_chatbot` folder, you can find a `openai.yaml` file, which is the connection configuration file.
+<details>
+<summary>Click to toggle the yaml.</summary>
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
@@ -66,44 +68,72 @@ name: open_ai_connection # name of the connection
 type: open_ai # Open AI 
 api_key: "<user-input>" # replace with your OpenAI API key
 ```
+</details>
+
+Establish the connection by running:
+```sh
+# Override keys with --set to avoid yaml file changes
+pf connection create --file openai.yaml --set api_key=<your_api_key>
+```
 
 <details>
-<summary>If you use <a herf="https://azure.microsoft.com/en-us/products/ai-services/openai-service-b">Azure Open AI</a>, click to toggle the yaml on Azure Open AI</summary>
+<summary>For <a herf="https://azure.microsoft.com/en-us/products/ai-services/openai-service-b">Azure Open AI</a>, click to toggle the setup.</summary>
 
 Create a new yaml file `azure_openai.yaml` in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
-name: "<connection-name>"
-type: azure_open_ai  # name of the connection
+name: azure_open_ai_connection # name of the connection
+type: azure_open_ai  # Azure Open AI 
 api_key: "<aoai-api-key>" # replace with your Azure OpenAI API key
 api_base: "aoai-api-endpoint" # replace with your Azure OpenAI API endpoint
-api_type: "azure" # Azure Open AI 
+api_type: "azure" 
 api_version: "2023-03-15-preview" # replace with your Azure OpenAI API version
 ```
+
+Establish the connection by running:
+```sh
+pf connection create --file azure_openai.yaml
+```
 </details>
 
-Run the following CLI command to create the connection:
+### Chat with your flow
 
-```sh
-pf connection create -f openai.yaml
-```
-More details about connection can be found [here](https://microsoft.github.io/concepts/concept-connections.html).
-
-#### Chat with your flow
+Note in `flow.dag.yaml` we are using connection named `open_ai_connection`.
 
 <details>
-<summary>Click to toggle the detailed introduction of the command</summary>
- 
-You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session.
+<summary>For Azure Open AI, click to toggle the modification</summary>
+Navigate to the `my_chatbot` folder, you can find a `flow.dag.yaml` file, which is the definition of the flow, including the inputs/outputs, tools, nodes, connection of llm node, etc.
+
+For Azure Open AI, please replace it with the connection name you created in the previous step.
+
+```yaml
+nodes:
+- name: chat
+  type: llm
+  source:
+    type: code
+    path: chat.jinja2
+  inputs:
+    deployment_name: gpt-4
+    max_tokens: '256'
+    temperature: '0.7'
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
+  api: chat
+  connection: azure_open_ai_connection
+```
 
 </details>
+Interact with it by running (press "Ctrl + C" to end the session):
 
 ```sh
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-#### What's Next? Ensuring ”High Quality“ with Prompt Flow
+### What's Next? Improve Your Chatbot on a specific task
+
+Ensuring "High Quality” of your chat bot with Prompt Flow.
 
 <details>
 <summary><b> Before deploying your application to production, it is crucial to evaluate its quality. </b> Click to toggle why is it so important?</summary>
