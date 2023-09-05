@@ -17,7 +17,7 @@ jobs:
 
           branch_name=$(git rev-parse --abbrev-ref HEAD)
           echo "branch name: $branch_name"
-          release_version=${string#release/promptflow/}
+          release_version=${branch_name#release/promptflow/}
           echo "release version: $release_version"
 
           echo "replacing version in src/promptflow/promptflow/_version.py..."
