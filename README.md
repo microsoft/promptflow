@@ -4,6 +4,7 @@
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
+[![](https://dcbadge.vercel.app/api/server/bnXr6kxs?compact=true&style=flat)](https://discord.gg/bnXr6kxs)
 
 > Welcome to join us to make Prompt flow!
 
@@ -136,7 +137,7 @@ Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Pro
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps: Develop a flow， improve the flow quality, deploy the flow to production.
+Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps: develop a flow，improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 

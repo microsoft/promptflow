@@ -215,6 +215,7 @@ class FlowInputDefinition:
     description: str = None
     enum: List[str] = None
     is_chat_input: bool = False
+    is_chat_history: bool = None
 
     def serialize(self):
         data = {}
@@ -227,6 +228,8 @@ class FlowInputDefinition:
             data["enum"] = self.enum
         if self.is_chat_input:
             data["is_chat_input"] = True
+        if self.is_chat_history:
+            data["is_chat_history"] = True
         return data
 
     @staticmethod
@@ -237,6 +240,7 @@ class FlowInputDefinition:
             data.get("description", ""),
             data.get("enum", []),
             data.get("is_chat_input", False),
+            data.get("is_chat_history", None),
         )
 
 
