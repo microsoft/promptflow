@@ -250,7 +250,7 @@ class Run(YAMLTranslatableMixin):
 
     def _to_orm_object(self) -> ORMRun:
         """Convert current run entity to ORM object."""
-        display_name = self._generate_display_name()
+        display_name = self._format_display_name()
         return ORMRun(
             name=self.name,
             created_on=self.created_on,
@@ -370,8 +370,14 @@ class Run(YAMLTranslatableMixin):
             display_name = self._get_flow_dir().name
         return display_name
 
-    def _generate_display_name(self) -> str:
-        # generate display name to align with PFS behavior
+    def _format_display_name(self) -> str:
+        """
+        Format display name.
+            For run without upstream run (variant run)
+                the pattern is {client_run_display_name}-{variant_id}-{timestamp}
+            For run with upstream run (variant run)
+                the pattern is {upstream_run_display_name}-{client_run_display_name}-{timestamp}
+        """
 
         display_name = self._get_default_display_name()
         time_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
