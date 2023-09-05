@@ -25,6 +25,7 @@ jobs:
           echo "replaced src/promptflow/promptflow/_version.py:"
           cat src/promptflow/promptflow/_version.py
 
+          git add src/promptflow/promptflow/_version.py
           git config --global user.name 'promptflow release'
           git config --global user.email 'aml-pt-eng@microsoft.com'
           git push --set-upstream origin $branch_name
