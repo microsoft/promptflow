@@ -1,7 +1,7 @@
-# Run Prompt flow in Azure AI
+# Run prompt flow in Azure AI
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
 Assuming you have learned how to create and run a flow following [Quick start](../../how-to-guides/quick-start.md). This guide will walk you through the main process of how to submit a promptflow run to [Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
@@ -14,18 +14,12 @@ Benefits of use Azure AI comparison to just run locally:
 
 1. An Azure account with an active subscription - [Create an account for free](https://azure.microsoft.com/free/?WT.mc_id=A261C142F)
 2. An Azure AI ML workspace - [Create workspace resources you need to get started with Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/quickstart-create-resources).
-3. A python environment, `python=3.9` is recommended.
+3. A python environment, `python=3.9` or higher version like 3.10 is recommended.
 4. Install `promptflow` with extra dependencies and `promptflow-tools`.
 ```sh
-pip install promptflow[azure] promptflow-tools --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
+pip install promptflow[azure] promptflow-tools
 ```
-5. Get the sample flows. 
-   - Get access to the flow sample repository.
-        - Make sure you have joined Microsoft org: [Microsoft (github.com)](https://github.com/microsoft)
-          - Link to join: [Home | Microsoft Open Source Management](https://repos.opensource.microsoft.com/)
-        - Request access to this team: [prompt flow users · microsoft Team (github.com)](https://github.com/orgs/microsoft/teams/prompt-flow-users)
-        - Ask a maintainer to approve your request.
-    - Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
+5. Clone the sample repo and check flows in folder [examples/flows](https://github.com/microsoft/promptflow/tree/main/examples/flows).
 ```sh
 git clone https://github.com/microsoft/promptflow.git
 ```
@@ -46,6 +40,14 @@ Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/
 
 :::{tab-item} CLI
 :sync: CLI
+
+Use `az login` to login so promptflow can get your credential.
+
+```sh
+az login
+```
+
+Submit a run to workspace.
 
 ```sh
 pfazure run create --subscription <my_sub> -g <my_resource_group> -w <my_workspace> --flow web-classification --data web-classification/data.jsonl --stream 
@@ -124,13 +126,14 @@ pf = PFClient(
 # load flow
 flow = "web-classification"
 data = "web-classification/data.jsonl"
-runtime = "demo-mir" # TODO remove this after serverless ready
+runtime = "demo-mir" # assume you have existing runtime with this name provisioned
+# runtime = None # un-comment use automatic runtime
 
 # create run
 base_run = pf.run(
     flow=flow,
     data=data,
-    runtime=runtime, # TODO hide this
+    runtime=runtime,
 )
 
 pf.stream(base_run)

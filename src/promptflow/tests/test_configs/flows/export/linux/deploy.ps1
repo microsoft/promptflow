@@ -142,9 +142,9 @@ $Command="az webapp create --name $Name -p $ServicePlanName --deployment-contain
 Invoke-Expression-And-Check "$Command"
 # Config environment variable
 Write-Host "Config app...$Name"
-$Command="az webapp config appsettings set -g $ResourceGroup --name $Name --settings ('@settings.json')"
+$Command="az webapp config appsettings set -g $ResourceGroup --name $Name --settings USER_AGENT=promptflow-appservice ('@settings.json')"
 Invoke-Expression-And-Check "$Command"
-Write-Host "Please go to https://ms.portal.azure.com/ to config environment variables and restart the app: $Name at (Settings>Configuration) or (Settings>Environment variables)"
+Write-Host "Please go to https://portal.azure.com/ to config environment variables and restart the app: $Name at (Settings>Configuration) or (Settings>Environment variables)"
 Write-Host "Reach deployment logs at (Deployment>Deployment Central) and app logs at (Monitoring>Log stream)"
 Write-Host "Reach advanced deployment tools at https://$Name.scm.azurewebsites.net/"
 Write-Host "Reach more details about app service at https://learn.microsoft.com/en-us/azure/app-service/"

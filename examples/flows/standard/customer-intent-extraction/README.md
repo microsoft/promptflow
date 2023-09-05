@@ -19,7 +19,7 @@ Ensure you have put your azure open ai endpoint key in .env file.
 cat .env
 ```
 
-## Run flow in local
+## Run flow
 
 1. init flow directory - create promptflow folder from existing python file
 ```bash
@@ -35,7 +35,7 @@ The generated files:
 pf connection create -f .env --name custom_connection
 ```
 
-3. test flow locally with single line input
+3. test flow with single line input
 ```bash
 pf flow test --flow . --input ./data/denormalized-flat.jsonl
 ```

@@ -1,0 +1,36 @@
+name: node_wrong_order
+inputs:
+  text:
+    type: string
+  skip:
+    type: bool
+outputs:
+  result:
+    type: string
+    reference: ${third_node}
+nodes:
+- name: third_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${second_node}
+- name: first_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${inputs.text}
+- name: second_node
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${first_node}
+  skip:
+    when: ${inputs.skip}
+    is: true
+    return: ${inputs.text}

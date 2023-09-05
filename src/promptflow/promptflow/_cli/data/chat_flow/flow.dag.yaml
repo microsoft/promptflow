@@ -1,6 +1,7 @@
 inputs:
   chat_history:
     type: list
+    is_chat_history: true
     default: []
   question:
     type: string
@@ -23,9 +24,6 @@ nodes:
     chat_history: ${inputs.chat_history}
     question: ${inputs.question}
   api: chat
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-id: template_chat_flow
-name: Template Chat Flow
+  connection: open_ai_connection
 environment:
   python_requirements_txt: requirements.txt

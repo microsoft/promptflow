@@ -15,7 +15,7 @@ Install promptflow sdk and other dependencies:
 pip install -r requirements.txt
 ```
 
-## Run flow in local
+## Run flow
 
 - Prepare your Azure Open AI resource follow this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
 
@@ -63,7 +63,7 @@ pf run show-details --name $name
 pf run visualize --name $name
 ```
 
-## Run flow locally with connection
+## Run flow with connection
 Storing connection info in .env with plaintext is not safe. We recommend to use `pf connection` to guard secrets like `api_key` from leak.
 
 - Show or create `open_ai_connection`

@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import tempfile
+import zipfile
 from contextlib import contextmanager
 from enum import Enum
 from os import PathLike
@@ -156,7 +157,8 @@ def get_encryption_key(generate_if_not_found: bool = False) -> str:
             raise StoreConnectionEncryptionKeyError(
                 "System keyring backend service not found in your operating system. "
                 "See https://pypi.org/project/keyring/ to install requirement for different operating system, "
-                "or 'pip install keyrings.alt' to use the third-party backend."
+                "or 'pip install keyrings.alt' to use the third-party backend. Reach more detail about this error at "
+                "https://microsoft.github.io/promptflow/how-to-guides/faq.html#connection-creation-failed-with-storeconnectionencryptionkeyerror"  # noqa: E501
             ) from e
 
     ENCRYPTION_KEY_IN_KEY_RING = _get_from_keyring()
@@ -237,9 +239,22 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
 
 
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value
+
+
 def parse_variant(variant: str) -> Tuple[str, str]:
     variant_regex = r"\${([^.]+).([^}]+)}"
-    match = re.match(variant_regex, variant)
+    match = re.match(variant_regex, strip_quotation(variant))
     if match:
         return match.group(1), match.group(2)
     else:
@@ -389,9 +404,60 @@ def _get_additional_includes(yaml_path):
     return flow_dag.get("additional_includes", [])
 
 
+def _is_folder_to_compress(path: Path) -> bool:
+    """Check if the additional include needs to compress corresponding folder as a zip.
+
+    For example, given additional include /mnt/c/hello.zip
+      1) if a file named /mnt/c/hello.zip already exists, return False (simply copy)
+      2) if a folder named /mnt/c/hello exists, return True (compress as a zip and copy)
+
+    :param path: Given path in additional include.
+    :type path: Path
+    :return: If the path need to be compressed as a zip file.
+    :rtype: bool
+    """
+    if path.suffix != ".zip":
+        return False
+    # if zip file exists, simply copy as other additional includes
+    if path.exists():
+        return False
+    # remove .zip suffix and check whether the folder exists
+    stem_path = path.parent / path.stem
+    return stem_path.is_dir()
+
+
+def _resolve_folder_to_compress(base_path: Path, include: str, dst_path: Path) -> None:
+    """resolve the zip additional include, need to compress corresponding folder."""
+    zip_additional_include = (base_path / include).resolve()
+    folder_to_zip = zip_additional_include.parent / zip_additional_include.stem
+    zip_file = dst_path / zip_additional_include.name
+    with zipfile.ZipFile(zip_file, "w") as zf:
+        zf.write(folder_to_zip, os.path.relpath(folder_to_zip, folder_to_zip.parent))  # write root in zip
+        for root, _, files in os.walk(folder_to_zip, followlinks=True):
+            for file in files:
+                file_path = os.path.join(folder_to_zip, file)
+                zf.write(file_path, os.path.relpath(file_path, folder_to_zip.parent))
+
+
 @contextmanager
 def _merge_local_code_and_additional_includes(code_path: Path):
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
+    logger = logging.getLogger(LOGGER_NAME)
+
+    def additional_includes_copy(src, relative_path, target_dir):
+        if src.is_file():
+            dst = Path(target_dir) / relative_path
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if dst.exists():
+                logger.warning(
+                    "Found duplicate file in additional includes, "
+                    f"additional include file {src} will overwrite {relative_path}"
+                )
+            shutil.copy2(src, dst)
+        else:
+            for name in src.glob("*"):
+                additional_includes_copy(name, Path(relative_path) / name.name, target_dir)
+
     if code_path.is_dir():
         yaml_path = (Path(code_path) / DAG_FILE_NAME).resolve()
         code_path = code_path.resolve()
@@ -405,15 +471,16 @@ def _merge_local_code_and_additional_includes(code_path: Path):
             src_path = Path(item)
             if not src_path.is_absolute():
                 src_path = (code_path / item).resolve()
-            dst_path = (Path(temp_dir) / src_path.name).resolve()
+
+            if _is_folder_to_compress(src_path):
+                _resolve_folder_to_compress(code_path, item, Path(temp_dir))
+                # early continue as the folder is compressed as a zip file
+                continue
 
             if not src_path.exists():
                 raise ValueError(f"Unable to find additional include {item}")
 
-            if src_path.is_file():
-                shutil.copy2(src_path, dst_path)
-            if src_path.is_dir():
-                shutil.copytree(src_path, dst_path)
+            additional_includes_copy(src_path, relative_path=src_path.name, target_dir=temp_dir)
         yield temp_dir
 
 
@@ -477,6 +544,8 @@ def _generate_tool_meta(
     tools: List[Tuple[str, str]],
     raise_error: bool,
     timeout: int,
+    *,
+    include_errors_in_output: bool = False,
 ) -> Dict[str, dict]:
     logger = logging.getLogger(LOGGER_NAME)
     # use multi process generate to avoid system path disturb
@@ -515,7 +584,10 @@ def _generate_tool_meta(
         if source not in res and source not in errors:
             errors[source] = f"Generate meta timeout for source {source!r}."
     for source in errors:
-        logger.warning(f"Generate meta for source {source!r} failed: {errors[source]}.")
+        if include_errors_in_output:
+            res[source] = errors[source]
+        else:
+            logger.warning(f"Generate meta for source {source!r} failed: {errors[source]}.")
     if raise_error and len(errors) > 0:
         error_message = "Generate meta failed, detail error(s):\n" + json.dumps(errors, indent=4)
         raise GenerateFlowToolsJsonError(error_message)
@@ -539,6 +611,8 @@ def generate_flow_tools_json(
     dump: bool = True,
     raise_error: bool = True,
     timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    *,
+    include_errors_in_output: bool = False,
 ) -> dict:
     """Generate flow.tools.json for a flow directory.
 
@@ -553,27 +627,33 @@ def generate_flow_tools_json(
         data = yaml.safe_load(f)
     tools = []  # List[Tuple[source_file, tool_type]]
     for node in data[NODES]:
-        if "source" in node:
+        if "source" in node and "type" in node:
             if node["source"]["type"] != "code":
-                continue
-            if not (flow_directory / node["source"]["path"]).exists():
-                continue
-            tools.append((node["source"]["path"], node["type"].lower()))
+                pass
+            # should get message if source file not exists
+            else:
+                tools.append((node["source"]["path"], node["type"].lower()))
         # understand DAG to parse variants
-        elif node.get(USE_VARIANTS) is True:
+        # TODO: should we allow source to appear both in node and node variants?
+        if node.get(USE_VARIANTS) is True:
             node_variants = data[NODE_VARIANTS][node["name"]]
             for variant_id in node_variants[VARIANTS]:
                 current_node = node_variants[VARIANTS][variant_id][NODE]
-                if current_node["source"]["type"] != "code":
+                if "source" not in current_node or "type" not in current_node["source"]:
                     continue
-                if not (flow_directory / current_node["source"]["path"]).exists():
-                    continue
+                # should get message if source file not exists
                 tools.append((current_node["source"]["path"], current_node["type"].lower()))
 
     # generate content
     flow_tools = {
         "package": _generate_package_tools(),
-        "code": _generate_tool_meta(flow_directory, tools, raise_error=raise_error, timeout=timeout),
+        "code": _generate_tool_meta(
+            flow_directory,
+            tools,
+            raise_error=raise_error,
+            timeout=timeout,
+            include_errors_in_output=include_errors_in_output,
+        ),
     }
 
     if dump:

@@ -44,7 +44,7 @@ python ./create_symlinks.py
 ### 2. Test & run the flow with symlinks
 
 In this sample, this flow will references some files in the [web-classification](../web-classification/README.md) flow, and assume you already have required connection setup.
-You can execute this flow locally or submit it to cloud.
+You can execute this flow or submit it to cloud.
 
 
 #### Test flow with single line data

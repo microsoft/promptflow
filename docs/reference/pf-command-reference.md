@@ -1,10 +1,10 @@
 # pf
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-Manage local prompt flow resources with the prompt flow CLI.
+Manage prompt flow resources with the prompt flow CLI.
 
 | Command | Description |
 | --- | --- |
@@ -19,7 +19,8 @@ Manage promptflow flow flows.
 | Command | Description |
 | --- | --- |
 | [pf flow init](#pf-flow-init) | Initialize a prompt flow directory. |
-| [pf flow test](#pf-flow-test) | Test the prompt flow or flow node in local. |
+| [pf flow test](#pf-flow-test) | Test the prompt flow or flow node. |
+| [pf flow build](#pf-flow-build) | Build a flow for further sharing or deployment. |
 | [pf flow serve](#pf-flow-serve) | Serving a flow as an endpoint. |
 
 ### pf flow init
@@ -84,7 +85,7 @@ Automatic yes to all prompts; assume 'yes' as answer to all prompts and run non-
 
 ### pf flow test
 
-Test the prompt flow or flow node in local.
+Test the prompt flow or flow node.
 
 ```bash
 pf flow test --flow
@@ -166,6 +167,61 @@ Start a interactive chat session for chat flow.
 
 Displays the output for each step in the chat flow.
 
+### pf flow build
+
+Build a flow for further sharing or deployment.
+
+```bash
+pf flow build --source
+              --output
+              --format
+              [--variant]
+              [--verbose]
+              [--debug]
+```
+
+#### Examples
+
+Build a flow as docker, which can be built into Docker image via `docker build`.
+
+```bash
+pf flow build --source <path-to-flow> --output <output-path> --format docker
+```
+
+Build a flow as docker with specific variant.
+
+```bash
+pf flow build --source <path-to-flow> --output <output-path> --format docker --variant '${node_name.variant_name}'
+```
+
+#### Required Parameter
+
+`--source`
+
+The flow or run source to be used.
+
+`--output`
+
+The folder to output built flow. Need to be empty or not existed.
+
+`--format`
+
+The format to build flow into
+
+#### Optional Parameters
+
+`--variant`
+
+Node & variant name in format of ${node_name.variant_name}.
+
+`--verbose`
+
+Show more details for each step during build.
+
+`--debug`
+
+Show debug information during build.
+
 ### pf flow serve
 
 Serving a flow as an endpoint.
@@ -175,6 +231,8 @@ pf flow serve --source
               [--port]
               [--host]
               [--environment-variables]
+              [--verbose]
+              [--debug]
 ```
 
 #### Examples
@@ -210,6 +268,14 @@ The host of endpoint.
 `--environment-variables`
 
 Environment variables to set by specifying a property path and value. Example: --environment-variable key1="\`${my_connection.api_key}\`" key2="value2". The value reference to connection keys will be resolved to the actual value, and all environment variables specified will be set into `os.environ`.
+
+`--verbose`
+
+Show more details for each step during serve.
+
+`--debug`
+
+Show debug information during serve.
 
 ## pf connection
 
@@ -343,7 +409,7 @@ Manage prompt flow runs.
 | [pf run create](#pf-run-create) | Create a run. |
 | [pf run update](#pf-run-update) | Update a run metadata, including display name, description and tags. |
 | [pf run stream](#pf-run-stream) | Stream run logs to the console. |
-| [pf run list](#pf-run-list) | List runs locally. |
+| [pf run list](#pf-run-list) | List runs. |
 | [pf run show](#pf-run-show) | Show details for a run. |
 | [pf run show-details](#pf-run-show-details) | Preview a run's intput(s) and output(s). |
 | [pf run show-metrics](#pf-run-show-metrics) | Print run metrics to the console. |
@@ -475,7 +541,7 @@ Name of the run.
 
 ### pf run list
 
-List runs locally.
+List runs.
 
 ```bash
 pf run list [--all-results]

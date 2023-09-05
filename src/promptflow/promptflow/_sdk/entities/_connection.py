@@ -291,12 +291,15 @@ class _StrongTypeConnection(_Connection):
 
 class AzureOpenAIConnection(_StrongTypeConnection):
     """
+    Azure Open AI connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param api_type: The api type, default "azure".
     :param api_version: The api version, default "2023-07-01-preview".
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.AZURE_OPEN_AI
 
     def __init__(
@@ -312,35 +315,44 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     @property
     def api_base(self):
+        """Return the connection api base."""
         return self.configs.get("api_base")
 
     @api_base.setter
     def api_base(self, value):
+        """Set the connection api base."""
         self.configs["api_base"] = value
 
     @property
     def api_type(self):
+        """Return the connection api type."""
         return self.configs.get("api_type")
 
     @api_type.setter
     def api_type(self, value):
+        """Set the connection api type."""
         self.configs["api_type"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
 
 class OpenAIConnection(_StrongTypeConnection):
     """
+    Open AI connection.
+
     :param api_key: The api key.
-    :param organization: The organization, optional.
+    :param organization: Optional. The unique identifier for your organization which can be used in API requests.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.OPEN_AI
 
     def __init__(self, api_key: str, organization: str = None, **kwargs):
@@ -354,18 +366,23 @@ class OpenAIConnection(_StrongTypeConnection):
 
     @property
     def organization(self):
+        """Return the connection organization."""
         return self.configs.get("organization")
 
     @organization.setter
     def organization(self, value):
+        """Set the connection organization."""
         self.configs["organization"] = value
 
 
 class SerpConnection(_StrongTypeConnection):
     """
+    Serp connection.
+
     :param api_key: The api key.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.SERP
 
     def __init__(self, api_key: str, **kwargs):
@@ -396,10 +413,13 @@ class _EmbeddingStoreConnection(_StrongTypeConnection):
 
 class QdrantConnection(_EmbeddingStoreConnection):
     """
+    Qdrant connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.QDRANT
 
     @classmethod
@@ -409,10 +429,13 @@ class QdrantConnection(_EmbeddingStoreConnection):
 
 class WeaviateConnection(_EmbeddingStoreConnection):
     """
+    Weaviate connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.WEAVIATE
 
     @classmethod
@@ -422,11 +445,14 @@ class WeaviateConnection(_EmbeddingStoreConnection):
 
 class CognitiveSearchConnection(_StrongTypeConnection):
     """
+    Cognitive Search connection.
+
     :param api_key: The api key.
     :param api_base: The api base.
     :param api_version: The api version, default "2023-07-01-Preview".
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.COGNITIVE_SEARCH
 
     def __init__(self, api_key: str, api_base: str, api_version: str = "2023-07-01-Preview", **kwargs):
@@ -440,29 +466,36 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
     @property
     def api_base(self):
+        """Return the connection api base."""
         return self.configs.get("api_base")
 
     @api_base.setter
     def api_base(self, value):
+        """Set the connection api base."""
         self.configs["api_base"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):
     """
+    Azure Content Safety connection.
+
     :param api_key: The api key.
     :param endpoint: The api endpoint.
     :param api_version: The api version, default "2023-04-30-preview".
     :param api_type: The api type, default "Content Safety".
     :param name: Connection name.
     """
+
     TYPE = ConnectionType.AZURE_CONTENT_SAFETY
 
     def __init__(
@@ -483,37 +516,46 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
 
     @property
     def endpoint(self):
+        """Return the connection endpoint."""
         return self.configs.get("endpoint")
 
     @endpoint.setter
     def endpoint(self, value):
+        """Set the connection endpoint."""
         self.configs["endpoint"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
     @property
     def api_type(self):
+        """Return the connection api type."""
         return self.configs.get("api_type")
 
     @api_type.setter
     def api_type(self, value):
+        """Set the connection api type."""
         self.configs["api_type"] = value
 
 
 class FormRecognizerConnection(AzureContentSafetyConnection):
     """
+    Form Recognizer connection.
+
     :param api_key: The api key.
     :param endpoint: The api endpoint.
     :param api_version: The api version, default "2023-07-31".
     :param api_type: The api type, default "Form Recognizer".
     :param name: Connection name.
     """
+
     # Note: FormRecognizer and ContentSafety are using CognitiveService type in ARM, so keys are the same.
     TYPE = ConnectionType.FORM_RECOGNIZER
 
@@ -533,6 +575,7 @@ class CustomConnection(_Connection):
     :param secrets: The secrets kv pairs.
     :param name: Connection name
     """
+
     TYPE = ConnectionType.CUSTOM
 
     def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
