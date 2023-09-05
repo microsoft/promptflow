@@ -15,7 +15,7 @@ jobs:
         run: |
           set -x -e
 
-          branch_name=$(git rev-parse --abbrev-ref HEAD)
+          branch_name="${{ github.ref_name }}"
           echo "branch name: $branch_name"
 
           if [[ $branch_name != release/promptflow/* ]]; then
