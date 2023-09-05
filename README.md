@@ -1,5 +1,6 @@
 # Prompt flow
-![banner](examples/tutorials/quick-start/media/PF_banner.png)
+
+[![banner](examples/tutorials/quick-start/media/PF_banner.png)](https://microsoft.github.io/promptflow)
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
@@ -92,7 +93,7 @@ In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flo
 
 > <details>
 > <summary>For Azure Open AI users, modify this file accordingly.</summary>
-> For Azure Open AI, please replace it with the connection name you created in the previous step.
+> For Azure Open AI, please replace it with the connection name you created in the previous step, and specify the deployment name you'd like to use.
 >
 > ```yaml
 > nodes:
@@ -102,7 +103,7 @@ In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flo
 >     type: code
 >     path: chat.jinja2
 >   inputs:
->     deployment_name: gpt-4
+>     deployment_name: <your_azure_open_ai_deployment_name>
 >     max_tokens: '256'
 >     temperature: '0.7'
 >     chat_history: ${inputs.chat_history}
@@ -137,29 +138,27 @@ Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Pro
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps: develop a flow，improve the flow quality, deploy the flow to production.
+Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 
-Start with [Step-by-Step Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): It provides a detailed walkthrough to create and run your own flow.
-
-#### VS Code Extension <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="30"/> 
-
-We also offer a VS Code extension for an interactive flow development experience with UI. You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
+[Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 
 <details>
-<summary> <b>Demo</b> (click to toggle the content)</summary>
-This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
+<summary><b>VS Code Extension</b> <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="20"/> -- a flow designer</summary>
+
+We also offer a VS Code extension for an interactive flow development experience with UI. This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
 
 [![vsc extension](https://img.youtube.com/vi/GmhasXd7sj4/0.jpg)](https://youtu.be/GmhasXd7sj4)
 
 </details>
 
+You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
+
 ### Learn from Use Cases
 
-Learning from [Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): It's an end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
-
-* More examples can be found [here](./examples/README.md). We welcome contributions of new use cases!
+[Tutorial: Chat with PDF]((https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md)): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
+> More examples can be found [here](./examples/README.md). We welcome contributions of new use cases!
 
 ### Setup for Contributors
 
