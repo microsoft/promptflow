@@ -39,89 +39,88 @@ pip install promptflow promptflow-tools
 
 ## Quick Start ⚡
 
-### Initialize a Prompt Flow
+<details>
+<summary><b>Create a chatbot with prompt flow</b></summary>
+ It creates a new <b>flow folder</b> named my_chatbot and generates the necessary flow files within it. The --flow argument is the path to the flow folder.
+</details>
 
-To initiate a prompt flow from a chat template, use the following command. It creates a new **flow folder** named `my_chatbot` and generates the necessary flow files within it. The `--flow` argument is the path to the flow folder.
+Initiate a prompt flow from a chat template:
 
 ```sh
 pf flow init --flow ./my_chatbot --type chat
 ```
 
-### Setup a connection for your API key
-
+<details>
+<summary><b>Setup a connection for your API key</b></summary>
 Navigate to the `my_chatbot` folder, you can find a yaml file named `openai.yaml` file, which is the definition of the connection to store your Open AI key.
+</details>
+
 
 Establish the connection by running:
 
 ```sh
 # Override keys with --set to avoid yaml file changes
-pf connection create --file openai.yaml --set api_key=<your_api_key>
+pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key>
 ```
+
+> <details>
+> <summary>For Azure Open AI, follow the respective setup guide.</summary>
+> 
+> Create a new yaml file `azure_openai.yaml` with following template in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
+> 
+> ```yaml
+> $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
+> name: azure_open_ai_connection # name of the connection
+> type: azure_open_ai  # Azure Open AI 
+> api_key: "<aoai-api-key>" # replace with your Azure OpenAI API key
+> api_base: "aoai-api-endpoint" # replace with your Azure OpenAI API endpoint
+> api_type: "azure" 
+> api_version: "2023-03-15-preview" # replace with your Azure OpenAI API version
+> ```
+> 
+> Establish the connection by running:
+> ```sh
+> pf connection create --file azure_openai.yaml
+> ```
+> </details>
 
 <details>
-<summary>For Azure Open AI, follow the respective setup guide.</summary>
-
-Create a new yaml file `azure_openai.yaml` with following template in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
-
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
-name: azure_open_ai_connection # name of the connection
-type: azure_open_ai  # Azure Open AI 
-api_key: "<aoai-api-key>" # replace with your Azure OpenAI API key
-api_base: "aoai-api-endpoint" # replace with your Azure OpenAI API endpoint
-api_type: "azure" 
-api_version: "2023-03-15-preview" # replace with your Azure OpenAI API version
-```
-
-Establish the connection by running:
-```sh
-pf connection create --file azure_openai.yaml
-```
-</details>
-
-### Chat with your flow
-
+<summary><b>Chat with your flow</b></summary>
 In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flow, including inputs/outputs, tools, nodes, etc. Note we're using the connection named `open_ai_connection` in the `chat` node.
-
-<details>
-<summary>For Azure Open AI users, modify this file accordingly.</summary>
-
-
-For Azure Open AI, please replace it with the connection name you created in the previous step.
-
-```yaml
-nodes:
-- name: chat
-  type: llm
-  source:
-    type: code
-    path: chat.jinja2
-  inputs:
-    deployment_name: gpt-4
-    max_tokens: '256'
-    temperature: '0.7'
-    chat_history: ${inputs.chat_history}
-    question: ${inputs.question}
-  api: chat
-  connection: azure_open_ai_connection
-```
-
 </details>
 
-You can interact with your chatbot via:
+> <details>
+> <summary>For Azure Open AI users, modify this file accordingly.</summary>
+> For Azure Open AI, please replace it with the connection name you created in the previous step.
+>
+> ```yaml
+> nodes:
+> - name: chat
+>   type: llm
+>   source:
+>     type: code
+>     path: chat.jinja2
+>   inputs:
+>     deployment_name: gpt-4
+>     max_tokens: '256'
+>     temperature: '0.7'
+>     chat_history: ${inputs.chat_history}
+>     question: ${inputs.question}
+>   api: chat
+>   connection: azure_open_ai_connection
+> ```
+>  </details>
+
+Interact with your chatbot via (Press `Ctrl + C` to end the session.):
 
 ```sh
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-Press `Ctrl + C` to end the session.
-
 Congratulations! You have now prototyped your chatbot! 🎉 What's next?
 
-### Ensuring "High Quality” in production scenarios
-
 <details>
-<summary><b> Before deploying your application to production, it is crucial to evaluate its quality. </b> Why is this crucial? </summary>
+<summary><b>Ensuring "High Quality” in production scenarios</b></summary>
 
 LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth.
 
