@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import sys
 import webbrowser
 from pathlib import Path
 
@@ -155,6 +156,18 @@ Examples:
 # Validate flow
 pf flow validate --source <path_to_flow>
 """  # noqa: E501
+    if (sys.version_info.major == 3) and (sys.version_info.minor < 9):
+        add_param_flow_tools_json_path = lambda parser: parser.add_argument(  # noqa: E731
+            "--tools-only",
+            action="store_true",
+            help=argparse.SUPPRESS,
+        )
+    else:
+        add_param_flow_tools_json_path = lambda parser: parser.add_argument(  # noqa: E731
+            "--tools-only",
+            action=argparse.BooleanOptionalAction,
+            help=argparse.SUPPRESS,
+        )
     activate_action(
         name="validate",
         description="Validate a flow and generate flow.tools.json for the flow.",
@@ -166,11 +179,7 @@ pf flow validate --source <path_to_flow>
                 type=str,
                 help=argparse.SUPPRESS,
             ),
-            lambda parser: parser.add_argument(  # noqa: E731
-                "--tools-only",
-                action=argparse.BooleanOptionalAction,
-                help=argparse.SUPPRESS,
-            ),
+            add_param_flow_tools_json_path,
         ],
         subparsers=subparsers,
         help_message="Validate a flow. Will raise error if the flow is not valid.",

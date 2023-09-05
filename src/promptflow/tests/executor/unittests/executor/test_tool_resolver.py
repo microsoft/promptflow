@@ -129,6 +129,7 @@ class TestToolResolver:
             and (sys.version_info.minor == 11)
             and ((sys.platform == "linux") or (sys.platform == "darwin"))
         ):
+            # Python >= 3.11 has a different error message on linux and macos
             message = "value invalid is not type ValueType.INT"
         else:
             message = "value invalid is not type int"

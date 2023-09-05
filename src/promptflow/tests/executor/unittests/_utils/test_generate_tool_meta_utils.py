@@ -98,7 +98,7 @@ class TestPythonLoadError:
             r"Traceback \(most recent call last\):\n"
             r'  File ".*load_error.py", line .*, in <module>\n'
             r"    1 / 0\n"
-            r"(.*\n)?"
+            r"(.*\n)?"  # Python >= 3.11 add extra line here like a pointer.
             r"ZeroDivisionError: division by zero\n",
             info_0_value.get("traceback"),
         )
