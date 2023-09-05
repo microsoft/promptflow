@@ -12,6 +12,8 @@ on:
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
 jobs:
   sdk_cli_tests:
     strategy:
@@ -58,10 +60,9 @@ jobs:
     - name: Run Test
       shell: pwsh
       working-directory: ${{ env.testWorkingDirectory }}
-      run: |-
-        $env:IS_IN_CI_PIPELINE = "true"
+      run: |
+        gci env:* | sort-object name
         az account show
-        $env:PYTHONPATH = "${{ github.workspace }}\\src\\promptflow"
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `

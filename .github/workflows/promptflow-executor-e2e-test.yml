@@ -12,6 +12,8 @@ on:
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
 jobs:
   executor_e2e_tests:
     strategy:
@@ -58,10 +60,9 @@ jobs:
     - name: Run Coverage Test
       shell: pwsh
       working-directory: ${{ github.workspace }}
-      run: |-
-        $env:IS_IN_CI_PIPELINE = "true"
+      run: |
+        gci env:* | sort-object name
         az account show
-        $env:PYTHONPATH = "${{ github.workspace }}\\src\\promptflow"
         pip install langchain
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
