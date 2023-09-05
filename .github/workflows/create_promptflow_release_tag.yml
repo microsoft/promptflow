@@ -28,6 +28,7 @@ jobs:
           git add src/promptflow/promptflow/_version.py
           git config --global user.name 'promptflow release'
           git config --global user.email 'aml-pt-eng@microsoft.com'
+          git commit -m "update version in _version.py for promptflow"
           git push --set-upstream origin $branch_name
 
           git tag promptflow_$release_version
