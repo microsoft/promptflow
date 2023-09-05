@@ -34,9 +34,9 @@ jobs:
         fi
         env | sort >> $GITHUB_OUTPUT
       id: display_env
-      shell: bash -el {0}
-    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
-      uses: "./.github/actions/step_create_conda_environment"
+      shell: bash
+    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+      uses: "./.github/actions/step_create_python_environment"
       with:
         pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
@@ -56,21 +56,19 @@ jobs:
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
     - name: Run Coverage Test
-      shell: bash -l {0}
+      shell: pwsh
       working-directory: ${{ github.workspace }}
       run: |-
-        set -x -e
-        export IS_IN_CI_PIPELINE="true"
+        $env:IS_IN_CI_PIPELINE = "true"
         az account show
-        conda activate release-env
-        export PYTHONPATH=${{ github.workspace }}/src/promptflow
+        $env:PYTHONPATH = "${{ github.workspace }}\\src\\promptflow"
         pip install langchain
-        python scripts/building/run_coverage_tests.py \
-          -p ${{ github.workspace }}/src/promptflow/promptflow \
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests \
-          -l eastus \
-          -m "all" \
-          -n ${{ steps.cpu-cores.outputs.count }} \
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ github.workspace }}/src/promptflow/promptflow `
+          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
+          -l eastus `
+          -m "all" `
+          -n ${{ steps.cpu-cores.outputs.count }}
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
@@ -102,3 +100,4 @@ jobs:
         pythonVersion: 3.9
         coverageThreshold: 0.7
         token: ${{ secrets.GITHUB_TOKEN }}
+        context: test/executor_e2e
