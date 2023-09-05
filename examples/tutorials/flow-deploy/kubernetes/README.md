@@ -135,7 +135,7 @@ You'll need to set up the environment variables in the container to make the con
   To achieve this, execute the following command:
 
   ```shell
-  kubectl port-forward <pod_name> <local_port>:<container_port>
+  kubectl port-forward <pod_name> <local_port>:<container_port> -n <your-namespace>
   ```
   With the port forwarding in place, you can use the curl command to initiate the endpoint test:
 
