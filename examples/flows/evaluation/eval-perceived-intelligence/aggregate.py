@@ -13,7 +13,7 @@ def aggregate(perceived_intelligence_score: List[float]):
 
     aggregated_results["perceived_intelligence_score"] /= aggregated_results["count"]
 
-    # Log metric for each variant
+    # Log metric
     from promptflow import log_metric
 
     log_metric(key="perceived_intelligence_score", value=aggregated_results["perceived_intelligence_score"])

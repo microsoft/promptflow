@@ -13,7 +13,7 @@ def calculate_accuracy(grades: List[str], variant_ids: List[str]):
             aggregate_grades[variant_id] = []
         aggregate_grades[variant_id].append(grade)
 
-    # calculate accuracy for each variant
+    # calculate accuracy
     for name, values in aggregate_grades.items():
         accuracy = round((values.count("Correct") / len(values)), 2)
         log_metric("accuracy", accuracy, variant_id=name)

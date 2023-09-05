@@ -6,7 +6,7 @@ from promptflow import tool
 @tool
 def aggregate(processed_results: List[str]):
     """
-    This tool aggregates the processed result of all lines to the variant level and log metric for each variant.
+    This tool aggregates the processed result of all lines and log metric.
 
     :param processed_results: List of the output of line_process node.
     """
@@ -17,7 +17,7 @@ def aggregate(processed_results: List[str]):
     print(results_num)
     print(processed_results)
 
-    # Log metric for each variant
+    # Log metric
     from promptflow import log_metric
     log_metric(key="results_num", value=results_num)
 

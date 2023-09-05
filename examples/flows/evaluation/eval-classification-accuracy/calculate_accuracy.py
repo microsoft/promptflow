@@ -10,7 +10,7 @@ def calculate_accuracy(grades: List[str]):
         grade = grades[index]
         result.append(grade)
 
-    # calculate accuracy for each variant
+    # calculate accuracy
     accuracy = round((result.count("Correct") / len(result)), 2)
     log_metric("accuracy", accuracy)
 
