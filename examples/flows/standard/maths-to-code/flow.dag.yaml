@@ -40,7 +40,7 @@ nodes:
     path: ask_llm.jinja2
   inputs:
     deployment_name: gpt-35-turbo
-    model: gpt-35-turbo
+    model: gpt-3.5-turbo
     question: ${inputs.math_question}
     examples: ${math_example.output}
   connection: open_ai_connection
