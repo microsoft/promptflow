@@ -28,7 +28,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         testType: [sdk-cli, executor]
-        pythonVersion: ['3.9', '3.10', '3.11']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11', '3.12']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -105,7 +105,7 @@ jobs:
       matrix:
         os: [windows-latest]
         testType: [sdk-cli, executor-e2e, executor-unit]
-        pythonVersion: ['3.9', '3.10', '3.11']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11', '3.12']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
