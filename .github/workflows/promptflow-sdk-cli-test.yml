@@ -61,7 +61,6 @@ jobs:
       run: |-
         $env:IS_IN_CI_PIPELINE = "true"
         az account show
-        conda activate release-env
         $env:PYTHONPATH = "${{ github.workspace }}\\src\\promptflow"
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `

@@ -15,7 +15,6 @@ runs:
     continue-on-error: true
     shell: pwsh
     run: |-
-      conda activate release-env
       pip uninstall -y promptflow promptflow-sdk promptflow-tools
   - name: 'Build and install: promptflow-tools'
     shell: pwsh
