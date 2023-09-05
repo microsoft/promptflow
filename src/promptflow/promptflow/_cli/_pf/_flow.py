@@ -161,16 +161,6 @@ pf flow validate --source <path_to_flow>
         epilog=epilog,
         add_params=[
             add_param_source,
-            lambda parser: parser.add_argument(  # noqa: E731
-                "--flow-tools-json-path",
-                type=str,
-                help=argparse.SUPPRESS,
-            ),
-            lambda parser: parser.add_argument(  # noqa: E731
-                "--tools-only",
-                action=argparse.BooleanOptionalAction,
-                help=argparse.SUPPRESS,
-            ),
         ],
         subparsers=subparsers,
         help_message="Validate a flow. Will raise error if the flow is not valid.",
@@ -424,6 +414,7 @@ def build_flow(args):
         output=args.output,
         format=args.format,
         variant=args.variant,
+        flow_only=args.flow_only,
     )
     print(
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"
@@ -437,9 +428,10 @@ def validate_flow(args):
 
     validation_result = pf_client.flows.validate(
         flow=args.source,
-        flow_tools_json_path=args.flow_tools_json_path,
-        tools_only=args.tools_only,
     )
     if validation_result:
         print(json.dumps(validation_result, indent=4))
         exit(1)
+    else:
+        print("Flow is valid.")
+        exit(0)

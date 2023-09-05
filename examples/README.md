@@ -16,8 +16,8 @@
 
 | path | status | description |
 ------|--------|-------------
-| [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | A quickstart tutorial to run a flow and evaluate it. |
-| [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | A quickstart tutorial to run a flow in Azure AI and evaluate it. |
+| [quickstart.ipynb](tutorials/get-started/quickstart.ipynb) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | A quickstart tutorial to run a flow and evaluate it. |
+| [quickstart-azure.ipynb](tutorials/get-started/quickstart-azure.ipynb) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | A quickstart tutorial to run a flow in Azure AI and evaluate it. |
 
 
 ## CLI examples
@@ -27,6 +27,8 @@
 | path | status | description |
 ------|--------|-------------
 | [chat-with-pdf](tutorials/e2e-development/chat-with-pdf.md) | [![samples_tutorials_e2e_development_chat_with_pdf](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml) |  Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information |
+| [azure-app-service](tutorials/flow-deploy/azure-app-service/README.md) | [![samples_tutorials_flow_deploy_azure_app_service](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_azure_app_service.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_azure_app_service.yml) |  This example demos how to deploy a flow using Azure App Service |
+| [docker](tutorials/flow-deploy/docker/README.md) | [![samples_tutorials_flow_deploy_docker](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_docker.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_docker.yml) |  This example demos how to deploy flow as a docker app |
 
 
 ### Flows ([flows](flows))
@@ -43,6 +45,7 @@
 | [flow-with-additional-includes](flows/standard/flow-with-additional-includes/README.md) | [![samples_flows_standard_flow_with_additional_includes](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_additional_includes.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_additional_includes.yml) |  User sometimes need to reference some common files or folders, this sample demos how to solve the problem using additional_includes |
 | [flow-with-symlinks](flows/standard/flow-with-symlinks/README.md) | [![samples_flows_standard_flow_with_symlinks](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_symlinks.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_symlinks.yml) |  User sometimes need to reference some common files or folders, this sample demos how to solve the problem using symlinks |
 | [gen-docstring](flows/standard/gen-docstring/README.md) | [![samples_flows_standard_gen_docstring](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_gen_docstring.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_gen_docstring.yml) |  This example can help you automatically generate Python code's docstring and return the modified code |
+| [maths-to-code](flows/standard/maths-to-code/README.md) | [![samples_flows_standard_maths_to_code](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_maths_to_code.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_maths_to_code.yml) |  Math to Code is a project that utilizes the power of the chatGPT model to generate code that models math questions and then executes the generated code to obtain the final numerical answer |
 | [named-entity-recognition](flows/standard/named-entity-recognition/README.md) | [![samples_flows_standard_named_entity_recognition](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_named_entity_recognition.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_named_entity_recognition.yml) |  A flow that perform named entity recognition task |
 | [web-classification](flows/standard/web-classification/README.md) | [![samples_flows_standard_web_classification](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_web_classification.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_web_classification.yml) |  This is a flow demonstrating multi-class classification with LLM |
 
@@ -74,22 +77,17 @@
 | [connections](connections/README.md) | [![samples_connections](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml) |  This folder contains example `YAML` files for creating `connection` using `pf` cli |
 
 
-### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
-
-| path | status | description |
-------|--------|-------------
-| [deploy.md](tutorials/flow-deploy/deploy.md) | | deploy flow as endpoint
 
 ## SDK examples
 
 | path | status | description |
 ------|--------|-------------
-| [quickstart.ipynb](tutorials/get-started) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | A quickstart tutorial to run a flow and evaluate it. |
-| [quickstart-azure.ipynb](tutorials/get-started) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | A quickstart tutorial to run a flow in Azure AI and evaluate it. |
-| [cloud-run-management.ipynb](tutorials/run-management) | [![samples_runmanagement_cloudrunmanagement](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml) | Flow run management in Azure AI |
-| [connection.ipynb](connections) | [![samples_connections_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml) | Manage various types of connections using sdk |
-| [chat-with-pdf-azure.ipynb](flows/chat/chat-with-pdf) | [![samples_flows_chat_chatwithpdf_chatwithpdfazure](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml) | A tutorial of chat-with-pdf flow that executes in Azure AI |
-| [chat-with-pdf.ipynb](flows/chat/chat-with-pdf) | [![samples_flows_chat_chatwithpdf_chatwithpdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml) | A tutorial of chat-with-pdf flow that allows user ask questions about the content of a PDF file and get answers |
+| [quickstart.ipynb](tutorials/get-started/quickstart.ipynb) | [![samples_getstarted_quickstart](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstart.yml) | A quickstart tutorial to run a flow and evaluate it. |
+| [quickstart-azure.ipynb](tutorials/get-started/quickstart-azure.ipynb) | [![samples_getstarted_quickstartazure](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_getstarted_quickstartazure.yml) | A quickstart tutorial to run a flow in Azure AI and evaluate it. |
+| [cloud-run-management.ipynb](tutorials/run-management/cloud-run-management.ipynb) | [![samples_runmanagement_cloudrunmanagement](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_runmanagement_cloudrunmanagement.yml) | Flow run management in Azure AI |
+| [connection.ipynb](connections/connection.ipynb) | [![samples_connections_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections_connection.yml) | Manage various types of connections using sdk |
+| [chat-with-pdf-azure.ipynb](flows/chat/chat-with-pdf/chat-with-pdf-azure.ipynb) | [![samples_flows_chat_chatwithpdf_chatwithpdfazure](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdfazure.yml) | A tutorial of chat-with-pdf flow that executes in Azure AI |
+| [chat-with-pdf.ipynb](flows/chat/chat-with-pdf/chat-with-pdf.ipynb) | [![samples_flows_chat_chatwithpdf_chatwithpdf](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_chat_chatwithpdf_chatwithpdf.yml) | A tutorial of chat-with-pdf flow that allows user ask questions about the content of a PDF file and get answers |
 
 
 
@@ -103,4 +101,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Reference
 
-* [Promptflow documentation](https://microsoft.github.io/promptflow)
+* [Promptflow documentation](https://microsoft.github.io/promptflow/)

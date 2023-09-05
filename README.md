@@ -22,7 +22,7 @@ With prompt flow, you will be able to:
 
 ## Get Started with Prompt flow ⚡
 
-Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow) & [examples](./examples/README.md):
+Develop your LLM apps with Prompt flow: please start with our [docs](https://microsoft.github.io/promptflow/) & [examples](./examples/README.md):
 - [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 - [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
 
