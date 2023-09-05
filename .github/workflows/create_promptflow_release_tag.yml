@@ -17,6 +17,12 @@ jobs:
 
           branch_name=$(git rev-parse --abbrev-ref HEAD)
           echo "branch name: $branch_name"
+
+          if [[ $branch_name != release/promptflow/* ]]; then
+            echo "not a release branch for promptflow, exiting..."
+            exit 1
+          fi
+
           release_version=${branch_name#release/promptflow/}
           echo "release version: $release_version"
 
