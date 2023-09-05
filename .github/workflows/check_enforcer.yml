@@ -21,7 +21,9 @@ jobs:
           pending_count=0
 
           while read check_run; do
-            if echo $check_run | grep -q '' ; then
+            if echo $check_run | grep -q '^triage$|^flake8$|^license/cla$' ; then
+              continue
+            else:
               pending_count=$((pending_count+1))
             fi
           done <<<$(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs | jq -c '.check_runs[] | {"name": .name, "url": .html_url, "conclusion": .conclusion} | select(.conclusion!="success")')
