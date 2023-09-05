@@ -28,51 +28,72 @@ With prompt flow, you will be able to:
 Learn more about the concept of Prompt flow [here](https://microsoft.github.io/promptflow/concepts/index.html).
 
 ------
-## Get Started with Prompt flow ⚡
 
-### Installation
-
+## Installation
 > ℹ️ A python environment, `python=3.9` is recommended.
 
 ```sh
 pip install promptflow promptflow-tools
 ```
 
-### Set Up Connection for Your API Key
+## Quick Start ⚡
 
-Create a yaml file `connection.yaml` to define the connection.
+This section will guide you quick start with Prompt flow from creating a simple chat flow from template.
 
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
-name: open_ai_connection # name of the connection
-type: open_ai
-api_key: <your_openai_key> # replace with your OpenAI API key
-```
-
-Run the following CLI command to create the connection:
-
-```sh
-pf connection create -f connection.yaml
-```
-More details about connection can be found [here](https://microsoft.github.io/concepts/concept-connections.html).
-
-### Quick Start from a Template
+#### Initialize a prompt flow using the chat template
 
 <details>
-<summary><b>Initialize a prompt flow using the chat template.</b> (click to toggle the detailed introduction of the command)</summary>
+<summary>Click to toggle the detailed introduction of the command</summary>
 
-Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it:
+Use the following CLI command to initiate a prompt flow from a chat template. This will create a new **flow folder** named "my_chatbot" and initiate flow files within it.
+
+You can find a flow.dag.yaml file which is the flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
 
 > The `--flow` argument is used to specify the path to the flow folder.
-
 </details>
 
 ```sh
 pf flow init --flow ./my_chatbot --type chat
 ```
 
+#### Setup a connection for your API key
+
+Go to the `my_chatbot` folder, open the yaml file `openai.yaml` which is the connection definition yaml file. Replace the `api_key` with your own OpenAI API key:
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+name: open_ai_connection # name of the connection
+type: open_ai # Open AI 
+api_key: "<user-input>" # replace with your OpenAI API key
+```
+
 <details>
-<summary><b>Chat with your flow</b> (click to toggle the detailed introduction of the command)</summary>
+<summary>If you use <a herf="https://azure.microsoft.com/en-us/products/ai-services/openai-service-b">Azure Open AI</a>, click to toggle the yaml on Azure Open AI</summary>
+
+Create a new yaml file `azure_openai.yaml` in the `my_chatbot` folder. Replace the `api_key` and `api_base` with your own Azure OpenAI API key and endpoint:
+
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
+name: "<connection-name>"
+type: azure_open_ai  # name of the connection
+api_key: "<aoai-api-key>" # replace with your Azure OpenAI API key
+api_base: "aoai-api-endpoint" # replace with your Azure OpenAI API endpoint
+api_type: "azure" # Azure Open AI 
+api_version: "2023-03-15-preview" # replace with your Azure OpenAI API version
+```
+</details>
+
+Run the following CLI command to create the connection:
+
+```sh
+pf connection create -f openai.yaml
+```
+More details about connection can be found [here](https://microsoft.github.io/concepts/concept-connections.html).
+
+#### Chat with your flow
+
+<details>
+<summary>Click to toggle the detailed introduction of the command</summary>
  
 You can interact with your flow using the following command. Enter your question in the `User` section. Press `Ctrl + C` to end the session.
 
@@ -82,12 +103,10 @@ You can interact with your flow using the following command. Enter your question
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-**What's Next? Ensuring ”High Quality“ with Prompt Flow**
-
-Before deploying your application to production, it is crucial to evaluate its quality.
+#### What's Next? Ensuring ”High Quality“ with Prompt Flow
 
 <details>
-<summary><b> Why is quality evaluation so important?</b></summary>
+<summary><b> Before deploying your application to production, it is crucial to evaluate its quality. </b> Click to toggle why is it so important?</summary>
 
 LLMs' randomness can yield unstable answers. Fine-tuning prompts can improve output reliability.  For accurate quality assessment, it's essential to test with larger datasets and compare outcomes with the ground truth.
 
@@ -99,7 +118,7 @@ Invest just 15 minutes to understand how prompt flow accelerates prompt tuning, 
 
 Try the [15-mins Easy Case](examples/tutorials/quick-start/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation ➡ Quality ready for production.
 
-Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
+Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 
 ## Tutorial 🏃‍♂️
 
@@ -130,7 +149,7 @@ Go through the tutorial of a practical use case, [Chat with PDF](https://github.
 
 Contribute to Prompt flow, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-Next, Continue with the **Contributing**  👇 section to to contribute to Prompt flow.
+Next Step! Continue with the **Contributing**  👇 section to to contribute to Prompt flow.
 
 ## Contributing
 
