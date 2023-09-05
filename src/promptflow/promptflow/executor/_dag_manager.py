@@ -73,6 +73,11 @@ class DAGManager:
     def _is_node_ready(self, node: Node) -> bool:
         """Returns True if the node is ready to be executed."""
         node_dependencies = [i for i in node.inputs.values()]
+        if node.skip:
+            node_dependencies.extend([node.skip.condition, node.skip.return_value])
+        if node.activate:
+            node_dependencies.append(node.activate.condition)
+
         for node_dependency in node_dependencies:
             if (
                 node_dependency.value_type == InputValueType.NODE_REFERENCE
