@@ -163,3 +163,4 @@ At the end of stream logs, you can find the `portal_url` of the submitted run, c
 
 Learn more about:
 - [CLI reference: pfazure](../../reference/pfazure-command-reference.md)
+- [Use flow in pipeline](./flow-in-pipeline.md)
