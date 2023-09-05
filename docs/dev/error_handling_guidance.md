@@ -155,6 +155,11 @@ For PromptFlow, to fit in with above principals, the error message(format) shall
 >Sentences to offer valuable suggestions for preventing or resolving the issue, including clear directions for mitigation or resolution.
 
 
+### Templates
+
+We have predefined error message formats for Promptflow. For more details, please refer to [Link to be added].
+
+
 ### Samples
 
 
