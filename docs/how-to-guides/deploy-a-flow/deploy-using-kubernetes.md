@@ -15,7 +15,6 @@ There are four steps to deploy a flow using Kubernetes:
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
-## Build a flow as docker format
 
 Note that all dependent connections must be created before building as docker.
 ```bash
