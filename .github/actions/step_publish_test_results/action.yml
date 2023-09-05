@@ -61,3 +61,4 @@ runs:
         -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
         -f description='The build succeeded!' \
         -f context='${{ inputs.context }}'
+    shell: bash -el {0}
