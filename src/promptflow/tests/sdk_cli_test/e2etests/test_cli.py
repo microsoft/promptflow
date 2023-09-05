@@ -86,6 +86,8 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
+        # --param "key=value" key="value"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             run_pf_command(
@@ -94,8 +96,8 @@ class TestCli:
                 "--flow",
                 f"{FLOWS_DIR}/classification_accuracy_evaluation",
                 "--column-mapping",
-                "groundtruth=${data.answer}",
-                "prediction=${run.outputs.category}",
+                "'groundtruth=${data.answer}'",
+                "prediction='${run.outputs.category}'",
                 "variant_id=${data.variant_id}",
                 "--data",
                 f"{DATAS_DIR}/webClassification3.jsonl",
@@ -309,7 +311,7 @@ class TestCli:
                 "answer=Channel",
                 "evidence=Url",
                 "--variant",
-                "${summarize_text_content.variant_1}",
+                "'${summarize_text_content.variant_1}'",
             )
             output_path = Path(temp_dir) / ".promptflow" / "flow-summarize_text_content-variant_1.output.json"
             assert output_path.exists()
@@ -804,6 +806,41 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
+
+    def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
+        chat_list = ["hi", "what is chat gpt?"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_defined_chat_history",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        # Test is_chat_history is set False
+        with pytest.raises(SystemExit):
+            chat_list = ["hi", "what is chat gpt?"]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_without_defined_chat_history",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     def test_flow_test_inputs(self, capsys, caplog):
         # Flow test missing required inputs

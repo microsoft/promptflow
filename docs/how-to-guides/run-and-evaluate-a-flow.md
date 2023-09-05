@@ -1,7 +1,7 @@
 # Run and evaluate a flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
 After you have developed and tested the flow in [init and test a flow](./init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
@@ -191,6 +191,9 @@ A web browser will be opened to show the visualization result.
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
+
+There are actions to trigger local batch runs. To perform an evaluation you can use the run against "existing runs" actions.
+
 ![img](../media/how-to-guides/vscode_against_run.png)
 ![img](../media/how-to-guides/vscode_against_run_2.png)
 :::
@@ -201,4 +204,4 @@ A web browser will be opened to show the visualization result.
 
 Learn more about:
 - [Tune prompts with variants](./tune-prompts-with-variants.md)
-- [Deploy and export a flow](./deploy-and-export-a-flow.md)
+- [Deploy a flow](./deploy-a-flow/index.md)

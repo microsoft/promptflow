@@ -1,6 +1,6 @@
 # Use streaming endpoints deployed from prompt flow
 
-In prompt flow, you can [deploy flow as REST endpoint](./deploy-and-export-a-flow.md) for real-time inference.
+In prompt flow, you can [deploy flow as REST endpoint](./deploy-a-flow/index.md) for real-time inference.
 
 When consuming the endpoint by sending a request, the default behavior is that the online endpoint will keep waiting until the whole response is ready, and then send it back to the client. This can cause a long delay for the client and a poor user experience.
 
@@ -42,7 +42,7 @@ In this guide, we will use the ["Chat with Wikipedia"](https://github.com/micros
 
 To use the streaming mode, you need to deploy your flow as an online endpoint. This will allow you to send requests and receive responses from your flow in real time.
 
-Follow [this guide](./deploy-and-export-a-flow.md) to deploy your flow as an online endpoint.
+Follow [this guide](./deploy-a-flow/index.md) to deploy your flow as an online endpoint.
 
 > [!NOTE]
 > 

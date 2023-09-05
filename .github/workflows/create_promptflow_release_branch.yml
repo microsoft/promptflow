@@ -1,0 +1,39 @@
+name: Create promptflow release branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      # specify when trigger
+      # expected format: 0.1.0b1 or 1.0.0
+      release_version:
+        description: Release version
+        required: true
+        type: string
+
+jobs:
+  create_release_branch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: create branch
+        run: |
+          set -x -e
+
+          release_version="${{ inputs.release_version }}"
+          if [[ "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(b[0-9]+)?$ ]]; then
+            echo "configured release version: $release_version"
+          else
+            echo "invalid configured release version: $release_version"
+            exit 1
+          fi
+
+          release_branch_name="release/promptflow/$release_version"
+          echo "release branch name: $release_branch_name, checking out..."
+          git checkout -b $release_branch_name
+
+          git config --global user.name 'promptflow release'
+          git config --global user.email 'aml-pt-eng@microsoft.com'
+          git push --set-upstream origin $release_branch_name
