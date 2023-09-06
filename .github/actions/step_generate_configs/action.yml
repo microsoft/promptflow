@@ -11,7 +11,6 @@ runs:
     working-directory: ${{ github.workspace }}
     shell: pwsh
     run: |
-      conda activate release-env
       pip list
       echo "Generating connection config file..."
       python ./scripts/building/generate_connection_config.py `
