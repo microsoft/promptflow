@@ -13,6 +13,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 import yaml
 
+from promptflow._core._errors import NotSupportedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
@@ -27,13 +28,7 @@ from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import (
-    ErrorTarget,
-    NotImplementedException,
-    PromptflowException,
-    SystemErrorException,
-    ValidationException,
-)
+from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     NodeConcurrencyNotFound,
@@ -657,7 +652,7 @@ class FlowExecutor:
                 outputs[name] = flow_inputs[output.reference.value]
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
-                raise NotImplementedException(
+                raise NotSupportedError(
                     message_format="The output type '{output_type}' is currently unsupported. "
                     "Please choose from available type: '{supported_output_type}' and try again.",
                     output_type=output.reference.value_type,
