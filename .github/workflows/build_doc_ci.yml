@@ -71,4 +71,5 @@ jobs:
         working-directory: scripts/docs/
         run: |-
           conda activate ${{ env.condaEnvName }}
+          pip install langchain
           ./doc_generation.ps1 -WithReferenceDoc:$true
