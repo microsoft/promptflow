@@ -275,7 +275,7 @@ class ReadmeStepsManage:
 
     @staticmethod
     def write_workflow(
-        workflow_name: str, pipeline_name: str, output_telemetry=Telemetry()
+        workflow_name: str, pipeline_name: str, python_versions: str, output_telemetry=Telemetry()
     ) -> None:
         # Schedule notebooks at different times to reduce maximum quota usage.
         name_hash = int(hashlib.sha512(workflow_name.encode()).hexdigest(), 16)
@@ -306,6 +306,7 @@ class ReadmeStepsManage:
             "path_filter": path_filter,
             "crontab": f"{schedule_minute} {schedule_hour} * * *",
             "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
+            "python_versions": python_versions,
         }
         workflow_template_path = (
             Path(ReadmeStepsManage.git_base_dir())

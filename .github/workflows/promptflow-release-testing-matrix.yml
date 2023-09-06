@@ -39,8 +39,8 @@ jobs:
       run: 
         env | sort >> $GITHUB_OUTPUT
       shell: bash -el {0}
-    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
-      uses: "./.github/actions/step_create_conda_environment"
+    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ matrix.pythonVersion }}
+      uses: "./.github/actions/step_create_python_environment"
       with:
         pythonVersion: ${{ matrix.pythonVersion }}
     - name: Build wheel

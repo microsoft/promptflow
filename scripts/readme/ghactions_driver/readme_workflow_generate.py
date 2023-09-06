@@ -46,7 +46,10 @@ def write_readme_workflow(readme_path, output_telemetry=Telemetry()):
     else:
         ReadmeSteps.extract_steps_and_run()
 
-    ReadmeStepsManage.write_workflow(
-        workflow_name, "samples_readme_ci", output_telemetry
-    )
+    if workflow_name.endswith("pdf"):
+        ReadmeStepsManage.write_workflow(
+            workflow_name, "samples_readme_ci", '\'3.9\', \'3.11\'', output_telemetry
+        )
+    else:
+        ReadmeStepsManage.write_workflow(workflow_name, "samples_readme_ci", '\'3.9\'', output_telemetry)
     ReadmeSteps.cleanup()

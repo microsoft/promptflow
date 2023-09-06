@@ -14,14 +14,18 @@ on:
 
 jobs:
   samples_readme_ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        pythonVersion: ['3.9']
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Setup Python 3.9 environment
+      - name: Setup Python ${{ matrix.pythonVersion }}
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "${{ matrix.pythonVersion }}"
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements

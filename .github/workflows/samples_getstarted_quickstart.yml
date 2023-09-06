@@ -14,6 +14,10 @@ on:
 
 jobs:
   samples_notebook_ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        pythonVersion: []
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,10 +28,10 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Setup Python 3.9 environment
+      - name: Setup Python ${{ matrix.pythonVersion }}
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "${{ matrix.pythonVersion }}"
       - name: Prepare requirements
         run: |
           python -m pip install --upgrade pip

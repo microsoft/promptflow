@@ -117,11 +117,7 @@ class TestValidation:
         bulk_result = executor.exec_bulk(
             batch_input,
         )
-        if (
-            (sys.version_info.major == 3)
-            and (sys.version_info.minor >= 11)
-            and ((sys.platform == "linux") or (sys.platform == "darwin"))
-        ):
+        if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
             # Python >= 3.11 has a different error message on linux and macos
             error_message_compare = error_message.replace("int", "ValueType.INT")
             assert error_message_compare in str(

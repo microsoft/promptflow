@@ -6,10 +6,10 @@ steps:
     uses: actions/checkout@v3
   - name: Generate config.json
     run: echo ${{ '{{' }} secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ '{{' }} github.workspace }}/examples/config.json
-  - name: Setup Python 3.9 environment
+  - name: Setup Python ${{ '{{' }} matrix.pythonVersion }}
     uses: actions/setup-python@v4
     with:
-      python-version: "3.9"
+      python-version: ${{ '{{' }} matrix.pythonVersion }}
   - name: Prepare sample requirements
     working-directory: {{ gh_working_dir }}
     run: |

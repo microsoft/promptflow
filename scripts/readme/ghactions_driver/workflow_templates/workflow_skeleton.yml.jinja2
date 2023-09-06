@@ -14,6 +14,10 @@ on:
 
 jobs:
   {{ ci_name }}:
+    strategy:
+      fail-fast: false
+      matrix:
+        pythonVersion: [{{ python_versions }}]
 {%- filter indent(width=4) -%}
 {% block steps %}
 {% endblock steps %}

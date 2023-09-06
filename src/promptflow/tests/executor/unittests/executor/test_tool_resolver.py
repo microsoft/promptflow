@@ -124,11 +124,7 @@ class TestToolResolver:
         with pytest.raises(NodeInputValidationError) as e:
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
-        if (
-            (sys.version_info.major == 3)
-            and (sys.version_info.minor >= 11)
-            and ((sys.platform == "linux") or (sys.platform == "darwin"))
-        ):
+        if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
             # Python >= 3.11 has a different error message on linux and macos
             message = "value invalid is not type ValueType.INT"
         else:

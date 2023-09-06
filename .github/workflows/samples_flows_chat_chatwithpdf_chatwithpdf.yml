@@ -14,16 +14,20 @@ on:
 
 jobs:
   samples_notebook_ci:
+    strategy:
+      fail-fast: false
+      matrix:
+        pythonVersion: ['3.9', '3.11']
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Generate config.json
         run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
-      - name: Setup Python 3.9 environment
+      - name: Setup Python ${{ matrix.pythonVersion }}
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: ${{ matrix.pythonVersion }}
       - name: Prepare sample requirements
         working-directory: examples/flows/chat/chat-with-pdf
         run: |

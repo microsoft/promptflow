@@ -73,6 +73,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
                 "path_filter": path_filter,
                 "crontab": f"{schedule_minute} {schedule_hour} * * *",
                 "crontab_comment": f"Every day starting at {schedule_hour - 16}:{schedule_minute} BJT",
+                "python_versions": '\'3.9\', \'3.11\'',
             }
         )
     else:
