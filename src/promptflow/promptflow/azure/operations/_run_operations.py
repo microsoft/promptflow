@@ -41,7 +41,12 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._constants._flow import (
+    AUTOMATIC_RUNTIME,
+    AUTOMATIC_RUNTIME_NAME,
+    BASE_IMAGE,
+    PYTHON_REQUIREMENTS_TXT,
+)
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -682,7 +687,7 @@ class RunOperations(_ScopeDependentOperations):
             "it may take a while to build runtime and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
-        runtime_name = "automatic"
+        runtime_name = AUTOMATIC_RUNTIME_NAME
         self._resolve_session(run=run, session_id=session_id, reset=reset)
         return runtime_name
 
@@ -690,12 +695,10 @@ class RunOperations(_ScopeDependentOperations):
         runtime = run._runtime or runtime
         session_id = self._get_session_id(flow=flow_path)
 
-        if runtime:
-            if not isinstance(runtime, str):
-                raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-        else:
+        if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
             runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
-
+        elif not isinstance(runtime, str):
+            raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         return runtime, session_id
 
     def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
