@@ -239,6 +239,8 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
         return generate_prompt_meta_dict(name, content, source=path)
     elif tool_type == ToolType.PROMPT:
         return generate_prompt_meta_dict(name, content, prompt_only=True, source=path)
+    elif tool_type == ToolType.CUSTOM_LLM:
+        return generate_prompt_meta_dict(name, content, source=path)
     else:
         raise ValueError(f"Unsupported tool type {tool_type}.")
 

@@ -514,26 +514,6 @@ class FlowOperations:
         """Generate flow tools meta for a specific flow or a specific node in the flow.
 
         This is a private interface for vscode extension, so do not change the interface unless necessary.
-        Sample output:
-        (
-            {
-                "convert_to_dict.py": {
-                    "type": "python",
-                    "inputs": {
-                        "input_str": {
-                            "type": [
-                                "string"
-                            ]
-                        }
-                    },
-                    "source": "convert_to_dict.py",
-                    "function": "convert_to_dict"
-                }
-            },
-            {
-                "summarize_text_content__variant_1.jinja2": "File not found: summarize_text_content__variant_1.jinja2"
-            }
-        )
 
         Usage:
         from promptflow import PFClient
@@ -561,18 +541,18 @@ class FlowOperations:
                 dump=False,
                 raise_error=False,
                 include_errors_in_output=True,
+                target_source=source_name,
+                used_packages_only=True,
             )
 
         # TODO: do you need flow.tools.json['package']?
         flow_tools_meta = flow_tools.pop("code", {})
-        if source_name:
-            if source_name not in flow_tools_meta:
-                raise ValueError(f"Source {source_name} does not exist in flow {flow_dag_path.as_posix()}")
-            flow_tools_meta = {source_name: flow_tools_meta[source_name]}
 
         tools_errors = {}
         nodes_with_error = [node_name for node_name, message in flow_tools_meta.items() if isinstance(message, str)]
         for node_name in nodes_with_error:
             tools_errors[node_name] = flow_tools_meta.pop(node_name)
 
-        return flow_tools_meta, tools_errors
+        flow_tools["code"] = flow_tools_meta
+
+        return flow_tools, tools_errors
