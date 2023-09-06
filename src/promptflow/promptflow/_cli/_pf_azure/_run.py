@@ -69,8 +69,13 @@ pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --
         )
 
     add_param_runtime = lambda parser: parser.add_argument("--runtime", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_param_reset = lambda parser: parser.add_argument(  # noqa: E731
+        "--reset-runtime", action="store_true", help=argparse.SUPPRESS
+    )
     add_run_create_common(
-        subparsers, [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime], epilog=epilog
+        subparsers,
+        [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime, add_param_reset],
+        epilog=epilog,
     )
 
 
@@ -353,7 +358,12 @@ def add_parser_run_update(subparsers):
 def dispatch_run_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
-        create_run(create_func=functools.partial(pf.runs.create_or_update, runtime=args.runtime), args=args)
+        create_run(
+            create_func=functools.partial(
+                pf.runs.create_or_update, runtime=args.runtime, reset_runtime=args.reset_runtime
+            ),
+            args=args,
+        )
     elif args.sub_action == "list":
         list_runs(
             args.subscription,
