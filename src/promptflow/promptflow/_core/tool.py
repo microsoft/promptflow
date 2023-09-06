@@ -40,6 +40,8 @@ class ToolInvoker(ABC):
 
 
 def tool(f):
+    """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow."""
+
     @functools.wraps(f)
     def new_f(*args, **kwargs):
         tool_invoker = ToolInvoker.active_instance()
