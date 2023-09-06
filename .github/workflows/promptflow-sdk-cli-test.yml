@@ -82,11 +82,7 @@ jobs:
     name: "Publish Tests Results"
     needs: sdk_cli_tests
     runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
+    permissions: write-all
     if: always()
 
     steps:
