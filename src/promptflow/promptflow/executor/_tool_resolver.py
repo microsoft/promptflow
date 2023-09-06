@@ -19,6 +19,7 @@ from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_pro
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
+from promptflow.contracts.connection import CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE, CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
@@ -28,6 +29,7 @@ from promptflow.executor._errors import (
     NodeInputValidationError,
     ValueTypeUnresolved,
 )
+from promptflow._sdk.entities import CustomConnection
 
 
 @dataclass
@@ -55,6 +57,11 @@ class ToolResolver:
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+
+        if connection_value.type.name == "CUSTOM" and CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE in connection_value.configs:
+            # Do we need to do some check here instead of return directly?
+            return self._convert_custom_connection_to_strong_type_connection(connection_value)
+
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
@@ -63,6 +70,23 @@ class ToolResolver:
             )
             raise NodeInputValidationError(message=msg)
         return connection_value
+
+    def _convert_custom_connection_to_strong_type_connection(self, custom_connection: CustomConnection):
+        module_name = custom_connection.configs.get(CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE)
+        custom_type_class_name = custom_connection.configs.get(CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE)
+        import importlib
+        module = importlib.import_module(module_name)
+        custom_defined_connection_class = getattr(module, custom_type_class_name)
+
+        instance_dict = {}
+        for key, value in custom_connection.configs.items():
+            if key not in [CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE, CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE]:
+                instance_dict[key] = value
+        for key, value in custom_connection.secrets.items():
+            instance_dict[key] = value
+        connection_instance = custom_defined_connection_class(**instance_dict)
+
+        return connection_instance
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool):
         updated_inputs = {

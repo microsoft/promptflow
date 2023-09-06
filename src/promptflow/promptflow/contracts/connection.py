@@ -1,0 +1,9 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
+CUSTOM_STRONG_TYPE_CONNECTION_PREFIX = "azureml.connection."
+CUSTOM_STRONG_TYPE_CONNECTION_TYPE = "custom_type"
+CUSTOM_STRONG_TYPE_CONNECTION_MODULE = "module"
+CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE = CUSTOM_STRONG_TYPE_CONNECTION_PREFIX + CUSTOM_STRONG_TYPE_CONNECTION_TYPE
+CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE = CUSTOM_STRONG_TYPE_CONNECTION_PREFIX + CUSTOM_STRONG_TYPE_CONNECTION_MODULE
