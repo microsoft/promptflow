@@ -31,7 +31,7 @@ fi
 
 ### CLI Example
 
-#### Run flow in local
+#### Run flow
 
 ```bash
 # test with default input value in flow.dag.yaml
