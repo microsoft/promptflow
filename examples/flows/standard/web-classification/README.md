@@ -96,15 +96,15 @@ az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
-# pfazure run create --flow . --data ./data.jsonl --stream # serverless compute
+pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir
+# pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
 
 # (Optional) create a new random run name for further use
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # create run using yaml file, --name is optional
 pfazure run create --file run.yml --runtime demo-mir --name $run_name
-# pfazure run create --file run.yml --stream --name $run_name # serverless compute
+# pfazure run create --file run.yml --stream --name $run_name # automatic runtime
 
 
 pfazure run stream --name $run_name

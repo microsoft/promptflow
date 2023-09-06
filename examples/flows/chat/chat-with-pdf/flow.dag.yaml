@@ -78,4 +78,4 @@ nodes:
     history: ${inputs.chat_history}
     env_ready_signal: ${setup_env.output}
 environment:
-    python_requirements_txt: requirements.txt
+  python_requirements_txt: requirements.txt

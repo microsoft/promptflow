@@ -354,6 +354,13 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # automatic is a reserved runtime name, will use automatic runtime if specified.
+            pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl", runtime="automatic")
+
     def test_automatic_runtime_with_environment(self, pf):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
@@ -520,7 +527,6 @@ class TestFlowRun:
             RunOperations, "get"
         ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
-            # no runtime provided, will use automatic runtime
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
