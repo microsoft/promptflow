@@ -137,13 +137,13 @@ raise MultipleToolsDefined(
 
     > Good Example: *"Youd failed at the validation in PFS."*
 
-    > Bad Example: *"You account does not have enough permission to submit the flow"*
+    > Bad Example: *"You account does not have enough permission to submit the flow。"*
 
 * **Helpful**:
 
     Informative, Actionable with constructive suggestions
 
-    > Good Example: *"The 'source' property is not specified for Node 'fetch_content'. To proceed, please specify with a valid source file path in your flow"*
+    > Good Example: *"The 'source' property is not specified for Node 'fetch_content'. To proceed, please specify with a valid source file path in your flow。"*
 
     > Bad Example: *"'source' missing for node."*
 
@@ -153,7 +153,7 @@ raise MultipleToolsDefined(
 
     > Good Example: *"The field 'num' expects 'int' value" but assigned with string literal."*
 
-    > Bad Example: *"You made a mistake to assign string literal to int 'num'*
+    > Bad Example: *"You made a mistake to assign string literal to int 'num'.*
 
 ### Rules
 
@@ -164,14 +164,14 @@ raise MultipleToolsDefined(
 
     Sentences to provide an explanation of the issue and details on how it occurs.
 
-    > *"The input for flow is incorrect. Error: The value 'hello' for flow input 'num' in line '0' of input data does not match the expected type 'int'"*
+    > *"The input for flow is incorrect. The value for flow input 'num' in line '0' of input data does not match the expected type 'int'。"*
 
 
     **Solution/Suggestion**:
 
     Sentences to offer valuable suggestions for preventing or resolving the issue, including clear directions for mitigation or resolution.
 
-    > *"To fix this error, please input an integer value for 'num'"*
+    > *"To fix this error, please input an integer value for 'num'."*
 
 2. For value quote, placeholder value, variables in the error message, please try to enclose with single quote.
 
@@ -189,7 +189,7 @@ raise MultipleToolsDefined(
 
     When raising a PromptFlowException with the specified message_format, the **message** member will be automatically populated with the rendered values, maintaining security. For example:
 
-    > *"Execution failure in 'MyTool': {UnSecureError}The input 'Washington Secret Order' from file 'order.11.2.35' is not well encrypted."*
+    > *"Execution failure in 'MyTool': (UnSecureError)The input 'Washington Secret Order' from file 'order.11.2.35' is not well encrypted."*
 
     In PromptFlow, the **message_format** is logged and tracked, but the **message** itself is **only** visible to PromptFlow users. We prioritize the security and privacy of user data throughout the platform. 
 
@@ -200,7 +200,7 @@ raise MultipleToolsDefined(
 1. Flow Definition Error：Node circular
 
 
-    >*"Flow is defined incorrectly. Node circular dependency has been detected among the nodes in your flow. Please Kindly review the reference relationships for the nodes **['divide_num', 'divide_num_1', 'divide_num_2']** and resolve the circular reference issue in the flow."*
+    >*"Flow is defined incorrectly. Node circular dependency has been detected among the nodes in your flow. Please kindly review the reference relationships for the nodes **['divide_num', 'divide_num_1', 'divide_num_2']** and resolve the circular reference issue in the flow."*
 
 
 2. Input Data Error: Type not match
