@@ -32,8 +32,8 @@ class TestFlowValidator:
             (
                 "nodes_cycle",
                 (
-                    "Node circular dependency has been detected among the nodes in your flow. "
-                    "Kindly review the reference relationships for the nodes "
+                    "Flow is defined incorrectly. Node circular dependency has been detected among the nodes "
+                    "in your flow. Kindly review the reference relationships for the nodes "
                     "['first_node', 'second_node'] and resolve the circular reference issue in "
                     "the flow."
                 ),
@@ -41,25 +41,25 @@ class TestFlowValidator:
             (
                 "nodes_cycle_with_skip",
                 (
-                    "Node circular dependency has been detected among the nodes in your flow. "
-                    "Kindly review the reference relationships for the "
-                    "nodes ['first_node', 'second_node'] and resolve the circular reference issue "
+                    "Flow is defined incorrectly. Node circular dependency has been detected among the nodes "
+                    "in your flow. Kindly review the reference relationships for the nodes "
+                    "['first_node', 'second_node'] and resolve the circular reference issue "
                     "in the flow."
                 ),
             ),
             (
                 "nodes_cycle_with_activate",
                 (
-                    "Node circular dependency has been detected among the nodes in your flow. "
-                    "Kindly review the reference relationships for the nodes ['first_node', "
+                    "Flow is defined incorrectly. Node circular dependency has been detected among the nodes "
+                    "in your flow. Kindly review the reference relationships for the nodes ['first_node', "
                     "'second_node'] and resolve the circular reference issue in the flow."
                 ),
             ),
             (
                 "wrong_node_reference",
                 (
-                    "Node 'second_node' references a non-existent node 'third_node' in your flow. "
-                    "Please review your flow to ensure that the node "
+                    "Flow is defined incorrectly. Node 'second_node' references a non-existent "
+                    "node 'third_node' in your flow. Please review your flow to ensure that the node "
                     "name is accurately specified."
                 ),
             ),
