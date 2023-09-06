@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import json
-import tiktoken
 from contextvars import ContextVar
 from datetime import datetime
 from types import GeneratorType
@@ -14,6 +13,7 @@ from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -268,169 +268,12 @@ class RunTracker(ThreadLocalSingleton):
         run_info = self.ensure_run_info(run_id)
         calls = run_info.api_calls or []
         total_metrics = {}
+        calculator = OpenAIMetricsCalculator(flow_logger)
         for call in calls:
-            metrics = self._get_openai_metrics(call)
-            self._merge_metrics_dict(total_metrics, metrics)
+            metrics = calculator.get_openai_metrics_from_api_call(call)
+            calculator.merge_metrics_dict(total_metrics, metrics)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(total_metrics)
-
-    def _get_openai_metrics(self, api_call: dict):
-        total_metrics = {}
-        if self._need_collect_metrics(api_call):
-            metrics = self._get_openai_metrics_for_signal_api(api_call)
-            self._merge_metrics_dict(total_metrics, metrics)
-
-        children = api_call.get("children")
-        if children is not None:
-            for child in children:
-                child_metrics = self._get_openai_metrics(child)
-                self._merge_metrics_dict(total_metrics, child_metrics)
-
-        return total_metrics
-
-    def _need_collect_metrics(self, api_call: dict):
-        if api_call.get("type") != "LLM":
-            return False
-        output = api_call.get("output")
-        if not isinstance(output, dict) and not isinstance(output, list):
-            return False
-        return True
-
-    def _get_openai_metrics_for_signal_api(self, api_call: dict):
-        output = api_call.get("output")
-        if isinstance(output, dict):
-            usage = output.get("usage")
-            if isinstance(usage, dict):
-                return usage
-            else:
-                flow_logger.warning(f"Cannot find openai metrics for non streaming api {api_call.get('name')}.")
-
-        name = api_call.get("name")
-        if name.split(".")[-2] == "ChatCompletion":
-            return self._calculate_openai_metrics_for_chat_api(api_call)
-        elif name.split(".")[-2] == "Completion":
-            return self._calculate_openai_metrics_for_completion_api(api_call)
-        else:
-            flow_logger.warning(f"Not supported api {name}, cannot calculate openai metrics for it.")
-            return {}
-
-    def _calculate_openai_metrics_for_chat_api(self, api_call):
-        inputs = api_call.get("inputs")
-        output = api_call.get("output")
-        metrics = {}
-        enc, tokens_per_message, tokens_per_name = self._get_encoding_for_chat_api(inputs["engine"])
-        metrics["prompt_tokens"] = self._get_prompt_tokens_from_messages(
-            inputs["messages"],
-            enc,
-            tokens_per_message,
-            tokens_per_name
-        )
-        if isinstance(output, list):
-            metrics["completion_tokens"] = len(output)
-        else:
-            metrics["completion_tokens"] = self._get_completion_tokens_for_chat_api(output, enc)
-        metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-        return metrics
-
-    def _get_encoding_for_chat_api(self, model):
-        try:
-            enc = tiktoken.encoding_for_model(model)
-        except KeyError:
-            flow_logger.warning(f"Encoding for {model} is not found. Using cl100k_base encoding.")
-            enc = tiktoken.get_encoding("cl100k_base")
-        if model in {
-            "gpt-35-turbo-0613",
-            "gpt-35-turbo-16k-0613",
-            "gpt-4-0314",
-            "gpt-4-32k-0314",
-            "gpt-4-0613",
-            "gpt-4-32k-0613",
-        }:
-            tokens_per_message = 3
-            tokens_per_name = 1
-        elif model == "gpt-35-turbo-0301":
-            tokens_per_message = 4  # every message follows <|start|>{role/name}\n{content}<|end|>\n
-            tokens_per_name = -1  # if there's a name, the role is omitted
-        elif "gpt-35-turbo" in model:
-            flow_logger.warning("gpt-35-turbo may update over time. Returning ecoding assuming gpt-35-turbo-0613.")
-            return self._get_encoding_for_chat_api(model="gpt-35-turbo-0613")
-        elif "gpt-4" in model:
-            flow_logger.warning("Warning: gpt-4 may update over time. Returning ecoding assuming gpt-4-0613.")
-            return self._get_encoding_for_chat_api(model="gpt-4-0613")
-        else:
-            flow_logger.warning(
-                f"Cannot calculate prompt tokens for model {model}. "
-                "Returning ecoding assuming gpt-35-turbo-0613."
-            )
-            return self._get_encoding_for_chat_api(model="gpt-35-turbo-0613")
-        return enc, tokens_per_message, tokens_per_name
-
-    # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
-    def _get_prompt_tokens_from_messages(self, messages, enc, tokens_per_message, tokens_per_name):
-        prompt_tokens = 0
-        for message in messages:
-            prompt_tokens += tokens_per_message
-            for key, value in message.items():
-                prompt_tokens += len(enc.encode(value))
-                if key == "name":
-                    prompt_tokens += tokens_per_name
-        prompt_tokens += 3  # every reply is primed with <|start|>assistant<|message|>
-        return prompt_tokens
-
-    def _get_completion_tokens_for_chat_api(self, output, enc):
-        completion_tokens = 0
-        choices = output.get("choices")
-        if isinstance(choices, list):
-            for ch in choices:
-                if isinstance(ch, dict):
-                    message = ch.get("message")
-                    if isinstance(message, dict):
-                        content = message.get("content")
-                        if isinstance(content, str):
-                            completion_tokens += len(enc.encode(content))
-        return completion_tokens
-
-    def _calculate_openai_metrics_for_completion_api(self, api_call: dict):
-        metrics = {}
-        inputs = api_call.get("inputs")
-        output = api_call.get("output")
-        enc = self._get_encoding_for_completion_api(inputs["engine"])
-        metrics["prompt_tokens"] = 0
-        prompt = inputs.get("prompt")
-        if isinstance(prompt, str):
-            metrics["prompt_tokens"] = len(enc.encode(prompt))
-        elif isinstance(prompt, list):
-            for pro in prompt:
-                metrics["prompt_tokens"] += len(enc.encode(pro))
-        if isinstance(output, list):
-            metrics["completion_tokens"] = len(output)
-        else:
-            metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
-        metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
-        return metrics
-
-    def _get_encoding_for_completion_api(self, model):
-        try:
-            enc = tiktoken.encoding_for_model(model)
-        except KeyError:
-            flow_logger.warning(f"Encoding for {model} is not found. Using p50k_base encoding.")
-            enc = tiktoken.get_encoding("p50k_base")
-        return enc
-
-    def _get_completion_tokens_for_completion_api(self, output, enc):
-        completion_tokens = 0
-        choices = output.get("choices")
-        if isinstance(choices, list):
-            for ch in choices:
-                if isinstance(ch, dict):
-                    text = ch.get("text")
-                    if isinstance(text, str):
-                        completion_tokens += len(enc.encode(text))
-        return completion_tokens
-
-    def _merge_metrics_dict(self, metrics: dict, metrics_to_merge: dict):
-        for k, v in metrics_to_merge.items():
-            metrics[k] = metrics.get(k, 0) + v
 
     def _collect_traces_from_nodes(self, run_id):
         child_run_infos = self.collect_child_node_runs(run_id)
