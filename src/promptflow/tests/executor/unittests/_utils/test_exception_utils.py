@@ -10,7 +10,7 @@ from promptflow._utils.exception_utils import (
     JsonSerializedPromptflowException,
     infer_error_code_from_class,
 )
-from promptflow._utils.utils import get_runtime_version
+from promptflow._core.operation_context import OperationContext
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, UserErrorException
 
 
@@ -243,7 +243,7 @@ class TestErrorResponse:
         assert response_dct["time"] is not None
         response_dct.pop("time")
         component_name = response_dct.pop("componentName", None)
-        assert component_name == f"promptflow/{get_runtime_version()}"
+        assert component_name == OperationContext.get_instance().get_user_agent()
         assert response_dct == {
             "error": {
                 "code": "UserError",
@@ -262,7 +262,7 @@ class TestErrorResponse:
         assert response["time"] is not None
         response.pop("time")
         component_name = response.pop("componentName", None)
-        assert component_name == f"promptflow/{get_runtime_version()}"
+        assert component_name == OperationContext.get_instance().get_user_agent()
         assert response == {
             "error": {
                 "code": "SystemError",

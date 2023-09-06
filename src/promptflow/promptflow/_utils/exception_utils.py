@@ -107,14 +107,14 @@ class ErrorResponse:
         return user_execution_error_info
 
     def to_dict(self):
-        from promptflow._utils.utils import get_runtime_version
+        from promptflow._core.operation_context import OperationContext
 
         return {
             "error": self._error_dict,
             "correlation": None,  # TODO: to be implemented
             "environment": None,  # TODO: to be implemented
             "location": None,  # TODO: to be implemented
-            "componentName": f"{ERROR_RESPONSE_COMPONENT_NAME}/{get_runtime_version()}",
+            "componentName": OperationContext.get_instance().get_user_agent(),
             "time": datetime.utcnow().isoformat(),
         }
 
