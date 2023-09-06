@@ -47,4 +47,8 @@ setup(
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
     },
     include_package_data=True,
+    project_urls={
+        "Bug Reports": "https://github.com/microsoft/promptflow/issues",
+        "Source": "https://github.com/microsoft/promptflow",
+    },
 )
