@@ -151,7 +151,7 @@ raise MultipleToolsDefined(
     
     Kindly, without blame and judgement
 
-    > Good Example: *"The field 'num' expects 'int' value" but assigned with string literal 'hello'."*
+    > Good Example: *"The field 'num' expects 'int' value" but assigned with string literal."*
 
     > Bad Example: *"You made a mistake to assign string literal to int 'num'*
 
@@ -177,7 +177,7 @@ raise MultipleToolsDefined(
 
    Use above example, below values shall be single quoted in message body
 
-   > 'hello', 'num', '0', 'int'      
+   > 'num', '0', 'int'      
 
 3. PromptFlow is designed with a strong commitment to user privacy and data security. As such, it does not log or record any user [PII](https://en.wikipedia.org/wiki/Personal_data) to mitigate the risk of unintentional data exposure. 
 
@@ -189,7 +189,7 @@ raise MultipleToolsDefined(
 
     When raising a PromptFlowException with the specified message_format, the **message** member will be automatically populated with the rendered values, maintaining security. For example:
 
-    ![Alt text](image.png)
+    > *"Execution failure in 'MyTool': {UnSecureError}The input 'Washington Secret Order' from file 'order.11.2.35' is not well encrypted."*
 
     In PromptFlow, the **message_format** is logged and tracked, but the **message** itself is **only** visible to PromptFlow users. We prioritize the security and privacy of user data throughout the platform. 
 
@@ -206,7 +206,7 @@ raise MultipleToolsDefined(
 2. Input Data Error: Type not match
 
 
-> "*The input for flow is incorrect. The value '**hello**' for flow input '**num**' in line **'0'** of input data does not match the expected type '**int**'. Please review the input data or adjust the input type of '**num**' in your flow.*"
+> "*The input for flow is incorrect. The value for flow input '**num**' in line **'0'** of input data does not match the expected type '**int**'. Please review the input data or adjust the input type of '**num**' in your flow.*"
 
 
 3. File not found Error
