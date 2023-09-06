@@ -5150,6 +5150,8 @@ class AetherResourceConfiguration(msrest.serialization.Model):
     :vartype locations: list[str]
     :ivar instance_priority:
     :vartype instance_priority: str
+    :ivar quota_enforcement_resource_id:
+    :vartype quota_enforcement_resource_id: str
     """
 
     _attribute_map = {
@@ -5158,6 +5160,7 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         'properties': {'key': 'properties', 'type': '{object}'},
         'locations': {'key': 'locations', 'type': '[str]'},
         'instance_priority': {'key': 'instancePriority', 'type': 'str'},
+        'quota_enforcement_resource_id': {'key': 'quotaEnforcementResourceId', 'type': 'str'},
     }
 
     def __init__(
@@ -5175,6 +5178,8 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         :paramtype locations: list[str]
         :keyword instance_priority:
         :paramtype instance_priority: str
+        :keyword quota_enforcement_resource_id:
+        :paramtype quota_enforcement_resource_id: str
         """
         super(AetherResourceConfiguration, self).__init__(**kwargs)
         self.instance_count = kwargs.get('instance_count', None)
@@ -5182,6 +5187,7 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         self.properties = kwargs.get('properties', None)
         self.locations = kwargs.get('locations', None)
         self.instance_priority = kwargs.get('instance_priority', None)
+        self.quota_enforcement_resource_id = kwargs.get('quota_enforcement_resource_id', None)
 
 
 class AetherResourceModel(msrest.serialization.Model):
@@ -6764,6 +6770,8 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
     :vartype locations: list[str]
     :ivar instance_priority:
     :vartype instance_priority: str
+    :ivar quota_enforcement_resource_id:
+    :vartype quota_enforcement_resource_id: str
     """
 
     _attribute_map = {
@@ -6772,6 +6780,7 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         'properties': {'key': 'properties', 'type': '{object}'},
         'locations': {'key': 'locations', 'type': '[str]'},
         'instance_priority': {'key': 'instancePriority', 'type': 'str'},
+        'quota_enforcement_resource_id': {'key': 'quotaEnforcementResourceId', 'type': 'str'},
     }
 
     def __init__(
@@ -6789,6 +6798,8 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         :paramtype locations: list[str]
         :keyword instance_priority:
         :paramtype instance_priority: str
+        :keyword quota_enforcement_resource_id:
+        :paramtype quota_enforcement_resource_id: str
         """
         super(AEVAResourceConfiguration, self).__init__(**kwargs)
         self.instance_count = kwargs.get('instance_count', None)
@@ -6796,6 +6807,7 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         self.properties = kwargs.get('properties', None)
         self.locations = kwargs.get('locations', None)
         self.instance_priority = kwargs.get('instance_priority', None)
+        self.quota_enforcement_resource_id = kwargs.get('quota_enforcement_resource_id', None)
 
 
 class AISuperComputerConfiguration(msrest.serialization.Model):
@@ -11165,6 +11177,8 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
     :vartype max_idle_time_seconds: long
+    :ivar action: Possible values include: "Install", "Reset".
+    :vartype action: str or ~flow.models.SetupFlowSessionAction
     """
 
     _attribute_map = {
@@ -11172,6 +11186,7 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
         'base_image': {'key': 'baseImage', 'type': 'str'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        'action': {'key': 'action', 'type': 'str'},
     }
 
     def __init__(
@@ -11187,12 +11202,15 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
         :paramtype max_idle_time_seconds: long
+        :keyword action: Possible values include: "Install", "Reset".
+        :paramtype action: str or ~flow.models.SetupFlowSessionAction
         """
         super(CreateFlowSessionRequest, self).__init__(**kwargs)
         self.python_pip_requirements = kwargs.get('python_pip_requirements', None)
         self.base_image = kwargs.get('base_image', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
+        self.action = kwargs.get('action', None)
 
 
 class CreateInferencePipelineRequest(msrest.serialization.Model):
@@ -16348,6 +16366,8 @@ class FlowInputDefinition(msrest.serialization.Model):
     :vartype description: str
     :ivar is_chat_input:
     :vartype is_chat_input: bool
+    :ivar is_chat_history:
+    :vartype is_chat_history: bool
     """
 
     _attribute_map = {
@@ -16356,6 +16376,7 @@ class FlowInputDefinition(msrest.serialization.Model):
         'default': {'key': 'default', 'type': 'object'},
         'description': {'key': 'description', 'type': 'str'},
         'is_chat_input': {'key': 'is_chat_input', 'type': 'bool'},
+        'is_chat_history': {'key': 'is_chat_history', 'type': 'bool'},
     }
 
     def __init__(
@@ -16378,6 +16399,8 @@ class FlowInputDefinition(msrest.serialization.Model):
         :paramtype description: str
         :keyword is_chat_input:
         :paramtype is_chat_input: bool
+        :keyword is_chat_history:
+        :paramtype is_chat_history: bool
         """
         super(FlowInputDefinition, self).__init__(**kwargs)
         self.name = kwargs.get('name', None)
@@ -16385,6 +16408,7 @@ class FlowInputDefinition(msrest.serialization.Model):
         self.default = kwargs.get('default', None)
         self.description = kwargs.get('description', None)
         self.is_chat_input = kwargs.get('is_chat_input', None)
+        self.is_chat_history = kwargs.get('is_chat_history', None)
 
 
 class FlowNode(msrest.serialization.Model):
