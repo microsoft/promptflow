@@ -656,8 +656,11 @@ class FlowExecutor:
             if node.name not in nodes_outputs:
                 if node.name in bypassed_nodes:
                     raise OutputReferenceBypassed(
-                        "Failed to extract output because the reference "
-                        f"node {output.reference.value!r} has been bypassed."
+                        message_format="The output '{output_name}' for flow is incorrect. "
+                        "The node '{node_name}' referenced by the output has been bypassed. "
+                        "Please refrain from using bypassed nodes as output sources.",
+                        output_name=name,
+                        node_name=node.name,
                     )
                 raise NodeOutputNotFound(f"Node {output.reference.value} not found in results.")
             node_result = nodes_outputs[output.reference.value]
