@@ -42,17 +42,6 @@ jobs:
             }
           }
 
-          $(gh api /repos/microsoft/promptflow/commits/62cf67227ec2ef5e946d62555d26c94920229a87/check-runs) | ConvertFrom-Json | Select-Object -ExpandProperty check_runs | ForEach-Object {
-            if ($_.name.Contains('promptflow-executor-unit-test')) {
-              check_conclusion $_.conclusion $_.name
-            }
-            if ($_.name.Contains('promptflow-executor-e2e-test')) {
-              check_conclusion $_.conclusion $_.name
-            }
-            if ($_.name.Contains('promptflow-sdk-cli-test')) {
-              check_conclusion $_.conclusion $_.name
-            }
-          }
           Write-Host "Total not success test numbers: "$pending_count
           Write-Host "Total success test numbers: "$success_count
 

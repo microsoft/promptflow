@@ -50,7 +50,7 @@ runs:
       coverageFile: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
       token: ${{ inputs.token }}
       thresholdAll: ${{ inputs.coverageThreshold }}
-  - name: Sending Status
+  - name: Sending PR status to checkenforcer
     run: |-
       gh api \
         --method POST \
