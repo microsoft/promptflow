@@ -298,7 +298,11 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
     copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
 
     print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
-    flow_test_args = "--interactive" if flow_type == "chat" else f"--input {os.path.join(flow_name, 'data.jsonl')}"
+    if flow_type == "chat":
+        flow_test_args = "--interactive"
+        print("Please follow the steps in README.md to create the connection.")
+    else:
+        flow_test_args = f"--input {os.path.join(flow_name, 'data.jsonl')}"
     flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
     print(f"You can execute this command to test the flow, {flow_test_command}")
 
