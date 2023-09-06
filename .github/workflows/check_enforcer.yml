@@ -13,43 +13,69 @@ jobs:
     steps:
       - name: Summarize check status
         id: summarize_check_status
-        shell: bash
+        shell: pwsh
         run: |
-          set -x
-          pending_count=0
-          success_count=0
+          $env:pending_count = 0
+          $env:success_count = 0
 
-          while read check_run; do
-            if echo $check_run | grep -q '"conclusion":"success"' ; then
-              success_count=$((success_count+1))
-            else
-              pending_count=$((pending_count+1))
-            fi
-          done <<<$(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs | jq -c '.check_runs[]')
+          function check_conclusion {
+            param(
+              [string]$conclusion
+            )
+            if ($conclusion -ieq "success") {
+              $env:success_count = 1 + $env:success_count
+              Write-Host "Success: " $env:success_count
+            } else {
+              $env:pending_count = 1 + $env:pending_count
+              Write-Host "Pending: " $env:pending_count
+            }
+          }
+          $(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs) | ConvertFrom-Json | Select-Object -ExpandProperty check_runs | ForEach-Object {
+            if ($_.name.Contains('promptflow-executor-unit-test')) {
+              check_conclusion $_.conclusion $_.name
+            }
+            if ($_.name.Contains('promptflow-executor-e2e-test')) {
+              check_conclusion $_.conclusion $_.name
+            }
+            if ($_.name.Contains('promptflow-sdk-cli-test')) {
+              check_conclusion $_.conclusion $_.name
+            }
+          }
 
-          echo "Total not success test numbers: "$pending_count
-          echo "Total success test numbers: "$success_count
+          $(gh api /repos/microsoft/promptflow/commits/62cf67227ec2ef5e946d62555d26c94920229a87/check-runs) | ConvertFrom-Json | Select-Object -ExpandProperty check_runs | ForEach-Object {
+            if ($_.name.Contains('promptflow-executor-unit-test')) {
+              check_conclusion $_.conclusion $_.name
+            }
+            if ($_.name.Contains('promptflow-executor-e2e-test')) {
+              check_conclusion $_.conclusion $_.name
+            }
+            if ($_.name.Contains('promptflow-sdk-cli-test')) {
+              check_conclusion $_.conclusion $_.name
+            }
+          }
+          Write-Host "Total not success test numbers: "$pending_count
+          Write-Host "Total success test numbers: "$success_count
 
-          if [ $pending_count -eq 0 ]; then
-            gh api \
-              --method POST \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
-              -f state='success' \
-              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
-              -f description='The build succeeded!' \
+          if ($pending_count -eq 0) {
+            gh api `
+              --method POST `
+              -H "Accept: application/vnd.github+json" `
+              -H "X-GitHub-Api-Version: 2022-11-28" `
+              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} `
+              -f state='success' `
+              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' `
+              -f description='The build succeeded!' `
               -f context='https://aka.ms/azsdk/checkenforcer' 
-          else
-            gh api \
-              --method POST \
-              -H "Accept: application/vnd.github+json" \
-              -H "X-GitHub-Api-Version: 2022-11-28" \
-              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} \
-              -f state='pending' \
-              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
-              -f description='Waiting for all checks to succeed' \
+          } else {
+            gh api `
+              --method POST `
+              -H "Accept: application/vnd.github+json" `
+              -H "X-GitHub-Api-Version: 2022-11-28" `
+              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} `
+              -f state='pending' `
+              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' `
+              -f description='Waiting for all checks to succeed' `
               -f context='https://aka.ms/azsdk/checkenforcer' 
-          fi
+          }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
