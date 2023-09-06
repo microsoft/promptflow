@@ -64,11 +64,11 @@ hello-world-proj/
 
     > [!Note] If you create a new tool, don't forget to also create the corresponding tool YAML. You can run below command under your tool project to auto generate your tool YAML. You may want to specify `-n` for `name` and `-d` for `description`, which would be displayed as the tool name and tooltip in prompt flow UI. 
     ```
-    python ..\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
+    python <path-to-scripts\tool\generate_package_tool_meta.py> -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
     ```
     For example:
     ```
-    python ..\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
+    python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
     ```
     To populate your tool module, adhere to the pattern \<package_name\>.tools.\<tool_name\>, which represents the folder path to your tool within the package.
 6. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
