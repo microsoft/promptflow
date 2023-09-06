@@ -6,6 +6,7 @@
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![CLI](https://img.shields.io/badge/CLI-reference-blue)](https://microsoft.github.io/promptflow/reference/pf-command-reference.html)
+[![vsc extension](https://img.shields.io/visual-studio-marketplace/i/prompt-flow.prompt-flow?logo=Visual%20Studio&label=Extension%20install)](https://microsoft.github.io/promptflow/reference/pf-command-reference.html)
 [![Doc](https://img.shields.io/badge/Doc-online-green)](https://microsoft.github.io/promptflow/index.html)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 [![Issue](https://img.shields.io/github/issues/microsoft/promptflow)](https://github.com/microsoft/promptflow/issues/new/choose)
@@ -20,7 +21,7 @@
 
 With prompt flow, you will be able to:
 
-- **Create and Iteratively Develop Flow**
+- **Create and Iteratively Develop [Flow](https://microsoft.github.io/promptflow/concepts/concept-flows.html)**
     - Create executable workflows that link LLMs, prompts, Python code and other tools together.
     - Debug and iterate your flows, especially the interaction with LLMs with ease.
 - **Evaluate Flow Quality and Performance**
@@ -125,16 +126,14 @@ Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to p
 
 [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 
-<details>
-<summary><b>VS Code Extension</b> <img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="20"/> -- a flow designer</summary>
+#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/> 
 
-We also offer a VS Code extension for an interactive flow development experience with UI. This is a detailed walkthrough step-by-step to create your own flow from scratch and invoke your first flow run.
+We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI. You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-[![vsc extension](https://img.youtube.com/vi/GmhasXd7sj4/0.jpg)](https://youtu.be/GmhasXd7sj4)
+<video src="https://youtu.be/GmhasXd7sj4" width="640" height="480" controls></video>
 
-</details>
+[![vsc](https://res.cloudinary.com/marcomontalbano/image/upload/v1694003692/video_to_markdown/images/youtube--GmhasXd7sj4-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://youtu.be/GmhasXd7sj4 "vsc")
 
-You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
 ### Learn from Use Cases
 

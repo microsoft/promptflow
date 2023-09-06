@@ -10,7 +10,6 @@
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 [![Discord](https://dcbadge.vercel.app/api/server/bnXr6kxs?compact=true&style=flat)](https://discord.gg/bnXr6kxs)
 [![Doc](https://img.shields.io/badge/Doc-online-green)](https://microsoft.github.io/promptflow/index.html)
-[![Discord](https://dcbadge.vercel.app/api/server/bnXr6kxs?compact=true&style=flat)](https://discord.gg/bnXr6kxs)
 [![!Github](https://img.shields.io/github/stars/microsoft/promptflow?logo=github&color=pink&link=https%3A%2F%2Fgithub.com%2Fmicrosoft%2Fpromptflow)](https://github.com/microsoft/promptflow)
 
 
