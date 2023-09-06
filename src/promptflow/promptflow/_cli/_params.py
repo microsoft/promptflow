@@ -272,4 +272,12 @@ def add_param_verbose(parser):
     )
 
 
-logging_params = [add_param_verbose, add_param_debug]
+def add_param_format_exception(parser):
+    parser.add_argument(
+        "--format_exception",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+
+
+logging_params = [add_param_verbose, add_param_debug, add_param_format_exception]

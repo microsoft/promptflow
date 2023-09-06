@@ -23,6 +23,7 @@ from tabulate import tabulate
 
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
@@ -344,6 +345,9 @@ def exception_handler(command: str):
                 return func(*args, **kwargs)
             except PromptflowException as e:
                 print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
+                error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                error_msg["command"] = " ".join(sys.argv)
+                sys.stderr.write(json.dumps(error_msg))
                 exit(1)
 
         return wrapper
