@@ -524,7 +524,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             else:
                 action = "reset"
 
-            logger.info(f"Start polling until session {action} is complted...")
+            logger.info(f"Start polling until session {action} is completed...")
             # start polling status here.
             if "azure-asyncoperation" not in response.headers:
                 raise FlowRequestException(

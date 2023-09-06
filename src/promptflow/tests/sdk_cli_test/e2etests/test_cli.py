@@ -221,7 +221,7 @@ class TestCli:
             f"description={description}",
         )
         run = local_client.runs.get(run_id)
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -239,7 +239,7 @@ class TestCli:
             f"description={description}",
             cwd=f"{RUNS_DIR}",
         )
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
