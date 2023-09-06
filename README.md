@@ -21,7 +21,7 @@
 
 With prompt flow, you will be able to:
 
-- **Create and Iteratively Develop [Flow](https://microsoft.github.io/promptflow/concepts/concept-flows.html)**
+- **Create and Iteratively Develop [Flow](https://microsoft.github.io/promptflow/concepts/concept-flows.html?_blank)**
     - Create executable workflows that link LLMs, prompts, Python code and other tools together.
     - Debug and iterate your flows, especially the interaction with LLMs with ease.
 - **Evaluate Flow Quality and Performance**
@@ -130,9 +130,7 @@ Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to p
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI. You can install it from the [visualstudio marketplace](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow).
 
-<video src="https://youtu.be/GmhasXd7sj4" width="640" height="480" controls></video>
-
-[![vsc](https://res.cloudinary.com/marcomontalbano/image/upload/v1694003692/video_to_markdown/images/youtube--GmhasXd7sj4-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://youtu.be/GmhasXd7sj4 "vsc")
+[![vsc](https://res.cloudinary.com/marcomontalbano/image/upload/v1694003692/video_to_markdown/images/youtube--GmhasXd7sj4-c05b58ac6eb4c4700831b2b3070cd403.jpg)](https://youtu.be/GmhasXd7sj4?_blank "vsc")
 
 
 ### Learn from Use Cases
