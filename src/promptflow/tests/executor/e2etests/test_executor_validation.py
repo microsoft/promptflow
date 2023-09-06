@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 
@@ -116,9 +117,20 @@ class TestValidation:
         bulk_result = executor.exec_bulk(
             batch_input,
         )
-        assert error_message in str(
-            bulk_result.line_results[0].run_info.error
-        ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
+        if (
+            (sys.version_info.major == 3)
+            and (sys.version_info.minor >= 11)
+            and ((sys.platform == "linux") or (sys.platform == "darwin"))
+        ):
+            # Python >= 3.11 has a different error message on linux and macos
+            error_message_compare = error_message.replace("int", "ValueType.INT")
+            assert error_message_compare in str(
+                bulk_result.line_results[0].run_info.error
+            ), f"Expected message {error_message_compare} but got {str(bulk_result.line_results[0].run_info.error)}"
+        else:
+            assert error_message in str(
+                bulk_result.line_results[0].run_info.error
+            ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
         assert error_class in str(
             bulk_result.line_results[0].run_info.error
         ), f"Expected message {error_class} but got {str(bulk_result.line_results[0].run_info.error)}"
