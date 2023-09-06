@@ -183,7 +183,7 @@ class FlowOperations:
             print("=" * len(info_msg))
             print(info_msg)
             print("Press Enter to send your message.")
-            print("You can quit with ctrl+Z.")
+            print("You can quit with ctrl+C.")
             print("=" * len(info_msg))
             submitter._chat_flow(
                 inputs=inputs,

@@ -38,13 +38,13 @@ Promptflow CLI provides a way to start an interactive chat session for chat flow
 pf flow test --flow <flow_folder> --interactive
 ```
 
-After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+Z**.
+After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+C**.
 Promptflow CLI will distinguish the output of different roles by color, <span style="color:Green">User input</span>, <span style="color:Gold">Bot output</span>, <span style="color:Blue">Flow script output</span>, <span style="color:Cyan">Node output</span>.
 
 > =========================================<br>
 > Welcome to chat flow, <You-flow-name>.<br>
 > Press Enter to send your message.<br>
-> You can quit with ctrl+Z.<br>
+> You can quit with ctrl+C.<br>
 > =========================================<br>
 > <span style="color:Green">User:</span> What types of container software there are<br>
 > <span style="color:Gold">Bot:</span> There are several types of container software available, including:<br>
@@ -61,7 +61,7 @@ If customer adds "--verbose" in the pf command, the output of each step will be 
 > =========================================<br>
 > Welcome to chat flow, Template Chat Flow.<br>
 > Press Enter to send your message.<br>
-> You can quit with ctrl+Z.<br>
+> You can quit with ctrl+C.<br>
 > =========================================<br>
 > <span style="color:Green">User:</span> What types of container software there are<br>
 > <span style="color:Cyan">chat:</span> There are several types of container software available, including:<br>
