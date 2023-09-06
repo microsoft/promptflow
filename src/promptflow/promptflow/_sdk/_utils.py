@@ -639,10 +639,16 @@ def generate_flow_tools_json(
         if target_source and source != target_source:
             return
         used_packages.add(pydash.get(_node, "source.tool", None))
+
+        if source is None or tool_type is None:
+            return
+
+        if tool_type == ToolType.CUSTOM_LLM:
+            tool_type = ToolType.PROMPT
+
         if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
             return
-        if source and tool_type:
-            tools.append((source, tool_type.lower()))
+        tools.append((source, tool_type.lower()))
 
     for node in data[NODES]:
         process_node(node)
@@ -659,6 +665,7 @@ def generate_flow_tools_json(
         used_packages.remove(None)
 
     # generate content
+    # TODO: remove type in tools (input) and code (output)
     flow_tools = {
         "package": _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
         "code": _generate_tool_meta(

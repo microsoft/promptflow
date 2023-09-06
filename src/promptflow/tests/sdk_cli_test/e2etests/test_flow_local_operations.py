@@ -301,7 +301,7 @@ class TestFlowLocalOperations:
                     "url": {"type": ["string"]},
                 },
                 "source": "classify_with_llm.jinja2",
-                "type": "llm",
+                "type": "prompt",
             },
             "./classify_with_llm.jinja2": {
                 "inputs": {
@@ -343,7 +343,7 @@ class TestFlowLocalOperations:
                     "url": {"type": ["string"]},
                 },
                 "source": "classify_with_llm.jinja2",
-                "type": "llm",
+                "type": "prompt",
             },
             "./classify_with_llm.jinja2": {
                 "inputs": {
