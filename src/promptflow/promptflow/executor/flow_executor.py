@@ -662,7 +662,13 @@ class FlowExecutor:
                         output_name=name,
                         node_name=node.name,
                     )
-                raise NodeOutputNotFound(f"Node {output.reference.value} not found in results.")
+                raise NodeOutputNotFound(
+                    message_format="The output '{output_name}' for flow is incorrect. "
+                    "No outputs found for node '{node_name}'. Please review the problematic "
+                    "output and rectify the error.",
+                    output_name=name,
+                    node_name=node.name,
+                )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
                 output.reference.value, node_result, output.reference.property
