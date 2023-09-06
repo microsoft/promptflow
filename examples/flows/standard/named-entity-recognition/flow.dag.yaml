@@ -18,6 +18,8 @@ nodes:
     type: code
     path: NER_LLM.jinja2
   inputs:
+    # This is to easily switch between openai and azure openai.
+    # deployment_name is required by azure openai, model is required by openai.
     deployment_name: gpt-35-turbo
     model: gpt-3.5-turbo
     max_tokens: 64

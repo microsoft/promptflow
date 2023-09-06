@@ -39,6 +39,8 @@ nodes:
     type: code
     path: ask_llm.jinja2
   inputs:
+    # This is to easily switch between openai and azure openai.
+    # deployment_name is required by azure openai, model is required by openai.
     deployment_name: gpt-35-turbo
     model: gpt-3.5-turbo
     question: ${inputs.math_question}
