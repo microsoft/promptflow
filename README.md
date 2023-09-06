@@ -1,4 +1,4 @@
-[![banner](examples/tutorials/quick-start/media/PF_banner.png)](https://microsoft.github.io/promptflow)
+[![banner](examples/tutorials/quick-start/media/PF_banner.png)](https://microsoft.github.io/promptflow/index.html)
 
 ------
 
