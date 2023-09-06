@@ -13,19 +13,20 @@ from ..utils import (
     get_yaml_file,
 )
 
+ACTIVATE_FLOW_TEST_CASES = ["conditional_flow_with_activate", "activate_with_no_inputs"]
+
 
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorActivate:
-    def test_flow_run_activate(self, dev_connections):
-        flow_folder = "conditional_flow_with_activate"
+    @pytest.mark.parametrize("flow_folder", ACTIVATE_FLOW_TEST_CASES)
+    def test_flow_run_activate(self, dev_connections, flow_folder):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         results = executor.exec_line(get_flow_inputs(flow_folder))
         # Assert the flow result
         expected_result = get_flow_expected_result(flow_folder)
-        expected_outputs = expected_result[0]["expected_outputs"]
-        expected_bypassed_nodes = expected_result[0]["expected_bypassed_nodes"]
-        self.assert_activate_flow_run_result(results, expected_outputs, expected_bypassed_nodes)
+        expected_result = expected_result[0] if isinstance(expected_result, list) else get_flow_expected_result
+        self.assert_activate_flow_run_result(results, expected_result)
 
     def test_bulk_run_activate(self, dev_connections):
         flow_folder = "conditional_flow_with_activate"
@@ -52,24 +53,23 @@ class TestExecutorActivate:
 
         # Validate the flow line results
         for i, line_result in enumerate(result.line_results):
-            expected_outputs = expected_result[i]["expected_outputs"]
-            expected_bypassed_nodes = expected_result[i]["expected_bypassed_nodes"]
-            self.assert_activate_flow_run_result(line_result, expected_outputs, expected_bypassed_nodes)
+            self.assert_activate_flow_run_result(line_result, expected_result[i])
 
         # Validate the flow status summary
         status_summary = result.get_status_summary()
         assert status_summary == expected_status_summary
 
-    def assert_activate_flow_run_result(self, result: LineResult, expected_outputs, expected_bypassed_nodes):
+    def assert_activate_flow_run_result(self, result: LineResult, expected_result):
         # Validate the flow status
         assert result.run_info.status == Status.Completed
 
         # Validate the flow output
         assert isinstance(result.output, dict)
-        assert result.output == expected_outputs
+        assert result.output == expected_result["expected_outputs"]
 
         # Validate the flow node run infos for the completed nodes
-        assert len(result.node_run_infos) == 9
+        assert len(result.node_run_infos) == expected_result["expected_node_count"]
+        expected_bypassed_nodes = expected_result["expected_bypassed_nodes"]
         completed_nodes_run_infos = [
             run_info for i, run_info in result.node_run_infos.items() if i not in expected_bypassed_nodes
         ]

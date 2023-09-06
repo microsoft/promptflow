@@ -2,6 +2,7 @@ from typing import Any, List, Mapping
 
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
+from promptflow.executor._errors import ReferenceNodeBypassed
 
 
 class DAGManager:
@@ -73,6 +74,12 @@ class DAGManager:
     def _is_node_ready(self, node: Node) -> bool:
         """Returns True if the node is ready to be executed."""
         node_dependencies = [i for i in node.inputs.values()]
+        # Add skip and activate conditions as node dependencies
+        if node.skip:
+            node_dependencies.extend([node.skip.condition, node.skip.return_value])
+        if node.activate:
+            node_dependencies.append(node.activate.condition)
+
         for node_dependency in node_dependencies:
             if (
                 node_dependency.value_type == InputValueType.NODE_REFERENCE
@@ -86,6 +93,14 @@ class DAGManager:
         """Returns True if the node should be bypassed."""
         # Bypass node if the skip condition is met
         if self._is_skip_condition_met(node):
+            if self._is_node_dependency_bypassed(node.skip.return_value):
+                raise ReferenceNodeBypassed(
+                    message_format="The node {reference_node_name} referenced by {node_name} has been bypassed, "
+                    "so the value of this node cannot be returned. Please refer to the node that "
+                    "will not be bypassed as the default return value.",
+                    reference_node_name=node.skip.return_value.value,
+                    node_name=node.name,
+                )
             skip_return = self._get_node_dependency_value(node.skip.return_value)
             # This is not a good practice, but we need to update the default output of bypassed node
             # to completed_nodes_outputs. We will remove these after skip config is deprecated.
