@@ -34,8 +34,8 @@ class FlowValidator:
                     continue
                 if i.value not in dependencies:
                     msg = (
-                        "Flow is defined incorrectly. Node '{{node_name}}' references a non-existent node "
-                        "'{{ref_node_name}}' in your flow. Please review your flow to ensure that the "
+                        "Flow is defined incorrectly. Node '{node_name}' references a non-existent node "
+                        "'{ref_node_name}' in your flow. Please review your flow to ensure that the "
                         "node name is accurately specified."
                     )
                     raise NodeReferenceNotFound(message_format=msg, node_name=n.name, ref_node_name=i.value)
@@ -53,7 +53,7 @@ class FlowValidator:
                 raise NodeCircularDependency(
                     message_format="Flow is defined incorrectly. Node circular dependency has been detected among the "
                     "nodes in your flow. Kindly review the reference relationships for the nodes "
-                    "{{remaining_nodes}} and resolve the circular reference issue in the flow.",
+                    "{remaining_nodes} and resolve the circular reference issue in the flow.",
                     remaining_nodes=remaining_nodes,
                 )
             sorted_nodes.append(node_to_pick)
@@ -75,7 +75,7 @@ class FlowValidator:
         for node in flow.nodes:
             if node.name in node_names:
                 raise DuplicateNodeName(
-                    message_format="Flow is defined incorrectly. Node with name '{{node_name}}' appears more than "
+                    message_format="Flow is defined incorrectly. Node with name '{node_name}' appears more than "
                     "once in the node definitions in your flow, which is not allowed. To address this "
                     "issue, please review your flow and either rename or remove nodes "
                     "with identical names.",
@@ -88,7 +88,7 @@ class FlowValidator:
                     continue
                 if v.value not in flow.inputs:
                     msg = (
-                        "Flow is defined incorrectly. Node '{{node_name}}' references flow input '{{flow_input_name}}' "
+                        "Flow is defined incorrectly. Node '{node_name}' references flow input '{flow_input_name}' "
                         "which is not defined in your flow. To resolve this issue, please review your flow, "
                         "ensuring that you either add the missing flow inputs or adjust node reference "
                         "to the correct flow input."
@@ -131,7 +131,7 @@ class FlowValidator:
             if k not in inputs:
                 line_info = "in input data" if idx is None else f"in line {idx} of input data"
                 msg = (
-                    "The input for flow is incorrect. The value for flow input '{{input_name}}' is not "
+                    "The input for flow is incorrect. The value for flow input '{input_name}' is not "
                     f"provided {line_info}. Please review your input data or remove this input in your flow "
                     "if it's no longer needed."
                 )
@@ -152,16 +152,16 @@ class FlowValidator:
             if v.value_type == InputValueType.FLOW_INPUT:
                 if v.value not in flow.inputs:
                     raise InputNotFound(
-                        message_format="The input for node is incorrect. Node input '{{node_input_name}}' is not "
-                        "found from flow inputs of node '{{node_name}}'. "
+                        message_format="The input for node is incorrect. Node input '{node_input_name}' is not "
+                        "found from flow inputs of node '{node_name}'. "
                         "Please review the node definition in your flow.",
                         node_input_name=v.value,
                         node_name=node.name,
                     )
                 if v.value not in inputs:
                     raise InputNotFound(
-                        message_format="The input for node is incorrect. Node input '{{node_input_name}}' is not found "
-                        "in input data for node '{{node_name}}'. Please verify the inputs data for the node.",
+                        message_format="The input for node is incorrect. Node input '{node_input_name}' is not found "
+                        "in input data for node '{node_name}'. Please verify the inputs data for the node.",
                         node_input_name=v.value,
                         node_name=node.name,
                     )
@@ -169,7 +169,7 @@ class FlowValidator:
                     updated_inputs[v.value] = flow.inputs[v.value].type.parse(inputs[v.value])
                 except Exception as e:
                     msg = (
-                        "The input for node is incorrect. Value for input '{{input_name}}' of node '{{node_name}}' "
+                        "The input for node is incorrect. Value for input '{input_name}' of node '{node_name}' "
                         f"is not type '{flow.inputs[v.value].type}'. Please review and rectify the input data."
                     )
                     raise InputTypeError(message_format=msg, input_name=k, node_name=node.name) from e
@@ -181,14 +181,14 @@ class FlowValidator:
         for k, v in flow.outputs.items():
             if v.reference.value_type == InputValueType.LITERAL and v.reference.value == "":
                 msg = (
-                    "Flow is defined incorrectly. The reference is not specified for the output '{{output_name}}' "
+                    "Flow is defined incorrectly. The reference is not specified for the output '{output_name}' "
                     "in the flow. To rectify this, ensure that you accurately specify the reference in the flow."
                 )
                 raise EmptyOutputReference(message_format=msg, output_name=k)
             if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
                 msg = (
-                    "Flow is defined incorrectly. The output '{{output_name}}' references non-existent flow input "
-                    "'{{flow_input_name}}' in your flow. Please carefully review your flow and "
+                    "Flow is defined incorrectly. The output '{output_name}' references non-existent flow input "
+                    "'{flow_input_name}' in your flow. Please carefully review your flow and "
                     "correct the reference definition for the output in question."
                 )
                 raise OutputReferenceNotFound(message_format=msg, output_name=k, flow_input_name=v.reference.value)
@@ -196,8 +196,8 @@ class FlowValidator:
                 node = flow.get_node(v.reference.value)
                 if node is None:
                     msg = (
-                        "Flow is defined incorrectly. The output '{{output_name}}' references non-existent node "
-                        "'{{node_name}}' in your flow. To resolve this issue, please carefully review your flow "
+                        "Flow is defined incorrectly. The output '{output_name}' references non-existent node "
+                        "'{node_name}' in your flow. To resolve this issue, please carefully review your flow "
                         "and correct the reference definition for the output in question."
                     )
                     raise OutputReferenceNotFound(message_format=msg, output_name=k, node_name=v.reference.value)
