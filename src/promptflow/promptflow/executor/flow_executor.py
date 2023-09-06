@@ -27,7 +27,13 @@ from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
+from promptflow.exceptions import (
+    ErrorTarget,
+    NotImplementedException,
+    PromptflowException,
+    SystemErrorException,
+    ValidationException,
+)
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import NodeConcurrencyNotFound, NodeOutputNotFound, OutputReferenceBypassed
 from promptflow.executor._flow_nodes_scheduler import (
@@ -646,7 +652,12 @@ class FlowExecutor:
                 outputs[name] = flow_inputs[output.reference.value]
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
-                raise NotImplementedError(f"Unsupported output type {output.reference.value_type}")
+                raise NotImplementedException(
+                    message_format="The output type '{output_type}' is currently unsupported. "
+                    "Please choose from available type: '{supported_output_type}' and try again.",
+                    output_type=output.reference.value_type,
+                    supported_output_type=[output_type.value for output_type in InputValueType],
+                )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
             if not node:
                 raise ValueError(f"Invalid node name {output.reference.value}")

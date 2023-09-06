@@ -186,3 +186,9 @@ class SystemErrorException(PromptflowException):
 
 class ValidationException(UserErrorException):
     pass
+
+
+class NotImplementedException(SystemErrorException):
+    """Exception raised when the feature is not implemented yet."""
+
+    pass
