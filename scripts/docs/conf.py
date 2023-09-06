@@ -49,10 +49,11 @@ exclude_patterns = [
 
 # Options for the linkcheck builder
 linkcheck_ignore = [
-    r"https://(ms\.)?portal\.azure\.com/",
-    r"https://aka\.ms/acs-doc",
-    r"https://github\.com/microsoft/promptflow",
     r"https://platform\.openai\.com/",
+    # These are used in card links, for example 'xx.html', .md can't be resolved.
+    r"^(?!https?)",
+    "deploy-using-docker.html",
+    "deploy-using-kubernetes.html",
 ]
 
 linkcheck_exclude_documents = ["contributing"]

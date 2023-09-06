@@ -1,2 +1,1 @@
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow/
-promptflow-sdk[builtins]
+promptflow

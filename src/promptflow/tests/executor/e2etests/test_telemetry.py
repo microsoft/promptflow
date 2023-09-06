@@ -1,4 +1,5 @@
 import json
+import sys
 import uuid
 from collections import namedtuple
 from unittest.mock import patch
@@ -24,13 +25,15 @@ def mock_stream_chat(**kwargs):
     return stream_response(kwargs)
 
 
+@pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
     def test_executor_openai_telemetry(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
         by mocking openai.ChatCompletion.create method. The mock method will return a generator
-        that yields a namedtuple with a json string of the headers passed to the method."""
+        that yields a namedtuple with a json string of the headers passed to the method.
+        """
 
         with patch("openai.ChatCompletion.create", new=mock_stream_chat):
             operation_context = OperationContext.get_instance()

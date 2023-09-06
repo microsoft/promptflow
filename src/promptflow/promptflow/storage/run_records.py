@@ -3,10 +3,10 @@
 # ---------------------------------------------------------
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 
-from promptflow._utils import serialize
+from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo
 
 
@@ -21,6 +21,7 @@ class NodeRunRecord:
     :param datetime end_time: The time the node finished running
     :param str status: The status of the node run
     """
+
     node_name: str
     line_number: int
     run_info: str
@@ -67,6 +68,7 @@ class LineRunRecord:
     :param str status: The status of the line execution
     :param str tags: The tags associated with the line run
     """
+
     line_number: int
     run_info: str
     start_time: datetime

@@ -1,0 +1,5 @@
+<PoliCheckExclusions>
+  <!-- All strings must be UPPER CASE -->
+  <!--index-xxx.js is an auto-generated javascript file - skipped given it's not expected to be readable -->
+  <Exclusion Type="FileName">SRC\PROMPTFLOW\PROMPTFLOW\_SDK\_SERVING\STATIC\INDEX.JS</Exclusion>
+</PoliCheckExclusions>

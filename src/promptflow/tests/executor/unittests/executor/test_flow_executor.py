@@ -1,5 +1,5 @@
 import json
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -13,10 +13,11 @@ from promptflow.executor.flow_executor import (
     MappingSourceNotFound,
     NoneInputsMappingIsNotSupported,
     enable_streaming_for_llm_tool,
-    ensure_node_result_is_serializable,
-    inject_stream_options,
+    _ensure_node_result_is_serializable,
+    _inject_stream_options,
 )
 from promptflow.tools.aoai import AzureOpenAI, chat, completion
+from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
 
 
 @pytest.mark.unittest
@@ -67,7 +68,7 @@ class TestFlowExecutor:
                 "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data. "
                 "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data."
+                "and you may need to manually assign input mapping based on your input data.",
             ),
         ],
     )
@@ -302,7 +303,7 @@ class TestFlowExecutor:
     )
     def test_inputs_mapping_for_all_lines_error(self, inputs, inputs_mapping, error_code, error_message):
         with pytest.raises(error_code) as e:
-            FlowExecutor.apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
+            FlowExecutor._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
 
@@ -347,7 +348,7 @@ class TestEnableStreamForLLMTool:
 
     def test_inject_stream_options_no_stream_param(self):
         # Test that the function does not wrap the decorated function if it has no stream parameter
-        func = inject_stream_options(lambda: True)(func_without_stream_parameter)
+        func = _inject_stream_options(lambda: True)(func_without_stream_parameter)
         assert func == func_without_stream_parameter
 
         result = func(a=1, b=2)
@@ -355,7 +356,7 @@ class TestEnableStreamForLLMTool:
 
     def test_inject_stream_options_with_stream_param(self):
         # Test that the function wraps the decorated function and injects the stream option
-        func = inject_stream_options(lambda: True)(func_with_stream_parameter)
+        func = _inject_stream_options(lambda: True)(func_with_stream_parameter)
         assert func != func_with_stream_parameter
 
         result = func(a=1, b=2)
@@ -368,7 +369,7 @@ class TestEnableStreamForLLMTool:
         # Test that the function uses the should_stream callable to determine the stream option
         should_stream = Mock(return_value=True)
 
-        func = inject_stream_options(should_stream)(func_with_stream_parameter)
+        func = _inject_stream_options(should_stream)(func_with_stream_parameter)
         result = func(a=1, b=2)
         assert result == (3, True)
 
@@ -390,9 +391,42 @@ def non_streaming_tool():
 
 class TestEnsureNodeResultIsSerializable:
     def test_streaming_tool_should_be_consumed_and_merged(self):
-        func = ensure_node_result_is_serializable(streaming_tool)
+        func = _ensure_node_result_is_serializable(streaming_tool)
         assert func() == "0123456789"
 
     def test_non_streaming_tool_should_not_be_affected(self):
-        func = ensure_node_result_is_serializable(non_streaming_tool)
+        func = _ensure_node_result_is_serializable(non_streaming_tool)
         assert func() == 1
+
+
+class TestGetAvailableMaxWorkerCount:
+    @pytest.mark.parametrize(
+        "total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
+        [
+            (1024.0, 128.0, 64.0, 1, -3),    # available_memory - 0.3 * total_memory < 0
+            (1024.0, 307.20, 64.0, 1, 0),  # available_memory - 0.3 * total_memory = 0
+            (1024.0, 768.0, 64.0, 7, 7),    # available_memory - 0.3 * total_memory > 0
+        ],
+    )
+    def test_get_available_max_worker_count(
+        self,
+        total_memory,
+        available_memory,
+        process_memory,
+        expected_max_worker_count,
+        actual_calculate_worker_count
+    ):
+        with patch("psutil.virtual_memory") as mock_mem:
+            mock_mem.return_value.total = total_memory * 1024 * 1024
+            mock_mem.return_value.available = available_memory * 1024 * 1024
+            with patch("psutil.Process") as mock_process:
+                mock_process.return_value.memory_info.return_value.rss = process_memory * 1024 * 1024
+                with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+                    mock_logger.warning.return_value = None
+                    max_worker_count = get_available_max_worker_count()
+                    assert max_worker_count == expected_max_worker_count
+                    if (actual_calculate_worker_count < 1):
+                        mock_logger.warning.assert_called_with(
+                            f"Available max worker count {actual_calculate_worker_count} is less than 1, "
+                            "set it to 1."
+                        )

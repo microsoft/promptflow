@@ -16,7 +16,7 @@ from promptflow.contracts.types import Secret
 
 
 class ConnectionManager:
-    """This class will be used for construction mode to run flow locally. Do not include it into tool code."""
+    """This class will be used for construction mode to run flow. Do not include it into tool code."""
 
     instance = None
 
@@ -42,7 +42,8 @@ class ConnectionManager:
         for key, connection_dict in _dict.items():
             typ = connection_dict.get("type")
             if typ not in cls_mapping:
-                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {cls_mapping.keys()}.")
+                supported = [key for key in cls_mapping.keys() if not key.startswith("_")]
+                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {supported}.")
             value = connection_dict.get("value", {})
             connection_class = cls_mapping[typ]
 
@@ -63,13 +64,13 @@ class ConnectionManager:
                     # Do not delete this branch, as promptflow_vectordb.connections is dataclass type.
                     cls_fields = {f.name: f for f in fields(connection_class)}
                     connection_value = connection_class(**{k: v for k, v in value.items() if k in cls_fields})
-                    setattr(
-                        connection_value,
-                        CONNECTION_SECRET_KEYS,
-                        [f.name for f in cls_fields.values() if f.type == Secret],
-                    )
+                    secret_keys = [f.name for f in cls_fields.values() if f.type == Secret]
                 else:
                     connection_value = connection_class(**{k: v for k, v in value.items()})
+                    secrets = getattr(connection_value, "secrets", {})
+                    secret_keys = list(secrets.keys()) if isinstance(secrets, dict) else []
+            # Set secret keys for log scrubbing
+            setattr(connection_value, CONNECTION_SECRET_KEYS, secret_keys)
             # Use this hack to make sure serialization works
             setattr(connection_value, CONNECTION_NAME_PROPERTY, key)
             connections[key] = connection_value

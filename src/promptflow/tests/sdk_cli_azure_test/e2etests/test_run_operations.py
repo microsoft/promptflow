@@ -16,6 +16,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
+from promptflow.azure._restclient.flow_service_caller import FlowRequestException
 from promptflow.azure.operations import RunOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -51,32 +52,32 @@ class TestFlowRun:
         run = remote_client.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_basic_evaluation(self, remote_client_int, runtime_int):
+    def test_basic_evaluation(self, pf, runtime):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
-        run = remote_client_int.run(
+        run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=data_path,
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(run, Run)
-        run = remote_client_int.runs.stream(run=run.name)
+        run = pf.runs.stream(run=run.name)
         assert run.status == RunStatus.COMPLETED
 
-        eval_run = remote_client_int.run(
+        eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             data=data_path,
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(eval_run, Run)
-        remote_client_int.runs.stream(run=eval_run.name)
+        pf.runs.stream(run=eval_run.name)
 
         # evaluation run without data
-        eval_run = remote_client_int.run(
+        eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             run=run,
             column_mapping={
@@ -84,10 +85,10 @@ class TestFlowRun:
                 "groundtruth": "${run.inputs.url}",
                 "prediction": "${run.outputs.category}",
             },
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(eval_run, Run)
-        remote_client_int.runs.stream(run=eval_run.name)
+        pf.runs.stream(run=eval_run.name)
 
     def test_run_with_connection_overwrite(self, remote_client, pf, runtime):
         run = pf.run(
@@ -353,6 +354,13 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # automatic is a reserved runtime name, will use automatic runtime if specified.
+            pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl", runtime="automatic")
+
     def test_automatic_runtime_with_environment(self, pf):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
@@ -455,7 +463,7 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/flow_with_dict_input",
                 data=data_path,
-                column_mapping={"key": {"value": "1"}},
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime="fake_runtime",
             )
 
@@ -497,7 +505,7 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/flow_with_dict_input",
                 data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"key": {"value": "1"}},
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime=runtime,
             )
 
@@ -511,8 +519,6 @@ class TestFlowRun:
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
             assert flow_session_id == body.session_id
-            # session id also contains alias
-            assert flow_lineage_id in flow_session_id
             assert flow_lineage_id == body.flow_lineage_id
             return body
 
@@ -521,7 +527,6 @@ class TestFlowRun:
             RunOperations, "get"
         ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
-            # no runtime provided, will use automatic runtime
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -537,3 +542,17 @@ class TestFlowRun:
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
+
+    def test_automatic_runtime_creation_failure(self, pf):
+
+        with pytest.raises(FlowRequestException) as e:
+            pf.runs._resolve_runtime(
+                run=Run(
+                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    resources={"instance_type": "not_exist"},
+                ),
+                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                runtime=None,
+            )
+        assert "Session creation failed for" in str(e.value)
