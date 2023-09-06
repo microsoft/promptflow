@@ -8,7 +8,6 @@ from enum import Enum
 from traceback import TracebackException, format_tb
 from types import TracebackType
 
-from promptflow._constants import ERROR_RESPONSE_COMPONENT_NAME
 from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException, ValidationException
 
 ADDITIONAL_INFO_USER_EXECUTION_ERROR = "ToolExecutionErrorDetails"
