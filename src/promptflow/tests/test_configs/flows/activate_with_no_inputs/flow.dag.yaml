@@ -1,0 +1,24 @@
+inputs:
+  text:
+    type: string
+outputs:
+  text:
+    type: string
+    reference: ${node_a.output}
+nodes:
+- name: node_a
+  type: python
+  source:
+    type: code
+    path: node_a.py
+  inputs:
+    input1: ${inputs.text}
+- name: node_b
+  type: python
+  source:
+    type: code
+    path: node_b.py
+  inputs: {}
+  activate:
+    when: ${node_a.output}
+    is: hello world

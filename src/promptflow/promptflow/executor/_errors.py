@@ -152,6 +152,10 @@ class OutputReferenceNotExist(NodeReferenceError):
     pass
 
 
+class ReferenceNodeBypassed(NodeReferenceError):
+    pass
+
+
 class NodeOutputNotFound(UserErrorException):
     pass
 
