@@ -129,35 +129,69 @@ raise MultipleToolsDefined(
 
 ## Define your error message/message_format
 
-Error messages principals:
+### Principals:
 
 * **Human**:
 
     Concise, Clear, understandable
 
+    > Good Example: *"Youd failed at the validation in PFS."*
+
+    > Bad Example: *"You account does not have enough permission to submit the flow"*
+
 * **Helpful**:
 
-    Informative, Actionable, with constructive suggestions
+    Informative, Actionable with constructive suggestions
+
+    > Good Example: *"The 'source' property is not specified for Node 'fetch_content'. To proceed, please specify with a valid source file path in your flow"*
+
+    > Bad Example: *"'source' missing for node."*
 
 * **Humble**:
     
     Kindly, without blame and judgement
 
-For PromptFlow, to fit in with above principals, the error message(format) shall corporate below segments at least:
+    > Good Example: *"The field 'num' expects 'int' value" but assigned with string literal 'hello'."*
+
+    > Bad Example: *"You made a mistake to assign string literal to int 'num'*
+
+### Rules
+
+1. In PromptFlow, to fit in with above principals, the error message(format) shall corporate below segments at least:
 
 
-**Cause Part**:
+    **Description/Cause**:
 
->Sentences to provide an explanation of the issue and detail how it occurs.
+    Sentences to provide an explanation of the issue and details on how it occurs.
 
-**Solution Part**:
-
->Sentences to offer valuable suggestions for preventing or resolving the issue, including clear directions for mitigation or resolution.
+    > *"The input for flow is incorrect. Error: The value 'hello' for flow input 'num' in line '0' of input data does not match the expected type 'int'"*
 
 
-### Templates
+    **Solution/Suggestion**:
 
-We have predefined error message formats for Promptflow. For more details, please refer to [Link to be added].
+    Sentences to offer valuable suggestions for preventing or resolving the issue, including clear directions for mitigation or resolution.
+
+    > *"To fix this error, please input an integer value for 'num'"*
+
+2. For value quote, placeholder value, variables in the error message, please try to enclose with single quote.
+
+   Use above example, below values shall be single quoted in message body
+
+   > 'hello', 'num', '0', 'int'      
+
+3. PromptFlow is designed with a strong commitment to user privacy and data security. As such, it does not log or record any user [PII](https://en.wikipedia.org/wiki/Personal_data) to mitigate the risk of unintentional data exposure. 
+
+    However, when handling error messages, there are situations where you may need to address sensitive information. For instance, you might encounter scenarios where you need to raise exceptions due to unforeseen or inner exceptions, which may possibly include sensitive user data. As a contributor, it's essential to craft error messages that are both informative and secure.
+
+    To achieve this, we recommend using the **message_format** member of PromptFlowException. You can encapsulate any sensitive information within variables within the message_format body. For instance, if error_type_and_message might contain sensitive user data, you can format it as follows:
+    
+    > *"Execution failure in '{node_name}': {error_type_and_message}"*
+
+    When raising a PromptFlowException with the specified message_format, the **message** member will be automatically populated with the rendered values, maintaining security. For example:
+
+    ![Alt text](image.png)
+
+    In PromptFlow, the **message_format** is logged and tracked, but the **message** itself is **only** visible to PromptFlow users. We prioritize the security and privacy of user data throughout the platform. 
 
 
 ### Samples
@@ -166,13 +200,13 @@ We have predefined error message formats for Promptflow. For more details, pleas
 1. Flow Definition Error：Node circular
 
 
->*"Flow is defined incorrectly. Error: Node circular dependency has been detected among the nodes in your flow. Solution: Please Kindly review the reference relationships for the nodes **['divide_num', 'divide_num_1', 'divide_num_2']** and resolve the circular reference issue in the flow."*
+>*"Flow is defined incorrectly. Node circular dependency has been detected among the nodes in your flow. Please Kindly review the reference relationships for the nodes **['divide_num', 'divide_num_1', 'divide_num_2']** and resolve the circular reference issue in the flow."*
 
 
 2. Input Data Error: Type not match
 
 
-> "*The input for flow is incorrect. Error: The value '**hello**' for flow input '**num**' in line **0** of input data does not match the expected type '**int**'. Please review the input data or adjust the input type of '**num**' in your flow.*"
+> "*The input for flow is incorrect. The value '**hello**' for flow input '**num**' in line **'0'** of input data does not match the expected type '**int**'. Please review the input data or adjust the input type of '**num**' in your flow.*"
 
 
 3. File not found Error
