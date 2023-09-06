@@ -537,7 +537,6 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
-    @pytest.mark.skip(reason="Error handling logic changed in session service.")
     def test_automatic_runtime_creation_failure(self, pf):
 
         with pytest.raises(FlowRequestException) as e:
