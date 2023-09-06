@@ -520,10 +520,11 @@ class Flow:
     def get_connection_input_names_for_node(self, node_name):
         """Return connection input names."""
         node = self.get_node(node_name)
+        if node and node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
+        # Ignore Prompt node and LLM node, due to they do not have connection inputs.
         if not node or node.type == ToolType.PROMPT or node.type == ToolType.LLM:
             return []
-        if node.use_variants:
-            node = self._apply_default_node_variant(node, self.node_variants)
         tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
         if tool:
             return list(self._get_connection_name_from_tool(tool, node).keys())
