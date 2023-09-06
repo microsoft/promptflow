@@ -97,17 +97,4 @@ jobs:
         pythonVersion: 3.9
         coverageThreshold: 0.7
         token: ${{ secrets.GITHUB_TOKEN }}
-    - name: Sending Status
-      run: |-
-        gh api \
-          --method POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          /repos/${{ github.repository }}/statuses/${{ github.sha }} \
-          -f state='success' \
-          -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
-          -f description='The build succeeded!' \
-          -f context='test/executor_e2e'
-      shell: bash -el {0}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        context: test/executor_e2e
