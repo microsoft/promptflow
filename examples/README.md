@@ -27,6 +27,8 @@
 | path | status | description |
 ------|--------|-------------
 | [chat-with-pdf](tutorials/e2e-development/chat-with-pdf.md) | [![samples_tutorials_e2e_development_chat_with_pdf](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml) |  Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information |
+| [azure-app-service](tutorials/flow-deploy/azure-app-service/README.md) | [![samples_tutorials_flow_deploy_azure_app_service](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_azure_app_service.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_azure_app_service.yml) |  This example demos how to deploy a flow using Azure App Service |
+| [docker](tutorials/flow-deploy/docker/README.md) | [![samples_tutorials_flow_deploy_docker](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_docker.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_docker.yml) |  This example demos how to deploy flow as a docker app |
 
 
 ### Flows ([flows](flows))
@@ -75,11 +77,6 @@
 | [connections](connections/README.md) | [![samples_connections](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_connections.yml) |  This folder contains example `YAML` files for creating `connection` using `pf` cli |
 
 
-### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
-
-| path | status | description |
-------|--------|-------------
-| [deploy.md](tutorials/flow-deploy/deploy.md) | | deploy flow as endpoint
 
 ## SDK examples
 
@@ -104,4 +101,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Reference
 
-* [Promptflow documentation](https://microsoft.github.io/promptflow)
+* [Promptflow documentation](https://microsoft.github.io/promptflow/)

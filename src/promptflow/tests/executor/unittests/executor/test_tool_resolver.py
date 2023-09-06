@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -123,7 +124,15 @@ class TestToolResolver:
         with pytest.raises(NodeInputValidationError) as e:
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
-        message = "value invalid is not type int"
+        if (
+            (sys.version_info.major == 3)
+            and (sys.version_info.minor >= 11)
+            and ((sys.platform == "linux") or (sys.platform == "darwin"))
+        ):
+            # Python >= 3.11 has a different error message on linux and macos
+            message = "value invalid is not type ValueType.INT"
+        else:
+            message = "value invalid is not type int"
         assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
 
         # Case 4: Unresolved value, like newly added type not in old version ValueType enum
