@@ -35,7 +35,12 @@ from promptflow.exceptions import (
     ValidationException,
 )
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import NodeConcurrencyNotFound, NodeOutputNotFound, OutputReferenceBypassed
+from promptflow.executor._errors import (
+    NodeConcurrencyNotFound,
+    NodeOutputNotFound,
+    OutputReferenceBypassed,
+    OutputReferenceNotExist,
+)
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -660,7 +665,13 @@ class FlowExecutor:
                 )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
             if not node:
-                raise ValueError(f"Invalid node name {output.reference.value}")
+                raise OutputReferenceNotExist(
+                    message_format="Flow is defined incorrectly. The node '{node_name}' "
+                    "referenced by the output '{output_name}' can not found in flow. "
+                    "Please rectify the error in your flow and try again.",
+                    node_name=output.reference.value,
+                    output_name=name,
+                )
             if node.aggregation:
                 # Note that the reduce node referenced in the output is not supported.
                 continue

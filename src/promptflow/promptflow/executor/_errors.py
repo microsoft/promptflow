@@ -109,14 +109,6 @@ class NoNodeExecutedError(FlowExecutionError):
     pass
 
 
-class OutputReferenceBypassed(FlowExecutionError):
-    pass
-
-
-class NodeOutputNotFound(FlowExecutionError):
-    pass
-
-
 class InputTypeError(InvalidFlowRequest):
     pass
 
@@ -150,6 +142,18 @@ class UnsupportedReference(NodeReferenceError):
 
 
 class InvalidReferenceProperty(NodeReferenceError):
+    pass
+
+
+class OutputReferenceBypassed(NodeReferenceError):
+    pass
+
+
+class OutputReferenceNotExist(NodeReferenceError):
+    pass
+
+
+class NodeOutputNotFound(UserErrorException):
     pass
 
 
