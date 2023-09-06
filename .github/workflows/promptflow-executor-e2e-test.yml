@@ -69,7 +69,7 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
           -l eastus `
           -m "all" `
-          -n ${{ steps.cpu-cores.outputs.count }}
+          -n ${{ steps.cpu-cores.outputs.count }}`
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
