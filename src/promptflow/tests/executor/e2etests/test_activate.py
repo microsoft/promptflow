@@ -25,7 +25,8 @@ class TestExecutorActivate:
         results = executor.exec_line(get_flow_inputs(flow_folder))
         # Assert the flow result
         expected_result = get_flow_expected_result(flow_folder)
-        self.assert_activate_flow_run_result(results, expected_result[0])
+        expected_result = expected_result[0] if isinstance(expected_result, list) else get_flow_expected_result
+        self.assert_activate_flow_run_result(results, expected_result)
 
     def test_bulk_run_activate(self, dev_connections):
         flow_folder = "conditional_flow_with_activate"

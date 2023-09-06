@@ -1,0 +1,37 @@
+inputs:
+  text:
+    type: string
+    default: hello
+outputs: {}
+nodes:
+- name: node_a
+  type: python
+  source:
+    type: code
+    path: node_a.py
+  inputs:
+    input1: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: hello
+- name: node_b
+  type: python
+  source:
+    type: code
+    path: node_b.py
+  inputs:
+    input1: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: world
+- name: node_c
+  type: python
+  source:
+    type: code
+    path: node_c.py
+  inputs:
+    input1: ${node_a.output}
+  skip:
+    when: ${node_a.output}
+    is: true
+    return: ${node_b.output}
