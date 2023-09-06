@@ -149,6 +149,10 @@ class InvalidReferenceProperty(NodeReferenceError):
     pass
 
 
+class ReferenceNodeBypassed(NodeReferenceError):
+    pass
+
+
 class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
