@@ -653,17 +653,21 @@ class FlowExecutor:
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
                 raise NotSupported(
-                    message_format="The output type '{output_type}' is currently unsupported. "
-                    "Please choose from available types: '{supported_output_type}' and try again.",
+                    message_format=(
+                        "The output type '{output_type}' is currently unsupported. "
+                        "Please choose from available types: '{supported_output_type}' and try again."
+                    ),
                     output_type=output.reference.value_type,
                     supported_output_type=[output_type.value for output_type in InputValueType],
                 )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
             if not node:
                 raise OutputReferenceNotExist(
-                    message_format="Flow is defined incorrectly. The node '{node_name}' "
-                    "referenced by the output '{output_name}' can not found in flow. "
-                    "Please rectify the error in your flow and try again.",
+                    message_format=(
+                        "Flow is defined incorrectly. The node '{node_name}' "
+                        "referenced by the output '{output_name}' can not found in flow. "
+                        "Please rectify the error in your flow and try again."
+                    ),
                     node_name=output.reference.value,
                     output_name=name,
                 )
@@ -673,16 +677,20 @@ class FlowExecutor:
             if node.name not in nodes_outputs:
                 if node.name in bypassed_nodes:
                     raise OutputReferenceBypassed(
-                        message_format="The output '{output_name}' for flow is incorrect. "
-                        "The node '{node_name}' referenced by the output has been bypassed. "
-                        "Please refrain from using bypassed nodes as output sources.",
+                        message_format=(
+                            "The output '{output_name}' for flow is incorrect. "
+                            "The node '{node_name}' referenced by the output has been bypassed. "
+                            "Please refrain from using bypassed nodes as output sources."
+                        ),
                         output_name=name,
                         node_name=node.name,
                     )
                 raise NodeOutputNotFound(
-                    message_format="The output '{output_name}' for flow is incorrect. "
-                    "No outputs found for node '{node_name}'. Please review the problematic "
-                    "output and rectify the error.",
+                    message_format=(
+                        "The output '{output_name}' for flow is incorrect. "
+                        "No outputs found for node '{node_name}'. Please review the problematic "
+                        "output and rectify the error."
+                    ),
                     output_name=name,
                     node_name=node.name,
                 )
