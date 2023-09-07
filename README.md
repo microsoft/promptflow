@@ -7,14 +7,11 @@
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 [![CLI](https://img.shields.io/badge/CLI-reference-blue)](https://microsoft.github.io/promptflow/reference/pf-command-reference.html)
-[![vsc extension](https://img.shields.io/visual-studio-marketplace/i/prompt-flow.prompt-flow?logo=Visual%20Studio&label=Extension%20install)](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)
-
-[![Doc](https://img.shields.io/badge/Doc-online-green)](https://microsoft.github.io/promptflow/index.html)
-[![Issue](https://img.shields.io/github/issues/microsoft/promptflow)](https://github.com/microsoft/promptflow/issues/new/choose)
+[![vsc extension](https://img.shields.io/visual-studio-marketplace/i/prompt-flow.prompt-flow?logo=Visual%20Studio&label=Extension%20)](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)[![Doc](https://img.shields.io/badge/Doc-online-green)](https://microsoft.github.io/promptflow/index.html)
+<br>[![Issue](https://img.shields.io/github/issues/microsoft/promptflow)](https://github.com/microsoft/promptflow/issues/new/choose)
 [![Discord](https://dcbadge.vercel.app/api/server/bnXr6kxs?compact=true&style=flat)](https://discord.gg/bnXr6kxs)
 [![Discussions](https://img.shields.io/github/discussions/microsoft/promptflow)](https://github.com/microsoft/promptflow/issues/new/choose)
 [![CONTRIBUTING](https://img.shields.io/badge/Contributing-8A2BE2)](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md)
-
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
 > Welcome to join us to make Prompt flow!
@@ -47,10 +44,9 @@ pip install promptflow promptflow-tools
 
 **Create a chatbot with prompt flow**
 
-Initiate a prompt flow from a chat template:
+Run the command to initiate a prompt flow from a chat template, it creates folder named `my_chatbot` and generates required files within it:
 
 ```sh
-# This command creates folder named my_chatbot and generates the necessary flow files within it.
 pf flow init --flow ./my_chatbot --type chat
 ```
 
@@ -65,12 +61,9 @@ pf flow init --flow ./my_chatbot --type chat
 > ```
 > </details>
 
-For OpenAI key, establish the connection by running:
-
+For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key:
 
 ```sh
-# This command creates a connection by using the openai.yaml file in the my_chatbot folder, which stores your OpenAI key
-
 # Override keys with --set to avoid yaml file changes
 pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key>
 ```
@@ -79,7 +72,7 @@ pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key
 
 In the `my_chatbot` folder, there's a `flow.dag.yaml` file that outlines the flow, including inputs/outputs, nodes,  connection, and the LLM model, etc
 
-> Note that in the `chat` node, we're using a connection named `open_ai_connection` and the `gpt-35-turbo` model. 
+> Note that in the `chat` node, we're using a connection named `open_ai_connection` and the `gpt-35-turbo` model.
 
 Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 
@@ -102,10 +95,9 @@ Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to p
 
 We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI. 
 
-<img src="examples/tutorials/quick-start/media/vsc.png" alt="vsc" width="400"/>
+<img src="examples/tutorials/quick-start/media/vsc.png" alt="vsc" width="1000"/>
 
 You can install it from the <a href="https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow" target="_blank">visualstudio marketplace</a>.
-
 
 #### Deep Dive into Flow Development
 
