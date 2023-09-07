@@ -122,4 +122,31 @@ class RunRecordNotFound(ValidationException):
 
 
 class FlowOutputUnserializable(UserErrorException):
-    pass
+    def __init__(self, *, output_name: str, module: str = None):
+        self._output_name = output_name
+        super().__init__(target=ErrorTarget.FLOW_EXECUTOR, module=module)
+
+    @property
+    def message_format(self):
+        if self.inner_exception:
+            return (
+                "The output '{output_name}' for flow is incorrect. The output value is not JSON serializable. "
+                "JSON dump failed: {error_type_and_message}. Please verify your flow output and "
+                "make sure the value serializable."
+            )
+        else:
+            return (
+                "The output '{output_name}' for flow is incorrect. The output value is not JSON serializable. "
+                "Please verify your flow output and make sure the value serializable."
+            )
+
+    @property
+    def message_parameters(self):
+        error_type_and_message = None
+        if self.inner_exception:
+            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+
+        return {
+            "output_name": self._output_name,
+            "error_type_and_message": error_type_and_message,
+        }

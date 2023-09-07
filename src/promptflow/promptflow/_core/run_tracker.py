@@ -252,14 +252,15 @@ class RunTracker(ThreadLocalSingleton):
         }
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
-        try:
-            return {k: self._ensure_serializable_value(v) for k, v in output.items()}
-        except Exception as e:
-            # If it is flow output not node output, raise an exception.
-            raise FlowOutputUnserializable(
-                f"Flow output must be json serializable, dump json failed: {e}",
-                target=ErrorTarget.FLOW_EXECUTOR,
-            ) from e
+        serializable_output = {}
+        for k, v in output.items():
+            try:
+                serializable_output[k] = self._ensure_serializable_value(v)
+            except Exception as e:
+                # If a specific key-value pair is not serializable, raise an exception with the key.
+                raise FlowOutputUnserializable(output_name=k) from e
+
+        return serializable_output
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
