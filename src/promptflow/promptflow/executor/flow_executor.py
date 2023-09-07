@@ -416,6 +416,11 @@ class FlowExecutor:
     def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
         """Validate the aggregation inputs according to the flow inputs."""
         for key, value in aggregated_flow_inputs.items():
+            if key in aggregation_inputs:
+                raise InvalidAggregationInput(
+                    message_format="Input '{input_key}' appear in both flow aggregation input and aggregation input.",
+                    input_key=key,
+                )
             if not isinstance(value, list):
                 raise InvalidAggregationInput(
                     message_format="Flow aggregation input {input_key} should be one list.", input_key=key

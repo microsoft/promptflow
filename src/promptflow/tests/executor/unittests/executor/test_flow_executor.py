@@ -408,14 +408,13 @@ class TestFlowExecutor:
         assert result == expected_inputs
 
     @pytest.mark.parametrize(
-        "aggregated_flow_inputs, aggregation_inputs, error_code, error_message",
+        "aggregated_flow_inputs, aggregation_inputs, error_message",
         [
             (
                 {},
                 {
                     "input1": "value1",
                 },
-                InvalidAggregationInput,
                 "Aggregation input input1 should be one list.",
             ),
             (
@@ -423,22 +422,27 @@ class TestFlowExecutor:
                     "input1": "value1",
                 },
                 {},
-                InvalidAggregationInput,
                 "Flow aggregation input input1 should be one list.",
             ),
             (
                 {"input1": ["value1_1", "value1_2"]},
                 {"input_2": ["value2_1"]},
-                InvalidAggregationInput,
                 "Whole aggregation inputs should have the same length. "
                 "Current key length mapping are: {'input1': 2, 'input_2': 1}",
             ),
+            (
+                {
+                    "input1": "value1",
+                },
+                {
+                    "input1": "value1",
+                },
+                "Input 'input1' appear in both flow aggregation input and aggregation input.",
+            ),
         ],
     )
-    def test_validate_aggregation_inputs_error(
-        self, aggregated_flow_inputs, aggregation_inputs, error_code, error_message
-    ):
-        with pytest.raises(error_code) as e:
+    def test_validate_aggregation_inputs_error(self, aggregated_flow_inputs, aggregation_inputs, error_message):
+        with pytest.raises(InvalidAggregationInput) as e:
             FlowExecutor._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
         assert str(e.value) == error_message
 
