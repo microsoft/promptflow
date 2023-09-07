@@ -179,17 +179,17 @@ class BuiltinsManager:
     @staticmethod
     def is_builtin(tool: Tool) -> bool:
         """Check if the tool is a builtin tool."""
-        return tool.type is ToolType.PYTHON and tool.code is None and tool.source is None
+        return tool.type == ToolType.PYTHON and tool.code is None and tool.source is None
 
     @staticmethod
     def is_llm(tool: Tool) -> bool:
         """Check if the tool is a LLM tool."""
-        return tool.type is ToolType.LLM
+        return tool.type == ToolType.LLM
 
     @staticmethod
     def is_custom_python(tool: Tool) -> bool:
         """Check if the tool is a custom python tool."""
-        return tool.type is ToolType.PYTHON and not BuiltinsManager.is_builtin(tool)
+        return tool.type == ToolType.PYTHON and not BuiltinsManager.is_builtin(tool)
 
 
 class ToolsManager:
@@ -259,14 +259,14 @@ class ToolLoader:
     def load_tool_for_node(self, node: Node) -> Tool:
         if node.source is None:
             raise UserErrorException(f"Node {node.name} does not have source defined.")
-        if node.type is ToolType.PYTHON:
+        if node.type == ToolType.PYTHON:
             if node.source.type == ToolSourceType.Package:
                 return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
                 _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
-        elif node.type is ToolType.CUSTOM_LLM:
+        elif node.type == ToolType.CUSTOM_LLM:
             if node.source.type == ToolSourceType.PackageWithPrompt:
                 return self.load_tool_for_package_node(node)
             raise NotImplementedError(
