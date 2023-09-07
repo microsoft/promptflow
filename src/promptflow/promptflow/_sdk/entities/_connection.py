@@ -43,6 +43,7 @@ from promptflow._sdk.schemas._connection import (
 )
 
 logger = LoggerFactory.get_logger(name=__name__)
+PROMPTFLOW_CONNECTIONS = "promptflow.connections"
 
 
 class _Connection(YAMLTranslatableMixin):
@@ -65,7 +66,7 @@ class _Connection(YAMLTranslatableMixin):
     def __init__(
         self,
         name: str = "default_connection",
-        module: str = "promptflow.connections",
+        module: str = PROMPTFLOW_CONNECTIONS,
         configs: Dict[str, str] = None,
         secrets: Dict[str, str] = None,
         **kwargs,
@@ -641,7 +642,7 @@ class CustomConnection(_Connection):
     def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
         super().__init__(secrets=secrets, configs=configs, **kwargs)
         self.custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
-        self.module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, None)
+        self.module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, PROMPTFLOW_CONNECTIONS)
 
     @classmethod
     def _get_schema_cls(cls, is_custom_strong_type=False):
@@ -758,7 +759,7 @@ class CustomConnection(_Connection):
             configs=configs,
             secrets=secrets,
             custom_type=custom_type,
-            module=module,
+            module=module or PROMPTFLOW_CONNECTIONS,
             expiry_time=orm_object.expiryTime,
             created_date=orm_object.createdDate,
             last_modified_date=orm_object.lastModifiedDate,
