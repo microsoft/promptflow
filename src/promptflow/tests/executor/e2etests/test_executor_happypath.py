@@ -342,3 +342,33 @@ class TestExecutor:
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
         flow_result = executor.exec_line(self.get_line_inputs())
         assert flow_result.run_info.status == Status.Completed
+
+    def test_executor_creation_with_default_input(self):
+        # Assert for single node run.
+        default_input_value = "input value from default"
+        yaml_file = get_yaml_file("default_input")
+        executor = FlowExecutor.create(yaml_file, {})
+        node_result = executor.load_and_exec_node(yaml_file, "test_print_input")
+        assert node_result.status == Status.Completed
+        assert node_result.output == default_input_value
+
+        # Assert for flow run.
+        flow_result = executor.exec_line({})
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.output["output"] == default_input_value
+        aggr_results = executor.exec_aggregation({}, aggregation_inputs={})
+        flow_aggregate_node = aggr_results.node_run_infos["aggregate_node"]
+        assert flow_aggregate_node.status == Status.Completed
+        assert flow_aggregate_node.output == [default_input_value]
+
+        # Assert for bulk run.
+        bulk_result = executor.exec_bulk([{}])
+        assert bulk_result.line_results[0].run_info.status == Status.Completed
+        assert bulk_result.line_results[0].output["output"] == default_input_value
+        bulk_aggregate_node = bulk_result.aggr_results.node_run_infos["aggregate_node"]
+        assert bulk_aggregate_node.status == Status.Completed
+        assert bulk_aggregate_node.output == [default_input_value]
+
+        # Assert for exec
+        exec_result = executor.exec({})
+        assert exec_result["output"] == default_input_value
