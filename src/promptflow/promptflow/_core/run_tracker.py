@@ -219,7 +219,7 @@ class RunTracker(ThreadLocalSingleton):
         if run_info is None:
             raise RunRecordNotFound(
                 message_format=(
-                    f"Run record with ID {run_id} was not found in the storage. "
+                    f"Run record with ID '{run_id}' was not found in the storage. "
                     f"Please contact support for further assistance."
                 ),
                 target=ErrorTarget.RUN_TRACKER,
