@@ -300,7 +300,8 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
     print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
     if flow_type == "chat":
         flow_test_args = "--interactive"
-        print("Please follow the steps in README.md to create the connection.")
+        print("The generated chat flow is requiring a connection named open_ai_connection, "
+              "please follow the steps in README.md to create if you haven't done that.")
     else:
         flow_test_args = f"--input {os.path.join(flow_name, 'data.jsonl')}"
     flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
