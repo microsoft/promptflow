@@ -45,6 +45,22 @@ REST_RUN_TYPE_2_RUN_TYPE = {
 
 
 class Run(YAMLTranslatableMixin):
+    """Flow run entity.
+
+    :param name: Name of the run.
+    :type name: str
+    :param type: Type of the run, should be one of "bulk", "evaluate" or "pairwise_evaluate".
+    :type type: str
+    :param flow: Path of the flow directory.
+    :type flow: Path
+    :param display_name: Display name of the run.
+    :type display_name: str
+    :param description: Description of the run.
+    :type description: str
+    :param tags: Tags of the run.
+    :type tags: List[Dict[str, str]]
+    """
+
     def __init__(
         self,
         flow: Path,
@@ -67,21 +83,6 @@ class Run(YAMLTranslatableMixin):
         properties: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
-        """Flow run.
-
-        :param name: Name of the run.
-        :type name: str
-        :param type: Type of the run, should be one of "bulk", "evaluate" or "pairwise_evaluate".
-        :type type: str
-        :param flow: Path of the flow directory.
-        :type flow: Path
-        :param display_name: Display name of the run.
-        :type display_name: str
-        :param description: Description of the run.
-        :type description: str
-        :param tags: Tags of the run.
-        :type tags: List[Dict[str, str]]
-        """
         # TODO: remove when RUN CRUD don't depend on this
         self.type = RunTypes.BATCH
         self.data = data
