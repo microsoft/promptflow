@@ -149,6 +149,7 @@ class FlowOperations(_ScopeDependentOperations):
         is_deterministic: bool = True,
         **kwargs,
     ) -> Component:
+        """Load a flow as a component."""
         rest_object = LoadFlowAsComponentRequest(
             node_variant=variant,
             inputs_mapping=columns_mapping,
