@@ -96,10 +96,3 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 
 from promptflow.storage._cache_storage import LocalCacheStorage
 from promptflow.storage._common import reconstruct_metrics_dict
-from promptflow.storage._sqlite_client import (
-    INDEX,
-    PRIMARY_KEY,
-    DuplicatedPrimaryKeyException,
-    NotFoundException,
-    SqliteClient,
-)
