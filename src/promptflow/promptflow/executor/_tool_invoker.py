@@ -16,4 +16,4 @@ class DefaultToolInvoker(ToolInvoker):
         signature = inspect.signature(f)
         argnames = [arg for arg in signature.parameters]
         # Try resolve the variable name of prompt parameter.
-        return cur_flow.invoke_tool_with_cache(f, argnames, args, kwargs)
+        return cur_flow.invoke_tool(f, argnames, args, kwargs)

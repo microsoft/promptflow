@@ -56,9 +56,9 @@ class FlowExecutor:
         flow: Flow,
         connections: dict,
         run_tracker: RunTracker,
-        cache_manager: AbstractCacheManager,
-        loaded_tools: Mapping[str, Callable],
         *,
+        cache_manager: Optional[AbstractCacheManager] = None,
+        loaded_tools: Optional[Mapping[str, Callable]] = None,
         worker_count=None,
         raise_ex: bool = False,
         working_dir=None,
@@ -85,8 +85,8 @@ class FlowExecutor:
         if self._worker_count <= 0:
             self._worker_count = self._DEFAULT_WORKER_COUNT
         self._run_tracker = run_tracker
-        self._cache_manager = cache_manager
-        self._loaded_tools = loaded_tools
+        self._cache_manager = cache_manager  # TODO: handle cache related logic.
+        self._loaded_tools = loaded_tools or {}
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
@@ -148,15 +148,12 @@ class FlowExecutor:
             storage = DummyRunStorage()
         run_tracker = RunTracker(storage)
 
-        cache_manager = AbstractCacheManager.init_from_env()
-
         ToolInvoker.activate(DefaultToolInvoker())
 
         return FlowExecutor(
             flow=flow,
             connections=connections,
             run_tracker=run_tracker,
-            cache_manager=cache_manager,
             loaded_tools={r.node.name: r.callable for r in resolved_tools},
             raise_ex=raise_ex,
             working_dir=working_dir,
@@ -222,7 +219,6 @@ class FlowExecutor:
             context = FlowExecutionContext(
                 name=flow.name,
                 run_tracker=run_tracker,
-                cache_manager=AbstractCacheManager.init_from_env(),
             )
             context.current_node = node
             context.start()

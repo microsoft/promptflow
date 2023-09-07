@@ -8,7 +8,7 @@ import time
 import uuid
 from contextvars import ContextVar
 from logging import WARNING
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from promptflow._core._errors import ToolExecutionError
 from promptflow._core.cache_manager import AbstractCacheManager, CacheInfo, CacheResult
@@ -36,7 +36,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self,
         name,
         run_tracker: RunTracker,
-        cache_manager: AbstractCacheManager,
+        cache_manager: Optional[AbstractCacheManager] = None,
         run_id=None,
         flow_id=None,
         line_number=None,
@@ -45,7 +45,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._name = name
         self._current_tool = None
         self._run_tracker = run_tracker
-        self._cache_manager = cache_manager
+        self._cache_manager = cache_manager  # TODO: handle cache related logic.
         self._run_id = run_id or str(uuid.uuid4())
         self._flow_id = flow_id or self._run_id
         self._line_number = line_number
@@ -81,7 +81,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._activate_in_context(force=True)
         self.update_operation_context()
 
-    def invoke_tool_with_cache(self, f: Callable, argnames: List[str], args, kwargs):
+    def invoke_tool(self, f: Callable, argnames: List[str], args, kwargs):
         if self._current_tool is not None:
             Tracer.push_tool(f, args, kwargs)
             output = f(*args, **kwargs)  # Do nothing if we are handling another tool
@@ -107,32 +107,15 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._run_tracker.set_inputs(node_run_id, {key: value for key, value in all_args.items() if key != "self"})
         traces = []
         try:
-            hit_cache = False
-            # Get result from cache. If hit cache, no need to execute f.
-            cache_info: CacheInfo = self._cache_manager.calculate_cache_info(self._flow_id, f, args, kwargs)
-            if self._current_node.enable_cache and cache_info:
-                cache_result: CacheResult = self._cache_manager.get_cache_result(cache_info)
-                if cache_result and cache_result.hit_cache:
-                    # Assign cached_flow_run_id and cached_run_id.
-                    run_info.cached_flow_run_id = cache_result.cached_flow_run_id
-                    run_info.cached_run_id = cache_result.cached_run_id
-                    result = cache_result.result
-                    hit_cache = True
-
-            if not hit_cache:
-                Tracer.start_tracing(node_run_id)
-                trace = Tracer.push_tool(f, args, kwargs)
-                trace.node_name = run_info.node
-                result = self.invoke_tool(f, args, kwargs)
-                result = Tracer.pop(result)
-                traces = Tracer.end_tracing()
+            Tracer.start_tracing(node_run_id)
+            trace = Tracer.push_tool(f, args, kwargs)
+            trace.node_name = run_info.node
+            result = self._invoke_tool_internal(f, args, kwargs)
+            result = Tracer.pop(result)
+            traces = Tracer.end_tracing()
 
             self._current_tool = None
             self._run_tracker.end_run(node_run_id, result=result, traces=traces)
-            # Record result in cache so that future run might reuse its result.
-            if not hit_cache and self._current_node.enable_cache:
-                self._persist_cache(cache_info, run_info)
-
             flow_logger.info(f"Node {self._current_node.name} completes.")
             return result
         except Exception as e:
@@ -145,7 +128,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         finally:
             self._run_tracker.persist_node_run(run_info)
 
-    def invoke_tool(self, f: Callable, args, kwargs):
+    def _invoke_tool_internal(self, f: Callable, args, kwargs):
         node_name = self._current_node.name if self._current_node else f.__name__
         try:
             logging_name = node_name
@@ -191,15 +174,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
 
     def end(self):
         self._deactivate_in_context()
-
-    def _persist_cache(self, cache_info: CacheInfo, run_info: RunInfo):
-        """Record result in cache storage if hash_id is valid."""
-        if cache_info and cache_info.hash_id is not None and len(cache_info.hash_id) > 0:
-            try:
-                self._cache_manager.persist_result(run_info, cache_info, self._flow_id)
-            except Exception as ex:
-                # Not a critical path, swallow the exception.
-                logging.warning(f"Failed to persist cache result. run_id: {run_info.run_id}. Exception: {ex}")
 
     def _generate_current_node_run_id(self) -> str:
         return self._generate_node_run_id(self._current_node)
