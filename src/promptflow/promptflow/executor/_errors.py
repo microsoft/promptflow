@@ -109,10 +109,6 @@ class NoNodeExecutedError(FlowExecutionError):
     pass
 
 
-class OutputReferenceBypassed(FlowExecutionError):
-    pass
-
-
 class InputTypeError(InvalidFlowRequest):
     pass
 
@@ -136,12 +132,7 @@ class NodeConcurrencyNotFound(SystemErrorException):
 class NodeReferenceError(UserErrorException):
     """Exception raised when node reference not found or unsupported"""
 
-    def __init__(self, message="", message_format="", target=ErrorTarget.FLOW_EXECUTOR, **kwargs):
-        if message:
-            message = f"Invalid node reference: {message}"
-        elif message_format:
-            message_format = f"Invalid node reference: {message_format}"
-        super().__init__(message=message, message_format=message_format, target=target, **kwargs)
+    pass
 
 
 class UnsupportedReference(NodeReferenceError):
@@ -152,7 +143,19 @@ class InvalidReferenceProperty(NodeReferenceError):
     pass
 
 
+class OutputReferenceBypassed(NodeReferenceError):
+    pass
+
+
+class OutputReferenceNotExist(NodeReferenceError):
+    pass
+
+
 class ReferenceNodeBypassed(NodeReferenceError):
+    pass
+
+
+class NodeOutputNotFound(UserErrorException):
     pass
 
 
