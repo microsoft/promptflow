@@ -25,12 +25,13 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
-from promptflow.contracts.flow import Flow, InputAssignment, InputValueType, Node
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
+    InvalidAggregationInput,
     NodeConcurrencyNotFound,
     NodeOutputNotFound,
     OutputReferenceBypassed,
@@ -195,6 +196,7 @@ class FlowExecutor:
         if not node.source or not node.type:
             raise ValueError(f"Node {node_name} is not a valid node in flow {flow_file}.")
 
+        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -400,8 +402,58 @@ class FlowExecutor:
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
     ) -> AggregationResult:
         self._node_concurrency = node_concurrency
+        aggregated_flow_inputs = dict(inputs or {})
+        aggregation_inputs = dict(aggregation_inputs or {})
+        self._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
+        aggregated_flow_inputs = self._apply_default_value_for_aggregation_input(
+            self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
+        )
+
         with self._run_tracker.node_log_manager:
-            return self._exec_aggregation(inputs, aggregation_inputs, run_id)
+            return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
+
+    @staticmethod
+    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
+        """Validate the aggregation inputs according to the flow inputs."""
+        for key, value in aggregated_flow_inputs.items():
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format="Flow aggregation input {input_key} should be one list.", input_key=key
+                )
+
+        for key, value in aggregation_inputs.items():
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format="Aggregation input {input_key} should be one list.", input_key=key
+                )
+
+        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
+        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
+        if len(set(inputs_len.values())) > 1:
+            raise InvalidAggregationInput(
+                message_format="Whole aggregation inputs should have the same length. "
+                "Current key length mapping are: {key_len}",
+                key_len=inputs_len,
+            )
+
+    @staticmethod
+    def _apply_default_value_for_aggregation_input(
+        inputs: Dict[str, FlowInputDefinition],
+        aggregated_flow_inputs: Mapping[str, Any],
+        aggregation_inputs: Mapping[str, Any],
+    ):
+        aggregation_lines = 1
+        if aggregated_flow_inputs.values():
+            one_input_value = list(aggregated_flow_inputs.values())[0]
+            aggregation_lines = len(one_input_value)
+        # If aggregated_flow_inputs is empty, we should use aggregation_inputs to get the length.
+        elif aggregation_inputs.values():
+            one_input_value = list(aggregation_inputs.values())[0]
+            aggregation_lines = len(one_input_value)
+        for key, value in inputs.items():
+            if key not in aggregated_flow_inputs and (value and value.default):
+                aggregated_flow_inputs[key] = [value.default] * aggregation_lines
+        return aggregated_flow_inputs
 
     def _exec_aggregation(
         self,
@@ -444,6 +496,7 @@ class FlowExecutor:
 
     def exec(self, inputs: dict, node_concurency=DEFAULT_CONCURRENCY_FLOW) -> dict:
         self._node_concurrency = node_concurency
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -482,6 +535,7 @@ class FlowExecutor:
         allow_generator_output: bool = False,
     ) -> LineResult:
         self._node_concurrency = node_concurrency
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -539,6 +593,11 @@ class FlowExecutor:
             BulkResults including flow results and metrics
         """
         self._node_concurrency = node_concurrency
+        # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
+        inputs = [
+            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            for each_line_input in inputs
+        ]
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
@@ -558,7 +617,15 @@ class FlowExecutor:
             aggr_results=aggr_results,
         )
 
-    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping):
+    @staticmethod
+    def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+        updated_inputs = dict(line_inputs or {})
+        for key, value in inputs.items():
+            if key not in updated_inputs and (value and value.default):
+                updated_inputs[key] = value.default
+        return updated_inputs
+
+    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
         resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         return resolved_inputs
@@ -566,6 +633,11 @@ class FlowExecutor:
     def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
         inputs_mapping = inputs_mapping or {}
         result_mapping = self._default_inputs_mapping
+        # For input has default value, we don't try to read data from default mapping.
+        # Default value is in higher priority than default mapping.
+        for key, value in self._flow.inputs.items():
+            if value and value.default:
+                del result_mapping[key]
         result_mapping.update(inputs_mapping)
         return result_mapping
 
