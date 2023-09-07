@@ -215,17 +215,17 @@ def _upsert_connection_from_file(file, params_override=None, connection_spec = N
     # Note: This function is used for pfutil, do not edit it.
     params_override = params_override or []
     params_override.append(load_yaml(file))
-    new_connection = load_connection(source=file, params_override=params_override, connection_spec=connection_spec)
-    existing_connection = _client.connections.get(new_connection.name, raise_error=False)
+    connection = load_connection(source=file, params_override=params_override, connection_spec=connection_spec)
+    existing_connection = _client.connections.get(connection.name, raise_error=False)
     if existing_connection:
-        _check_custom_connection_type_match(existing_connection, new_connection)
+        _check_custom_connection_type_match(existing_connection, connection)
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         validate_and_interactive_get_secrets(connection, is_update=True)
         # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
         connection._secrets = existing_connection._secrets
     else:
-        validate_and_interactive_get_secrets(new_connection)
-    connection = _client.connections.create_or_update(new_connection)
+        validate_and_interactive_get_secrets(connection)
+    connection = _client.connections.create_or_update(connection)
     return connection
 
 
