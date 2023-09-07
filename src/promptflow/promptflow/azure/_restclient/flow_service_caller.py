@@ -524,7 +524,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
             else:
                 action = "reset"
 
-            logger.info(f"Start polling until session {action} is complted...")
+            logger.info(f"Start polling until session {action} is completed...")
             # start polling status here.
             if "azure-asyncoperation" not in response.headers:
                 raise FlowRequestException(
@@ -549,9 +549,10 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 status = response["status"]
                 logger.debug(f"Current polling status: {status}")
                 if time_run % 30 == 0:
-                    logger.info(f"Waiting for session {action}, current status: {status}")
+                    # print the message every 30 seconds to avoid users feeling stuck during the operation
+                    print(f"Waiting for session {action}, current status: {status}")
                 else:
-                    logger.debug(f"Waiting for session warm-up, current status: {status}")
+                    logger.debug(f"Waiting for session {action}, current status: {status}")
 
             if status == "Succeeded":
                 logger.info(f"Session {action} finished with status {status}.")

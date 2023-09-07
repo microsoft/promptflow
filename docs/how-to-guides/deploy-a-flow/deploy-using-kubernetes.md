@@ -194,4 +194,4 @@ You'll need to set up the environment variables in the container to make the con
   ```
 
 ## Next steps
-- Try the example [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/kubenettes).
+- Try the example [here](https://github.com/microsoft/promptflow/tree/main/examples/tutorials/flow-deploy/kubernetes).
