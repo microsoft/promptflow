@@ -31,6 +31,8 @@ fi
 
 ### CLI Example
 
+#### Run flow
+
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
@@ -47,3 +49,21 @@ pf run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --colu
 # visualize run output details
 pf run visualize --name $run_name
 ```
+
+#### Submit run to cloud
+
+Assume we already have a connection named `open_ai_connection` in workspace.
+
+```bash
+# set default workspace
+az account set -s <your_subscription_id>
+az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
+```
+
+``` bash
+# create run
+pfazure run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config='{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }' --name $run_name --runtime chat_with_pdf_runtime
+# pfazure run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config='{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }' --name $run_name # automatic runtime
+```
+
+Note: Click portal_url of the run to view the final snapshot.
