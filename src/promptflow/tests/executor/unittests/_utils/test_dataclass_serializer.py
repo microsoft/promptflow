@@ -1,3 +1,4 @@
+import os
 import pytest
 from datetime import datetime
 from dataclasses import dataclass
@@ -77,6 +78,7 @@ def test_serialize_dataclass():
     assert deserialized_run_info == node_run_info
     assert serialize(node_record) == node_record.serialize()
 
+
 @pytest.mark.unittest
 @pytest.mark.parametrize(
     "value, value_type",
@@ -111,13 +113,33 @@ def test_serialize_remove_null():
     connection_manager = ConnectionManager(new_connection)
     assert serialize(connection_manager.get("azure_open_ai_connection")) == "azure_open_ai_connection"
 
-    assert serialize(GeneratorProxy(generator())) == []
+    g = GeneratorProxy(generator())
+    next(g)
+    assert serialize(g) == [0]
 
-    try:
-        from pydantic import BaseModel
-        serialize(BaseModel())
-    except ImportError:
-        pass
+
+@pytest.mark.unittest
+def test_import_pydantic_error():
+    # test when pydantic is not installed
+    class DummyClass:
+        def __init__(self, name, age):
+            self.name = name
+            self.age = age
+    dummy = DummyClass('Test', 20)
+    serialize(dummy)
+
+
+@pytest.mark.unittest
+def test_import_pydantic():
+    # test when pydantic is installed
+    os.system("pip install pydantic")
+    from pydantic import BaseModel
+
+    class Model(BaseModel):
+        name: str
+        age: int
+    model = Model(name='Test', age=20)
+    assert serialize(model) == {'name': 'Test', 'age': 20}
 
 
 @pytest.mark.unittest
@@ -128,7 +150,6 @@ def test_deserialize_dataclass():
     # test when data is not a dict
     with pytest.raises(ValueError):
         deserialize_dataclass(NodeRunRecord, "NodeRunRecord")
-
 
     @dataclass
     class DummyDataClassWithDefault:
