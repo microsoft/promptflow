@@ -654,7 +654,7 @@ class FlowExecutor:
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
                 raise NotSupported(
                     message_format="The output type '{output_type}' is currently unsupported. "
-                    "Please choose from available type: '{supported_output_type}' and try again.",
+                    "Please choose from available types: '{supported_output_type}' and try again.",
                     output_type=output.reference.value_type,
                     supported_output_type=[output_type.value for output_type in InputValueType],
                 )
