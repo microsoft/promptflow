@@ -267,7 +267,7 @@ pf_client = PFClient()
 # Test flow
 inputs = {"<flow_input_name>": "<flow_input_value>"}  # The inputs of the flow.
 flow_result = pf_client.test(flow="<flow_folder_path>", inputs=inputs)
-for item in flow_result["<LLM node output>"]:
+for item in flow_result["<LLM_node_output_name>"]:
     print(item)
 ```
 
