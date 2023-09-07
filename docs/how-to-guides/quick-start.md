@@ -78,6 +78,10 @@ This graph is rendered by VS Code extension which will be introduced in the next
 ### Using VS Code Extension to visualize the flow
 _Note: Prompt flow VS Code Extension is highly recommended for flow development and debugging._
 
+Click to watch the demo video:
+
+<a href="https://youtu.be/05Utfsm0ptc" title="vsc demo" target="_blank"><img src="https://res.cloudinary.com/marcomontalbano/image/upload/v1694011417/video_to_markdown/images/youtube--05Utfsm0ptc-c05b58ac6eb4c4700831b2b3070cd403.jpg" alt="vsc demo" /></a>
+
 1. Prerequisites for VS Code extension.
    - Install latest stable version of [VS Code](https://code.visualstudio.com/)
    - Install [VS Code Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python)
