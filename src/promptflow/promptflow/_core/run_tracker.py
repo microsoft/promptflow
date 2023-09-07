@@ -289,7 +289,7 @@ class RunTracker(ThreadLocalSingleton):
         run_info = self._node_runs.get(run_id) or self._flow_runs.get(run_id)
         if run_info is None:
             raise RunRecordNotFound(
-                message_format=f"Run record with ID {run_id} was not found in the storage. "
+                message_format=f"Run record with ID '{run_id}' was not found in the storage. "
                 f"Please contact support for further assistance.",
                 target=ErrorTarget.RUN_TRACKER,
             )
