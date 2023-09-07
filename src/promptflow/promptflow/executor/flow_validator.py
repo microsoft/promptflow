@@ -33,12 +33,12 @@ class FlowValidator:
                 if i.value_type != InputValueType.NODE_REFERENCE:
                     continue
                 if i.value not in dependencies:
-                    msg = (
+                    msg_format = (
                         "Flow is defined incorrectly. Node '{node_name}' references a non-existent node "
                         "'{ref_node_name}' in your flow. Please review your flow to ensure that the "
                         "node name is accurately specified."
                     )
-                    raise NodeReferenceNotFound(message_format=msg, node_name=n.name, ref_node_name=i.value)
+                    raise NodeReferenceNotFound(message_format=msg_format, node_name=n.name, ref_node_name=i.value)
                 dependencies[n.name].add(i.value)
         sorted_nodes = []
         picked = set()
@@ -51,9 +51,11 @@ class FlowValidator:
                 # Figure out the nodes names with circular dependency problem alphabetically
                 remaining_nodes = sorted(list(set(dependencies.keys()) - picked))
                 raise NodeCircularDependency(
-                    message_format="Flow is defined incorrectly. Node circular dependency has been detected among the "
-                    "nodes in your flow. Kindly review the reference relationships for the nodes "
-                    "{remaining_nodes} and resolve the circular reference issue in the flow.",
+                    message_format=(
+                        "Flow is defined incorrectly. Node circular dependency has been detected "
+                        "among the nodes in your flow. Kindly review the reference relationships for the nodes "
+                        "{remaining_nodes} and resolve the circular reference issue in the flow."
+                    ),
                     remaining_nodes=remaining_nodes,
                 )
             sorted_nodes.append(node_to_pick)
@@ -75,10 +77,11 @@ class FlowValidator:
         for node in flow.nodes:
             if node.name in node_names:
                 raise DuplicateNodeName(
-                    message_format="Flow is defined incorrectly. Node with name '{node_name}' appears more than "
-                    "once in the node definitions in your flow, which is not allowed. To address this "
-                    "issue, please review your flow and either rename or remove nodes "
-                    "with identical names.",
+                    message_format=(
+                        "Flow is defined incorrectly. Node with name '{node_name}' appears more than once "
+                        "in the node definitions in your flow, which is not allowed. To address this issue, "
+                        "please review your flow and either rename or remove nodes with identical names."
+                    ),
                     node_name=node.name,
                 )
             node_names.add(node.name)
@@ -152,16 +155,19 @@ class FlowValidator:
             if v.value_type == InputValueType.FLOW_INPUT:
                 if v.value not in flow.inputs:
                     raise InputNotFound(
-                        message_format="The input for node is incorrect. Node input '{node_input_name}' is not "
-                        "found from flow inputs of node '{node_name}'. "
-                        "Please review the node definition in your flow.",
+                        message_format=(
+                            "The input for node is incorrect. Node input '{node_input_name}' is not found "
+                            "from flow inputs of node '{node_name}'. Please review the node definition in your flow."
+                        ),
                         node_input_name=v.value,
                         node_name=node.name,
                     )
                 if v.value not in inputs:
                     raise InputNotFound(
-                        message_format="The input for node is incorrect. Node input '{node_input_name}' is not found "
-                        "in input data for node '{node_name}'. Please verify the inputs data for the node.",
+                        message_format=(
+                            "The input for node is incorrect. Node input '{node_input_name}' is not found "
+                            "in input data for node '{node_name}'. Please verify the inputs data for the node."
+                        ),
                         node_input_name=v.value,
                         node_name=node.name,
                     )
