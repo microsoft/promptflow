@@ -1,4 +1,3 @@
-import os
 import pytest
 from datetime import datetime
 from dataclasses import dataclass
@@ -9,11 +8,8 @@ from promptflow._utils.dataclass_serializer import \
 from promptflow.contracts.run_info import RunInfo, Status
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow.storage.run_records import NodeRunRecord
-
-
-def generator():
-    for i in range(3):
-        yield i
+from unittest.mock import patch, Mock
+import sys
 
 
 def get_connection_dict():
@@ -111,35 +107,42 @@ def test_serialize_remove_null():
 
     new_connection = get_connection_dict()
     connection_manager = ConnectionManager(new_connection)
-    assert serialize(connection_manager.get("azure_open_ai_connection")) == "azure_open_ai_connection"
+    assert serialize(connection_manager.get("azure_open_ai_connection"), remove_null=True) == "azure_open_ai_connection"
+
+    def generator():
+        for i in range(3):
+            yield i
 
     g = GeneratorProxy(generator())
     next(g)
-    assert serialize(g) == [0]
+    assert serialize(g, remove_null=True) == [0]
 
 
 @pytest.mark.unittest
+@patch.dict('sys.modules', {'pydantic': None})
 def test_import_pydantic_error():
-    # test when pydantic is not installed
+    # mock pydantic is not installed
     class DummyClass:
         def __init__(self, name, age):
             self.name = name
             self.age = age
     dummy = DummyClass('Test', 20)
-    serialize(dummy)
+    assert serialize(dummy) == dummy
 
 
 @pytest.mark.unittest
+@patch.dict('sys.modules', {'pydantic': Mock()})
 def test_import_pydantic():
-    # test when pydantic is installed
-    os.system("pip install pydantic")
-    from pydantic import BaseModel
+    # mock pydantic is installed
+    class MockBaseModel:
+        def dict(self):
+            return {"key": "value"}
 
-    class Model(BaseModel):
-        name: str
-        age: int
-    model = Model(name='Test', age=20)
-    assert serialize(model) == {'name': 'Test', 'age': 20}
+    mock_value = MockBaseModel()
+    sys.modules['pydantic'].BaseModel = MockBaseModel
+
+    assert serialize(mock_value) == mock_value.dict()
+    assert serialize(123) == 123
 
 
 @pytest.mark.unittest
