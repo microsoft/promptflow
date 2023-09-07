@@ -51,14 +51,6 @@ class Run(YAMLTranslatableMixin):
     :type flow: Path
     :param name: Name of the run.
     :type name: Optional[str]
-    :param type: Type of the run.
-    :type type: Optional[str]
-    :param display_name: Display name of the run.
-    :type display_name: Optional[str]
-    :param description: Description of the run.
-    :type description: Optional[str]
-    :param tags: Tags of the run.
-    :type tags: Optional[List[Dict[str, str]]]
     :param data: Input data for the run.
     :type data: Optional[str]
     :param variant: Variant of the run.
@@ -67,6 +59,12 @@ class Run(YAMLTranslatableMixin):
     :type run: Optional[Union[Run, str]]
     :param column_mapping: Column mapping for the run. Optional since it's not stored in the database.
     :type column_mapping: Optional[dict]
+    :param display_name: Display name of the run.
+    :type display_name: Optional[str]
+    :param description: Description of the run.
+    :type description: Optional[str]
+    :param tags: Tags of the run.
+    :type tags: Optional[List[Dict[str, str]]]
     :param created_on: Date and time the run was created.
     :type created_on: Optional[datetime.datetime]
     :param start_time: Date and time the run started.
