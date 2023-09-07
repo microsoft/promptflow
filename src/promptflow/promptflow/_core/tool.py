@@ -7,7 +7,7 @@ import inspect
 import logging
 from abc import ABC
 from enum import Enum
-from typing import Optional
+from typing import Callable, Optional
 
 module_logger = logging.getLogger(__name__)
 
@@ -39,8 +39,14 @@ class ToolInvoker(ABC):
         return cls._active_tool_invoker
 
 
-def tool(f):
-    """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow."""
+def tool(f: Callable) -> Callable:
+    """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
+
+    :param f: The tool function.
+    :type f: Callable
+    :return: The decorated function.
+    :rtype: Callable
+    """
 
     @functools.wraps(f)
     def new_f(*args, **kwargs):

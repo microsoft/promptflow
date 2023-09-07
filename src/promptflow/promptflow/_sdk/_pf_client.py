@@ -101,6 +101,7 @@ class PFClient:
         :param run: Run object or name of the run.
         :type run: Union[str, ~promptflow.sdk.entities.Run]
         :return: flow run info.
+        :rtype: ~promptflow.sdk.entities.Run
         """
         return self.runs.stream(run)
 
@@ -134,10 +135,12 @@ class PFClient:
 
     @property
     def runs(self) -> RunOperations:
+        """Run operations that can manage runs."""
         return self._runs
 
     @property
     def connections(self) -> ConnectionOperations:
+        """Connection operations that can manage connections."""
         return self._connections
 
     @property
@@ -154,7 +157,7 @@ class PFClient:
         node: str = None,
         environment_variables: dict = None,
     ) -> dict:
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
