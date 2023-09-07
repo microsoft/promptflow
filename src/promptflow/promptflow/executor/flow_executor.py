@@ -13,6 +13,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 import yaml
 
+from promptflow._core._errors import NotSupported
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
@@ -29,7 +30,12 @@ from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import NodeConcurrencyNotFound, OutputReferenceBypassed
+from promptflow.executor._errors import (
+    NodeConcurrencyNotFound,
+    NodeOutputNotFound,
+    OutputReferenceBypassed,
+    OutputReferenceNotExist,
+)
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
@@ -127,7 +133,7 @@ class FlowExecutor:
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ) -> "FlowExecutor":
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        flow = Flow.from_yaml(flow_file, working_dir=working_dir, gen_tool=False)
+        flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         if node_override:
             flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
@@ -646,20 +652,48 @@ class FlowExecutor:
                 outputs[name] = flow_inputs[output.reference.value]
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
-                raise NotImplementedError(f"Unsupported output type {output.reference.value_type}")
+                raise NotSupported(
+                    message_format=(
+                        "The output type '{output_type}' is currently unsupported. "
+                        "Please choose from available types: '{supported_output_type}' and try again."
+                    ),
+                    output_type=output.reference.value_type,
+                    supported_output_type=[output_type.value for output_type in InputValueType],
+                )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
             if not node:
-                raise ValueError(f"Invalid node name {output.reference.value}")
+                raise OutputReferenceNotExist(
+                    message_format=(
+                        "Flow is defined incorrectly. The node '{node_name}' "
+                        "referenced by the output '{output_name}' can not found in flow. "
+                        "Please rectify the error in your flow and try again."
+                    ),
+                    node_name=output.reference.value,
+                    output_name=name,
+                )
             if node.aggregation:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
                 if node.name in bypassed_nodes:
                     raise OutputReferenceBypassed(
-                        "Failed to extract output because the reference "
-                        f"node {output.reference.value!r} has been bypassed."
+                        message_format=(
+                            "The output '{output_name}' for flow is incorrect. "
+                            "The node '{node_name}' referenced by the output has been bypassed. "
+                            "Please refrain from using bypassed nodes as output sources."
+                        ),
+                        output_name=name,
+                        node_name=node.name,
                     )
-                raise ValueError(f"Node {output.reference.value} not found in results.")
+                raise NodeOutputNotFound(
+                    message_format=(
+                        "The output '{output_name}' for flow is incorrect. "
+                        "No outputs found for node '{node_name}'. Please review the problematic "
+                        "output and rectify the error."
+                    ),
+                    output_name=name,
+                    node_name=node.name,
+                )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
                 output.reference.value, node_result, output.reference.property

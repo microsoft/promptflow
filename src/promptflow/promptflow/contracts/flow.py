@@ -388,31 +388,18 @@ class Flow:
         return working_dir
 
     @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None, gen_tool=True) -> "Flow":
+    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))
-
-        # TODO: Postpone tool generation to flow execution in all scenarios and remove this parameter.
-        if not gen_tool:
-            return flow
-        from promptflow._core.tools_manager import gen_tool_by_source
-
-        for node in flow.nodes:
-            if node.source:
-                tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
-                node.tool = tool.name
-                flow.tools.append(tool)
-        if flow.node_variants:
-            # Generate tools for node variants
-            for node_variant in flow.node_variants.values():
-                for variant in node_variant.variants.values():
-                    node = variant.node
-                    tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
-                    node.tool = tool.name
-                    flow.tools.append(tool)
+            flow._set_tool_loader(working_dir)
         return flow
+
+    def _set_tool_loader(self, working_dir):
+        package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
+        from promptflow._core.tools_manager import ToolLoader
+        self._tool_loader = ToolLoader(working_dir, package_tool_keys)
 
     def _apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
@@ -496,16 +483,9 @@ class Flow:
     def get_chat_output_name(self):
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
-    def get_connection_input_names_for_node(self, node_name):
-        """Return connection input names."""
-        node = self.get_node(node_name)
-        if not node:
-            return []
-        if node.use_variants:
-            node = self._apply_default_node_variant(node, self.node_variants)
-        result = []
+    def _get_connection_name_from_tool(self, tool: Tool, node: Node):
+        connection_names = {}
         value_types = set({v.value for v in ValueType.__members__.values()})
-        tool = self.get_tool(node.tool)
         for k, v in tool.inputs.items():
             input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
             if all(typ.lower() in value_types for typ in input_type):
@@ -513,44 +493,42 @@ class Flow:
                 continue
             input_assignment = node.inputs.get(k)
             # Add literal node assignment values to results, skip node reference
-            if isinstance(input_assignment, InputAssignment) and input_assignment.value_type == InputValueType.LITERAL:
-                result.append(k)
-        return result
+            if (
+                isinstance(input_assignment, InputAssignment)
+                and input_assignment.value_type == InputValueType.LITERAL
+            ):
+                connection_names[k] = input_assignment.value
+        return connection_names
 
     def get_connection_names(self):
-        """Return the possible connection names in flow object."""
         connection_names = set({})
-        tool_metas = {tool.name: tool for tool in self.tools}
-        value_types = set({v.value for v in ValueType.__members__.values()})
         nodes = [
             self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
             for node in self.nodes
         ]
         for node in nodes:
             if node.connection:
-                # Some node has a separate field for connection.
                 connection_names.add(node.connection)
                 continue
-            # Get tool meta and return possible input name with connection type
-            if node.tool not in tool_metas:
-                msg = f"Node {node.name!r} references tool {node.tool!r} which is not in the flow {self.name!r}."
-                raise Exception(msg)
-            tool = tool_metas.get(node.tool)
-            # Force regard input type not in ValueType as connection type.
-            for k, v in tool.inputs.items():
-                input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
-                if all(typ.lower() in value_types for typ in input_type):
-                    # All type is value type, the key is not a possible connection key.
-                    continue
-                input_assignment = node.inputs.get(k)
-                # Add literal node assignment values to results, skip node reference
-                if (
-                    isinstance(input_assignment, InputAssignment)
-                    and input_assignment.value_type == InputValueType.LITERAL
-                ):
-                    connection_names.add(input_assignment.value)
-        # Filter None and empty string out
-        return set({item for item in connection_names if item})
+            if node.type == ToolType.PROMPT or node.type == ToolType.LLM:
+                continue
+            tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+            if tool:
+                connection_names.update(self._get_connection_name_from_tool(tool, node).values())
+        return connection_names
+
+    def get_connection_input_names_for_node(self, node_name):
+        """Return connection input names."""
+        node = self.get_node(node_name)
+        if node and node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
+        # Ignore Prompt node and LLM node, due to they do not have connection inputs.
+        if not node or node.type == ToolType.PROMPT or node.type == ToolType.LLM:
+            return []
+        tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+        if tool:
+            return list(self._get_connection_name_from_tool(tool, node).keys())
+        return []
 
     def _replace_with_variant(self, variant_node: Node, variant_tools: list):
         for index, node in enumerate(self.nodes):

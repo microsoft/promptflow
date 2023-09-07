@@ -50,7 +50,7 @@ nodes:
   type: llm
   source:
     type: code
-    path: classify_with_llm.jinja2
+    path: ./classify_with_llm.jinja2
   inputs:
     deployment_name: text-davinci-003
     suffix: ''
@@ -78,6 +78,12 @@ nodes:
     path: convert_to_dict.py
   inputs:
     input_str: ${classify_with_llm.output}
+- name: open_source_llm_tool
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: promptflow.tools.azure_translator.get_translation
+    path: classify_with_llm.jinja2
 node_variants:
   summarize_text_content:
     default_variant_id: variant_1

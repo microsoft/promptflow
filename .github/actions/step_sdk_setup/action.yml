@@ -1,4 +1,4 @@
-name: step_sdk_setup
+name: step_sdk_setup_win
 inputs:
   scriptPath:
     required: false
@@ -13,44 +13,42 @@ runs:
   - name: Clean up installed packages
     working-directory: ${{ inputs.scriptPath }}
     continue-on-error: true
-    shell: bash -el {0}
-    run: |-
-      conda activate release-env
+    shell: pwsh
+    run: |
       pip uninstall -y promptflow promptflow-sdk promptflow-tools
   - name: 'Build and install: promptflow-tools'
-    shell: bash -el {0}
-    run: |-
-      conda activate release-env
+    shell: pwsh
+    run: |
+      Set-PSDebug -Trace 2
       python ./setup.py bdist_wheel
-      cd dist
-      package=$(ls | grep '.whl')
-      eval "pip install '$package'"
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
+      pip install $package.FullName
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: src/promptflow-tools
   - name: 'Build and install: promptflow with extra'
     if: inputs.setupType == 'promptflow_with_extra'
-    shell: bash -el {0}
-    run: |-
-      conda activate release-env
+    shell: pwsh
+    run: |
+      Set-PSDebug -Trace 2
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
       python ./setup.py bdist_wheel
-      wheel_file=$(ls ./dist | grep 'promptflow')
-      echo "########### wheel file: $wheel_file ###########"
-      pip install "./dist/$wheel_file[azure]"
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
+      pip install $($package.FullName + "[azure]")
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}
   - name: 'Build and install: promptflow-sdk'
     if: inputs.setupType == 'promptflow_dev'
-    shell: bash -el {0}
-    run: |-
-      conda activate release-env
+    shell: pwsh
+    run: |
+      Set-PSDebug -Trace 2
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
-      pip install ./dist/promptflow_sdk-0.0.1-py3-none-any.whl
+      $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
+      pip install $package.FullName
       echo "########### pip freeze ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}

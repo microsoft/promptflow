@@ -273,7 +273,7 @@ Use the code lens action on the top of the yaml editor to trigger flow test
 
 
 Click the run flow button on the top of the visual editor to trigger flow test.
-![visual_editor_flow_test](../media/how-to-guides/quick-start/run_flow_visual_editor.png)
+![visual_editor_flow_test](../media/how-to-guides/quick-start/test_flow_dag_editor.gif)
 :::
 
 ::::
