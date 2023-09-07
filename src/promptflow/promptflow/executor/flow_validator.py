@@ -35,10 +35,12 @@ class FlowValidator:
                 if i.value not in dependencies:
                     msg_format = (
                         "Flow is defined incorrectly. Node '{node_name}' references a non-existent node "
-                        "'{ref_node_name}' in your flow. Please review your flow to ensure that the "
+                        "'{reference_node_name}' in your flow. Please review your flow to ensure that the "
                         "node name is accurately specified."
                     )
-                    raise NodeReferenceNotFound(message_format=msg_format, node_name=n.name, ref_node_name=i.value)
+                    raise NodeReferenceNotFound(
+                        message_format=msg_format, node_name=n.name, reference_node_name=i.value
+                    )
                 dependencies[n.name].add(i.value)
         sorted_nodes = []
         picked = set()
