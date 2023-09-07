@@ -336,7 +336,7 @@ def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
 
 
 def is_format_exception():
-    if os.environ.get("FORMAT_EXCEPTION", "false").lower() == "true":
+    if os.environ.get("PROMPTFLOW_STRUCTURE_EXECTPION_OUTPUT", "false").lower() == "true":
         return True
     return False
 

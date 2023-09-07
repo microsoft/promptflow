@@ -1106,7 +1106,7 @@ class TestCli:
     def test_format_cli_exception(self, capsys):
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
-        with patch.dict(os.environ, {"FORMAT_EXCEPTION": "true"}):
+        with patch.dict(os.environ, {"PROMPTFLOW_STRUCTURE_EXECTPION_OUTPUT": "true"}):
             with pytest.raises(SystemExit):
                 run_pf_command(
                     "connection",
