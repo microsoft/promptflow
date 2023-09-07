@@ -1,0 +1,25 @@
+inputs:
+  question:
+    type: string
+    default: input value from default
+outputs:
+  output:
+    type: string
+    reference: ${test_print_input.output}
+nodes:
+- name: test_print_input
+  type: python
+  source:
+    type: code
+    path: test_print_input.py
+  inputs:
+    input: ${inputs.question}
+- name: aggregate_node
+  type: python
+  source:
+    type: code
+    path: test_print_aggregation.py
+  inputs:
+    inputs: ${inputs.question}
+  aggregation: true
+  use_variants: false
