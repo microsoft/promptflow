@@ -84,7 +84,8 @@ pf flow test --flow ./my_chatbot --interactive
 ```
 
 Then you will see the chatbot in action:
-![interactive](examples/tutorials/quick-start/media/interactive.gif)
+
+<img src="examples/tutorials/quick-start/media/interactive.gif" alt="interactive" width="500"/> 
 
 Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 
