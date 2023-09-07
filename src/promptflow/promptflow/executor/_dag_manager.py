@@ -97,8 +97,8 @@ class DAGManager:
                 raise ReferenceNodeBypassed(
                     message_format=(
                         "The node '{reference_node_name}' referenced by '{node_name}' has been bypassed, "
-                        "so the value of this node cannot be returned. Please refer to the node that "
-                        "will not be bypassed as the default return value."
+                        "so the node cannot return valid value. Please refer to the node that will not be "
+                        "bypassed as the return value of skip config."
                     ),
                     reference_node_name=node.skip.return_value.value,
                     node_name=node.name,
