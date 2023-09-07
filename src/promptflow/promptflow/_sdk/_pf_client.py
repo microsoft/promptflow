@@ -145,7 +145,7 @@ class PFClient:
 
     @property
     def flows(self) -> FlowOperations:
-        """Operations on the flow, such as test/debug the flow, chat with chat flow."""
+        """Operations on the flow that can manage flows."""
         return self._flows
 
     def test(
