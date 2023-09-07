@@ -95,9 +95,11 @@ class DAGManager:
         if self._is_skip_condition_met(node):
             if self._is_node_dependency_bypassed(node.skip.return_value):
                 raise ReferenceNodeBypassed(
-                    message_format="The node '{reference_node_name}' referenced by '{node_name}' has been bypassed, "
-                    "so the value of this node cannot be returned. Please refer to the node that "
-                    "will not be bypassed as the default return value.",
+                    message_format=(
+                        "The node '{reference_node_name}' referenced by '{node_name}' has been bypassed, "
+                        "so the value of this node cannot be returned. Please refer to the node that "
+                        "will not be bypassed as the default return value."
+                    ),
                     reference_node_name=node.skip.return_value.value,
                     node_name=node.name,
                 )
