@@ -4,7 +4,7 @@ from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERR
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
-class NotSupportedError(SystemErrorException):
+class NotSupported(SystemErrorException):
     """Exception raised when the feature is not supported."""
 
     pass

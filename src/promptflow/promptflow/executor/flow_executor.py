@@ -13,7 +13,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 import yaml
 
-from promptflow._core._errors import NotSupportedError
+from promptflow._core._errors import NotSupported
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
@@ -652,7 +652,7 @@ class FlowExecutor:
                 outputs[name] = flow_inputs[output.reference.value]
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
-                raise NotSupportedError(
+                raise NotSupported(
                     message_format="The output type '{output_type}' is currently unsupported. "
                     "Please choose from available type: '{supported_output_type}' and try again.",
                     output_type=output.reference.value_type,
