@@ -50,11 +50,12 @@ AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 
-CUSTOM_STRONG_TYPE_CONNECTION_PREFIX = "azureml.connection."
-CUSTOM_STRONG_TYPE_CONNECTION_TYPE = "custom_type"
-CUSTOM_STRONG_TYPE_CONNECTION_MODULE = "module"
-CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE = CUSTOM_STRONG_TYPE_CONNECTION_PREFIX + CUSTOM_STRONG_TYPE_CONNECTION_TYPE
-CUSTOM_STRONG_TYPE_CONNECTION_FULL_MODULE = CUSTOM_STRONG_TYPE_CONNECTION_PREFIX + CUSTOM_STRONG_TYPE_CONNECTION_MODULE
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "azureml.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    FULL_TYPE = PREFIX + TYPE
+    FULL_MODULE = PREFIX + MODULE
 
 
 class RunTypes:
@@ -161,8 +162,6 @@ class CommonYamlFields:
     """Name."""
     SCHEMA = "$schema"
     """Schema."""
-    CUSTOM_TYPE = "custom_type"
-    """Custom Type."""
 
 
 MAX_LIST_CLI_RESULTS = 50  # general list
