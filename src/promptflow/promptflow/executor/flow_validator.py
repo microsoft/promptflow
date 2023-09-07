@@ -90,13 +90,15 @@ class FlowValidator:
                 if v.value_type != InputValueType.FLOW_INPUT:
                     continue
                 if v.value not in flow.inputs:
-                    msg = (
+                    msg_format = (
                         "Flow is defined incorrectly. Node '{node_name}' references flow input '{flow_input_name}' "
                         "which is not defined in your flow. To resolve this issue, please review your flow, "
                         "ensuring that you either add the missing flow inputs or adjust node reference "
                         "to the correct flow input."
                     )
-                    raise InputReferenceNotFound(message_format=msg, node_name=node.name, flow_input_name=v.value)
+                    raise InputReferenceNotFound(
+                        message_format=msg_format, node_name=node.name, flow_input_name=v.value
+                    )
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
@@ -114,12 +116,12 @@ class FlowValidator:
                     updated_inputs[k] = v.type.parse(inputs[k])
             except Exception as e:
                 line_info = "" if idx is None else f"in line {idx} of input data"
-                msg = (
+                msg_format = (
                     f"The input for flow is incorrect. The value for flow input '{{flow_input_name}}' {line_info} "
                     f"does not match the expected type '{v.type}'. Please change flow input type or adjust the input "
                     f"value in your input data."
                 )
-                raise InputTypeError(message_format=msg, flow_input_name=k) from e
+                raise InputTypeError(message_format=msg_format, flow_input_name=k) from e
         return updated_inputs
 
     @staticmethod
@@ -133,12 +135,12 @@ class FlowValidator:
         for k, v in flow.inputs.items():
             if k not in inputs:
                 line_info = "in input data" if idx is None else f"in line {idx} of input data"
-                msg = (
+                msg_format = (
                     "The input for flow is incorrect. The value for flow input '{input_name}' is not "
                     f"provided {line_info}. Please review your input data or remove this input in your flow "
                     "if it's no longer needed."
                 )
-                raise InputNotFound(message_format=msg, input_name=k)
+                raise InputNotFound(message_format=msg_format, input_name=k)
         return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
 
     @staticmethod
@@ -174,11 +176,11 @@ class FlowValidator:
                 try:
                     updated_inputs[v.value] = flow.inputs[v.value].type.parse(inputs[v.value])
                 except Exception as e:
-                    msg = (
+                    msg_format = (
                         "The input for node is incorrect. Value for input '{input_name}' of node '{node_name}' "
                         f"is not type '{flow.inputs[v.value].type}'. Please review and rectify the input data."
                     )
-                    raise InputTypeError(message_format=msg, input_name=k, node_name=node.name) from e
+                    raise InputTypeError(message_format=msg_format, input_name=k, node_name=node.name) from e
         return updated_inputs
 
     @staticmethod
@@ -186,27 +188,29 @@ class FlowValidator:
         updated_outputs = {}
         for k, v in flow.outputs.items():
             if v.reference.value_type == InputValueType.LITERAL and v.reference.value == "":
-                msg = (
+                msg_format = (
                     "Flow is defined incorrectly. The reference is not specified for the output '{output_name}' "
                     "in the flow. To rectify this, ensure that you accurately specify the reference in the flow."
                 )
-                raise EmptyOutputReference(message_format=msg, output_name=k)
+                raise EmptyOutputReference(message_format=msg_format, output_name=k)
             if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
-                msg = (
+                msg_format = (
                     "Flow is defined incorrectly. The output '{output_name}' references non-existent flow input "
                     "'{flow_input_name}' in your flow. Please carefully review your flow and "
                     "correct the reference definition for the output in question."
                 )
-                raise OutputReferenceNotFound(message_format=msg, output_name=k, flow_input_name=v.reference.value)
+                raise OutputReferenceNotFound(
+                    message_format=msg_format, output_name=k, flow_input_name=v.reference.value
+                )
             if v.reference.value_type == InputValueType.NODE_REFERENCE:
                 node = flow.get_node(v.reference.value)
                 if node is None:
-                    msg = (
+                    msg_format = (
                         "Flow is defined incorrectly. The output '{output_name}' references non-existent node "
                         "'{node_name}' in your flow. To resolve this issue, please carefully review your flow "
                         "and correct the reference definition for the output in question."
                     )
-                    raise OutputReferenceNotFound(message_format=msg, output_name=k, node_name=v.reference.value)
+                    raise OutputReferenceNotFound(message_format=msg_format, output_name=k, node_name=v.reference.value)
                 if node.aggregation:
                     msg = f"Output '{k}' references a reduce node '{v.reference.value}', will not take effect."
                     logger.warning(msg)
