@@ -9,11 +9,11 @@ from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
 from promptflow._cli._utils import activate_action, confirm, exception_handler, print_yellow_warning, get_secret_input
-from promptflow._sdk._constants import LOGGER_NAME, ConnectionType, CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE
+from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
-from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.entities._connection import _Connection, CustomConnection
 
 logger = logging.getLogger(LOGGER_NAME)
 _client = PFClient()  # Do we have some function like PFClient.get_instance?
@@ -194,22 +194,31 @@ def list_connection():
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
 
 
+def _check_custom_connection_type_match(old_connection, new_connection):
+    if type(old_connection) != CustomConnection:
+        return
+
+    if type(new_connection) != CustomConnection:
+        raise Exception("Connection type mismatch. Please specify the type as 'custom' in the yaml file.")
+
+    if old_connection.is_custom_strong_type():
+        if not new_connection.is_custom_strong_type():
+            raise Exception(f"Connection custom_type mismatch. Please specify custom_type as {old_connection.custom_type} in the yaml file.")
+        elif old_connection.custom_type != new_connection.custom_type:
+            raise Exception(f"Connection custom_type mismatch. Existing: {new_connection.custom_type}, supported: {old_connection.custom_type}.")
+    # shall we allow custom type to custom strong type?
+    elif new_connection.is_custom_strong_type():
+        raise Exception(f"....")
+
+
 def _upsert_connection_from_file(file, params_override=None, connection_spec = None):
     # Note: This function is used for pfutil, do not edit it.
     params_override = params_override or []
     params_override.append(load_yaml(file))
     new_connection = load_connection(source=file, params_override=params_override, connection_spec=connection_spec)
     existing_connection = _client.connections.get(new_connection.name, raise_error=False)
-
-    # Thow exception if the existing connection is custom-defined strong type, while the new connection is not custom-defined
-    existing_custom_type = existing_connection._to_dict().get("configs").get(CUSTOM_STRONG_TYPE_CONNECTION_FULL_TYPE)
-    if existing_custom_type != new_connection.custom_type:
-        raise Exception(
-            f"Connection {new_connection.name} with type custom and custom_type {existing_custom_type} already exists. "
-            f"Please specify the same custom_type in the yaml file."
-        )
-
     if existing_connection:
+        _check_custom_connection_type_match(existing_connection, new_connection)
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         validate_and_interactive_get_secrets(connection, is_update=True)
         # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
