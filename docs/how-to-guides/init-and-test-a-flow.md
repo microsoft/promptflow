@@ -243,6 +243,38 @@ If a flow contains chat inputs or chat outputs in the flow interface, there will
 
 ::::
 
+When the [LLM node](https://promptflow.azurewebsites.net/tools-reference/llm-tool.html) in the chat flow that is connected to the flow output, Promptflow SDK streams the results of the LLM node.
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+The flow result will be streamed in the terminal as shown below.
+
+![streaming_output](../media/how-to-guides/init-and-test-a-flow/streaming_output.gif)
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+The LLM node return value of `test` function is a generator, you can consume the result by this way:
+
+```python
+from promptflow import PFClient
+
+pf_client = PFClient()
+
+# Test flow
+inputs = {"<flow_input_name>": "<flow_input_value>"}  # The inputs of the flow.
+flow_result = pf_client.test(flow="<flow_folder_path>", inputs=inputs)
+for item in flow_result["<LLM_node_output_name>"]:
+    print(item)
+```
+
+:::
+
+::::
+
 ### Debug a single node in the flow
 
 Customer can debug a single python node in VScode by the extension.
