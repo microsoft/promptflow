@@ -54,7 +54,7 @@ class PromptflowException(Exception):
 
     @property
     def message(self):
-        """Return the error message."""
+        """The error message."""
         if self._message:
             return self._message
 
@@ -65,12 +65,12 @@ class PromptflowException(Exception):
 
     @property
     def message_format(self):
-        """Return the error message format."""
+        """The error message format."""
         return self._message_format
 
     @cached_property
     def message_parameters(self):
-        """Return the error message parameters."""
+        """The error message parameters."""
         if not self._kwargs:
             return {}
 
@@ -79,12 +79,12 @@ class PromptflowException(Exception):
 
     @cached_property
     def serializable_message_parameters(self):
-        """Return the serializable error message parameters."""
+        """The serializable error message parameters."""
         return {k: str(v) for k, v in self.message_parameters.items()}
 
     @property
     def target(self):
-        """Return the error target.
+        """The error target.
 
         :return: The error target.
         :rtype: ErrorTarget

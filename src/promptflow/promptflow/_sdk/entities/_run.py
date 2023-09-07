@@ -47,29 +47,53 @@ REST_RUN_TYPE_2_RUN_TYPE = {
 class Run(YAMLTranslatableMixin):
     """Flow run entity.
 
-    :param name: Name of the run.
-    :type name: str
-    :param type: Type of the run, should be one of "bulk", "evaluate" or "pairwise_evaluate".
-    :type type: str
     :param flow: Path of the flow directory.
     :type flow: Path
+    :param name: Name of the run.
+    :type name: Optional[str]
+    :param type: Type of the run.
+    :type type: Optional[str]
     :param display_name: Display name of the run.
-    :type display_name: str
+    :type display_name: Optional[str]
     :param description: Description of the run.
-    :type description: str
+    :type description: Optional[str]
     :param tags: Tags of the run.
-    :type tags: List[Dict[str, str]]
+    :type tags: Optional[List[Dict[str, str]]]
+    :param data: Input data for the run.
+    :type data: Optional[str]
+    :param variant: Variant of the run.
+    :type variant: Optional[str]
+    :param run: Parent run or run ID.
+    :type run: Optional[Union[Run, str]]
+    :param column_mapping: Column mapping for the run. Optional since it's not stored in the database.
+    :type column_mapping: Optional[dict]
+    :param created_on: Date and time the run was created.
+    :type created_on: Optional[datetime.datetime]
+    :param start_time: Date and time the run started.
+    :type start_time: Optional[datetime.datetime]
+    :param end_time: Date and time the run ended.
+    :type end_time: Optional[datetime.datetime]
+    :param status: Status of the run.
+    :type status: Optional[str]
+    :param environment_variables: Environment variables for the run.
+    :type environment_variables: Optional[Dict[str, str]]
+    :param connections: Connections for the run.
+    :type connections: Optional[Dict[str, Dict]]
+    :param properties: Properties of the run.
+    :type properties: Optional[Dict[str, Any]]
+    :param kwargs: Additional keyword arguments.
+    :type kwargs: Optional[dict]
     """
 
     def __init__(
         self,
         flow: Path,
-        name: str = None,
+        name: Optional[str] = None,
         # input fields are optional since it's not stored in DB
-        data: str = None,
-        variant: str = None,
-        run: Union["Run", str] = None,
-        column_mapping: dict = None,
+        data: Optional[str] = None,
+        variant: Optional[str] = None,
+        run: Optional[Union["Run", str]] = None,
+        column_mapping: Optional[dict] = None,
         display_name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[List[Dict[str, str]]] = None,
@@ -78,8 +102,8 @@ class Run(YAMLTranslatableMixin):
         start_time: Optional[datetime.datetime] = None,
         end_time: Optional[datetime.datetime] = None,
         status: Optional[str] = None,
-        environment_variables: Dict[str, str] = None,
-        connections: Dict[str, Dict] = None,
+        environment_variables: Optional[Dict[str, str]] = None,
+        connections: Optional[Dict[str, Dict]] = None,
         properties: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
