@@ -2,6 +2,7 @@ import pytest
 
 from promptflow.contracts.flow import ActivateCondition, InputAssignment, Node, SkipCondition
 from promptflow.executor._dag_manager import DAGManager
+from promptflow.executor._errors import ReferenceNodeBypassed
 
 
 def create_test_node(name, input, skip=None, activate=None):
@@ -56,6 +57,29 @@ class TestDAGManager:
         expected_bypassed_nodes = {"node1", "node2", "node4"}
         assert pop_bypassed_node_names(dag_manager) == expected_bypassed_nodes
         assert dag_manager.bypassed_nodes.keys() == expected_bypassed_nodes
+
+    def test_pop_bypassed_nodes_with_exception(self):
+        nodes = [
+            create_test_node("node1", input="${inputs.text}", activate={"when": "${inputs.text}", "is": "hello"}),
+            create_test_node("node2", input="${inputs.text}", activate={"when": "${inputs.text}", "is": "world"}),
+            create_test_node(
+                "node3",
+                input="${inputs.text}",
+                skip={"when": "${node1.output}", "is": "hello", "return": "${node2.output}"},
+            ),
+        ]
+        flow_inputs = {"text": "hello"}
+        dag_manager = DAGManager(nodes, flow_inputs)
+        assert pop_bypassed_node_names(dag_manager) == {"node2"}
+        dag_manager.complete_nodes({"node1": "hello"})
+        with pytest.raises(ReferenceNodeBypassed) as e:
+            dag_manager.pop_bypassable_nodes()
+        error_message = (
+            "Invalid node reference: The node node2 referenced by node3 has been bypassed, "
+            "so the value of this node cannot be returned. Please refer to the node that will "
+            "not be bypassed as the default return value."
+        )
+        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     def test_complete_nodes(self):
         nodes = [create_test_node("node1", input="value1")]

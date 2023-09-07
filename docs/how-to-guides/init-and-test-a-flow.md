@@ -33,7 +33,10 @@ pf flow init --flow <flow-name> --type chat
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
+Use VS Code explorer pane > directory icon > right click > the "New flow in this directory" action. Follow the popped out dialog to initialize your flow in the target folder.
 ![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_1.png)
+
+Alternatively, you can use the "Create new flow" action on the Prompt flow pane > quick access section to create a new flow
 ![img](../media/how-to-guides/init-and-test-a-flow/vscode_new_flow_2.png)
 
 :::
@@ -70,6 +73,18 @@ In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/tools.json`
 
 Promptflow also provides ways to test the initialized flow or flow node. It will help you quickly test your flow.
 
+### Visual editor on the VS Code for Prompt flow.
+
+::::{tab-set}
+:::{tab-item} VS Code Extension
+:sync: VS Code Extension
+
+Open the flow.dag.yaml file of your flow. On the top of the yaml editor you can find the "Visual editor" action. Use it to open the Visual editor with GUI support.
+
+![img](../media/how-to-guides/vscode_open_visual_editor.png)
+:::
+
+::::
 
 ### Test flow
 
@@ -132,6 +147,7 @@ Promptflow CLI will generate test logs and outputs in `.promptflow`:
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
+You can use the action either on the default yaml editor or the visual editor to trigger flow test. See the snapshots below:
 ![img](../media/how-to-guides/vscode_test_flow_yaml.png)
 ![img](../media/how-to-guides/vscode_test_flow_visual.png)
 
@@ -183,6 +199,8 @@ The log and result of flow node test will be displayed in the terminal. And the 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
+The Prompt flow extension provides inline actions in both default yaml editor and visual editor to trigger single node runs.
+
 ![img](../media/how-to-guides/vscode_single_node_test.png)
 ![img](../media/how-to-guides/vscode_single_node_test_visual.png)
 
@@ -216,8 +234,42 @@ Using this [chat flow](https://github.com/microsoft/promptflow/tree/main/example
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
+If a flow contains chat inputs or chat outputs in the flow interface, there will be a selection when triggering flow test. You can select the interactive mode if you want to.
+
 ![img](../media/how-to-guides/vscode_interactive_chat.png)
 ![img](../media/how-to-guides/vscode_interactive_chat_1.png)
+
+:::
+
+::::
+
+When the [LLM node](https://promptflow.azurewebsites.net/tools-reference/llm-tool.html) in the chat flow that is connected to the flow output, Promptflow SDK streams the results of the LLM node.
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+The flow result will be streamed in the terminal as shown below.
+
+![streaming_output](../media/how-to-guides/init-and-test-a-flow/streaming_output.gif)
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+The LLM node return value of `test` function is a generator, you can consume the result by this way:
+
+```python
+from promptflow import PFClient
+
+pf_client = PFClient()
+
+# Test flow
+inputs = {"<flow_input_name>": "<flow_input_value>"}  # The inputs of the flow.
+flow_result = pf_client.test(flow="<flow_folder_path>", inputs=inputs)
+for item in flow_result["<LLM_node_output_name>"]:
+    print(item)
+```
 
 :::
 
@@ -231,6 +283,7 @@ Customer can debug a single python node in VScode by the extension.
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
+Break points and debugging functionalities for the Python steps in your flow. Just set the break points and use the debug actions on either default yaml editor or visual editor.
 ![img](../media/how-to-guides/vscode_single_node_debug_yaml.png)
 ![img](../media/how-to-guides/vscode_single_node_debug_visual.png)
 

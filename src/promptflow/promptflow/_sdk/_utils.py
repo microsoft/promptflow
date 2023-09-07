@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
 
 import keyring
+import pydash
 import yaml
 from cryptography.fernet import Fernet
 from filelock import FileLock
@@ -157,7 +158,7 @@ def get_encryption_key(generate_if_not_found: bool = False) -> str:
             raise StoreConnectionEncryptionKeyError(
                 "System keyring backend service not found in your operating system. "
                 "See https://pypi.org/project/keyring/ to install requirement for different operating system, "
-                "or 'pip install keyrings.alt' to use the third-party backend. Reach more detail about this error at"
+                "or 'pip install keyrings.alt' to use the third-party backend. Reach more detail about this error at "
                 "https://microsoft.github.io/promptflow/how-to-guides/faq.html#connection-creation-failed-with-storeconnectionencryptionkeyerror"  # noqa: E501
             ) from e
 
@@ -239,9 +240,22 @@ def load_from_dict(schema: Any, data: Dict, context: Dict, additional_message: s
         raise ValidationError(decorate_validation_error(schema, pretty_error, additional_message))
 
 
+def strip_quotation(value):
+    """
+    To avoid escaping chars in command args, args will be surrounded in quotas.
+    Need to remove the pair of quotation first.
+    """
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    elif value.startswith("'") and value.endswith("'"):
+        return value[1:-1]
+    else:
+        return value
+
+
 def parse_variant(variant: str) -> Tuple[str, str]:
     variant_regex = r"\${([^.]+).([^}]+)}"
-    match = re.match(variant_regex, variant)
+    match = re.match(variant_regex, strip_quotation(variant))
     if match:
         return match.group(1), match.group(2)
     else:
@@ -581,7 +595,7 @@ def _generate_tool_meta(
     return res
 
 
-def _generate_package_tools() -> dict:
+def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
     import imp
 
     import pkg_resources
@@ -590,7 +604,7 @@ def _generate_package_tools() -> dict:
 
     from promptflow._core.tools_manager import collect_package_tools
 
-    return collect_package_tools()
+    return collect_package_tools(keys=keys)
 
 
 def generate_flow_tools_json(
@@ -600,6 +614,8 @@ def generate_flow_tools_json(
     timeout: int = FLOW_TOOLS_JSON_GEN_TIMEOUT,
     *,
     include_errors_in_output: bool = False,
+    target_source: str = None,
+    used_packages_only: bool = False,
 ) -> dict:
     """Generate flow.tools.json for a flow directory.
 
@@ -607,33 +623,51 @@ def generate_flow_tools_json(
     :param dump: whether to dump to .promptflow/flow.tools.json, default value is True.
     :param raise_error: whether to raise the error, default value is True.
     :param timeout: timeout for generation, default value is 60 seconds.
+    :param include_errors_in_output: whether to include error messages in output, default value is False.
+    :param target_source: the source name to filter result, default value is None.
+    :param used_packages_only: whether to only include used packages, default value is False.
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
     with open(flow_directory / DAG_FILE_NAME, "r") as f:
         data = yaml.safe_load(f)
     tools = []  # List[Tuple[source_file, tool_type]]
+    used_packages = set()
+
+    def process_node(_node):
+        source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
+        if target_source and source != target_source:
+            return
+        used_packages.add(pydash.get(_node, "source.tool", None))
+
+        if source is None or tool_type is None:
+            return
+
+        if tool_type == ToolType.CUSTOM_LLM:
+            tool_type = ToolType.PROMPT
+
+        if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
+            return
+        tools.append((source, tool_type.lower()))
+
     for node in data[NODES]:
-        if "source" in node and "type" in node:
-            if node["source"]["type"] != "code":
-                pass
-            # should get message if source file not exists
-            else:
-                tools.append((node["source"]["path"], node["type"].lower()))
+        process_node(node)
+
         # understand DAG to parse variants
         # TODO: should we allow source to appear both in node and node variants?
         if node.get(USE_VARIANTS) is True:
             node_variants = data[NODE_VARIANTS][node["name"]]
             for variant_id in node_variants[VARIANTS]:
                 current_node = node_variants[VARIANTS][variant_id][NODE]
-                if "source" not in current_node or "type" not in current_node["source"]:
-                    continue
-                # should get message if source file not exists
-                tools.append((current_node["source"]["path"], current_node["type"].lower()))
+                process_node(current_node)
+
+    if None in used_packages:
+        used_packages.remove(None)
 
     # generate content
+    # TODO: remove type in tools (input) and code (output)
     flow_tools = {
-        "package": _generate_package_tools(),
+        "package": _generate_package_tools(keys=list(used_packages) if used_packages_only else None),
         "code": _generate_tool_meta(
             flow_directory,
             tools,

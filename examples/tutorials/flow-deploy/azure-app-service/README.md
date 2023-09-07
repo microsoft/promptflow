@@ -1,19 +1,26 @@
 # Deploy flow using Azure App Service
 
+This example demos how to deploy a flow using Azure App Service.
+
 [Azure App Service](https://learn.microsoft.com/azure/app-service/) is an HTTP-based service for hosting web applications, REST APIs, and mobile back ends.
 The scripts (`deploy.sh` for bash and `deploy.ps1` for powershell) under this folder are here to help deploy the docker image to Azure App Service.
 
-This example demos how to deploy [web-classification](../../flows/standard/web-classification/README.md) deploy a flow using Azure App Service.
+We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 ## Build a flow as docker format app
+
+Note that all dependent connections must be created before building as docker.
+```bash
+# create connection if not created before
+pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
 
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../flows/standard/web-classification --output build --format docker
+pf flow build --source ../../../flows/standard/web-classification --output build --format docker
 ```
 
-Note that all dependent connections must be created before building as docker.
 
 ## Deploy with Azure App Service
 The two scripts will do the following things:
@@ -37,11 +44,11 @@ Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 See the full parameters by `bash deploy.sh -h` or `.\deploy.ps1 -h`.
 
 ## View and test the web app
-The web app can be found via [azure portal](https://ms.portal.azure.com/) 
+The web app can be found via [azure portal](https://portal.azure.com/) 
 
 ![img](assets/azure_portal_img.png)
 
-After the app created, you will need to go to https://ms.portal.azure.com/ find the app and set up the environment variables
+After the app created, you will need to go to https://portal.azure.com/ find the app and set up the environment variables
 at (Settings>Configuration) or (Settings>Environment variables), then restart the app.
 
 ![img](assets/set_env_var.png)

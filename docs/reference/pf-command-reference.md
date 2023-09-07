@@ -20,6 +20,7 @@ Manage promptflow flow flows.
 | --- | --- |
 | [pf flow init](#pf-flow-init) | Initialize a prompt flow directory. |
 | [pf flow test](#pf-flow-test) | Test the prompt flow or flow node. |
+| [pf flow build](#pf-flow-build) | Build a flow for further sharing or deployment. |
 | [pf flow serve](#pf-flow-serve) | Serving a flow as an endpoint. |
 
 ### pf flow init
@@ -166,6 +167,61 @@ Start a interactive chat session for chat flow.
 
 Displays the output for each step in the chat flow.
 
+### pf flow build
+
+Build a flow for further sharing or deployment.
+
+```bash
+pf flow build --source
+              --output
+              --format
+              [--variant]
+              [--verbose]
+              [--debug]
+```
+
+#### Examples
+
+Build a flow as docker, which can be built into Docker image via `docker build`.
+
+```bash
+pf flow build --source <path-to-flow> --output <output-path> --format docker
+```
+
+Build a flow as docker with specific variant.
+
+```bash
+pf flow build --source <path-to-flow> --output <output-path> --format docker --variant '${node_name.variant_name}'
+```
+
+#### Required Parameter
+
+`--source`
+
+The flow or run source to be used.
+
+`--output`
+
+The folder to output built flow. Need to be empty or not existed.
+
+`--format`
+
+The format to build flow into
+
+#### Optional Parameters
+
+`--variant`
+
+Node & variant name in format of ${node_name.variant_name}.
+
+`--verbose`
+
+Show more details for each step during build.
+
+`--debug`
+
+Show debug information during build.
+
 ### pf flow serve
 
 Serving a flow as an endpoint.
@@ -175,6 +231,8 @@ pf flow serve --source
               [--port]
               [--host]
               [--environment-variables]
+              [--verbose]
+              [--debug]
 ```
 
 #### Examples
@@ -210,6 +268,14 @@ The host of endpoint.
 `--environment-variables`
 
 Environment variables to set by specifying a property path and value. Example: --environment-variable key1="\`${my_connection.api_key}\`" key2="value2". The value reference to connection keys will be resolved to the actual value, and all environment variables specified will be set into `os.environ`.
+
+`--verbose`
+
+Show more details for each step during serve.
+
+`--debug`
+
+Show debug information during serve.
 
 ## pf connection
 

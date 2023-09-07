@@ -5815,6 +5815,8 @@ class AetherResourceConfiguration(msrest.serialization.Model):
     :vartype locations: list[str]
     :ivar instance_priority:
     :vartype instance_priority: str
+    :ivar quota_enforcement_resource_id:
+    :vartype quota_enforcement_resource_id: str
     """
 
     _attribute_map = {
@@ -5823,6 +5825,7 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         'properties': {'key': 'properties', 'type': '{object}'},
         'locations': {'key': 'locations', 'type': '[str]'},
         'instance_priority': {'key': 'instancePriority', 'type': 'str'},
+        'quota_enforcement_resource_id': {'key': 'quotaEnforcementResourceId', 'type': 'str'},
     }
 
     def __init__(
@@ -5833,6 +5836,7 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         properties: Optional[Dict[str, Any]] = None,
         locations: Optional[List[str]] = None,
         instance_priority: Optional[str] = None,
+        quota_enforcement_resource_id: Optional[str] = None,
         **kwargs
     ):
         """
@@ -5846,6 +5850,8 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         :paramtype locations: list[str]
         :keyword instance_priority:
         :paramtype instance_priority: str
+        :keyword quota_enforcement_resource_id:
+        :paramtype quota_enforcement_resource_id: str
         """
         super(AetherResourceConfiguration, self).__init__(**kwargs)
         self.instance_count = instance_count
@@ -5853,6 +5859,7 @@ class AetherResourceConfiguration(msrest.serialization.Model):
         self.properties = properties
         self.locations = locations
         self.instance_priority = instance_priority
+        self.quota_enforcement_resource_id = quota_enforcement_resource_id
 
 
 class AetherResourceModel(msrest.serialization.Model):
@@ -7630,6 +7637,8 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
     :vartype locations: list[str]
     :ivar instance_priority:
     :vartype instance_priority: str
+    :ivar quota_enforcement_resource_id:
+    :vartype quota_enforcement_resource_id: str
     """
 
     _attribute_map = {
@@ -7638,6 +7647,7 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         'properties': {'key': 'properties', 'type': '{object}'},
         'locations': {'key': 'locations', 'type': '[str]'},
         'instance_priority': {'key': 'instancePriority', 'type': 'str'},
+        'quota_enforcement_resource_id': {'key': 'quotaEnforcementResourceId', 'type': 'str'},
     }
 
     def __init__(
@@ -7648,6 +7658,7 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         properties: Optional[Dict[str, Any]] = None,
         locations: Optional[List[str]] = None,
         instance_priority: Optional[str] = None,
+        quota_enforcement_resource_id: Optional[str] = None,
         **kwargs
     ):
         """
@@ -7661,6 +7672,8 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         :paramtype locations: list[str]
         :keyword instance_priority:
         :paramtype instance_priority: str
+        :keyword quota_enforcement_resource_id:
+        :paramtype quota_enforcement_resource_id: str
         """
         super(AEVAResourceConfiguration, self).__init__(**kwargs)
         self.instance_count = instance_count
@@ -7668,6 +7681,7 @@ class AEVAResourceConfiguration(msrest.serialization.Model):
         self.properties = properties
         self.locations = locations
         self.instance_priority = instance_priority
+        self.quota_enforcement_resource_id = quota_enforcement_resource_id
 
 
 class AISuperComputerConfiguration(msrest.serialization.Model):
@@ -12586,6 +12600,8 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
     :vartype vm_size: str
     :ivar max_idle_time_seconds:
     :vartype max_idle_time_seconds: long
+    :ivar action: Possible values include: "Install", "Reset".
+    :vartype action: str or ~flow.models.SetupFlowSessionAction
     """
 
     _attribute_map = {
@@ -12593,6 +12609,7 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
         'base_image': {'key': 'baseImage', 'type': 'str'},
         'vm_size': {'key': 'vmSize', 'type': 'str'},
         'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        'action': {'key': 'action', 'type': 'str'},
     }
 
     def __init__(
@@ -12602,6 +12619,7 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
         base_image: Optional[str] = None,
         vm_size: Optional[str] = None,
         max_idle_time_seconds: Optional[int] = None,
+        action: Optional[Union[str, "SetupFlowSessionAction"]] = None,
         **kwargs
     ):
         """
@@ -12613,12 +12631,15 @@ class CreateFlowSessionRequest(msrest.serialization.Model):
         :paramtype vm_size: str
         :keyword max_idle_time_seconds:
         :paramtype max_idle_time_seconds: long
+        :keyword action: Possible values include: "Install", "Reset".
+        :paramtype action: str or ~flow.models.SetupFlowSessionAction
         """
         super(CreateFlowSessionRequest, self).__init__(**kwargs)
         self.python_pip_requirements = python_pip_requirements
         self.base_image = base_image
         self.vm_size = vm_size
         self.max_idle_time_seconds = max_idle_time_seconds
+        self.action = action
 
 
 class CreateInferencePipelineRequest(msrest.serialization.Model):
@@ -18447,6 +18468,8 @@ class FlowInputDefinition(msrest.serialization.Model):
     :vartype description: str
     :ivar is_chat_input:
     :vartype is_chat_input: bool
+    :ivar is_chat_history:
+    :vartype is_chat_history: bool
     """
 
     _attribute_map = {
@@ -18455,6 +18478,7 @@ class FlowInputDefinition(msrest.serialization.Model):
         'default': {'key': 'default', 'type': 'object'},
         'description': {'key': 'description', 'type': 'str'},
         'is_chat_input': {'key': 'is_chat_input', 'type': 'bool'},
+        'is_chat_history': {'key': 'is_chat_history', 'type': 'bool'},
     }
 
     def __init__(
@@ -18465,6 +18489,7 @@ class FlowInputDefinition(msrest.serialization.Model):
         default: Optional[Any] = None,
         description: Optional[str] = None,
         is_chat_input: Optional[bool] = None,
+        is_chat_history: Optional[bool] = None,
         **kwargs
     ):
         """
@@ -18483,6 +18508,8 @@ class FlowInputDefinition(msrest.serialization.Model):
         :paramtype description: str
         :keyword is_chat_input:
         :paramtype is_chat_input: bool
+        :keyword is_chat_history:
+        :paramtype is_chat_history: bool
         """
         super(FlowInputDefinition, self).__init__(**kwargs)
         self.name = name
@@ -18490,6 +18517,7 @@ class FlowInputDefinition(msrest.serialization.Model):
         self.default = default
         self.description = description
         self.is_chat_input = is_chat_input
+        self.is_chat_history = is_chat_history
 
 
 class FlowNode(msrest.serialization.Model):

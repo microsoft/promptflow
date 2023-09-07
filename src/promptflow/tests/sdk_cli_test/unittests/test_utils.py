@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import argparse
 import os
 import shutil
 import tempfile
@@ -16,6 +17,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
+from promptflow._cli._params import AppendToDictAction
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._utils import (
     decrypt_secret_value,
@@ -122,6 +124,20 @@ class TestCLIUtils:
         test_list = [{"node1.connection": "a"}, {"node1.deploy_name": "b"}]
         result = list_of_dict_to_nested_dict(test_list)
         assert result == {"node1": {"connection": "a", "deploy_name": "b"}}
+
+    def test_append_to_dict_action(self):
+        parser = argparse.ArgumentParser(prog="test_dict_action")
+        parser.add_argument("--dict", action=AppendToDictAction, nargs="+")
+        args = ["--dict", "key1=val1", "\'key2=val2\'", "\"key3=val3\"", "key4=\'val4\'", "key5=\"val5'"]
+        args = parser.parse_args(args)
+        expect_dict = {
+            "key1": "val1",
+            "key2": "val2",
+            "key3": "val3",
+            "key4": "val4",
+            "key5": "\"val5'",
+        }
+        assert args.dict[0] == expect_dict
 
     def test_build_sorted_column_widths_tuple_list(self) -> None:
         columns = ["col1", "col2", "col3"]

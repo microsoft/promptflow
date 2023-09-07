@@ -86,6 +86,8 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
+        # --param "key=value" key="value"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             run_pf_command(
@@ -94,8 +96,8 @@ class TestCli:
                 "--flow",
                 f"{FLOWS_DIR}/classification_accuracy_evaluation",
                 "--column-mapping",
-                "groundtruth=${data.answer}",
-                "prediction=${run.outputs.category}",
+                "'groundtruth=${data.answer}'",
+                "prediction='${run.outputs.category}'",
                 "variant_id=${data.variant_id}",
                 "--data",
                 f"{DATAS_DIR}/webClassification3.jsonl",
@@ -219,7 +221,7 @@ class TestCli:
             f"description={description}",
         )
         run = local_client.runs.get(run_id)
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -237,7 +239,7 @@ class TestCli:
             f"description={description}",
             cwd=f"{RUNS_DIR}",
         )
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -309,7 +311,7 @@ class TestCli:
                 "answer=Channel",
                 "evidence=Url",
                 "--variant",
-                "${summarize_text_content.variant_1}",
+                "'${summarize_text_content.variant_1}'",
             )
             output_path = Path(temp_dir) / ".promptflow" / "flow-summarize_text_content-variant_1.output.json"
             assert output_path.exists()
@@ -768,6 +770,20 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
+        # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
         # Validate terminal output
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--interactive", "--verbose")
@@ -775,8 +791,7 @@ class TestCli:
         # Check node output
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
-        # TODO Checkout user code stdout
-        # assert "print:" in outerr.out
+        assert "[show_answer]: print:" in outerr.out
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
