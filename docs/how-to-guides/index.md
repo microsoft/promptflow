@@ -5,6 +5,8 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 ```{toctree}
 :maxdepth: 1
 
+flow-yaml-schema
+develop-standard-flow
 init-and-test-a-flow
 run-and-evaluate-a-flow
 tune-prompts-with-variants
