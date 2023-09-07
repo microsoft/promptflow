@@ -95,6 +95,27 @@ class TestValidation:
                     "the reference in the flow."
                 ),
             ),
+            (
+                "outputs_reference_not_valid",
+                "flow.dag.yaml",
+                OutputReferenceNotFound,
+                (
+                    "Flow is defined incorrectly. The output 'content' references non-existent "
+                    "node 'another_stringify_num' in your flow. To resolve this issue, please "
+                    "carefully review your flow and correct the reference definition for the "
+                    "output in question."
+                ),
+            ),
+            (
+                "outputs_with_invalid_flow_inputs_ref",
+                "flow.dag.yaml",
+                OutputReferenceNotFound,
+                (
+                    "Flow is defined incorrectly. The output 'num' references non-existent flow "
+                    "input 'num11' in your flow. Please carefully review your flow and correct "
+                    "the reference definition for the output in question."
+                ),
+            ),
         ],
     )
     def test_executor_create_failure_type_and_message(
@@ -130,8 +151,6 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, error_class",
         [
-            ("outputs_reference_not_valid", OutputReferenceNotFound),
-            ("outputs_with_invalid_flow_inputs_ref", OutputReferenceNotFound),
             ("invalid_connection", ConnectionNotFound),
             ("tool_type_missing", NotImplementedError),
             ("wrong_module", FailedToImportModule),
