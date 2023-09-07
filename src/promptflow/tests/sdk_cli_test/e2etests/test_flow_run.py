@@ -283,6 +283,28 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=run_name)
 
+    def test_referenced_output_not_exist(self, pf):
+        # failed run won't generate output
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+
+        run_name = str(uuid.uuid4())
+        with pytest.raises(MappingSourceNotFound) as e:
+            pf.run(
+                name=run_name,
+                run=failed_run,
+                flow=f"{FLOWS_DIR}/failed_flow",
+                column_mapping={"text": "${run.outputs.text}"},
+            )
+        assert "Couldn't find these mapping relations: ${run.outputs.text}." in str(e.value)
+
+        # run should not be created
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(name=run_name)
+
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
             source=f"{RUNS_DIR}/run_with_connections.yaml",
@@ -345,7 +367,7 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         assert run.name == name
-        assert run.display_name == display_name
+        assert f"{display_name}-default-" in run.display_name
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
@@ -356,8 +378,8 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert run.display_name == run.name
-        run = pf.runs.create_or_update(
+        assert "print_env_var-default-" in run.display_name
+        base_run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -365,7 +387,18 @@ class TestFlowRun:
                 display_name="my_run",
             )
         )
-        assert run.display_name == "my_run"
+        assert "my_run-default-" in base_run.display_name
+
+        run = pf.runs.create_or_update(
+            run=Run(
+                flow=Path(f"{FLOWS_DIR}/print_env_var"),
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
+                display_name="my_run",
+                run=base_run,
+            )
+        )
+        assert f"{base_run.display_name}-my_run-" in run.display_name
 
     def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"

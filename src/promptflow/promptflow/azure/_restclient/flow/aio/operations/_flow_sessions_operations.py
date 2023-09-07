@@ -121,6 +121,8 @@ class FlowSessionsOperations:
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str,
+        session_id: str,
+        action_type: Union[str, "_models.SetupFlowSessionAction"],
         location: str,
         operation_id: str,
         api_version: Optional[str] = "1.0.0",
@@ -135,6 +137,10 @@ class FlowSessionsOperations:
         :type resource_group_name: str
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
+        :param session_id:
+        :type session_id: str
+        :param action_type:
+        :type action_type: str or ~flow.models.SetupFlowSessionAction
         :param location:
         :type location: str
         :param operation_id:
@@ -159,6 +165,8 @@ class FlowSessionsOperations:
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
+            session_id=session_id,
+            action_type=action_type,
             location=location,
             operation_id=operation_id,
             api_version=api_version,
@@ -183,5 +191,5 @@ class FlowSessionsOperations:
 
         return deserialized
 
-    poll_operation_status.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/locations/{location}/operations/{operationId}'}  # type: ignore
+    poll_operation_status.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/{sessionId}/{actionType}/locations/{location}/operations/{operationId}'}  # type: ignore
 

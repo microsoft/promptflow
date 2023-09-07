@@ -161,16 +161,6 @@ pf flow validate --source <path_to_flow>
         epilog=epilog,
         add_params=[
             add_param_source,
-            lambda parser: parser.add_argument(  # noqa: E731
-                "--flow-tools-json-path",
-                type=str,
-                help=argparse.SUPPRESS,
-            ),
-            lambda parser: parser.add_argument(  # noqa: E731
-                "--tools-only",
-                action=argparse.BooleanOptionalAction,
-                help=argparse.SUPPRESS,
-            ),
         ],
         subparsers=subparsers,
         help_message="Validate a flow. Will raise error if the flow is not valid.",
@@ -308,7 +298,12 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
     copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
 
     print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
-    flow_test_args = "--interactive" if flow_type == "chat" else f"--input {os.path.join(flow_name, 'data.jsonl')}"
+    if flow_type == "chat":
+        flow_test_args = "--interactive"
+        print("The generated chat flow is requiring a connection named open_ai_connection, "
+              "please follow the steps in README.md to create if you haven't done that.")
+    else:
+        flow_test_args = f"--input {os.path.join(flow_name, 'data.jsonl')}"
     flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
     print(f"You can execute this command to test the flow, {flow_test_command}")
 
@@ -350,7 +345,7 @@ def test_flow(args):
             environment_variables=environment_variables,
             variant=args.variant,
             node=args.node,
-            streaming_output=False,
+            allow_generator_output=False,
         )
         # Dump flow/node test info
         flow = load_flow(args.flow)
@@ -438,9 +433,10 @@ def validate_flow(args):
 
     validation_result = pf_client.flows.validate(
         flow=args.source,
-        flow_tools_json_path=args.flow_tools_json_path,
-        tools_only=args.tools_only,
     )
     if validation_result:
         print(json.dumps(validation_result, indent=4))
         exit(1)
+    else:
+        print("Flow is valid.")
+        exit(0)
