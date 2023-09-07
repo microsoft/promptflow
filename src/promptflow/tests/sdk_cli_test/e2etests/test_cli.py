@@ -1106,36 +1106,35 @@ class TestCli:
     def test_format_cli_exception(self, capsys):
         from promptflow._sdk.operations._connection_operations import ConnectionOperations
 
-        with pytest.raises(SystemExit):
-            run_pf_command(
-                "connection",
-                "show",
-                "--name",
-                "invalid_connection_name",
-                "--format_exception",
-            )
-        outerr = capsys.readouterr()
-        assert outerr.err
-        error_msg = json.loads(outerr.err)
-        assert error_msg["code"] == "ConnectionNotFoundError"
-
-        def mocked_connection_get(*args, **kwargs):
-            raise Exception("mock exception")
-
-        with patch.object(ConnectionOperations, "get") as mock_connection_get:
-            mock_connection_get.side_effect = mocked_connection_get
-            with pytest.raises(Exception):
+        with patch.dict(os.environ, {"FORMAT_EXCEPTION": "true"}):
+            with pytest.raises(SystemExit):
                 run_pf_command(
                     "connection",
                     "show",
                     "--name",
                     "invalid_connection_name",
-                    "--format_exception"
                 )
             outerr = capsys.readouterr()
             assert outerr.err
             error_msg = json.loads(outerr.err)
-            assert error_msg["code"] == "SystemError"
+            assert error_msg["code"] == "ConnectionNotFoundError"
+
+            def mocked_connection_get(*args, **kwargs):
+                raise Exception("mock exception")
+
+            with patch.object(ConnectionOperations, "get") as mock_connection_get:
+                mock_connection_get.side_effect = mocked_connection_get
+                with pytest.raises(Exception):
+                    run_pf_command(
+                        "connection",
+                        "show",
+                        "--name",
+                        "invalid_connection_name",
+                    )
+                outerr = capsys.readouterr()
+                assert outerr.err
+                error_msg = json.loads(outerr.err)
+                assert error_msg["code"] == "SystemError"
 
         with pytest.raises(SystemExit):
             run_pf_command(

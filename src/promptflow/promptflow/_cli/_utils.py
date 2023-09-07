@@ -336,12 +336,9 @@ def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
 
 
 def is_format_exception():
-    from promptflow._cli._params import add_param_format_exception
-
-    parser = argparse.ArgumentParser()
-    add_param_format_exception(parser)
-    args, _ = parser.parse_known_args(sys.argv)
-    return args.format_exception
+    if os.environ.get("FORMAT_EXCEPTION", "false").lower() == "true":
+        return True
+    return False
 
 
 def exception_handler(command: str):
