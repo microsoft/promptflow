@@ -8,6 +8,7 @@ import logging
 import multiprocessing
 import os
 import re
+import sys
 import shutil
 import tempfile
 import zipfile
@@ -44,6 +45,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
+    HOME_PROMPT_FLOW_DIR,
 )
 from promptflow._sdk._errors import (
     DecryptConnectionError,
@@ -722,3 +724,45 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
                 .encode("utf-8")
                 .replace(b"\r\n", b"\n"),
             )
+
+
+def get_current_env_name():
+    # Check if it's a Conda environment
+    conda_env = os.environ.get('CONDA_DEFAULT_ENV')
+    if conda_env:
+        return conda_env
+
+    # Check if it's a virtualenv environment
+    virtual_env_path = os.environ.get('VIRTUAL_ENV')
+    if virtual_env_path:
+        return os.path.basename(virtual_env_path)
+
+    # Check if Python executable is being called directly
+    # TODO: This might be hack, seek better way
+    python_exec_path = sys.executable
+    if python_exec_path:
+        env_path_parts = python_exec_path.split('envs')[1]
+        return env_path_parts.split(os.sep)[1]
+
+    # If it's neither Conda nor virtualenv, return 'default'
+    return 'default'
+
+
+def refresh_connections_dir(connection_spec_files, connection_template_yamls):
+    env_name = get_current_env_name()
+    connections_dir = (HOME_PROMPT_FLOW_DIR / "envs" / env_name / "connections").resolve()
+    if os.path.isdir(connections_dir):
+        shutil.rmtree(connections_dir)
+    os.makedirs(connections_dir)
+
+    if connection_spec_files and connection_template_yamls:
+        for connection_name, content in connection_spec_files.items():
+            file_name = connection_name + ".schema.json"
+            with open(connections_dir / file_name, "w") as f:
+                json.dump(content, f, indent=2)
+
+        for connection_name, content in connection_template_yamls.items():
+            yaml_data = yaml.safe_load(content)
+            file_name = connection_name + ".template.yaml"
+            with open(connections_dir / file_name, "w") as f:
+                yaml.dump(yaml_data, f, sort_keys=False)
