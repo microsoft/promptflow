@@ -430,7 +430,7 @@ class RunOperations(_ScopeDependentOperations):
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    def archive(self, run: str)-> Run:
+    def archive(self, run: str) -> Run:
         """Archive a run.
 
         :param run: The run name
