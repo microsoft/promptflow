@@ -101,7 +101,7 @@ We also offer a VS Code extension (a flow designer) for an interactive flow deve
 
 <img src="examples/tutorials/quick-start/media/vsc.png" alt="vsc" width="1000"/>
 
-You can install it from the <a href="https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow" target="_blank">visualstudio marketplace</a>.
+You can install it from the <a href="https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow">visualstudio marketplace</a>.
 
 #### Deep Dive into Flow Development
 
@@ -110,7 +110,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 ### Learn from Use Cases
 
 [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
-> More examples can be found [here](./examples/README.md). We welcome contributions of new use cases!
+> More examples can be found [here](https://microsoft.github.io/promptflow/tutorials/index.html#samples). We welcome contributions of new use cases!
 
 ### Setup for Contributors
 
