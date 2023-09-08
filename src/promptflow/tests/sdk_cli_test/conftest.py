@@ -70,7 +70,7 @@ def setup_local_connection(local_client):
     for name, _dct in connection_dict.items():
         if _dct["type"] == "BingConnection":
             continue
-        local_client.connections.create_or_update(_Connection.from_execution_connection_dict(name=name, data=_dct))
+        local_client.connections.create_or_update(_Connection._from_execution_connection_dict(name=name, data=_dct))
     _connection_setup = True
 
 
