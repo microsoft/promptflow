@@ -34,9 +34,9 @@ class FlowValidator:
                     continue
                 if i.value not in dependencies:
                     msg_format = (
-                        "Flow is defined incorrectly. Node '{node_name}' references a non-existent node "
-                        "'{reference_node_name}' in your flow. Please review your flow to ensure that the "
-                        "node name is accurately specified."
+                        "Invalid node definitions found in the flow graph. Node '{node_name}' references "
+                        "a non-existent node '{reference_node_name}' in your flow. Please review your flow to "
+                        "ensure that the node name is accurately specified."
                     )
                     raise NodeReferenceNotFound(
                         message_format=msg_format, node_name=n.name, reference_node_name=i.value
@@ -54,7 +54,7 @@ class FlowValidator:
                 remaining_nodes = sorted(list(set(dependencies.keys()) - picked))
                 raise NodeCircularDependency(
                     message_format=(
-                        "Flow is defined incorrectly. Node circular dependency has been detected "
+                        "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
                         "among the nodes in your flow. Kindly review the reference relationships for the nodes "
                         "{remaining_nodes} and resolve the circular reference issue in the flow."
                     ),
@@ -80,9 +80,9 @@ class FlowValidator:
             if node.name in node_names:
                 raise DuplicateNodeName(
                     message_format=(
-                        "Flow is defined incorrectly. Node with name '{node_name}' appears more than once "
-                        "in the node definitions in your flow, which is not allowed. To address this issue, "
-                        "please review your flow and either rename or remove nodes with identical names."
+                        "Invalid node definitions found in the flow graph. Node with name '{node_name}' appears "
+                        "more than once in the node definitions in your flow, which is not allowed. To address "
+                        "this issue, please review your flow and either rename or remove nodes with identical names."
                     ),
                     node_name=node.name,
                 )
@@ -93,10 +93,10 @@ class FlowValidator:
                     continue
                 if v.value not in flow.inputs:
                     msg_format = (
-                        "Flow is defined incorrectly. Node '{node_name}' references flow input '{flow_input_name}' "
-                        "which is not defined in your flow. To resolve this issue, please review your flow, "
-                        "ensuring that you either add the missing flow inputs or adjust node reference "
-                        "to the correct flow input."
+                        "Invalid node definitions found in the flow graph. Node '{node_name}' references flow input "
+                        "'{flow_input_name}' which is not defined in your flow. To resolve this issue, "
+                        "please review your flow, ensuring that you either add the missing flow inputs "
+                        "or adjust node reference to the correct flow input."
                     )
                     raise InputReferenceNotFound(
                         message_format=msg_format, node_name=node.name, flow_input_name=v.value
@@ -191,14 +191,15 @@ class FlowValidator:
         for k, v in flow.outputs.items():
             if v.reference.value_type == InputValueType.LITERAL and v.reference.value == "":
                 msg_format = (
-                    "Flow is defined incorrectly. The reference is not specified for the output '{output_name}' "
-                    "in the flow. To rectify this, ensure that you accurately specify the reference in the flow."
+                    "The output '{output_name}' for flow is incorrect. The reference is not specified for "
+                    "the output '{output_name}' in the flow. To rectify this, "
+                    "ensure that you accurately specify the reference in the flow."
                 )
                 raise EmptyOutputReference(message_format=msg_format, output_name=k)
             if v.reference.value_type == InputValueType.FLOW_INPUT and v.reference.value not in flow.inputs:
                 msg_format = (
-                    "Flow is defined incorrectly. The output '{output_name}' references non-existent flow input "
-                    "'{flow_input_name}' in your flow. Please carefully review your flow and "
+                    "The output '{output_name}' for flow is incorrect. The output '{output_name}' references "
+                    "non-existent flow input '{flow_input_name}' in your flow. Please carefully review your flow and "
                     "correct the reference definition for the output in question."
                 )
                 raise OutputReferenceNotFound(
@@ -208,9 +209,9 @@ class FlowValidator:
                 node = flow.get_node(v.reference.value)
                 if node is None:
                     msg_format = (
-                        "Flow is defined incorrectly. The output '{output_name}' references non-existent node "
-                        "'{node_name}' in your flow. To resolve this issue, please carefully review your flow "
-                        "and correct the reference definition for the output in question."
+                        "The output '{output_name}' for flow is incorrect. The output '{output_name}' references "
+                        "non-existent node '{node_name}' in your flow. To resolve this issue, please carefully review "
+                        "your flow and correct the reference definition for the output in question."
                     )
                     raise OutputReferenceNotFound(message_format=msg_format, output_name=k, node_name=v.reference.value)
                 if node.aggregation:

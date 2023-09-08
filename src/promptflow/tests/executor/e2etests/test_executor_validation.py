@@ -38,7 +38,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 DuplicateNodeName,
                 (
-                    "Flow is defined incorrectly. Node with name 'stringify_num' appears more "
+                    "Invalid node definitions found in the flow graph. Node with name 'stringify_num' appears more "
                     "than once in the node definitions in your flow, which is not allowed. To "
                     "address this issue, please review your flow and either rename or remove "
                     "nodes with identical names."
@@ -58,7 +58,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 NodeReferenceNotFound,
                 (
-                    "Flow is defined incorrectly. Node 'divide_num_2' references a non-existent "
+                    "Invalid node definitions found in the flow graph. Node 'divide_num_2' references a non-existent "
                     "node 'divide_num_3' in your flow. Please review your flow to ensure that the "
                     "node name is accurately specified."
                 ),
@@ -68,7 +68,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 NodeCircularDependency,
                 (
-                    "Flow is defined incorrectly. Node circular dependency has been detected "
+                    "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
                     "among the nodes in your flow. Kindly review the reference relationships for "
                     "the nodes ['divide_num', 'divide_num_1', 'divide_num_2'] and resolve the "
                     "circular reference issue in the flow."
@@ -79,7 +79,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 InputReferenceNotFound,
                 (
-                    "Flow is defined incorrectly. Node 'divide_num' references flow input 'num_1' "
+                    "Invalid node definitions found in the flow graph. Node 'divide_num' references flow input 'num_1' "
                     "which is not defined in your flow. To resolve this issue, please review your "
                     "flow, ensuring that you either add the missing flow inputs or adjust node "
                     "reference to the correct flow input."
@@ -90,7 +90,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 EmptyOutputReference,
                 (
-                    "Flow is defined incorrectly. The reference is not specified for the output "
+                    "The output 'content' for flow is incorrect. The reference is not specified for the output "
                     "'content' in the flow. To rectify this, ensure that you accurately specify "
                     "the reference in the flow."
                 ),
@@ -100,7 +100,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 OutputReferenceNotFound,
                 (
-                    "Flow is defined incorrectly. The output 'content' references non-existent "
+                    "The output 'content' for flow is incorrect. The output 'content' references non-existent "
                     "node 'another_stringify_num' in your flow. To resolve this issue, please "
                     "carefully review your flow and correct the reference definition for the "
                     "output in question."
@@ -111,7 +111,7 @@ class TestValidation:
                 "flow.dag.yaml",
                 OutputReferenceNotFound,
                 (
-                    "Flow is defined incorrectly. The output 'num' references non-existent flow "
+                    "The output 'num' for flow is incorrect. The output 'num' references non-existent flow "
                     "input 'num11' in your flow. Please carefully review your flow and correct "
                     "the reference definition for the output in question."
                 ),
