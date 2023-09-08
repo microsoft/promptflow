@@ -548,11 +548,10 @@ class TestFlowRun:
         with pytest.raises(FlowRequestException) as e:
             pf.runs._resolve_runtime(
                 run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
                     resources={"instance_type": "not_exist"},
                 ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
                 runtime=None,
             )
         assert "Session creation failed for" in str(e.value)
