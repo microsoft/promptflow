@@ -140,10 +140,10 @@ api_version: <test_version>
 
 If you are using OpenAI, sign up account via [OpenAI website](https://openai.com/), login and [find personal API key](https://platform.openai.com/account/api-keys), then use this yaml:
 ```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
 name: open_ai_connection
-type: azure_open_ai
-api_key: <test_key>
+type: open_ai
+api_key: "<user-input>"
 organization: "" # optional
 ```
 Then we can use CLI command to create the connection.

@@ -42,11 +42,11 @@ from promptflow.exceptions import SystemErrorException
 
 
 class FlowOperations(_ScopeDependentOperations):
-    """FlowOperations.
+    """FlowOperations that can manage flows.
 
     You should not instantiate this class directly. Instead, you should
-    create an MLClient instance that instantiates it for you and
-    attaches it as an attribute
+    create an PFClient instance that instantiates it for you and
+    attaches it as an attribute.
     """
 
     def __init__(
