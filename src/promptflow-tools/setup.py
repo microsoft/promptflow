@@ -25,10 +25,15 @@ with open(os.path.join(PACKAGE_FOLDER_PATH, "version.txt"), "r") as fd:
 if not version:
     raise RuntimeError("Cannot find version information")
 
+with open("README.md", encoding="utf-8") as f:
+    readme = f.read()
+
 setup(
     name=PACKAGE_NAME,
     version=version,
     description="Prompt flow built-in tools",
+    long_description_content_type="text/markdown",
+    long_description=readme,
     author="Microsoft Corporation",
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -42,4 +47,8 @@ setup(
         "package_tools": ["builtins = promptflow.tools.list:list_package_tools"],
     },
     include_package_data=True,
+    project_urls={
+        "Bug Reports": "https://github.com/microsoft/promptflow/issues",
+        "Source": "https://github.com/microsoft/promptflow",
+    },
 )

@@ -1,0 +1,9 @@
+[
+    {
+        "expected_node_count": 2,
+        "expected_outputs":{
+            "text": "hello world"
+        },
+        "expected_bypassed_nodes":[]
+    }
+]
