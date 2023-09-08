@@ -18,7 +18,7 @@ def get_connection_dict():
             "type": "AzureOpenAIConnection",
             "value": {
                 "api_key": "<azure-openai-key>",
-                "api_base": "https://gpt-test-eus.openai.azure.com/",
+                "api_base": "<aoai-api-endpoint>",
                 "api_type": "azure",
                 "api_version": "2023-07-01-preview",
             },
@@ -27,7 +27,7 @@ def get_connection_dict():
             "type": "CustomConnection",
             "value": {
                 "api_key": "<your-key>",
-                "url": "https://api.bing.microsoft.com/v7.0/search",
+                "url": "<connection-endpoint>",
             },
             "module": "promptflow.connections",
             "secret_keys": ["api_key"],
@@ -69,9 +69,7 @@ def test_serialize_dataclass():
         index=0,
     )
     node_record = NodeRunRecord.from_run_info(node_run_info)
-    serialized_run_info = serialize(node_run_info)
-    deserialized_run_info = deserialize_value(serialized_run_info, RunInfo)
-    assert deserialized_run_info == node_run_info
+    assert deserialize_value(serialize(node_run_info), RunInfo) == node_run_info
     assert serialize(node_record) == node_record.serialize()
 
 
@@ -104,16 +102,22 @@ def test_serialize_remove_null():
     serialized_dataclass = serialize(DummyDataClass("Dummy", None), remove_null=True)
     assert serialize(serialized_dataclass, remove_null=True) == {'name': 'Dummy'}
 
+
+@pytest.mark.unittest
+def test_serialize_connection():
     new_connection = get_connection_dict()
     connection_manager = ConnectionManager(new_connection)
-    assert serialize(connection_manager.get("azure_open_ai_connection"), remove_null=True) == "azure_open_ai_connection"
+    assert serialize(connection_manager.get("azure_open_ai_connection")) == "azure_open_ai_connection"
 
+
+@pytest.mark.unittest
+def test_serialize_generator():
     def generator():
         for i in range(3):
             yield i
     g = GeneratorProxy(generator())
     next(g)
-    assert serialize(g, remove_null=True) == [0]
+    assert serialize(g) == [0]
 
 
 @pytest.mark.unittest
@@ -163,16 +167,17 @@ def test_deserialize_dataclass():
 
 
 @pytest.mark.unittest
-def test_deserialize_value():
-    # test when field_type is not type
-    assert deserialize_value(1, 2) == 1
-    # test when field_type is subclass of Enum
-    assert deserialize_value(Status.Completed, Status) == Status.Completed
-    # test with none datetime
-    assert deserialize_value(None, datetime) is None
-    # test with datetime without z
-    date_str = "2022-01-01T00:00:00"
-    assert deserialize_value(date_str, datetime) == datetime.fromisoformat(date_str)
+@pytest.mark.parametrize(
+    "a, b, expected",
+    [
+        (1, 2, 1),
+        (Status.Completed, Status, Status.Completed),
+        (None, datetime, None),
+        ("2022-01-01T00:00:00", datetime, datetime.fromisoformat("2022-01-01T00:00:00")),
+    ]
+)
+def test_deserialize_value(a, b, expected):
+    assert deserialize_value(a, b) == expected
 
 
 @pytest.mark.unittest
