@@ -1,7 +1,3 @@
-[![banner](examples/tutorials/quick-start/media/banner.png)](https://microsoft.github.io/promptflow/index.html)
-
-------
-
 # Prompt flow
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
@@ -82,10 +78,6 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 ```sh
 pf flow test --flow ./my_chatbot --interactive
 ```
-
-Then you will see the chatbot in action:
-
-<img src="examples/tutorials/quick-start/media/interactive.gif" alt="interactive" width="500"/> 
 
 Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 
