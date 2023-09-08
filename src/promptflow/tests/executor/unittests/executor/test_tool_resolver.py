@@ -125,7 +125,7 @@ class TestToolResolver:
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
         if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
-            # Python >= 3.11 has a different error message on linux and macos
+            # Python >= 3.11 has a different error message
             message = "value invalid is not type ValueType.INT"
         else:
             message = "value invalid is not type int"
