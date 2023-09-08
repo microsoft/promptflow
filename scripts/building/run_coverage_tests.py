@@ -69,7 +69,7 @@ if __name__ == "__main__":
         "--log-level=info",
         "--log-format=%(asctime)s %(levelname)s %(message)s",
         "--log-date-format=[%Y-%m-%d %H:%M:%S]",
-        "--durations=5",
+        "--durations=10",
         "-ra",
         "-vv",
     ]
