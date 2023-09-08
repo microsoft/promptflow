@@ -68,7 +68,7 @@ if($WithReferenceDoc){
     }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
-    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" 2>&1 | Tee-Object -FilePath $SphinxApiDoc 
+    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
 }
 
 
@@ -81,7 +81,7 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams 2>&1 | Tee-Object -FilePath $SphinxBuildDoc
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
 
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
