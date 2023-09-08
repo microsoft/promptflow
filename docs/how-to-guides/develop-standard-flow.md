@@ -4,7 +4,8 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-From this document, customer can learn how to develop the standard flow by writing a flow yaml from scratch.
+From this document, customer can learn how to develop the standard flow by writing a flow yaml from scratch. You can 
+find additional information about flow yaml schema in [Flow YAML Schema](../reference/flow-yaml-schema-reference.md).
 
 ## Flow input data
 The flow input data is the data that you want to process in your flow. 

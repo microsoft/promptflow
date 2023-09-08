@@ -1,7 +1,7 @@
-# Flow YAML schema
+# Flow YAML Schema
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
 From this document, customer can get the details of flow schema.
@@ -221,8 +221,3 @@ additional_includes:
 :::
 
 ::::
-
-
-## Next steps
-
-- [Develop standard flow](develop-standard-flow.md)
