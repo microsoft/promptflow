@@ -16,7 +16,6 @@ from azure.ai.ml._scope_dependent_operations import (
     OperationScope,
     _ScopeDependentOperations,
 )
-from azure.ai.ml._utils._asset_utils import traverse_directory
 from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 from azure.ai.ml._utils.utils import hash_dict
 from azure.ai.ml.constants._common import SHORT_URI_FORMAT, AzureMLResourceType
@@ -32,6 +31,7 @@ from promptflow._sdk._constants import (
     WORKSPACE_LINKED_DATASTORE_NAME,
 )
 from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_json
+from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
 from promptflow.azure._entities._flow import Flow
 from promptflow.azure._ml import Component
@@ -149,6 +149,7 @@ class FlowOperations(_ScopeDependentOperations):
         is_deterministic: bool = True,
         **kwargs,
     ) -> Component:
+        """Load a flow as a component."""
         rest_object = LoadFlowAsComponentRequest(
             node_variant=variant,
             inputs_mapping=columns_mapping,
@@ -277,7 +278,14 @@ class FlowOperations(_ScopeDependentOperations):
             source_path = Path(code.path).resolve()
             prefix = os.path.basename(source_path) + "/"
             for root, _, files in os.walk(source_path, followlinks=True):
-                upload_paths += list(traverse_directory(root, files, source_path, prefix, ignore_file=ignore_file))
+                upload_paths += list(
+                    traverse_directory(
+                        root,
+                        files,
+                        prefix=prefix,
+                        ignore_file=ignore_file,
+                    )
+                )
             logger = logging.getLogger(LOGGER_NAME)
             for file_path, _ in upload_paths:
                 logger.debug(f"will upload file: {file_path}...")

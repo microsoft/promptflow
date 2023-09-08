@@ -45,6 +45,15 @@ class MetricLoggerManager:
 
 
 def log_metric(key, value, variant_id=None):
+    """Log a metric for current promptflow run.
+
+    :param key: Metric name.
+    :type key: str
+    :param value: Metric value.
+    :type value: float
+    :param variant_id: Variant id for the metric.
+    :type variant_id: str
+    """
     MetricLoggerManager.get_instance().log_metric(key, value, variant_id)
 
 
