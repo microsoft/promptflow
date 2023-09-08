@@ -102,7 +102,8 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
-    def keys(self):
+    def keys(self) -> list:
+        """Return keys of the connection properties."""
         return list(self.configs.keys()) + list(self.secrets.keys())
 
     def __getitem__(self, item):
@@ -289,10 +290,12 @@ class _StrongTypeConnection(_Connection):
 
     @property
     def api_key(self):
-        return self.secrets.get("api_key", "***")
+        """Return the api key."""
+        return self.secrets.get("api_key", SCRUBBED_VALUE)
 
     @api_key.setter
     def api_key(self, value):
+        """Set the api key."""
         self.secrets["api_key"] = value
 
 
