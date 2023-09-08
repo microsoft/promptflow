@@ -1,6 +1,9 @@
 import contextvars
 import multiprocessing
 import queue
+import math
+import os
+import psutil
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -363,11 +366,6 @@ def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, st
 
 
 def get_available_max_worker_count():
-    import math
-    import os
-
-    import psutil
-
     pid = os.getpid()
     mem_info = psutil.virtual_memory()
     total_memory = mem_info.total / (1024 * 1024)  # in MB
