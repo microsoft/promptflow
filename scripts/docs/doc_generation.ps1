@@ -24,6 +24,8 @@ param(
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
 [string] $WarningErrorPattern = "WARNING:|ERROR:"
+$apidocWarningsAndErrors = $null
+$buildWarningsAndErrors = $null
 
 if (-not $SkipInstall){
     # Prepare doc generation packages
@@ -69,6 +71,7 @@ if($WithReferenceDoc){
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
     sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
+    $apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
 }
 
 
@@ -82,12 +85,10 @@ if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
 sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+$buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
-
-$apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
-$buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 if ($apidocWarningsAndErrors) {  
     Write-Host "=============== API doc warnings and errors ==============="  
