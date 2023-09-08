@@ -53,7 +53,6 @@ class RunOperations:
             message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
         )
 
-    @classmethod
     def get(cls, name: str) -> Run:
         """Get a run entity.
 
@@ -180,6 +179,13 @@ class RunOperations:
         return self.get(name)
 
     def get_details(self, name: Union[str, Run]) -> pd.DataFrame:
+        """Get run inputs and outputs.
+
+        :param name: name of the run.
+        :type name: str
+        :return: Run details.
+        :rtype: ~pandas.DataFrame
+        """
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
         run._check_run_status_is_completed()
@@ -200,6 +206,13 @@ class RunOperations:
         return df
 
     def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
+        """Get run metrics.
+
+        :param name: name of the run.
+        :type name: str
+        :return: Run metrics.
+        :rtype: Dict[str, Any]
+        """
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
         run._check_run_status_is_completed()
