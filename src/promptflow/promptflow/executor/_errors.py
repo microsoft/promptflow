@@ -55,6 +55,26 @@ class InvalidBulkTestRequest(ValidationException):
         )
 
 
+class InputMappingError(ValidationException):
+    def __init__(
+        self,
+        target: ErrorTarget = ErrorTarget.EXECUTOR,
+        **kwargs,
+    ):
+        super().__init__(
+            target=target,
+            **kwargs,
+        )
+
+
+class NoneInputsMappingIsNotSupported(SystemErrorException):
+    pass
+
+
+class NodeResultCountNotMatch(SystemErrorException):
+    pass
+
+
 class InvalidFlowRequest(ValidationException):
     def __init__(
         self,

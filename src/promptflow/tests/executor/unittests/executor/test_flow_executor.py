@@ -9,11 +9,8 @@ from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import InvalidAggregationInput
 from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
 from promptflow.executor.flow_executor import (
-    EmptyInputAfterMapping,
-    EmptyInputListError,
     FlowExecutor,
-    LineNumberNotAlign,
-    MappingSourceNotFound,
+    InputMappingError,
     NoneInputsMappingIsNotSupported,
     _ensure_node_result_is_serializable,
     _inject_stream_options,
@@ -66,11 +63,11 @@ class TestFlowExecutor:
                     "question": "${baseline.output}",
                     "answer": "${data.output}",
                 },
-                MappingSourceNotFound,
-                "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
-                "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data.",
+                InputMappingError,
+                "The input for flow is incorrect. Couldn't find these mapping relations: ${baseline.output}, "
+                "${data.output}. Please make sure your input mapping keys and values match your YAML input section "
+                "and input data. If a mapping reads input from 'data', it might be generated from the YAML input "
+                "section, and you may need to manually assign input mapping based on your input data.",
             ),
         ],
     )
@@ -129,17 +126,20 @@ class TestFlowExecutor:
                 {
                     "baseline": [],
                 },
-                EmptyInputListError,
-                "List from key 'baseline' is empty.",
+                InputMappingError,
+                "The input for flow is incorrect. Input from key 'baseline' is one empty list. "
+                "Which means we cannot generate one line for the flow run. Please rectify the input and try again.",
             ),
             (
                 {
                     "data": [{"question": "q1", "answer": "ans1"}, {"question": "q2", "answer": "ans2"}],
                     "baseline": [{"answer": "baseline_ans2"}],
                 },
-                LineNumberNotAlign,
-                "Line numbers are not aligned. Some lists have dictionaries missing the 'line_number' key, "
-                "and the lengths of these lists are different. List lengths: {'data': 2, 'baseline': 1}",
+                InputMappingError,
+                "The input for flow is incorrect. Line numbers are not aligned. Some lists have dictionaries missing "
+                "the 'line_number' key, and the lengths of these lists are different. List lengths are: "
+                "{'data': 2, 'baseline': 1}. Please make sure these lists have the same length "
+                "or add 'line_number' key to each dictionary.",
             ),
         ],
     )
@@ -278,7 +278,7 @@ class TestFlowExecutor:
         [
             (
                 {"question": "${question}"},
-                EmptyInputAfterMapping,
+                InputMappingError,
             ),
         ],
     )
@@ -303,7 +303,7 @@ class TestFlowExecutor:
                 },
                 None,
                 NoneInputsMappingIsNotSupported,
-                "Inputs mapping is None.",
+                "Inputs mapping is None. Please set one inputs mapping or use default inputs mapping in flow_executor.",
             ),
         ],
     )

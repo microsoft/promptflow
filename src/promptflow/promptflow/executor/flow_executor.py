@@ -28,12 +28,15 @@ from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
+from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
+    InputMappingError,
     InvalidAggregationInput,
     NodeConcurrencyNotFound,
     NodeOutputNotFound,
+    NodeResultCountNotMatch,
+    NoneInputsMappingIsNotSupported,
     OutputReferenceBypassed,
     OutputReferenceNotExist,
 )
@@ -793,7 +796,9 @@ class FlowExecutor:
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
-            raise NodeConcurrencyNotFound("Need to set node concurrency as using flow executor.")
+            raise NodeConcurrencyNotFound(
+                message_format=f"Need to set valid node concurrency to run, current value is {self._node_concurrency}."
+            )
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
 
     @staticmethod
@@ -854,11 +859,14 @@ class FlowExecutor:
                 result[map_to_key] = map_value  # Literal value
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
-            raise MappingSourceNotFound(
-                f"Couldn't find these mapping relations: {', '.join(notfound_mapping_relations)}. "
+            invalid_relations = ", ".join(notfound_mapping_relations)
+            raise InputMappingError(
+                message_format="The input for flow is incorrect. "
+                "Couldn't find these mapping relations: {invalid_relations}. "
                 "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data."
+                "If a mapping reads input from 'data', it might be generated from the YAML input section, "
+                "and you may need to manually assign input mapping based on your input data.",
+                invalid_relations=invalid_relations,
             )
         # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:
@@ -870,8 +878,13 @@ class FlowExecutor:
         input_dict: Mapping[str, List[Mapping[str, Any]]],
     ) -> List[Mapping[str, Mapping[str, Any]]]:
         for input_key, list_of_one_input in input_dict.items():
-            if len(list_of_one_input) == 0:
-                raise EmptyInputListError(f"List from key '{input_key}' is empty.")
+            if not list_of_one_input:
+                raise InputMappingError(
+                    message_format="The input for flow is incorrect. Input from key '{input_key}' is one empty list. "
+                    "Which means we cannot generate one line for the flow run. "
+                    "Please rectify the input and try again.",
+                    input_key=input_key,
+                )
 
         # Check if line numbers are aligned.
         all_lengths_without_line_number = {
@@ -880,9 +893,12 @@ class FlowExecutor:
             if not any(LINE_NUMBER_KEY in one_item for one_item in list_of_one_input)
         }
         if len(set(all_lengths_without_line_number.values())) > 1:
-            raise LineNumberNotAlign(
+            raise InputMappingError(
+                message_format="The input for flow is incorrect. "
                 "Line numbers are not aligned. Some lists have dictionaries missing the 'line_number' key, "
-                f"and the lengths of these lists are different. List lengths: {all_lengths_without_line_number}"
+                "and the lengths of these lists are different. List lengths are: {all_lengths_without_line_number}. "
+                "Please make sure these lists have the same length or add 'line_number' key to each dictionary.",
+                all_lengths_without_line_number=all_lengths_without_line_number,
             )
 
         # Collect each line item from each input.
@@ -951,11 +967,17 @@ class FlowExecutor:
         }]
         """
         if inputs_mapping is None:
-            # This exception should not happen since we should use default inputs_mapping if not provided.
-            raise NoneInputsMappingIsNotSupported("Inputs mapping is None.")
+            # This exception should not happen since we will use default inputs_mapping for None input.
+            raise NoneInputsMappingIsNotSupported(
+                message_format="Inputs mapping is None. "
+                "Please set one inputs mapping or use default inputs mapping in flow_executor."
+            )
         merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
         if len(merged_list) == 0:
-            raise EmptyInputAfterMapping("Input data does not contain a complete line. Please check your input.")
+            raise InputMappingError(
+                message_format="The input for flow is incorrect. All inputs come from different line of data "
+                "so can't execute. Please provide data in same line to correct the input."
+            )
 
         result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
@@ -1054,32 +1076,3 @@ def _ensure_node_result_is_serializable(f):
         return result
 
     return wrapper
-
-
-class InputMappingError(ValidationException):
-    def __init__(self, message, target=ErrorTarget.FLOW_EXECUTOR):
-        super().__init__(message=message, target=target)
-
-
-class LineNumberNotAlign(InputMappingError):
-    pass
-
-
-class MappingSourceNotFound(InputMappingError):
-    pass
-
-
-class EmptyInputListError(InputMappingError):
-    pass
-
-
-class EmptyInputAfterMapping(InputMappingError):
-    pass
-
-
-class NoneInputsMappingIsNotSupported(SystemErrorException):
-    pass
-
-
-class NodeResultCountNotMatch(SystemErrorException):
-    pass

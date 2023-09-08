@@ -17,7 +17,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import MappingSourceNotFound
+from promptflow.executor.flow_executor import InputMappingError
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -292,7 +292,7 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(MappingSourceNotFound) as e:
+        with pytest.raises(InputMappingError) as e:
             pf.run(
                 name=run_name,
                 run=failed_run,
@@ -530,7 +530,7 @@ class TestFlowRun:
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(MappingSourceNotFound):
+        with pytest.raises(InputMappingError):
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=data_path,
