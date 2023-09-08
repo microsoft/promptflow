@@ -1,11 +1,11 @@
 # Develop standard flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-From this document, customer can learn how to develop the standard flow by writing a flow yaml from scratch. You can 
-find additional information about flow yaml schema in [Flow YAML Schema](../reference/flow-yaml-schema-reference.md).
+From this document, you can learn how to develop a standard flow by writing a flow yaml from scratch. You can 
+find additional information about flow yaml schema in [Flow YAML Schema](../../reference/flow-yaml-schema-reference.md).
 
 ## Flow input data
 The flow input data is the data that you want to process in your flow. 
@@ -26,16 +26,19 @@ inputs:
 When unfolding Inputs section in the authoring page, you can set and view your flow inputs, including input schema (name and type), 
 and the input value.
 
-![flow_input](../media/how-to-guides/develop-standard-flow/flow_input.png)
+![flow_input](../../media/how-to-guides/develop-standard-flow/flow_input.png)
 :::
 
 ::::
 For Web Classification sample as shown the screenshot above, the flow input is a url of string type. We also support 
-the input type of int, bool, double, list and object.
+the input type of `int`, `bool`, `double`, `list` and `object`.
 
 ## Develop the flow using different tools
-In one flow, you can consume different kinds of tools. We now support built-in tool like LLM, Python and Prompt and 
-third-party tool like Serp API, Content Safety, Vector Search, etc.
+In one flow, you can consume different kinds of tools. We now support built-in tool like 
+[LLM](../../reference/tools-reference/llm-tool.md), [Python](../../reference/tools-reference/python-tool.md) and 
+[Prompt](../../reference/tools-reference/prompt-tool.md) and 
+third-party tool like [Serp API](../../reference/tools-reference/serp-api-tool.md), 
+[Vector Search](../../reference/tools-reference/vector_db_lookup_tool.md), etc.
 
 ### Add tool as your need
 ::::{tab-set}
@@ -59,7 +62,7 @@ nodes:
 :sync: VS Code Extension
 By selecting the tool card on the very top, you'll add a new tool node to flow.
 
-![add_tool](../media/how-to-guides/develop-standard-flow/add_tool.png)
+![add_tool](../../media/how-to-guides/develop-standard-flow/add_tool.png)
 :::
 
 ::::
@@ -68,7 +71,7 @@ By selecting the tool card on the very top, you'll add a new tool node to flow.
 ::::{tab-set}
 :::{tab-item} CLI
 :sync: CLI
-You can edit the tool by simply open the source file and edit it. For example, we show simple Python tool code and LLM tool prompt below.
+You can edit the tool by simply opening the source file and making edits. For example, we provide a simple Python tool code below.
 
 ```python
 from promptflow import tool
@@ -80,6 +83,8 @@ from promptflow import tool
 def my_python_tool(input1: str) -> str:
   return 'hello ' + input1
 ```
+
+We also provide an LLM tool prompt below.
 
 ```jinja
 Please summarize the following text in one paragraph. 100 words.
@@ -95,13 +100,13 @@ When a new tool node is added to flow, it will be appended at the bottom of flat
 At the top of each tool node card, there's a toolbar for adjusting the tool node. You can move it up or down, you can delete or rename it too.
 For a python tool node, you can edit the tool code by clicking the code file. For a LLM tool node, you can edit the 
 tool prompt by clicking the prompt file and adjust input parameters like connection, api and etc.
-![edit_tool](../media/how-to-guides/develop-standard-flow/edit_tool.png)
+![edit_tool](../../media/how-to-guides/develop-standard-flow/edit_tool.png)
 :::
 
 ::::
 
 ### Create connection
-Please refer to the [Create necessary connections](./quick-start.md#create-necessary-connections) for details.
+Please refer to the [Create necessary connections](../quick-start.md#create-necessary-connections) for details.
 
 ## Chain your flow - link nodes together
 Before linking nodes together, you need to define and expose an interface.
@@ -197,7 +202,7 @@ by `${prepare_examples.output}` and `${summarize_text_content.output}`.
 In the value drop-down, select `${inputs.url}`, `${prepare_examples.output}` and `${summarize_text_content.output}`, then 
 you'll see in the graph view that the newly created LLM node is linked to the flow input, upstream `prepare_examples` and `summarize_text_content` node. 
 
-![scenario1](../media/how-to-guides/develop-standard-flow/scenario1.png)
+![link_llm_with_flow_input_single_output_node](../../media/how-to-guides/develop-standard-flow/link_llm_with_flow_input_single_output_node.png)
 :::
 
 ::::
@@ -235,7 +240,7 @@ You can link `examples` to the `evidence` output of upstream `covert_to_dict` no
 In the value drop-down, select `${convert_to_dict.output}`, then manually append `evidence`, then you'll see in the graph 
 view that the newly created LLM node is linked to the upstream `convert_to_dict node`.
 
-![scenario2](../media/how-to-guides/develop-standard-flow/scenario2.png)
+![link_llm_with_multi_output_node](../../media/how-to-guides/develop-standard-flow/link_llm_with_multi_output_node.png)
 :::
 ::::
 When running the flow, the `text_content` input of the node will be replaced by `evidence` value from `convert_to_dict node` output dictionary on the fly.
@@ -263,14 +268,14 @@ using `${flow.input_name}` to link with flow input or `${upstream_node_name.outp
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
-![scenario3](../media/how-to-guides/develop-standard-flow/scenario3.png)
+![link_python_with_flow_node_input](../../media/how-to-guides/develop-standard-flow/link_python_with_flow_node_input.png)
 :::
 
 ::::
 When running the flow, the `input_str` input of the node will be replaced by flow input on the fly and the `input_str2` 
 input of the node will be replaced by `fetch_text_content_from_url` node output dictionary on the fly.
 
-## Set and check flow output
+## Set flow output
 When the flow is complicated, instead of checking outputs on each node, you can set flow output and check outputs of 
 multiple nodes in one place. Moreover, flow output helps:
 
@@ -302,11 +307,7 @@ First define flow output schema, then select in drop-down the node whose output 
 Since `convert_to_dict` has a dictionary output with two keys: `category` and `evidence`, you need to manually append 
 `category` and `evidence` to each. Then run flow, after a while, you can check flow output in a table.
 
-![flow_output](../media/how-to-guides/develop-standard-flow/flow_output.png)
+![flow_output](../../media/how-to-guides/develop-standard-flow/flow_output.png)
 :::
 
 ::::
-
-## Next steps
-
-- [Initialize and test a flow](./init-and-test-a-flow.md)

@@ -4,14 +4,13 @@
 This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-From this document, customer can get the details of flow schema.
 The source JSON schema can be found at [Flow.schema.json](https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json)
 
 ## YAML syntax
 
 | Key                        | Type      | Description                                                                                                                                                                                                       |
 |----------------------------|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `$schema`                  | string    | The YAML schema. If you use the Azure Machine Learning VS Code extension to author the YAML file, including `$schema` at the top of your file enables you to invoke schema and resource completions.              |
+| `$schema`                  | string    | The YAML schema. If you use the Prompt flow VS Code extension to author the YAML file, including `$schema` at the top of your file enables you to invoke schema and resource completions.              |
 | `inputs`                   | object    | Dictionary of flow inputs. The key is a name for the input within the context of the flow and the value is the flow input definition.                                                                             |
 | `inputs.<input_name>`      | object    | The flow input definition. See [Flow input](#flow-input) for the set of configurable properties.                                                                                                                  |
 | `outputs`                  | object    | Dictionary of flow outputs. The key is a name for the output within the context of the flow and the value is the flow output definition.                                                                          |
