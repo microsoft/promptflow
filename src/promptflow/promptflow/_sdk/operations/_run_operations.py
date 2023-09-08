@@ -53,7 +53,7 @@ class RunOperations:
             message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
         )
 
-    def get(cls, name: str) -> Run:
+    def get(self, name: str) -> Run:
         """Get a run entity.
 
         :param name: Name of the run.
