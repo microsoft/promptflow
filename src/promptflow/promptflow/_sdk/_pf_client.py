@@ -46,33 +46,49 @@ class PFClient:
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
-        Note: at least one of data or run must be provided.
 
-        :param flow: path to flow directory to run evaluation
-        :param data: pointer to test data (of variant bulk runs) for eval runs
-        :param run:
-            flow run id or flow run
-            keep lineage between current run and variant runs
-            batch outputs can be referenced as ${run.outputs.col_name} in inputs_mapping
-        :param column_mapping: define a data flow logic to map input data, support:
-            from data: data.col1:
-            from run:
-                run.inputs.col1: if need reference run's inputs
-                run.output.col1: if need reference run's outputs
-            Example:
-                {"ground_truth": "${data.answer}", "prediction": "${run.outputs.answer}"}
-        :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
-            if not specified.
-        :param connections: Overwrite node level connections with provided value.
-            Example: {"node1": {"connection": "new_connection", "deployment_name": "gpt-35-turbo"}}
+        .. note::
+            At least one of the ``data`` or ``run`` parameters must be provided.
+
+        .. admonition:: column_mapping
+
+            - from data:
+                - ``data.col1``
+            - from run:
+                - ``run.inputs.col1``: if need reference run's inputs
+                - ``run.output.col1``: if need reference run's outputs
+            - Example:
+                - ``{"ground_truth": "${data.answer}", "prediction": "${run.outputs.answer}"}``
+
+        :param flow: Path to the flow directory to run evaluation.
+        :type flow: Union[str, PathLike]
+        :param data: Pointer to the test data (of variant bulk runs) for eval runs.
+        :type data: Union[str, PathLike]
+        :param run: Flow run ID or flow run. This parameter helps keep lineage between
+            the current run and variant runs. Batch outputs can be
+            referenced as ``${run.outputs.col_name}`` in inputs_mapping.
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param column_mapping: Define a data flow logic to map input data.
+        :type column_mapping: Dict[str, str]
+        :param variant: Node & variant name in the format of ``${node_name.variant_name}``.
+            The default variant will be used if not specified.
+        :type variant: str
+        :param connections: Overwrite node level connections with provided values.
+            Example: ``{"node1": {"connection": "new_connection", "deployment_name": "gpt-35-turbo"}}``
+        :type connections: Dict[str, Dict[str, str]]
         :param environment_variables: Environment variables to set by specifying a property path and value.
-            Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
+            Example: ``{"key1": "${my_connection.api_key}", "key2"="value2"}``
             The value reference to connection keys will be resolved to the actual value,
             and all environment variables specified will be set into os.environ.
+        :type environment_variables: Dict[str, str]
         :param name: Name of the run.
+        :type name: str
         :param display_name: Display name of the run.
+        :type display_name: str
         :param tags: Tags of the run.
-        :return: flow run info.
+        :type tags: Dict[str, str]
+        :return: Flow run info.
+        :rtype: ~promptflow.entities.Run
         """
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")

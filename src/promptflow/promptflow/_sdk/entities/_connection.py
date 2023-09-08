@@ -507,8 +507,7 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):
-    """
-    Azure Content Safety connection.
+    """Azure Content Safety connection.
 
     :param api_key: The api key.
     :type api_key: str

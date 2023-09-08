@@ -131,6 +131,9 @@ todo_include_todos = True
 # myst reference config
 myst_heading_anchors = 5
 
+# Whether to create a Sphinx table of contents for the lists of class methods and attributes.
+numpydoc_class_members_toctree = False
+
 
 def setup(app):
     # Add the gallery directive

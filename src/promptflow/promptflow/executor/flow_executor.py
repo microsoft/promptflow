@@ -803,24 +803,34 @@ class FlowExecutor:
     ) -> Dict[str, Any]:
         """Apply inputs mapping to inputs for new contract.
 
-        For example:
-        inputs: {
-            "data": {"answer": 123, "question": "dummy"},
-            "baseline": {"answer": 322},
-        }
-        inputs_mapping: {
-            "question": "${data.question}",  # Question from the data
-            "groundtruth": "${data.answer}",  # Answer from the data
-            "baseline": "${baseline.answer}",  # Answer from the baseline
-            "deployment_name": "text-davinci-003",  # literal value
-        }
+        .. admonition:: Examples
 
-        Returns: {
-            "question": "dummy",
-            "groundtruth": 123,
-            "baseline": 322,
-            "deployment_name": "text-davinci-003",
-        }
+            .. code-block:: python
+
+                inputs: {
+                    "data": {"answer": 123, "question": "dummy"},
+                    "baseline": {"answer": 322},
+                }
+                inputs_mapping: {
+                    "question": "${data.question}",  # Question from the data
+                    "groundtruth": "${data.answer}",  # Answer from the data
+                    "baseline": "${baseline.answer}",  # Answer from the baseline
+                    "deployment_name": "text-davinci-003",  # literal value
+                }
+
+                Returns: {
+                    "question": "dummy",
+                    "groundtruth": 123,
+                    "baseline": 322,
+                    "deployment_name": "text-davinci-003",
+                }
+
+        :param inputs: Inputs for the flow.
+        :type inputs: Mapping[str, Mapping[str, Any]]
+        :param inputs_mapping: Inputs mapping for the flow.
+        :type inputs_mapping: Mapping[str, str]
+        :return: Processed inputs for the flow.
+        :rtype: Dict[str, Any]
         """
         import re
 
