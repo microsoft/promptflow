@@ -1,0 +1,20 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  text:
+    type: string
+    default: Python Hello World!
+outputs:
+  output:
+    type: object
+    reference: ${embed_text.output}
+nodes:
+  - name: embed_text
+    type: python
+    source:
+      type: package
+      tool: promptflow.tools.embedding.embedding
+    inputs:
+      input: ${inputs.text}
+      deployment_name: text-embedding-ada-002
+      model: text-embedding-ada-002
+      connection: open_ai_connection
