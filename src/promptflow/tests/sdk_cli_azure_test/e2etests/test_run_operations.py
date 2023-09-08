@@ -543,7 +543,6 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
-    @pytest.mark.skip(reason="server-side error.")
     def test_automatic_runtime_creation_failure(self, pf):
 
         with pytest.raises(FlowRequestException) as e:
@@ -563,10 +562,17 @@ class TestFlowRun:
 
         from promptflow.azure._restclient.flow.operations import BulkRunsOperations
 
+        def fake_submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            request_id_in_headers = headers["x-ms-client-request-id"]
+            # request id in headers should be same with request id in service caller
+            assert request_id_in_headers == remote_client.runs._service_caller._request_id
+            raise HttpResponseError("customized error message.")
+
         with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
             FlowServiceCaller, "_set_headers_with_user_aml_token"
         ):
-            mock_request.side_effect = HttpResponseError("customized error message.")
+            mock_request.side_effect = fake_submit
             with pytest.raises(FlowRequestException) as e:
                 original_request_id = remote_client.runs._service_caller._request_id
                 remote_client.runs._service_caller.submit_bulk_run(
