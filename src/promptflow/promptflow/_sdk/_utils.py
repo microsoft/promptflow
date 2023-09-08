@@ -616,6 +616,7 @@ def generate_flow_tools_json(
     include_errors_in_output: bool = False,
     target_source: str = None,
     used_packages_only: bool = False,
+    source_path_mapping: Dict[str, List[str]] = None,
 ) -> dict:
     """Generate flow.tools.json for a flow directory.
 
@@ -626,6 +627,7 @@ def generate_flow_tools_json(
     :param include_errors_in_output: whether to include error messages in output, default value is False.
     :param target_source: the source name to filter result, default value is None.
     :param used_packages_only: whether to only include used packages, default value is False.
+    :param source_path_mapping: if specified, record yaml paths for each source.
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
@@ -634,7 +636,7 @@ def generate_flow_tools_json(
     tools = []  # List[Tuple[source_file, tool_type]]
     used_packages = set()
 
-    def process_node(_node):
+    def process_node(_node, _node_path):
         source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
         if target_source and source != target_source:
             return
@@ -649,9 +651,14 @@ def generate_flow_tools_json(
         if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
             return
         tools.append((source, tool_type.lower()))
+        if source_path_mapping is not None:
+            if source not in source_path_mapping:
+                source_path_mapping[source] = []
 
-    for node in data[NODES]:
-        process_node(node)
+            source_path_mapping[source].append(f"{_node_path}.source.path")
+
+    for node_i, node in enumerate(data[NODES]):
+        process_node(node, f"{NODES}.{node_i}")
 
         # understand DAG to parse variants
         # TODO: should we allow source to appear both in node and node variants?
@@ -659,7 +666,7 @@ def generate_flow_tools_json(
             node_variants = data[NODE_VARIANTS][node["name"]]
             for variant_id in node_variants[VARIANTS]:
                 current_node = node_variants[VARIANTS][variant_id][NODE]
-                process_node(current_node)
+                process_node(current_node, f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}")
 
     if None in used_packages:
         used_packages.remove(None)

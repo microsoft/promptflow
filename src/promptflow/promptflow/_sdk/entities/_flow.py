@@ -6,13 +6,23 @@ import abc
 import logging
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Dict, Tuple, Union
 
-from promptflow._sdk._constants import LOGGER_NAME
+import yaml
+from marshmallow import Schema
+
+from promptflow._sdk._constants import (
+    BASE_PATH_CONTEXT_KEY,
+    DEFAULT_ENCODING,
+    FLOW_TOOLS_JSON,
+    LOGGER_NAME,
+    PROMPT_FLOW_DIR_NAME,
+)
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .._constants import DAG_FILE_NAME
 from .._errors import ConnectionNotFoundError
+from .._vendor._validation import SchemaValidatableMixin
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -105,3 +115,66 @@ class Flow(FlowBase):
                 # ignore when connection not found since it can be configured with env var.
                 raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
         return result
+
+
+class ProtectedFlow(Flow, SchemaValidatableMixin):
+    def __init__(
+        self,
+        code: str,
+        **kwargs,
+    ):
+        super().__init__(code=code, **kwargs)
+
+        self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
+
+    @property
+    def flow_dag_path(self) -> Path:
+        return self._flow_dir / self._dag_file_name
+
+    @property
+    def name(self) -> str:
+        return self._flow_dir.name
+
+    @property
+    def tools_meta_path(self) -> Path:
+        target_path = self._flow_dir / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        return target_path
+
+    @classmethod
+    def _get_flow_definition(cls, flow, base_path=None) -> Tuple[Path, str]:
+        if base_path:
+            flow_path = Path(base_path) / flow
+        else:
+            flow_path = Path(flow)
+
+        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
+            return flow_path, DAG_FILE_NAME
+        elif flow_path.is_file():
+            return flow_path.parent, flow_path.name
+
+        raise ValueError(f"Can't find flow with path {flow_path.as_posix()}.")
+
+    # region SchemaValidatableMixin
+    @classmethod
+    def _create_schema_for_validation(cls, context) -> Schema:
+        # import here to avoid circular import
+        from ..schemas._flow import FlowSchema
+
+        return FlowSchema(context=context)
+
+    def _default_context(self) -> dict:
+        return {BASE_PATH_CONTEXT_KEY: self._flow_dir}
+
+    def _create_validation_error(self, message, no_personal_data_message=None):
+        return UserErrorException(
+            message=message,
+            target=ErrorTarget.CONTROL_PLANE_SDK,
+            no_personal_data_message=no_personal_data_message,
+        )
+
+    def _dump_for_validation(self) -> Dict:
+        # Flow is read-only in control plane, so we always dump the flow from file
+        return yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+
+    # endregion
