@@ -222,7 +222,7 @@ Promptflow CLI provides a way to start an interactive chat session for chat flow
 pf flow test --flow <flow-name> --interactive
 ```
 
-After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+Z**.
+After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+C**.
 Promptflow CLI will distinguish the output of different roles by color, <span style="color:Green">User input</span>, <span style="color:Gold">Bot output</span>, <span style="color:Blue">Flow script output</span>, <span style="color:Cyan">Node output</span>.
 
 Using this [chat flow](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/basic-chat) to show how to use interactive mode.
@@ -238,6 +238,38 @@ If a flow contains chat inputs or chat outputs in the flow interface, there will
 
 ![img](../media/how-to-guides/vscode_interactive_chat.png)
 ![img](../media/how-to-guides/vscode_interactive_chat_1.png)
+
+:::
+
+::::
+
+When the [LLM node](https://promptflow.azurewebsites.net/tools-reference/llm-tool.html) in the chat flow that is connected to the flow output, Promptflow SDK streams the results of the LLM node.
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+The flow result will be streamed in the terminal as shown below.
+
+![streaming_output](../media/how-to-guides/init-and-test-a-flow/streaming_output.gif)
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+The LLM node return value of `test` function is a generator, you can consume the result by this way:
+
+```python
+from promptflow import PFClient
+
+pf_client = PFClient()
+
+# Test flow
+inputs = {"<flow_input_name>": "<flow_input_value>"}  # The inputs of the flow.
+flow_result = pf_client.test(flow="<flow_folder_path>", inputs=inputs)
+for item in flow_result["<LLM_node_output_name>"]:
+    print(item)
+```
 
 :::
 

@@ -5,7 +5,7 @@ import abc
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -44,6 +44,20 @@ logger = LoggerFactory.get_logger(name=__name__)
 
 
 class _Connection(YAMLTranslatableMixin):
+    """A connection entity that stores the connection information.
+
+    :param name: Connection name
+    :type name: str
+    :param type: Possible values include: "OpenAI", "AzureOpenAI", "Custom".
+    :type type: str
+    :param module: The module of connection class, used for execution.
+    :type module: str
+    :param configs: The configs kv pairs.
+    :type configs: Dict[str, str]
+    :param secrets: The secrets kv pairs.
+    :type secrets: Dict[str, str]
+    """
+
     TYPE = ConnectionType._NOT_SET
 
     def __init__(
@@ -54,13 +68,6 @@ class _Connection(YAMLTranslatableMixin):
         secrets: Dict[str, str] = None,
         **kwargs,
     ):
-        """
-        :param name: Connection name
-        :param type: Possible values include: "OpenAI", "AzureOpenAI", "Custom".
-        :param module: The module of connection class, used for execution.
-        :param configs: The configs kv pairs.
-        :param secrets: The secrets kv pairs.
-        """
         self.name = name
         self.type = self.TYPE
         self.class_name = f"{self.TYPE.value}Connection"  # The type in executor connection dict
@@ -95,7 +102,8 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
-    def keys(self):
+    def keys(self) -> List:
+        """Return keys of the connection properties."""
         return list(self.configs.keys()) + list(self.secrets.keys())
 
     def __getitem__(self, item):
@@ -229,7 +237,7 @@ class _Connection(YAMLTranslatableMixin):
         )
         return connection
 
-    def to_execution_connection_dict(self) -> dict:
+    def _to_execution_connection_dict(self) -> dict:
         value = {**self.configs, **self.secrets}
         secret_keys = list(self.secrets.keys())
         return {
@@ -240,7 +248,7 @@ class _Connection(YAMLTranslatableMixin):
         }
 
     @classmethod
-    def from_execution_connection_dict(cls, name, data) -> "_Connection":
+    def _from_execution_connection_dict(cls, name, data) -> "_Connection":
         type_cls, _ = cls._resolve_cls_and_type(data={"type": data.get("type")[: -len("Connection")]})
         value_dict = data.get("value", {})
         if type_cls == CustomConnection:
@@ -282,22 +290,28 @@ class _StrongTypeConnection(_Connection):
 
     @property
     def api_key(self):
-        return self.secrets.get("api_key", "***")
+        """Return the api key."""
+        return self.secrets.get("api_key", SCRUBBED_VALUE)
 
     @api_key.setter
     def api_key(self, value):
+        """Set the api key."""
         self.secrets["api_key"] = value
 
 
 class AzureOpenAIConnection(_StrongTypeConnection):
-    """
-    Azure Open AI connection.
+    """Azure Open AI connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param api_type: The api type, default "azure".
+    :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
+    :type api_version: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.AZURE_OPEN_AI
@@ -345,12 +359,14 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
 
 class OpenAIConnection(_StrongTypeConnection):
-    """
-    Open AI connection.
+    """Open AI connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param organization: Optional. The unique identifier for your organization which can be used in API requests.
+    :type organization: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.OPEN_AI
@@ -376,11 +392,12 @@ class OpenAIConnection(_StrongTypeConnection):
 
 
 class SerpConnection(_StrongTypeConnection):
-    """
-    Serp connection.
+    """Serp connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.SERP
@@ -412,12 +429,14 @@ class _EmbeddingStoreConnection(_StrongTypeConnection):
 
 
 class QdrantConnection(_EmbeddingStoreConnection):
-    """
-    Qdrant connection.
+    """Qdrant connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.QDRANT
@@ -428,12 +447,14 @@ class QdrantConnection(_EmbeddingStoreConnection):
 
 
 class WeaviateConnection(_EmbeddingStoreConnection):
-    """
-    Weaviate connection.
+    """Weaviate connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.WEAVIATE
@@ -444,13 +465,16 @@ class WeaviateConnection(_EmbeddingStoreConnection):
 
 
 class CognitiveSearchConnection(_StrongTypeConnection):
-    """
-    Cognitive Search connection.
+    """Cognitive Search connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param api_version: The api version, default "2023-07-01-Preview".
+    :type api_version: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.COGNITIVE_SEARCH
@@ -490,10 +514,15 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
     Azure Content Safety connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param endpoint: The api endpoint.
+    :type endpoint: str
     :param api_version: The api version, default "2023-04-30-preview".
+    :type api_version: str
     :param api_type: The api type, default "Content Safety".
+    :type api_type: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.AZURE_CONTENT_SAFETY
@@ -546,14 +575,18 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
 
 
 class FormRecognizerConnection(AzureContentSafetyConnection):
-    """
-    Form Recognizer connection.
+    """Form Recognizer connection.
 
     :param api_key: The api key.
+    :type api_key: str
     :param endpoint: The api endpoint.
+    :type endpoint: str
     :param api_version: The api version, default "2023-07-31".
+    :type api_version: str
     :param api_type: The api type, default "Form Recognizer".
+    :type api_type: str
     :param name: Connection name.
+    :type name: str
     """
 
     # Note: FormRecognizer and ContentSafety are using CognitiveService type in ARM, so keys are the same.
@@ -570,10 +603,14 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
 
 
 class CustomConnection(_Connection):
-    """
+    """Custom connection.
+
     :param configs: The configs kv pairs.
+    :type configs: Dict[str, str]
     :param secrets: The secrets kv pairs.
+    :type secrets: Dict[str, str]
     :param name: Connection name
+    :type name: str
     """
 
     TYPE = ConnectionType.CUSTOM
@@ -610,6 +647,7 @@ class CustomConnection(_Connection):
         return super().__getattribute__(item)
 
     def is_secret(self, item):
+        """Check if item is a secret."""
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
         return item in self.secrets
 

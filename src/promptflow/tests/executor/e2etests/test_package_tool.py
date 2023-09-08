@@ -13,7 +13,7 @@ from promptflow.executor.flow_executor import LineResult
 from ..utils import WRONG_FLOW_ROOT, get_flow_package_tool_definition, get_flow_sample_inputs, get_yaml_file
 
 PACKAGE_TOOL_BASE = Path(__file__).parent.parent / "package_tools"
-PACKAGE_TOOL_ENTRY = "promptflow.executor._tool_resolver.collect_package_tools"
+PACKAGE_TOOL_ENTRY = "promptflow._core.tools_manager.collect_package_tools"
 
 sys.path.insert(0, str(PACKAGE_TOOL_BASE.resolve()))
 
@@ -87,11 +87,10 @@ class TestPackageTool:
                 FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
 
     @pytest.mark.parametrize(
-        "flow_folder, line_input, error_class, error_message",
+        "flow_folder, error_class, error_message",
         [
             (
                 "wrong_tool_in_package_tools",
-                {"text": "Best beijing hotel"},
                 PackageToolNotFoundError,
                 "Package tool 'promptflow.tools.serpapi.SerpAPI.search_11' is not found in the current environment. "
                 "All available package tools are: "
@@ -100,7 +99,6 @@ class TestPackageTool:
             ),
             (
                 "wrong_package_in_package_tools",
-                {"text": "Best beijing hotel"},
                 PackageToolNotFoundError,
                 "Package tool 'promptflow.tools.serpapi11.SerpAPI.search' is not found in the current environment. "
                 "All available package tools are: "
@@ -109,22 +107,14 @@ class TestPackageTool:
             ),
         ],
     )
-    def test_package_tool_execution(self, flow_folder, line_input, error_class, error_message, dev_connections):
+    def test_package_tool_execution(self, flow_folder, error_class, error_message, dev_connections):
         def mock_collect_package_tools(keys=None):
-            if keys is None:
-                return {
-                    "promptflow.tools.azure_content_safety.AzureContentSafety.analyze_text": None,
-                    "promptflow.tools.azure_detect.AzureDetect.get_language": None,
-                }  # Mock response for specific argument
-            else:
-                # Call the actual function with keys
-                from promptflow._core.tools_manager import collect_package_tools
-
-                return collect_package_tools(keys)
+            return {
+                "promptflow.tools.azure_content_safety.AzureContentSafety.analyze_text": None,
+                "promptflow.tools.azure_detect.AzureDetect.get_language": None,
+            }
 
         with patch(PACKAGE_TOOL_ENTRY, side_effect=mock_collect_package_tools):
-            # ret = collect_package_tools()
-            # print("hello" + json.dumps(ret))
             with pytest.raises(error_class) as exce_info:
                 FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
             assert error_message == exce_info.value.message
