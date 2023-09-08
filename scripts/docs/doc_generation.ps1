@@ -21,8 +21,8 @@ param(
 [string] $TempDocPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
 [string] $PkgSrcPath = [System.IO.Path]::Combine($RepoRootPath, "src\promptflow\promptflow")
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
-[string] $SphinxApiDoc = "sphinx_apidoc.log"
-[string] $SphinxBuildDoc = "sphinx_build.log"
+[string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
+[string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
 [string] $WarningErrorPattern = "WARNING:|ERROR:"
 
 if (-not $SkipInstall){
