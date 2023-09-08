@@ -69,23 +69,30 @@ def test_serialize_dataclass():
         index=0,
     )
     node_record = NodeRunRecord.from_run_info(node_run_info)
-    assert deserialize_value(serialize(node_run_info), RunInfo) == node_run_info
-    assert serialize(node_record) == node_record.serialize()
+    serialized_info = serialize(node_run_info)
+    serialized_record = serialize(node_record)
+    # test dataclass without serialize attribute
+    assert serialized_info['status'] == "Completed"
+    assert serialized_info['start_time'] == "2023-09-04T00:00:00Z"
+    assert deserialize_value(serialized_info, RunInfo) == node_run_info
+    # test dataclass with serialize attribute
+    assert serialized_record == node_record.serialize()
 
 
 @pytest.mark.unittest
 @pytest.mark.parametrize(
-    "value, value_type",
+    "value, value_type, expected",
     [
-        (datetime(2023, 9, 4), datetime),
-        (Status.Completed, Status),
-        ([1, 2, 3], List[int]),
-        ({"a": 1, "b": 2}, Dict[str, int]),
-        (1, int),
-        ("a", str),
+        (datetime(2023, 9, 4), datetime, "2023-09-04T00:00:00Z"),
+        (Status.Completed, Status, "Completed"),
+        ([1, 2, 3], List[int], [1, 2, 3]),
+        ({"a": 1, "b": 2}, Dict[str, int], {"a": 1, "b": 2}),
+        (1, int, 1),
+        ("a", str, "a"),
     ]
 )
-def test_serialize_value(value, value_type):
+def test_serialize_value(value, value_type, expected):
+    assert serialize(value) == expected
     assert deserialize_value(serialize(value), value_type) == value
 
 
@@ -99,8 +106,7 @@ def test_serialize_remove_null():
     class DummyDataClass:
         name: str
         age: int
-    serialized_dataclass = serialize(DummyDataClass("Dummy", None), remove_null=True)
-    assert serialize(serialized_dataclass, remove_null=True) == {'name': 'Dummy'}
+    assert serialize(DummyDataClass("Dummy", None), remove_null=True) == {'name': 'Dummy'}
 
 
 @pytest.mark.unittest
