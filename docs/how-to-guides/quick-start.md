@@ -80,7 +80,7 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
 
 Click to watch the demo video:
 
-<iframe src="https://youtu.be/05Utfsm0ptc" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="vscode_extension_demo"></iframe>
+<iframe src="https://www.youtube.com/embed/05Utfsm0ptc" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="vscode_extension_demo"></iframe>
 
 1. Prerequisites for VS Code extension.
    - Install latest stable version of [VS Code](https://code.visualstudio.com/)
