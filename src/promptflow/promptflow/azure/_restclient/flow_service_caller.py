@@ -56,7 +56,6 @@ class RequestTelemetryMixin(TelemetryMixin):
 
 def _request_wrapper():
     """Wrapper for request. Will refress request id and pretty print exception."""
-
     def exception_wrapper(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -73,7 +72,6 @@ def _request_wrapper():
                     f"Reason: {e.reason} \n"
                     f"Error message: {e.message} \n"
                 )
-
         return wrapper
 
     return exception_wrapper
@@ -157,13 +155,13 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def create_flow(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            experiment_id=None,  # type: Optional[str]
-            body=None,  # type: Optional["_models.CreateFlowRequest"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        experiment_id=None,  # type: Optional[str]
+        body=None,  # type: Optional["_models.CreateFlowRequest"]
+        **kwargs  # type: Any
     ):
         headers = self._get_headers()
         return self.caller.flows.create_flow(
@@ -178,23 +176,23 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def create_component_from_flow(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            body=None,  # type: Optional["_models.LoadFlowAsComponentRequest"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        body=None,  # type: Optional["_models.LoadFlowAsComponentRequest"]
+        **kwargs  # type: Any
     ):
         headers = self._get_headers()
         try:
             return self.caller.flows.load_as_component(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                body=body,
-                headers=headers,
-                **kwargs
-            )
+                    subscription_id=subscription_id,
+                    resource_group_name=resource_group_name,
+                    workspace_name=workspace_name,
+                    body=body,
+                    headers=headers,
+                    **kwargs
+                )
         except ResourceExistsError:
             return f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}" \
                    f"/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}" \
@@ -202,15 +200,15 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def list_flows(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            experiment_id=None,  # type: Optional[str]
-            owned_only=None,  # type: Optional[bool]
-            flow_type=None,  # type: Optional[Union[str, "_models.FlowType"]]
-            list_view_type=None,  # type: Optional[Union[str, "_models.ListViewType"]]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        experiment_id=None,  # type: Optional[str]
+        owned_only=None,  # type: Optional[bool]
+        flow_type=None,  # type: Optional[Union[str, "_models.FlowType"]]
+        list_view_type=None,  # type: Optional[Union[str, "_models.ListViewType"]]
+        **kwargs  # type: Any
     ):
         headers = self._get_headers()
         return self.caller.flows.list_flows(
@@ -227,16 +225,16 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def submit_flow(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            experiment_id,  # type: str
-            endpoint_name=None,  # type: Optional[str]
-            body=None,  # type: Optional["_models.SubmitFlowRequest"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        experiment_id,  # type: str
+        endpoint_name=None,  # type: Optional[str]
+        body=None,  # type: Optional["_models.SubmitFlowRequest"]
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.flows.submit_flow(
             subscription_id=subscription_id,
@@ -251,15 +249,15 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def get_flow(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            flow_id,  # type: str
-            experiment_id,  # type: str
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        flow_id,  # type: str
+        experiment_id,  # type: str
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.flows.get_flow(
             subscription_id=subscription_id,
@@ -273,15 +271,15 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def create_connection(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            connection_name,  # type: str
-            body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequest"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        connection_name,  # type: str
+        body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequest"]
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.connections.create_connection(
             subscription_id=subscription_id,
@@ -295,124 +293,128 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     @_request_wrapper()
     def update_connection(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            connection_name,  # type: str
-            body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequestDto"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        connection_name,  # type: str
+        body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequestDto"]
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.connections.update_connection(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            connection_name=connection_name,
-            body=body,
-            headers=headers,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                connection_name=connection_name,
+                body=body,
+                headers=headers,
+                **kwargs
+            )
+
 
     @_request_wrapper()
     def get_connection(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            connection_name,  # type: str
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        connection_name,  # type: str
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.connections.get_connection(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            connection_name=connection_name,
-            headers=headers,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                connection_name=connection_name,
+                headers=headers,
+                **kwargs
+            )
 
     @_request_wrapper()
     def delete_connection(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            connection_name,  # type: str
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        connection_name,  # type: str
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.connections.delete_connection(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            connection_name=connection_name,
-            headers=headers,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                connection_name=connection_name,
+                headers=headers,
+                **kwargs
+            )
+
 
     @_request_wrapper()
     def list_connections(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.connections.list_connections(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            headers=headers,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                headers=headers,
+                **kwargs
+            )
+
 
     @_request_wrapper()
     def list_connection_specs(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        **kwargs  # type: Any
     ):
-
+        
         headers = self._get_headers()
         return self.caller.connections.list_connection_specs(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            headers=headers,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                headers=headers,
+                **kwargs
+            )
+
 
     @_request_wrapper()
     def list_runs(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        **kwargs  # type: Any
     ):
         """List runs in the workspace.
 
         :return: A list of runs in the workspace.
         :rtype: list[~azure.ml._restclient.machinelearningservices.models.Run]
         """
-
+        
         headers = self._get_headers()
         return self.caller.flows.list_flow_runs(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            headers=headers,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                headers=headers,
+                **kwargs
+            )
 
     @_request_wrapper()
     def submit_bulk_run(
@@ -438,28 +440,29 @@ class FlowServiceCaller(RequestTelemetryMixin):
         :rtype: str
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-
+        
         headers = self._get_headers()
         # pass user aml token to flow run submission
         self._set_headers_with_user_aml_token(headers)
         return self.caller.bulk_runs.submit_bulk_run(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            headers=headers,
-            body=body,
-            **kwargs
-        )
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name,
+                headers=headers,
+                body=body,
+                **kwargs
+            )
+
 
     @_request_wrapper()
     def create_flow_session(
-            self,
-            subscription_id,  # type: str
-            resource_group_name,  # type: str
-            workspace_name,  # type: str
-            session_id,  # type: str
-            body,  # type: Optional["_models.CreateFlowSessionRequest"]
-            **kwargs  # type: Any
+        self,
+        subscription_id,  # type: str
+        resource_group_name,  # type: str
+        workspace_name,  # type: str
+        session_id,  # type: str
+        body,  # type: Optional["_models.CreateFlowSessionRequest"]
+        **kwargs  # type: Any
     ):
         from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, \
             ResourceNotFoundError, map_error
@@ -471,6 +474,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
         from promptflow.azure._constants._flow import SESSION_CREATION_TIMEOUT_SECONDS
         from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 
+        
         headers = self._get_headers()
         # pass user aml token to session create so user don't need to do authentication again in CI
         self._set_headers_with_user_aml_token(headers)
@@ -559,17 +563,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 f"{json.dumps(response, indent=2)}."
             )
 
+
     @_request_wrapper()
     def poll_operation_status(
-            self,
-            url,
-            **kwargs  # type: Any
+        self,
+        url,
+        **kwargs  # type: Any
     ):
         from azure.core.rest import HttpRequest
         from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, \
             ResourceNotFoundError, map_error
         from promptflow.azure._restclient.flow.operations._flow_sessions_operations import _models
 
+        
         headers = self._get_headers()
         request = HttpRequest(
             method="GET",
