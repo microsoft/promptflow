@@ -266,18 +266,16 @@ class RunOperations:
             error_message = f"Cannot visualize non-completed run. {str(e)}"
             logger.error(error_message)
 
-    @classmethod
-    def _get_outputs(cls, run: Union[str, Run]) -> List[Dict[str, Any]]:
+    def _get_outputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
         if isinstance(run, str):
-            run = cls.get(name=run)
+            run = self.get(name=run)
         local_storage = LocalStorageOperations(run)
         return local_storage.load_outputs()
 
-    @classmethod
-    def _get_inputs(cls, run: Union[str, Run]) -> List[Dict[str, Any]]:
+    def _get_inputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
         if isinstance(run, str):
-            run = cls.get(name=run)
+            run = self.get(name=run)
         local_storage = LocalStorageOperations(run)
         return local_storage.load_inputs()
