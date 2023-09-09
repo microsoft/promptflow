@@ -459,6 +459,9 @@ class FlowOperations:
                         message=message,
                     )
 
+        # flow in control plane is read-only, so resolve location makes sense even in SDK experience
+        validation_result.resolve_location_for_diagnostics(flow.flow_dag_path)
+
         flow._try_raise(
             validation_result,
             raise_error=raise_error,

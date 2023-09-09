@@ -1,5 +1,11 @@
 # Release History
 
+## 0.1.0b7 (upcoming)
+
+### Features Added
+
+- **pf flow validate**: support validate flow
+
 ## 0.1.0b6 (2023.09.15)
 
 ### Features Added

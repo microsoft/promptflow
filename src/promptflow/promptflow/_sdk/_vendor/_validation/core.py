@@ -501,6 +501,9 @@ class _YamlLocationResolver:
             if loaded_yaml.is_mapping() and attr in loaded_yaml:
                 loaded_yaml = loaded_yaml.get(attr)
                 attrs.pop()
+            elif loaded_yaml.is_sequence() and attr.isdigit() and 0 <= int(attr) < len(loaded_yaml):
+                loaded_yaml = loaded_yaml[int(attr)]
+                attrs.pop()
             else:
                 try:
                     # if current object is a path of a valid yaml file, try to resolve location in new source file

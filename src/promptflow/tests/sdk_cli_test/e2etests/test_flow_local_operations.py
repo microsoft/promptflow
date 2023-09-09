@@ -295,6 +295,8 @@ class TestFlowLocalOperations:
             "outputs.category.type": "Missing data for required field.",
         }
 
+        assert "line 22" in repr(validation_result)
+
         assert flow_tools_path.is_file()
         flow_tools = yaml.safe_load(flow_tools_path.read_text())
         assert "code" in flow_tools
