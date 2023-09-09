@@ -239,7 +239,7 @@ class TestHandleOpenAIError:
 
     def test_unexpected_error_handle(self, azure_open_ai_connection, mocker: MockerFixture):
         dummyEx = Exception("Something went wrong")
-        mock_method = mocker.patch("promptflow.tools.aoai.openai.ChatCompletion.create", side_effect=dummyEx)
+        mock_method = mocker.patch("promptflow.tools.aoai.litellm.completion", side_effect=dummyEx)
         error_codes = "UserError/LLMError"
         with pytest.raises(LLMError) as exc_info:
             chat(connection=azure_open_ai_connection, prompt="user:\nhello", deployment_name="gpt-35-turbo")

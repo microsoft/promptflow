@@ -1,4 +1,5 @@
 import openai
+import litellm
 from typing import List
 
 from promptflow import tool
@@ -16,7 +17,7 @@ def create_messages(question, chat_history):
 @tool
 def chat(connection: AzureOpenAIConnection, question: str, chat_history: List) -> str:
     stream = True
-    completion = openai.ChatCompletion.create(
+    completion = litellm.completion(
         engine="gpt-35-turbo",
         messages=list(create_messages(question, chat_history)),
         temperature=1.0,

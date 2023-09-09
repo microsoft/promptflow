@@ -31,11 +31,11 @@ def mock_stream_chat(**kwargs):
 class TestExecutorTelemetry:
     def test_executor_openai_telemetry(self, dev_connections):
         """This test validates telemetry info header is correctly injected to OpenAI API
-        by mocking openai.ChatCompletion.create method. The mock method will return a generator
+        by mocking litellm.completion method. The mock method will return a generator
         that yields a namedtuple with a json string of the headers passed to the method.
         """
 
-        with patch("openai.ChatCompletion.create", new=mock_stream_chat):
+        with patch("litellm.completion", new=mock_stream_chat):
             operation_context = OperationContext.get_instance()
             operation_context.clear()
 

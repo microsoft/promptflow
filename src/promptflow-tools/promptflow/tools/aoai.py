@@ -1,6 +1,7 @@
 import json
 
 import openai
+import litellm
 
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.types import PromptTemplate
@@ -141,7 +142,7 @@ class AzureOpenAI(ToolProvider):
             params["functions"] = functions
             params["function_call"] = process_function_call(function_call)
 
-        completion = openai.ChatCompletion.create(**{**self._connection_dict, **params})
+        completion = litellm.completion(**{**self._connection_dict, **params})
         return post_process_chat_api_response(completion, stream, functions)
 
     # TODO: embedding is a separate builtin tool, will remove it from llm.

@@ -3,6 +3,7 @@ from types import GeneratorType
 from unittest.mock import patch
 
 import openai
+import litellm
 import pytest
 
 from promptflow._core.openai_injector import (
@@ -53,7 +54,7 @@ def test_aoai_generator_proxy():
             # stream parameter is false or not given, return a string
             return "This is a returned string"
 
-    with patch("openai.Completion.create", new=mock_aoai), patch("openai.ChatCompletion.create", new=mock_aoai), patch(
+    with patch("openai.Completion.create", new=mock_aoai), patch("litellm.completion", new=mock_aoai), patch(
         "openai.Embedding.create", new=mock_aoai
     ):
         Tracer.start_tracing("mock_run_id")
@@ -83,7 +84,7 @@ def test_aoai_call_inject():
     def mock_aoai(**kwargs):
         return kwargs.get("headers")
 
-    with patch("openai.Completion.create", new=mock_aoai), patch("openai.ChatCompletion.create", new=mock_aoai), patch(
+    with patch("openai.Completion.create", new=mock_aoai), patch("litellm.completion", new=mock_aoai), patch(
         "openai.Embedding.create", new=mock_aoai
     ):
         inject_openai_api()
@@ -93,7 +94,7 @@ def test_aoai_call_inject():
         assert return_headers is not None
         assert injected_headers.items() <= return_headers.items()
 
-        return_headers = openai.ChatCompletion.create(headers="abc")
+        return_headers = litellm.completion(headers="abc")
         assert return_headers is not None
         assert injected_headers.items() <= return_headers.items()
 
@@ -125,7 +126,7 @@ def test_aoai_tool_header():
         return response
 
     with patch("openai.Completion.create", new=mock_complete), patch(
-        "openai.ChatCompletion.create", new=mock_chat
+        "litellm.completion", new=mock_chat
     ), patch("openai.Embedding.create", new=mock_embedding):
         inject_openai_api()
         aoai_tool_header = {"ms-azure-ai-promptflow-called-from": "aoai-tool"}
@@ -171,7 +172,7 @@ def test_aoai_chat_tool_prompt():
         completion = Completion(choices=[choice])
         return completion
 
-    with patch("openai.ChatCompletion.create", new=mock_chat):
+    with patch("litellm.completion", new=mock_chat):
         inject_openai_api()
         return_messages = AzureOpenAI(AzureOpenAIConnection(api_key=None, api_base=None)).chat(
             prompt="user:\ntest", deployment_name="test"

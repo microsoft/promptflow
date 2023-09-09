@@ -3,6 +3,7 @@ import logging
 import time
 import uuid
 import openai
+import litellm
 import os
 from abc import ABC, abstractmethod
 import tiktoken
@@ -99,7 +100,7 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, convo_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = openai.ChatCompletion.create(
+        response = litellm.completion(
             engine=self.engine,
             messages=messages,
             temperature=temperature,
@@ -118,7 +119,7 @@ class ChatLLM(AOAI):
         messages = self.create_prompt(text, convo_id)
         self.validate_tokens(messages)
         temperature = kwargs.pop("temperature", 0.1)
-        response = openai.ChatCompletion.create(
+        response = litellm.completion(
             engine=self.engine,
             messages=messages,
             temperature=temperature,

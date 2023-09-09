@@ -1,5 +1,6 @@
 from typing import List
 import openai
+import litellm
 import os
 import tiktoken
 from jinja2 import Template
@@ -65,13 +66,13 @@ class OAIChat(OAI):
     )
     def generate(self, messages: list, **kwargs) -> List[float]:
         if openai.api_type == "azure":
-            return openai.ChatCompletion.create(
-                engine=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
+            return litellm.completion(
+                model=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
                 messages=messages,
                 **kwargs,
             )["choices"][0]["message"]["content"]
         else:
-            return openai.ChatCompletion.create(
+            return litellm.completion(
                 model=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
                 messages=messages,
                 **kwargs,
@@ -88,14 +89,14 @@ class OAIChat(OAI):
     )
     def stream(self, messages: list, **kwargs):
         if openai.api_type == "azure":
-            response = openai.ChatCompletion.create(
-                engine=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
+            response = litellm.completion(
+                model=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
                 messages=messages,
                 stream=True,
                 **kwargs,
             )
         else:
-            response = openai.ChatCompletion.create(
+            response = litellm.completion(
                 model=os.environ.get("CHAT_MODEL_DEPLOYMENT_NAME"),
                 messages=messages,
                 stream=True,
