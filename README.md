@@ -83,7 +83,7 @@ Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Pro
 
 ## Tutorial 🏃‍♂️
 
-Prompt Flow is a tool designed to **facilitate high quality LLM-native apps to production**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
+Prompt Flow is a tool designed to **build high quality LLM apps**, the development process in prompt flow follows these steps: develop a flow, improve the flow quality, deploy the flow to production.
 
 ### Develop your own LLM apps
 
@@ -95,7 +95,7 @@ We also offer a VS Code extension (a flow designer) for an interactive flow deve
 
 You can install it from the <a href="https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow">visualstudio marketplace</a>.
 
-#### Deep Dive into Flow Development
+#### Deep dive into flow development
 
 [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 
