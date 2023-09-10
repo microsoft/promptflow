@@ -19,13 +19,13 @@
 
 With prompt flow, you will be able to:
 
-- **Create and Iteratively Develop Flow**
+- **Create and iteratively develop flow**
     - Create executable [flows](https://microsoft.github.io/promptflow/concepts/concept-flows.html) that link LLMs, prompts, Python code and other [tools](https://microsoft.github.io/promptflow/concepts/concept-tools.html) together.
     - Debug and iterate your flows, especially the [interaction with LLMs](https://microsoft.github.io/promptflow/concepts/concept-connections.html) with ease.
-- **Evaluate Flow Quality and Performance**
+- **Evaluate flow quality and performance**
     - Evaluate your flow's quality and performance with larger datasets.
     - Integrate the testing and evaluation into your CI/CD system to ensure quality of your flow.
-- **Streamlined Development Cycle for Production**
+- **Streamlined development cycle for production**
     - Deploy your flow to the serving platform you choose or integrate into your app's code base easily.
     - (Optional but highly recommended) Collaborate with your team by leveraging the cloud version of [Prompt flow in Azure AI](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/overview-what-is-prompt-flow?view=azureml-api-2).
 
