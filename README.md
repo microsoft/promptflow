@@ -8,12 +8,15 @@
 
 [![Doc](https://img.shields.io/badge/Doc-online-green)](https://microsoft.github.io/promptflow/index.html)
 [![Issue](https://img.shields.io/github/issues/microsoft/promptflow)](https://github.com/microsoft/promptflow/issues/new/choose)
-[![Discord](https://dcbadge.vercel.app/api/server/bnXr6kxs?compact=true&style=flat)](https://discord.gg/bnXr6kxs)
+[![Discord](https://dcbadge.vercel.app/api/server/9K5hdsbbsx?compact=true&style=flat)](https://discord.gg/9K5hdsbbsx)
 [![Discussions](https://img.shields.io/github/discussions/microsoft/promptflow)](https://github.com/microsoft/promptflow/issues/new/choose)
 [![CONTRIBUTING](https://img.shields.io/badge/Contributing-8A2BE2)](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md)
 [![License: MIT](https://img.shields.io/github/license/microsoft/promptflow)](https://github.com/microsoft/promptflow/blob/main/LICENSE)
 
-> Welcome to join us to make Prompt flow!
+> Welcome to join us to make Prompt flow better by
+> participating [discussions](https://github.com/microsoft/promptflow/discussions),
+> opening [issues](https://github.com/microsoft/promptflow/issues/new/choose),
+> submitting [PRs](https://github.com/microsoft/promptflow/pulls).
 
 **Prompt flow** is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
@@ -99,12 +102,12 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 
-### Learn from Use Cases
+### Learn from use cases
 
 [Tutorial: Chat with PDF](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/e2e-development/chat-with-pdf.md): An end-to-end tutorial on how to build a high quality chat application with prompt flow, including flow development and evaluation with metrics.
 > More examples can be found [here](https://microsoft.github.io/promptflow/tutorials/index.html#samples). We welcome contributions of new use cases!
 
-### Setup for Contributors
+### Setup for contributors
 
 If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
