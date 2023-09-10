@@ -1,0 +1,39 @@
+id: template_standard_flow
+name: Template Standard Flow
+inputs:
+  path:
+    type: string
+outputs:
+  output_python:
+    type: string
+    reference: ${input_passthrough.output}
+  output_check:
+    type: string
+    reference: ${grammer_check.output}
+nodes:
+- name: read_file
+  type: python
+  source:
+    type: code
+    path: read_file.py
+  inputs:
+    path: ${inputs.path}
+- name: grammer_check
+  type: llm
+  source:
+    type: code
+    path: grammar_check.jinja2
+  inputs:
+    max_tokens: 1000
+    text: ${read_file.output}
+    deployment_name: gpt-35-turbo
+    model: gpt-35-turbo
+  connection: open_ai_connection
+  api: chat
+- name: input_passthrough
+  type: prompt
+  source:
+    type: code
+    path: input_passthrough.jinja2
+  inputs:
+    input: ${inputs.path}
