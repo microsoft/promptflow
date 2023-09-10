@@ -54,20 +54,18 @@ pf flow init --flow ./my_chatbot --type chat
 
 **Setup a connection for your API key**
 
-> <details>
-> <summary>For Azure OpenAI key, establish the connection by running:</summary>
->
-> ```sh
-> # Override keys and endpoint with --set to avoid yaml file changes
-> pf connection create --file ./my_chatbot/azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_endpoint>
-> ```
-> </details>
-
 For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key:
 
 ```sh
 # Override keys with --set to avoid yaml file changes
 pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key>
+```
+
+For Azure OpenAI key, establish the connection by running:
+
+```sh
+# Override keys and endpoint with --set to avoid yaml file changes
+pf connection create --file ./my_chatbot/azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_endpoint>
 ```
 
 **Chat with your flow**
