@@ -58,14 +58,13 @@ For OpenAI key, establish a connection by running the command, using the `openai
 
 ```sh
 # Override keys with --set to avoid yaml file changes
-pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key>
+pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key> --name open_ai_connection
 ```
 
-For Azure OpenAI key, establish the connection by running:
+For Azure OpenAI key, establish the connection by running the command, using the `azure_openai.yaml` file:
 
 ```sh
-# Override keys and endpoint with --set to avoid yaml file changes
-pf connection create --file ./my_chatbot/azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_endpoint>
+pf connection create --file ./my_chatbot/azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 
 **Chat with your flow**
