@@ -4,7 +4,10 @@ from unittest.mock import Mock, patch
 import pytest
 
 from promptflow import tool
-from promptflow.contracts.flow import Flow
+from promptflow.contracts.flow import Flow, FlowInputDefinition
+from promptflow.contracts.tool import ValueType
+from promptflow.executor._errors import InvalidAggregationInput
+from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
 from promptflow.executor.flow_executor import (
     EmptyInputAfterMapping,
     EmptyInputListError,
@@ -12,12 +15,11 @@ from promptflow.executor.flow_executor import (
     LineNumberNotAlign,
     MappingSourceNotFound,
     NoneInputsMappingIsNotSupported,
-    enable_streaming_for_llm_tool,
     _ensure_node_result_is_serializable,
     _inject_stream_options,
+    enable_streaming_for_llm_tool,
 )
 from promptflow.tools.aoai import AzureOpenAI, chat, completion
-from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
 
 
 @pytest.mark.unittest
@@ -148,9 +150,12 @@ class TestFlowExecutor:
 
     @pytest.mark.parametrize("inputs_mapping", [{"question": "${data.question}"}, {}])
     def test_complete_inputs_mapping_by_default_value(self, inputs_mapping):
-        flow = Flow(
-            id="fakeId", name=None, nodes=[], inputs={"question": None, "groundtruth": None}, outputs=None, tools=[]
-        )
+        inputs = {
+            "question": None,
+            "groundtruth": None,
+            "input_with_default_value": FlowInputDefinition(type=ValueType.INT, default="default_value"),
+        }
+        flow = Flow(id="fakeId", name=None, nodes=[], inputs=inputs, outputs=None, tools=[])
         flow_executor = FlowExecutor(
             flow=flow,
             connections=None,
@@ -159,6 +164,7 @@ class TestFlowExecutor:
             loaded_tools=None,
         )
         updated_inputs_mapping = flow_executor._complete_inputs_mapping_by_default_value(inputs_mapping)
+        assert "input_with_default_value" not in updated_inputs_mapping
         assert updated_inputs_mapping == {"question": "${data.question}", "groundtruth": "${data.groundtruth}"}
 
     @pytest.mark.parametrize(
@@ -306,6 +312,140 @@ class TestFlowExecutor:
             FlowExecutor._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
+    @pytest.mark.parametrize(
+        "flow_inputs, inputs, expected_inputs",
+        [
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                None,  # Could handle None input
+                {"input_from_default": "default_value"},
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                {},
+                {"input_from_default": "default_value"},
+            ),
+            (
+                {
+                    "input_no_default": FlowInputDefinition(type=ValueType.STRING),
+                },
+                {},
+                {},  # No default value for input.
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                {"input_from_default": "input_value", "another_key": "input_value"},
+                {"input_from_default": "input_value", "another_key": "input_value"},
+            ),
+        ],
+    )
+    def test_apply_default_value_for_input(self, flow_inputs, inputs, expected_inputs):
+        result = FlowExecutor._apply_default_value_for_input(flow_inputs, inputs)
+        assert result == expected_inputs
+
+    @pytest.mark.parametrize(
+        "flow_inputs, aggregated_flow_inputs, aggregation_inputs, expected_inputs",
+        [
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                {},
+                {},
+                {"input_from_default": ["default_value"]},
+            ),
+            (
+                {
+                    "input_no_default": FlowInputDefinition(type=ValueType.STRING),
+                },
+                {},
+                {},
+                {},  # No default value for input.
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                {"input_from_default": "input_value", "another_key": "input_value"},
+                {},
+                {"input_from_default": "input_value", "another_key": "input_value"},
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                {"another_key": ["input_value", "input_value"]},
+                {},
+                {
+                    "input_from_default": ["default_value", "default_value"],
+                    "another_key": ["input_value", "input_value"],
+                },
+            ),
+            (
+                {
+                    "input_from_default": FlowInputDefinition(type=ValueType.STRING, default="default_value"),
+                },
+                {},
+                {"another_key_in_aggregation_inputs": ["input_value", "input_value"]},
+                {
+                    "input_from_default": ["default_value", "default_value"],
+                },
+            ),
+        ],
+    )
+    def test_apply_default_value_for_aggregation_input(
+        self, flow_inputs, aggregated_flow_inputs, aggregation_inputs, expected_inputs
+    ):
+        result = FlowExecutor._apply_default_value_for_aggregation_input(
+            flow_inputs, aggregated_flow_inputs, aggregation_inputs
+        )
+        assert result == expected_inputs
+
+    @pytest.mark.parametrize(
+        "aggregated_flow_inputs, aggregation_inputs, error_message",
+        [
+            (
+                {},
+                {
+                    "input1": "value1",
+                },
+                "Aggregation input input1 should be one list.",
+            ),
+            (
+                {
+                    "input1": "value1",
+                },
+                {},
+                "Flow aggregation input input1 should be one list.",
+            ),
+            (
+                {"input1": ["value1_1", "value1_2"]},
+                {"input_2": ["value2_1"]},
+                "Whole aggregation inputs should have the same length. "
+                "Current key length mapping are: {'input1': 2, 'input_2': 1}",
+            ),
+            (
+                {
+                    "input1": "value1",
+                },
+                {
+                    "input1": "value1",
+                },
+                "Input 'input1' appear in both flow aggregation input and aggregation input.",
+            ),
+        ],
+    )
+    def test_validate_aggregation_inputs_error(self, aggregated_flow_inputs, aggregation_inputs, error_message):
+        with pytest.raises(InvalidAggregationInput) as e:
+            FlowExecutor._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
+        assert str(e.value) == error_message
+
 
 def func_with_stream_parameter(a: int, b: int, stream=False):
     return a + b, stream
@@ -403,18 +543,13 @@ class TestGetAvailableMaxWorkerCount:
     @pytest.mark.parametrize(
         "total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count",
         [
-            (1024.0, 128.0, 64.0, 1, -3),    # available_memory - 0.3 * total_memory < 0
+            (1024.0, 128.0, 64.0, 1, -3),  # available_memory - 0.3 * total_memory < 0
             (1024.0, 307.20, 64.0, 1, 0),  # available_memory - 0.3 * total_memory = 0
-            (1024.0, 768.0, 64.0, 7, 7),    # available_memory - 0.3 * total_memory > 0
+            (1024.0, 768.0, 64.0, 7, 7),  # available_memory - 0.3 * total_memory > 0
         ],
     )
     def test_get_available_max_worker_count(
-        self,
-        total_memory,
-        available_memory,
-        process_memory,
-        expected_max_worker_count,
-        actual_calculate_worker_count
+        self, total_memory, available_memory, process_memory, expected_max_worker_count, actual_calculate_worker_count
     ):
         with patch("psutil.virtual_memory") as mock_mem:
             mock_mem.return_value.total = total_memory * 1024 * 1024
@@ -425,7 +560,7 @@ class TestGetAvailableMaxWorkerCount:
                     mock_logger.warning.return_value = None
                     max_worker_count = get_available_max_worker_count()
                     assert max_worker_count == expected_max_worker_count
-                    if (actual_calculate_worker_count < 1):
+                    if actual_calculate_worker_count < 1:
                         mock_logger.warning.assert_called_with(
                             f"Available max worker count {actual_calculate_worker_count} is less than 1, "
                             "set it to 1."

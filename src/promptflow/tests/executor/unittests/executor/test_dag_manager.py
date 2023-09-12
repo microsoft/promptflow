@@ -75,9 +75,8 @@ class TestDAGManager:
         with pytest.raises(ReferenceNodeBypassed) as e:
             dag_manager.pop_bypassable_nodes()
         error_message = (
-            "Invalid node reference: The node node2 referenced by node3 has been bypassed, "
-            "so the value of this node cannot be returned. Please refer to the node that will "
-            "not be bypassed as the default return value."
+            "The node 'node2' referenced by 'node3' has been bypassed, so the node cannot return valid value. "
+            "Please refer to the node that will not be bypassed as the return value of skip config."
         )
         assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
 

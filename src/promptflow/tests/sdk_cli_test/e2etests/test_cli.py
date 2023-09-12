@@ -770,6 +770,20 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
+        # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
         # Validate terminal output
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--interactive", "--verbose")
@@ -777,8 +791,7 @@ class TestCli:
         # Check node output
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
-        # TODO Checkout user code stdout
-        # assert "print:" in outerr.out
+        assert "[show_answer]: print:" in outerr.out
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
@@ -1089,3 +1102,46 @@ class TestCli:
         assert "Executing node print_val. node run id:" not in f.getvalue()
         # executor logs won't stream
         assert "Node print_val completes." not in f.getvalue()
+
+    def test_format_cli_exception(self, capsys):
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        with patch.dict(os.environ, {"PROMPTFLOW_STRUCTURE_EXCEPTION_OUTPUT": "true"}):
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "connection",
+                    "show",
+                    "--name",
+                    "invalid_connection_name",
+                )
+            outerr = capsys.readouterr()
+            assert outerr.err
+            error_msg = json.loads(outerr.err)
+            assert error_msg["code"] == "ConnectionNotFoundError"
+
+            def mocked_connection_get(*args, **kwargs):
+                raise Exception("mock exception")
+
+            with patch.object(ConnectionOperations, "get") as mock_connection_get:
+                mock_connection_get.side_effect = mocked_connection_get
+                with pytest.raises(Exception):
+                    run_pf_command(
+                        "connection",
+                        "show",
+                        "--name",
+                        "invalid_connection_name",
+                    )
+                outerr = capsys.readouterr()
+                assert outerr.err
+                error_msg = json.loads(outerr.err)
+                assert error_msg["code"] == "SystemError"
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "connection",
+                "show",
+                "--name",
+                "invalid_connection_name",
+            )
+        outerr = capsys.readouterr()
+        assert not outerr.err
