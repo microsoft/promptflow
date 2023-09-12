@@ -21,6 +21,7 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
 REQUIRES = [
+    "psutil",  # Get process information when bulk run
     "openai>=0.27.8,<0.28.0",  # promptflow.core.api_injector
     "flask>=2.2.3,<3.0.0",  # Serving endpoint requirements
     "dataset>=1.6.0,<2.0.0",  # promptflow.storage

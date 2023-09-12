@@ -48,7 +48,7 @@ class FlowOperations:
         node: str = None,
         environment_variables: dict = None,
     ) -> dict:
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
@@ -81,9 +81,10 @@ class FlowOperations:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
-        streaming_output: bool = True,
+        stream_log: bool = True,
+        allow_generator_output: bool = True,
     ):
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :param inputs: Input data for the flow test
@@ -94,7 +95,7 @@ class FlowOperations:
            Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
-        : param streaming_output: Whether return streaming output when flow has streaming output.
+        : param allow_generator_output: Whether return streaming output when flow has streaming output.
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
@@ -116,12 +117,12 @@ class FlowOperations:
                     stream=True,
                 )
             else:
-                if streaming_output and submitter._get_streaming_nodes():
-                    return submitter.interactive_test(inputs=flow_inputs, environment_variables=environment_variables)
-                else:
-                    return submitter.flow_test(
-                        inputs=flow_inputs, environment_variables=environment_variables, stream=True
-                    )
+                return submitter.flow_test(
+                    inputs=flow_inputs,
+                    environment_variables=environment_variables,
+                    stream_log=stream_log,
+                    allow_generator_output=allow_generator_output,
+                )
 
     @staticmethod
     def _is_chat_flow(flow):
@@ -183,7 +184,7 @@ class FlowOperations:
             print("=" * len(info_msg))
             print(info_msg)
             print("Press Enter to send your message.")
-            print("You can quit with ctrl+Z.")
+            print("You can quit with ctrl+C.")
             print("=" * len(info_msg))
             submitter._chat_flow(
                 inputs=inputs,

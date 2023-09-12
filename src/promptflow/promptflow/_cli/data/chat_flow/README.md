@@ -8,7 +8,11 @@ Currently, there are two connection types supported by LLM tool: "AzureOpenAI" a
 
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create --file openai.yaml --set api_key=<your_api_key> organization=<your_organization> --name open_ai_connection
+# Create open ai connection
+pf connection create --file openai.yaml --set api_key=<your_api_key> --name open_ai_connection
+
+# Create azure open ai connection
+# pf connection create --file azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 
 Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
@@ -38,13 +42,13 @@ Promptflow CLI provides a way to start an interactive chat session for chat flow
 pf flow test --flow <flow_folder> --interactive
 ```
 
-After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+Z**.
+After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+C**.
 Promptflow CLI will distinguish the output of different roles by color, <span style="color:Green">User input</span>, <span style="color:Gold">Bot output</span>, <span style="color:Blue">Flow script output</span>, <span style="color:Cyan">Node output</span>.
 
 > =========================================<br>
 > Welcome to chat flow, <You-flow-name>.<br>
 > Press Enter to send your message.<br>
-> You can quit with ctrl+Z.<br>
+> You can quit with ctrl+C.<br>
 > =========================================<br>
 > <span style="color:Green">User:</span> What types of container software there are<br>
 > <span style="color:Gold">Bot:</span> There are several types of container software available, including:<br>
@@ -61,7 +65,7 @@ If customer adds "--verbose" in the pf command, the output of each step will be 
 > =========================================<br>
 > Welcome to chat flow, Template Chat Flow.<br>
 > Press Enter to send your message.<br>
-> You can quit with ctrl+Z.<br>
+> You can quit with ctrl+C.<br>
 > =========================================<br>
 > <span style="color:Green">User:</span> What types of container software there are<br>
 > <span style="color:Cyan">chat:</span> There are several types of container software available, including:<br>
