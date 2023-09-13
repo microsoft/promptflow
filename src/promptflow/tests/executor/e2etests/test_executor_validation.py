@@ -3,6 +3,7 @@ import sys
 
 import pytest
 
+from promptflow._core._errors import FlowOutputUnserializable
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
 from promptflow.contracts._errors import FailedToImportModule
@@ -174,6 +175,27 @@ class TestValidation:
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         with pytest.raises(error_class):
             executor.exec_line(line_input)
+
+    @pytest.mark.parametrize(
+        "flow_folder, line_input, error_class, error_msg",
+        [
+            (
+                "flow_output_unserializable",
+                {"num": "22"},
+                FlowOutputUnserializable,
+                (
+                    "The output 'content' for flow is incorrect. The output value is not JSON serializable. "
+                    "JSON dump failed: (TypeError) Object of type UnserializableClass is not JSON serializable. "
+                    "Please verify your flow output and make sure the value serializable."
+                ),
+            ),
+        ],
+    )
+    def test_flow_run_execution_errors(self, flow_folder, line_input, error_class, error_msg, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+        # For now, there exception is designed to be swallowed in executor. But Run Info would have the error details
+        res = executor.exec_line(line_input)
+        assert error_msg == res.run_info.error["message"]
 
     @pytest.mark.parametrize(
         "flow_folder, batch_input, error_message, error_class",
