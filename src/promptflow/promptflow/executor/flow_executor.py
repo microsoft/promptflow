@@ -13,7 +13,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 import yaml
 
-from promptflow._core._errors import NotSupported
+from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
@@ -33,10 +33,7 @@ from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
     InvalidAggregationInput,
-    NodeConcurrencyNotFound,
     NodeOutputNotFound,
-    NodeResultCountNotMatch,
-    NoneInputsMappingIsNotSupported,
     OutputReferenceBypassed,
     OutputReferenceNotExist,
 )
@@ -247,7 +244,9 @@ class FlowExecutor:
             node_runs = run_tracker.collect_node_runs()
             if len(node_runs) != 1:
                 # Should not happen except there is bug in run_tracker or thread control.
-                raise NodeResultCountNotMatch("Expecting eactly one node run.")
+                raise UnexpectedError(
+                    message_format="Expecting only one node result. Please contact support for further assistance."
+                )
             return node_runs[0]
 
     @staticmethod
@@ -796,8 +795,12 @@ class FlowExecutor:
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
-            raise NodeConcurrencyNotFound(
-                message_format=f"Need to set valid node concurrency to run, current value is {self._node_concurrency}."
+            raise UnexpectedError(
+                message_format=(
+                    "Need to set valid node concurrency to run, current value is {current_value}. "
+                    "Please contact support for further assistance."
+                ),
+                current_value=self._node_concurrency,
             )
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
 
@@ -806,7 +809,7 @@ class FlowExecutor:
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
-        """Apply inputs mapping to inputs for new contract.
+        """Apply input mapping to inputs for new contract.
 
         For example:
         inputs: {
@@ -832,7 +835,7 @@ class FlowExecutor:
         result = {}
         notfound_mapping_relations = []
         for map_to_key, map_value in inputs_mapping.items():
-            # Ignore reserved key configuration from inputs mapping.
+            # Ignore reserved key configuration from input mapping.
             if map_to_key == LINE_NUMBER_KEY:
                 continue
             if not isinstance(map_value, str):  # All non-string values are literal values.
@@ -861,11 +864,12 @@ class FlowExecutor:
         if notfound_mapping_relations:
             invalid_relations = ", ".join(notfound_mapping_relations)
             raise InputMappingError(
-                message_format="The input for flow is incorrect. "
-                "Couldn't find these mapping relations: {invalid_relations}. "
-                "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                "If a mapping reads input from 'data', it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data.",
+                message_format=(
+                    "The input for flow is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
+                    "Please make sure your input mapping keys and values match your YAML input section and input data. "
+                    "If a mapping reads input from 'data', it might be generated from the YAML input section, "
+                    "and you may need to manually assign input mapping based on your input data."
+                ),
                 invalid_relations=invalid_relations,
             )
         # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
@@ -880,9 +884,11 @@ class FlowExecutor:
         for input_key, list_of_one_input in input_dict.items():
             if not list_of_one_input:
                 raise InputMappingError(
-                    message_format="The input for flow is incorrect. Input from key '{input_key}' is one empty list. "
-                    "Which means we cannot generate one line for the flow run. "
-                    "Please rectify the input and try again.",
+                    message_format=(
+                        "The input for flow is incorrect. Input from key '{input_key}' is an empty list, "
+                        "which means we cannot generate a single line input for the flow run. "
+                        "Please rectify the input and try again."
+                    ),
                     input_key=input_key,
                 )
 
@@ -894,10 +900,13 @@ class FlowExecutor:
         }
         if len(set(all_lengths_without_line_number.values())) > 1:
             raise InputMappingError(
-                message_format="The input for flow is incorrect. "
-                "Line numbers are not aligned. Some lists have dictionaries missing the 'line_number' key, "
-                "and the lengths of these lists are different. List lengths are: {all_lengths_without_line_number}. "
-                "Please make sure these lists have the same length or add 'line_number' key to each dictionary.",
+                message_format=(
+                    "The input for flow is incorrect. Line numbers are not aligned. "
+                    "Some lists have dictionaries missing the 'line_number' key, "
+                    "and the lengths of these lists are different. "
+                    "List lengths are: {all_lengths_without_line_number}. "
+                    "Please make sure these lists have the same length or add 'line_number' key to each dictionary."
+                ),
                 all_lengths_without_line_number=all_lengths_without_line_number,
             )
 
@@ -931,7 +940,7 @@ class FlowExecutor:
         input_dict: Mapping[str, List[Mapping[str, Any]]],
         inputs_mapping: Mapping[str, str],
     ) -> List[Dict[str, Any]]:
-        """Apply inputs mapping to all input lines.
+        """Apply input mapping to all input lines.
 
         For example:
         input_dict = {
@@ -967,16 +976,20 @@ class FlowExecutor:
         }]
         """
         if inputs_mapping is None:
-            # This exception should not happen since we will use default inputs_mapping for None input.
-            raise NoneInputsMappingIsNotSupported(
-                message_format="Inputs mapping is None. "
-                "Please set one inputs mapping or use default inputs mapping in flow_executor."
+            # This exception should not happen since we will use _default_inputs_mapping for None input.
+            raise UnexpectedError(
+                message_format=(
+                    "Input mapping is None. You need to set one input mapping or use default input mapping. "
+                    "Please contact support for further assistance."
+                )
             )
         merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
         if len(merged_list) == 0:
             raise InputMappingError(
-                message_format="The input for flow is incorrect. All inputs come from different line of data "
-                "so can't execute. Please provide data in same line to correct the input."
+                message_format=(
+                    "The input for flow is incorrect. Could not find one complete line on the provided input. "
+                    "Please ensure that you supply data on the same line to resolve this issue."
+                )
             )
 
         result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]

@@ -4,6 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from promptflow import tool
+from promptflow._core._errors import UnexpectedError
 from promptflow.contracts.flow import Flow, FlowInputDefinition
 from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import InvalidAggregationInput
@@ -11,7 +12,6 @@ from promptflow.executor._line_execution_process_pool import get_available_max_w
 from promptflow.executor.flow_executor import (
     FlowExecutor,
     InputMappingError,
-    NoneInputsMappingIsNotSupported,
     _ensure_node_result_is_serializable,
     _inject_stream_options,
     enable_streaming_for_llm_tool,
@@ -127,8 +127,8 @@ class TestFlowExecutor:
                     "baseline": [],
                 },
                 InputMappingError,
-                "The input for flow is incorrect. Input from key 'baseline' is one empty list. "
-                "Which means we cannot generate one line for the flow run. Please rectify the input and try again.",
+                "The input for flow is incorrect. Input from key 'baseline' is an empty list, which means we "
+                "cannot generate a single line input for the flow run. Please rectify the input and try again.",
             ),
             (
                 {
@@ -302,8 +302,9 @@ class TestFlowExecutor:
                     "data": [{"question": "q1", "answer": "ans1"}, {"question": "q2", "answer": "ans2"}],
                 },
                 None,
-                NoneInputsMappingIsNotSupported,
-                "Inputs mapping is None. Please set one inputs mapping or use default inputs mapping in flow_executor.",
+                UnexpectedError,
+                "Input mapping is None. You need to set one input mapping or use default input mapping. "
+                "Please contact support for further assistance.",
             ),
         ],
     )

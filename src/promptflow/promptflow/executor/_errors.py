@@ -67,14 +67,6 @@ class InputMappingError(ValidationException):
         )
 
 
-class NoneInputsMappingIsNotSupported(SystemErrorException):
-    pass
-
-
-class NodeResultCountNotMatch(SystemErrorException):
-    pass
-
-
 class InvalidFlowRequest(ValidationException):
     def __init__(
         self,
@@ -140,10 +132,6 @@ class NodeReferenceNotFound(InvalidFlowRequest):
 
 
 class NodeCircularDependency(InvalidFlowRequest):
-    pass
-
-
-class NodeConcurrencyNotFound(SystemErrorException):
     pass
 
 
