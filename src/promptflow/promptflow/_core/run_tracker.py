@@ -219,10 +219,11 @@ class RunTracker(ThreadLocalSingleton):
         if run_info is None:
             raise RunRecordNotFound(
                 message_format=(
-                    f"Run record with ID '{run_id}' was not found in the storage. "
-                    f"Please contact support for further assistance."
+                    "Run record with ID '{run_id}' was not tracked in promptflow execution. "
+                    "Please contact support for further assistance."
                 ),
                 target=ErrorTarget.RUN_TRACKER,
+                run_id=run_id,
             )
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
@@ -292,10 +293,11 @@ class RunTracker(ThreadLocalSingleton):
         if run_info is None:
             raise RunRecordNotFound(
                 message_format=(
-                    f"Run record with ID '{run_id}' was not found in the storage. "
-                    f"Please contact support for further assistance."
+                    "Run record with ID '{run_id}' was not tracked in promptflow execution. "
+                    "Please contact support for further assistance."
                 ),
                 target=ErrorTarget.RUN_TRACKER,
+                run_id=run_id,
             )
         return run_info
 

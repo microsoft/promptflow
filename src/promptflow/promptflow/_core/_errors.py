@@ -123,7 +123,7 @@ class MetaFileReadError(GenerateMetaUserError):
     pass
 
 
-class RunRecordNotFound(ValidationException):
+class RunRecordNotFound(SystemErrorException):
     pass
 
 
