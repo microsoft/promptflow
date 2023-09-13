@@ -2,7 +2,7 @@ pre-commit
 nox
 mock
 pytest-cov
-coverage==6.0.1
+coverage
 pytest-forked
 pytest-xdist
 pytest-timeout
