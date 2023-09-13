@@ -11,12 +11,6 @@ class InvalidCustomLLMTool(ValidationException):
     pass
 
 
-class FlowExecutionError(SystemErrorException):
-    """Base System Exceptions for flow execution"""
-
-    pass
-
-
 class ValueTypeUnresolved(ValidationException):
     pass
 
@@ -101,11 +95,15 @@ class InputNotFound(InvalidFlowRequest):
     pass
 
 
-class InputNotFoundFromAncestorNodeOutput(FlowExecutionError):
+class InvalidAggregationInput(SystemErrorException):
     pass
 
 
-class NoNodeExecutedError(FlowExecutionError):
+class InputNotFoundFromAncestorNodeOutput(SystemErrorException):
+    pass
+
+
+class NoNodeExecutedError(SystemErrorException):
     pass
 
 
