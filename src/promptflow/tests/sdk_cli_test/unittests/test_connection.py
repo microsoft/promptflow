@@ -197,7 +197,7 @@ secrets:
     def test_to_execution_connection_dict(self):
         # Assert custom connection build
         connection = CustomConnection(name="test_connection", configs={"a": "1"}, secrets={"b": "2"})
-        assert connection.to_execution_connection_dict() == {
+        assert connection._to_execution_connection_dict() == {
             "module": "promptflow.connections",
             "secret_keys": ["b"],
             "type": "CustomConnection",
@@ -213,7 +213,7 @@ secrets:
             api_type="azure",
             api_version="2023-07-01-preview",
         )
-        assert connection.to_execution_connection_dict() == {
+        assert connection._to_execution_connection_dict() == {
             "module": "promptflow.connections",
             "secret_keys": ["api_key"],
             "type": "AzureOpenAIConnection",
@@ -232,7 +232,7 @@ secrets:
             api_key="test_key",
             organization="test_org",
         )
-        assert connection.to_execution_connection_dict() == {
+        assert connection._to_execution_connection_dict() == {
             "module": "promptflow.connections",
             "secret_keys": ["api_key"],
             "type": "OpenAIConnection",

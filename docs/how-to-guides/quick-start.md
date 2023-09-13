@@ -110,6 +110,7 @@ inputs:
     default: https://play.google.com/store/apps/details?id=com.twitter.android
 ...
 ```
+See more details of this topic in [Develop a flow](./develop-a-flow/index.md).
 
 ### Create necessary connections
 
@@ -139,10 +140,10 @@ api_version: <test_version>
 
 If you are using OpenAI, sign up account via [OpenAI website](https://openai.com/), login and [find personal API key](https://platform.openai.com/account/api-keys), then use this yaml:
 ```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
 name: open_ai_connection
-type: azure_open_ai
-api_key: <test_key>
+type: open_ai
+api_key: "<user-input>"
 organization: "" # optional
 ```
 Then we can use CLI command to create the connection.
@@ -283,6 +284,7 @@ See more details of this topic in [Initialize and test a flow](./init-and-test-a
 ## Next steps
 
 Learn more on how to:
+- [Develop a flow](./develop-a-flow/index.md): details on how to develop a flow by writing a flow yaml from scratch.
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
 - [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
