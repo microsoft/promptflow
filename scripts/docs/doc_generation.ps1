@@ -23,7 +23,7 @@ param(
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
 [string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
 [string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
-[string] $WarningErrorPattern = "WARNING:|ERROR:"
+[string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:"
 $apidocWarningsAndErrors = $null
 $buildWarningsAndErrors = $null
 
@@ -70,7 +70,7 @@ if($WithReferenceDoc){
     }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
-    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
+    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" 2>&1 | Tee-Object -FilePath $SphinxApiDoc 
     $apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
 }
 
@@ -84,7 +84,7 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams 2>&1 | Tee-Object -FilePath $SphinxBuildDoc
 $buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"

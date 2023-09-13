@@ -578,25 +578,22 @@ class FlowExecutor:
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
     ) -> BulkResult:
-        """
-        The entry points for bulk run execution
+        """The entry points for bulk run execution
 
-        Parameters
-        ----------
-        inputs:
-            The batch inputs for the flow in the executor
-        run_id:
-            parent run id for current flow run, if any
-            Todo: discuss with sdk if we keep this
-        validate_inputs:
-            flag to indicate if do inputs data validation
-        raise_on_line_failure:
-            flag to indicate if raise exception if line execution failed for bulk run
-
-        Returns
-        -------
-            BulkResults including flow results and metrics
+        :param inputs: A list of dictionaries containing input data.
+        :type inputs: List[Dict[str, Any]]
+        :param run_id: Run ID.
+        :type run_id: str, optional
+        :param validate_inputs: Whether to validate the inputs. Defaults to True.
+        :type validate_inputs: bool, optional
+        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False.
+        :type raise_on_line_failure: bool, optional
+        :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
+        :type node_concurrency: int, optional
+        :return: The bulk result.
+        :rtype: ~promptflow.executor.flow_executor.BulkResult
         """
+
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         inputs = [
