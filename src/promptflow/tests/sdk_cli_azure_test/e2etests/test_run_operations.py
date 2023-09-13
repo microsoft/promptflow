@@ -543,16 +543,16 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
     def test_automatic_runtime_creation_failure(self, pf):
 
         with pytest.raises(FlowRequestException) as e:
             pf.runs._resolve_runtime(
                 run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
                     resources={"instance_type": "not_exist"},
                 ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
                 runtime=None,
             )
         assert "Session creation failed for" in str(e.value)
@@ -562,10 +562,17 @@ class TestFlowRun:
 
         from promptflow.azure._restclient.flow.operations import BulkRunsOperations
 
+        def fake_submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            request_id_in_headers = headers["x-ms-client-request-id"]
+            # request id in headers should be same with request id in service caller
+            assert request_id_in_headers == remote_client.runs._service_caller._request_id
+            raise HttpResponseError("customized error message.")
+
         with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
             FlowServiceCaller, "_set_headers_with_user_aml_token"
         ):
-            mock_request.side_effect = HttpResponseError("customized error message.")
+            mock_request.side_effect = fake_submit
             with pytest.raises(FlowRequestException) as e:
                 original_request_id = remote_client.runs._service_caller._request_id
                 remote_client.runs._service_caller.submit_bulk_run(

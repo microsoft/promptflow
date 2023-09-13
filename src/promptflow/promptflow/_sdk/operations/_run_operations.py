@@ -53,8 +53,7 @@ class RunOperations:
             message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
         )
 
-    @classmethod
-    def get(cls, name: str) -> Run:
+    def get(self, name: str) -> Run:
         """Get a run entity.
 
         :param name: Name of the run.
@@ -180,6 +179,13 @@ class RunOperations:
         return self.get(name)
 
     def get_details(self, name: Union[str, Run]) -> pd.DataFrame:
+        """Get run inputs and outputs.
+
+        :param name: name of the run.
+        :type name: str
+        :return: Run details.
+        :rtype: ~pandas.DataFrame
+        """
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
         run._check_run_status_is_completed()
@@ -200,6 +206,13 @@ class RunOperations:
         return df
 
     def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
+        """Get run metrics.
+
+        :param name: name of the run.
+        :type name: str
+        :return: Run metrics.
+        :rtype: Dict[str, Any]
+        """
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
         run._check_run_status_is_completed()
@@ -219,6 +232,7 @@ class RunOperations:
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
+                create_time=run.created_on,
                 tags=run.tags,
                 lineage=run.run,
                 metrics=self.get_metrics(name=run.name),
@@ -253,18 +267,16 @@ class RunOperations:
             error_message = f"Cannot visualize non-completed run. {str(e)}"
             logger.error(error_message)
 
-    @classmethod
-    def _get_outputs(cls, run: Union[str, Run]) -> List[Dict[str, Any]]:
+    def _get_outputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
         if isinstance(run, str):
-            run = cls.get(name=run)
+            run = self.get(name=run)
         local_storage = LocalStorageOperations(run)
         return local_storage.load_outputs()
 
-    @classmethod
-    def _get_inputs(cls, run: Union[str, Run]) -> List[Dict[str, Any]]:
+    def _get_inputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
         if isinstance(run, str):
-            run = cls.get(name=run)
+            run = self.get(name=run)
         local_storage = LocalStorageOperations(run)
         return local_storage.load_inputs()

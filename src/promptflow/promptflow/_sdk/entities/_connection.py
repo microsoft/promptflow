@@ -5,7 +5,7 @@ import abc
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Union, List
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -102,7 +102,8 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
-    def keys(self):
+    def keys(self) -> List:
+        """Return keys of the connection properties."""
         return list(self.configs.keys()) + list(self.secrets.keys())
 
     def __getitem__(self, item):
@@ -236,7 +237,7 @@ class _Connection(YAMLTranslatableMixin):
         )
         return connection
 
-    def to_execution_connection_dict(self) -> dict:
+    def _to_execution_connection_dict(self) -> dict:
         value = {**self.configs, **self.secrets}
         secret_keys = list(self.secrets.keys())
         return {
@@ -247,7 +248,7 @@ class _Connection(YAMLTranslatableMixin):
         }
 
     @classmethod
-    def from_execution_connection_dict(cls, name, data) -> "_Connection":
+    def _from_execution_connection_dict(cls, name, data) -> "_Connection":
         type_cls, _ = cls._resolve_cls_and_type(data={"type": data.get("type")[: -len("Connection")]})
         value_dict = data.get("value", {})
         if type_cls == CustomConnection:
@@ -289,10 +290,12 @@ class _StrongTypeConnection(_Connection):
 
     @property
     def api_key(self):
-        return self.secrets.get("api_key", "***")
+        """Return the api key."""
+        return self.secrets.get("api_key", SCRUBBED_VALUE)
 
     @api_key.setter
     def api_key(self, value):
+        """Set the api key."""
         self.secrets["api_key"] = value
 
 
@@ -643,6 +646,7 @@ class CustomConnection(_Connection):
         return super().__getattribute__(item)
 
     def is_secret(self, item):
+        """Check if item is a secret."""
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
         return item in self.secrets
 

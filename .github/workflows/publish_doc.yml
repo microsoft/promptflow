@@ -11,6 +11,7 @@ on:
       - 'docs/**'
       - 'scripts/docs/**'
       - '.github/workflows/publish_doc.yml'
+      - 'src/promptflow/promptflow/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
