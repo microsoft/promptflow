@@ -543,6 +543,7 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
     def test_automatic_runtime_creation_failure(self, pf):
 
         with pytest.raises(FlowRequestException) as e:
