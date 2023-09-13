@@ -30,7 +30,7 @@ jobs:
       - name: Build Doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -WarningAsError:$true
+        run: ./doc_generation.ps1 -WarningAsError:$true -WithReferenceDoc:$true
 
   # Note: We have this job separately because some error may missing when build link check exists.
   link_check_job:
@@ -46,30 +46,3 @@ jobs:
         shell: powershell
         working-directory: scripts/docs/
         run: ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true
-
-  # TODO: Once we fixed all warnings in reference doc job, delete this whole job and make job "build_doc_job" to run with "-WithReferenceDoc:$true"
-  build_doc_with_reference_doc_job:
-    runs-on: windows-latest
-    name: Build Doc with Reference Doc
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v2
-        with:
-          submodules: true
-
-      - name: Conda Setup
-        uses: "./.github/actions/step_create_conda_environment"
-
-      - name: Dev setup
-        uses: "./.github/actions/step_sdk_setup"
-        with:
-          setupType: ${{ env.packageSetupType }}
-          scriptPath: ${{ env.testWorkingDirectory }}
-
-      - name: Build doc with reference doc
-        shell: powershell
-        working-directory: scripts/docs/
-        run: |-
-          conda activate ${{ env.condaEnvName }}
-          pip install langchain
-          ./doc_generation.ps1 -WithReferenceDoc:$true
