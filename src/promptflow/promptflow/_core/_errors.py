@@ -5,7 +5,7 @@ from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorEx
 
 
 class UnexpectedError(SystemErrorException):
-    """Exception raised for normal errors that should not happen."""
+    """Exception raised for unexpected errors that should not occur under normal circumstances."""
 
     pass
 

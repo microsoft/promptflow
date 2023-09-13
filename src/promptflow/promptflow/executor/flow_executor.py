@@ -245,7 +245,11 @@ class FlowExecutor:
             if len(node_runs) != 1:
                 # Should not happen except there is bug in run_tracker or thread control.
                 raise UnexpectedError(
-                    message_format="Expecting only one node result. Please contact support for further assistance."
+                    message_format=(
+                        "Single node execution failed. Expected one node result, "
+                        "but received {node_result_num}. Please contact support for further assistance."
+                    ),
+                    node_result_num=len(node_runs),
                 )
             return node_runs[0]
 
@@ -797,8 +801,8 @@ class FlowExecutor:
         if not isinstance(self._node_concurrency, int):
             raise UnexpectedError(
                 message_format=(
-                    "Need to set valid node concurrency to run, current value is {current_value}. "
-                    "Please contact support for further assistance."
+                    "Flow execution failed. To proceed, ensure that a valid node concurrency value is set. "
+                    "The current value is {current_value}. Please contact support for further assistance."
                 ),
                 current_value=self._node_concurrency,
             )
@@ -863,9 +867,10 @@ class FlowExecutor:
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
             invalid_relations = ", ".join(notfound_mapping_relations)
+            # TODO: Replace detail message about default mapping by doc link.
             raise InputMappingError(
                 message_format=(
-                    "The input for flow is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
+                    "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
                     "If a mapping reads input from 'data', it might be generated from the YAML input section, "
                     "and you may need to manually assign input mapping based on your input data."
@@ -885,7 +890,7 @@ class FlowExecutor:
             if not list_of_one_input:
                 raise InputMappingError(
                     message_format=(
-                        "The input for flow is incorrect. Input from key '{input_key}' is an empty list, "
+                        "The input for batch run is incorrect. Input from key '{input_key}' is an empty list, "
                         "which means we cannot generate a single line input for the flow run. "
                         "Please rectify the input and try again."
                     ),
@@ -901,7 +906,7 @@ class FlowExecutor:
         if len(set(all_lengths_without_line_number.values())) > 1:
             raise InputMappingError(
                 message_format=(
-                    "The input for flow is incorrect. Line numbers are not aligned. "
+                    "The input for batch run is incorrect. Line numbers are not aligned. "
                     "Some lists have dictionaries missing the 'line_number' key, "
                     "and the lengths of these lists are different. "
                     "List lengths are: {all_lengths_without_line_number}. "
@@ -976,18 +981,19 @@ class FlowExecutor:
         }]
         """
         if inputs_mapping is None:
-            # This exception should not happen since we will use _default_inputs_mapping for None input.
+            # This exception should not happen since developers need to use _default_inputs_mapping for None input.
+            # So, this exception is one system error.
             raise UnexpectedError(
                 message_format=(
-                    "Input mapping is None. You need to set one input mapping or use default input mapping. "
-                    "Please contact support for further assistance."
+                    "The input for batch run is incorrect. Please make sure to set up a proper input mapping before "
+                    "proceeding. If you need additional help, feel free to contact support for further assistance."
                 )
             )
         merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
         if len(merged_list) == 0:
             raise InputMappingError(
                 message_format=(
-                    "The input for flow is incorrect. Could not find one complete line on the provided input. "
+                    "The input for batch run is incorrect. Could not find one complete line on the provided input. "
                     "Please ensure that you supply data on the same line to resolve this issue."
                 )
             )

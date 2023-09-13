@@ -64,7 +64,7 @@ class TestFlowExecutor:
                     "answer": "${data.output}",
                 },
                 InputMappingError,
-                "The input for flow is incorrect. Couldn't find these mapping relations: ${baseline.output}, "
+                "The input for batch run is incorrect. Couldn't find these mapping relations: ${baseline.output}, "
                 "${data.output}. Please make sure your input mapping keys and values match your YAML input section "
                 "and input data. If a mapping reads input from 'data', it might be generated from the YAML input "
                 "section, and you may need to manually assign input mapping based on your input data.",
@@ -127,7 +127,7 @@ class TestFlowExecutor:
                     "baseline": [],
                 },
                 InputMappingError,
-                "The input for flow is incorrect. Input from key 'baseline' is an empty list, which means we "
+                "The input for batch run is incorrect. Input from key 'baseline' is an empty list, which means we "
                 "cannot generate a single line input for the flow run. Please rectify the input and try again.",
             ),
             (
@@ -136,8 +136,8 @@ class TestFlowExecutor:
                     "baseline": [{"answer": "baseline_ans2"}],
                 },
                 InputMappingError,
-                "The input for flow is incorrect. Line numbers are not aligned. Some lists have dictionaries missing "
-                "the 'line_number' key, and the lengths of these lists are different. List lengths are: "
+                "The input for batch run is incorrect. Line numbers are not aligned. Some lists have dictionaries "
+                "missing the 'line_number' key, and the lengths of these lists are different. List lengths are: "
                 "{'data': 2, 'baseline': 1}. Please make sure these lists have the same length "
                 "or add 'line_number' key to each dictionary.",
             ),
@@ -303,8 +303,8 @@ class TestFlowExecutor:
                 },
                 None,
                 UnexpectedError,
-                "Input mapping is None. You need to set one input mapping or use default input mapping. "
-                "Please contact support for further assistance.",
+                "The input for batch run is incorrect. Please make sure to set up a proper input mapping "
+                "before proceeding. If you need additional help, feel free to contact support for further assistance.",
             ),
         ],
     )
