@@ -1,10 +1,10 @@
 import io
 import logging
-import os
 import time
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from tempfile import mkdtemp
+from unittest.mock import Mock
 from uuid import uuid4
 
 import pytest
@@ -76,6 +76,18 @@ class TestFileHandlerConcurrentWrapper:
                 assert len(log_lines) == 2
                 assert f"log {i}" in log_lines[0]
                 assert log_lines[1] == ""
+
+    def test_clear(self):
+        wrapper = FileHandlerConcurrentWrapper()
+        assert wrapper.handler is None
+
+        log_path = str(Path(mkdtemp()) / "logs.log")
+        file_handler = FileHandler(log_path)
+        file_handler.close = Mock(side_effect=Exception("test exception"))
+        wrapper.handler = file_handler
+
+        wrapper.clear()
+        assert wrapper.handler is None
 
 
 @pytest.mark.unittest
@@ -193,8 +205,6 @@ class TestLogContext:
             log = load_content(log_path)
             keywords = ["test update log", "test update input log", "execution.bulk", "input_logger", "INFO", "WARNING"]
             assert all(keyword in log for keyword in keywords)
-        os.remove(original_log_path)
-        os.remove(log_path)
 
     def test_scrub_credentials(self):
         log_content = "sig=signature&key=accountkey"
