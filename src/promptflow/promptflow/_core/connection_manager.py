@@ -16,7 +16,7 @@ from promptflow.contracts.types import Secret
 
 
 class ConnectionManager:
-    """This class will be used for construction mode to run flow locally. Do not include it into tool code."""
+    """This class will be used for construction mode to run flow. Do not include it into tool code."""
 
     instance = None
 
@@ -42,7 +42,8 @@ class ConnectionManager:
         for key, connection_dict in _dict.items():
             typ = connection_dict.get("type")
             if typ not in cls_mapping:
-                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {cls_mapping.keys()}.")
+                supported = [key for key in cls_mapping.keys() if not key.startswith("_")]
+                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {supported}.")
             value = connection_dict.get("value", {})
             connection_class = cls_mapping[typ]
 

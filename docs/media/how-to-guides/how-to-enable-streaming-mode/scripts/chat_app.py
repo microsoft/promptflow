@@ -188,10 +188,10 @@ class ChatApp:
 if __name__ == "__main__":
     ml_client = MLClient(
         credential=AzureCliCredential(),
-        # TODO: Replace with your subscription ID, resource group name, and workspace name
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-canary-dev",
+        # Replace with your subscription ID, resource group name, and workspace name
+        subscription_id="<your_sub_id>",
+        resource_group_name="<your_resource_group_name>",
+        workspace_name="<your_workspace_name>",
     )
 
     chat_app = ChatApp(

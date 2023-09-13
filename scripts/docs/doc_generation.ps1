@@ -11,7 +11,8 @@ PS> ./doc_generation.ps1 -BuildLinkCheck -WarningAsError:$true -SkipInstall
 param(
     [switch]$SkipInstall,
     [switch]$WarningAsError = $false,
-    [switch]$BuildLinkCheck = $false
+    [switch]$BuildLinkCheck = $false,
+    [switch]$WithReferenceDoc = $false
 )
 
 [string] $ScriptPath = $PSCommandPath | Split-Path -Parent
@@ -20,6 +21,11 @@ param(
 [string] $TempDocPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
 [string] $PkgSrcPath = [System.IO.Path]::Combine($RepoRootPath, "src\promptflow\promptflow")
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
+[string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
+[string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
+[string] $WarningErrorPattern = "WARNING:|ERROR:"
+$apidocWarningsAndErrors = $null
+$buildWarningsAndErrors = $null
 
 if (-not $SkipInstall){
     # Prepare doc generation packages
@@ -56,12 +62,16 @@ Write-Host "Copy doc to: $TempDocPath"
 ROBOCOPY $DocPath $TempDocPath /S /NFL /NDL /XD "*.git" [System.IO.Path]::Combine($DocPath, "_scripts\_build")
 ProcessFiles
 
-if(!$BuildLinkCheck){
-    # Only build ref doc when it's not link check
-    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, "reference\python-library-reference")
+if($WithReferenceDoc){
+    $RefDocRelativePath = "reference\python-library-reference"
+    $RefDocPath = [System.IO.Path]::Combine($TempDocPath, $RefDocRelativePath)
+    if(!(Test-Path $RefDocPath)){
+        throw "Reference doc path not found. Please make sure '$RefDocRelativePath' is under '$DocPath'"
+    }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
-    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath"
+    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
+    $apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
 }
 
 
@@ -74,7 +84,22 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+$buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
+
+if ($apidocWarningsAndErrors) {  
+    Write-Host "=============== API doc warnings and errors ==============="  
+    foreach ($line in $apidocWarningsAndErrors) {  
+        Write-Host $line -ForegroundColor Red  
+    }  
+}  
+  
+if ($buildWarningsAndErrors) {  
+    Write-Host "=============== Build warnings and errors ==============="  
+    foreach ($line in $buildWarningsAndErrors) {  
+        Write-Host $line -ForegroundColor Red  
+    }  
+} 

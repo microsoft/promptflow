@@ -24,8 +24,8 @@ To go through this tutorial you should:
    pip install -r requirements.txt
 ```
 
-2. Install VS code extension (optional but highly recommended)
-   // TODO
+2. Install and configure [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) follow [Quick Start Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html). (_This extension is optional but highly recommended for flow development and debugging._)
+
 
 ## Console chatbot chat_with_pdf
 A typical RAG application has two steps:
@@ -129,7 +129,7 @@ Appropriate tooling is essential for facilitating this experimentation and fine-
 - Running a few examples and manually verifying the results.
 - Running larger scale tests with a formal approach (using metrics) to assess your app's quality.
 
-You may have already learned how to create a prompt flow from scratch. Building a prompt flow from existing code is also straightforward. You can construct a [chat flow]() either by composing the YAML file or using the visual editor of [Visual Studio Code extension]() and create a few wrappers for existing code. 
+You may have already learned how to create a prompt flow from scratch. Building a prompt flow from existing code is also straightforward. You can construct a chat flow either by composing the YAML file or using the visual editor of [Visual Studio Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) and create a few wrappers for existing code. 
 
 Check out below:
 - [flow.dag.yaml](../../flows/chat/chat-with-pdf/flow.dag.yaml)
@@ -151,7 +151,7 @@ def build_index_tool(pdf_path: str) -> str:
     return create_faiss_index(pdf_path)
 ```
 
-The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection]() to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
+The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection](https://microsoft.github.io/promptflow/concepts/concept-connections.html) to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
 
 We're using Azure OpenAI in this example, below is the shell command to do so:
 ```bash
@@ -169,7 +169,7 @@ If you plan to use OpenAI instead you can use below instead:
 if pf connection list | grep open_ai_connection; then
     echo "open_ai_connection already exists"
 else
-    pf connection create --file ../../../connections/openai.yml --name open_ai_connection --set api_key=<your_api_key> organization=<your_org_id>
+    pf connection create --file ../../../connections/openai.yml --name open_ai_connection --set api_key=<your_api_key>
 fi
 ```
 
@@ -178,9 +178,9 @@ The flow looks like:
 <img src="../../flows/chat/chat-with-pdf/assets/multi-node-flow-chat-with-pdf.png" width="500" alt="chat with pdf flow, multi-node"/>
 
 ## Prompt flow evaluations
-Now the prompt flow for chat_with_pdf is created, you might have already run/debug flow through the [Visual Studio Code extension](). It's time to do some testing and evaluation, which starts with:
+Now the prompt flow for chat_with_pdf is created, you might have already run/debug flow through the Visual Studio Code extension. It's time to do some testing and evaluation, which starts with:
 1. Create a test dataset which contains a few question and pdf_url pairs.
-2. Use existing [evaluation flows]() or develop new evaluation flows to generate metrics.
+2. Use existing [evaluation flows](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation) or develop new evaluation flows to generate metrics.
 
 A small dataset can be found here: [bert-paper-qna.jsonl](../../flows/chat/chat-with-pdf/data/bert-paper-qna.jsonl) which contains around 10 questions for the BERT paper.
 
@@ -299,4 +299,64 @@ python -m unittest discover -s tests -p '*_test.py'
 ```
 
 ## Deployment
-//TODO: command line and screenshot of pf flow export and deploy to different cloud platforms
+The flow can be deployed across multiple platforms, such as a local development service, within a Docker container, onto a Kubernetes cluster, etc.
+
+The following sections will guide you through the process of deploying the flow to a Docker container, for more details about
+the other choices, please refer to [flow deploy docs](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/index.html).
+
+
+### Build a flow as docker format app
+
+Use the command below to build a flow as docker format app:
+
+```bash
+pf flow build --source . --output build --format docker
+```
+
+### Deploy with Docker
+#### Build Docker image
+
+Like other Dockerfile, you need to build the image first. You can tag the image with any name you want. In this example, we use `promptflow-serve`.
+
+Run the command below to build image:
+
+```shell
+docker build build -t chat-with-pdf-serve
+```
+
+#### Run Docker image
+
+Run the docker image will start a service to serve the flow inside the container. 
+
+##### Connections
+If the service involves connections, all related connections will be exported as yaml files and recreated in containers.
+Secrets in connections won't be exported directly. Instead, we will export them as a reference to environment variables:
+```yaml
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/OpenAIConnection.schema.json
+type: open_ai
+name: open_ai_connection
+module: promptflow.connections
+api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
+```
+You'll need to set up the environment variables in the container to make the connections work.
+
+#### Run with `docker run`
+
+
+You can run the docker image directly set via below commands:
+```shell
+# The started service will listen on port 8080.You can map the port to any port on the host machine as you want.
+docker run -p 8080:8080 -e OPEN_AI_CONNECTION_API_KEY=<secret-value> chat-with-pdf-serve
+```
+
+#### Test the endpoint
+After start the service, you can open the test page at `http://localhost:8080/` and test it:
+
+![test-page](../../flows/chat/chat-with-pdf/assets/chat_with_pdf_test_page.png)
+
+or use curl to test it from cli:
+
+```shell
+curl http://localhost:8080/score --data '{"question":"what is BERT?", "chat_history": [], "pdf_url": "https://arxiv.org/pdf/1810.04805.pdf", "config": {"EMBEDDING_MODEL_DEPLOYMENT_NAME": "text-embedding-ada-002", "CHAT_MODEL_DEPLOYMENT_NAME": "gpt-35-turbo", "PROMPT_TOKEN_LIMIT": 3000, "MAX_COMPLETION_TOKENS": 256, "VERBOSE": true, "CHUNK_SIZE": 1024, "CHUNK_OVERLAP": 64}}' -X POST  -H "Content-Type: application/json"
+```
+![test-endpoint](../../flows/chat/chat-with-pdf/assets/chat_with_pdf_test_endpoint.png)

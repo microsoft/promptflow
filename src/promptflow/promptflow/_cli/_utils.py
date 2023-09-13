@@ -21,8 +21,9 @@ import pydash
 from dotenv import load_dotenv
 from tabulate import tabulate
 
-from promptflow._sdk._utils import print_red_error
+from promptflow._sdk._utils import print_red_error, print_yellow_warning
 from promptflow._utils.utils import is_in_ci_pipeline
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
 AzureMLWorkspaceTriad = namedtuple("AzureMLWorkspace", ["subscription_id", "resource_group_name", "workspace_name"])
@@ -334,6 +335,12 @@ def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
     print(tabulate(df, headers="keys", tablefmt="grid", maxcolwidths=column_widths, maxheadercolwidths=column_widths))
 
 
+def is_format_exception():
+    if os.environ.get("PROMPTFLOW_STRUCTURE_EXCEPTION_OUTPUT", "false").lower() == "true":
+        return True
+    return False
+
+
 def exception_handler(command: str):
     """Catch known cli exceptions."""
 
@@ -342,10 +349,80 @@ def exception_handler(command: str):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except PromptflowException as e:
-                print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
-                exit(1)
+            except Exception as e:
+                if is_format_exception():
+                    # When the flag format_exception is set in command,
+                    # it will write a json with exception info and command to stderr.
+                    error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                    error_msg["command"] = " ".join(sys.argv)
+                    sys.stderr.write(json.dumps(error_msg))
+                if isinstance(e, PromptflowException):
+                    print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
+                    exit(1)
+                else:
+                    raise e
 
         return wrapper
 
     return decorator
+
+
+def get_secret_input(prompt, mask="*"):
+    """Get secret input with mask printed on screen in CLI.
+
+    Provide better handling for control characters:
+    - Handle Ctrl-C as KeyboardInterrupt
+    - Ignore control characters and print warning message.
+    """
+    if not isinstance(prompt, str):
+        raise TypeError(f"prompt must be a str, not ${type(prompt).__name__}")
+    if not isinstance(mask, str):
+        raise TypeError(f"mask argument must be a one-character str, not ${type(mask).__name__}")
+    if len(mask) != 1:
+        raise ValueError("mask argument must be a one-character str")
+
+    if sys.platform == "win32":
+        # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:
+        from msvcrt import getch  # type: ignore
+    else:  # macOS and Linux
+        import tty
+        import termios
+
+        def getch():
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            try:
+                tty.setraw(sys.stdin.fileno())
+                ch = sys.stdin.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            return ch
+
+    secret_input = []
+    sys.stdout.write(prompt)
+    sys.stdout.flush()
+
+    while True:
+        key = ord(getch())
+        if key == 13:  # Enter key pressed.
+            sys.stdout.write("\n")
+            return "".join(secret_input)
+        elif key == 3:  # Ctrl-C pressed.
+            raise KeyboardInterrupt()
+        elif key in (8, 127):  # Backspace/Del key erases previous output.
+            if len(secret_input) > 0:
+                # Erases previous character.
+                sys.stdout.write("\b \b")  # \b doesn't erase the character, it just moves the cursor back.
+                sys.stdout.flush()
+                secret_input = secret_input[:-1]
+        elif 0 <= key <= 31:
+            msg = "\nThe last user input got ignored as it is control character."
+            print_yellow_warning(msg)
+            sys.stdout.write(prompt + mask * len(secret_input))
+            sys.stdout.flush()
+        else:
+            # display the mask character.
+            char = chr(key)
+            sys.stdout.write(mask)
+            sys.stdout.flush()
+            secret_input.append(char)

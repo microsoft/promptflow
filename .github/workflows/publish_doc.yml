@@ -11,6 +11,7 @@ on:
       - 'docs/**'
       - 'scripts/docs/**'
       - '.github/workflows/publish_doc.yml'
+      - 'src/promptflow/promptflow/**'
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -22,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  packageSetupType: promptflow_open_source
+  packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
 
 jobs:
@@ -38,12 +39,6 @@ jobs:
       - name: Conda Setup
         uses: "./.github/actions/step_create_conda_environment"
 
-      - name: Display environment variables
-        run: |
-          echo ${{ env.packageSetupType }}
-          echo ${{ env.testWorkingDirectory }}
-        shell: bash -l {0}
-
       - name: Dev setup
         uses: "./.github/actions/step_sdk_setup"
         with:
@@ -53,7 +48,9 @@ jobs:
       - name: Build Doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1
+        run: |-
+          pip install langchain
+          ./doc_generation.ps1 -WithReferenceDoc:$true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1

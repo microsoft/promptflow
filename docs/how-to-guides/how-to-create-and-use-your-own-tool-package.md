@@ -21,11 +21,11 @@ git clone https://github.com/microsoft/promptflow.git
 ### Create custom tool package
 Run below command under root folder to create your tool project quickly:
 ```
-python scripts\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
+python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
 ```
 For example:
 ```
-python scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message
+python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message
 ```
 This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_ and _function-name_ are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_.
 
@@ -64,11 +64,11 @@ hello-world-proj/
 
     > [!Note] If you create a new tool, don't forget to also create the corresponding tool YAML. You can run below command under your tool project to auto generate your tool YAML. You may want to specify `-n` for `name` and `-d` for `description`, which would be displayed as the tool name and tooltip in prompt flow UI. 
     ```
-    python ..\scripts\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
+    python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
     ```
     For example:
     ```
-    python ..\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
+    python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
     ```
     To populate your tool module, adhere to the pattern \<package_name\>.tools.\<tool_name\>, which represents the folder path to your tool within the package.
 6. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
@@ -101,18 +101,15 @@ hello-world-proj/
   If you only want to put it on Test PyPI, upload your package by running `twine upload --repository-url https://test.pypi.org/legacy/ dist/*`. Once your package is uploaded to Test PyPI, others can install it using pip by running `pip install --index-url https://test.pypi.org/simple/ your-package-name`.
 
 ## Use your tool from VSCode Extension
-* Step1: Download the latest version [Prompt flow extension](https://aka.ms/promptflow/vsc). In the future, the extension will be available in the marketplace and you can skip this step.
+* Step1: Install [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow). 
 
-* Step2: Install the extension in VSCode via "Install from VSIX":
-![install-vsix](../media/contributing/install-vsix.png)
-
-* Step3: Go to terminal and install your tool package in conda environment of the extension. By default, the conda env name is `prompt-flow`.
+* Step2: Go to terminal and install your tool package in conda environment of the extension. Assume your conda env name is `prompt-flow`.
    ```
    (local_test) PS D:\projects\promptflow\tool-package-quickstart> conda activate prompt-flow
    (prompt-flow) PS D:\projects\promptflow\tool-package-quickstart> pip install .\dist\my_tools_package-0.0.1-py3-none-any.whl
    ``` 
 
-* Step4: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
+* Step3: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
 ![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
 
 

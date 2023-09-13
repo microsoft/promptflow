@@ -17,7 +17,8 @@ from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
-from promptflow.storage import AbstractRunStorage, DummyRunStorage
+from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import DummyRunStorage
 
 
 class RunTracker(ThreadLocalSingleton):
@@ -126,6 +127,35 @@ class RunTracker(ThreadLocalSingleton):
         self.set_current_run_in_context(run_id)
         self.node_log_manager.set_node_context(run_id, node, index)
         return run_info
+
+    def bypass_node_run(
+        self,
+        node,
+        flow_run_id,
+        parent_run_id,
+        run_id,
+        outputs,
+        index,
+        variant_id,
+    ):
+        run_info = RunInfo(
+            node=node,
+            run_id=run_id,
+            flow_run_id=flow_run_id,
+            parent_run_id=parent_run_id,
+            status=Status.Bypassed,
+            inputs=None,
+            output=outputs,
+            metrics=None,
+            error=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            result=outputs,
+            index=index,
+            variant_id=variant_id,
+            api_calls=[],
+        )
+        self._node_runs[run_id] = run_info
 
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
         if output:
@@ -305,7 +335,7 @@ class RunTracker(ThreadLocalSingleton):
         child_run_infos = self.collect_child_node_runs(run_id)
         traces = []
         for node_run_info in child_run_infos:
-            traces.extend(node_run_info.api_calls)
+            traces.extend(node_run_info.api_calls or [])
         return traces
 
     OPENAI_AGGREGATE_METRICS = ["total_tokens"]
@@ -335,27 +365,24 @@ class RunTracker(ThreadLocalSingleton):
         status_summary = {}
         line_status = {}
         for run_info in node_run_infos:
+            node_name = run_info.node
             if run_info.index is not None:
                 if run_info.index not in line_status.keys():
                     line_status[run_info.index] = True
 
-                line_status[run_info.index] = line_status[run_info.index] and run_info.status == Status.Completed
+                line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
+                    Status.Completed,
+                    Status.Bypassed,
+                )
 
-                node_name = run_info.node
-                if "__pf__.nodes." + node_name + ".completed" not in status_summary.keys():
-                    status_summary["__pf__.nodes." + node_name + ".completed"] = 0
-                    status_summary["__pf__.nodes." + node_name + ".failed"] = 0
-
-                # Only consider Completed and Failed status, because the UX only support two status.
-                if run_info.status in (Status.Completed, Status.Failed):
-                    status_summary["__pf__.nodes." + node_name + f".{run_info.status.value}".lower()] += 1
+                # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
+                if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
+                    node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
+                    status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
 
             # For reduce node, the index is None.
             else:
-                node_name = run_info.node
-                status_summary["__pf__.nodes." + node_name + ".completed"] = (
-                    1 if run_info.status == Status.Completed else 0
-                )
+                status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
         status_summary["__pf__.lines.completed"] = sum(line_status.values())
         status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]

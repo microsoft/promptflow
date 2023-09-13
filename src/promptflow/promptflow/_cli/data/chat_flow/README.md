@@ -1,8 +1,29 @@
 # Chat flow
 Chat flow is designed for conversational application development, building upon the capabilities of standard flow and providing enhanced support for chat inputs/outputs and chat history management. With chat flow, you can easily create a chatbot that handles chat input and output.
 
+## Create connection for LLM tool to use
+You can follow these steps to create a connection required by a LLM tool.
+
+Currently, there are two connection types supported by LLM tool: "AzureOpenAI" and "OpenAI". If you want to use "AzureOpenAI" connection type, you need to create an Azure OpenAI service first. Please refer to [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/) for more details. If you want to use "OpenAI" connection type, you need to create an OpenAI account first. Please refer to [OpenAI](https://platform.openai.com/) for more details.
+
+```bash
+# Override keys with --set to avoid yaml file changes
+# Create open ai connection
+pf connection create --file openai.yaml --set api_key=<your_api_key> --name open_ai_connection
+
+# Create azure open ai connection
+# pf connection create --file azure_openai.yaml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
+
+Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+```bash
+# show registered connection
+pf connection show --name open_ai_connection
+```
+Please refer to connections [document](https://promptflow.azurewebsites.net/community/local/manage-connections.html) and [example](https://github.com/microsoft/promptflow/tree/main/examples/connections) for more details.
+
 ## Develop a chat flow
-Develop flow inputs and outputs
+
 The most important elements that differentiate a chat flow from a standard flow are **Chat Input**, **Chat History**, and **Chat Output**.
 
 - **Chat Input**: Chat input refers to the messages or queries submitted by users to the chatbot. Effectively handling chat input is crucial for a successful conversation, as it involves understanding user intentions, extracting relevant information, and triggering appropriate responses.
@@ -21,13 +42,13 @@ Promptflow CLI provides a way to start an interactive chat session for chat flow
 pf flow test --flow <flow_folder> --interactive
 ```
 
-After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+Z**.
+After executing this command, customer can interact with the chat flow in the terminal. Customer can press **Enter** to send the message to chat flow. And customer can quit with **ctrl+C**.
 Promptflow CLI will distinguish the output of different roles by color, <span style="color:Green">User input</span>, <span style="color:Gold">Bot output</span>, <span style="color:Blue">Flow script output</span>, <span style="color:Cyan">Node output</span>.
 
 > =========================================<br>
 > Welcome to chat flow, <You-flow-name>.<br>
 > Press Enter to send your message.<br>
-> You can quit with ctrl+Z.<br>
+> You can quit with ctrl+C.<br>
 > =========================================<br>
 > <span style="color:Green">User:</span> What types of container software there are<br>
 > <span style="color:Gold">Bot:</span> There are several types of container software available, including:<br>
@@ -44,7 +65,7 @@ If customer adds "--verbose" in the pf command, the output of each step will be 
 > =========================================<br>
 > Welcome to chat flow, Template Chat Flow.<br>
 > Press Enter to send your message.<br>
-> You can quit with ctrl+Z.<br>
+> You can quit with ctrl+C.<br>
 > =========================================<br>
 > <span style="color:Green">User:</span> What types of container software there are<br>
 > <span style="color:Cyan">chat:</span> There are several types of container software available, including:<br>

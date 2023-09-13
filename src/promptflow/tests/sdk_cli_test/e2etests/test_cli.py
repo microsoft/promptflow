@@ -86,6 +86,8 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
+        # --param "key=value" key="value"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             run_pf_command(
@@ -94,8 +96,8 @@ class TestCli:
                 "--flow",
                 f"{FLOWS_DIR}/classification_accuracy_evaluation",
                 "--column-mapping",
-                "groundtruth=${data.answer}",
-                "prediction=${run.outputs.category}",
+                "'groundtruth=${data.answer}'",
+                "prediction='${run.outputs.category}'",
                 "variant_id=${data.variant_id}",
                 "--data",
                 f"{DATAS_DIR}/webClassification3.jsonl",
@@ -153,7 +155,7 @@ class TestCli:
         # used variant_0 config, defaults using variant_1
         assert tuning_node["inputs"]["temperature"] == 0.2
 
-    def test_environment_variable_overwrite(self, local_client):
+    def test_environment_variable_overwrite(self, local_client, local_aoai_connection):
         run_id = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -168,7 +170,7 @@ class TestCli:
             "API_BASE=${azure_open_ai_connection.api_base}",
         )
         outputs = local_client.runs._get_outputs(run=run_id)
-        assert "openai.azure.com" in outputs["output"][0]
+        assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
         with pytest.raises(Exception) as e:
@@ -219,7 +221,7 @@ class TestCli:
             f"description={description}",
         )
         run = local_client.runs.get(run_id)
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -237,7 +239,7 @@ class TestCli:
             f"description={description}",
             cwd=f"{RUNS_DIR}",
         )
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -254,6 +256,9 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            previous_log_content = f.read()
 
         # Test without input
         run_pf_command(
@@ -264,6 +269,10 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert previous_log_content not in log_content
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -302,7 +311,7 @@ class TestCli:
                 "answer=Channel",
                 "evidence=Url",
                 "--variant",
-                "${summarize_text_content.variant_1}",
+                "'${summarize_text_content.variant_1}'",
             )
             output_path = Path(temp_dir) / ".promptflow" / "flow-summarize_text_content-variant_1.output.json"
             assert output_path.exists()
@@ -526,6 +535,12 @@ class TestCli:
         assert outputs["output"] == env["API_BASE"]
         validate_stdout(Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.detail.json")
 
+        # Test log contains user printed outputs
+        log_path = Path(FLOWS_DIR) / "print_env_var" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert env["API_BASE"] in log_content
+
         run_pf_command(
             "flow",
             "test",
@@ -620,6 +635,15 @@ class TestCli:
             ignore_file_path = Path(temp_dir) / flow_name / ".gitignore"
             assert ignore_file_path.exists()
             ignore_file_path.unlink()
+
+            # Only azure openai connection in test env
+            with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "r") as f:
+                flow_dict = yaml.safe_load(f)
+            flow_dict["nodes"][0]["provider"] = "AzureOpenAI"
+            flow_dict["nodes"][0]["connection"] = "azure_open_ai_connection"
+            with open(Path(temp_dir) / flow_name / "flow.dag.yaml", "w") as f:
+                yaml.dump(flow_dict, f)
+
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
@@ -746,6 +770,20 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
+        # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
         # Validate terminal output
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--interactive", "--verbose")
@@ -753,8 +791,7 @@ class TestCli:
         # Check node output
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
-        # TODO Checkout user code stdout
-        # assert "print:" in outerr.out
+        assert "[show_answer]: print:" in outerr.out
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
@@ -782,6 +819,41 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
+
+    def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
+        chat_list = ["hi", "what is chat gpt?"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_defined_chat_history",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        # Test is_chat_history is set False
+        with pytest.raises(SystemExit):
+            chat_list = ["hi", "what is chat gpt?"]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_without_defined_chat_history",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     def test_flow_test_inputs(self, capsys, caplog):
         # Flow test missing required inputs
@@ -879,20 +951,36 @@ class TestCli:
                 expect_dict=expect_inputs,
             )
 
-    @pytest.mark.skip(reason="TODO: fix this test")
-    def test_flow_export(self):
-        flows_dir = "./tests/test_configs/flows"
+    def test_flow_build(self):
+        source = f"{FLOWS_DIR}/web_classification_with_additional_include/flow.dag.yaml"
+
+        def get_node_settings(_flow_dag_path: Path):
+            flow_dag = yaml.safe_load(_flow_dag_path.read_text())
+            target_node = next(filter(lambda x: x["name"] == "summarize_text_content", flow_dag["nodes"]))
+            target_node.pop("name")
+            return target_node
+
         with tempfile.TemporaryDirectory() as temp_dir:
             run_pf_command(
                 "flow",
-                "export",
+                "build",
                 "--source",
-                os.path.join(flows_dir, "intent-copilot"),
+                source,
                 "--output",
                 temp_dir,
                 "--format",
                 "docker",
+                "--variant",
+                "${summarize_text_content.variant_0}",
             )
+
+            new_flow_dag_path = Path(temp_dir, "flow", "flow.dag.yaml")
+            flow_dag = yaml.safe_load(Path(source).read_text())
+            assert (
+                get_node_settings(new_flow_dag_path)
+                == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
+            )
+            assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
@@ -1014,3 +1102,46 @@ class TestCli:
         assert "Executing node print_val. node run id:" not in f.getvalue()
         # executor logs won't stream
         assert "Node print_val completes." not in f.getvalue()
+
+    def test_format_cli_exception(self, capsys):
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        with patch.dict(os.environ, {"PROMPTFLOW_STRUCTURE_EXCEPTION_OUTPUT": "true"}):
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "connection",
+                    "show",
+                    "--name",
+                    "invalid_connection_name",
+                )
+            outerr = capsys.readouterr()
+            assert outerr.err
+            error_msg = json.loads(outerr.err)
+            assert error_msg["code"] == "ConnectionNotFoundError"
+
+            def mocked_connection_get(*args, **kwargs):
+                raise Exception("mock exception")
+
+            with patch.object(ConnectionOperations, "get") as mock_connection_get:
+                mock_connection_get.side_effect = mocked_connection_get
+                with pytest.raises(Exception):
+                    run_pf_command(
+                        "connection",
+                        "show",
+                        "--name",
+                        "invalid_connection_name",
+                    )
+                outerr = capsys.readouterr()
+                assert outerr.err
+                error_msg = json.loads(outerr.err)
+                assert error_msg["code"] == "SystemError"
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "connection",
+                "show",
+                "--name",
+                "invalid_connection_name",
+            )
+        outerr = capsys.readouterr()
+        assert not outerr.err

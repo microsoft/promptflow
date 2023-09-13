@@ -13,6 +13,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 import yaml
 
+from promptflow._core._errors import NotSupported
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
@@ -24,22 +25,29 @@ from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
-from promptflow.contracts.flow import Flow, InputAssignment, InputValueType, Node
+from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
 from promptflow.executor import _input_assignment_parser
-from promptflow.executor._errors import NodeConcurrencyNotFound
+from promptflow.executor._errors import (
+    InvalidAggregationInput,
+    NodeConcurrencyNotFound,
+    NodeOutputNotFound,
+    OutputReferenceBypassed,
+    OutputReferenceNotExist,
+)
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
     DEFAULT_CONCURRENCY_FLOW,
     FlowNodesScheduler,
 )
 from promptflow.executor._result import AggregationResult, BulkResult, LineResult
+from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
-from promptflow.executor.tool_invoker import DefaultToolInvoker
-from promptflow.storage import AbstractRunStorage, DummyRunStorage
+from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import DummyRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -48,7 +56,7 @@ LINE_TIMEOUT_SEC = 600
 class FlowExecutor:
     """This class is used to execute a single flow for different inputs."""
 
-    DEFAULT_WORKER_COUNT = 16
+    _DEFAULT_WORKER_COUNT = 16
 
     def __init__(
         self,
@@ -77,12 +85,12 @@ class FlowExecutor:
             self._worker_count = worker_count
         else:
             try:
-                worker_count = int(os.environ.get("PF_WORKER_COUNT", self.DEFAULT_WORKER_COUNT))
+                worker_count = int(os.environ.get("PF_WORKER_COUNT", self._DEFAULT_WORKER_COUNT))
                 self._worker_count = worker_count
             except Exception:
-                self._worker_count = self.DEFAULT_WORKER_COUNT
+                self._worker_count = self._DEFAULT_WORKER_COUNT
         if self._worker_count <= 0:
-            self._worker_count = self.DEFAULT_WORKER_COUNT
+            self._worker_count = self._DEFAULT_WORKER_COUNT
         self._run_tracker = run_tracker
         self._cache_manager = cache_manager
         self._loaded_tools = loaded_tools
@@ -126,9 +134,9 @@ class FlowExecutor:
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ) -> "FlowExecutor":
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        flow = Flow.from_yaml(flow_file, working_dir=working_dir, gen_tool=False)
+        flow = Flow.from_yaml(flow_file, working_dir=working_dir)
         if node_override:
-            flow = flow.apply_node_overrides(node_override)
+            flow = flow._apply_node_overrides(node_override)
         flow = flow._apply_default_node_variants()
         package_tool_keys = [node.source.tool for node in flow.nodes if node.source and node.source.tool]
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -188,6 +196,7 @@ class FlowExecutor:
         if not node.source or not node.type:
             raise ValueError(f"Node {node_name} is not a valid node in flow {flow_file}.")
 
+        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -245,13 +254,16 @@ class FlowExecutor:
         return update_environment_variables_with_connections(connections)
 
     def convert_flow_input_types(self, inputs: dict):
+        """
+        Convert flow inputs type if existing. Ignore missing inputs.
+
+        return:
+            type converted inputs
+        """
         return FlowValidator.resolve_flow_inputs_type(self._flow, inputs)
 
-    def collect_run_infos(self):
-        return self._run_tracker.collect_all_run_infos_as_dicts()
-
     @property
-    def default_inputs_mapping(self):
+    def _default_inputs_mapping(self):
         return {key: f"${{data.{key}}}" for key in self._flow.inputs}
 
     @property
@@ -390,8 +402,63 @@ class FlowExecutor:
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
     ) -> AggregationResult:
         self._node_concurrency = node_concurrency
+        aggregated_flow_inputs = dict(inputs or {})
+        aggregation_inputs = dict(aggregation_inputs or {})
+        self._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
+        aggregated_flow_inputs = self._apply_default_value_for_aggregation_input(
+            self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
+        )
+
         with self._run_tracker.node_log_manager:
-            return self._exec_aggregation(inputs, aggregation_inputs, run_id)
+            return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
+
+    @staticmethod
+    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
+        """Validate the aggregation inputs according to the flow inputs."""
+        for key, value in aggregated_flow_inputs.items():
+            if key in aggregation_inputs:
+                raise InvalidAggregationInput(
+                    message_format="Input '{input_key}' appear in both flow aggregation input and aggregation input.",
+                    input_key=key,
+                )
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format="Flow aggregation input {input_key} should be one list.", input_key=key
+                )
+
+        for key, value in aggregation_inputs.items():
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format="Aggregation input {input_key} should be one list.", input_key=key
+                )
+
+        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
+        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
+        if len(set(inputs_len.values())) > 1:
+            raise InvalidAggregationInput(
+                message_format="Whole aggregation inputs should have the same length. "
+                "Current key length mapping are: {key_len}",
+                key_len=inputs_len,
+            )
+
+    @staticmethod
+    def _apply_default_value_for_aggregation_input(
+        inputs: Dict[str, FlowInputDefinition],
+        aggregated_flow_inputs: Mapping[str, Any],
+        aggregation_inputs: Mapping[str, Any],
+    ):
+        aggregation_lines = 1
+        if aggregated_flow_inputs.values():
+            one_input_value = list(aggregated_flow_inputs.values())[0]
+            aggregation_lines = len(one_input_value)
+        # If aggregated_flow_inputs is empty, we should use aggregation_inputs to get the length.
+        elif aggregation_inputs.values():
+            one_input_value = list(aggregation_inputs.values())[0]
+            aggregation_lines = len(one_input_value)
+        for key, value in inputs.items():
+            if key not in aggregated_flow_inputs and (value and value.default):
+                aggregated_flow_inputs[key] = [value.default] * aggregation_lines
+        return aggregated_flow_inputs
 
     def _exec_aggregation(
         self,
@@ -434,6 +501,7 @@ class FlowExecutor:
 
     def exec(self, inputs: dict, node_concurency=DEFAULT_CONCURRENCY_FLOW) -> dict:
         self._node_concurrency = node_concurency
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -472,6 +540,7 @@ class FlowExecutor:
         allow_generator_output: bool = False,
     ) -> LineResult:
         self._node_concurrency = node_concurrency
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -529,6 +598,11 @@ class FlowExecutor:
             BulkResults including flow results and metrics
         """
         self._node_concurrency = node_concurrency
+        # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
+        inputs = [
+            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            for each_line_input in inputs
+        ]
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
@@ -548,14 +622,27 @@ class FlowExecutor:
             aggr_results=aggr_results,
         )
 
-    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping):
+    @staticmethod
+    def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+        updated_inputs = dict(line_inputs or {})
+        for key, value in inputs.items():
+            if key not in updated_inputs and (value and value.default):
+                updated_inputs[key] = value.default
+        return updated_inputs
+
+    def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
-        resolved_inputs = self.apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
+        resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         return resolved_inputs
 
     def _complete_inputs_mapping_by_default_value(self, inputs_mapping):
         inputs_mapping = inputs_mapping or {}
-        result_mapping = self.default_inputs_mapping
+        result_mapping = self._default_inputs_mapping
+        # For input has default value, we don't try to read data from default mapping.
+        # Default value is in higher priority than default mapping.
+        for key, value in self._flow.inputs.items():
+            if value and value.default:
+                del result_mapping[key]
         result_mapping.update(inputs_mapping)
         return result_mapping
 
@@ -616,8 +703,8 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
-            output, nodes_outputs = self.traverse_nodes(inputs, context)
-            output = self.stringify_generator_output(output) if not allow_generator_output else output
+            output, nodes_outputs = self._traverse_nodes(inputs, context)
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -632,7 +719,7 @@ class FlowExecutor:
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
-    def extract_outputs(self, nodes_outputs, flow_inputs):
+    def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
         outputs = {}
         for name, output in self._flow.outputs.items():
             if output.reference.value_type == InputValueType.LITERAL:
@@ -642,36 +729,69 @@ class FlowExecutor:
                 outputs[name] = flow_inputs[output.reference.value]
                 continue
             if output.reference.value_type != InputValueType.NODE_REFERENCE:
-                raise NotImplementedError(f"Unsupported output type {output.reference.value_type}")
+                raise NotSupported(
+                    message_format=(
+                        "The output type '{output_type}' is currently unsupported. "
+                        "Please choose from available types: '{supported_output_type}' and try again."
+                    ),
+                    output_type=output.reference.value_type,
+                    supported_output_type=[output_type.value for output_type in InputValueType],
+                )
             node = next((n for n in self._flow.nodes if n.name == output.reference.value), None)
             if not node:
-                raise ValueError(f"Invalid node name {output.reference.value}")
+                raise OutputReferenceNotExist(
+                    message_format=(
+                        "Flow is defined incorrectly. The node '{node_name}' "
+                        "referenced by the output '{output_name}' can not found in flow. "
+                        "Please rectify the error in your flow and try again."
+                    ),
+                    node_name=output.reference.value,
+                    output_name=name,
+                )
             if node.aggregation:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                raise ValueError(f"Node {output.reference.value} not found in results.")
+                if node.name in bypassed_nodes:
+                    raise OutputReferenceBypassed(
+                        message_format=(
+                            "The output '{output_name}' for flow is incorrect. "
+                            "The node '{node_name}' referenced by the output has been bypassed. "
+                            "Please refrain from using bypassed nodes as output sources."
+                        ),
+                        output_name=name,
+                        node_name=node.name,
+                    )
+                raise NodeOutputNotFound(
+                    message_format=(
+                        "The output '{output_name}' for flow is incorrect. "
+                        "No outputs found for node '{node_name}'. Please review the problematic "
+                        "output and rectify the error."
+                    ),
+                    output_name=name,
+                    node_name=node.name,
+                )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
                 output.reference.value, node_result, output.reference.property
             )
         return outputs
 
-    def traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
+    def _traverse_nodes(self, inputs, context: FlowExecutionContext) -> Tuple[dict, dict]:
         batch_nodes = [node for node in self._flow.nodes if not node.aggregation]
         outputs = {}
-        nodes_outputs = self._submit_to_scheduler(context, inputs, batch_nodes)
-        outputs = self.extract_outputs(nodes_outputs, inputs)
+        nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
+        outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
 
-    def stringify_generator_output(self, outputs: dict):
+    def _stringify_generator_output(self, outputs: dict):
         for k, v in outputs.items():
             if isinstance(v, GeneratorType):
                 outputs[k] = "".join(str(chuck) for chuck in v)
 
         return outputs
 
-    def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> dict:
+    def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
             raise NodeConcurrencyNotFound("Need to set node concurrency as using flow executor.")
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
@@ -791,7 +911,7 @@ class FlowExecutor:
         return result
 
     @staticmethod
-    def apply_inputs_mapping_for_all_lines(
+    def _apply_inputs_mapping_for_all_lines(
         input_dict: Mapping[str, List[Mapping[str, Any]]],
         inputs_mapping: Mapping[str, str],
     ) -> List[Dict[str, Any]]:
@@ -852,7 +972,7 @@ class FlowExecutor:
                 and self._flow.is_referenced_by_flow_output(node)
                 and not self._flow.is_referenced_by_other_node(node)
             ):
-                self._tools_manager.wrap_tool(node.name, wrapper=inject_stream_options(stream_required))
+                self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
 
     def ensure_flow_is_serializable(self):
         """Ensure that the flow is serializable.
@@ -865,10 +985,10 @@ class FlowExecutor:
         to consume the streaming outputs and merge them into a string for executor usage.
         """
         for node in self._flow.nodes:
-            self._tools_manager.wrap_tool(node.name, wrapper=ensure_node_result_is_serializable)
+            self._tools_manager.wrap_tool(node.name, wrapper=_ensure_node_result_is_serializable)
 
 
-def inject_stream_options(should_stream: Callable[[], bool]):
+def _inject_stream_options(should_stream: Callable[[], bool]):
     """Inject the stream options to the decorated function.
 
     AzureOpenAI.completion and AzureOpenAI.chat tools support both stream and non-stream mode.
@@ -915,7 +1035,7 @@ def enable_streaming_for_llm_tool(f):
     return wrapper
 
 
-def ensure_node_result_is_serializable(f):
+def _ensure_node_result_is_serializable(f):
     """Ensure the node result is serializable.
 
     Some of the nodes may return a generator of strings to create streaming outputs.

@@ -1,5 +1,12 @@
 name: step_publish_test_results
 inputs:
+  testActionFileName:
+    required: required
+    type: string
+  testResultTitle:
+    required: false
+    default: "Test Result"
+    type: string
   osVersion:
     required: false
     default: "ubuntu-latest"
@@ -15,6 +22,10 @@ inputs:
   token:
     description: 'A Github PAT'
     required: true
+  context:
+    description: 'The context of the status'
+    required: false
+    default: 'test/sdk_cli'
 runs:
   using: composite
   steps:
@@ -29,12 +40,27 @@ runs:
   - name: Publish Test Results
     uses: EnricoMi/publish-unit-test-result-action@v2
     with:
-      check_name: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
-      comment_title: "Executor Unit Test Result [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/promptflow-executor-unit-test.yml?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+      check_name: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
+      comment_title: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
   - name: Generate Coverage Report
+    if: ${{ inputs.coverageThreshold != 0 }}
     uses: orgoro/coverage@v3.1
     with:
       coverageFile: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
       token: ${{ inputs.token }}
       thresholdAll: ${{ inputs.coverageThreshold }}
+  - name: Sending PR status to checkenforcer
+    run: |-
+      gh api \
+        --method POST \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        /repos/${{ github.repository }}/statuses/${{ github.sha }} \
+        -f state='success' \
+        -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' \
+        -f description='The build succeeded!' \
+        -f context='${{ inputs.context }}'
+    shell: bash -el {0}
+    env:
+      GITHUB_TOKEN: ${{ inputs.token }}

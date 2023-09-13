@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+from promptflow._sdk._constants import BULK_RUN_LINE_ERRORS
 from promptflow.exceptions import ErrorTarget, PromptflowException
 
 
@@ -68,9 +68,17 @@ class GenerateFlowToolsJsonError(PromptflowException):
 class BulkRunException(PromptflowException):
     """Exception raised when bulk run failed."""
 
-    def __init__(self, *, message="", failed_lines: int, total_lines: int, module: str = None, **kwargs):
+    def __init__(self, *, message="", failed_lines: int, total_lines: int, line_errors, module: str = None, **kwargs):
         self.failed_lines = failed_lines
         self.total_lines = total_lines
-        # TODO(2626231): aggregate error messages
+        self._additional_info = {
+            BULK_RUN_LINE_ERRORS: line_errors,
+        }
+
         message = f"Failed to run {failed_lines}/{total_lines} lines: First error message is: {message}"
         super().__init__(message=message, target=ErrorTarget.RUNTIME, module=module, **kwargs)
+
+    @property
+    def additional_info(self):
+        """Set the tool exception details as additional info."""
+        return self._additional_info

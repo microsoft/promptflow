@@ -15,7 +15,7 @@ from promptflow.exceptions import ErrorTarget
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule
+from ._errors import FailedToImportModule, NodeConditionConflict
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
@@ -123,6 +123,20 @@ class ToolSource:
 
 
 @dataclass
+class ActivateCondition:
+    condition: InputAssignment
+    condition_value: Any
+
+    @staticmethod
+    def deserialize(data: dict) -> "ActivateCondition":
+        result = ActivateCondition(
+            condition=InputAssignment.deserialize(data["when"]),
+            condition_value=data["is"],
+        )
+        return result
+
+
+@dataclass
 class SkipCondition:
     condition: InputAssignment
     condition_value: Any
@@ -154,6 +168,7 @@ class Node:
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
     skip: Optional[SkipCondition] = None
+    activate: Optional[ActivateCondition] = None
 
     def serialize(self):
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v})
@@ -185,6 +200,11 @@ class Node:
             node.type = ToolType(data["type"])
         if "skip" in data:
             node.skip = SkipCondition.deserialize(data["skip"])
+        if "activate" in data:
+            node.activate = ActivateCondition.deserialize(data["activate"])
+        if node.skip and node.activate:
+            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
+
         return node
 
 
@@ -195,6 +215,7 @@ class FlowInputDefinition:
     description: str = None
     enum: List[str] = None
     is_chat_input: bool = False
+    is_chat_history: bool = None
 
     def serialize(self):
         data = {}
@@ -207,6 +228,8 @@ class FlowInputDefinition:
             data["enum"] = self.enum
         if self.is_chat_input:
             data["is_chat_input"] = True
+        if self.is_chat_history:
+            data["is_chat_history"] = True
         return data
 
     @staticmethod
@@ -217,6 +240,7 @@ class FlowInputDefinition:
             data.get("description", ""),
             data.get("enum", []),
             data.get("is_chat_input", False),
+            data.get("is_chat_history", None),
         )
 
 
@@ -300,7 +324,7 @@ class Flow:
         return data
 
     @staticmethod
-    def import_requisites(tools, nodes):
+    def _import_requisites(tools, nodes):
         try:
             """This function will import tools/nodes required modules to ensure type exists so flow can be executed."""
             # Import tool modules to ensure register_builtins & registered_connections executed
@@ -321,7 +345,7 @@ class Flow:
     def deserialize(data: dict) -> "Flow":
         tools = [Tool.deserialize(t) for t in data.get("tools") or []]
         nodes = [Node.deserialize(n) for n in data.get("nodes") or []]
-        Flow.import_requisites(tools, nodes)
+        Flow._import_requisites(tools, nodes)
         inputs = data.get("inputs") or {}
         outputs = data.get("outputs") or {}
         return Flow(
@@ -364,25 +388,20 @@ class Flow:
         return working_dir
 
     @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None, gen_tool=True) -> "Flow":
+    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))
-
-        # TODO: Postpone tool generation to flow execution in all scenarios and remove this parameter.
-        if not gen_tool:
-            return flow
-        from promptflow._core.tools_manager import gen_tool_by_source
-
-        for node in flow.nodes:
-            if node.source:
-                tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
-                node.tool = tool.name
-                flow.tools.append(tool)
+            flow._set_tool_loader(working_dir)
         return flow
 
-    def apply_node_overrides(self, node_overrides):
+    def _set_tool_loader(self, working_dir):
+        package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
+        from promptflow._core.tools_manager import ToolLoader
+        self._tool_loader = ToolLoader(working_dir, package_tool_keys)
+
+    def _apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
 
         Example:
@@ -464,14 +483,9 @@ class Flow:
     def get_chat_output_name(self):
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
-    def get_connection_input_names_for_node(self, node_name):
-        """Return connection input names."""
-        node = self.get_node(node_name)
-        if not node:
-            return []
-        result = []
+    def _get_connection_name_from_tool(self, tool: Tool, node: Node):
+        connection_names = {}
         value_types = set({v.value for v in ValueType.__members__.values()})
-        tool = self.get_tool(node.tool)
         for k, v in tool.inputs.items():
             input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
             if all(typ.lower() in value_types for typ in input_type):
@@ -479,42 +493,44 @@ class Flow:
                 continue
             input_assignment = node.inputs.get(k)
             # Add literal node assignment values to results, skip node reference
-            if isinstance(input_assignment, InputAssignment) and input_assignment.value_type == InputValueType.LITERAL:
-                result.append(k)
-        return result
+            if (
+                isinstance(input_assignment, InputAssignment)
+                and input_assignment.value_type == InputValueType.LITERAL
+            ):
+                connection_names[k] = input_assignment.value
+        return connection_names
 
     def get_connection_names(self):
-        """Return the possible connection names in flow object."""
         connection_names = set({})
-        tool_metas = {tool.name: tool for tool in self.tools}
-        value_types = set({v.value for v in ValueType.__members__.values()})
-        for node in self.nodes:
+        nodes = [
+            self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
+            for node in self.nodes
+        ]
+        for node in nodes:
             if node.connection:
-                # Some node has a separate field for connection.
                 connection_names.add(node.connection)
                 continue
-            # Get tool meta and return possible input name with connection type
-            if node.tool not in tool_metas:
-                msg = f"Node {node.name!r} references tool {node.tool!r} which is not in the flow {self.name!r}."
-                raise Exception(msg)
-            tool = tool_metas.get(node.tool)
-            # Force regard input type not in ValueType as connection type.
-            for k, v in tool.inputs.items():
-                input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
-                if all(typ.lower() in value_types for typ in input_type):
-                    # All type is value type, the key is not a possible connection key.
-                    continue
-                input_assignment = node.inputs.get(k)
-                # Add literal node assignment values to results, skip node reference
-                if (
-                    isinstance(input_assignment, InputAssignment)
-                    and input_assignment.value_type == InputValueType.LITERAL
-                ):
-                    connection_names.add(input_assignment.value)
-        # Filter None and empty string out
+            if node.type == ToolType.PROMPT or node.type == ToolType.LLM:
+                continue
+            tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+            if tool:
+                connection_names.update(self._get_connection_name_from_tool(tool, node).values())
         return set({item for item in connection_names if item})
 
-    def replace_with_variant(self, variant_node: Node, variant_tools: list):
+    def get_connection_input_names_for_node(self, node_name):
+        """Return connection input names."""
+        node = self.get_node(node_name)
+        if node and node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
+        # Ignore Prompt node and LLM node, due to they do not have connection inputs.
+        if not node or node.type == ToolType.PROMPT or node.type == ToolType.LLM:
+            return []
+        tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+        if tool:
+            return list(self._get_connection_name_from_tool(tool, node).keys())
+        return []
+
+    def _replace_with_variant(self, variant_node: Node, variant_tools: list):
         for index, node in enumerate(self.nodes):
             if node.name == variant_node.name:
                 self.nodes[index] = variant_node

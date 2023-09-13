@@ -1,30 +1,30 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-# ---------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# ---------------------------------------------------------
 """service_calller.py, module for interacting with the AzureML service."""
+import json
+import logging
 import os
 import sys
 import time
 import uuid
+from functools import wraps
 
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
-from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
-from promptflow.exceptions import ValidationException, UserErrorException
+from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
-logger = LoggerFactory.get_logger(name=__name__)
+logger = logging.getLogger(__name__)
 
 
-class FlowRequestException(Exception):
+class FlowRequestException(PromptflowException):
     """FlowRequestException."""
 
-    def __init__(self, message):
-        super().__init__(message)
+    def __init__(self, message, **kwargs):
+        super().__init__(message, **kwargs)
 
 
 class TelemetryMixin(object):
@@ -41,7 +41,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
     def __init__(self):
         super().__init__()
-        self._request_id = None
+        self._request_id = str(uuid.uuid4())
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
@@ -52,6 +52,29 @@ class RequestTelemetryMixin(TelemetryMixin):
 
     def _refresh_request_id_for_telemetry(self):
         self._request_id = str(uuid.uuid4())
+
+
+def _request_wrapper():
+    """Wrapper for request. Will refress request id and pretty print exception."""
+    def exception_wrapper(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if not isinstance(self, RequestTelemetryMixin):
+                raise PromptflowException(f"Wrapped function is not RequestTelemetryMixin, got {type(self)}")
+            # refresh request before each request
+            self._refresh_request_id_for_telemetry()
+            try:
+                return func(self, *args, **kwargs)
+            except HttpResponseError as e:
+                raise FlowRequestException(
+                    f"Calling {func.__name__} failed with request id: {self._request_id} \n"
+                    f"Status code: {e.status_code} \n"
+                    f"Reason: {e.reason} \n"
+                    f"Error message: {e.message} \n"
+                )
+        return wrapper
+
+    return exception_wrapper
 
 
 class FlowServiceCaller(RequestTelemetryMixin):
@@ -100,10 +123,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default")
-        custom_header = {
-            "Authorization": "Bearer " + token.token,
-            "x-ms-client-request-id": str(uuid.uuid4())
-        }
+        custom_header = {"Authorization": "Bearer " + token.token, "x-ms-client-request-id": self._request_id}
         return custom_header
 
     def _set_headers_with_user_aml_token(self, headers):
@@ -133,6 +153,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
         headers["aml-user-token"] = aml_token
 
+    @_request_wrapper()
     def create_flow(
         self,
         subscription_id,  # type: str
@@ -142,22 +163,18 @@ class FlowServiceCaller(RequestTelemetryMixin):
         body=None,  # type: Optional["_models.CreateFlowRequest"]
         **kwargs  # type: Any
     ):
-        # TODO: move the wrapper to decorator
-        self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
-        try:
-            return self.caller.flows.create_flow(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                experiment_id=experiment_id,
-                body=body,
-                headers=headers,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+        return self.caller.flows.create_flow(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            experiment_id=experiment_id,
+            body=body,
+            headers=headers,
+            **kwargs
+        )
 
+    @_request_wrapper()
     def create_component_from_flow(
         self,
         subscription_id,  # type: str
@@ -166,24 +183,22 @@ class FlowServiceCaller(RequestTelemetryMixin):
         body=None,  # type: Optional["_models.LoadFlowAsComponentRequest"]
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
         try:
             return self.caller.flows.load_as_component(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                body=body,
-                headers=headers,
-                **kwargs
-            )
+                    subscription_id=subscription_id,
+                    resource_group_name=resource_group_name,
+                    workspace_name=workspace_name,
+                    body=body,
+                    headers=headers,
+                    **kwargs
+                )
         except ResourceExistsError:
             return f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}" \
                    f"/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}" \
                    f"/components/{body.component_name}/versions/{body.component_version}"
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+    @_request_wrapper()
     def list_flows(
         self,
         subscription_id,  # type: str
@@ -195,23 +210,20 @@ class FlowServiceCaller(RequestTelemetryMixin):
         list_view_type=None,  # type: Optional[Union[str, "_models.ListViewType"]]
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
         headers = self._get_headers()
-        try:
-            return self.caller.flows.list_flows(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                experiment_id=experiment_id,
-                owned_only=owned_only,
-                flow_type=flow_type,
-                list_view_type=list_view_type,
-                headers=headers,
-                **kwargs,
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+        return self.caller.flows.list_flows(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            experiment_id=experiment_id,
+            owned_only=owned_only,
+            flow_type=flow_type,
+            list_view_type=list_view_type,
+            headers=headers,
+            **kwargs,
+        )
 
+    @_request_wrapper()
     def submit_flow(
         self,
         subscription_id,  # type: str
@@ -222,22 +234,20 @@ class FlowServiceCaller(RequestTelemetryMixin):
         body=None,  # type: Optional["_models.SubmitFlowRequest"]
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.flows.submit_flow(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                experiment_id=experiment_id,
-                endpoint_name=endpoint_name,
-                body=body,
-                headers=headers,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+        return self.caller.flows.submit_flow(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            experiment_id=experiment_id,
+            endpoint_name=endpoint_name,
+            body=body,
+            headers=headers,
+            **kwargs
+        )
 
+    @_request_wrapper()
     def get_flow(
         self,
         subscription_id,  # type: str
@@ -247,21 +257,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
         experiment_id,  # type: str
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.flows.get_flow(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                experiment_id=experiment_id,
-                flow_id=flow_id,
-                headers=headers,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+        return self.caller.flows.get_flow(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            experiment_id=experiment_id,
+            flow_id=flow_id,
+            headers=headers,
+            **kwargs
+        )
 
+    @_request_wrapper()
     def create_connection(
         self,
         subscription_id,  # type: str
@@ -271,21 +279,19 @@ class FlowServiceCaller(RequestTelemetryMixin):
         body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequest"]
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.connections.create_connection(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                connection_name=connection_name,
-                body=body,
-                headers=headers,
-                **kwargs
-            )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+        return self.caller.connections.create_connection(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            connection_name=connection_name,
+            body=body,
+            headers=headers,
+            **kwargs
+        )
 
+    @_request_wrapper()
     def update_connection(
         self,
         subscription_id,  # type: str
@@ -295,10 +301,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
         body=None,  # type: Optional["_models.CreateOrUpdateConnectionRequestDto"]
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.connections.update_connection(
+        return self.caller.connections.update_connection(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
@@ -307,9 +312,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 headers=headers,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+
+    @_request_wrapper()
     def get_connection(
         self,
         subscription_id,  # type: str
@@ -318,10 +323,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
         connection_name,  # type: str
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.connections.get_connection(
+        return self.caller.connections.get_connection(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
@@ -329,9 +333,8 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 headers=headers,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+    @_request_wrapper()
     def delete_connection(
         self,
         subscription_id,  # type: str
@@ -340,10 +343,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
         connection_name,  # type: str
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.connections.delete_connection(
+        return self.caller.connections.delete_connection(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
@@ -351,9 +353,9 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 headers=headers,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+
+    @_request_wrapper()
     def list_connections(
         self,
         subscription_id,  # type: str
@@ -361,19 +363,18 @@ class FlowServiceCaller(RequestTelemetryMixin):
         workspace_name,  # type: str
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.connections.list_connections(
+        return self.caller.connections.list_connections(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
                 headers=headers,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+
+    @_request_wrapper()
     def list_connection_specs(
         self,
         subscription_id,  # type: str
@@ -381,19 +382,18 @@ class FlowServiceCaller(RequestTelemetryMixin):
         workspace_name,  # type: str
         **kwargs  # type: Any
     ):
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.connections.list_connection_specs(
+        return self.caller.connections.list_connection_specs(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
                 headers=headers,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+
+    @_request_wrapper()
     def list_runs(
         self,
         subscription_id,  # type: str
@@ -406,19 +406,17 @@ class FlowServiceCaller(RequestTelemetryMixin):
         :return: A list of runs in the workspace.
         :rtype: list[~azure.ml._restclient.machinelearningservices.models.Run]
         """
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            return self.caller.flows.list_flow_runs(
+        return self.caller.flows.list_flow_runs(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
                 headers=headers,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+    @_request_wrapper()
     def submit_bulk_run(
             self,
             subscription_id,  # type: str
@@ -442,12 +440,11 @@ class FlowServiceCaller(RequestTelemetryMixin):
         :rtype: str
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
         # pass user aml token to flow run submission
         self._set_headers_with_user_aml_token(headers)
-        try:
-            return self.caller.bulk_runs.submit_bulk_run(
+        return self.caller.bulk_runs.submit_bulk_run(
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name,
@@ -455,16 +452,16 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 body=body,
                 **kwargs
             )
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
 
+
+    @_request_wrapper()
     def create_flow_session(
         self,
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
         session_id,  # type: str
-        body=None,  # type: Optional["_models.CreateFlowSessionRequest"]
+        body,  # type: Optional["_models.CreateFlowSessionRequest"]
         **kwargs  # type: Any
     ):
         from azure.core.exceptions import ClientAuthenticationError, HttpResponseError, ResourceExistsError, \
@@ -475,80 +472,99 @@ class FlowServiceCaller(RequestTelemetryMixin):
             _models
         )
         from promptflow.azure._constants._flow import SESSION_CREATION_TIMEOUT_SECONDS
+        from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
         # pass user aml token to session create so user don't need to do authentication again in CI
         self._set_headers_with_user_aml_token(headers)
-        try:
-            # did not call self.caller.flow_sessions.create_flow_session because it does not support return headers
-            cls = kwargs.pop('cls', None)  # type: ClsType[Any]
-            error_map = {
-                401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-            }
-            error_map.update(kwargs.pop('error_map', {}))
+        # did not call self.caller.flow_sessions.create_flow_session because it does not support return headers
+        cls = kwargs.pop('cls', None)  # type: ClsType[Any]
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        error_map.update(kwargs.pop('error_map', {}))
 
-            content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
+        content_type = kwargs.pop('content_type', "application/json")  # type: Optional[str]
 
-            if body is not None:
-                _json = self.caller.flow_sessions._serialize.body(body, 'CreateFlowSessionRequest')
-            else:
-                _json = None
+        _json = self.caller.flow_sessions._serialize.body(body, 'CreateFlowSessionRequest')
 
-            request = build_create_flow_session_request(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                session_id=session_id,
-                content_type=content_type,
-                json=_json,
-                template_url=self.caller.flow_sessions.create_flow_session.metadata['url'],
-                headers=headers
+        request = build_create_flow_session_request(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            session_id=session_id,
+            content_type=content_type,
+            json=_json,
+            template_url=self.caller.flow_sessions.create_flow_session.metadata['url'],
+            headers=headers
+        )
+        request = _convert_request(request)
+        request.url = self.caller.flow_sessions._client.format_url(request.url)
+        pipeline_response = self.caller.flow_sessions._client._pipeline.run(request, stream=False, **kwargs)
+
+        response = pipeline_response.http_response
+
+        if response.status_code not in [200, 202]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self.caller.flow_sessions._deserialize.failsafe_deserialize(_models.ErrorResponse,
+                                                                                pipeline_response)
+            raise HttpResponseError(response=response, model=error)
+        if response.status_code == 200:
+            return
+        action = body.action or SetupFlowSessionAction.INSTALL.value
+        if action == SetupFlowSessionAction.INSTALL.value:
+            action = "creation"
+        else:
+            action = "reset"
+
+        logger.info(f"Start polling until session {action} is completed...")
+        # start polling status here.
+        if "azure-asyncoperation" not in response.headers:
+            raise FlowRequestException(
+                "No polling url found in response headers. "
+                f"Request id: {headers['x-ms-client-request-id']}. "
+                f"Response headers: {response.headers}."
             )
-            request = _convert_request(request)
-            request.url = self.caller.flow_sessions._client.format_url(request.url)
-            pipeline_response = self.caller.flow_sessions._client._pipeline.run(request, stream=False, **kwargs)
+        polling_url = response.headers["azure-asyncoperation"]
+        time_run = 0
+        sleep_period = 5
+        status = None
+        timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
+        # InProgress is only known non-terminal status for now.
+        while status in [None, "InProgress"]:
+            if time_run + sleep_period > timeout_seconds:
+                message = f"Timeout for session {action} {session_id} for {AUTOMATIC_RUNTIME}.\n" \
+                          "Please resubmit the flow later."
+                raise Exception(message)
+            time_run += sleep_period
+            time.sleep(sleep_period)
+            response = self.poll_operation_status(url=polling_url, **kwargs)
+            status = response["status"]
+            logger.debug(f"Current polling status: {status}")
+            if time_run % 30 == 0:
+                # print the message every 30 seconds to avoid users feeling stuck during the operation
+                print(f"Waiting for session {action}, current status: {status}")
+            else:
+                logger.debug(f"Waiting for session {action}, current status: {status}")
 
-            response = pipeline_response.http_response
+        if status == "Succeeded":
+            logger.info(f"Session {action} finished with status {status}.")
+        else:
+            # refine response error message
+            try:
+                response["error"]["message"] = json.loads(response["error"]["message"])
+            except Exception:
+                pass
+            raise FlowRequestException(
+                f"Session {action} failed for {session_id}. \n"
+                f"Session {action} status: {status}. \n"
+                f"Request id: {headers['x-ms-client-request-id']}. \n"
+                f"{json.dumps(response, indent=2)}."
+            )
 
-            if response.status_code not in [200, 202]:
-                map_error(status_code=response.status_code, response=response, error_map=error_map)
-                error = self.caller.flow_sessions._deserialize.failsafe_deserialize(_models.ErrorResponse,
-                                                                                    pipeline_response)
-                raise HttpResponseError(response=response, model=error)
-            if response.status_code == 200:
-                return
 
-            logger.info("Start polling until session is ready...")
-            # start polling status here.
-            if "azure-asyncoperation" not in response.headers:
-                raise FlowRequestException(
-                    "No polling url found in response headers. "
-                    f"Request id: {headers['x-ms-client-request-id']}. "
-                    f"Response headers: {response.headers}."
-                )
-            polling_url = response.headers["azure-asyncoperation"]
-            time_run = 0
-            sleep_period = 5
-            status = None
-            timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
-            while status != "Succeeded":
-                if time_run + sleep_period > timeout_seconds:
-                    message = f"Timeout when creating session {session_id} for automatic runtime.\n" \
-                              "Please resubmit the flow later."
-                    raise Exception(message)
-                time_run += sleep_period
-                time.sleep(sleep_period)
-                status = self.poll_operation_status(url=polling_url, **kwargs)
-                logger.debug(f"Current polling status: {status}")
-                if time_run % 30 == 0:
-                    logger.info(f"Waiting for session warm-up, current status: {status}")
-                else:
-                    logger.debug(f"Waiting for session warm-up, current status: {status}")
-            logger.info(f"Session creation finished with status {status}.")
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
-
+    @_request_wrapper()
     def poll_operation_status(
         self,
         url,
@@ -559,33 +575,29 @@ class FlowServiceCaller(RequestTelemetryMixin):
             ResourceNotFoundError, map_error
         from promptflow.azure._restclient.flow.operations._flow_sessions_operations import _models
 
-        self._refresh_request_id_for_telemetry()
+        
         headers = self._get_headers()
-        try:
-            request = HttpRequest(
-                method="GET",
-                url=url,
-                headers=headers,
-                **kwargs
-            )
-            pipeline_response = self.caller.flow_sessions._client._pipeline.run(request, stream=False, **kwargs)
-            response = pipeline_response.http_response
-            error_map = {
-                401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-            }
-            if response.status_code not in [200]:
-                map_error(status_code=response.status_code, response=response, error_map=error_map)
-                error = self.caller.flow_sessions._deserialize.failsafe_deserialize(_models.ErrorResponse,
-                                                                                    pipeline_response)
-                raise HttpResponseError(response=response, model=error)
+        request = HttpRequest(
+            method="GET",
+            url=url,
+            headers=headers,
+            **kwargs
+        )
+        pipeline_response = self.caller.flow_sessions._client._pipeline.run(request, stream=False, **kwargs)
+        response = pipeline_response.http_response
+        error_map = {
+            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
+        }
+        if response.status_code not in [200]:
+            map_error(status_code=response.status_code, response=response, error_map=error_map)
+            error = self.caller.flow_sessions._deserialize.failsafe_deserialize(_models.ErrorResponse,
+                                                                                pipeline_response)
+            raise HttpResponseError(response=response, model=error)
 
-            deserialized = self.caller.flow_sessions._deserialize('object', pipeline_response)
-            if "status" not in deserialized:
-                raise FlowRequestException(
-                    f"Status not found in response. Request id: {headers['x-ms-client-request-id']}. "
-                    f"Response headers: {response.headers}."
-                )
-            status = deserialized["status"]
-            return status
-        except HttpResponseError as e:
-            raise FlowRequestException(f"Request id: {headers['x-ms-client-request-id']}") from e
+        deserialized = self.caller.flow_sessions._deserialize('object', pipeline_response)
+        if "status" not in deserialized:
+            raise FlowRequestException(
+                f"Status not found in response. Request id: {headers['x-ms-client-request-id']}. "
+                f"Response headers: {response.headers}."
+            )
+        return deserialized

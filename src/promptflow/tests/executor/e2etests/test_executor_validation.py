@@ -1,4 +1,5 @@
 import json
+import sys
 
 import pytest
 
@@ -10,7 +11,7 @@ from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
     ConnectionNotFound,
     DuplicateNodeName,
-    EmptyOutputError,
+    EmptyOutputReference,
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
@@ -38,7 +39,7 @@ class TestValidation:
             ("node_reference_not_found", "flow.dag.yaml", NodeReferenceNotFound),
             ("node_circular_dependency", "flow.dag.yaml", NodeCircularDependency),
             ("flow_input_reference_invalid", "flow.dag.yaml", InputReferenceNotFound),
-            ("flow_output_reference_invalid", "flow.dag.yaml", EmptyOutputError),
+            ("flow_output_reference_invalid", "flow.dag.yaml", EmptyOutputReference),
         ],
     )
     def test_executor_create(self, flow_folder, yml_file, error_class, dev_connections):
@@ -93,13 +94,19 @@ class TestValidation:
             (
                 "simple_flow_with_python_tool",
                 [{"num11": "22"}],
-                "Input 'num' in line 0 is not provided for flow.",
+                (
+                    "The value for flow input 'num' is not provided in line 0 of input data. "
+                    "Please review your input data or remove this input in your flow if it's no longer needed."
+                ),
                 "InputNotFound",
             ),
             (
                 "simple_flow_with_python_tool",
                 [{"num": "hello"}],
-                "Input 'num' in line 0 for flow 'default_flow' of value hello is not type int.",
+                (
+                    "The value 'hello' for flow input 'num' in line 0 of input data does not match the expected "
+                    "type 'int'. Please review the input data or adjust the input type of 'num' in your flow."
+                ),
                 "InputTypeError",
             ),
         ],
@@ -110,9 +117,20 @@ class TestValidation:
         bulk_result = executor.exec_bulk(
             batch_input,
         )
-        assert error_message in str(
-            bulk_result.line_results[0].run_info.error
-        ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
+        if (
+            (sys.version_info.major == 3)
+            and (sys.version_info.minor >= 11)
+            and ((sys.platform == "linux") or (sys.platform == "darwin"))
+        ):
+            # Python >= 3.11 has a different error message on linux and macos
+            error_message_compare = error_message.replace("int", "ValueType.INT")
+            assert error_message_compare in str(
+                bulk_result.line_results[0].run_info.error
+            ), f"Expected message {error_message_compare} but got {str(bulk_result.line_results[0].run_info.error)}"
+        else:
+            assert error_message in str(
+                bulk_result.line_results[0].run_info.error
+            ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
         assert error_class in str(
             bulk_result.line_results[0].run_info.error
         ), f"Expected message {error_class} but got {str(bulk_result.line_results[0].run_info.error)}"
