@@ -27,10 +27,22 @@ jobs:
         with:
           submodules: true
 
-      - name: Build Doc
+      - name: Conda Setup
+        uses: "./.github/actions/step_create_conda_environment"
+
+      - name: Dev setup
+        uses: "./.github/actions/step_sdk_setup"
+        with:
+          setupType: ${{ env.packageSetupType }}
+          scriptPath: ${{ env.testWorkingDirectory }}
+
+      - name: Build doc with reference doc
         shell: powershell
         working-directory: scripts/docs/
-        run: ./doc_generation.ps1 -WarningAsError:$true -WithReferenceDoc:$true
+        run: |-
+          conda activate ${{ env.condaEnvName }}
+          pip install langchain
+          ./doc_generation.ps1 -WithReferenceDoc:$true -WarningAsError:$true 
 
   # Note: We have this job separately because some error may missing when build link check exists.
   link_check_job:
