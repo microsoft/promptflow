@@ -23,12 +23,13 @@ The source JSON schema can be found at [Flow.schema.json](https://azuremlschemas
 
 ### Flow input
 
-| Key             | Type                                      | Description                                | Allowed values                                      |
-|-----------------|-------------------------------------------|--------------------------------------------|-----------------------------------------------------|
-| `type`          | string                                    | The type of flow input.                    | `int`, `double`, `bool`, `string`, `list`, `object` |
-| `description`   | string                                    | Description of the input.                  |                                                     |
-| `default`       | int, double, bool, string, list or object | The default value for the input.           |                                                     |
-| `is_chat_input` | boolean                                   | Whether the input is the chat flow input.  |                                                     |
+| Key               | Type                                      | Description                                          | Allowed values                                      |
+|-------------------|-------------------------------------------|------------------------------------------------------|-----------------------------------------------------|
+| `type`            | string                                    | The type of flow input.                              | `int`, `double`, `bool`, `string`, `list`, `object` |
+| `description`     | string                                    | Description of the input.                            |                                                     |
+| `default`         | int, double, bool, string, list or object | The default value for the input.                     |                                                     |
+| `is_chat_input`   | boolean                                   | Whether the input is the chat flow input.            |                                                     |
+| `is_chat_history` | boolean                                   | Whether the input is the chat history for chat flow. |                                                     |
 
 ### Flow output
 
@@ -69,154 +70,10 @@ Below, we explore the variants for a single node.
 
 ## Examples
 
-Flow examples are available in the [GitHub repository](https://github.com/microsoft/promptflow/tree/main/examples/flows). 
-Below, we provide a web classification flow example.
+Flow examples are available in the [GitHub repository](https://github.com/microsoft/promptflow/tree/main/examples/flows).
 
-## YAML: Web classification flow YAML
-
-::::{tab-set}
-:::{tab-item} CLI
-:sync: CLI
-
-```yaml
-inputs:
-  url:
-    type: string
-    default: https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h
-outputs:
-  category:
-    type: string
-    reference: ${convert_to_dict.output.category}
-  evidence:
-    type: string
-    reference: ${convert_to_dict.output.evidence}
-nodes:
-- name: fetch_text_content_from_url
-  type: python
-  source:
-    type: code
-    path: fetch_text_content_from_url.py
-  inputs:
-    url: ${inputs.url}
-- name: summarize_text_content
-  type: llm
-  source:
-    type: code
-    path: summarize_text_content.jinja2
-  inputs:
-    deployment_name: text-davinci-003
-    suffix: ''
-    max_tokens: '128'
-    temperature: '0.2'
-    top_p: '1.0'
-    logprobs: ''
-    echo: 'False'
-    stop: ''
-    presence_penalty: '0'
-    frequency_penalty: '0'
-    best_of: '1'
-    logit_bias: ''
-    text: ${fetch_text_content_from_url.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-  module: promptflow.tools.aoai
-
-  use_variants: true
-- name: prepare_examples
-  type: python
-  source:
-    type: code
-    path: prepare_examples.py
-  inputs: {}
-- name: classify_with_llm
-  type: llm
-  source:
-    type: code
-    path: classify_with_llm.jinja2
-  inputs:
-    deployment_name: text-davinci-003
-    suffix: ''
-    max_tokens: '128'
-    temperature: '0.2'
-    top_p: '1.0'
-    logprobs: ''
-    echo: 'False'
-    stop: ''
-    presence_penalty: '0'
-    frequency_penalty: '0'
-    best_of: '1'
-    logit_bias: ''
-    url: ${inputs.url}
-    examples: ${prepare_examples.output}
-    text_content: ${summarize_text_content.output}
-  provider: AzureOpenAI
-  connection: azure_open_ai_connection
-  api: completion
-  module: promptflow.tools.aoai
-- name: convert_to_dict
-  type: python
-  source:
-    type: code
-    path: convert_to_dict.py
-  inputs:
-    input_str: ${classify_with_llm.output}
-node_variants:
-  summarize_text_content:
-    default_variant_id: variant_1
-    variants:
-      variant_0:
-        node:
-          type: llm
-          source:
-            type: code
-            path: summarize_text_content.jinja2
-          inputs:
-            deployment_name: text-davinci-003
-            suffix: ''
-            max_tokens: '128'
-            temperature: '0.2'
-            top_p: '1.0'
-            logprobs: ''
-            echo: 'False'
-            stop: ''
-            presence_penalty: '0'
-            frequency_penalty: '0'
-            best_of: '1'
-            logit_bias: ''
-            text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
-          connection: azure_open_ai_connection
-          api: completion
-          module: promptflow.tools.aoai
-      variant_1:
-        node:
-          type: llm
-          source:
-            type: code
-            path: summarize_text_content__variant_1.jinja2
-          inputs:
-            deployment_name: text-davinci-003
-            suffix: ''
-            max_tokens: '256'
-            temperature: '0.2'
-            top_p: '1.0'
-            logprobs: ''
-            echo: 'False'
-            stop: ''
-            presence_penalty: '0'
-            frequency_penalty: '0'
-            best_of: '1'
-            logit_bias: ''
-            text: ${fetch_text_content_from_url.output}
-          provider: AzureOpenAI
-          connection: azure_open_ai_connection
-          api: completion
-          module: promptflow.tools.aoai
-additional_includes:
-  - ../external_files/convert_to_dict.py
-  - ../external_files/fetch_text_content_from_url.py
-```
-:::
-
-::::
+- [basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/basic)
+- [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification)
+- [basic-chat](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/basic-chat)
+- [chat-with-pdf](https://github.com/microsoft/promptflow/tree/main/examples/flows/chat/chat-with-pdf)
+- [eval-basic](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-basic)
