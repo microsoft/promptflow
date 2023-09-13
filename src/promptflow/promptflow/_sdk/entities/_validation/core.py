@@ -38,7 +38,7 @@ class Diagnostic(object):
     def __init__(self, yaml_path: str, message: str, error_code: str) -> None:
         """Init Diagnostic.
 
-        :keyword yaml_path: A dash path from root to the target element of the diagnostic. jobs.job_a.inputs.input_str
+        :keyword yaml_path: A dash path from root to the target element of the diagnostic.
         :paramtype yaml_path: str
         :keyword message: Error message of diagnostic.
         :paramtype message: str
@@ -67,7 +67,7 @@ class Diagnostic(object):
     ):
         """Create a diagnostic instance.
 
-        :param yaml_path: A dash path from root to the target element of the diagnostic. jobs.job_a.inputs.input_str
+        :param yaml_path: A dash path from root to the target element of the diagnostic.
         :type yaml_path: str
         :param message: Error message of diagnostic.
         :type message: str
@@ -84,7 +84,7 @@ class Diagnostic(object):
 
 
 class ValidationResult(object):
-    """Represents the result of job/asset validation.
+    """Represents the result of validation.
 
     This class is used to organize and parse diagnostics from both client & server side before expose them. The result
     is immutable.
@@ -103,14 +103,6 @@ class ValidationResult(object):
         :return: A dictionary of error messages. The key is the yaml path of the error, and the value is the error
             message.
         :rtype: dict
-
-        .. admonition:: Example:
-
-            .. literalinclude:: ../../../../samples/ml_samples_misc.py
-                :start-after: [START validation_result]
-                :end-before: [END validation_result]
-                :language: markdown
-                :dedent: 8
         """
         messages = {}
         for diagnostic in self._errors:
@@ -181,7 +173,7 @@ class MutableValidationResult(ValidationResult):
 
         Will update current validation result.
         If field_name is not None, then yaml_path in the other validation result will be updated accordingly.
-        * => field_name, jobs.job_a => field_name.jobs.job_a e.g.. If None, then no update.
+        * => field_name, a.b => field_name.a.b e.g.. If None, then no update.
 
         :param target: Validation result to merge.
         :type target: ValidationResult

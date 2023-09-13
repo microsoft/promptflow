@@ -21,7 +21,7 @@ from promptflow._sdk._utils import (
     generate_random_string,
     parse_variant,
 )
-from promptflow._sdk._vendor._validation import ValidationResult
+from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
 from promptflow.exceptions import UserErrorException

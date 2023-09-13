@@ -22,7 +22,7 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .._constants import DAG_FILE_NAME
 from .._errors import ConnectionNotFoundError
-from .._vendor._validation import SchemaValidatableMixin
+from ._validation import SchemaValidatableMixin
 
 logger = logging.getLogger(LOGGER_NAME)
 
