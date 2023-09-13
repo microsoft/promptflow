@@ -224,7 +224,7 @@ class SubmitterHelper:
         for n in connection_names:
             try:
                 conn = local_client.connections.get(name=n, with_secrets=True)
-                result[n] = conn.to_execution_connection_dict()
+                result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:
                     raise e

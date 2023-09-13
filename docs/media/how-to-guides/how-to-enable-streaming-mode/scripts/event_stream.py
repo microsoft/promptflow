@@ -44,7 +44,7 @@ class Event:
 
         parts = line.split(':', maxsplit=1)
         if len(parts) < 2:
-            raise ValueError("Bad format: Each line must could be splited into two parts by ':'.")
+            raise ValueError("Bad format: Each line must could be splitted into two parts by ':'.")
 
         prefix = parts[0]
         data = parts[1].strip()
