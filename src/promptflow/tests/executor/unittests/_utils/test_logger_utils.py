@@ -183,6 +183,13 @@ class TestLogContext:
         # Make sure context variables are cleaned up.
         assert log_handler._context_var.get() is None
 
+    def test_empty_file_path(self, logger, stream_handler):
+        logger.addHandler(stream_handler)
+        logger.addHandler(FileHandlerConcurrentWrapper())
+        with LogContext("", input_logger=logger):
+            logger.info("test log")
+            assert stream_handler.stream.getvalue() == "test log\n"
+
     def test_update_log_path(self):
         log_handler = FileHandlerConcurrentWrapper()
         input_logger = logging.getLogger("input_logger")
