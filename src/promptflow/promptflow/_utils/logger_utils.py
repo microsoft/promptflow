@@ -53,7 +53,18 @@ class CredentialScrubberFormatter(logging.Formatter):
     def format(self, record):
         """Override logging.Formatter's format method and remove credentials from log."""
         s: str = super().format(record)
+
+        s = self._handle_traceback(s, record)
+        s = self._handle_customer_content(s, record)
         return self.credential_scrubber.scrub(s)
+
+    def _handle_customer_content(self, s: str, record: logging.LogRecord) -> str:
+        """Do nothing."""
+        return s
+
+    def _handle_traceback(self, s: str, record: logging.LogRecord) -> str:
+        """Do nothing."""
+        return s
 
 
 class FileHandler:
