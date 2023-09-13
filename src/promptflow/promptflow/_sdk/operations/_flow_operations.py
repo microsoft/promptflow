@@ -48,7 +48,7 @@ class FlowOperations:
         node: str = None,
         environment_variables: dict = None,
     ) -> dict:
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
@@ -84,7 +84,7 @@ class FlowOperations:
         stream_log: bool = True,
         allow_generator_output: bool = True,
     ):
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :param inputs: Input data for the flow test

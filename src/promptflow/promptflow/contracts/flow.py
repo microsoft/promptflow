@@ -515,7 +515,7 @@ class Flow:
             tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
             if tool:
                 connection_names.update(self._get_connection_name_from_tool(tool, node).values())
-        return connection_names
+        return set({item for item in connection_names if item})
 
     def get_connection_input_names_for_node(self, node_name):
         """Return connection input names."""
