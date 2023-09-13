@@ -11,7 +11,12 @@ from sqlalchemy import TEXT, Boolean, Column, Index
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
-from promptflow._sdk._constants import RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, ListViewType
+from promptflow._sdk._constants import (
+    RUN_INFO_CREATED_ON_INDEX_NAME,
+    RUN_INFO_TABLENAME,
+    FlowRunProperties,
+    ListViewType,
+)
 from promptflow._sdk._errors import RunExistsError, RunNotFoundError
 
 from .retry import sqlite_retry
@@ -89,6 +94,7 @@ class RunInfo(Base):
         tags: Optional[Dict[str, str]] = None,
         start_time: Optional[Union[str, datetime.datetime]] = None,
         end_time: Optional[Union[str, datetime.datetime]] = None,
+        system_metrics: Optional[Dict[str, int]] = None,
     ) -> None:
         update_dict = {}
         if status is not None:
@@ -110,7 +116,16 @@ class RunInfo(Base):
             self.end_time = end_time if isinstance(end_time, str) else end_time.isoformat()
             update_dict["end_time"] = self.end_time
         with mgmt_db_session() as session:
-            session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
+            # if not update system metrics, we can directly update the row;
+            # otherwise, we need to get properties first, update the dict and finally update the row
+            if system_metrics is None:
+                session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
+            else:
+                run_info = session.query(RunInfo).filter(RunInfo.name == self.name).first()
+                props = json.loads(run_info.properties)
+                props[FlowRunProperties.SYSTEM_METRICS] = system_metrics.copy()
+                update_dict["properties"] = json.dumps(props)
+                session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
             session.commit()
 
     @staticmethod
