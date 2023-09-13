@@ -119,11 +119,13 @@ class FlowValidator:
             except Exception as e:
                 line_info = "" if idx is None else f"in line {idx} of input data"
                 msg_format = (
-                    f"The input for flow is incorrect. The value for flow input '{{flow_input_name}}' {line_info} "
-                    f"does not match the expected type '{v.type}'. Please change flow input type or adjust the input "
-                    f"value in your input data."
+                    "The input for flow is incorrect. The value for flow input '{flow_input_name}' {line_info} "
+                    "does not match the expected type '{expected_type}'. Please change flow input type "
+                    "or adjust the input value in your input data."
                 )
-                raise InputTypeError(message_format=msg_format, flow_input_name=k) from e
+                raise InputTypeError(
+                    message_format=msg_format, flow_input_name=k, line_info=line_info, expected_type=v.type
+                ) from e
         return updated_inputs
 
     @staticmethod
@@ -139,10 +141,10 @@ class FlowValidator:
                 line_info = "in input data" if idx is None else f"in line {idx} of input data"
                 msg_format = (
                     "The input for flow is incorrect. The value for flow input '{input_name}' is not "
-                    f"provided {line_info}. Please review your input data or remove this input in your flow "
+                    "provided {line_info}. Please review your input data or remove this input in your flow "
                     "if it's no longer needed."
                 )
-                raise InputNotFound(message_format=msg_format, input_name=k)
+                raise InputNotFound(message_format=msg_format, input_name=k, line_info=line_info)
         return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
 
     @staticmethod
@@ -180,9 +182,14 @@ class FlowValidator:
                 except Exception as e:
                     msg_format = (
                         "The input for node is incorrect. Value for input '{input_name}' of node '{node_name}' "
-                        f"is not type '{flow.inputs[v.value].type}'. Please review and rectify the input data."
+                        "is not type '{expected_type}'. Please review and rectify the input data."
                     )
-                    raise InputTypeError(message_format=msg_format, input_name=k, node_name=node.name) from e
+                    raise InputTypeError(
+                        message_format=msg_format,
+                        input_name=k,
+                        node_name=node.name,
+                        expected_type=flow.inputs[v.value].type,
+                    ) from e
         return updated_inputs
 
     @staticmethod
