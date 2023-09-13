@@ -261,7 +261,18 @@ class RunTracker(ThreadLocalSingleton):
                 serializable_output[k] = self._ensure_serializable_value(v)
             except Exception as e:
                 # If a specific key-value pair is not serializable, raise an exception with the key.
-                raise FlowOutputUnserializable(output_name=k) from e
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+                message_format = (
+                    "The output '{output_name}' for flow is incorrect. The output value is not JSON serializable. "
+                    "JSON dump failed: {error_type_and_message}. Please verify your flow output and "
+                    "make sure the value serializable."
+                )
+                raise FlowOutputUnserializable(
+                    message_format=message_format,
+                    target=ErrorTarget.FLOW_EXECUTOR,
+                    output_name=k,
+                    error_type_and_message=error_type_and_message,
+                ) from e
 
         return serializable_output
 
