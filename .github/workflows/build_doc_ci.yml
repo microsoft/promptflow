@@ -15,7 +15,6 @@ on:
 env:
   packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
-  condaEnvName: release-env
 
 jobs:
   build_doc_job:
@@ -27,8 +26,8 @@ jobs:
         with:
           submodules: true
 
-      - name: Conda Setup
-        uses: "./.github/actions/step_create_conda_environment"
+      - name: Python Setup
+        uses: "./.github/actions/step_create_python_environment"
 
       - name: Dev setup
         uses: "./.github/actions/step_sdk_setup"
@@ -40,7 +39,6 @@ jobs:
         shell: powershell
         working-directory: scripts/docs/
         run: |-
-          conda activate ${{ env.condaEnvName }}
           pip install langchain
           ./doc_generation.ps1 -WithReferenceDoc:$true -WarningAsError:$true 
 
