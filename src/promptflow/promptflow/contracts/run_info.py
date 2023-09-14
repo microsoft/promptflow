@@ -25,6 +25,7 @@ class Status(Enum):
         """Check if a given status is terminated.
 
         :param status: The status to be checked
+        :type status: str or :class:`Status`
         :return: True if the status is terminated, False otherwise
         :rtype: bool
         """
@@ -38,24 +39,43 @@ class RunInfo:
     """A dataclass representing the run information.
 
     :param node: Node name
+    :type node: str
     :param flow_run_id: This is equal to root_run_id
+    :type flow_run_id: str
     :param run_id: flow_run_id:step_run_id
-    :param status: Status of the run, see :class:`Status`
+    :type run_id: str
+    :param status: Status of the run
+    :type status: str or :class:`Status`
     :param inputs: List of inputs for the run
+    :type inputs: list
     :param output: Output of the run
+    :type output: object
     :param metrics: Metrics of the run
+    :type metrics: Dict[str, Any]
     :param error: Errors occurred during the run
+    :type error: Dict[str, Any]
     :param parent_run_id: Parent run id
+    :type parent_run_id: str
     :param start_time: Start time of the run
+    :type start_time: datetime
     :param end_time: End time of the run
-    :param index: (Optional) Index of the run
-    :param api_calls: (Optional) API calls made during the run
-    :param variant_id: (Optional) Variant id of the run
-    :param cached_run_id: (Optional) Cached run id
-    :param cached_flow_run_id: (Optional) Cached flow run id
-    :param logs: (Optional) Logs of the run
-    :param system_metrics: (Optional) System metrics of the run
-    :param result: (Optional) Result of the run
+    :type end_time: datetime
+    :param index: Index of the run
+    :type index: int, optional
+    :param api_calls: API calls made during the run
+    :type api_calls: List[Dict[str, Any]], optional
+    :param variant_id: Variant id of the run
+    :type variant_id: str, optional
+    :param cached_run_id: Cached run id
+    :type cached_run_id: str, optional
+    :param cached_flow_run_id: Cached flow run id
+    :type cached_flow_run_id: str, optional
+    :param logs: Logs of the run
+    :type logs: Dict[str, str], optional
+    :param system_metrics: System metrics of the run
+    :type system_metrics: Dict[str, Any], optional
+    :param result: Result of the run
+    :type result: object, optional
     """
 
     node: str
@@ -84,27 +104,49 @@ class FlowRunInfo:
     """A dataclass representing the run information.
 
     :param run_id: flow_run_id:child_flow_run_id
-    :param status: Status of the flow run, see :class:`Status`
+    :type run_id: str
+    :param status: Status of the flow run
+    :type status: str or :class:`Status`
     :param error: Errors occurred during the flow run
+    :type error: Dict[str, Any]
     :param inputs: Inputs for the flow run
+    :type inputs: object
     :param output: Output of the flow run
+    :type output: object
     :param metrics: Metrics of the flow run
+    :type metrics: Dict[str, Any]
     :param request: Request made for the flow run
+    :type request: object
     :param parent_run_id: Parent run id of the flow run
+    :type parent_run_id: str
     :param root_run_id: Root run id of the flow run
+    :type root_run_id: str
     :param source_run_id: The run id of the run that triggered the flow run
+    :type source_run_id: str
     :param flow_id: Flow id of the flow run
+    :type flow_id: str
     :param start_time: Start time of the flow run
+    :type start_time: datetime
     :param end_time: End time of the flow run
-    :param index: (Optional) Index of the flow run (used for bulk test mode)
-    :param api_calls: (Optional) API calls made during the flow run
-    :param variant_id: (Optional) Variant id of the flow run
-    :param name: (Optional) Name of the flow run
-    :param description: (Optional) Description of the flow run
-    :param tags: (Optional) Tags of the flow run
-    :param system_metrics: (Optional) System metrics of the flow run
-    :param result: (Optional) Result of the flow run
-    :param upload_metrics: (Optional) Flag indicating whether to upload metrics for the flow run
+    :type end_time: datetime
+    :param index: Index of the flow run (used for bulk test mode)
+    :type index: int, optional
+    :param api_calls: API calls made during the flow run
+    :type api_calls: List[Dict[str, Any]], optional
+    :param variant_id: Variant id of the flow run
+    :type variant_id: str, optional
+    :param name: Name of the flow run
+    :type name: str, optional
+    :param description: Description of the flow run
+    :type description: str, optional
+    :param tags: Tags of the flow run
+    :type tags: Dict[str, str], optional
+    :param system_metrics: System metrics of the flow run
+    :type system_metrics: Dict[str, Any], optional
+    :param result: Result of the flow run
+    :type result: object, optional
+    :param upload_metrics: Flag indicating whether to upload metrics for the flow run
+    :type upload_metrics: bool, optional
     """
     run_id: str
     status: Status
