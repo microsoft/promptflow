@@ -140,6 +140,7 @@ class FlowRunProperties:
     OUTPUT_PATH = "output_path"
     NODE_VARIANT = "node_variant"
     RUN = "run"
+    SYSTEM_METRICS = "system_metrics"
 
 
 class CommonYamlFields:
