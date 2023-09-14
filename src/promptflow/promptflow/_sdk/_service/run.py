@@ -7,6 +7,7 @@ from dataclasses import asdict
 from flask import Blueprint, jsonify, request
 
 from promptflow._sdk._constants import get_list_view_type
+from promptflow._sdk._service.utils import api_wrapper
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow.contracts._run_management import RunMetadata
@@ -15,6 +16,7 @@ run_bp = Blueprint("run", __name__, url_prefix="/run/v1.0")
 
 
 @run_bp.route("/list", methods=["GET"])
+@api_wrapper
 def list():
     # parse query parameters
     max_results = request.args.get("max_results", default=50, type=int)
@@ -33,6 +35,7 @@ def list():
 
 
 @run_bp.route("/<string:name>", methods=["GET"])
+@api_wrapper
 def get(name: str):
     op = RunOperations()
     run = op.get(name=name)
@@ -41,6 +44,7 @@ def get(name: str):
 
 
 @run_bp.route("/<string:name>/metadata", methods=["GET"])
+@api_wrapper
 def get_metadata(name: str):
     run_op = RunOperations()
     run = run_op.get(name=name)
@@ -58,6 +62,7 @@ def get_metadata(name: str):
 
 
 @run_bp.route("/<string:name>/detail", methods=["GET"])
+@api_wrapper
 def get_detail(name: str):
     run_op = RunOperations()
     run = run_op.get(name=name)
