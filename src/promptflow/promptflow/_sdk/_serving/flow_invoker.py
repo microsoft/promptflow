@@ -7,7 +7,10 @@ from typing import Callable, Union
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
-from promptflow._sdk._utils import update_environment_variables_with_connections
+from promptflow._sdk._utils import (
+    resolve_connections_environment_variable_reference,
+    update_environment_variables_with_connections,
+)
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow.executor import FlowExecutor
@@ -59,13 +62,12 @@ class FlowInvoker:
         else:
             raise UnsupportedConnectionProvider(connection_provider)
 
+        resolve_connections_environment_variable_reference(self.connections)
+        update_environment_variables_with_connections(self.connections)
+        logger.info(f"Promptflow get connections successfully. keys: {self.connections.keys()}")
+
     def _init_executor(self):
         logger.info("Promptflow executor starts initializing...")
-        # try to get the connections
-        logger.info("Promptflow start getting connections from local...")
-
-        update_environment_variables_with_connections(self.connections)
-        logger.info(f"Promptflow serving app get connections successfully. keys: {self.connections.keys()}")
         self.executor = FlowExecutor.create(
             flow_file=self.flow_entity.path,
             working_dir=self.flow_entity.code,

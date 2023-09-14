@@ -22,11 +22,7 @@ from promptflow._sdk._serving.utils import (
     load_request_data,
     streaming_response_required,
 )
-from promptflow._sdk._utils import (
-    resolve_connections_environment_variable_reference,
-    setup_user_agent_to_operation_context,
-    update_environment_variables_with_connections,
-)
+from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._sdk.entities._flow import Flow
 from promptflow._version import VERSION
 
@@ -62,12 +58,6 @@ class PromptflowServingApp(Flask):
         if self.flow_invoker:
             return
         logger.info("Promptflow executor starts initializing...")
-        # try get the connections
-        logger.info("Promptflow serving app start getting connections from local...")
-        connections = Flow._get_local_connections(executable=self.flow_entity._init_executable())
-        resolve_connections_environment_variable_reference(connections)
-        update_environment_variables_with_connections(connections)
-        logger.info(f"Promptflow serving app get connections successfully. keys: {connections.keys()}")
         self.flow_invoker = FlowInvoker(
             self.project_path, connection_provider="local", streaming=streaming_response_required
         )
