@@ -11,14 +11,6 @@ on:
 
   workflow_dispatch:
     inputs:
-      ReleaseType:
-        description: 'Official release or test'
-        required: true
-        default: "Release"
-        type: choice
-        options:
-          - "Release"
-          - "Test"
       UploadAsLatest:
         description: 'True to upload the distribution as latest'
         required: true
@@ -34,28 +26,12 @@ on:
         type: string
 
 jobs:
-  approve_manual_release:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    name: Approve manual release
-    permissions:
-      issues: write
-    steps:
-      - name: Wait for approval
-        uses: trstringer/manual-approval@v1
-        timeout-minutes: 60
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: 16oeahr,chjinche,DaweiCai
-          minimum-approvals: 1
-          issue-title: "Request to release new promptflow-tools version."
-  
   manual_release:
     needs: approve_manual_release
     uses: ./.github/workflows/wheel_distributing.yml
     name: Manual release
     with:
-      ReleaseType: ${{ inputs.ReleaseType }}
+      ReleaseType: "Test"
       UploadAsLatest: ${{ inputs.UploadAsLatest }}
       SourceFolderName: ${{ inputs.SourceFolderName }}
       ConfigsFolderPath: "scripts/distributing/configs"
