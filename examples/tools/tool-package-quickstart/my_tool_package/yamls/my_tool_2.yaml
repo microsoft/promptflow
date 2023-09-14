@@ -4,7 +4,7 @@ my_tool_package.tools.my_tool_2.MyTool.my_tool:
   inputs:
     connection:
       type:
-      - CustomConnection
+      - MySecondConnection
     input_text:
       type:
       - string
