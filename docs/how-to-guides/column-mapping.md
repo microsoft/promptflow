@@ -14,7 +14,7 @@ The following types of values in column mapping are supported:
 
 ## Flow inputs override priority
 
-Flow input value are override based on the following priority:
+Flow input values are overridden according to the following priority:
 
 "specified in column mapping" > "default value" > "same name column in provided data".
 
@@ -35,6 +35,8 @@ inputs:
 ...
 ```
 
+And the flow will return each inputs in outputs.
+
 With the following data
 
 ```json
@@ -54,7 +56,7 @@ column_mapping:
     input3: ${data.input3}
 ```
 
-The run details will be like this:
+Since the flow will return each inputs in output, we can get the actual inputs from `outputs.output` field in run details:
 
 ![column_mapping_details](../media/column_mapping_details.png)
 
