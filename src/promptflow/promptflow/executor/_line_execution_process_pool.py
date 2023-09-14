@@ -127,11 +127,16 @@ class LineExecutionProcessPool:
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         process, input_queue, output_queue = self._new_process()
+        logger.info(f"Process {idx} started.==================")
         while True:
+            if not process.is_alive():
+                logger.info(f"Process {idx} exited.==================")
+                return
             try:
+                logger.info(f"Process {idx} waiting for task.=======================")
                 args = task_queue.get(timeout=1)
             except queue.Empty:
-                logger.info(f"Process {idx} queue empty, exit.")
+                logger.info(f"Process {idx} queue empty, exit.======================")
                 self.end_process(process)
                 return
 
@@ -149,12 +154,15 @@ class LineExecutionProcessPool:
                     # processing them within a specified timeout period.
                     message = output_queue.get(timeout=1)
                     if isinstance(message, LineResult):
+                        logger.info(f"Line {line_number} completed.")
                         completed = True
                         result_list.append(message)
                         break
                     elif isinstance(message, FlowRunInfo):
+                        logger.info(f"Line {line_number} FlowRunInfo completed.")
                         self._storage.persist_flow_run(message)
                     elif isinstance(message, NodeRunInfo):
+                        logger.info(f"Line {line_number} NodeRunInfo completed.")
                         self._storage.persist_node_run(message)
                 except queue.Empty:
                     continue
