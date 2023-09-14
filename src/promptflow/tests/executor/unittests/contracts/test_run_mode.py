@@ -11,4 +11,3 @@ def test_parse():
 
     with pytest.raises(ValueError):
         RunMode.parse(123)
-

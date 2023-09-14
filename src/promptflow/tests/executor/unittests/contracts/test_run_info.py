@@ -2,6 +2,7 @@ import pytest
 from datetime import datetime
 from promptflow.contracts.run_info import Status, RunInfo, FlowRunInfo
 
+
 @pytest.mark.unittest
 def test_status_is_terminated():
     assert Status.is_terminated(Status.Completed)
@@ -35,6 +36,7 @@ def test_run_info_creation():
     assert run_info.flow_run_id == '123'
     assert run_info.run_id == '123:456'
     assert run_info.status == Status.Running
+
 
 @pytest.mark.unittest
 def test_flow_run_info_creation():
