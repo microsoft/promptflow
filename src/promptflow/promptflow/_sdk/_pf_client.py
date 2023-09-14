@@ -51,6 +51,7 @@ class PFClient:
             At least one of the ``data`` or ``run`` parameters must be provided.
 
         .. admonition:: Column_mapping
+
             Column mapping is a mapping from flow input name to specified values.
             If specified, the flow will be executed with provided value for specified inputs.
             The value can be:
