@@ -8,8 +8,6 @@ You can:
 
 - [Manage runs](#manage-runs)
   - [Create a run](#create-a-run)
-    - [Column mapping](#column-mapping)
-    - [Flow inputs override priority](#flow-inputs-override-priority)
   - [Get a run](#get-a-run)
   - [Show run details](#show-run-details)
   - [Show run metrics](#show-run-metrics)
@@ -47,36 +45,7 @@ column_mapping:
 run: <existing-flow-run-name>
 ```
 
-### Column mapping
-
-Column mapping is a mapping from flow input name to specified values.
-If specified, the flow will be executed with provided value for specified inputs.
-The following types of values in column mapping are supported:
-
-- `${data.<column_name>}` to reference from your test dataset.
-- `${run.outputs.<output_name>}` to reference from your flow output.
-- `STATIC_VALUE` to create static value for all lines for specified column.
-
-### Flow inputs override priority
-
-Flow input value are override based on the following priority: "specified in column mapping" > "default value" > "same name column in provided data".
-
-For example, the following flow will use:
-
-- value "val1" specified by `column_mapping` for input "key1"
-- value "val2" specified in flow's default value for input "key2"
-- value "val3" specified in provided data's column for input "key3"
-
-```yaml
-$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json
-flow: my_flow
-# my_flow has default value val2 for key2
-data: my_data
-# my_data has column key3 with value val3
-column_mapping:
-   key1: "val1"
-variant: ${summarize_text_content.variant_0}
-```
+Reference [here](./column-mapping.md) for detailed information for column mapping.
 
 After preparing the yaml file, use the CLI command below to create them:
 
