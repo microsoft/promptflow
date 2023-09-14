@@ -54,8 +54,7 @@ LINE_TIMEOUT_SEC = 600
 
 
 class FlowExecutor:
-    """
-    This class is used to execute a single flow for different inputs.
+    """This class is used to execute a single flow for different inputs.
 
     :param flow: The flow to be executed.
     :type flow: Flow
@@ -95,8 +94,7 @@ class FlowExecutor:
         line_timeout_sec=LINE_TIMEOUT_SEC,
         flow_file=None,
     ):
-        """
-        Initialize a FlowExecutor object.
+        """Initialize a FlowExecutor object.
 
         :param flow: The Flow object to execute.
         :type flow: Flow
@@ -180,8 +178,7 @@ class FlowExecutor:
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
     ) -> "FlowExecutor":
-        """
-        Create a new instance of FlowExecutor.
+        """Create a new instance of FlowExecutor.
 
         :param flow_file: The path to the flow file.
         :type flow_file: Path
@@ -250,8 +247,7 @@ class FlowExecutor:
         working_dir: Optional[Path] = None,
         raise_ex: bool = False,
     ):
-        """
-        Load and execute a single node from the flow.
+        """Load and execute a single node from the flow.
 
         :param flow_file: The path to the flow file.
         :type flow_file: Path
@@ -340,8 +336,7 @@ class FlowExecutor:
 
     @staticmethod
     def update_environment_variables_with_connections(connections: dict):
-        """
-        Update environment variables with connections.
+        """Update environment variables with connections.
 
         :param connections: A dictionary containing connection information.
         :type connections: dict
@@ -368,8 +363,7 @@ class FlowExecutor:
 
     @property
     def has_aggregation_node(self) -> bool:
-        """
-        Check if the flow executor has any aggregation nodes.
+        """Check if the flow executor has any aggregation nodes.
 
         :return: True if the flow executor has at least one aggregation node, False otherwise.
         :rtype: bool
@@ -378,8 +372,7 @@ class FlowExecutor:
 
     @property
     def aggregation_nodes(self):
-        """
-        Get the aggregation nodes of the flow executor.
+        """Get the aggregation nodes of the flow executor.
 
         :return: A list of aggregation nodes.
         :rtype: list
@@ -504,8 +497,7 @@ class FlowExecutor:
         return InputAssignment(value=aggregation_inputs[serialized_val])
 
     def get_status_summary(self, run_id: str):
-        """
-        Get a summary of the status of a given run.
+        """Get a summary of the status of a given run.
 
         :param run_id: The ID of the run to get the status summary for.
         :type run_id: str
@@ -521,8 +513,7 @@ class FlowExecutor:
         run_id=None,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
     ) -> AggregationResult:
-        """
-        Execute the aggregation node of the flow.
+        """Execute the aggregation node of the flow.
 
         :param inputs: A mapping of input names to their values.
         :type inputs: Mapping[str, Any]
@@ -674,8 +665,7 @@ class FlowExecutor:
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
     ) -> LineResult:
-        """
-        Execute a single line of the flow.
+        """Execute a single line of the flow.
 
         :param inputs: The input values for the line.
         :type inputs: Mapping[str, Any]
@@ -783,8 +773,7 @@ class FlowExecutor:
         return updated_inputs
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
-        """
-        Validate and apply inputs mapping for all lines in the flow.
+        """Validate and apply inputs mapping for all lines in the flow.
 
         :param inputs: The inputs to the flow.
         :type inputs: Any
@@ -817,8 +806,7 @@ class FlowExecutor:
         validate_inputs: bool = False,
         allow_generator_output: bool = False,
     ) -> LineResult:
-        """
-        execute line run
+        """execute line run
 
         Args:
             inputs (Mapping): flow inputs
@@ -969,8 +957,7 @@ class FlowExecutor:
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
-        """
-        Apply input mapping to inputs for new contract.
+        """Apply input mapping to inputs for new contract.
 
         .. admonition:: Examples
 
@@ -1170,8 +1157,7 @@ class FlowExecutor:
         return result
 
     def enable_streaming_for_llm_flow(self, stream_required: Callable[[], bool]):
-        """
-        Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.
+        """Enable the LLM node that is connected to output to return streaming results controlled by `stream_required`.
 
         If the stream_required callback returns True, the LLM node will return a generator of strings.
         Otherwise, the LLM node will return a string.
@@ -1188,8 +1174,14 @@ class FlowExecutor:
                 self._tools_manager.wrap_tool(node.name, wrapper=_inject_stream_options(stream_required))
 
     def ensure_flow_is_serializable(self):
-        """
-        Ensure that the flow is serializable.
+        """Ensure that the flow is serializable.
+
+        Some of the nodes may return a generator of strings to create streaming outputs.
+        This is useful when the flow is deployed as a web service.
+        However, in the interactive mode, the executor assumes that the node result is JSON serializable.
+
+        This method adds a wrapper to each node in the flow
+        to consume the streaming outputs and merge them into a string for executor usage.
 
         :return: None
         """
@@ -1223,8 +1215,7 @@ def _inject_stream_options(should_stream: Callable[[], bool]):
 
 
 def enable_streaming_for_llm_tool(f):
-    """
-    Enable the stream mode for LLM tools that support it.
+    """Enable the stream mode for LLM tools that support it.
 
     :param f: The function to wrap.
     :type f: function
