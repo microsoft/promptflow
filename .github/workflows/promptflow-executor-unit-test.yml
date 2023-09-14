@@ -3,8 +3,6 @@ on:
   schedule:
     - cron: "40 19 * * *" # Every day starting at 3:40 BJT
   pull_request_target:
-    types:
-      - opened
     paths:
       - src/promptflow/**
       - scripts/**
