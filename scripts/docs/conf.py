@@ -131,6 +131,8 @@ todo_include_todos = True
 myst_heading_anchors = 5
 
 
+suppress_warnings = ['index']
+
 def setup(app):
     # Add the gallery directive
     app.add_directive("gallery-grid", GalleryDirective)
