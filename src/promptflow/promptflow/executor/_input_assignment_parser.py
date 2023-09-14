@@ -22,6 +22,7 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
             flow_input_keys = ", ".join(flow_inputs.keys()) if flow_inputs is not None else None
             raise InputNotFound(
                 message_format=(
+                    "Flow execution failed. "
                     "The input '{input_name}' is not found from flow inputs '{flow_input_keys}'. "
                     "Please check the input name and try again."
                 ),
@@ -33,6 +34,7 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
         if i.section != "output":
             raise UnsupportedReference(
                 message_format=(
+                    "Flow execution failed. "
                     "The section '{reference_section}' of reference is currently unsupported. "
                     "Please specify the output part of the node '{reference_node_name}'."
                 ),
@@ -43,6 +45,7 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
             node_output_keys = ", ".join(nodes_outputs.keys()) if nodes_outputs is not None else None
             raise InputNotFoundFromAncestorNodeOutput(
                 message_format=(
+                    "Flow execution failed. "
                     "The input '{input_name}' is not found from ancestor node outputs '{node_output_keys}'. "
                     "Please check the node name and try again."
                 ),
@@ -52,8 +55,9 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
         return parse_node_property(i.value, nodes_outputs[i.value], i.property)
     raise NotSupported(
         message_format=(
+            "Flow execution failed. "
             "The type '{input_type}' is currently unsupported. "
-            "Please choose from available types: '{supported_output_type}' and try again.",
+            "Please choose from available types: {supported_output_type} and try again."
         ),
         input_type=i.value_type,
         supported_output_type=[value_type.value for value_type in InputValueType],
@@ -78,6 +82,7 @@ def parse_node_property(node_name, node_val, property=""):
                 else:
                     raise InvalidReferenceProperty(
                         message_format=(
+                            "Flow execution failed. "
                             "Invalid index '{index}' when accessing property '{property}' of the node '{node_name}'. "
                             "Please check the index and try again."
                         ),
@@ -93,6 +98,7 @@ def parse_node_property(node_name, node_val, property=""):
                     val = getattr(val, part)
     except (KeyError, IndexError, AttributeError) as e:
         message_format = (
+            "Flow execution failed. "
             "Invalid property '{property}' when accessing the node '{node_name}'. "
             "Please check the property and try again."
         )

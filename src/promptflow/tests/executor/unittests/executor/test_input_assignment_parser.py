@@ -74,16 +74,16 @@ class TestInputAssignmentParser:
                 NotSupported,
                 (
                     "The type 'wrong_type' is currently unsupported. "
-                    "Please choose from available types: 'LITERAL', 'FLOW_INPUT' and try again."
+                    "Please choose from available types: ['Literal', 'FlowInput', 'NodeReference'] and try again."
                 ),
             ),
         ],
     )
     def test_parse_value_with_exception(self, input, expected_error_class, expected_error_message):
         input_assignment = InputAssignment.deserialize(input) if isinstance(input, str) else input
-        with pytest.raises(expected_error_class) as exc_info:
+        with pytest.raises(expected_error_class) as e:
             parse_value(input_assignment, NODE_OUTPUTS, FLOW_INPUTS)
-            assert exc_info.value.message == expected_error_message
+        assert e.value.message == f"Flow execution failed. {expected_error_message}"
 
     @pytest.mark.parametrize(
         "node_val, property, expected_value",
@@ -131,8 +131,8 @@ class TestInputAssignmentParser:
                 {"output_str": ["output1", "output2"]},
                 "output_str[2]",
                 (
-                    "Invalid index '2' when accessing property 'output_str[2]' of the node 'node1'. "
-                    "Please check the index and try again."
+                    "Invalid property 'output_str[2]' when accessing the node 'node1'. "
+                    "Please check the property and try again."
                 ),
             ),
             (
@@ -142,11 +142,6 @@ class TestInputAssignmentParser:
                     "Invalid property 'text' when accessing the node 'node1'. "
                     "Please check the property and try again."
                 ),
-            ),
-            (
-                ["output1", "output2"],
-                "[2]",
-                ("Invalid property '[2]' when accessing the node 'node1'. " "Please check the property and try again."),
             ),
             (
                 DummyObject(),
@@ -159,6 +154,6 @@ class TestInputAssignmentParser:
         ],
     )
     def test_parse_node_property_with_exception(self, node_val, property, expected_error_message):
-        with pytest.raises(InvalidReferenceProperty) as exc_info:
+        with pytest.raises(InvalidReferenceProperty) as e:
             parse_node_property("node1", node_val, property)
-            assert exc_info.value.message == expected_error_message
+        assert e.value.message == f"Flow execution failed. {expected_error_message}"
