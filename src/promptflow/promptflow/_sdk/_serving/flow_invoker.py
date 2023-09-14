@@ -1,9 +1,10 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 from typing import Callable, Union
 
-from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import update_environment_variables_with_connections
@@ -11,7 +12,7 @@ from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow.executor import FlowExecutor
 
-logger = LoggerFactory.get_logger(__name__)
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class FlowInvoker:
