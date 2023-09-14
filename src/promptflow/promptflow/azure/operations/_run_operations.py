@@ -122,8 +122,7 @@ class RunOperations(_ScopeDependentOperations):
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
         url = (
-            f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid="
-            f"{self._common_azure_url_pattern}&flight=promptfilestorage,PFSourceRun=false"
+            f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid=" f"{self._common_azure_url_pattern}"
         )
         return url
 
