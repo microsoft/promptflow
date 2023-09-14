@@ -3,11 +3,12 @@ on:
   schedule:
     - cron: "40 19 * * *" # Every day starting at 3:40 BJT
   pull_request_target:
-    branches: [ main ]
+    types:
+      - opened
     paths:
       - src/promptflow/**
       - scripts/**
-      - .github/workflows/promptflow-executor-unit-test.yml
+      - '**promptflow-executor-unit-test.yml'
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
