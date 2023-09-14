@@ -21,6 +21,7 @@ class ErrorTarget(str, Enum):
     RUN_STORAGE = "RunStorage"
     CONTROL_PLANE_SDK = "ControlPlaneSDK"
     SERVING_APP = "ServingApp"
+    FLOW_INVOKER = "FlowInvoker"
 
 
 class PromptflowException(Exception):
