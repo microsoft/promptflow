@@ -38,6 +38,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
 - header: "📒 How-to Guides"
   content: "
     Articles guide user to complete a specific task in prompt flow.<br/><br/>
+    - [Develop a flow](how-to-guides/develop-a-flow/index.md)<br/>
     - [Initialize and test a flow](how-to-guides/init-and-test-a-flow.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow.md)<br/>
     - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
