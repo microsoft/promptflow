@@ -170,7 +170,7 @@ class CLIListOutputFormat:
 
 def get_run_output_path(run) -> Path:
     # store the run outputs to user's local dir
-    return (Path.home() / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
+    return (run.flow / PROMPT_FLOW_DIR_NAME / ".runs" / str(run.name)).resolve()
 
 
 class LocalStorageFilenames:
