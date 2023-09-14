@@ -4,6 +4,7 @@
 
 import re
 
+from promptflow._core._errors import NotSupported
 from promptflow.contracts.flow import InputAssignment, InputValueType
 from promptflow.executor._errors import (
     InputNotFound,
@@ -19,18 +20,44 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
     if i.value_type == InputValueType.FLOW_INPUT:
         if i.value not in flow_inputs:
             flow_input_keys = ", ".join(flow_inputs.keys()) if flow_inputs is not None else None
-            raise InputNotFound(message=f"{i.value} is not found from flow inputs '{flow_input_keys}'")
+            raise InputNotFound(
+                message_format=(
+                    "The input '{input_name}' is not found from flow inputs '{flow_input_keys}'. "
+                    "Please check the input name and try again."
+                ),
+                input_name=i.value,
+                flow_input_keys=flow_input_keys,
+            )
         return flow_inputs[i.value]
     if i.value_type == InputValueType.NODE_REFERENCE:
         if i.section != "output":
-            raise UnsupportedReference(f"Unsupported reference {i.serialize()}")
+            raise UnsupportedReference(
+                message_format=(
+                    "The section '{reference_section}' of reference is currently unsupported. "
+                    "Please specify the output part of the node '{reference_node_name}'."
+                ),
+                reference_section=i.section,
+                reference_node_name=i.value,
+            )
         if i.value not in nodes_outputs:
             node_output_keys = ", ".join(nodes_outputs.keys()) if nodes_outputs is not None else None
             raise InputNotFoundFromAncestorNodeOutput(
-                message=f"{i.value} is not found from ancestor node output '{node_output_keys}'"
+                message_format=(
+                    "The input '{input_name}' is not found from ancestor node outputs '{node_output_keys}'. "
+                    "Please check the node name and try again."
+                ),
+                input_name=i.value,
+                node_output_keys=node_output_keys,
             )
         return parse_node_property(i.value, nodes_outputs[i.value], i.property)
-    raise NotImplementedError(f"The value type {i.value_type} cannot be parsed for input {i}")
+    raise NotSupported(
+        message_format=(
+            "The type '{input_type}' is currently unsupported. "
+            "Please choose from available types: '{supported_output_type}' and try again.",
+        ),
+        input_type=i.value_type,
+        supported_output_type=[value_type.value for value_type in InputValueType],
+    )
 
 
 property_pattern = r"(\w+)|(\['.*?'\])|(\[\d+\])"
@@ -49,7 +76,15 @@ def parse_node_property(node_name, node_val, property=""):
                 elif index.isdigit():
                     index = int(index)
                 else:
-                    raise InvalidReferenceProperty(f"Invalid index {index} when accessing property {property}")
+                    raise InvalidReferenceProperty(
+                        message_format=(
+                            "Invalid index '{index}' when accessing property '{property}' of the node '{node_name}'. "
+                            "Please check the index and try again."
+                        ),
+                        index=index,
+                        property=property,
+                        node_name=node_name,
+                    )
                 val = val[index]
             else:
                 if isinstance(val, dict):
@@ -57,5 +92,9 @@ def parse_node_property(node_name, node_val, property=""):
                 else:
                     val = getattr(val, part)
     except (KeyError, IndexError, AttributeError) as e:
-        raise InvalidReferenceProperty(f"Invalid property {property} for the node {node_name}") from e
+        message_format = (
+            "Invalid property '{property}' when accessing the node '{node_name}'. "
+            "Please check the property and try again."
+        )
+        raise InvalidReferenceProperty(message_format=message_format, property=property, node_name=node_name) from e
     return val
