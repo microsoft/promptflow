@@ -42,41 +42,6 @@ def assert_datetime_prefix(string: str, expected_str: str):
 
 
 @pytest.mark.unittest
-class TestNodeLogWriter:
-    def test_set_node_info(self):
-        run_logger = NodeLogWriter(sys.stdout)
-        assert run_logger.get_log(RUN_ID) is None
-        run_logger.set_node_info(RUN_ID, NODE_NAME, LINE_NUMBER)
-        assert run_logger.get_log(RUN_ID) == ""
-
-    def test_clear_node_info(self):
-        run_logger = NodeLogWriter(sys.stdout)
-        run_logger.clear_node_info(RUN_ID)
-        run_logger.set_node_info(RUN_ID, NODE_NAME, LINE_NUMBER)
-        run_logger.clear_node_info(RUN_ID)
-        assert run_logger.run_id_to_stdout.get(RUN_ID) is None
-
-    def test_get_log(self):
-        run_logger = NodeLogWriter(sys.stdout)
-        sys.stdout = run_logger
-        print("test")
-        assert run_logger.get_log(RUN_ID) is None
-        run_logger.set_node_info(RUN_ID, NODE_NAME, LINE_NUMBER)
-        print("test")
-        assert_datetime_prefix(run_logger.get_log(RUN_ID), "test\n")
-        run_logger.clear_node_info(RUN_ID)
-        assert run_logger.get_log(RUN_ID) is None
-
-    def test_multi_thread(self):
-        run_logger = NodeLogWriter(sys.stdout)
-        sys.stdout = run_logger
-        with ThreadPool(processes=10) as pool:
-            results = pool.starmap(assert_print_result, ((i, run_logger) for i in range(10)))
-            for r in results:
-                pass
-
-
-@pytest.mark.unittest
 class TestNodeLogManager:
     def test_get_logs(self):
         with NodeLogManager(record_datetime=False) as lm:
@@ -118,3 +83,38 @@ class TestNodeLogManager:
             assert_datetime_prefix(outputs[0], "test")
             assert_datetime_prefix(outputs[1], "test2")
             assert outputs[2] == ""
+
+
+@pytest.mark.unittest
+class TestNodeLogWriter:
+    def test_set_node_info(self):
+        run_logger = NodeLogWriter(sys.stdout)
+        assert run_logger.get_log(RUN_ID) is None
+        run_logger.set_node_info(RUN_ID, NODE_NAME, LINE_NUMBER)
+        assert run_logger.get_log(RUN_ID) == ""
+
+    def test_clear_node_info(self):
+        run_logger = NodeLogWriter(sys.stdout)
+        run_logger.clear_node_info(RUN_ID)
+        run_logger.set_node_info(RUN_ID, NODE_NAME, LINE_NUMBER)
+        run_logger.clear_node_info(RUN_ID)
+        assert run_logger.run_id_to_stdout.get(RUN_ID) is None
+
+    def test_get_log(self):
+        run_logger = NodeLogWriter(sys.stdout)
+        sys.stdout = run_logger
+        print("test")
+        assert run_logger.get_log(RUN_ID) is None
+        run_logger.set_node_info(RUN_ID, NODE_NAME, LINE_NUMBER)
+        print("test")
+        assert_datetime_prefix(run_logger.get_log(RUN_ID), "test\n")
+        run_logger.clear_node_info(RUN_ID)
+        assert run_logger.get_log(RUN_ID) is None
+
+    def test_multi_thread(self):
+        run_logger = NodeLogWriter(sys.stdout)
+        sys.stdout = run_logger
+        with ThreadPool(processes=10) as pool:
+            results = pool.starmap(assert_print_result, ((i, run_logger) for i in range(10)))
+            for r in results:
+                pass

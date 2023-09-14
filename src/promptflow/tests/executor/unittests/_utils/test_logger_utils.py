@@ -52,45 +52,6 @@ def stream_handler():
 
 
 @pytest.mark.unittest
-class TestFileHandlerConcurrentWrapper:
-    def test_set_handler_thread_safe(self):
-        wrapper = FileHandlerConcurrentWrapper()
-        logger = logging.getLogger("test execution log handler")
-        logger.addHandler(wrapper)
-
-        process_num = 3
-        folder_path = Path(mkdtemp())
-        log_path_list = [str(folder_path / f"log_{i}.log") for i in range(process_num)]
-
-        with ThreadPool(processes=process_num) as pool:
-            results = pool.starmap(
-                _set_handler, ((logger, FileHandler(log_path_list[i]), f"log {i}") for i in range(process_num))
-            )
-            results = list(results)
-
-        # Make sure log content is as expected.
-        for i, log_path in enumerate(log_path_list):
-            with open(log_path, "r") as f:
-                log = f.read()
-                log_lines = log.split("\n")
-                assert len(log_lines) == 2
-                assert f"log {i}" in log_lines[0]
-                assert log_lines[1] == ""
-
-    def test_clear(self):
-        wrapper = FileHandlerConcurrentWrapper()
-        assert wrapper.handler is None
-
-        log_path = str(Path(mkdtemp()) / "logs.log")
-        file_handler = FileHandler(log_path)
-        file_handler.close = Mock(side_effect=Exception("test exception"))
-        wrapper.handler = file_handler
-
-        wrapper.clear()
-        assert wrapper.handler is None
-
-
-@pytest.mark.unittest
 class TestCredentialScrubberFormatter:
     def test_log(self, logger, stream_handler):
         """Make sure credentials by logger.log are scrubbed."""
@@ -146,6 +107,45 @@ class TestCredentialScrubberFormatter:
         with ThreadPool(processes=3) as pool:
             results = pool.map(set_and_check_credential_list, [[f"secret {i}", f"credential {i}"] for i in range(3)])
             _ = list(results)
+
+
+@pytest.mark.unittest
+class TestFileHandlerConcurrentWrapper:
+    def test_set_handler_thread_safe(self):
+        wrapper = FileHandlerConcurrentWrapper()
+        logger = logging.getLogger("test execution log handler")
+        logger.addHandler(wrapper)
+
+        process_num = 3
+        folder_path = Path(mkdtemp())
+        log_path_list = [str(folder_path / f"log_{i}.log") for i in range(process_num)]
+
+        with ThreadPool(processes=process_num) as pool:
+            results = pool.starmap(
+                _set_handler, ((logger, FileHandler(log_path_list[i]), f"log {i}") for i in range(process_num))
+            )
+            results = list(results)
+
+        # Make sure log content is as expected.
+        for i, log_path in enumerate(log_path_list):
+            with open(log_path, "r") as f:
+                log = f.read()
+                log_lines = log.split("\n")
+                assert len(log_lines) == 2
+                assert f"log {i}" in log_lines[0]
+                assert log_lines[1] == ""
+
+    def test_clear(self):
+        wrapper = FileHandlerConcurrentWrapper()
+        assert wrapper.handler is None
+
+        log_path = str(Path(mkdtemp()) / "logs.log")
+        file_handler = FileHandler(log_path)
+        file_handler.close = Mock(side_effect=Exception("test exception"))
+        wrapper.handler = file_handler
+
+        wrapper.clear()
+        assert wrapper.handler is None
 
 
 @pytest.mark.unittest
