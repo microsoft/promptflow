@@ -211,9 +211,7 @@ VIS_LIB_VERSION = "0.0.28"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
-    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
-    "&flight=promptfilestorage,PFPackageTools,PFRunList,PromptBatchRunDesignV2,PFSourceRun"
-    "&runId={names}"
+    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
 
 
