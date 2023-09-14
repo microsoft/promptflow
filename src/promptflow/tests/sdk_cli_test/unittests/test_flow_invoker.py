@@ -8,7 +8,7 @@ import pytest
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
+PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
 FLOWS_DIR = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 EXAMPLE_FLOW = FLOWS_DIR / "web_classification"
 
