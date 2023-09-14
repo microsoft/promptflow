@@ -23,20 +23,12 @@ def create_run_against_multi_line_data(client: PFClient) -> Run:
 @pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.e2etest
 class TestRunAPIs:
-    def test_heartbeat(self, pfs_op: PFSOperations) -> None:
-        response = pfs_op.heartbeat()
-        assert response.status_code == 204
-
-    def test_list_runs(
-        self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
-    ) -> None:
+    def test_list_runs(self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations) -> None:
         create_run_against_multi_line_data(pf_client)
         runs = pfs_op.list()
         assert len(runs) >= 1
 
-    def test_get_run(
-        self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
-    ) -> None:
+    def test_get_run(self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations) -> None:
         run = create_run_against_multi_line_data(pf_client)
         run_from_pfs = pfs_op.get(name=run.name)
         assert run_from_pfs["name"] == run.name

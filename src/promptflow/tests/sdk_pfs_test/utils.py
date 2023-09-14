@@ -15,7 +15,7 @@ class PFSOperations:
         self._client = client
 
     def heartbeat(self):
-        return self._client.get("/heartbeat")
+        return self._client.get("/heartbeat").json
 
     def list(self) -> List[dict]:
         # TODO: add query parameters
