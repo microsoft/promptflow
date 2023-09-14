@@ -4,6 +4,12 @@ from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERR
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 
+class UnexpectedError(SystemErrorException):
+    """Exception raised for unexpected errors that should not occur under normal circumstances."""
+
+    pass
+
+
 class NotSupported(SystemErrorException):
     """Exception raised when the feature is not supported."""
 
