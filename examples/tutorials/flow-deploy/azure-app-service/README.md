@@ -18,7 +18,7 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../../flows/standard/web-classification --output build --format docker
+pf flow build --source ../../../flows/standard/web-classification --output dist --format docker
 ```
 
 
@@ -32,7 +32,7 @@ The two scripts will do the following things:
 
 Example command to use bash script:
 ```shell
-bash deploy.sh --path build -i <image_tag> --name my_app_23d8m -r <docker registery> -g <resource_group>
+bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registery> -g <resource_group>
 ```
 
 Example command to use powershell script:
