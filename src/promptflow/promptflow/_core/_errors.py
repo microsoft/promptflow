@@ -121,3 +121,11 @@ class MetaFileNotFound(GenerateMetaUserError):
 
 class MetaFileReadError(GenerateMetaUserError):
     pass
+
+
+class RunRecordNotFound(SystemErrorException):
+    pass
+
+
+class FlowOutputUnserializable(UserErrorException):
+    pass
