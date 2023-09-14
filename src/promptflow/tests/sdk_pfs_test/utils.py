@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from typing import List
 
 from flask.testing import FlaskClient
 
@@ -15,17 +14,17 @@ class PFSOperations:
         self._client = client
 
     def heartbeat(self):
-        return self._client.get("/heartbeat").json
+        return self._client.get("/heartbeat")
 
-    def list(self) -> List[dict]:
+    def list(self):
         # TODO: add query parameters
-        return self._client.get(f"{self.RUN_URL_PREFIX}/list").json
+        return self._client.get(f"{self.RUN_URL_PREFIX}/list")
 
-    def get(self, name: str) -> dict:
-        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}").json
+    def get(self, name: str):
+        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}")
 
-    def get_metadata(self, name: str) -> dict:
-        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/metadata").json
+    def get_metadata(self, name: str):
+        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/metadata")
 
-    def get_detail(self, name: str) -> dict:
-        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/detail").json
+    def get_detail(self, name: str):
+        return self._client.get(f"{self.RUN_URL_PREFIX}/{name}/detail")
