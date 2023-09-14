@@ -7,7 +7,7 @@ import pytest
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
 from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
@@ -680,3 +680,9 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" in run_dict
         assert run_dict["error"] == exception
+
+    def test_system_metrics_in_properties(self, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        assert FlowRunProperties.SYSTEM_METRICS in run.properties
+        assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
+        assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]

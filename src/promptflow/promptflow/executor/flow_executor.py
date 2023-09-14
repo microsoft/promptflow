@@ -741,7 +741,7 @@ class FlowExecutor:
             if not node:
                 raise OutputReferenceNotExist(
                     message_format=(
-                        "Flow is defined incorrectly. The node '{node_name}' "
+                        "The output '{output_name}' for flow is incorrect. The node '{node_name}' "
                         "referenced by the output '{output_name}' can not found in flow. "
                         "Please rectify the error in your flow and try again."
                     ),
