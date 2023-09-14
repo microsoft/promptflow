@@ -72,7 +72,6 @@ class FlowInvoker:
             raise_ex=True,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
-        self.executor._run_tracker.allow_generator_types = True
         logger.info("Promptflow executor initiated successfully.")
 
     def invoke(self, data):
