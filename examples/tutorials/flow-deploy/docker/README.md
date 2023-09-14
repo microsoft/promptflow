@@ -1,7 +1,7 @@
 # Deploy a flow using Docker
 
 This example demos how to deploy flow as a docker app. 
-We will use [web-classification](../../flows/standard/web-classification/README.md) as example in this tutorial.
+We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
 ## Build a flow as docker format app
 

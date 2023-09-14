@@ -11,12 +11,6 @@ class InvalidCustomLLMTool(ValidationException):
     pass
 
 
-class FlowExecutionError(SystemErrorException):
-    """Base System Exceptions for flow execution"""
-
-    pass
-
-
 class ValueTypeUnresolved(ValidationException):
     pass
 
@@ -101,15 +95,15 @@ class InputNotFound(InvalidFlowRequest):
     pass
 
 
-class InputNotFoundFromAncestorNodeOutput(FlowExecutionError):
+class InvalidAggregationInput(SystemErrorException):
     pass
 
 
-class NoNodeExecutedError(FlowExecutionError):
+class InputNotFoundFromAncestorNodeOutput(SystemErrorException):
     pass
 
 
-class OutputReferenceBypassed(FlowExecutionError):
+class NoNodeExecutedError(SystemErrorException):
     pass
 
 
@@ -136,9 +130,7 @@ class NodeConcurrencyNotFound(SystemErrorException):
 class NodeReferenceError(UserErrorException):
     """Exception raised when node reference not found or unsupported"""
 
-    def __init__(self, message, target=ErrorTarget.FLOW_EXECUTOR):
-        msg = f"Invalid node reference: {message}"
-        super().__init__(message=msg, target=target)
+    pass
 
 
 class UnsupportedReference(NodeReferenceError):
@@ -146,6 +138,22 @@ class UnsupportedReference(NodeReferenceError):
 
 
 class InvalidReferenceProperty(NodeReferenceError):
+    pass
+
+
+class OutputReferenceBypassed(NodeReferenceError):
+    pass
+
+
+class OutputReferenceNotExist(NodeReferenceError):
+    pass
+
+
+class ReferenceNodeBypassed(NodeReferenceError):
+    pass
+
+
+class NodeOutputNotFound(UserErrorException):
     pass
 
 

@@ -1,7 +1,13 @@
 from traceback import TracebackException
 
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
+
+
+class NotSupported(SystemErrorException):
+    """Exception raised when the feature is not supported."""
+
+    pass
 
 
 class PackageToolNotFoundError(ValidationException):
@@ -114,4 +120,12 @@ class MetaFileNotFound(GenerateMetaUserError):
 
 
 class MetaFileReadError(GenerateMetaUserError):
+    pass
+
+
+class RunRecordNotFound(SystemErrorException):
+    pass
+
+
+class FlowOutputUnserializable(UserErrorException):
     pass

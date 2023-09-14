@@ -224,7 +224,7 @@ class SubmitterHelper:
         for n in connection_names:
             try:
                 conn = local_client.connections.get(name=n, with_secrets=True)
-                result[n] = conn.to_execution_connection_dict()
+                result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:
                     raise e
@@ -329,10 +329,14 @@ class RunSubmitter:
         for input_key, local_file in input_dicts.items():
             result[input_key] = load_data(local_file)
         if run.run is not None:
-            variant_output = reverse_transpose(self.run_operations._get_outputs(run.run))
-            result["run.outputs"] = variant_output
-            variant_input = reverse_transpose(self.run_operations._get_inputs(run.run))
-            result["run.inputs"] = variant_input
+            referenced_outputs = self.run_operations._get_outputs(run.run)
+            if referenced_outputs:
+                variant_output = reverse_transpose(referenced_outputs)
+                result["run.outputs"] = variant_output
+            referenced_inputs = self.run_operations._get_inputs(run.run)
+            if referenced_inputs:
+                variant_input = reverse_transpose(referenced_inputs)
+                result["run.inputs"] = variant_input
         return result
 
     @classmethod

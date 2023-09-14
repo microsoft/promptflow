@@ -8,6 +8,7 @@ from datetime import datetime
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
@@ -16,7 +17,7 @@ from promptflow._utils.logger_utils import flow_logger
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
 
@@ -216,7 +217,14 @@ class RunTracker(ThreadLocalSingleton):
     ):
         run_info = self._flow_runs.get(run_id) or self._node_runs.get(run_id)
         if run_info is None:
-            raise RunRecordNotFound(message=f"Run {run_id} not found", target=ErrorTarget.RUN_TRACKER)
+            raise RunRecordNotFound(
+                message_format=(
+                    "Run record with ID '{run_id}' was not tracked in promptflow execution. "
+                    "Please contact support for further assistance."
+                ),
+                target=ErrorTarget.RUN_TRACKER,
+                run_id=run_id,
+            )
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
         elif isinstance(run_info, RunInfo):
@@ -247,14 +255,26 @@ class RunTracker(ThreadLocalSingleton):
         }
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
-        try:
-            return {k: self._ensure_serializable_value(v) for k, v in output.items()}
-        except Exception as e:
-            # If it is flow output not node output, raise an exception.
-            raise UserErrorException(
-                f"Flow output must be json serializable, dump json failed: {e}",
-                target=ErrorTarget.FLOW_EXECUTOR,
-            ) from e
+        serializable_output = {}
+        for k, v in output.items():
+            try:
+                serializable_output[k] = self._ensure_serializable_value(v)
+            except Exception as e:
+                # If a specific key-value pair is not serializable, raise an exception with the key.
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+                message_format = (
+                    "The output '{output_name}' for flow is incorrect. The output value is not JSON serializable. "
+                    "JSON dump failed: {error_type_and_message}. Please verify your flow output and "
+                    "make sure the value serializable."
+                )
+                raise FlowOutputUnserializable(
+                    message_format=message_format,
+                    target=ErrorTarget.FLOW_EXECUTOR,
+                    output_name=k,
+                    error_type_and_message=error_type_and_message,
+                ) from e
+
+        return serializable_output
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
@@ -283,7 +303,12 @@ class RunTracker(ThreadLocalSingleton):
         run_info = self._node_runs.get(run_id) or self._flow_runs.get(run_id)
         if run_info is None:
             raise RunRecordNotFound(
-                message=f"Run {run_id} not found when tracking inputs", target=ErrorTarget.RUN_TRACKER
+                message_format=(
+                    "Run record with ID '{run_id}' was not tracked in promptflow execution. "
+                    "Please contact support for further assistance."
+                ),
+                target=ErrorTarget.RUN_TRACKER,
+                run_id=run_id,
             )
         return run_info
 
@@ -390,7 +415,3 @@ class RunTracker(ThreadLocalSingleton):
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):
         self._storage.persist_status_summary(status_summary, run_id)
-
-
-class RunRecordNotFound(ValidationException):
-    pass

@@ -16,7 +16,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
-from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -354,6 +354,13 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # automatic is a reserved runtime name, will use automatic runtime if specified.
+            pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl", runtime="automatic")
+
     def test_automatic_runtime_with_environment(self, pf):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
@@ -520,7 +527,6 @@ class TestFlowRun:
             RunOperations, "get"
         ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
-            # no runtime provided, will use automatic runtime
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -537,16 +543,47 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
     def test_automatic_runtime_creation_failure(self, pf):
 
         with pytest.raises(FlowRequestException) as e:
             pf.runs._resolve_runtime(
                 run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
                     resources={"instance_type": "not_exist"},
                 ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
                 runtime=None,
             )
         assert "Session creation failed for" in str(e.value)
+
+    def test_run_submission_exception(self, remote_client):
+        from azure.core.exceptions import HttpResponseError
+
+        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
+
+        def fake_submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            request_id_in_headers = headers["x-ms-client-request-id"]
+            # request id in headers should be same with request id in service caller
+            assert request_id_in_headers == remote_client.runs._service_caller._request_id
+            raise HttpResponseError("customized error message.")
+
+        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
+            FlowServiceCaller, "_set_headers_with_user_aml_token"
+        ):
+            mock_request.side_effect = fake_submit
+            with pytest.raises(FlowRequestException) as e:
+                original_request_id = remote_client.runs._service_caller._request_id
+                remote_client.runs._service_caller.submit_bulk_run(
+                    subscription_id="fake_subscription_id",
+                    resource_group_name="fake_resource_group",
+                    workspace_name="fake_workspace_name",
+                )
+                # request id has been updated
+                assert original_request_id != remote_client.runs._service_caller._request_id
+
+            # original error message should be included in FlowRequestException
+            assert "customized error message" in str(e.value)
+            # request id should be included in FlowRequestException
+            assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)

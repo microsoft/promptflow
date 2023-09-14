@@ -1,0 +1,56 @@
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: web-classification
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: open-ai-connection-api-key
+  namespace: web-classification
+type: Opaque
+data:
+  open-ai-connection-api-key: <encoded_secret>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-classification-service
+  namespace: web-classification
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    nodePort: 30123
+  selector:
+    app: web-classification-serve-app
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-classification-serve-app
+  namespace: web-classification
+spec:
+  selector:
+    matchLabels:
+      app: web-classification-serve-app
+  template:
+    metadata:
+      labels:
+        app: web-classification-serve-app
+    spec:
+      containers:
+      - name: web-classification-serve-container
+        image: web-classification-serve
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        env:
+        - name: OPEN_AI_CONNECTION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: open-ai-connection-api-key
+              key: open-ai-connection-api-key

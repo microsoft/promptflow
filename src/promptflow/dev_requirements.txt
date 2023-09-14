@@ -15,7 +15,6 @@ azure-mgmt-storage==21.0.0
 # Note: This is possibly-insecure, do not add this to setup.
 keyrings.alt
 
---extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
 promptflow-tools
 
 beautifulsoup4==4.12.2

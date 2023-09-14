@@ -1,0 +1,17 @@
+inputs:
+  num:
+    type: int
+outputs:
+  content:
+    type: string
+    reference: ${divide_num.output}
+nodes:
+- name: divide_num
+  type: python
+  source:
+    type: code
+    path: divide_num.py
+  inputs:
+    num: ${inputs.num}
+
+

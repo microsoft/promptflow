@@ -86,7 +86,7 @@ class PFClient:
 
     @property
     def ml_client(self):
-        """Return a client class to interact with Azure ML services."""
+        """Return a client to interact with Azure ML services."""
         return self._ml_client
 
     @classmethod
@@ -250,6 +250,7 @@ class PFClient:
     ) -> "Component":
         """
         Load a flow as a component.
+
         :param source: Source of the flow. Should be a path to a flow dag yaml file or a flow directory.
         :type source: Union[str, PathLike, IO[AnyStr]]
         :param component_type: Type of the loaded component, support parallel only for now.
@@ -300,4 +301,5 @@ class PFClient:
 
     @property
     def runs(self):
+        """Return the run operation object that can manage runs."""
         return self._runs
