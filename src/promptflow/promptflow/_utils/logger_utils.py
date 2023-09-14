@@ -61,13 +61,15 @@ class CredentialScrubberFormatter(logging.Formatter):
     def _handle_customer_content(self, s: str, record: logging.LogRecord) -> str:
         """Interface method for handling customer content in log message.
 
-        Derived class can override this method to handle customer content in log."""
+        Derived class can override this method to handle customer content in log.
+        """
         return s
 
     def _handle_traceback(self, s: str, record: logging.LogRecord) -> str:
         """Interface method for handling traceback in log message.
 
-        Derived class can override this method to handle traceback in log."""
+        Derived class can override this method to handle traceback in log.
+        """
         return s
 
 
