@@ -39,7 +39,7 @@ With the following data
 
 ```json
 {"input3": "val3_in_data", "input4": "val4_in_data"}
-``````
+```
 
 And use the following YAML to run
 
