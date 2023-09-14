@@ -121,6 +121,10 @@ class RunInfo(Base):
             if system_metrics is None:
                 session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
             else:
+                # with high concurrency on same row, we may lose the earlier commit
+                # we regard it acceptable as it should be an edge case to update properties
+                # on same row with high concurrency;
+                # if it's a concern, we can move those properties to an extra column
                 run_info = session.query(RunInfo).filter(RunInfo.name == self.name).first()
                 props = json.loads(run_info.properties)
                 props[FlowRunProperties.SYSTEM_METRICS] = system_metrics.copy()
