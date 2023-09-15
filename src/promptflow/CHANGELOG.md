@@ -1,5 +1,11 @@
 # Release History
 
+## 0.1.0b6 (Upcoming)
+
+### Features Added
+
+- Add token metrics in run properties
+
 ## 0.1.0b5 (2023.09.08)
 
 ### Features Added
