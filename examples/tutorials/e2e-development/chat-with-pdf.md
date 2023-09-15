@@ -310,7 +310,7 @@ the other choices, please refer to [flow deploy docs](https://microsoft.github.i
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source . --output build --format docker
+pf flow build --source . --output dist --format docker
 ```
 
 ### Deploy with Docker
@@ -321,7 +321,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 Run the command below to build image:
 
 ```shell
-docker build build -t chat-with-pdf-serve
+docker build dist -t chat-with-pdf-serve
 ```
 
 #### Run Docker image
