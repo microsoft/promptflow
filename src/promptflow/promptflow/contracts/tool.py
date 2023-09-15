@@ -42,7 +42,7 @@ class ValueType(str, Enum):
         :param t: The value needs to get its `ValueType`
         :type t: Any
         :return: The `ValueType` of the given value
-        :rtype: ValueType
+        :rtype: ~promptflow.contracts.tool.ValueType
         """
 
         if isinstance(t, Secret):
@@ -68,7 +68,7 @@ class ValueType(str, Enum):
         :param t: The type needs to get its `ValueType`
         :type t: type
         :return: The `ValueType` of the given type
-        :rtype: ValueType
+        :rtype: ~promptflow.contracts.ValueType
         """
 
         if t == int:
@@ -210,9 +210,9 @@ class InputDefinition:
     enum: List[str] = None
 
     def serialize(self) -> dict:
-        """Serialize `InputDefinition` to dict.
+        """Serialize input definition to dict.
 
-        :return: The serialized `InputDefinition`
+        :return: The serialized input definition
         :rtype: dict
         """
 
@@ -230,12 +230,12 @@ class InputDefinition:
 
     @staticmethod
     def deserialize(data: dict) -> "InputDefinition":
-        """Deserialize dict to `InputDefinition`.
+        """Deserialize dict to input definition.
 
         :param data: The dict needs to be deserialized
         :type data: dict
-        :return: The deserialized `InputDefinition`
-        :rtype: InputDefinition
+        :return: The deserialized input definition
+        :rtype: ~promptflow.contracts.tool.InputDefinition
         """
 
         def _deserialize_type(v):
@@ -261,9 +261,9 @@ class OutputDefinition:
     is_property: bool = False
 
     def serialize(self) -> dict:
-        """Serialize `OutputDefinition` to dict.
+        """Serialize output definition to dict.
 
-        :return: The serialized `OutputDefinition`
+        :return: The serialized output definition
         :rtype: dict
         """
 
@@ -276,12 +276,12 @@ class OutputDefinition:
 
     @staticmethod
     def deserialize(data: dict) -> "OutputDefinition":
-        """Deserialize dict to `OutputDefinition`.
+        """Deserialize dict to output definition.
 
         :param data: The dict needs to be deserialized
         :type data: dict
-        :return: The deserialized `OutputDefinition`
-        :rtype: OutputDefinition
+        :return: The deserialized output definition
+        :rtype: ~promptflow.contracts.tool.OutputDefinition
         """
 
         return OutputDefinition(
@@ -298,29 +298,29 @@ class Tool:
     :param name: The name of the tool
     :type name: str
     :param type: The type of the tool
-    :type type: `ToolType`
+    :type type: ~promptflow.contracts.tool.ToolType
     :param inputs: The inputs of the tool
-    :type inputs: Dict[str, `InputDefinition`]
+    :type inputs: Dict[str, ~promptflow.contracts.tool.InputDefinition]
     :param outputs: The outputs of the tool
-    :type outputs: Dict[str, `OutputDefinition`], optional
+    :type outputs: Optional[Dict[str, ~promptflow.contracts.tool.OutputDefinition]]
     :param description: The description of the tool
-    :type description: str, optional
+    :type description: Optional[str]
     :param module: The module of the tool
-    :type module: str, optional
+    :type module: Optional[str]
     :param class_name: The class name of the tool
-    :type class_name: str, optional
+    :type class_name: Optional[str]
     :param source: The source of the tool
-    :type source: str, optional
+    :type source: Optional[str]
     :param code: The code of the tool
-    :type code: str, optional
+    :type code: Optional[str]
     :param function: The function of the tool
-    :type function: str, optional
+    :type function: Optional[str]
     :param connection_type: The connection type of the tool
-    :type connection_type: List[str], optional
+    :type connection_type: Optional[List[str]]
     :param is_builtin: Whether the tool is a built-in tool
-    :type is_builtin: bool, optional
+    :type is_builtin: Optional[bool]
     :param stage: The stage of the tool
-    :type stage: str, optional
+    :type stage: Optional[str]
     """
 
     name: str
@@ -338,9 +338,9 @@ class Tool:
     stage: Optional[str] = None
 
     def serialize(self) -> dict:
-        """Serialize `Tool` to dict and skip None fields.
+        """Serialize tool to dict and skip None fields.
 
-        :return: The serialized `Tool`
+        :return: The serialized tool
         :rtype: dict
         """
 
@@ -353,12 +353,12 @@ class Tool:
 
     @staticmethod
     def deserialize(data: dict) -> "Tool":
-        """Deserialize dict to `Tool`.
+        """Deserialize dict to tool.
 
         :param data: The dict needs to be deserialized
         :type data: dict
-        :return: The deserialized `Tool`
-        :rtype: Tool
+        :return: The deserialized tool
+        :rtype: ~promptflow.contracts.tool.Tool
         """
 
         return Tool(

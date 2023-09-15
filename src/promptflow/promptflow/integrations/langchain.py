@@ -11,8 +11,8 @@ from promptflow._core.tracer import Trace, Tracer, TraceType
 
 
 class PromptFlowCallbackHandler(BaseCallbackHandler):
-    """`PromptFlowCallbackHandler` implements the `BaseCallbackHandler` interface,
-    which has a method for each event that can be subscribed to.
+    """`PromptFlowCallbackHandler` implements the `langchain.callbacks.base.BaseCallbackHandler`
+    interface, which has a method for each event that can be subscribed to.
     The appropriate method will be called on the handler when the event is triggered."""
 
     def __init__(self):
