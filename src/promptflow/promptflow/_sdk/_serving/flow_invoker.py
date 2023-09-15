@@ -44,9 +44,6 @@ class FlowInvoker:
         if connection_provider == "local":
             logger.info("Getting connections from local sqlite...")
             self.connections = Flow._get_local_connections(executable=self.flow_entity._init_executable())
-        elif connection_provider == "azure":
-            # TODO: support this
-            raise NotImplementedError("Azure connection provider is not supported yet.")
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()

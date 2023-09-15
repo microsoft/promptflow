@@ -23,8 +23,7 @@ class FlowConnectionError(UserErrorException):
 class UnsupportedConnectionProvider(FlowConnectionError):
     def __init__(self, provider):
         super().__init__(
-            message_format="Unsupported connection provider {provider}, "
-            "supported are 'local', 'azure' and typing.Callable.",
+            message_format="Unsupported connection provider {provider}, " "supported are 'local' and typing.Callable.",
             provider=provider,
             target=ErrorTarget.FLOW_INVOKER,
         )
