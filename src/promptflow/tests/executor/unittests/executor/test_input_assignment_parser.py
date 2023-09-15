@@ -62,6 +62,14 @@ class TestInputAssignmentParser:
                 ),
             ),
             (
+                "${node2.output}",
+                InputNotFoundFromAncestorNodeOutput,
+                (
+                    "The input 'node2' is not found from ancestor node outputs 'node1'. "
+                    "Please check the node name and try again."
+                ),
+            ),
+            (
                 "${node1.word}",
                 UnsupportedReference,
                 (
