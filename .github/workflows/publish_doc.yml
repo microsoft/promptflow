@@ -36,8 +36,8 @@ jobs:
         with:
           submodules: true
 
-      - name: Conda Setup
-        uses: "./.github/actions/step_create_conda_environment"
+      - name: Python Setup
+        uses: "./.github/actions/step_create_python_environment"
 
       - name: Dev setup
         uses: "./.github/actions/step_sdk_setup"
