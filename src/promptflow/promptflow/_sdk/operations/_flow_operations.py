@@ -236,7 +236,8 @@ class FlowOperations:
         else:
             secret_dict = connection_yaml
 
-        env_var_names = [f"{connection.name}_{secret_key}".upper() for secret_key in connection.secrets]
+        connection_var_name = connection.name.replace(" ", "")
+        env_var_names = [f"{connection_var_name}_{secret_key}".upper() for secret_key in connection.secrets]
         for secret_key, secret_env in zip(connection.secrets, env_var_names):
             secret_dict[secret_key] = "${env:" + secret_env + "}"
 
@@ -266,7 +267,8 @@ class FlowOperations:
         connection_paths, env_var_names = [], {}
         for connection_name in connection_names:
             connection = local_client.connections.get(name=connection_name, with_secrets=True)
-            connection_paths.append(output_dir / f"{connection_name}.yaml")
+            connection_var_name = connection_name.replace(" ", "")
+            connection_paths.append(output_dir / f"{connection_var_name}.yaml")
             for env_var_name in self._dump_connection(
                 connection,
                 connection_paths[-1],
