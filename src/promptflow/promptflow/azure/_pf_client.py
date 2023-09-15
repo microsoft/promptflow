@@ -23,16 +23,16 @@ from promptflow.azure.operations._flow_opearations import FlowOperations
 class PFClient:
     """A client class to interact with Promptflow service.
 
-    Use this client to manage promptflow resources, e.g. runs
+    Use this client to manage promptflow resources, e.g. runs.
 
-    :param credential: Credential to use for authentication, defaults to None
+    :param credential: Credential to use for authentication, optional
     :type credential: ~azure.core.credentials.TokenCredential
-    :param subscription_id: Azure subscription ID, optional for registry assets only, defaults to None
+    :param subscription_id: Azure subscription ID, optional for registry assets only, optional
     :type subscription_id: typing.Optional[str]
-    :param resource_group_name: Azure resource group, optional for registry assets only, defaults to None
+    :param resource_group_name: Azure resource group, optional for registry assets only, optional
     :type resource_group_name: typing.Optional[str]
     :param workspace_name: Workspace to use in the client, optional for non workspace dependent operations only,
-            defaults to None
+        optional.
     :type workspace_name: typing.Optional[str]
     :param kwargs: A dictionary of additional configuration parameters.
     :type kwargs: dict
@@ -112,7 +112,7 @@ class PFClient:
         :type credential: ~azure.core.credentials.TokenCredential
         :param path: The path to the config file or starting directory to search.
             The parameter defaults to starting the search in the current directory.
-            Defaults to None
+            optional
         :type path: typing.Union[os.PathLike, str]
         :param file_name: Allows overriding the config file name to search for when path is a directory path.
             (Default value = None)
@@ -141,33 +141,47 @@ class PFClient:
         **kwargs,
     ) -> Run:
         """Run flow against provided data or run.
-        Note: at least one of data or run must be provided.
+
+        .. note:: at least one of data or run must be provided.
+
+        .. admonition:: column_mapping
+
+            - from data:
+                - ``data.col1``
+            - from run:
+                - ``run.inputs.col1``: if need reference run's inputs
+                - ``run.output.col1``: if need reference run's outputs
+            - Example:
+                - ``{"ground_truth": "${data.answer}", "prediction": "${run.outputs.answer}"}``
 
         :param flow: path to flow directory to run evaluation
+        :type flow: Union[str, PathLike]
         :param data: pointer to test data (of variant bulk runs) for eval runs
-        :param run:
-            flow run id or flow run
-            keep lineage between current run and variant runs
+        :type data: Union[str, PathLike]
+        :param run: flow run id or flow run, keep lineage between current run and variant runs,
             batch outputs can be referenced as ${run.outputs.col_name} in inputs_mapping
-        :param column_mapping: define a data flow logic to map input data, support:
-            from data: data.col1:
-            from run:
-                run.inputs.col1: if need reference run's inputs
-                run.output.col1: if need reference run's outputs
-            Example:
-                {"ground_truth": "${data.answer}", "prediction": "${run.outputs.answer}"}
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param column_mapping: define a data flow logic to map input data.
+        :type column_mapping: dict
         :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
             if not specified.
+        :type variant: str
         :param connections: Overwrite node level connections with provided value.
-            Example: {"node1": {"connection": "new_connection", "deployment_name": "gpt-35-turbo"}}
+            Example: ``{"node1": {"connection": "new_connection", "deployment_name": "gpt-35-turbo"}}``
+        :type connections: dict
         :param environment_variables: Environment variables to set by specifying a property path and value.
-            Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
+            Example: ``{"key1": "${my_connection.api_key}", "key2"="value2"}``
             The value reference to connection keys will be resolved to the actual value,
             and all environment variables specified will be set into os.environ.
+        :type environment_variables: dict
         :param name: Name of the run.
+        :type name: str
         :param display_name: Display name of the run.
+        :type display_name: str
         :param tags: Tags of the run.
+        :type tags: Dict[str, str]
         :return: flow run info.
+        :rtype: ~promptflow.entities.Run
         """
         if not os.path.exists(flow):
             raise FileNotFoundError(f"flow path {flow} does not exist")
