@@ -6,6 +6,7 @@ import pytest
 from promptflow._core._errors import ToolExecutionError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import (
+    ADDITIONAL_INFO_USER_EXECUTION_ERROR,
     ErrorResponse,
     ExceptionPresenter,
     JsonSerializedPromptflowException,
@@ -255,6 +256,17 @@ class TestErrorResponse:
             "location": None,
         }
 
+    def test_to_simplied_dict(self):
+        with pytest.raises(CustomizedException) as e:
+            raise_general_exception()
+        error_response = ErrorResponse.from_exception(e.value)
+        assert error_response.to_simplified_dict() == {
+            "error": {
+                "code": "SystemError",
+                "message": "General exception",
+            }
+        }
+
     def test_from_exception(self):
         with pytest.raises(CustomizedException) as e:
             raise_general_exception()
@@ -317,6 +329,48 @@ class TestErrorResponse:
         inner_error_code = ErrorResponse.from_error_dict(error_dict).innermost_error_code
 
         assert inner_error_code == expected_innermost_error_code
+
+    @pytest.mark.parametrize(
+        "error_dict, expected_additional_info",
+        [
+            ({"code": "UserError"}, {}),
+            (
+                {
+                    "code": "UserError",
+                    "additionalInfo": [
+                        {
+                            "type": "test_additional_info",
+                            "info": "This is additional info for testing.",
+                        },
+                        "not_dict",
+                        {
+                            "type": "empty_info",
+                        },
+                        {
+                            "info": "Empty type",
+                        },
+                        {
+                            "test": "Invalid additional info",
+                        },
+                    ],
+                },
+                {"test_additional_info": "This is additional info for testing."},
+            ),
+        ],
+    )
+    def test_additional_info(self, error_dict, expected_additional_info):
+        error_response = ErrorResponse.from_error_dict(error_dict)
+        assert error_response.additional_info == expected_additional_info
+        assert all(error_response.get_additional_info(key) == value for key, value in expected_additional_info.items())
+
+    def test_get_user_execution_error_info(self):
+        with pytest.raises(ToolExecutionError) as e:
+            raise_tool_execution_error()
+
+        expected_error_info = e.value.additional_info.get(ADDITIONAL_INFO_USER_EXECUTION_ERROR)
+        error_repsonse = ErrorResponse.from_exception(e.value)
+        actual_error_info = error_repsonse.get_user_execution_error_info()
+        assert actual_error_info == expected_error_info
 
 
 @pytest.mark.unittest
