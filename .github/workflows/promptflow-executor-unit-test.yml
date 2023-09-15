@@ -2,11 +2,12 @@ name: promptflow-executor-unit-test
 on:
   schedule:
     - cron: "40 19 * * *" # Every day starting at 3:40 BJT
-  pull_request_target:
+  pull_request:
+    branches: [ main ]
     paths:
       - src/promptflow/**
       - scripts/**
-      - '**promptflow-executor-unit-test.yml'
+      - .github/workflows/promptflow-executor-unit-test.yml
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
@@ -14,16 +15,7 @@ env:
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
 jobs:
-  authorize:
-    environment:
-      ${{ github.event_name == 'pull_request_target' &&
-      github.event.pull_request.head.repo.full_name != github.repository &&
-      'external' || 'internal' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: true
   executor_unit_tests:
-    needs: authorize
     strategy:
       fail-fast: false
       matrix:
@@ -72,12 +64,12 @@ jobs:
         gci env:* | sort-object name
         az account show
         python scripts/building/run_coverage_tests.py `
-          -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
+          -p ${{ env.testWorkingDirectory }}/promptflow `
+          -t ${{ env.testWorkingDirectory }}/tests/executor/unittests `
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }} `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
