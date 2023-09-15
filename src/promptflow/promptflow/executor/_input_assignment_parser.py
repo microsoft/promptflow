@@ -42,11 +42,11 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
                 reference_node_name=i.value,
             )
         if i.value not in nodes_outputs:
-            node_output_keys = ", ".join(nodes_outputs.keys()) if nodes_outputs is not None else None
+            node_output_keys = [output_keys for output_keys in nodes_outputs.keys() if nodes_outputs]
             raise InputNotFoundFromAncestorNodeOutput(
                 message_format=(
                     "Flow execution failed. "
-                    "The input '{input_name}' is not found from ancestor node outputs '{node_output_keys}'. "
+                    "The input '{input_name}' is not found from ancestor node outputs {node_output_keys}. "
                     "Please check the node name and try again."
                 ),
                 input_name=i.value,
