@@ -49,7 +49,7 @@ Exported Dockerfile & its dependencies are located in the same folder. The struc
 - settings.json: a json file to store the settings of the docker image
 - README.md: Simple introduction of the files
 
-## Package flow model with Pyinstaller
+## Package flow model
 We are going to use the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) as
 an example to show how to package flow model with Pyinstaller.
 
@@ -164,7 +164,6 @@ coll = COLLECT(
 
 ```
 
-
 ### Package flow using Pyinstaller
 PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
 
@@ -202,4 +201,4 @@ To your users, the app is self-contained. They do not need to install any partic
 
 
 ## Next steps
-- Try the example [here](../../../examples/tutorials/flow-deploy/flow-model-packaging/README.md#package-flow-model).
+- Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy)

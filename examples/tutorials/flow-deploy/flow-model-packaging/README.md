@@ -1,4 +1,4 @@
-# Package flow model
+# Flow model packaging
 This example demos how to package flow as a executable app. 
 We will use [web-classification](../../../flows/standard/web-classification/README.md) as example in this tutorial.
 
@@ -17,7 +17,7 @@ Use the command below to build a flow as docker format app:
 ```bash
 pf flow build --source ../../../flows/standard/web-classification --output target --format docker
 ```
-## Package flow model with Pyinstaller
+## Package flow model
 ### Prepare an entry file
 A Python entry file is included as the entry point for the bundled app. We offer a Python file named `start.py`` here, which enables you to serve a flow folder as an endpoint.
 
@@ -123,7 +123,6 @@ coll = COLLECT(
 )
 
 ```
-
 
 ### Package flow using Pyinstaller
 PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
