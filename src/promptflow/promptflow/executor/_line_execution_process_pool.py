@@ -4,6 +4,7 @@ import queue
 import math
 import os
 import psutil
+import traceback
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -135,6 +136,7 @@ class LineExecutionProcessPool:
             try:
                 logger.info(f"Process {idx} waiting for task.=======================")
                 args = task_queue.get(timeout=1)
+                logger.info(f"Process {idx} got task. args: {args}=======================")
             except queue.Empty:
                 logger.info(f"Process {idx} queue empty, exit.======================")
                 self.end_process(process)
@@ -150,19 +152,27 @@ class LineExecutionProcessPool:
 
             while datetime.now().timestamp() - start_time.timestamp() <= timeout_time:
                 try:
+                    if not process.is_alive():
+                        traceback_str = traceback.extract_stack()
+                        logger.error(
+                            f"Process {idx}, Line {line_number} execution failed with error loop: {traceback_str}")
+                        logger.warning(f"Process {idx}, Line {line_number} process exited.")
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
                     message = output_queue.get(timeout=1)
                     if isinstance(message, LineResult):
-                        logger.info(f"Line {line_number} completed.")
+                        logger.info(f"Process {idx}, Line {line_number} completed.")
                         completed = True
                         result_list.append(message)
                         break
                     elif isinstance(message, FlowRunInfo):
-                        logger.info(f"Line {line_number} FlowRunInfo completed.")
+                        logger.info(f"Process {idx}, Line {line_number} FlowRunInfo completed.")
+                        logger.info(f"Process {idx}, Line {line_number} FlowRunInfo: {message}")
+                        logger.info(f"Process {idx}, Line {line_number} FlowRunInfo status: {message.status}")
                         self._storage.persist_flow_run(message)
                     elif isinstance(message, NodeRunInfo):
-                        logger.info(f"Line {line_number} NodeRunInfo completed.")
+                        logger.info(f"Process {idx}, Line {line_number} NodeRunInfo completed.")
+                        logger.info(f"Process {idx}, Line {line_number} NodeRunInfo: {message}.")
                         self._storage.persist_node_run(message)
                 except queue.Empty:
                     continue
@@ -170,12 +180,14 @@ class LineExecutionProcessPool:
             self._completed_idx[line_number] = process.name
             # Handling the timeout of a line execution process.
             if not completed:
-                logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
+                logger.warning(f"Process {idx}, Line {line_number} timeout after {timeout_time} seconds.")
                 ex = LineExecutionTimeoutError(line_number, timeout_time)
                 result = self._generate_line_result_for_exception(
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
+                traceback_str = traceback.extract_stack()
+                logger.error(f"Process {idx}, Line {line_number} execution failed with error: {traceback_str}")
                 self.end_process(process)
                 process, input_queue, output_queue = self._new_process()
             self._processing_idx.pop(line_number)
