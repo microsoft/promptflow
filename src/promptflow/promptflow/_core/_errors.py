@@ -10,8 +10,10 @@ class UnexpectedError(SystemErrorException):
     pass
 
 
-class NotSupported(SystemErrorException):
-    """Exception raised when the feature is not supported."""
+class NotSupported(UserErrorException):
+    """This exception should be raised when a feature is not supported by the package or product.
+    Customers should take action, such as upgrading the package or using the product in the correct way, to resolve it.
+    """
 
     pass
 
