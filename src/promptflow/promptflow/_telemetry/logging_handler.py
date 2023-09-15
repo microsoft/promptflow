@@ -3,87 +3,40 @@
 # ---------------------------------------------------------
 import logging
 import platform
-import traceback
 
 from opencensus.ext.azure.common import utils
-from opencensus.ext.azure.common.protocol import Data, Envelope, ExceptionData, Message
+from opencensus.ext.azure.common.protocol import Data, Envelope, Message
 from opencensus.ext.azure.log_exporter import AzureLogHandler
+
+from promptflow._cli._configuration import Configuration
+from promptflow._cli._user_agent import USER_AGENT
 
 # b4ff2b60-2f72-4a5f-b7a6-571318b50ab2
 # TODO: replace with prod app insights
 INSTRUMENTATION_KEY = "b4ff2b60-2f72-4a5f-b7a6-571318b50ab2"
-PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
-
-
-class CustomDimensionsFilter(logging.Filter):
-    """Add application-wide properties to AzureLogHandler records"""
-
-    def __init__(self, custom_dimensions=None):  # pylint: disable=super-init-not-called
-        self.custom_dimensions = custom_dimensions or {}
-
-    def filter(self, record: dict) -> bool:
-        """Adds the default custom_dimensions into the current log record. Does not
-        otherwise filter any records
-
-        :param record: The record
-        :type record: dict
-        :return: True
-        :rtype: bool
-        """
-
-        custom_dimensions = self.custom_dimensions.copy()
-        custom_dimensions.update(getattr(record, "custom_dimensions", {}))
-        record.custom_dimensions = custom_dimensions
-
-        return True
 
 
 # cspell:ignore overriden
-def get_appinsights_log_handler(
-    user_agent,
-    *args,  # pylint: disable=unused-argument
-    instrumentation_key=None,
-    component_name=None,
-    enable_telemetry=True,
-    **kwargs,
-):
-    """Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
-
-    :param user_agent: Information about the user's browser.
-    :type user_agent: Dict[str, str]
-    :param args: Optional arguments for formatting messages.
-    :type args: list
-    :keyword instrumentation_key: The Application Insights instrumentation key.
-    :paramtype instrumentation_key: str
-    :keyword component_name: The component name.
-    :paramtype component_name: str
-    :keyword enable_telemetry: Whether to enable telemetry. Will be overriden to False if not in a Jupyter Notebook.
-    :paramtype enable_telemetry: bool
-    :keyword kwargs: Optional keyword arguments for adding additional information to messages.
-    :paramtype kwargs: dict
-    :return: The logging handler.
-    :rtype: AzureMLSDKLogHandler
+def get_appinsights_log_handler():
     """
+    Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
+    """
+    from promptflow._telemetry.telemetry import is_telemetry_enabled
+
     try:
-        if instrumentation_key is None:
-            instrumentation_key = INSTRUMENTATION_KEY
+        instrumentation_key = INSTRUMENTATION_KEY
+        config = Configuration.get_instance()
+        custom_properties = {
+            "python_version": platform.python_version(),
+            "user_agent": USER_AGENT,
+            "user_id": config.get_or_set_user_id(),
+        }
 
-        child_namespace = component_name or __name__
-        current_logger = logging.getLogger(PROMPTFLOW_LOGGER_NAMESPACE).getChild(child_namespace)
-        current_logger.propagate = False
-        current_logger.setLevel(logging.CRITICAL)
-
-        custom_properties = {"PythonVersion": platform.python_version()}
-        custom_properties.update({"user_agent": user_agent})
-        if "properties" in kwargs:
-            custom_properties.update(kwargs.pop("properties"))
         handler = AzureMLSDKLogHandler(
             connection_string=f"InstrumentationKey={instrumentation_key}",
             custom_properties=custom_properties,
-            enable_telemetry=enable_telemetry,
+            enable_telemetry=is_telemetry_enabled(),
         )
-        current_logger.addHandler(handler)
-
         return handler
     except Exception:  # pylint: disable=broad-except
         # ignore any exceptions, telemetry collection errors shouldn't block an operation
@@ -99,7 +52,6 @@ class AzureMLSDKLogHandler(AzureLogHandler):
 
         self._is_telemetry_collection_disabled = not enable_telemetry
         self._custom_properties = custom_properties
-        self.addFilter(CustomDimensionsFilter(self._custom_properties))
 
     def emit(self, record):
         if self._is_telemetry_collection_disabled:
@@ -129,52 +81,12 @@ class AzureMLSDKLogHandler(AzureLogHandler):
             "module": record.module,
             "level": record.levelname,
         }
-        if hasattr(record, "custom_dimensions") and isinstance(record.custom_dimensions, dict):
-            properties.update(record.custom_dimensions)
+        properties.update(self._custom_properties)
 
-        if record.exc_info:
-            exctype, _value, tb = record.exc_info
-            callstack = []
-            level = 0
-            has_full_stack = False
-            exc_type = "N/A"
-            message = self.format(record)
-            if tb is not None:
-                has_full_stack = True
-                for _, line, method, _text in traceback.extract_tb(tb):
-                    callstack.append(
-                        {
-                            "level": level,
-                            "method": method,
-                            "line": line,
-                        }
-                    )
-                    level += 1
-                callstack.reverse()
-            elif record.message:
-                message = record.message
+        if hasattr(record, "properties") and isinstance(record.properties, dict):
+            properties.update(record.properties)
 
-            if exctype is not None:
-                exc_type = exctype.__name__
-
-            envelope.name = "Microsoft.ApplicationInsights.Exception"
-
-            data = ExceptionData(
-                exceptions=[
-                    {
-                        "id": 1,
-                        "outerId": 0,
-                        "typeName": exc_type,
-                        "message": message,
-                        "hasFullStack": has_full_stack,
-                        "parsedStack": callstack,
-                    }
-                ],
-                severityLevel=max(0, record.levelno - 1) // 10,
-                properties=properties,
-            )
-            envelope.data = Data(baseData=data, baseType="ExceptionData")
-        else:
+        if not record.exc_info:
             envelope.name = "Microsoft.ApplicationInsights.Message"
             data = Message(
                 message=self.format(record),

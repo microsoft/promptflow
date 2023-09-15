@@ -1,0 +1,122 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+import contextlib
+import functools
+import uuid
+from datetime import datetime
+
+
+class ActivityType(object):
+    """The type of activity (code) monitored.
+
+    The default type is "PublicAPI".
+    """
+
+    PUBLICAPI = "PublicApi"  # incoming public API call (default)
+    INTERNALCALL = "InternalCall"  # internal (function) call
+    CLIENTPROXY = "ClientProxy"  # an outgoing service API call
+
+
+class ActivityCompletionStatus(object):
+    """The activity (code) completion status, success, or failure."""
+
+    SUCCESS = "Success"
+    FAILURE = "Failure"
+
+
+@contextlib.contextmanager
+def log_activity(
+    logger,
+    activity_name,
+    activity_type=ActivityType.INTERNALCALL,
+    custom_dimensions=None,
+):
+    """Log an activity.
+
+    An activity is a logical block of code that consumers want to monitor.
+    To monitor, wrap the logical block of code with the ``log_activity()`` method. As an alternative, you can
+    also use the ``@monitor_with_activity`` decorator.
+
+    :param logger: The logger adapter.
+    :type logger: logging.LoggerAdapter
+    :param activity_name: The name of the activity. The name should be unique per the wrapped logical code block.
+    :type activity_name: str
+    :param activity_type: One of PUBLICAPI, INTERNALCALL, or CLIENTPROXY which represent an incoming API call,
+        an internal (function) call, or an outgoing API call. If not specified, INTERNALCALL is used.
+    :type activity_type: str
+    :param custom_dimensions: The custom properties of the activity.
+    :type custom_dimensions: dict
+    :return: None
+    """
+    activity_info = {
+        "activity_id": str(uuid.uuid4()),
+        "activity_name": activity_name,
+        "activity_type": activity_type,
+    }
+    custom_dimensions = custom_dimensions or {}
+    activity_info.update(custom_dimensions)
+
+    start_time = datetime.utcnow()
+    completion_status = ActivityCompletionStatus.SUCCESS
+
+    message = "ActivityStarted, {}".format(activity_name)
+    logger.info(message, extra={"properties": activity_info})
+    exception = None
+
+    try:
+        yield logger
+    except BaseException as e:  # pylint: disable=broad-except
+        exception = e
+        completion_status = ActivityCompletionStatus.FAILURE
+    finally:
+        try:
+            end_time = datetime.utcnow()
+            duration_ms = round((end_time - start_time).total_seconds() * 1000, 2)
+
+            activity_info["completion_status"] = completion_status
+            activity_info["duration_ms"] = duration_ms
+            message = "ActivityCompleted: Activity={}, HowEnded={}, Duration={} [ms]".format(
+                activity_name, completion_status, duration_ms
+            )
+            if exception:
+                logger.error(message, extra={"properties": activity_info})
+            else:
+                logger.info(message, extra={"properties": activity_info})
+        except Exception:  # pylint: disable=broad-except
+            return  # pylint: disable=lost-exception
+
+
+def monitor_with_activity(
+    activity_name,
+    activity_type=ActivityType.INTERNALCALL,
+    custom_dimensions=None,
+):
+    """Add a wrapper for monitoring an activity (code).
+
+    An activity is a logical block of code that consumers want to monitor.
+    To monitor, use the ``@monitor_with_activity`` decorator. As an alternative, you can also wrap the
+    logical block of code with the ``log_activity()`` method.
+
+    :param activity_name: The name of the activity. The name should be unique per the wrapped logical code block.
+    :type activity_name: str
+    :param activity_type: One of PUBLICAPI, INTERNALCALL, or CLIENTPROXY which represent an incoming API call,
+        an internal (function) call, or an outgoing API call. If not specified, INTERNALCALL is used.
+    :type activity_type: str
+    :param custom_dimensions: The custom properties of the activity.
+    :type custom_dimensions: dict
+    :return:
+    """
+
+    def monitor(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kwargs):
+            from promptflow._telemetry.telemetry import get_telemetry_logger
+
+            logger = get_telemetry_logger()
+            with log_activity(logger, activity_name, activity_type, custom_dimensions):
+                return f(*args, **kwargs)
+
+        return wrapper
+
+    return monitor
