@@ -20,7 +20,7 @@ def test_build_azure_openai_connection_from_rest_object():
             "authType": "ApiKey",
             "credentials": {"key": "***"},
             "category": "AzureOpenAI",
-            "target": "https://gpt-test-eus.openai.azure.com/",
+            "target": "<api-base>",
             "metadata": {
                 "azureml.flow.connection_type": "AzureOpenAI",
                 "azureml.flow.module": "promptflow.connections",
@@ -33,7 +33,7 @@ def test_build_azure_openai_connection_from_rest_object():
         "type": "AzureOpenAIConnection",
         "module": "promptflow.connections",
         "value": {
-            "api_base": "https://gpt-test-eus.openai.azure.com/",
+            "api_base": "<api-base>",
             "api_key": "***",
             "api_type": "azure",
             "api_version": "2023-07-01-preview",
@@ -53,7 +53,7 @@ def test_build_default_azure_openai_connection_missing_metadata():
             "authType": "ApiKey",
             "credentials": {"key": "***"},
             "category": "AzureOpenAI",
-            "target": "https://gpt-test-eus.openai.azure.com/",
+            "target": "<api-base>",
             "metadata": {
                 "ApiType": "azure",
                 "ApiVersion": "2023-07-01-preview",
@@ -64,7 +64,7 @@ def test_build_default_azure_openai_connection_missing_metadata():
         "type": "AzureOpenAIConnection",
         "module": "promptflow.connections",
         "value": {
-            "api_base": "https://gpt-test-eus.openai.azure.com/",
+            "api_base": "<api-base>",
             "api_key": "***",
             "api_type": "azure",
             "api_version": "2023-07-01-preview",
@@ -84,7 +84,7 @@ def test_build_custom_keys_connection_from_rest_object():
             "authType": "CustomKeys",
             "credentials": {"keys": {"my_key1": "***", "my_key2": "***"}},
             "category": "CustomKeys",
-            "target": "https://gpt-test-eus.openai.azure.com/",
+            "target": "<api-base>",
             "metadata": {
                 "azureml.flow.connection_type": "Custom",
                 "azureml.flow.module": "promptflow.connections",

@@ -108,7 +108,6 @@ class TestConnectionOperations:
         assert (
             result._to_dict().items()
             > {
-                "api_base": "https://gpt-test-eus.openai.azure.com/",
                 "api_type": "azure",
                 "module": "promptflow.connections",
                 "name": "azure_open_ai_connection",
