@@ -64,12 +64,12 @@ jobs:
         gci env:* | sort-object name
         az account show
         python scripts/building/run_coverage_tests.py `
-          -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/unittests `
+          -p ${{ env.testWorkingDirectory }}/promptflow `
+          -t ${{ env.testWorkingDirectory }}/tests/executor/unittests `
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }} `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
