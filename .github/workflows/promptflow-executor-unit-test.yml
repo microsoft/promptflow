@@ -30,11 +30,8 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Clear GitHub Actions cache
-      run: |
-        git clean -ffdx
     - name: checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
