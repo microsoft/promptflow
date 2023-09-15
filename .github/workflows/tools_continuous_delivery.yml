@@ -27,7 +27,7 @@ on:
 
 jobs:
   manual_release:
-    needs: approve_manual_release
+    if: github.event_name == 'workflow_dispatch'
     uses: ./.github/workflows/wheel_distributing.yml
     name: Manual release
     with:
