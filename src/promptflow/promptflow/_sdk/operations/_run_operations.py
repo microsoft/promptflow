@@ -232,6 +232,7 @@ class RunOperations:
             metadata = RunMetadata(
                 name=run.name,
                 display_name=run.display_name,
+                create_time=run.created_on,
                 tags=run.tags,
                 lineage=run.run,
                 metrics=self.get_metrics(name=run.name),
