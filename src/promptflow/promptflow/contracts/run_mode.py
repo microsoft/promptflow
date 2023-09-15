@@ -19,7 +19,7 @@ class RunMode(str, Enum):
         :param value: The string to parse.
         :type value: str
         :return: The corresponding RunMode enum value.
-        :rtype: promptflow.contracts.run_mode.RunMode
+        :rtype: ~promptflow.contracts.run_mode.RunMode
         :raises ValueError: If the value is not a valid string.
         """
         if not isinstance(value, str):
