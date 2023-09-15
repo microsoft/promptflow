@@ -310,15 +310,17 @@ class RunSubmitter:
             local_storage.dump_snapshot(flow)
             local_storage.dump_inputs(mapped_inputs)
             # result: outputs and metrics
-            # TODO: retrieve root run system metrics from executor return, we might store it in db
             local_storage.persist_result(bulk_result)
-
+            # exceptions
             local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
+            # system metrics: token related
+            system_metrics = bulk_result.get_openai_metrics()
 
             self.run_operations.update(
                 name=run.name,
                 status=status,
                 end_time=datetime.datetime.now(),
+                system_metrics=system_metrics,
             )
 
     def _resolve_data(self, run: Run):

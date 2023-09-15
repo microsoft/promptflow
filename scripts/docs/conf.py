@@ -21,7 +21,6 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "matplotlib.sphinxext.plot_directive",
-    "numpydoc",
     "sphinx_togglebutton",
     'myst_parser',
     "sphinx.builders.linkcheck",
