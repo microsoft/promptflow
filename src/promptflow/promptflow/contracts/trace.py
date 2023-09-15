@@ -8,12 +8,7 @@ from typing import Any, Dict, List, Optional
 
 
 class TraceType(str, Enum):
-    """An enumeration of possible trace types.
-
-    :cvar LLM: The LLM trace type.
-    :cvar TOOL: The tool trace type.
-    :cvar LANGCHAIN: The LangChain trace type.
-    """
+    """An enumeration class to represent different types of traces."""
 
     LLM = "LLM"
     TOOL = "Tool"
@@ -24,24 +19,24 @@ class TraceType(str, Enum):
 class Trace:
     """A dataclass that represents a trace of a program execution.
 
-    :ivar name: The name of the trace.
-    :vartype name: str
-    :ivar type: The type of the trace.
-    :vartype type: TraceType
-    :ivar inputs: The inputs of the trace.
-    :vartype inputs: Dict[str, Any]
-    :ivar output: The output of the trace, or None if not available.
-    :vartype output: Optional[Any]
-    :ivar start_time: The timestamp of the start time, or None if not available.
-    :vartype start_time: Optional[float]
-    :ivar end_time: The timestamp of the end time, or None if not available.
-    :vartype end_time: Optional[float]
-    :ivar error: The error message of the trace, or None if no error occurred.
-    :vartype error: Optional[str]
-    :ivar children: The list of child traces, or None if no children.
-    :vartype children: Optional[List[Trace]]
-    :ivar node_name: The node name of the trace, used for flow level trace, or None if not applicable.
-    :vartype node_name: Optional[str]
+    :param name: The name of the trace.
+    :type name: str
+    :param type: The type of the trace.
+    :type type: TraceType
+    :param inputs: The inputs of the trace.
+    :type inputs: Dict[str, Any]
+    :param output: The output of the trace, or None if not available.
+    :type output: Optional[Any]
+    :param start_time: The timestamp of the start time, or None if not available.
+    :type start_time: Optional[float]
+    :param end_time: The timestamp of the end time, or None if not available.
+    :type end_time: Optional[float]
+    :param error: The error message of the trace, or None if no error occurred.
+    :type error: Optional[str]
+    :param children: The list of child traces, or None if no children.
+    :type children: Optional[List[Trace]]
+    :param node_name: The node name of the trace, used for flow level trace, or None if not applicable.
+    :type node_name: Optional[str]
     """
 
     name: str
