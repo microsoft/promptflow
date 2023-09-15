@@ -107,10 +107,12 @@ class PromptflowException(Exception):
 
     @module.setter
     def module(self, value):
+        """Set the module of the error that occurs."""
         self._module = value
 
     @property
     def reference_code(self):
+        """The reference code of the error."""
         if self.module:
             return f"{self.target}/{self.module}"
         else:
