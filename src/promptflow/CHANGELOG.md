@@ -1,5 +1,11 @@
 # Release History
 
+## 0.1.0b7 (Upcoming)
+
+### Bugs Fixed
+
+- Reserve `.promptflow` folder when dump run snapshot
+
 ## 0.1.0b6 (2023.09.15)
 
 ### Features Added
