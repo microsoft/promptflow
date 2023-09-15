@@ -40,12 +40,12 @@ class RunInfo:
 
     :param node: Node name
     :type node: str
-    :param flow_run_id: This is equal to root_run_id
+    :param flow_run_id: The id of the flow run
     :type flow_run_id: str
-    :param run_id: flow_run_id:step_run_id
+    :param run_id: The id of the run, which equals flow_run_id:step_run_id
     :type run_id: str
     :param status: Status of the run
-    :type status: str or :class:`Status`
+    :type status: ~promptflow.contracts.run_info.Status
     :param inputs: List of inputs for the run
     :type inputs: list
     :param output: Output of the run
@@ -61,23 +61,22 @@ class RunInfo:
     :param end_time: End time of the run
     :type end_time: datetime
     :param index: Index of the run
-    :type index: int, optional
+    :type index: optional[int]
     :param api_calls: API calls made during the run
-    :type api_calls: List[Dict[str, Any]], optional
+    :type api_calls: optional[List[Dict[str, Any]]]
     :param variant_id: Variant id of the run
-    :type variant_id: str, optional
+    :type variant_id: optional[str]
     :param cached_run_id: Cached run id
-    :type cached_run_id: str, optional
+    :type cached_run_id: optional[str]
     :param cached_flow_run_id: Cached flow run id
-    :type cached_flow_run_id: str, optional
+    :type cached_flow_run_id: optional[str]
     :param logs: Logs of the run
-    :type logs: Dict[str, str], optional
+    :type logs: optional[Dict[str, str]]
     :param system_metrics: System metrics of the run
-    :type system_metrics: Dict[str, Any], optional
+    :type system_metrics: optional[Dict[str, Any]]
     :param result: Result of the run
-    :type result: object, optional
+    :type result: optional[object]
     """
-
     node: str
     flow_run_id: str
     run_id: str
@@ -103,10 +102,10 @@ class RunInfo:
 class FlowRunInfo:
     """A dataclass representing the run information.
 
-    :param run_id: flow_run_id:child_flow_run_id
+    :param run_id: The id of the run, which equals flow_run_id:child_flow_run_id
     :type run_id: str
     :param status: Status of the flow run
-    :type status: str or :class:`Status`
+    :type status: ~promptflow.contracts.run_info.Status
     :param error: Errors occurred during the flow run
     :type error: Dict[str, Any]
     :param inputs: Inputs for the flow run
@@ -130,23 +129,23 @@ class FlowRunInfo:
     :param end_time: End time of the flow run
     :type end_time: datetime
     :param index: Index of the flow run (used for bulk test mode)
-    :type index: int, optional
+    :type index: optional[int]
     :param api_calls: API calls made during the flow run
-    :type api_calls: List[Dict[str, Any]], optional
+    :type api_calls: optional[List[Dict[str, Any]]]
     :param variant_id: Variant id of the flow run
-    :type variant_id: str, optional
+    :type variant_id: optional[str]
     :param name: Name of the flow run
-    :type name: str, optional
+    :type name: optional[str]
     :param description: Description of the flow run
-    :type description: str, optional
+    :type description: optional[str]
     :param tags: Tags of the flow run
-    :type tags: Dict[str, str], optional
+    :type tags: optional[Dict[str, str]]
     :param system_metrics: System metrics of the flow run
-    :type system_metrics: Dict[str, Any], optional
+    :type system_metrics: optional[Dict[str, Any]]
     :param result: Result of the flow run
-    :type result: object, optional
+    :type result: optional[object]
     :param upload_metrics: Flag indicating whether to upload metrics for the flow run
-    :type upload_metrics: bool, optional
+    :type upload_metrics: optional[bool]
     """
     run_id: str
     status: Status
