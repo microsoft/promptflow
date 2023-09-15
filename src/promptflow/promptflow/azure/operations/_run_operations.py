@@ -66,7 +66,7 @@ class RunRequestException(Exception):
 
 
 class RunOperations(_ScopeDependentOperations):
-    """FlowRunOperations.
+    """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
     create an PFClient instance that instantiates it for you and
@@ -121,10 +121,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        url = (
-            f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid="
-            f"{self._common_azure_url_pattern}&flight=promptfilestorage,PFSourceRun=false"
-        )
+        url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
         return url
 
     def _get_input_portal_url_from_input_uri(self, input_uri):
@@ -175,6 +172,13 @@ class RunOperations(_ScopeDependentOperations):
         return custom_header
 
     def create_or_update(self, run: Run, **kwargs) -> Run:
+        """Create or update a run.
+
+        :param run: Run object to create or update.
+        :type run: ~promptflow.entities.Run
+        :return: Run object created or updated.
+        :rtype: ~promptflow.entities.Run
+        """
         stream = kwargs.pop("stream", False)
         reset = kwargs.pop("reset_runtime", False)
 
@@ -423,10 +427,24 @@ class RunOperations(_ScopeDependentOperations):
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    def archive(self, run_name):
+    def archive(self, run: str) -> Run:
+        """Archive a run.
+
+        :param run: The run name
+        :type run: str
+        :return: The run
+        :rtype: Run
+        """
         pass
 
-    def restore(self, run_name):
+    def restore(self, run: str) -> Run:
+        """Restore a run.
+
+        :param run: The run name
+        :type run: str
+        :return: The run
+        :rtype: Run
+        """
         pass
 
     def _get_log(self, flow_run_id: str) -> str:
@@ -586,7 +604,7 @@ class RunOperations(_ScopeDependentOperations):
         return inputs, outputs
 
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
-        """Visualize run(s).
+        """Visualize run(s) using Azure AI portal.
 
         :param runs: Names of the runs, or list of run objects.
         :type runs: Union[str, ~promptflow.sdk.entities.Run, List[str], List[~promptflow.sdk.entities.Run]]
