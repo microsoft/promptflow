@@ -73,12 +73,12 @@ jobs:
         az account show
         pip install langchain
         python scripts/building/run_coverage_tests.py `
-          -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
+          -p ${{ env.testWorkingDirectory }}/promptflow `
+          -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}`
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
