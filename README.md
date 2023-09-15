@@ -1,3 +1,7 @@
+[![banner](examples/tutorials/quick-start/media/banner.png)](https://microsoft.github.io/promptflow)
+
+-------------------
+
 # Prompt flow
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
@@ -77,6 +81,10 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 ```sh
 pf flow test --flow ./my_chatbot --interactive
 ```
+
+**Ensure "High Quality” with Prompt flow**
+
+Try the [15-mins Easy Case](examples/tutorials/flow-evaluation/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation ➡ Quality ready for production.
 
 Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 
