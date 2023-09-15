@@ -61,21 +61,21 @@ class RunInfo:
     :param end_time: End time of the run
     :type end_time: datetime
     :param index: Index of the run
-    :type index: optional[int]
+    :type index: Optional[int]
     :param api_calls: API calls made during the run
-    :type api_calls: optional[List[Dict[str, Any]]]
+    :type api_calls: Optional[List[Dict[str, Any]]]
     :param variant_id: Variant id of the run
-    :type variant_id: optional[str]
+    :type variant_id: Optional[str]
     :param cached_run_id: Cached run id
-    :type cached_run_id: optional[str]
+    :type cached_run_id: Optional[str]
     :param cached_flow_run_id: Cached flow run id
-    :type cached_flow_run_id: optional[str]
+    :type cached_flow_run_id: Optional[str]
     :param logs: Logs of the run
-    :type logs: optional[Dict[str, str]]
+    :type logs: Optional[Dict[str, str]]
     :param system_metrics: System metrics of the run
-    :type system_metrics: optional[Dict[str, Any]]
+    :type system_metrics: Optional[Dict[str, Any]]
     :param result: Result of the run
-    :type result: optional[object]
+    :type result: Optional[object]
     """
     node: str
     flow_run_id: str
@@ -129,23 +129,23 @@ class FlowRunInfo:
     :param end_time: End time of the flow run
     :type end_time: datetime
     :param index: Index of the flow run (used for bulk test mode)
-    :type index: optional[int]
+    :type index: Optional[int]
     :param api_calls: API calls made during the flow run
-    :type api_calls: optional[List[Dict[str, Any]]]
+    :type api_calls: Optional[List[Dict[str, Any]]]
     :param variant_id: Variant id of the flow run
-    :type variant_id: optional[str]
+    :type variant_id: Optional[str]
     :param name: Name of the flow run
-    :type name: optional[str]
+    :type name: Optional[str]
     :param description: Description of the flow run
-    :type description: optional[str]
+    :type description: Optional[str]
     :param tags: Tags of the flow run
-    :type tags: optional[Dict[str, str]]
+    :type tags: Optional[Dict[str, str]]
     :param system_metrics: System metrics of the flow run
-    :type system_metrics: optional[Dict[str, Any]]
+    :type system_metrics: Optional[Dict[str, Any]]
     :param result: Result of the flow run
-    :type result: optional[object]
+    :type result: Optional[object]
     :param upload_metrics: Flag indicating whether to upload metrics for the flow run
-    :type upload_metrics: optional[bool]
+    :type upload_metrics: Optional[bool]
     """
     run_id: str
     status: Status
