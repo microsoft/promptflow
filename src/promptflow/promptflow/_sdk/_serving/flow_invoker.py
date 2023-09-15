@@ -74,8 +74,15 @@ class FlowInvoker:
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         logger.info("Promptflow executor initiated successfully.")
 
-    def invoke(self, data):
-        """process a flow request in the runtime."""
+    def invoke(self, data: dict):
+        """
+        Process a flow request in the runtime.
+
+        :param data: The request data dict with flow input as keys, for example: {"question": "What is ChatGPT?"}.
+        :type data: dict
+        :return: The flow output dict, for example: {"answer": "ChatGPT is a chatbot."}.
+        :rtype: dict
+        """
         logger.info(f"PromptFlow invoker received data: {data}")
 
         logger.info(f"Validating flow input with data {data!r}")
