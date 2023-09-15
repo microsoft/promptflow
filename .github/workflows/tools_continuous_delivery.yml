@@ -9,34 +9,7 @@ on:
       - '!README.*'
       - '!src/promptflow-tools/tests/**'
 
-  workflow_dispatch:
-    inputs:
-      UploadAsLatest:
-        description: 'True to upload the distribution as latest'
-        required: true
-        default: "False"
-        type: choice
-        options:
-          - "True"
-          - "False"
-      SourceFolderName:
-        description: 'The source folder of the distribution'
-        required: true
-        default: "promptflow-tools"
-        type: string
-
 jobs:
-  manual_release:
-    if: github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/wheel_distributing.yml
-    name: Manual release
-    with:
-      ReleaseType: "Test"
-      UploadAsLatest: ${{ inputs.UploadAsLatest }}
-      SourceFolderName: ${{ inputs.SourceFolderName }}
-      ConfigsFolderPath: "scripts/distributing/configs"
-    secrets: inherit
-
   continuous_delivery_release:
     if: github.event_name == 'push'
     uses: ./.github/workflows/wheel_distributing.yml
