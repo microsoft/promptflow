@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import abc
+import copy
 import json
 from os import PathLike
 from pathlib import Path
@@ -41,6 +42,8 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
     CustomStrongTypeConnectionSchema,
 )
+from promptflow.contracts.types import Secret
+
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -66,7 +69,7 @@ class _Connection(YAMLTranslatableMixin):
     def __init__(
         self,
         name: str = "default_connection",
-        module: str = PROMPTFLOW_CONNECTIONS,
+        module: str = "promptflow.connections",
         configs: Dict[str, str] = None,
         secrets: Dict[str, str] = None,
         **kwargs,
@@ -270,6 +273,8 @@ class _Connection(YAMLTranslatableMixin):
             return CustomConnection(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
 
+    def is_type_not_set(self):
+        return self.TYPE == ConnectionType._NOT_SET
 
 class _StrongTypeConnection(_Connection):
     def _to_orm_object(self):
@@ -626,6 +631,44 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
         return FormRecognizerConnectionSchema
 
 
+class CustomStrongTypeConnection(_Connection):
+    def __init__(self, **kwargs):
+        configs = {}
+        secrets = {}
+        for k,v in self.__class__.__annotations__.items():
+            field_value = kwargs.get(k, None)
+            if v == Secret:
+                secrets[k] = field_value
+            else:
+                configs[k] = field_value
+        if not secrets:
+            raise ValueError(
+                f"Secrets is required for {_Connection.__class__.__name__}."
+            )
+        module = self.__class__.__module__
+        super().__init__(secrets=secrets, configs=configs, module = module, **kwargs)
+
+
+    def __setattr__(self, key, value):
+        if key in self.__annotations__:
+            if type(value) == Secret:
+                self.secrets[key] = value
+            else:
+                self.configs[key] = value
+        else:
+            super().__setattr__(key,value)
+
+    def is_custom_strong_type(self):
+        return True
+
+    def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
+        pass
+
+    def _to_orm_object(self) -> ORMConnection:
+        pass
+
+
+
 class CustomConnection(_Connection):
     """Custom connection.
 
@@ -635,14 +678,21 @@ class CustomConnection(_Connection):
     :type secrets: Dict[str, str]
     :param name: Connection name
     :type name: str
+    :is_custom_strong_type: Whether the custom connection is strong type.
     """
 
     TYPE = ConnectionType.CUSTOM
 
-    def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
+    def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, is_azureml_custom_strong_type_connection = False, **kwargs):
+        # When create connection through file, we can't check if it is custom strong type through self.custom_type
+        # So we need a hint 'is_custom_strong_type' to indicate it.
+        if is_azureml_custom_strong_type_connection:
+            configs.update({CustomStrongTypeConnectionConfigs.FULL_TYPE: kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)})
+            configs.update({CustomStrongTypeConnectionConfigs.FULL_MODULE: kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, None)})
         super().__init__(secrets=secrets, configs=configs, **kwargs)
         self.custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
-        self.module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, PROMPTFLOW_CONNECTIONS)
+
+
 
     @classmethod
     def _get_schema_cls(cls, is_custom_strong_type=False):
@@ -661,7 +711,19 @@ class CustomConnection(_Connection):
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
             raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
-        return cls(base_path=context[BASE_PATH_CONTEXT_KEY], **loaded_data)
+        return cls(base_path=context[BASE_PATH_CONTEXT_KEY], is_azureml_custom_strong_type_connection = is_custom_strong_type, **loaded_data)
+
+
+    def __setattr__(self, key, value):
+        if hasattr(self, "custom_type") and self.is_custom_strong_type():
+            if value and type(value) == Secret and hasattr(self, "secrets") and key in self.secrets:
+                self.secrets[key] = value
+                return
+            if value and type(value) != Secret and hasattr(self, "configs") and key in self.configs:
+                self.configs[key] = value
+                return
+        super().__setattr__(key, value)
+
 
     def __getattr__(self, item):
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
@@ -673,10 +735,10 @@ class CustomConnection(_Connection):
             # Usually obj.configs will not reach here
             # This is added to handle copy.deepcopy loop issue
             return super().__getattribute__("configs")
-        if item in self.secrets:
+        if hasattr(self, "secrets") and item in self.secrets:
             logger.warning("Please use connection.secrets[key] to access secrets.")
             return self.secrets[item]
-        if item in self.configs:
+        if hasattr(self, "configs") and item in self.configs:
             logger.warning("Please use connection.configs[key] to access configs.")
             return self.configs[item]
         return super().__getattribute__(item)
@@ -702,14 +764,6 @@ class CustomConnection(_Connection):
             {k: {"configValueType": ConfigValueType.SECRET.value, "value": v} for k, v in encrypted_secrets.items()}
         )
 
-        if self.is_custom_strong_type():
-            custom_configs.update(
-                {CustomStrongTypeConnectionConfigs.FULL_TYPE: {"configValueType": ConfigValueType.STRING.value, "value": self.custom_type}}
-            )
-            custom_configs.update(
-                {CustomStrongTypeConnectionConfigs.FULL_MODULE: {"configValueType": ConfigValueType.STRING.value, "value": self.module}}
-            )
-
         return ORMConnection(
             connectionName=self.name,
             connectionType=self.type.value,
@@ -732,13 +786,10 @@ class CustomConnection(_Connection):
 
         secrets = {}
         unsecure_connection = False
-        custom_type, module = None, None
+        custom_type = None
         for k, v in json.loads(orm_object.customConfigs).items():
             if k == CustomStrongTypeConnectionConfigs.FULL_TYPE:
                 custom_type = v["value"]
-                continue
-            if k == CustomStrongTypeConnectionConfigs.FULL_MODULE:
-                module = v["value"]
                 continue
             if not v["configValueType"] == ConfigValueType.SECRET.value:
                 continue
@@ -759,7 +810,6 @@ class CustomConnection(_Connection):
             configs=configs,
             secrets=secrets,
             custom_type=custom_type,
-            module=module or PROMPTFLOW_CONNECTIONS,
             expiry_time=orm_object.expiryTime,
             created_date=orm_object.createdDate,
             last_modified_date=orm_object.lastModifiedDate,
@@ -811,6 +861,25 @@ class CustomConnection(_Connection):
         connection_instance = custom_defined_connection_class(**instance_dict)
 
         return connection_instance
+
+    @classmethod
+    def convert_strong_type_to_custom(cls, custom_str_type_connection: _Connection):
+        attributes = copy.copy(vars(custom_str_type_connection))
+        attributes["module"] = PROMPTFLOW_CONNECTIONS
+        # update configs
+        configs = {}
+        configs.update(
+            {CustomStrongTypeConnectionConfigs.FULL_TYPE: custom_str_type_connection.__class__.__name__}
+        )
+        configs.update(
+            {CustomStrongTypeConnectionConfigs.FULL_MODULE: custom_str_type_connection.__module__}
+        )
+        configs.update(**custom_str_type_connection.configs)
+
+        attributes["configs"] = configs
+        attributes["custom_type"] = custom_str_type_connection.__class__.__name__
+        custom_connection = CustomConnection(**attributes)
+        return custom_connection
 
 
 _supported_types = {

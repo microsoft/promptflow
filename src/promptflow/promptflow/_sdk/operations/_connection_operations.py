@@ -7,7 +7,7 @@ from typing import List
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._utils import safe_parse_object_list
-from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.entities._connection import _Connection, CustomConnection
 
 
 class ConnectionOperations:
@@ -65,6 +65,8 @@ class ConnectionOperations:
         :param connection: Run object to create or update.
         :type connection: ~promptflow.sdk.entities._connection._Connection
         """
+        if connection.is_type_not_set():
+            connection = CustomConnection.convert_strong_type_to_custom(connection)
         orm_object = connection._to_orm_object()
         now = datetime.now().isoformat()
         if orm_object.createdDate is None:
@@ -72,3 +74,4 @@ class ConnectionOperations:
         orm_object.lastModifiedDate = now
         ORMConnection.create_or_update(orm_object)
         return self.get(connection.name)
+
