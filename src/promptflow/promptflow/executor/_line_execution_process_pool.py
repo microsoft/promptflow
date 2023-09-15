@@ -151,6 +151,7 @@ class LineExecutionProcessPool:
             completed = False
 
             while datetime.now().timestamp() - start_time.timestamp() <= timeout_time:
+                logger.info(f"Process {idx}, Line {line_number} waiting for output.=======================")
                 try:
                     if not process.is_alive():
                         traceback_str = traceback.extract_stack()
@@ -175,6 +176,7 @@ class LineExecutionProcessPool:
                         logger.info(f"Process {idx}, Line {line_number} NodeRunInfo: {message}.")
                         self._storage.persist_node_run(message)
                 except queue.Empty:
+                    logger.info(f"Process {idx}, Line {line_number} queue.Empty=======================")
                     continue
 
             self._completed_idx[line_number] = process.name
