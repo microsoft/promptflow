@@ -22,7 +22,7 @@ class Trace:
     :param name: The name of the trace.
     :type name: str
     :param type: The type of the trace.
-    :type type: ~promptflow.contracts.TraceType
+    :type type: ~promptflow.contracts.trace.TraceType
     :param inputs: The inputs of the trace.
     :type inputs: Dict[str, Any]
     :param output: The output of the trace, or None if not available.
