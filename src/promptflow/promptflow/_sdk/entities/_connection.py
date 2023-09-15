@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import abc
+from dataclasses import dataclass
 import json
 from os import PathLike
 from pathlib import Path
@@ -41,6 +42,9 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
     CustomStrongTypeConnectionSchema,
 )
+
+from promptflow.contracts.types import Secret
+
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -257,6 +261,8 @@ class _Connection(YAMLTranslatableMixin):
             return CustomConnection(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
 
+    def is_type_not_set(self):
+        return self.TYPE == ConnectionType._NOT_SET
 
 class _StrongTypeConnection(_Connection):
     def _to_orm_object(self):
@@ -577,6 +583,35 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
         return FormRecognizerConnectionSchema
 
 
+class CustomStrongTypeConnection(_Connection):
+    def __init__(self, **kwargs):
+        custom_fields = self.__class__.__annotations__
+        configs = {}
+        secrets = {}
+        for k,v in custom_fields.items():
+            field_value = kwargs.get(k, None)
+            if v == Secret:
+                secrets[k] = field_value
+            else:
+                configs[k] = field_value
+        if not secrets:
+            raise ValueError(
+                f"Secrets is required for {_Connection.__class__.__name__}."
+            )
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+    # name: str
+
+    def is_custom_strong_type(self):
+        return True
+
+    def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
+        pass
+
+    def _to_orm_object(self) -> ORMConnection:
+        pass
+
+
+
 class CustomConnection(_Connection):
     """
     :param configs: The configs kv pairs.
@@ -595,7 +630,7 @@ class CustomConnection(_Connection):
             )
         super().__init__(secrets=secrets, configs=configs, **kwargs)
         self.custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
-        self.module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, PROMPTFLOW_CONNECTIONS)
+        self.custom_module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, None)
 
     @classmethod
     def _get_schema_cls(cls, is_custom_strong_type=False):
@@ -653,7 +688,7 @@ class CustomConnection(_Connection):
                 {CustomStrongTypeConnectionConfigs.FULL_TYPE: {"configValueType": ConfigValueType.STRING.value, "value": self.custom_type}}
             )
             custom_configs.update(
-                {CustomStrongTypeConnectionConfigs.FULL_MODULE: {"configValueType": ConfigValueType.STRING.value, "value": self.module}}
+                {CustomStrongTypeConnectionConfigs.FULL_MODULE: {"configValueType": ConfigValueType.STRING.value, "value": self.custom_module}}
             )
 
         return ORMConnection(
@@ -678,13 +713,13 @@ class CustomConnection(_Connection):
 
         secrets = {}
         unsecure_connection = False
-        custom_type, module = None, None
+        custom_type, custom_module = None, None
         for k, v in json.loads(orm_object.customConfigs).items():
             if k == CustomStrongTypeConnectionConfigs.FULL_TYPE:
                 custom_type = v["value"]
                 continue
             if k == CustomStrongTypeConnectionConfigs.FULL_MODULE:
-                module = v["value"]
+                custom_module = v["value"]
                 continue
             if not v["configValueType"] == ConfigValueType.SECRET.value:
                 continue
@@ -705,7 +740,7 @@ class CustomConnection(_Connection):
             configs=configs,
             secrets=secrets,
             custom_type=custom_type,
-            module=module or PROMPTFLOW_CONNECTIONS,
+            custom_module=custom_module,
             expiry_time=orm_object.expiryTime,
             created_date=orm_object.createdDate,
             last_modified_date=orm_object.lastModifiedDate,
@@ -730,6 +765,14 @@ class CustomConnection(_Connection):
         connection_instance = custom_defined_connection_class(**instance_dict)
 
         return connection_instance
+
+    @classmethod
+    def convert_strong_type_to_custom(cls, custom_str_type_connection: _Connection):
+        kwargs = {k:v for k,v in custom_str_type_connection.__dict__.items() if k not in ['secrets', 'configs']}
+        custom_connection = CustomConnection(secrets=custom_str_type_connection.secrets, configs=custom_str_type_connection.configs, **kwargs)
+        custom_connection.custom_type = custom_str_type_connection.__class__.__name__
+        custom_connection.custom_module = custom_str_type_connection.__module__
+        return custom_connection
 
 
 _supported_types = {

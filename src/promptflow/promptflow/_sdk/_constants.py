@@ -53,7 +53,7 @@ LOCAL_STORAGE_BATCH_SIZE = 1
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "azureml.connection."
     TYPE = "custom_type"
-    MODULE = "module"
+    MODULE = "custom_module"
     FULL_TYPE = PREFIX + TYPE
     FULL_MODULE = PREFIX + MODULE
 

@@ -15,6 +15,7 @@ from ._connection import (
     QdrantConnection,
     WeaviateConnection,
     FormRecognizerConnection,
+    CustomStrongTypeConnection,
 )
 from ._run import Run
 
@@ -24,6 +25,7 @@ __all__ = [
     "AzureOpenAIConnection",
     "OpenAIConnection",
     "CustomConnection",
+    "CustomStrongTypeConnection",
     "CognitiveSearchConnection",
     "SerpConnection",
     "QdrantConnection",
