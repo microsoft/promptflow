@@ -202,4 +202,4 @@ To your users, the app is self-contained. They do not need to install any partic
 
 
 ## Next steps
-- Try the example [here](../../../examples/tutorials/flow-deploy/flow-model-packaging/README.md).
+- Try the example [here](../../../examples/tutorials/flow-deploy/flow-model-packaging/README.md#package-flow-model).
