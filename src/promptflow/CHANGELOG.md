@@ -1,10 +1,20 @@
 # Release History
 
-## 0.1.0b5 (Upcoming)
+## 0.1.0b6 (Upcoming)
 
-### Features added
+### Features Added
+
+- Add token metrics in run properties
+
+## 0.1.0b5 (2023.09.08)
+
+### Features Added
 
 - **pf run visualize**: support lineage graph & display name in visualize page
+
+### Bugs Fixed
+
+- Add missing requirement `psutil` in `setup.py`
 
 ## 0.1.0b4 (2023.09.04)
 

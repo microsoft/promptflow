@@ -13,7 +13,7 @@ from typing import AbstractSet, Any, Callable, Dict, List, Mapping, Optional, Tu
 
 import yaml
 
-from promptflow._core._errors import NotSupported
+from promptflow._core._errors import NotSupported, UnexpectedError
 from promptflow._core.cache_manager import AbstractCacheManager
 from promptflow._core.flow_execution_context import FlowExecutionContext
 from promptflow._core.metric_logger import add_metric_logger, remove_metric_logger
@@ -28,11 +28,11 @@ from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, ValidationException
+from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
+    InputMappingError,
     InvalidAggregationInput,
-    NodeConcurrencyNotFound,
     NodeOutputNotFound,
     OutputReferenceBypassed,
     OutputReferenceNotExist,
@@ -244,7 +244,13 @@ class FlowExecutor:
             node_runs = run_tracker.collect_node_runs()
             if len(node_runs) != 1:
                 # Should not happen except there is bug in run_tracker or thread control.
-                raise NodeResultCountNotMatch("Expecting eactly one node run.")
+                raise UnexpectedError(
+                    message_format=(
+                        "Single node execution failed. Expected one node result, "
+                        "but received {node_result_num}. Please contact support for further assistance."
+                    ),
+                    node_result_num=len(node_runs),
+                )
             return node_runs[0]
 
     @staticmethod
@@ -578,25 +584,22 @@ class FlowExecutor:
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
     ) -> BulkResult:
-        """
-        The entry points for bulk run execution
+        """The entry points for bulk run execution
 
-        Parameters
-        ----------
-        inputs:
-            The batch inputs for the flow in the executor
-        run_id:
-            parent run id for current flow run, if any
-            Todo: discuss with sdk if we keep this
-        validate_inputs:
-            flag to indicate if do inputs data validation
-        raise_on_line_failure:
-            flag to indicate if raise exception if line execution failed for bulk run
-
-        Returns
-        -------
-            BulkResults including flow results and metrics
+        :param inputs: A list of dictionaries containing input data.
+        :type inputs: List[Dict[str, Any]]
+        :param run_id: Run ID.
+        :type run_id: str, optional
+        :param validate_inputs: Whether to validate the inputs. Defaults to True.
+        :type validate_inputs: bool, optional
+        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False.
+        :type raise_on_line_failure: bool, optional
+        :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
+        :type node_concurrency: int, optional
+        :return: The bulk result.
+        :rtype: ~promptflow.executor.flow_executor.BulkResult
         """
+
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         inputs = [
@@ -741,7 +744,7 @@ class FlowExecutor:
             if not node:
                 raise OutputReferenceNotExist(
                     message_format=(
-                        "Flow is defined incorrectly. The node '{node_name}' "
+                        "The output '{output_name}' for flow is incorrect. The node '{node_name}' "
                         "referenced by the output '{output_name}' can not found in flow. "
                         "Please rectify the error in your flow and try again."
                     ),
@@ -793,7 +796,13 @@ class FlowExecutor:
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):
-            raise NodeConcurrencyNotFound("Need to set node concurrency as using flow executor.")
+            raise UnexpectedError(
+                message_format=(
+                    "Flow execution failed. To proceed, ensure that a valid node concurrency value is set. "
+                    "The current value is {current_value}. Please contact support for further assistance."
+                ),
+                current_value=self._node_concurrency,
+            )
         return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
 
     @staticmethod
@@ -801,33 +810,43 @@ class FlowExecutor:
         inputs: Mapping[str, Mapping[str, Any]],
         inputs_mapping: Mapping[str, str],
     ) -> Dict[str, Any]:
-        """Apply inputs mapping to inputs for new contract.
+        """Apply input mapping to inputs for new contract.
 
-        For example:
-        inputs: {
-            "data": {"answer": 123, "question": "dummy"},
-            "baseline": {"answer": 322},
-        }
-        inputs_mapping: {
-            "question": "${data.question}",  # Question from the data
-            "groundtruth": "${data.answer}",  # Answer from the data
-            "baseline": "${baseline.answer}",  # Answer from the baseline
-            "deployment_name": "text-davinci-003",  # literal value
-        }
+        .. admonition:: Examples
 
-        Returns: {
-            "question": "dummy",
-            "groundtruth": 123,
-            "baseline": 322,
-            "deployment_name": "text-davinci-003",
-        }
+            .. code-block:: python
+
+                inputs: {
+                    "data": {"answer": 123, "question": "dummy"},
+                    "baseline": {"answer": 322},
+                }
+                inputs_mapping: {
+                    "question": "${data.question}",  # Question from the data
+                    "groundtruth": "${data.answer}",  # Answer from the data
+                    "baseline": "${baseline.answer}",  # Answer from the baseline
+                    "deployment_name": "text-davinci-003",  # literal value
+                }
+
+                Returns: {
+                    "question": "dummy",
+                    "groundtruth": 123,
+                    "baseline": 322,
+                    "deployment_name": "text-davinci-003",
+                }
+
+        :param inputs: Inputs for the flow.
+        :type inputs: Mapping[str, Mapping[str, Any]]
+        :param inputs_mapping: Inputs mapping for the flow.
+        :type inputs_mapping: Mapping[str, str]
+        :return: Processed inputs for the flow.
+        :rtype: Dict[str, Any]
         """
         import re
 
         result = {}
         notfound_mapping_relations = []
         for map_to_key, map_value in inputs_mapping.items():
-            # Ignore reserved key configuration from inputs mapping.
+            # Ignore reserved key configuration from input mapping.
             if map_to_key == LINE_NUMBER_KEY:
                 continue
             if not isinstance(map_value, str):  # All non-string values are literal values.
@@ -854,11 +873,16 @@ class FlowExecutor:
                 result[map_to_key] = map_value  # Literal value
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
-            raise MappingSourceNotFound(
-                f"Couldn't find these mapping relations: {', '.join(notfound_mapping_relations)}. "
-                "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                "If a mapping value has a '${data' prefix, it might be generated from the YAML input section, "
-                "and you may need to manually assign input mapping based on your input data."
+            invalid_relations = ", ".join(notfound_mapping_relations)
+            # TODO: Replace detail message about default mapping by doc link.
+            raise InputMappingError(
+                message_format=(
+                    "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
+                    "Please make sure your input mapping keys and values match your YAML input section and input data. "
+                    "If a mapping reads input from 'data', it might be generated from the YAML input section, "
+                    "and you may need to manually assign input mapping based on your input data."
+                ),
+                invalid_relations=invalid_relations,
             )
         # For PRS scenario, apply_inputs_mapping will be used for exec_line and line_number is not necessary.
         if LINE_NUMBER_KEY in inputs:
@@ -870,8 +894,15 @@ class FlowExecutor:
         input_dict: Mapping[str, List[Mapping[str, Any]]],
     ) -> List[Mapping[str, Mapping[str, Any]]]:
         for input_key, list_of_one_input in input_dict.items():
-            if len(list_of_one_input) == 0:
-                raise EmptyInputListError(f"List from key '{input_key}' is empty.")
+            if not list_of_one_input:
+                raise InputMappingError(
+                    message_format=(
+                        "The input for batch run is incorrect. Input from key '{input_key}' is an empty list, "
+                        "which means we cannot generate a single line input for the flow run. "
+                        "Please rectify the input and try again."
+                    ),
+                    input_key=input_key,
+                )
 
         # Check if line numbers are aligned.
         all_lengths_without_line_number = {
@@ -880,9 +911,15 @@ class FlowExecutor:
             if not any(LINE_NUMBER_KEY in one_item for one_item in list_of_one_input)
         }
         if len(set(all_lengths_without_line_number.values())) > 1:
-            raise LineNumberNotAlign(
-                "Line numbers are not aligned. Some lists have dictionaries missing the 'line_number' key, "
-                f"and the lengths of these lists are different. List lengths: {all_lengths_without_line_number}"
+            raise InputMappingError(
+                message_format=(
+                    "The input for batch run is incorrect. Line numbers are not aligned. "
+                    "Some lists have dictionaries missing the 'line_number' key, "
+                    "and the lengths of these lists are different. "
+                    "List lengths are: {all_lengths_without_line_number}. "
+                    "Please make sure these lists have the same length or add 'line_number' key to each dictionary."
+                ),
+                all_lengths_without_line_number=all_lengths_without_line_number,
             )
 
         # Collect each line item from each input.
@@ -915,7 +952,7 @@ class FlowExecutor:
         input_dict: Mapping[str, List[Mapping[str, Any]]],
         inputs_mapping: Mapping[str, str],
     ) -> List[Dict[str, Any]]:
-        """Apply inputs mapping to all input lines.
+        """Apply input mapping to all input lines.
 
         For example:
         input_dict = {
@@ -951,11 +988,22 @@ class FlowExecutor:
         }]
         """
         if inputs_mapping is None:
-            # This exception should not happen since we should use default inputs_mapping if not provided.
-            raise NoneInputsMappingIsNotSupported("Inputs mapping is None.")
+            # This exception should not happen since developers need to use _default_inputs_mapping for None input.
+            # So, this exception is one system error.
+            raise UnexpectedError(
+                message_format=(
+                    "The input for batch run is incorrect. Please make sure to set up a proper input mapping before "
+                    "proceeding. If you need additional help, feel free to contact support for further assistance."
+                )
+            )
         merged_list = FlowExecutor._merge_input_dicts_by_line(input_dict)
         if len(merged_list) == 0:
-            raise EmptyInputAfterMapping("Input data does not contain a complete line. Please check your input.")
+            raise InputMappingError(
+                message_format=(
+                    "The input for batch run is incorrect. Could not find one complete line on the provided input. "
+                    "Please ensure that you supply data on the same line to resolve this issue."
+                )
+            )
 
         result = [FlowExecutor.apply_inputs_mapping(item, inputs_mapping) for item in merged_list]
         return result
@@ -1054,32 +1102,3 @@ def _ensure_node_result_is_serializable(f):
         return result
 
     return wrapper
-
-
-class InputMappingError(ValidationException):
-    def __init__(self, message, target=ErrorTarget.FLOW_EXECUTOR):
-        super().__init__(message=message, target=target)
-
-
-class LineNumberNotAlign(InputMappingError):
-    pass
-
-
-class MappingSourceNotFound(InputMappingError):
-    pass
-
-
-class EmptyInputListError(InputMappingError):
-    pass
-
-
-class EmptyInputAfterMapping(InputMappingError):
-    pass
-
-
-class NoneInputsMappingIsNotSupported(SystemErrorException):
-    pass
-
-
-class NodeResultCountNotMatch(SystemErrorException):
-    pass

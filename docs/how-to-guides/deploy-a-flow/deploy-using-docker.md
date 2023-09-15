@@ -53,7 +53,7 @@ refer to [Setup connection for web-classifiction](https://github.com/microsoft/p
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../flows/standard/web-classification --output build --format docker
+pf flow build --source ../../flows/standard/web-classification --output dist --format docker
 ```
 
 Note that all dependent connections must be created before exporting as docker.
@@ -65,7 +65,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 Run the command below to build image:
 
 ```bash
-docker build build -t web-classification-serve
+docker build dist -t web-classification-serve
 ```
 
 ### Run Docker image

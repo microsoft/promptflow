@@ -16,10 +16,10 @@ from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
 
 class ConnectionOperations(_ScopeDependentOperations):
-    """FlowOperations.
+    """ConnectionOperations.
 
     You should not instantiate this class directly. Instead, you should
-    create an MLClient instance that instantiates it for you and
+    create an PFClient instance that instantiates it for you and
     attaches it as an attribute.
     """
 

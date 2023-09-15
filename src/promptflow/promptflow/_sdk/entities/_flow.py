@@ -100,7 +100,7 @@ class Flow(FlowBase):
         for n in connection_names:
             try:
                 conn = local_client.connections.get(name=n, with_secrets=True)
-                result[n] = conn.to_execution_connection_dict()
+                result[n] = conn._to_execution_connection_dict()
             except ConnectionNotFoundError:
                 # ignore when connection not found since it can be configured with env var.
                 raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
