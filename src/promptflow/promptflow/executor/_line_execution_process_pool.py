@@ -301,18 +301,49 @@ def _exec_line(
             line_result.output = {}
         return line_result
     except Exception as e:
-        if executor._run_tracker.flow_run_list:
-            run_info = executor._run_tracker.flow_run_list[0]
-        else:
-            run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
-        output_queue.put(run_info)
-        result = LineResult(
-            output={},
-            aggregation_inputs={},
-            run_info=run_info,
-            node_run_infos={},
-        )
-    return result
+        try:
+            logger.error(f"Line {index} execution failed with error: {e}")
+            if executor._run_tracker.flow_run_list:
+                logger.info(f"Line {index} if execution flow_run_list: {executor._run_tracker.flow_run_list}")
+                run_info = executor._run_tracker.flow_run_list[0]
+                logger.info(f"Line {index} if execution run_info: {run_info}")
+            else:
+                logger.info(f"Line {index} else")
+                run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
+                logger.info(f"Line {index} else execution run_info: {run_info}")
+            output_queue.put(run_info)
+            result = LineResult(
+                output={},
+                aggregation_inputs={},
+                run_info=run_info,
+                node_run_infos={},
+            )
+            return result
+        except Exception as e:
+            logger.error(f"Line {index} try exception with error: {e}")
+            run_info = FlowRunInfo(
+                run_id=f"{run_id}_{index}",
+                status=Status.Failed,
+                error=ExceptionPresenter.create(e).to_dict(include_debug_info=True),
+                inputs=inputs,
+                output=None,
+                metrics=None,
+                request=None,
+                parent_run_id=run_id,
+                root_run_id=run_id,
+                source_run_id=None,
+                flow_id="flow_id",
+                start_time="start_time",
+                end_time=datetime.utcnow(),
+                index=index,
+            )
+            result = LineResult(
+                output={},
+                aggregation_inputs={},
+                run_info=run_info,
+                node_run_infos={},
+            )
+            return result
 
 
 def _process_wrapper(
