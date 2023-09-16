@@ -82,9 +82,9 @@ Interact with your chatbot by running: (press `Ctrl + C` to end the session)
 pf flow test --flow ./my_chatbot --interactive
 ```
 
-**Ensure "High Quality” with Prompt flow**
+**Core value: ensuring "High Quality” from prototype to production** 
 
-Try the [15-mins Easy Case](examples/tutorials/flow-evaluation/promptflow-quality-improvement.md) on Tuning ➕ Batch Testing ➕ Evaluation ➡ Quality ready for production.
+Explore our [**15-minute tutorial**](examples/tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md) that guides you through prompt tuning ➡ batch testing ➡ evaluation, all designed to ensure high quality ready for production.
 
 Next Step! Continue with the **Tutorial**  👇 section to delve deeper into Prompt flow.
 

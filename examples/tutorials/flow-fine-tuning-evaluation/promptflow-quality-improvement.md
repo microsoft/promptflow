@@ -10,32 +10,45 @@ When we talk about "high quality", it's not just about accuracy. It's equally im
 
 <img src="./media/realcase.png" alt="comparison resutl" width=60%>
 
-## Video
+## Video tutorial
 
-Before practicing, you can watch the video for a quick understand.
+Before practicing, you can watch the video for a quick understand. This video shows how to use the **prompt flow VS code extension** to develop your chat flow, fine tune the prompt, batch test the flow, and evaluate the quality.
 
-<iframe src="https://www.youtube.com/embed/gcIe6nk2gA4" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="vscode_extension_demo"></iframe>
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=gcIe6nk2gA4
+" target="_blank"><img src="./media/Screenshot-video.png" 
+alt="video demo" border="10" /></a>
 
-## Practice
+## Hands-on practice
 
-Now it’s your practice time! Run our sample yourself to watch the actual effect.
+* Option 1 - VS Code Extension: [Install the prompt flow extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) in VS Code and follow the [video tutorial](https://youtu.be/gcIe6nk2gA4) above for a guided practice.
+* Option 2 - CLI：Follow the steps below to gain hands-on experience with the prompt flow CLI.
+
+It's time to put theory into practice! Execute our sample and witness the effects.
 
 ### Prerequisite
 
-Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance.
+Before moving ahead, ensure you've completed the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. Ensure you have the following setup:
+* [Install prompt flow](../../../README.md#installation)
+* [Setup a connection for your API key](../../../README.md#quick-start-⚡)
 
-Click to [download the samples](./pf-test.zip), unzip it to folder `pf-test`, where contains the sample flow and test data we'll use in this tutorial. Go into the `pf-test` folder:
+> ℹ️ For testing quickly, this tutorial uses CLI command.
+
+Clone the promptflow repository to your local machine:
 
 ```bash
-cd pf-test
+git clone https://github.com/microsoft/promptflow.git
 ```
-> ℹ️ For testing quickly, this tutorial uses CLI command.
+
 
 Next, let's get started with customizing the flow for a specific task.
 
-### Customize the Flow for a Specific Task
+### Customize the flow for a specific task
 
-In the `pf-test` folder, you can see a `my_chatbot_orgin` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
+In the `examples/flows/chat` folder, you can see a `basic-chat` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
+
+```bash
+cd promptflow/examples/flows/chat
+```
 
 ><details>
 ><summary>For Azure Open AI, please modify the `flow.dag.yaml` file</summary>
@@ -66,10 +79,10 @@ You are an assistant to calculate the answer to the provided math problems.
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
 ```
 
-Run the following command to test the flow with a simple math problem:
+Keep staying in the `promptflow/examples/flows/chat` path, run the following command to test the flow with a simple math problem:
 
 ```bash
-pf flow test --flow ./my_chatbot_origin --inputs question="1+1=?"
+pf flow test --flow ./basic-chat --inputs question="1+1=?"
 ```
 This will yield the following output:
 ```json
@@ -81,7 +94,7 @@ This will yield the following output:
 Sometime, the question may be challenging. Now, let's test it with a complex math problem, such as:
 
 ```bash
-pf flow test --flow ./my_chatbot_origin --inputs question="We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?"
+pf flow test --flow ./basic-chat --inputs question="We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?"
 ```
 
 The output is:
@@ -90,13 +103,13 @@ The output is:
     "answer": "-1"
 }
 ```
-However, the correct answer is 5 (Don't be suprised if you got the correct answer, as the randoness of LLM). The output answer is incorrect! It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
+However, the correct answer is 5 (Don't be surprised if you got the correct answer, as the randiness of LLM). The output answer is incorrect! It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
 
 ### Evaluate the quality of your prompt
 
 With prompt flow, you can quickly trigger a batch-run to test your prompt with a larger dataset, and evaluate the quality of the answers.
 
-There is a `test_data.jsonl` file in the `pf-test` folder, which is a dataset containing 20 test data entries (a subset of [the Math Dataset](https://github.com/hendrycks/math/)). It includes the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one example:
+There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-variant` folder, which is a dataset containing 20 test data entries (a subset of [the Math Dataset](https://github.com/hendrycks/math/)). It includes the input question, the ground truth for numerical answer, and the reasoning (raw_answer). Here's one example:
 
 ```json
 {
@@ -112,16 +125,17 @@ Run the following command to test your prompt with this dataset:
 >The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
 
 ```bash
-pf run create --flow ./my_chatbot_origin --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
+pf run create --flow ./basic-chat --data ./chatmathvariant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 ```
 > ⚠ For Azure Open AI, run the following command instead:
 > ```bash
-> pf run create --flow ./my_chatbot_origin --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
+> pf run create --flow ./chat_math_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
 > ```
 
 > ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
+
 > ```bash 
-> pf run create --flow C:\Users\test\pf-test\my_chatbot_origin --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
+> pf run create --flow C:\Users\promptflow\examples\flows\chat\chat_math_variant --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 > ```
 
 > ⚠ The run name must be unique. Please specify a new name in `--name`. <br> 
@@ -157,10 +171,14 @@ This can show the line by line input and output of the run:
 
 Next, create an **evaluation run** to calculate the accuracy of the answers based on the previous run.
 
-In the `pf-test` folder, you can see a `eval_accuracy` folder, which represents an evaluation flow. We'll use this flow to evaluate the accuracy of the answers.
+In the `promptflow/examples/flows/evaluation` folder, you can see a `eval-accuracy-maths-to-code` folder, which represents an evaluation flow. We'll use this flow to evaluate the accuracy of the answers.
 
 ```bash
-pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
+cd promptflow/examples/flows/evaluation
+```
+
+```bash
+pf run create --flow ./eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
 ```
 
 Then get metrics of the `eval_run` (specify another customized or random run name in `--name` argument):
@@ -191,10 +209,10 @@ Oops! The accuracy isn't satisfactory. It's time to fine-tune your prompt for hi
 
 ### Fine-tuning your prompt and evaluate the improvement
 
-In the `pf-test` folder, you can see a `my_chatbot_variant` folder, which represents a flow with two additional prompt variants compared to the original `my_chatbot_origin`. 
+In the `/chat` folder, you can see a `chat-math-variant` folder, which represents a flow with two additional prompt variants compared to the original one you customized based on the `basic-chat`.
 
 In this sample flow, you'll find three Jinja files: 
-* `chat.jinja2` is the original prompt as same as the one in `my_chatbot_origin`.
+* `chat.jinja2` is the original prompt as same as the one you customized in `basic-chat`.
 * `chat_variant_1.jinja2` and `chat_variant_2.jinja2` are the 2 additional prompt variants.
 
 We leverage the Chain of Thought (CoT) prompt engineering method to adjust the prompt. The goal is to activate the Language Model's reasoning capability of the questions, by providing a few CoT examples.
@@ -269,23 +287,27 @@ Run the CLI command below to start the experiment: test all variants, evaluate t
 > ℹ️ By default, the connection is set to `open_ai_connection` and and the model is set to `gpt-4` for each variant, as specified in the `flow.dag.yaml` file. However, you have the flexibility to specify a different connection and model by adding `--connections chat.connection=<your_connection_name> chat.model=<model_name>` in the test run command.
 
 ```bash
+cd promptflow/examples/flows
+```
+
+```bash
 # Test and evaluate variant_0:
 # Test-run
-pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
+pf run create --flow ./chat/chat-math-variant --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
 # Evaluate-run
-pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
+pf run create --flow ./evaluation/eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
 
 # Test and evaluate variant_1:
 # Test-run
-pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
+pf run create --flow ./chat/chat-math-variant --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
 # Evaluate-run
-pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
+pf run create --flow ./evaluation/eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
 
 # Test and evaluate variant_2:
 # Test-run
-pf run create --flow ./my_chatbot_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
+pf run create --flow ./chat/chat-math-variant --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
 # Evaluate-run
-pf run create --flow ./eval_accuracy --data test_data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
+pf run create --flow ./evaluation/eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
 ```
 
 Get metrics of the all evaluations:
