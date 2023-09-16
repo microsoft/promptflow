@@ -50,8 +50,18 @@ In the `examples/flows/chat` folder, you can see a `basic-chat` folder, which re
 cd promptflow/examples/flows/chat
 ```
 
+To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
+
+```
+system:
+You are an assistant to calculate the answer to the provided math problems. 
+Please return the final numerical answer only, without any accompanying reasoning or explanation.
+```
+
+Before run, check your connection settings in `flow.dag.yaml` file. The default connection name is `open_ai_connection`, and the default model is `gpt-turbo-3.5`. If you have a different connection name or model, please modify the `flow.dag.yaml` file accordingly.
+
 ><details>
-><summary>For Azure Open AI, please modify the `flow.dag.yaml` file</summary>
+><summary>(click to toggle details) For Azure Open AI, please modify the `flow.dag.yaml` file to specify your connection and deployment</summary>
 >
 > Replace the 'node:' section with following content, specify the 'connection_name' to your Azure Open AI connection, and specify the 'deployment_name' to the model deployment you'd like to use.
 > ```yaml
@@ -62,22 +72,15 @@ cd promptflow/examples/flows/chat
 >    type: code
 >    path: chat.jinja2
 >  inputs:
->    deployment_name: <your_azure_open_ai_deployment_name>
+>    deployment_name: <your_azure_open_ai_deployment_name> #specify your deployment name
 >    max_tokens: '256'
->    temperature: '0.7'
+>    temperature: '0'
 >    chat_history: ${inputs.chat_history}
 >    question: ${inputs.question}
 >  api: chat
->  connection: <your_azure_open_ai_connection_name>
+>  connection: <your_azure_open_ai_connection_name> #specify your azure openai connection name
 > ```
 </details>
-To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
-
-```
-system:
-You are an assistant to calculate the answer to the provided math problems. 
-Please return the final numerical answer only, without any accompanying reasoning or explanation.
-```
 
 Keep staying in the `promptflow/examples/flows/chat` path, run the following command to test the flow with a simple math problem:
 
