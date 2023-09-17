@@ -677,7 +677,7 @@ class FlowExecutor:
             LineResult: Line run result
         """
         run_id = run_id or str(uuid.uuid4())
-        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
+        line_run_id = str(uuid.uuid4()) if line_number is None else f"{run_id}_{line_number}"
         run_tracker = RunTracker(
             self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
         )
