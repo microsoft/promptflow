@@ -66,16 +66,16 @@ Despite being a minimalistic LLM application, there are several aspects we may w
 
 Create a .env file in the chat_with_pdf directory (same directory with the main.py) and populate it with the following content. We can use the load_dotenv() function to import these into our environment variables later on. We'll delve into what these variables represent when discussing how each step of the process is implemented.
 
-Rename the .env.example file in chat-with-pdf directory and modify per your need.
+Rename the .env.example file in chat_with_pdf directory and modify per your need.
 
 > If you're using Open AI, your .env should look like:
 ```ini
 OPENAI_API_KEY=<open_ai_key>
 EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
-CHAT_MODEL_DEPLOYMENT_NAME=gpt-3.5-turbo
+CHAT_MODEL_DEPLOYMENT_NAME=gpt-4
 PROMPT_TOKEN_LIMIT=3000
-MAX_COMPLETION_TOKENS=256
-CHUNK_SIZE=1024
+MAX_COMPLETION_TOKENS=1024
+CHUNK_SIZE=256
 CHUNK_OVERLAP=64
 VERBOSE=False
 ```
@@ -88,10 +88,10 @@ OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
 OPENAI_API_VERSION=2023-05-15
 EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
-CHAT_MODEL_DEPLOYMENT_NAME=gpt-35-turbo
+CHAT_MODEL_DEPLOYMENT_NAME=gpt-4
 PROMPT_TOKEN_LIMIT=3000
-MAX_COMPLETION_TOKENS=256
-CHUNK_SIZE=1024
+MAX_COMPLETION_TOKENS=1024
+CHUNK_SIZE=256
 CHUNK_OVERLAP=64
 VERBOSE=False
 ```
@@ -215,9 +215,9 @@ column_mapping:
     EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
     CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo
     PROMPT_TOKEN_LIMIT: 3000
-    MAX_COMPLETION_TOKENS: 256
+    MAX_COMPLETION_TOKENS: 1024
     VERBOSE: true
-    CHUNK_SIZE: 1024
+    CHUNK_SIZE: 256
     CHUNK_OVERLAP: 64
 ```
 **CLI**
