@@ -53,7 +53,7 @@ pf flow init --flow ./my_chatbot --type chat
 
 **Setup a connection for your API key**
 
-For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key（override keys and name with --set to avoid yaml file changes）:
+For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key (override keys and name with --set to avoid yaml file changes):
 
 ```sh
 pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key> --name open_ai_connection
