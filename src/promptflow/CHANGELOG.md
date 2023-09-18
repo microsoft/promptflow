@@ -6,7 +6,7 @@
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
-- [Executor][Internal] Improve error message for Input convert
+- [Executor][Internal] Add JSONDecodeError exception handle for input type parse
 
 ## 0.1.0b6 (2023.09.15)
 
