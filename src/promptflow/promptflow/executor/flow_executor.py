@@ -695,6 +695,7 @@ class FlowExecutor:
             index=line_number,
             variant_id=variant_id,
         )
+        logger.info(f"LineResult {line_number}: run_info {run_info}==========")
         context = FlowExecutionContext(
             name=self._flow.name,
             run_tracker=run_tracker,
@@ -710,10 +711,15 @@ class FlowExecutor:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             output, nodes_outputs = self._traverse_nodes(inputs, context)
+            logger.info(f"LineResult {line_number}: output {output}==========")
+            logger.info(f"LineResult {line_number}: nodes_outputs {nodes_outputs}==========")
             output = self._stringify_generator_output(output) if not allow_generator_output else output
+            logger.info(f"LineResult {line_number}: output2 {output}==========")
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+            logger.info(f"LineResult {line_number}: aggregation_inputs {aggregation_inputs}==========")
+
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -723,6 +729,7 @@ class FlowExecutor:
             run_tracker.persist_flow_run(run_info)
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
+        logger.info(f"LineResult {line_number}: node_runs {node_runs}==========")
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
     def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
