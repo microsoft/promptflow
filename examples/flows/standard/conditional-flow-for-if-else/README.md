@@ -28,12 +28,12 @@ pf flow test --flow .
 pf flow test --flow . --inputs question="What is Prompt flow?"
 ```
 
-- Create run with multiple lines data
+- Create run with multiple lines of data
 ```bash
 pf run create --flow . --data ./data.jsonl --stream
 ```
 
-- List and show run meta
+- List and show run metadata
 ```bash
 # list created run
 pf run list
