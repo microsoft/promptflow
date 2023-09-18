@@ -211,7 +211,7 @@ class FlowExecutor:
             flow.id, flow.name, [r.node for r in resolved_tools], inputs=flow.inputs, outputs=flow.outputs, tools=[]
         )
         # ensure_flow_valid including validation + resolve
-        # Todo: 1) split pure validation + resovle from below method 2) provide completed validation()
+        # Todo: 1) split pure validation + resolve from below method 2) provide completed validation()
         flow = FlowValidator._validate_nodes_topology(flow)
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
@@ -397,10 +397,10 @@ class FlowExecutor:
         """Collect the values from the kvs according to the indexes."""
         return {k: [v[i] for i in indexes] for k, v in kvs.items()}
 
-    def _fill_lines(self, idxes, values, nlines):
+    def _fill_lines(self, indexes, values, nlines):
         """Fill the values into the result list according to the indexes."""
         result = [None] * nlines
-        for idx, value in zip(idxes, values):
+        for idx, value in zip(indexes, values):
             result[idx] = value
         return result
 
@@ -1013,7 +1013,7 @@ class FlowExecutor:
             match = re.search(r"^\${([^{}]+)}$", map_value)
             if match is not None:
                 pattern = match.group(1)
-                # Could also try each paire of key value from inputs to match the pattern.
+                # Could also try each pair of key value from inputs to match the pattern.
                 # But split pattern by '.' is one deterministic way.
                 # So, give key with less '.' higher priority.
                 splitted_str = pattern.split(".")
@@ -1097,12 +1097,12 @@ class FlowExecutor:
                             tmp_dict[index] = {}
                         tmp_dict[index][input_key] = one_line_item
         result = []
-        for line, valus_for_one_line in tmp_dict.items():
+        for line, values_for_one_line in tmp_dict.items():
             # Missing input is not acceptable line.
-            if len(valus_for_one_line) != len(input_dict):
+            if len(values_for_one_line) != len(input_dict):
                 continue
-            valus_for_one_line[LINE_NUMBER_KEY] = line
-            result.append(valus_for_one_line)
+            values_for_one_line[LINE_NUMBER_KEY] = line
+            result.append(values_for_one_line)
         return result
 
     @staticmethod

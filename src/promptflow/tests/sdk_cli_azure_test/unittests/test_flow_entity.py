@@ -13,7 +13,7 @@ from mock.mock import Mock
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow.azure._load_functions import load_flow
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")

@@ -102,11 +102,11 @@ class PythonREPL:
         warn_once()
         self.code_validations.validate_code(command)
         old_stdout = sys.stdout
-        sys.stdout = mystdout = StringIO()
+        sys.stdout = my_stdout = StringIO()
         try:
             exec(command, self.globals, self.locals)
             sys.stdout = old_stdout
-            output = mystdout.getvalue()
+            output = my_stdout.getvalue()
         except Exception as e:
             sys.stdout = old_stdout
             output = repr(e)

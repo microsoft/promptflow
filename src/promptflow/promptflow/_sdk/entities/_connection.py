@@ -82,7 +82,7 @@ class _Connection(YAMLTranslatableMixin):
         # | <user-input>     | prompt input | prompt input        | raise error          |
         # --------------------------------------------------------------------------------
         self.secrets = secrets or {}
-        self._secrets = {**self.secrets}  # Unscrubbed secrets
+        self._secrets = {**self.secrets}  # Un-scrubbed secrets
         self.expiry_time = kwargs.get("expiry_time", None)
         self.created_date = kwargs.get("created_date", None)
         self.last_modified_date = kwargs.get("last_modified_date", None)

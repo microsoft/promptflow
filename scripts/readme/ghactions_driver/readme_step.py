@@ -73,7 +73,7 @@ class InstallDevDependenciesStep(Step):
         Step.__init__(self, "Prepare dev requirements")
 
     def get_workflow_step(self) -> str:
-        template = Step.get_workflow_template("step_install_devdeps.yml.jinja2")
+        template = Step.get_workflow_template("step_install_dev_deps.yml.jinja2")
         return template.render(
             {
                 "step_name": self.workflow_name,
