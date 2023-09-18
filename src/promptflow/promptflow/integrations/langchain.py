@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -10,14 +11,37 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 from promptflow._core.tracer import Trace, Tracer, TraceType
 
 
+class LangChainEventType(Enum):
+    LLM = "LLM"
+    CHAIN = "CHAIN"
+    TOOL = "TOOL"
+    AGENT = "AGENT"
+
+
 class PromptFlowCallbackHandler(BaseCallbackHandler):
+
     def __init__(self):
         super().__init__()
         self._tracer = Tracer.active_instance()
+        self._events_stack = []  # Use this to track the current event type to avoid popping the wrong event
 
     @property
     def always_verbose(self) -> bool:
         return True
+
+    def _try_pop_event_type(self, event_type: LangChainEventType):
+        """Try to pop the event type from the stack.
+
+        If the event type is not the same as the top of the stack, do not pop and return false.
+        This is used to avoid poping wrong events then causing error.
+        One example is that on_agent_finish is called but on_agent_action is not called
+        when we test agent type CHAT_CONVERSATIONAL_REACT_DESCRIPTION."""
+        if not self._events_stack:
+            return False
+        if self._events_stack[-1] == event_type:
+            self._events_stack.pop()
+            return True
+        return False
 
     def _push(self, trace: Trace):
         if not self._tracer:
@@ -32,6 +56,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
     def on_llm_start(self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any) -> Any:
         name = self._get_name(serialized) or "LLM"
         trace = Trace(name, TraceType.LANGCHAIN, {"prompts": prompts})
+        self._events_stack.append(LangChainEventType.LLM)
         self._push(trace)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
@@ -39,32 +64,40 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> Any:
         output = response
-        self._pop(output)
+        if self._try_pop_event_type(LangChainEventType.LLM):
+            self._pop(output)
 
     def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
-        self._pop(error=error)
+        if self._try_pop_event_type(LangChainEventType.LLM):
+            self._pop(error=error)
 
     def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any) -> Any:
         name = self._get_name(serialized) or "Chain"
         trace = Trace(name, TraceType.LANGCHAIN, inputs)
+        self._events_stack.append(LangChainEventType.CHAIN)
         self._push(trace)
 
     def on_chain_end(self, outputs: Dict[str, Any], **kwargs: Any) -> Any:
-        self._pop(outputs)
+        if self._try_pop_event_type(LangChainEventType.CHAIN):
+            self._pop(outputs)
 
     def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
-        self._pop(error=error)
+        if self._try_pop_event_type(LangChainEventType.CHAIN):
+            self._pop(error=error)
 
     def on_tool_start(self, serialized: Dict[str, Any], input_str: str, **kwargs: Any) -> Any:
         name = self._get_name(serialized) or "Tool"
         trace = Trace(name, TraceType.LANGCHAIN, {"input_str": input_str})
+        self._events_stack.append(LangChainEventType.TOOL)
         self._push(trace)
 
     def on_tool_end(self, output: str, **kwargs: Any) -> Any:
-        self._pop(output)
+        if self._try_pop_event_type(LangChainEventType.TOOL):
+            self._pop(output)
 
     def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
-        self._pop(error=error)
+        if self._try_pop_event_type(LangChainEventType.TOOL):
+            self._pop(error=error)
 
     def on_text(self, text: str, **kwargs: Any) -> Any:
         pass
@@ -72,11 +105,13 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         name = action.tool
         trace = Trace(name, TraceType.LANGCHAIN, {"tool_input": action.tool_input})
+        self._events_stack.append(LangChainEventType.AGENT)
         self._push(trace)
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         output = finish.return_values
-        self._pop(output)
+        if self._try_pop_event_type(LangChainEventType.AGENT):
+            self._pop(output)
 
     def _get_name(self, serialized: Dict[str, Any]):
         # For version 0.0.197 and earlier, the name is stored in the "name" field,
