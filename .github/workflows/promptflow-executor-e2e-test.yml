@@ -16,6 +16,7 @@ env:
 jobs:
   authorize:
     environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
       ${{ github.event_name == 'pull_request_target' &&
       github.event.pull_request.head.repo.full_name != github.repository &&
       'external' || 'internal' }}
