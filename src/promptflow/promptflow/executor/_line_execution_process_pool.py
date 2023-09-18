@@ -107,8 +107,9 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _new_process(self):
-        input_queue = Queue()
-        output_queue = Queue()
+        manager = Manager()
+        input_queue = manager.Queue()
+        output_queue = manager.Queue()
         current_log_context = LogContext.get_current()
         process = Process(
             target=_process_wrapper,
