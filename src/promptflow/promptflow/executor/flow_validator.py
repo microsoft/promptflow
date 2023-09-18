@@ -20,6 +20,8 @@ from promptflow.executor._errors import (
 
 
 class FlowValidator:
+    """This is a validation class designed to verify the integrity and validity of flow definitions and input data."""
+
     @staticmethod
     def _ensure_nodes_order(flow: Flow):
         dependencies = {n.name: set() for n in flow.nodes}
@@ -105,11 +107,19 @@ class FlowValidator:
 
     @staticmethod
     def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        Resolve inputs by type if existing. Ignore missing inputs. This method is used for PRS case
+        """Resolve inputs by type if existing. Ignore missing inputs.
 
-        return:
-            type converted inputs
+        :param flow: The `flow` parameter is of type `Flow` and represents a flow object
+        :type flow: Flow
+        :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
+        flow inputs, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :param idx: The `idx` parameter is an optional integer that represents the line index of the input
+        data. It is used to provide additional information in case there is an error with the input data
+        :type idx: Optional[int]
+        :return: The updated inputs, where the values are
+        type-converted based on the expected type specified in the `flow` object.
+        :rtype: Mapping[str, Any]
         """
         updated_inputs = {k: v for k, v in inputs.items()}
         for k, v in flow.inputs.items():
@@ -130,11 +140,19 @@ class FlowValidator:
 
     @staticmethod
     def ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
+        """Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
-        return:
-            type converted inputs
+        :param flow: The `flow` parameter is of type `Flow` and represents a flow object
+        :type flow: Flow
+        :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
+        flow inputs, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :param idx: The `idx` parameter is an optional integer that represents the line index of the input
+        data. It is used to provide additional information in case there is an error with the input data
+        :type idx: Optional[int]
+        :return: The updated inputs, where the values are type-converted based on the expected
+        type specified in the `flow` object.
+        :rtype: Mapping[str, Any]
         """
         for k, v in flow.inputs.items():
             if k not in inputs:
@@ -148,12 +166,20 @@ class FlowValidator:
         return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
 
     @staticmethod
-    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]):
-        """
-        Filter the flow inputs for node and resolve the value by type.
+    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Filter the flow inputs for node and resolve the value by type.
 
-        return:
-            the resolved flow inputs which are needed by the node only
+        :param flow: The `flow` parameter is an instance of the `Flow` class. It represents the flow or
+        workflow that contains the node and inputs
+        :type flow: Flow
+        :param node: The `node` parameter is an instance of the `Node` class
+        :type node: Node
+        :param inputs: A dictionary containing the input values for the node. The keys are the names of the
+        input variables, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :return: the resolved flow inputs which are needed by the node only
+        by the node only.
+        :rtype: Mapping[str, Any]
         """
         updated_inputs = {}
         inputs = inputs or {}
