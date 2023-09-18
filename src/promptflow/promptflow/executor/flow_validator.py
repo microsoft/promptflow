@@ -110,7 +110,7 @@ class FlowValidator:
         """Resolve inputs by type if existing. Ignore missing inputs.
 
         :param flow: The `flow` parameter is of type `Flow` and represents a flow object
-        :type flow: promptflow.contracts.flow.Flow
+        :type flow: ~promptflow.contracts.flow.Flow
         :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
             flow inputs, and the values are the corresponding input values
         :type inputs: Mapping[str, Any]
@@ -143,7 +143,7 @@ class FlowValidator:
         """Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
         :param flow: The `flow` parameter is of type `Flow` and represents a flow object
-        :type flow: promptflow.contracts.flow.Flow
+        :type flow: ~promptflow.contracts.flow.Flow
         :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
             flow inputs, and the values are the corresponding input values
         :type inputs: Mapping[str, Any]
@@ -171,9 +171,9 @@ class FlowValidator:
 
         :param flow: The `flow` parameter is an instance of the `Flow` class. It represents the flow or
             workflow that contains the node and inputs
-        :type flow: promptflow.contracts.flow.Flow
+        :type flow: ~promptflow.contracts.flow.Flow
         :param node: The `node` parameter is an instance of the `Node` class
-        :type node: promptflow.contracts.flow.Node
+        :type node: ~promptflow.contracts.flow.Node
         :param inputs: A dictionary containing the input values for the node. The keys are the names of the
             input variables, and the values are the corresponding input values
         :type inputs: Mapping[str, Any]
