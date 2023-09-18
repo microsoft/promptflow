@@ -16,6 +16,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
+from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.azure.operations._flow_operations import FlowOperations
 
@@ -76,6 +77,14 @@ class PFClient:
             **kwargs,
         )
         self._connections = ConnectionOperations(
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            all_operations=self._ml_client._operation_container,
+            credential=self._ml_client._credential,
+            service_caller=self._service_caller,
+            **kwargs,
+        )
+        self._arm_connections = ArmConnectionOperations(
             operation_scope=self._ml_client._operation_scope,
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,

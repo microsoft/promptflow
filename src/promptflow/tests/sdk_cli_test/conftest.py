@@ -80,7 +80,6 @@ def flow_serving_client(mocker: MockerFixture):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
     app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
-    app.init_executor_if_not_exist()
     app.config.update(
         {
             "TESTING": True,
@@ -94,10 +93,31 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     app = create_serving_app()
-    app.init_executor_if_not_exist()
     app.config.update(
         {
             "TESTING": True,
         }
     )
     return app.test_client()
+
+
+def create_client_by_model(model_name: str, mocker: MockerFixture):
+    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    app = create_serving_app()
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def serving_client_llm_chat(mocker: MockerFixture):
+    return create_client_by_model("chat_flow_with_stream_output", mocker)
+
+
+@pytest.fixture
+def serving_client_python_stream_tools(mocker: MockerFixture):
+    return create_client_by_model("python_stream_tools", mocker)
