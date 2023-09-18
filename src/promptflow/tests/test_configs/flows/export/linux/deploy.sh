@@ -158,7 +158,7 @@ echo "$command"
 eval "$command"
 # Config environment variable
 echo "Config app...$name"
-command="az webapp config appsettings set -g $resource_group --name $name --settings USER_AGENT=promptflow-appservice @settings.json"
+command="az webapp config appsettings set -g $resource_group --name $name --settings USER_AGENT=promptflow-appservice WEBSITES_PORT=8080 @settings.json"
 command=$(append_to_command "$command")
 echo "$command"
 eval "$command"
