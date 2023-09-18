@@ -4,7 +4,9 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-In promptflow, we support control logic by activate config, like if-else, switch. This guide will help you learn how to create a conditional flow using activate config.
+In promptflow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
+
+This guide will help you learn how to create a conditional flow using activate config.
 
 ## Prerequisites
 
@@ -12,34 +14,44 @@ Please ensure that your promptflow version is greater than `0.1.0b5`.
 
 ## Usage Description
 
-If a node has activate config, it will only be executed when the activate condition is met. You can specify `activate.when` as flow inputs or node outputs and
+If a node has activate config, it will only be executed when the activate condition is met. Each node in your flow can have an associated activate config, specifying when it should execute and when it should bypass. The configuration consists of two essential components:
+- `activate.when`: The condition that triggers the execution of the node. It can be based on the outputs of a previous node, or the inputs of the flow.
+- `activate.is`: The condition's value, which can be a constant value of string, boolean, integer, double.
+
+You can manually change the flow.dag.yaml in the flow folder or use the visual editor in VS Code Extension to add activate config to nodes in the flow.
 
 ::::{tab-set}
 :::{tab-item} Yaml
 :sync: Yaml
-You can add activate config in the nodes section of flow yaml.
+
+You can add activate config in the node section of flow yaml.
 ```yaml
 activate:
   when: ${node.output}
   is: true
 ```
+
 :::
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 
+- Click `Visual editor` in the flow.dag.yaml to enter the flow interface.
+![visual_editor](../media/how-to-guides/conditional-flow-with-activate/visual_editor.png)
 
+- Click on the `Activation config` section in the node you want to add and fill in the values for "when" and "is".
+![activate_config](../media/how-to-guides/conditional-flow-with-activate/activate_config.png)
 
 :::
 
 ::::
-
-### Yaml
-### VS Code Extension
 
 ## Example flow
 - If-else scenario:
 - Switch scenario:
 
 
-## TroubleShoot
+## Troubleshoot
+If you encounter any issues while using `activate config`, consider the following troubleshooting steps:
+
+If you continue to experience difficulties, please consult our comprehensive documentation or reach out to our support team for assistance.
