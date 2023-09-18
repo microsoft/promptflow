@@ -130,7 +130,7 @@ def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     while i > 0:
         frame_summary = frame_summaries[i]
         if frame_summary.filename == flow_execution_context.__file__:
-            return frame_summaries[i + 1 :]
+            return frame_summaries[i + 1:]
         i -= 1
     return frame_summaries
 
@@ -161,6 +161,16 @@ def generate_elapsed_time_messages(func_name: str, start_time: float, interval: 
     elapse_time = round(elapse_time / interval) * interval
     msgs = [f"{func_name} has been running for {elapse_time:.0f} seconds, {thread_msg}"]
     return msgs
+
+
+def show_all_frames():
+    import sys
+    frames = sys._current_frames()
+    for thread_id, frame in frames.items():
+        print("Thread ID: %s" % thread_id)
+        print("Stack Trace: ")
+        print("\n".join(traceback.format_stack(frame)))
+        print()
 
 
 def set_context(context: contextvars.Context):
