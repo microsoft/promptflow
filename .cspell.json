@@ -1,6 +1,7 @@
 {
   "version": "0.2",
   "language": "en",
+  "languageId": "python",
   "dictionaries": [
     "powershell",
     "python",
