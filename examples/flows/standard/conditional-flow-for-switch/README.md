@@ -19,16 +19,18 @@ Prepare your Azure Open AI resource follow this [instruction](https://learn.micr
 
 Note in this example, we are using [chat api](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/chatgpt?pivots=programming-language-chat-completions), please use `gpt-35-turbo` or `gpt-4` model deployment.
 
-Ensure you have created `open_ai_connection` connection before.
-```bash
-pf connection show -n open_ai_connection
-```
-
 Create connection if you haven't done that. Ensure you have put your azure open ai endpoint key in [azure_openai.yml](../../../connections/azure_openai.yml) file.
 ```bash
 # Override keys with --set to avoid yaml file changes
 pf connection create -f ../../../connections/azure_openai.yml --name open_ai_connection --set api_key=<your_api_key> api_base=<your_api_base>
 ```
+
+Note in [flow.dag.yaml](flow.dag.yaml) we are using connection named `open_ai_connection`.
+```bash
+# show registered connection
+pf connection show --name open_ai_connection
+```
+
 ## Run flow
 
 - Test flow
