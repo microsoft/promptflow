@@ -61,6 +61,42 @@ You would typically expect the chatbot to be intelligent enough to decipher that
 
 A "rewrite_question" step is performed before feeding the question to "find_context" step.
 
+### Configurations
+Despite being a minimalistic LLM application, there are several aspects we may want to adjust or experiment with in the future. We'll store these in environment variables for ease of access and modification. In the subsequent sections, we'll guide you on how to experiment with these configurations to enhance your chat application's quality.
+
+Create a .env file in the chat_with_pdf directory (same directory with the main.py) and populate it with the following content. We can use the load_dotenv() function to import these into our environment variables later on. We'll delve into what these variables represent when discussing how each step of the process is implemented.
+
+Rename the .env.example file in chat_with_pdf directory and modify per your need.
+
+> If you're using Open AI, your .env should look like:
+```ini
+OPENAI_API_KEY=<open_ai_key>
+EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
+CHAT_MODEL_DEPLOYMENT_NAME=gpt-4
+PROMPT_TOKEN_LIMIT=3000
+MAX_COMPLETION_TOKENS=1024
+CHUNK_SIZE=256
+CHUNK_OVERLAP=64
+VERBOSE=False
+```
+Note: if you have an org id, it can be set via OPENAI_ORG_ID=<your_org_id>
+
+> If you're using Azure Open AI, you .env should look like:
+```ini
+OPENAI_API_TYPE=azure
+OPENAI_API_BASE=<AOAI_endpoint>
+OPENAI_API_KEY=<AOAI_key>
+OPENAI_API_VERSION=2023-05-15
+EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
+CHAT_MODEL_DEPLOYMENT_NAME=gpt-4
+PROMPT_TOKEN_LIMIT=3000
+MAX_COMPLETION_TOKENS=1024
+CHUNK_SIZE=256
+CHUNK_OVERLAP=64
+VERBOSE=False
+```
+Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
+
 ### Take a look at the chatbot in action!
 You should be able to run the console app by:
 ```shell
@@ -72,27 +108,6 @@ It looks like below if everything goes fine:
 ![chatbot console](../../flows/chat/chat-with-pdf/assets/chatbot_console.gif)
 
 Now, let's delve into the actual code that implements the chatbot.
-
-### Configurations
-Despite being a minimalistic LLM application, there are several aspects we may want to adjust or experiment with in the future. We'll store these in environment variables for ease of access and modification. In the subsequent sections, we'll guide you on how to experiment with these configurations to enhance your chat application's quality.
-
-Create a .env file in this directory and populate it with the following content. We can use the load_dotenv() function to import these into our environment variables later on. We'll delve into what these variables represent when discussing how each step of the process is implemented.
-
-Check out [example env file](.env.example).
-```ini
-OPENAI_API_TYPE=azure
-OPENAI_API_BASE=<AOAI_endpoint>
-OPENAI_API_KEY=<AOAI_key>
-OPENAI_API_VERSION=2023-05-15
-EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
-CHAT_MODEL_DEPLOYMENT_NAME=gpt-35-turbo
-PROMPT_TOKEN_LIMIT=3000
-MAX_COMPLETION_TOKENS=256
-CHUNK_SIZE=1024
-CHUNK_OVERLAP=64
-VERBOSE=False
-```
-Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
 
 ### Implementation of each steps
 #### Download pdf: [download.py](../../flows/chat/chat-with-pdf/chat_with_pdf/download.py)
@@ -200,9 +215,9 @@ column_mapping:
     EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
     CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo
     PROMPT_TOKEN_LIMIT: 3000
-    MAX_COMPLETION_TOKENS: 256
+    MAX_COMPLETION_TOKENS: 1024
     VERBOSE: true
-    CHUNK_SIZE: 1024
+    CHUNK_SIZE: 256
     CHUNK_OVERLAP: 64
 ```
 **CLI**
@@ -245,13 +260,14 @@ column_mapping:
   answer: ${run.outputs.answer}
   context: ${run.outputs.context}
 ```
-NOTE: the run property in eval_run.yaml is the run name of batch_run.yaml
+> NOTE: the run property in eval_run.yaml is the run name of batch_run.yaml
 
 **CLI:**
 ```bash
 eval_run_name="eval_groundedness_"$(openssl rand -hex 12)
 pf run create --file eval_run.yaml --run $run_name --name $eval_run_name
 ```
+> Note: this assumes that you have followed previous steps to create OpenAI/Azure OpenAI connection with name "open_ai_connection".
 
 After the run completes you can use below commands to get detail of the runs:
 ```bash
