@@ -12,7 +12,7 @@ Please ensure that your promptflow version is greater than `0.1.0b5`.
 
 ## Usage Description
 
-If a node has activate config, it only will be executed when the activate condition is met. You can specify `activate.when` as flow inputs or node outputs and
+If a node has activate config, it will only be executed when the activate condition is met. You can specify `activate.when` as flow inputs or node outputs and
 
 ::::{tab-set}
 :::{tab-item} Yaml
