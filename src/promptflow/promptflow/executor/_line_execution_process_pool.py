@@ -366,11 +366,11 @@ def _process_wrapper(
     import threading
     import time
     logging_name = os.getpid()
-    interval_seconds = 10
+    interval_seconds = 120
     start_time = time.perf_counter()
     thread_id = threading.current_thread().ident
     with RepeatLogTimer(
-        interval_seconds=10,
+        interval_seconds=120,
         logger=bulk_logger,
         level=INFO,
         log_message_function=generate_elapsed_time_messages,
