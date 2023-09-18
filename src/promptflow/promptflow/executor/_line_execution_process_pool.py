@@ -38,6 +38,7 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
+        logger.info(f"QueueRunStorage persist_flow_run: {run_info}")
         self.queue.put(run_info)
 
 

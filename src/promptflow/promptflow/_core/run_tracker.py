@@ -13,7 +13,7 @@ from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
-from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -97,6 +97,7 @@ class RunTracker(ThreadLocalSingleton):
             index=index,
             variant_id=variant_id,
         )
+        logger.info(f"LineResult {index}: run_info {run_info}==========")
         self.persist_flow_run(run_info)
         self._flow_runs[run_id] = run_info
         self._current_run_id = run_id
