@@ -14,7 +14,8 @@ def my_custom_connection() -> MyFirstConnection:
 class TestMyTool1:
     def test_my_tool_1(self, my_custom_connection):
         result = my_tool(my_custom_connection, input_text="Hello Microsoft! ")
-        assert result == "Hello Microsoft! This is my first connection."
+        print("result: ", result)
+        assert result == "connection_value is MyFirstConnection: True"
 
 
 # Run the unit tests

@@ -6,13 +6,13 @@ from promptflow._core.tools_manager import register_connections
 @dataclass
 class MyFirstConnection():
     api_key: Secret
-    api_hint: str = "This is my first connection."
+    api_base: str = "This is my first connection."
 
 
 @dataclass
 class MySecondConnection():
     api_key: Secret
-    api_hint: str = "This is my second connection."
+    api_base: str = "This is my second connection."
 
 
 register_connections([MyFirstConnection, MySecondConnection])

@@ -16,4 +16,4 @@ class MyTool(ToolProvider):
         # Replace with your tool code.
         # Usually connection contains configs to connect to an API.
         # Not all tools need a connection. You can remove it if you don't need it.
-        return input_text + self.connection.api_hint
+        return input_text + self.connection.api_base
