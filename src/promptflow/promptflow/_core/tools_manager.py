@@ -7,14 +7,12 @@ import importlib.util
 import inspect
 import logging
 import traceback
-from dataclasses import fields
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Tuple, Union
 
 import pkg_resources
 import yaml
-from jinja2 import Template
 
 from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
@@ -23,6 +21,10 @@ from promptflow._core.tool_meta_generator import (
     generate_prompt_tool,
     generate_python_tool,
     load_python_module_from_file,
+)
+from promptflow._utils.connection_utils import (
+    generate_custom_strong_type_connection_spec,
+    generate_custom_strong_type_connection_template,
 )
 from promptflow._utils.tool_utils import (
     function_to_tool_definition,
@@ -124,65 +126,6 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
             module_logger.warning(msg)
 
     return all_package_tools, all_package_connection_specs, all_package_connection_templates
-
-
-def generate_custom_strong_type_connection_spec(cls, package, package_version):
-    connection_spec = {
-        "connectionCategory": "CustomKeys",
-        "flowValueType": "CustomConnection",
-        "connectionType": cls.__name__,
-        "ConnectionTypeDisplayName": cls.__name__,
-        "configSpecs": [],
-        "module": cls.__module__,
-        "package": package,
-        "package_version": package_version,
-    }
-
-    for field in fields(cls):
-        spec = {
-            "name": field.name,
-            "displayName": field.name.replace("_", " ").title(),
-            "configValueType": field.type.__name__,
-            "isOptional": field.default is not None,
-        }
-        connection_spec["configSpecs"].append(spec)
-    return connection_spec
-
-
-def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
-    connection_template_str = """
-    name: <connection-name>
-    type: custom
-    custom_type: {{ custom_type }}
-    module: {{ module }}
-    package: {{ package }}
-    package_version: {{ package_version }}
-    configs:
-      {% for key, value in configs.items() %}
-      {{ key }}: "{{ value -}}"{% endfor %}
-    secrets:  # must-have{% for key, value in secrets.items() %}
-      {{ key }}: "{{ value -}}"{% endfor %}
-    """
-
-    configs = {}
-    secrets = {}
-    connection_template = Template(connection_template_str)
-    for spec in connection_spec["configSpecs"]:
-        if spec["configValueType"] == "Secret":
-            secrets[spec["name"]] = "<" + spec["name"].replace("_", "-") + ">"
-        else:
-            configs[spec["name"]] = "<" + spec["name"].replace("_", "-") + ">"
-
-    data = {
-        "custom_type": cls.__name__,
-        "module": cls.__module__,
-        "package": package,
-        "package_version": package_version,
-        "configs": configs,
-        "secrets": secrets,
-    }
-
-    return connection_template.render(data)
 
 
 def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:

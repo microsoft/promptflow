@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
+from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -426,3 +427,26 @@ def get_secret_input(prompt, mask="*"):
             sys.stdout.write(mask)
             sys.stdout.flush()
             secret_input.append(char)
+
+
+def check_custom_connection_type_match(old_connection, new_connection):
+    if not isinstance(old_connection, CustomConnection):
+        return
+
+    if not isinstance(new_connection, CustomConnection):
+        raise Exception("Connection type mismatch. Please specify the type as 'custom' in the yaml file.")
+
+    if old_connection.is_custom_strong_type():
+        if not new_connection.is_custom_strong_type():
+            raise Exception(
+                f"Connection custom_type mismatch. "
+                f"Please specify custom_type as {old_connection.custom_type} in the yaml file."
+            )
+        elif old_connection.custom_type != new_connection.custom_type:
+            raise Exception(
+                f"Connection custom_type mismatch. "
+                f"Existing: {new_connection.custom_type}, supported: {old_connection.custom_type}."
+            )
+    # shall we allow custom type to custom strong type?
+    elif new_connection.is_custom_strong_type():
+        raise Exception("CustomConnection to custom strong type connection not allowed!")

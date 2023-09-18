@@ -152,7 +152,7 @@ class TestToolsManager:
                 ],
                 "module": "my_tool_package.connections",
                 "package": "my-tools-package-with-cstc",
-                "package_version": "0.0.2",
+                "package_version": "0.0.4",
             }
         }
         expected_template = {
@@ -161,7 +161,7 @@ class TestToolsManager:
             "custom_type": "MyFirstConnection",
             "module": "my_tool_package.connections",
             "package": "my-tools-package-with-cstc",
-            "package_version": "0.0.2",
+            "package_version": "0.0.4",
             "configs": {"api_base": "<api-base>"},
             "secrets": {"api_key": "<api-key>"},
         }
