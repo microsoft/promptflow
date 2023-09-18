@@ -36,7 +36,7 @@ With prompt flow, you will be able to:
 
 ## Installation
 
-Ensure you have a python environment, `python=3.9` is recommended.
+Ensure you have a python environment, `python>=3.8` is recommended.
 
 ```sh
 pip install promptflow promptflow-tools
