@@ -110,6 +110,6 @@ After the variant run is created, you can evaluate the variant run with a evalua
 ## Next steps
 
 Learn more about:
-- [Run and evluate a flow](./run-and-evaluate-a-flow.md)
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
 - [Deploy a flow](./deploy-a-flow/index.md)
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)
