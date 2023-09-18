@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import copy
+from json import JSONDecodeError
 from typing import Any, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
@@ -11,6 +12,7 @@ from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputReference,
     InputNotFound,
+    InputParseError,
     InputReferenceNotFound,
     InputTypeError,
     NodeCircularDependency,
@@ -126,10 +128,20 @@ class FlowValidator:
             try:
                 if k in inputs:
                     updated_inputs[k] = v.type.parse(inputs[k])
-            except Exception as e:
-                line_info = "" if idx is None else f"in line {idx} of input data"
+            except JSONDecodeError as e:
+                line_info = "" if idx is None else f" in line {idx} of input data"
                 msg_format = (
-                    "The input for flow is incorrect. The value for flow input '{flow_input_name}' {line_info} "
+                    "Failed to parse the flow input. The value for flow input '{flow_input_name}'{line_info} "
+                    "was interpreted as JSON but the value '{input_value}' is invalid JSON'. Please make sure "
+                    "your inputs are properly formatted. For example, use double quotes instead of single quotes."
+                )
+                raise InputParseError(
+                    message_format=msg_format, flow_input_name=k, line_info=line_info, input_value=inputs[k]
+                ) from e
+            except Exception as e:
+                line_info = "" if idx is None else f" in line {idx} of input data"
+                msg_format = (
+                    "The input for flow is incorrect. The value for flow input '{flow_input_name}'{line_info} "
                     "does not match the expected type '{expected_type}'. Please change flow input type "
                     "or adjust the input value in your input data."
                 )

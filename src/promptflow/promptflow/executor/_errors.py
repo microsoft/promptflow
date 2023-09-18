@@ -123,6 +123,10 @@ class InputTypeError(InvalidFlowRequest):
     pass
 
 
+class InputParseError(InvalidFlowRequest):
+    pass
+
+
 class InvalidConnectionType(InvalidFlowRequest):
     pass
 
