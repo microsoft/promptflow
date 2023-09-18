@@ -32,6 +32,8 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
@@ -96,6 +98,8 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
