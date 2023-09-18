@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-In promptflow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
+In Prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
 
 This guide will help you learn how to create a conditional flow using activate config.
 
@@ -14,7 +14,7 @@ Please ensure that your promptflow version is greater than `0.1.0b5`.
 
 ## Usage Description
 
-If a node has activate config, it will only be executed when the activate condition is met. Each node in your flow can have an associated activate config, specifying when it should execute and when it should bypass. The configuration consists of two essential components:
+Each node in your flow can have an associated activate config, specifying when it should execute and when it should bypass. If a node has activate config, it will only be executed when the activate condition is met. The configuration consists of two essential components:
 - `activate.when`: The condition that triggers the execution of the node. It can be based on the outputs of a previous node, or the inputs of the flow.
 - `activate.is`: The condition's value, which can be a constant value of string, boolean, integer, double.
 
@@ -47,11 +47,28 @@ activate:
 ::::
 
 ## Example flow
-- If-else scenario:
-- Switch scenario:
+
+Let's illustrate how to use activate config with practical examples.
+
+- If-Else scenario: Learn how to create a conditional flow for if-else scenarios. [View Example]()
+- Switch scenario: Explore conditional flow for switch scenarios. [View Example]()
 
 
 ## Troubleshoot
-If you encounter any issues while using `activate config`, consider the following troubleshooting steps:
 
-If you continue to experience difficulties, please consult our comprehensive documentation or reach out to our support team for assistance.
+If you encounter any issues or errors while using `activate config` in Prompt flow, this section provides guidance and solutions for common error codes. Refer to the following error codes and their respective solutions to quickly and efficiently resolve issues during your flow development.
+
+1. ReferenceNodeBypassed
+- Error message:
+- Error description:
+- Solution:
+2. OutputReferenceBypassed
+- Error message:
+- Error description:
+- Solution:
+3. OutputReferenceNotExist
+- Error message:
+- Error description:
+- Solution:
+
+These error codes and their respective solutions should help you troubleshoot common issues related to `activate config` and ensure the smooth execution of your conditonal flow. If you continue to experience difficulties, please consult our comprehensive documentation or reach out to our support team for assistance.
