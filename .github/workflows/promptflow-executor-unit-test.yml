@@ -107,6 +107,6 @@ jobs:
         testResultTitle: Executor Unit Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.5
+        coverageThreshold: 50
         token: ${{ secrets.GITHUB_TOKEN }}
         context: test/executor_unit

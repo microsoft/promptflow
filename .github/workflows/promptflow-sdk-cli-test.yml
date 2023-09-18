@@ -107,6 +107,6 @@ jobs:
         testResultTitle: SDK CLI Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.4
+        coverageThreshold: 40
         token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli
