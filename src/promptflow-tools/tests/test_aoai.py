@@ -31,7 +31,7 @@ class TestAOAI:
             deployment_name="gpt-35-turbo",
             max_tokens="32",
             temperature=0,
-            user_input="Fill in more detalis about trend 2.",
+            user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
         )
         assert "details about trend 2" in result.lower()
@@ -83,7 +83,7 @@ class TestAOAI:
             deployment_name="gpt-35-turbo",
             max_tokens="32",
             temperature=0,
-            user_input="Fill in more detalis about trend 2.",
+            user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
             stream=True,
         )

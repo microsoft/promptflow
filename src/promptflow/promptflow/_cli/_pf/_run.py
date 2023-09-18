@@ -201,7 +201,7 @@ pf run list
 pf run list --max-results 10
 # List active and archived runs status:
 pf run list --include-archived
-# List arhived runs status only:
+# List archived runs status only:
 pf run list --archived-only
 # List all runs status:
 pf run list --all-results
