@@ -1,4 +1,4 @@
-# Dev Steup
+# Dev Setup
 
 ## Set up process
 

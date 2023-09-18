@@ -1,0 +1,30 @@
+name: Spell check CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  Spell_Check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+
+      - name: install cspell
+        run: |-
+          npm install -g cspell
+          cspell lint "$(srcPath)/azure-ai-ml/**"
+
+      - name: run cspell
+        run: flake8
