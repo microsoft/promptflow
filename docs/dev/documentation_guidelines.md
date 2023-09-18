@@ -18,7 +18,7 @@ This guide describes how to author Python docstrings for promptflow public inter
 First please read through [Sphinx style](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html#the-sphinx-docstring-format) to have a basic understanding of sphinx style docstring.
 
 
-### Class docstring
+### Write class docstring
 
 Let's start with a class example:
 ```python
@@ -67,7 +67,7 @@ class MyClass:
 **Notes**:
 
 1. One-line summary is required. It should be clear and concise.
-2. Detailed explanation is encouraged but not required. Including notes, admonitions and code blocks.
+2. Detailed explanation is encouraged but not required. This part may or may not include notes, admonitions and code blocks.
     - The format like `.. note::` is called `directive`. Directives are a mechanism to extend the content of [reStructuredText](https://docutils.sourceforge.io/rst.html). Every directive declares a block of content with specific role. Start a new line with `.. directive_name::` to use the directive. 
     - The directives used in the sample(`note/admonition/code-block`) should be enough for basic usage of docstring in our project. But you are welcomed to explore more [Directives](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#specific-admonitions).
 3. Parameter description and type is required.
@@ -96,7 +96,7 @@ class MyClass:
     - Double backticks(``): Double backticks are typically used to highlight a literal value.
 
 
-### Function docstring
+### Write function docstring
 
 ```python
 from typing import Optional
