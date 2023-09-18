@@ -1,5 +1,5 @@
 inputs:
-  query:
+  question:
     type: string
     default: What is Prompt flow?
 outputs:
@@ -13,14 +13,14 @@ nodes:
     type: code
     path: content_safety_check.py
   inputs:
-    text: ${inputs.query}
+    text: ${inputs.question}
 - name: llm_result
   type: python
   source:
     type: code
     path: llm_result.py
   inputs:
-    request: ${inputs.query}
+    question: ${inputs.question}
   activate:
     when: ${content_safety_check.output}
     is: true
@@ -30,7 +30,7 @@ nodes:
     type: code
     path: default_result.py
   inputs:
-    request: ${inputs.query}
+    question: ${inputs.question}
   activate:
     when: ${content_safety_check.output}
     is: false

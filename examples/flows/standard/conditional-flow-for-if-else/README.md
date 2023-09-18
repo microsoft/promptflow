@@ -25,7 +25,7 @@ pip install -r requirements.txt
 pf flow test --flow .
 
 # test with flow inputs
-pf flow test --flow . --inputs query="What is Prompt flow?"
+pf flow test --flow . --inputs question="What is Prompt flow?"
 ```
 
 - List and show run meta
