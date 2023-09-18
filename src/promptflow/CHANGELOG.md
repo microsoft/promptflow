@@ -1,10 +1,19 @@
 # Release History
 
-## 0.1.0b6 (Upcoming)
+## 0.1.0b6 (2023.09.15)
 
 ### Features Added
 
-- Add token metrics in run properties
+- [promptflow][Feature] Store token metrics in run properties
+
+### Bugs Fixed
+
+- Refine error message body for flow_validator.py
+- Refine error message body for run_tracker.py
+- [Executor][Internal] Add some unit test to improve code coverage of log/metric
+- [SDK/CLI] Update portal link to remove flight.
+- [Executor][Internal] Improve inputs mapping's error message.
+- [API] Resolve warnings/errors of sphinx build
 
 ## 0.1.0b5 (2023.09.08)
 
