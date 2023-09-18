@@ -193,6 +193,7 @@ class _Connection(YAMLTranslatableMixin):
         return obj
 
     @classmethod
+    @abc.abstractmethod
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
         # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
         type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
@@ -641,8 +642,9 @@ class CustomStrongTypeConnection(_Connection):
                 secrets[k] = field_value
             else:
                 configs[k] = field_value
-        if not secrets:
-            raise ValueError(f"Secrets is required for {_Connection.__class__.__name__}.")
+        # For custom connection secrets are not checked? So does CustomStrongTypeConnection?
+        # if not secrets:
+        #     raise ValueError(f"Secrets is required for {_Connection.__class__.__name__}.")
         module = self.__class__.__module__
         super().__init__(secrets=secrets, configs=configs, module=module, **kwargs)
 
@@ -679,9 +681,6 @@ class CustomConnection(_Connection):
 
     TYPE = ConnectionType.CUSTOM
 
-<<<<<<< HEAD
-    def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, is_azureml_custom_strong_type_connection = False, **kwargs):
-=======
     def __init__(
         self,
         secrets: Dict[str, str],
@@ -689,13 +688,6 @@ class CustomConnection(_Connection):
         is_azureml_custom_strong_type_connection=False,
         **kwargs,
     ):
-        if not secrets:
-            raise ValueError(
-                "Secrets is required for custom connection, "
-                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
-                "to initialize custom connection."
-            )
->>>>>>> 615f94eb (fix flake8 and add tests)
         # When create connection through file, we can't check if it is custom strong type through self.custom_type
         # So we need a hint 'is_custom_strong_type' to indicate it.
         if is_azureml_custom_strong_type_connection:
@@ -848,9 +840,6 @@ class CustomConnection(_Connection):
             if v.config_value_type == ConfigValueType.STRING.value
         }
 
-    def is_custom_strong_type(self):
-        return self.custom_type is not None
-
         secrets = {
             k: v.value
             for k, v in mt_rest_obj.custom_configs.items()
@@ -866,6 +855,8 @@ class CustomConnection(_Connection):
             last_modified_date=mt_rest_obj.last_modified_date,
         )
 
+    def is_custom_strong_type(self):
+        return self.custom_type is not None
 
     def convert_to_custom_strong_type_connection(self):
         module_name = self.configs.get(CustomStrongTypeConnectionConfigs.FULL_MODULE)
