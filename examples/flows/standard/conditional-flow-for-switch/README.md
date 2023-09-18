@@ -2,7 +2,8 @@
 
 This example is a conditional flow for switch scenario.
 
-....
+In this flow, with the search function of a certain mall as the background, the LLM node analyzes the user intention according to the input query and returns one of "product_recommendation", "order_search" and "product_info". The `class_check` node will output the specific user intention and select the corresponding node for execution, and perform different processing logic on the query,
+and then generate user-facing output.
 
 By following this example, you will learn how to create a conditional flow using the `activate config`.
 
