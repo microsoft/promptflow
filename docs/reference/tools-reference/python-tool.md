@@ -14,19 +14,20 @@ Users can effortlessly create Python tools, edit code, and verify results with e
 
 ### Types
 
-| Type | Python annotation             | Description                                |
-| ---- |-------------------------------|--------------------------------------------|
-| int | param: int                    | Integer type                               |
-| bool | param: bool                   | Boolean type                               |
-| string | param: str                    | String type                                |
-| double | param: float                  | Double type                                |
-| list | param: list or param: List[T] | List type                                  |
-| object | param: dict or param: Dict[K, V] | Object type                                |
-| xxConnection | param: xxConnection | Connection type, will be handled specially |
+| Type                                                | Python example                  | Description                                |
+|-----------------------------------------------------|---------------------------------|--------------------------------------------|
+| int                                                 | param: int                      | Integer type                               |
+| bool                                                | param: bool                     | Boolean type                               |
+| string                                              | param: str                      | String type                                |
+| double                                              | param: float                    | Double type                                |
+| list                                                | param: list or param: List[T]   | List type                                  |
+| object                                              | param: dict or param: Dict[K, V] | Object type                                |
+| [Connection](../../concepts/concept-connections.md) | param: CustomConnection         | Connection type, will be handled specially |
 
 
-Parameters with `Connection` type annotation will be treated as connection inputs, promptflow will try to find
-the connection name by the parameter value passed in during execution time.
+Parameters with `Connection` type annotation will be treated as connection inputs, which means:
+- Promptflow extension will show a selector to select the connection.
+- During execution time, promptflow will try to find the connection with the name same from parameter value passed in.
 
 Note that `Union[...]` type annotation is supported **ONLY** for connection type, 
 for example, `param: Union[CustomConnection, OpenAIConnection]`.
@@ -76,10 +77,10 @@ def my_python_tool(message: str, my_conn: CustomConnection) -> str:
 
 ### Inputs
 
-| Name    | Type   | Sample Value | 
-|---------|--------|--------------|
-| message | string | "world"      |
-| my_conn | CustomConnection | "my_conn" |
+| Name    | Type   | Sample Value in Flow Yaml | Value passed to function|
+|---------|--------|-------------------------| ------------------------|
+| message | string | "world"                 | "world"                 |
+| my_conn | CustomConnection | "my_conn"               | CustomConnection object |
 
 Promptflow will try to find the connection named 'my_conn' during execution time.
 
