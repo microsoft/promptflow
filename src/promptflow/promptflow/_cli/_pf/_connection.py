@@ -8,12 +8,12 @@ import logging
 from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
-from promptflow._cli._utils import activate_action, confirm, exception_handler, print_yellow_warning, get_secret_input
+from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
-from promptflow._sdk.entities._connection import _Connection, CustomConnection
+from promptflow._sdk.entities._connection import CustomConnection, _Connection
 
 logger = logging.getLogger(LOGGER_NAME)
 _client = PFClient()  # Do we have some function like PFClient.get_instance?
@@ -194,24 +194,31 @@ def list_connection():
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
 
 
+# TODO: Refine custom connection type check.
 def _check_custom_connection_type_match(old_connection, new_connection):
-    if type(old_connection) != CustomConnection:
+    if not isinstance(old_connection, CustomConnection):
         return
 
-    if type(new_connection) != CustomConnection:
+    if not isinstance(new_connection, CustomConnection):
         raise Exception("Connection type mismatch. Please specify the type as 'custom' in the yaml file.")
 
     if old_connection.is_custom_strong_type():
         if not new_connection.is_custom_strong_type():
-            raise Exception(f"Connection custom_type mismatch. Please specify custom_type as {old_connection.custom_type} in the yaml file.")
+            raise Exception(
+                f"Connection custom_type mismatch. "
+                f"Please specify custom_type as {old_connection.custom_type} in the yaml file."
+            )
         elif old_connection.custom_type != new_connection.custom_type:
-            raise Exception(f"Connection custom_type mismatch. Existing: {new_connection.custom_type}, supported: {old_connection.custom_type}.")
+            raise Exception(
+                f"Connection custom_type mismatch. "
+                f"Existing: {new_connection.custom_type}, supported: {old_connection.custom_type}."
+            )
     # shall we allow custom type to custom strong type?
     elif new_connection.is_custom_strong_type():
-        raise Exception(f"....")
+        raise Exception("CustomConnection to custom strong type connection not allowed!")
 
 
-def _upsert_connection_from_file(file, params_override=None, connection_spec = None):
+def _upsert_connection_from_file(file, params_override=None, connection_spec=None):
     # Note: This function is used for pfutil, do not edit it.
     params_override = params_override or []
     params_override.append(load_yaml(file))

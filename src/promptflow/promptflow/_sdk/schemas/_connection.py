@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import copy
 
-from marshmallow import fields, pre_dump, validates, ValidationError
+from marshmallow import ValidationError, fields, pre_dump, validates
 
 from promptflow._sdk._constants import ConnectionType
 from promptflow._sdk.schemas._base import YamlFileSchema
@@ -126,15 +126,19 @@ class CustomStrongTypeConnectionSchema(YamlFileSchema):
     last_modified_date = fields.Str(dump_only=True)
     expiry_time = fields.Str(dump_only=True)
 
-    @validates('module')
+    @validates("module")
     def validate_module(self, value):
-        if 'connection_spec' in self.context and value != self.context["connection_spec"]["module"]:
-            raise ValidationError(f'Unknown module type {value}. Supported: {self.context["connection_spec"]["module"]}')
+        if "connection_spec" in self.context and value != self.context["connection_spec"]["module"]:
+            raise ValidationError(
+                f'Unknown module type {value}. Supported: {self.context["connection_spec"]["module"]}'
+            )
 
-    @validates('custom_type')
+    @validates("custom_type")
     def validate_custom_type(self, value):
-        if 'connection_spec' in self.context and value != self.context['connection_spec']["connectionType"]:
-            raise ValidationError(f'Unknown connection type {value}. Supported: {self.context["connection_spec"]["connectionType"]}')
+        if "connection_spec" in self.context and value != self.context["connection_spec"]["connectionType"]:
+            raise ValidationError(
+                f'Unknown connection type {value}. Supported: {self.context["connection_spec"]["connectionType"]}'
+            )
 
     @pre_dump
     def _pre_dump(self, data, **kwargs):

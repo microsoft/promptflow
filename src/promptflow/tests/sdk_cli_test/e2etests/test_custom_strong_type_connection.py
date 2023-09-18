@@ -4,16 +4,17 @@ from pathlib import Path
 import pydash
 import pytest
 
+from promptflow._core.tools_manager import register_connections
 from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import CustomStrongTypeConnection
 from promptflow.contracts.types import Secret
-from promptflow._core.tools_manager import register_connections
 
 
 class MyCustomConnection(CustomStrongTypeConnection):
     api_key: Secret
     api_base: str
+
 
 register_connections([MyCustomConnection])
 
@@ -34,35 +35,27 @@ class TestCustomStrongTypeConnection:
         # Get
         result = _client.connections.get(name)
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
-            'module': 'promptflow.connections',
-            'type': 'custom',
-            'configs':
-            {
-                'api_base': 'test',
-                'azureml.connection.custom_type': 'MyCustomConnection',
-                'azureml.connection.module': 'sdk_cli_test.e2etests.test_custom_strong_type_connection'
+            "module": "promptflow.connections",
+            "type": "custom",
+            "configs": {
+                "api_base": "test",
+                "azureml.connection.custom_type": "MyCustomConnection",
+                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            'secrets':
-            {
-                'api_key': '******'
-            }
+            "secrets": {"api_key": "******"},
         }
         # Update
         conn.api_base = "test2"
         result = _client.connections.create_or_update(conn)
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
-            'module': 'promptflow.connections',
-            'type': 'custom',
-            'configs':
-            {
-                'api_base': 'test2',
-                'azureml.connection.custom_type': 'MyCustomConnection',
-                'azureml.connection.module': 'sdk_cli_test.e2etests.test_custom_strong_type_connection'
+            "module": "promptflow.connections",
+            "type": "custom",
+            "configs": {
+                "api_base": "test2",
+                "azureml.connection.custom_type": "MyCustomConnection",
+                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            'secrets':
-            {
-                'api_key': '******'
-            }
+            "secrets": {"api_key": "******"},
         }
         # List
         result = _client.connections.list()
@@ -81,35 +74,27 @@ class TestCustomStrongTypeConnection:
         # Get
         custom_conn = _client.connections.get(name)
         assert pydash.omit(custom_conn._to_dict(), ["created_date", "last_modified_date", "name"]) == {
-            'module': 'promptflow.connections',
-            'type': 'custom',
-            'configs':
-            {
-                'api_base': 'test',
-                'azureml.connection.custom_type': 'MyCustomConnection',
-                'azureml.connection.module': 'sdk_cli_test.e2etests.test_custom_strong_type_connection'
+            "module": "promptflow.connections",
+            "type": "custom",
+            "configs": {
+                "api_base": "test",
+                "azureml.connection.custom_type": "MyCustomConnection",
+                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            'secrets':
-            {
-                'api_key': '******'
-            }
+            "secrets": {"api_key": "******"},
         }
         # Update
         custom_conn.api_base = "test2"
         result = _client.connections.create_or_update(custom_conn)
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
-            'module': 'promptflow.connections',
-            'type': 'custom',
-            'configs':
-            {
-                'api_base': 'test2',
-                'azureml.connection.custom_type': 'MyCustomConnection',
-                'azureml.connection.module': 'sdk_cli_test.e2etests.test_custom_strong_type_connection'
+            "module": "promptflow.connections",
+            "type": "custom",
+            "configs": {
+                "api_base": "test2",
+                "azureml.connection.custom_type": "MyCustomConnection",
+                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
-            'secrets':
-            {
-                'api_key': '******'
-            }
+            "secrets": {"api_key": "******"},
         }
         # List
         result = _client.connections.list()

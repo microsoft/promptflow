@@ -7,7 +7,7 @@ from typing import List
 from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._utils import safe_parse_object_list
-from promptflow._sdk.entities._connection import _Connection, CustomConnection
+from promptflow._sdk.entities._connection import CustomConnection, _Connection
 
 
 class ConnectionOperations:
@@ -74,4 +74,3 @@ class ConnectionOperations:
         orm_object.lastModifiedDate = now
         ORMConnection.create_or_update(orm_object)
         return self.get(connection.name)
-

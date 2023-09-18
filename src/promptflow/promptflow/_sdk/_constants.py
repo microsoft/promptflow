@@ -50,6 +50,7 @@ AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 
+
 class CustomStrongTypeConnectionConfigs:
     PREFIX = "azureml.connection."
     TYPE = "custom_type"

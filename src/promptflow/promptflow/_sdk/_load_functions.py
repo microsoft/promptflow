@@ -51,8 +51,13 @@ def load_common(
     cls, type_str = cls._resolve_cls_and_type(data=yaml_dict, params_override=params_override)
 
     try:
-        return cls._load(data=yaml_dict, yaml_path=relative_origin, params_override=params_override,
-                         connection_spec = connection_spec, **kwargs)
+        return cls._load(
+            data=yaml_dict,
+            yaml_path=relative_origin,
+            params_override=params_override,
+            connection_spec=connection_spec,
+            **kwargs,
+        )
     except Exception as e:
         raise Exception(f"Load entity error: {e}") from e
 
@@ -74,12 +79,12 @@ def load_run(
 
 def load_connection(
     source: Union[str, PathLike, IO[AnyStr]],
-    connection_spec = None,
+    connection_spec=None,
     **kwargs,
 ):
     if Path(source).name.endswith(".env"):
         return _load_env_to_connection(source, **kwargs)
-    return load_common(_Connection, source, connection_spec = connection_spec, **kwargs)
+    return load_common(_Connection, source, connection_spec=connection_spec, **kwargs)
 
 
 def _load_env_to_connection(

@@ -63,6 +63,19 @@
       "key1"
     ]
   },
+  "custom_strong_type_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "api_key": "<your-key>",
+      "api_base": "This is my first custom connection.",
+      "azureml.connection.custom_type": "MyFirstConnection",
+      "azureml.connection.module": "my_tool_package.connections"
+    },
+    "module": "promptflow.connections",
+    "secret_keys": [
+      "api_key"
+    ]
+  },
   "open_ai_connection": {
     "type": "OpenAIConnection",
     "value": {

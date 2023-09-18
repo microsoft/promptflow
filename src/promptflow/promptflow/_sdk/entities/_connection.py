@@ -35,15 +35,14 @@ from promptflow._sdk.schemas._connection import (
     AzureOpenAIConnectionSchema,
     CognitiveSearchConnectionSchema,
     CustomConnectionSchema,
+    CustomStrongTypeConnectionSchema,
     FormRecognizerConnectionSchema,
     OpenAIConnectionSchema,
     QdrantConnectionSchema,
     SerpConnectionSchema,
     WeaviateConnectionSchema,
-    CustomStrongTypeConnectionSchema,
 )
 from promptflow.contracts.types import Secret
-
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -215,7 +214,7 @@ class _Connection(YAMLTranslatableMixin):
         data: Dict = None,
         yaml_path: Union[PathLike, str] = None,
         params_override: list = None,
-        connection_spec = None,
+        connection_spec=None,
         **kwargs,
     ) -> "_Connection":
         """Load a job object from a yaml file.
@@ -275,6 +274,7 @@ class _Connection(YAMLTranslatableMixin):
 
     def is_type_not_set(self):
         return self.TYPE == ConnectionType._NOT_SET
+
 
 class _StrongTypeConnection(_Connection):
     def _to_orm_object(self):
@@ -635,28 +635,25 @@ class CustomStrongTypeConnection(_Connection):
     def __init__(self, **kwargs):
         configs = {}
         secrets = {}
-        for k,v in self.__class__.__annotations__.items():
+        for k, v in self.__class__.__annotations__.items():
             field_value = kwargs.get(k, None)
             if v == Secret:
                 secrets[k] = field_value
             else:
                 configs[k] = field_value
         if not secrets:
-            raise ValueError(
-                f"Secrets is required for {_Connection.__class__.__name__}."
-            )
+            raise ValueError(f"Secrets is required for {_Connection.__class__.__name__}.")
         module = self.__class__.__module__
-        super().__init__(secrets=secrets, configs=configs, module = module, **kwargs)
-
+        super().__init__(secrets=secrets, configs=configs, module=module, **kwargs)
 
     def __setattr__(self, key, value):
         if key in self.__annotations__:
-            if type(value) == Secret:
+            if isinstance(value, Secret):
                 self.secrets[key] = value
             else:
                 self.configs[key] = value
         else:
-            super().__setattr__(key,value)
+            super().__setattr__(key, value)
 
     def is_custom_strong_type(self):
         return True
@@ -666,7 +663,6 @@ class CustomStrongTypeConnection(_Connection):
 
     def _to_orm_object(self) -> ORMConnection:
         pass
-
 
 
 class CustomConnection(_Connection):
@@ -683,16 +679,38 @@ class CustomConnection(_Connection):
 
     TYPE = ConnectionType.CUSTOM
 
+<<<<<<< HEAD
     def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, is_azureml_custom_strong_type_connection = False, **kwargs):
+=======
+    def __init__(
+        self,
+        secrets: Dict[str, str],
+        configs: Dict[str, str] = None,
+        is_azureml_custom_strong_type_connection=False,
+        **kwargs,
+    ):
+        if not secrets:
+            raise ValueError(
+                "Secrets is required for custom connection, "
+                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                "to initialize custom connection."
+            )
+>>>>>>> 615f94eb (fix flake8 and add tests)
         # When create connection through file, we can't check if it is custom strong type through self.custom_type
         # So we need a hint 'is_custom_strong_type' to indicate it.
         if is_azureml_custom_strong_type_connection:
-            configs.update({CustomStrongTypeConnectionConfigs.FULL_TYPE: kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)})
-            configs.update({CustomStrongTypeConnectionConfigs.FULL_MODULE: kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, None)})
+            configs.update(
+                {CustomStrongTypeConnectionConfigs.FULL_TYPE: kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)}
+            )
+            configs.update(
+                {
+                    CustomStrongTypeConnectionConfigs.FULL_MODULE: kwargs.get(
+                        CustomStrongTypeConnectionConfigs.MODULE, None
+                    )
+                }
+            )
         super().__init__(secrets=secrets, configs=configs, **kwargs)
         self.custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
-
-
 
     @classmethod
     def _get_schema_cls(cls, is_custom_strong_type=False):
@@ -705,25 +723,29 @@ class CustomConnection(_Connection):
         # Note here are two cases:
         # 1. When create/load connection data from yaml, the custom_type and module are outside the configs of data.
         # 2. When update/load connection data from DB, the custom_type and module are within the configs of data.
-        is_custom_strong_type = data.get(CustomStrongTypeConnectionConfigs.TYPE) or (data.get("configs") and data.get("configs").get(CustomStrongTypeConnectionConfigs.FULL_TYPE))
-        schema_cls = cls._get_schema_cls(is_custom_strong_type = is_custom_strong_type)
+        is_custom_strong_type = data.get(CustomStrongTypeConnectionConfigs.TYPE) or (
+            data.get("configs") and data.get("configs").get(CustomStrongTypeConnectionConfigs.FULL_TYPE)
+        )
+        schema_cls = cls._get_schema_cls(is_custom_strong_type=is_custom_strong_type)
         try:
             loaded_data = schema_cls(context=context).load(data, **kwargs)
         except Exception as e:
             raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
-        return cls(base_path=context[BASE_PATH_CONTEXT_KEY], is_azureml_custom_strong_type_connection = is_custom_strong_type, **loaded_data)
-
+        return cls(
+            base_path=context[BASE_PATH_CONTEXT_KEY],
+            is_azureml_custom_strong_type_connection=is_custom_strong_type,
+            **loaded_data,
+        )
 
     def __setattr__(self, key, value):
         if hasattr(self, "custom_type") and self.is_custom_strong_type():
-            if value and type(value) == Secret and hasattr(self, "secrets") and key in self.secrets:
+            if isinstance(value, Secret) and hasattr(self, "secrets") and key in self.secrets:
                 self.secrets[key] = value
                 return
-            if value and type(value) != Secret and hasattr(self, "configs") and key in self.configs:
+            if not isinstance(value, Secret) and hasattr(self, "configs") and key in self.configs:
                 self.configs[key] = value
                 return
         super().__setattr__(key, value)
-
 
     def __getattr__(self, item):
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
@@ -849,6 +871,7 @@ class CustomConnection(_Connection):
         module_name = self.configs.get(CustomStrongTypeConnectionConfigs.FULL_MODULE)
         custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.FULL_TYPE)
         import importlib
+
         module = importlib.import_module(module_name)
         custom_defined_connection_class = getattr(module, custom_type_class_name)
 
@@ -868,12 +891,8 @@ class CustomConnection(_Connection):
         attributes["module"] = PROMPTFLOW_CONNECTIONS
         # update configs
         configs = {}
-        configs.update(
-            {CustomStrongTypeConnectionConfigs.FULL_TYPE: custom_str_type_connection.__class__.__name__}
-        )
-        configs.update(
-            {CustomStrongTypeConnectionConfigs.FULL_MODULE: custom_str_type_connection.__module__}
-        )
+        configs.update({CustomStrongTypeConnectionConfigs.FULL_TYPE: custom_str_type_connection.__class__.__name__})
+        configs.update({CustomStrongTypeConnectionConfigs.FULL_MODULE: custom_str_type_connection.__module__})
         configs.update(**custom_str_type_connection.configs)
 
         attributes["configs"] = configs

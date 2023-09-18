@@ -2,19 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from dataclasses import fields
 import importlib
 import importlib.util
 import inspect
-from jinja2 import Template
 import logging
 import traceback
+from dataclasses import fields
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Tuple, Union
 
 import pkg_resources
 import yaml
+from jinja2 import Template
 
 from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
@@ -24,9 +24,13 @@ from promptflow._core.tool_meta_generator import (
     generate_python_tool,
     load_python_module_from_file,
 )
-from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func, is_custom_tool_package
+from promptflow._utils.tool_utils import (
+    function_to_tool_definition,
+    get_prompt_param_name_from_func,
+    is_custom_tool_package,
+)
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import Tool, ToolType, ConnectionType
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 module_logger = logging.getLogger(__name__)
@@ -93,22 +97,24 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
 
                 if is_custom_tool_package(m):
                     # Get custom strong type connection definition
-                    custom_strong_type_connections_classes = [obj for name, obj in inspect.getmembers(module) if
-                                                              inspect.isclass(
-                                                                  obj) and ConnectionType.is_custom_strong_type_connection(
-                                                                  obj)]
+                    custom_strong_type_connections_classes = [
+                        obj
+                        for name, obj in inspect.getmembers(module)
+                        if inspect.isclass(obj) and ConnectionType.is_custom_strong_type_connection(obj)
+                    ]
 
                     if custom_strong_type_connections_classes:
                         for cls in custom_strong_type_connections_classes:
                             identifier = f"{cls.__module__}.{cls.__name__}"
-                            connection_spec = generate_custom_strong_type_connection_spec(cls,
-                                                                                          entry_point.dist.project_name,
-                                                                                          entry_point.dist.version)
+                            connection_spec = generate_custom_strong_type_connection_spec(
+                                cls, entry_point.dist.project_name, entry_point.dist.version
+                            )
                             all_package_connection_specs[identifier] = connection_spec
                             all_package_connection_templates[
-                                identifier] = generate_custom_strong_type_connection_template(cls, connection_spec,
-                                                                                              entry_point.dist.project_name,
-                                                                                              entry_point.dist.version)
+                                identifier
+                            ] = generate_custom_strong_type_connection_template(
+                                cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
+                            )
 
         except Exception as e:
             msg = (
@@ -129,7 +135,7 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
         "configSpecs": [],
         "module": cls.__module__,
         "package": package,
-        "package_version": package_version
+        "package_version": package_version,
     }
 
     for field in fields(cls):
@@ -145,17 +151,17 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
 
 def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
     connection_template_str = """
-    name: <connection-name>  
+    name: <connection-name>
     type: custom
     custom_type: {{ custom_type }}
     module: {{ module }}
     package: {{ package }}
     package_version: {{ package_version }}
-    configs:  
-      {% for key, value in configs.items() %}  
-      {{ key }}: "{{ value -}}"{% endfor %}  
-    secrets:  # must-have{% for key, value in secrets.items() %}  
-      {{ key }}: "{{ value -}}"{% endfor %}  
+    configs:
+      {% for key, value in configs.items() %}
+      {{ key }}: "{{ value -}}"{% endfor %}
+    secrets:  # must-have{% for key, value in secrets.items() %}
+      {{ key }}: "{{ value -}}"{% endfor %}
     """
 
     configs = {}
@@ -173,7 +179,8 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
         "package": package,
         "package_version": package_version,
         "configs": configs,
-        "secrets": secrets}
+        "secrets": secrets,
+    }
 
     return connection_template.render(data)
 
