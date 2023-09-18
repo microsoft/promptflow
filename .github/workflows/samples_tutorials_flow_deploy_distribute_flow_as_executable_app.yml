@@ -3,13 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_tutorials_flow_deploy_flow_model_packaging
+name: samples_tutorials_flow_deploy_distribute_flow_as_executable_app
 on:
   schedule:
     - cron: "10 19 * * *" # Every day starting at 3:10 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_flow_model_packaging.yml ]
+    paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_distribute_flow_as_executable_app.yml ]
   workflow_dispatch:
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/tutorials/flow-deploy/flow-model-packaging
+        working-directory: examples/tutorials/flow-deploy/distribute-flow-as-executable-app
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -48,7 +48,7 @@ jobs:
             mv .env.example .env
           fi
       - name: Create run.yml
-        working-directory: examples/tutorials/flow-deploy/flow-model-packaging
+        working-directory: examples/tutorials/flow-deploy/distribute-flow-as-executable-app
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -59,16 +59,16 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/tutorials/flow-deploy/flow-model-packaging/README.md
+      - name: Extract Steps examples/tutorials/flow-deploy/distribute-flow-as-executable-app/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/flow-deploy/flow-model-packaging/README.md -o examples/tutorials/flow-deploy/flow-model-packaging
+          python scripts/readme/extract_steps_from_readme.py -f examples/tutorials/flow-deploy/distribute-flow-as-executable-app/README.md -o examples/tutorials/flow-deploy/distribute-flow-as-executable-app
       - name: Cat script
-        working-directory: examples/tutorials/flow-deploy/flow-model-packaging
+        working-directory: examples/tutorials/flow-deploy/distribute-flow-as-executable-app
         run: |
           cat bash_script.sh
       - name: Run scripts
-        working-directory: examples/tutorials/flow-deploy/flow-model-packaging
+        working-directory: examples/tutorials/flow-deploy/distribute-flow-as-executable-app
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -78,7 +78,7 @@ jobs:
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
-        working-directory: examples/tutorials/flow-deploy/flow-model-packaging
+        working-directory: examples/tutorials/flow-deploy/distribute-flow-as-executable-app
         run: |
           pip list
       - name: Upload artifact
@@ -86,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/tutorials/flow-deploy/flow-model-packaging/bash_script.sh
+          path: examples/tutorials/flow-deploy/distribute-flow-as-executable-app/bash_script.sh

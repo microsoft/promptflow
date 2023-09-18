@@ -1,4 +1,4 @@
-# Flow model packaging
+# Distribute flow as exectuable app
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
@@ -62,29 +62,17 @@ Additionally, please ensure that you have installed all the required dependencie
 A Python entry file is included as the entry point for the bundled app. We offer a Python file named `start.py`` here, which enables you to serve a flow folder as an endpoint.
 
 ```python
-import subprocess
 import os
 import json
+import argparse
 
-def setup_promptflow(requirement_path) -> None:
-    if os.path.exists(requirement_path):
-        print("- Setting up the promptflow requirements")
-        cmds = ["pip", "install", "-q", "-r", requirement_path]
-        subprocess.run(cmds)
-    else:
-        print("- Setting up the promptflow")
-        cmds = ["pip", "install", "promptflow", "-q"]
-        subprocess.run(cmds)
-
-        print("- Setting up the promptflow-tools")
-        cmds = ["pip", "install", "promptflow-tools", "-q"]
-        subprocess.run(cmds)
-
-def create_connection(directory_path) -> None:
+from promptflow._cli._pf._connection import create_connection
+from promptflow._cli._pf._flow import serve_flow
+def create_connections(directory_path) -> None:
     for root, dirs, files in os.walk(directory_path):
         for file in files:
             file_path = os.path.join(root, file)
-            subprocess.run(["pf", "connection", "create", "--file", file_path])
+            create_connection(file_path)
 
 
 def set_environment_variable(file_path) -> None:
@@ -100,11 +88,37 @@ def set_environment_variable(file_path) -> None:
             os.environ[environment_variable] = user_input
 
 if __name__ == "__main__":
-    setup_promptflow("./flow/requirements.txt")
-    create_connection("./connections")
+    create_connections("./connections")
     set_environment_variable("./settings.json")
     # Execute 'pf flow serve' command
-    subprocess.run(["pf", "flow", "serve", "--source", "flow", "--host", "0.0.0.0"])
+    # setup argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--source",
+        default="flow",
+    )
+    parser.add_argument(
+        "--port",
+        default="8080",
+    )
+    parser.add_argument(
+        "--host",
+        default="0.0.0.0",
+    )
+    parser.add_argument(  # noqa: E731
+        "--static_folder", type=str, help=argparse.SUPPRESS
+    )
+
+    parser.add_argument(
+        "--environment-variables",
+        help="Environment variables to set by specifying a property path and value. Example: --environment-variable "
+        "key1='${my_connection.api_key}' key2='value2'. The value reference to connection keys will be resolved "
+        "to the actual value, and all environment variables specified will be set into os.environ.",
+        nargs="+",
+    )
+
+    args = parser.parse_args()
+    serve_flow(args)
 ```
 
 ### Prepare a spec file
@@ -115,15 +129,17 @@ To streamline this process, we offer a `start.spec`` spec file that bundles the 
 ```spec
 # -*- mode: python ; coding: utf-8 -*-
 
+
 block_cipher = None
+
 
 a = Analysis(
     ['start.py'],
     pathex=[],
     binaries=[],
     datas=[("./connections", "connections"), ("./flow", "flow"), ("./settings.json", ".")],
-    hiddenimports=[],
-    hookspath=[],
+    hiddenimports=["promptflow", "promptflow-tools", "bs4"],
+    hookspath=["."],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
@@ -161,7 +177,6 @@ coll = COLLECT(
     upx_exclude=[],
     name='start',
 )
-
 ```
 
 ### Package flow using Pyinstaller
@@ -187,7 +202,7 @@ api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 We will prompt you to set up the environment variables in the console to make the connections work.
 
 ### Test the endpoint
-Finaly, You can compress the `dist` folder and distribute the bundle to other people. They can decompress it and execute your program by double clicking the executable file, e.g. `start.exe` in Windows system or excuting the binary file, e.g. `start` in Linux system. 
+Finally, You can compress the `dist` folder and distribute the bundle to other people. They can decompress it and execute your program by double clicking the executable file, e.g. `start.exe` in Windows system or execute the binary file, e.g. `start` in Linux system. 
 
 Then they can open another terminal to test the endpoint with the following command:
 ```bash
