@@ -13,12 +13,11 @@ nodes:
     type: code
     path: classify_with_llm.jinja2
   inputs:
-    deployment_name: text-davinci-003
+    deployment_name: gpt-35-turbo
     max_tokens: 128
-    temperature: 1
     query: ${inputs.query}
-  connection: azure_open_ai_connection
-  api: completion
+  connection: open_ai_connection
+  api: chat
 - name: class_check
   type: python
   source:
