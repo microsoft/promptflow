@@ -406,7 +406,7 @@ class FlowExecutor:
             raise UnexpectedError(
                 message_format=(
                     "Unexpected error occurs while executing the aggregated nodes. "
-                    "The failure details: {error_type_and_message}. Please fix or contact support for assistance."
+                    "The error details: {error_type_and_message}. Please fix or contact support for assistance."
                 ),
                 error_type_and_message=error_type_and_message,
             ) from e
