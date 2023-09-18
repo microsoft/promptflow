@@ -4,6 +4,8 @@ my_tool_package.tools.my_tool_1.my_tool:
     connection:
       type:
       - CustomConnection
+      custom_type:
+      - MyFirstConnection
     input_text:
       type:
       - string
