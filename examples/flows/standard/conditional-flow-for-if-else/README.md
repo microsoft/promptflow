@@ -4,9 +4,13 @@ This example is a conditonal flow for if-else scenario.
 
 In this flow, it checks if an input query passes content safety check. If it's denied, we'll return a default response; otherwise, we'll call LLM to get a response and then summarize the final results.
 
-:::{admonition} Notice
-The 'content_safety_check' and 'llm_result' node in this flow are dummy nodes that do not actually use the conten safety tool and LLM tool. You can replace them with the real ones. Learn more: [LLM Tool](https://microsoft.github.io/promptflow/reference/tools-reference/llm-tool.html)
-:::
+The following are two execution situations of this flow:
+- if input query passes content safety check:
+  ![content_safety_check_passed](content_safety_check_passed.png)
+- else:
+  ![content_safety_check_failed](content_safety_check_failed.png)
+
+**Notice**: The `content_safety_check` and `llm_result` node in this flow are dummy nodes that do not actually use the conten safety tool and LLM tool. You can replace them with the real ones. Learn more: [LLM Tool](https://microsoft.github.io/promptflow/reference/tools-reference/llm-tool.html)
 
 By following this example, you will learn how to create a conditional flow using the `activate config`.
 
