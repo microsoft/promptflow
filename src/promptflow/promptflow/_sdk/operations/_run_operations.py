@@ -35,7 +35,7 @@ class RunOperations:
         self,
         max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
         *,
-        list_view_type: ListViewType = ListViewType.ACTIVE_ONLY,
+        list_view_typle: ListViewType = ListViewType.ACTIVE_ONLY,
     ) -> List[Run]:
         """List runs.
 
@@ -46,7 +46,7 @@ class RunOperations:
         :return: List of run objects.
         :rtype: List[~promptflow.entities.Run]
         """
-        orm_runs = ORMRun.list(max_results=max_results, list_view_type=list_view_type)
+        orm_runs = ORMRun.list(max_results=max_results, list_view_type=list_view_typle)
         return safe_parse_object_list(
             obj_list=orm_runs,
             parser=Run._from_orm_object,
