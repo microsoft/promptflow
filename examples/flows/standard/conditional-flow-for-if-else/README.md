@@ -30,7 +30,11 @@ pf flow test --flow . --inputs question="What is Prompt flow?"
 
 - Create run with multiple lines of data
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+# create a random run name
+run_name="conditional_flow_for_if_else_"$(openssl rand -hex 12)
+
+# create run
+pf run create --flow . --data ./data.jsonl --stream --name $run_name
 ```
 
 - List and show run metadata
@@ -38,15 +42,12 @@ pf run create --flow . --data ./data.jsonl --stream
 # list created run
 pf run list
 
-# get a sample run name
-name=$(pf run list -r 10 | jq '.[] | select(.name | contains("conditional_flow_for_if_else")) | .name'| head -n 1 | tr -d '"')
-
 # show specific run detail
-pf run show --name $name
+pf run show --name $run_name
 
 # show output
-pf run show-details --name $name
+pf run show-details --name $run_name
 
 # visualize run in browser
-pf run visualize --name $name
+pf run visualize --name $run_name
 ```
