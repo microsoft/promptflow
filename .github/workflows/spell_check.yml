@@ -25,4 +25,6 @@ jobs:
         run: npm install -g cspell
 
       - name: Run cspell
-        run: cspell lint "**"
+        run: |-
+          cspell lint "**"
+          echo -e "\e[91mNote: If the detected words are expected, add them in ".cspell.json".\e[0m" 

@@ -24,8 +24,7 @@
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/tests/**",
-    "**/flow.dag.yaml",
-    "docs/cloud/azureai/faq.md"
+    "**/flow.dag.yaml"
   ],
   "words": [
     "propmtflow",
@@ -52,7 +51,6 @@
     "logit",
     "hnsw",
     "chatml",
-    "dtype",
     "UNLCK",
     "KHTML",
     "numlines",
@@ -68,7 +66,10 @@
     "pfutil",
     "mgmt",
     "wsid",
-    "westus"
+    "westus",
+    "msrest",
+    "cref",
+    "msal"
   ],
   "ignoreWords": [
     "openmpi",
@@ -118,11 +119,13 @@
     "continuumio",
     "pydantic",
     "iterrows",
+    "dtype",
     "fillna",
     "nlines",
     "aggr",
     "tcsetattr",
-    "pysqlite"
+    "pysqlite",
+    "AADSTS700082"
   ],
   "allowCompoundWords": true
 }

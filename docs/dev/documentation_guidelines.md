@@ -140,7 +140,7 @@ You can build the documentation site locally to preview the final effect of your
 4. Check warnings/errors in the build log, fix them if any, then build again.
 5. Open `scripts/docs/_build/index.html` to preview the local doc site.
 
-## Aditional comments
+## Additional comments
 
 - **Utilities**: The [autoDocstring](https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring) VSCode extension or GitHub Copilot can help autocomplete in this style for you.
 
