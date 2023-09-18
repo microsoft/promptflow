@@ -4,6 +4,10 @@ This example is a conditonal flow for if-else scenario.
 
 In this flow, it checks if an input query passes content safety check. If it's denied, we'll return a default response; otherwise, we'll call LLM to get a response and then summarize the final results.
 
+:::{admonition} Notice
+The 'content_safety_check' and 'llm_result' node in this flow are dummy nodes that do not actually use connections of `Azure Content Safty` and `Azure Open AI`. You can replace them with the real ones. Learn more: [Manage connections](../../../connections/connection.ipynb)
+:::
+
 By following this example, you will learn how to create a conditional flow using the `activate config`.
 
 ## Prerequisites
