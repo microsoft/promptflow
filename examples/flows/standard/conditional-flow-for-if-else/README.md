@@ -1,6 +1,6 @@
 # Conditional flow for if-else scenario
 
-This example is a conditonal flow for if-else scenario.
+This example is a conditional flow for if-else scenario.
 
 In this flow, it checks if an input query passes content safety check. If it's denied, we'll return a default response; otherwise, we'll call LLM to get a response and then summarize the final results.
 
