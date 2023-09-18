@@ -110,15 +110,15 @@ class FlowValidator:
         """Resolve inputs by type if existing. Ignore missing inputs.
 
         :param flow: The `flow` parameter is of type `Flow` and represents a flow object
-        :type flow: Flow
+        :type flow: promptflow.contracts.flow.Flow
         :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
-        flow inputs, and the values are the corresponding input values
+            flow inputs, and the values are the corresponding input values
         :type inputs: Mapping[str, Any]
         :param idx: The `idx` parameter is an optional integer that represents the line index of the input
-        data. It is used to provide additional information in case there is an error with the input data
+            data. It is used to provide additional information in case there is an error with the input data
         :type idx: Optional[int]
-        :return: The updated inputs, where the values are
-        type-converted based on the expected type specified in the `flow` object.
+        :return: The updated inputs with values are type-converted based on the expected type specified
+            in the `flow` object.
         :rtype: Mapping[str, Any]
         """
         updated_inputs = {k: v for k, v in inputs.items()}
@@ -143,15 +143,15 @@ class FlowValidator:
         """Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
         :param flow: The `flow` parameter is of type `Flow` and represents a flow object
-        :type flow: Flow
+        :type flow: promptflow.contracts.flow.Flow
         :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
-        flow inputs, and the values are the corresponding input values
+            flow inputs, and the values are the corresponding input values
         :type inputs: Mapping[str, Any]
         :param idx: The `idx` parameter is an optional integer that represents the line index of the input
-        data. It is used to provide additional information in case there is an error with the input data
+            data. It is used to provide additional information in case there is an error with the input data
         :type idx: Optional[int]
         :return: The updated inputs, where the values are type-converted based on the expected
-        type specified in the `flow` object.
+            type specified in the `flow` object.
         :rtype: Mapping[str, Any]
         """
         for k, v in flow.inputs.items():
@@ -170,15 +170,14 @@ class FlowValidator:
         """Filter the flow inputs for node and resolve the value by type.
 
         :param flow: The `flow` parameter is an instance of the `Flow` class. It represents the flow or
-        workflow that contains the node and inputs
-        :type flow: Flow
+            workflow that contains the node and inputs
+        :type flow: promptflow.contracts.flow.Flow
         :param node: The `node` parameter is an instance of the `Node` class
-        :type node: Node
+        :type node: promptflow.contracts.flow.Node
         :param inputs: A dictionary containing the input values for the node. The keys are the names of the
-        input variables, and the values are the corresponding input values
+            input variables, and the values are the corresponding input values
         :type inputs: Mapping[str, Any]
-        :return: the resolved flow inputs which are needed by the node only
-        by the node only.
+        :return: the resolved flow inputs which are needed by the node only by the node only.
         :rtype: Mapping[str, Any]
         """
         updated_inputs = {}
