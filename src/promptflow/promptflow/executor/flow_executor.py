@@ -405,8 +405,8 @@ class FlowExecutor:
             error_type_and_message = f"({e.__class__.__name__}) {e}"
             raise UnexpectedError(
                 message_format=(
-                    "Aggregation nodes execution failed. The failure details: {error_type_and_message}. "
-                    "Please fix or contact support for assistance."
+                    "Unexpected error occurs while executing the aggregated nodes. "
+                    "The failure details: {error_type_and_message}. Please fix or contact support for assistance."
                 ),
                 error_type_and_message=error_type_and_message,
             ) from e
