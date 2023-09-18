@@ -19,13 +19,18 @@ pip install -r requirements.txt
 
 ## Run flow
 
-- Test flow/node
+- Test flow
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
 
 # test with flow inputs
 pf flow test --flow . --inputs question="What is Prompt flow?"
+```
+
+- Create run with multiple lines data
+```bash
+pf run create --flow . --data ./data.jsonl --stream
 ```
 
 - List and show run meta
