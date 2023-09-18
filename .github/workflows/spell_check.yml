@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Use Node.js 20.x
@@ -21,10 +21,8 @@ jobs:
         with:
           node-version: "20.x"
 
-      - name: install cspell
-        run: |-
-          npm install -g cspell
-          cspell lint "$(srcPath)/azure-ai-ml/**"
+      - name: Install cspell
+        run: npm install -g cspell
 
-      - name: run cspell
-        run: flake8
+      - name: Run cspell
+        run: cspell lint "**"
