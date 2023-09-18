@@ -71,7 +71,7 @@ If you encounter any issues or errors while using `activate config` in Prompt fl
 - Error description:
 - Solution:
 
-These error codes and their respective solutions should help you troubleshoot common issues related to `activate config` and ensure the smooth execution of your conditonal flow. If you continue to experience difficulties, please consult our comprehensive documentation or reach out to our support team for assistance.
+These error codes and their respective solutions should help you troubleshoot common issues related to `activate config` and ensure the smooth execution of your conditional flow. If you continue to experience difficulties, please consult our comprehensive documentation or reach out to our support team for assistance.
 
 ## Next steps
 
