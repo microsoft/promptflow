@@ -4,7 +4,7 @@ or do some complex data processing.
 
 A custom script tool is defined by a python function, and can be referenced and used as a flow node.
 
-## Define a tool
+## Define a script tool
 A tool function is a python function with specific signatures. The function must be defined in a python file, and 
 decorated with `@tool` function decorator.
 
