@@ -97,7 +97,7 @@ class RunTracker(ThreadLocalSingleton):
             index=index,
             variant_id=variant_id,
         )
-        logger.info(f"LineResult {index}: run_info {run_info}==========")
+        logger.info(f"LineResult {index}: start_flow_run, run_info {run_info}==========")
         self.persist_flow_run(run_info)
         self._flow_runs[run_id] = run_info
         self._current_run_id = run_id
