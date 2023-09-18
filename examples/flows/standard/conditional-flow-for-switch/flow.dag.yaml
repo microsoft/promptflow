@@ -1,0 +1,67 @@
+inputs:
+  query:
+    type: string
+    default: When will my order be shipped?
+outputs:
+  response:
+    type: string
+    reference: ${generate_response.output}
+nodes:
+- name: classify_with_llm
+  type: llm
+  source:
+    type: code
+    path: classify_with_llm.jinja2
+  inputs:
+    deployment_name: text-davinci-003
+    max_tokens: 128
+    temperature: 1
+    query: ${inputs.query}
+  connection: azure_open_ai_connection
+  api: completion
+- name: class_check
+  type: python
+  source:
+    type: code
+    path: class_check.py
+  inputs:
+    llm_result: ${classify_with_llm.output}
+- name: order_search
+  type: python
+  source:
+    type: code
+    path: order_search.py
+  inputs:
+    query: ${inputs.query}
+  activate:
+    when: ${class_check.output}
+    is: order_search
+- name: product_info
+  type: python
+  source:
+    type: code
+    path: product_info.py
+  inputs:
+    query: ${inputs.query}
+  activate:
+    when: ${class_check.output}
+    is: product_info
+- name: product_recommendation
+  type: python
+  source:
+    type: code
+    path: product_recommendation.py
+  inputs:
+    query: ${inputs.query}
+  activate:
+    when: ${class_check.output}
+    is: product_recommendation
+- name: generate_response
+  type: python
+  source:
+    type: code
+    path: generate_response.py
+  inputs:
+    order_search: ${order_search.output}
+    product_info: ${product_info.output}
+    product_recommendation: ${product_recommendation.output}
