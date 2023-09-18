@@ -5,6 +5,7 @@ import argparse
 from promptflow._cli._pf._connection import create_connection
 from promptflow._cli._pf._flow import serve_flow
 
+
 def create_connections(directory_path) -> None:
     for root, dirs, files in os.walk(directory_path):
         for file in files:
