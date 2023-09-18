@@ -408,7 +408,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
             if args is None:
                 logger.info(f"Process {os.getpid()} queue1 empty, exit. args:{args}")
             else:
-                logger.info(f"Process {os.getpid()} got1 task. args: {args[1]}")
+                logger.info(f"Process {os.getpid()} got1 task. args: {args[1]}, {args}")
             inputs, line_number, run_id, variant_id, validate_inputs = args[:5]
             result = _exec_line(
                 executor=executor,
