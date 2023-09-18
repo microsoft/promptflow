@@ -57,13 +57,13 @@ class FlowExecutor:
     """This class is used to execute a single flow for different inputs.
 
     :param flow: The flow to be executed.
-    :type flow: Flow
+    :type flow: ~promptflow.contracts.flow.Flow
     :param connections: The connections to be used for the flow.
     :type connections: dict
     :param run_tracker: The run tracker to be used for the flow.
-    :type run_tracker: RunTracker
+    :type run_tracker: ~promptflow._core.run_tracker.RunTracker
     :param cache_manager: The cache manager to be used for the flow.
-    :type cache_manager: AbstractCacheManager
+    :type cache_manager: ~promptflow._core.cache_manager.AbstractCacheManager
     :param loaded_tools: The loaded tools to be used for the flow.
     :type loaded_tools: Mapping[str, Callable]
     :param worker_count: The number of workers to be used for the flow. Default is 16.
@@ -97,13 +97,13 @@ class FlowExecutor:
         """Initialize a FlowExecutor object.
 
         :param flow: The Flow object to execute.
-        :type flow: Flow
+        :type flow: ~promptflow.contracts.flow.Flow
         :param connections: The connections between nodes in the Flow.
         :type connections: dict
         :param run_tracker: The RunTracker object to track the execution of the Flow.
-        :type run_tracker: RunTracker
+        :type run_tracker: ~promptflow._core.run_tracker.RunTracker
         :param cache_manager: The AbstractCacheManager object to manage caching of results.
-        :type cache_manager: AbstractCacheManager
+        :type cache_manager: ~promptflow._core.cache_manager.AbstractCacheManager
         :param loaded_tools: A mapping of tool names to their corresponding functions.
         :type loaded_tools: Mapping[str, Callable]
         :param worker_count: The number of workers to use for parallel execution of the Flow.
@@ -187,7 +187,7 @@ class FlowExecutor:
         :param working_dir: The working directory to be used for the flow. Default is None.
         :type working_dir: Optional[str]
         :param storage: The storage to be used for the flow. Default is None.
-        :type storage: Optional[AbstractRunStorage]
+        :type storage: Optional[~promptflow.storage.AbstractRunStorage]
         :param raise_ex: Whether to raise exceptions or not. Default is True.
         :type raise_ex: Optional[bool]
         :param node_override: The node overrides to be used for the flow. Default is None.
@@ -195,7 +195,7 @@ class FlowExecutor:
         :param line_timeout_sec: The line timeout in seconds to be used for the flow. Default is LINE_TIMEOUT_SEC.
         :type line_timeout_sec: Optional[int]
         :return: A new instance of FlowExecutor.
-        :rtype: FlowExecutor
+        :rtype: ~promptflow.executor.flow_executor.FlowExecutor
         """
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         flow = Flow.from_yaml(flow_file, working_dir=working_dir)
@@ -348,7 +348,7 @@ class FlowExecutor:
         return update_environment_variables_with_connections(connections)
 
     def convert_flow_input_types(self, inputs: dict) -> Mapping[str, Any]:
-        """ Convert the input types of the given inputs dictionary to match the expected types of the flow.
+        """Convert the input types of the given inputs dictionary to match the expected types of the flow.
 
         :param inputs: A dictionary containing the inputs to the flow.
         :type inputs: dict
@@ -524,7 +524,7 @@ class FlowExecutor:
         :param node_concurrency: The maximum number of nodes that can be executed concurrently.
         :type node_concurrency: int
         :return: The result of the aggregation node.
-        :rtype: AggregationResult
+        :rtype: ~promptflow.executor._result.AggregationResult
         :raises: FlowError if the inputs or aggregation_inputs are invalid.
         """
         self._node_concurrency = node_concurrency
@@ -625,8 +625,17 @@ class FlowExecutor:
         finally:
             remove_metric_logger(_log_metric)
 
-    def exec(self, inputs: dict, node_concurency=DEFAULT_CONCURRENCY_FLOW) -> dict:
-        self._node_concurrency = node_concurency
+    def exec(self, inputs: dict, node_concurrency=DEFAULT_CONCURRENCY_FLOW) -> dict:
+        """Executes the flow with the given inputs and returns the output.
+
+        :param inputs: A dictionary containing the input values for the flow.
+        :type inputs: dict
+        :param node_concurrency: The maximum number of nodes that can be executed concurrently.
+        :type node_concurrency: int
+        :return: A dictionary containing the output values of the flow.
+        :rtype: dict
+        """
+        self._node_concurrency = node_concurrency
         inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
@@ -682,7 +691,7 @@ class FlowExecutor:
         :param allow_generator_output: Whether to allow generator output.
         :type allow_generator_output: bool
         :return: The result of executing the line.
-        :rtype: LineResult
+        :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
         inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
@@ -731,7 +740,8 @@ class FlowExecutor:
         :type run_id: Optional[str]
         :param validate_inputs: Whether to validate the inputs. Defaults to True.
         :type validate_inputs: Optional[bool]
-        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False.
+        :param raise_on_line_failure: Whether to raise an exception on line failure. Defaults to False. \
+        [To be deprecated]
         :type raise_on_line_failure: Optional[bool]
         :param node_concurrency: The node concurrency. Defaults to DEFAULT_CONCURRENCY_BULK.
         :type node_concurrency: Optional[int]
