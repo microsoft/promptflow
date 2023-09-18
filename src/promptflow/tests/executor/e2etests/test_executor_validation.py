@@ -193,9 +193,9 @@ class TestValidation:
                 InputParseError,
                 (
                     "Failed to parse the flow input. The value for flow input 'key' was "
-                    "interpreted as JSON but the value '['hello']' is invalid JSON'. Please make "
-                    "sure your inputs are properly formatted. For example, use double quotes instead "
-                    "of single quotes."
+                    "interpreted as JSON string but the value '['hello']' is invalid for JSON "
+                    "parsing. Please make sure your inputs are properly formatted. For example, "
+                    "use double quotes instead of single quotes."
                 ),
             ),
         ],
