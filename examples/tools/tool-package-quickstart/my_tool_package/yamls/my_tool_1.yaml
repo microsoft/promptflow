@@ -3,7 +3,7 @@ my_tool_package.tools.my_tool_1.my_tool:
   inputs:
     connection:
       type:
-      - MyFirstConnection
+      - CustomConnection
     input_text:
       type:
       - string
