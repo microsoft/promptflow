@@ -1,4 +1,4 @@
-# Distribute flow as exectuable app
+# Distribute flow as executable app
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
@@ -59,7 +59,7 @@ refer to [Setup connection for web-classifiction](https://github.com/microsoft/p
 Additionally, please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions.
 
 ### Prepare an entry file
-A Python entry file is included as the entry point for the bundled app. We offer a Python file named `start.py`` here, which enables you to serve a flow folder as an endpoint.
+A Python entry file is included as the entry point for the bundled app. We offer a Python file named `app.py`` here, which enables you to serve a flow folder as an endpoint.
 
 ```python
 import os
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 ### Prepare a spec file
 The spec file tells PyInstaller how to process your script. It encodes the script names and most of the options you give to the pyinstaller command. The spec file is actually executable Python code. PyInstaller builds the app by executing the contents of the spec file.
 
-To streamline this process, we offer a `start.spec`` spec file that bundles the application into a single folder. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html).
+To streamline this process, we offer a `app.spec`` spec file that bundles the application into a single folder. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html).
 
 ```spec
 # -*- mode: python ; coding: utf-8 -*-
@@ -134,7 +134,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['start.py'],
+    ['app.py'],
     pathex=[],
     binaries=[],
     datas=[("./connections", "connections"), ("./flow", "flow"), ("./settings.json", ".")],
@@ -155,7 +155,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='start',
+    name='app',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -175,19 +175,19 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='start',
+    name='app',
 )
 ```
 
 ### Package flow using Pyinstaller
 PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
 
-Once you've placed the spec file `start.spec` and Python entry script `start.py` in the <your-output-dir> folder generated in the [Build a flow as docker format](#build-a-flow-as-docker-format), you can package the flow model by using the following command:
+Once you've placed the spec file `app.spec` and Python entry script `app.py` in the <your-output-dir> folder generated in the [Build a flow as docker format](#build-a-flow-as-docker-format), you can package the flow model by using the following command:
 ```bash
 cd <your-output-dir>
-pyinstaller start.spec
+pyinstaller app.spec
 ```
-It will create two folders named `build` and `dist` within your specified output directory, denoted as <your-output-dir>. The `build` folder houses various log and working files, while the `dist` folder contains the `start` executable folder. Inside the `dist` folder, you will discover the bundled application intended for distribution to your users.
+It will create two folders named `build` and `dist` within your specified output directory, denoted as <your-output-dir>. The `build` folder houses various log and working files, while the `dist` folder contains the `app` executable folder. Inside the `dist` folder, you will discover the bundled application intended for distribution to your users.
 
 #### Connections
 If the service involves connections, all related connections will be exported as yaml files and recreated in the executable package.
@@ -202,7 +202,7 @@ api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 We will prompt you to set up the environment variables in the console to make the connections work.
 
 ### Test the endpoint
-Finally, You can compress the `dist` folder and distribute the bundle to other people. They can decompress it and execute your program by double clicking the executable file, e.g. `start.exe` in Windows system or execute the binary file, e.g. `start` in Linux system. 
+Finally, You can compress the `dist` folder and distribute the bundle to other people. They can decompress it and execute your program by double clicking the executable file, e.g. `app.exe` in Windows system or execute the binary file, e.g. `app` in Linux system. 
 
 Then they can open another terminal to test the endpoint with the following command:
 ```bash
