@@ -29,7 +29,7 @@ Setup connections to provisioned resources in prompt flow.
 | Type        | Name     | API KEY  | API Type | API Version |
 |-------------|----------|----------|----------|-------------|
 | OpenAI      | Required | Required | -        | -           |
-| AzureOpenAI | Required | Requried | Required | Required    |
+| AzureOpenAI | Required | Required | Required | Required    |
 
 
 ## Inputs

@@ -55,8 +55,7 @@ class PatchedSchemaMeta(SchemaMeta):
 
         if PatchedBaseSchema not in bases:
             bases = bases + (PatchedBaseSchema,)
-        klass = super().__new__(cls, name, bases, dct)
-        return klass
+        return super().__new__(cls, name, bases, dct)
 
 
 class PathAwareSchema(PatchedBaseSchema, metaclass=PatchedSchemaMeta):
