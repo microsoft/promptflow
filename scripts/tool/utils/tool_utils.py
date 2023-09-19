@@ -88,7 +88,7 @@ def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tup
     # a. For custom llm tool, there should be exactly one PromptTemplate input
     # b. For python tool, PromptTemplate input is not supported
     if tool_type == ToolType.PYTHON and prompt_template_count > 0:
-        raise Exception(f"Input of type 'PromptTemplate' not suppoted in python tool '{f.__name__}'. ")
+        raise Exception(f"Input of type 'PromptTemplate' not supported in python tool '{f.__name__}'. ")
 
     if tool_type == ToolType.CUSTOM_LLM and prompt_template_count == 0:
         raise Exception(f"No input of type 'PromptTemplate' was found in custom llm tool '{f.__name__}'. ")
