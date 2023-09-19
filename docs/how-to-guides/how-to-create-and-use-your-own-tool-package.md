@@ -1,6 +1,11 @@
 # Custom tool package creation and usage
 In this document, we will guide you through the process of developing your own tool package, offering detailed steps and advice on how to utilize your creation.
 
+The custom tool is a prompt flow tool developed by yourself. If you find it useful, you can follow this guidance to make it a tool package. This will enable you to conveniently reuse it, share it with your team, or distribute it to anyone in the world.
+
+After successful installation of the package, your custom "tool" will show up in VSCode extension as below: 
+![custom-tool-list](../media/contributing/custom-tool-list-in-extension.png)
+
 ## Create your own tool package
 Your tool package should be a python package. To try it quickly, just use [my-tools-package 0.0.1](https://pypi.org/project/my-tools-package/) and skip this section.
 
@@ -19,7 +24,7 @@ git clone https://github.com/microsoft/promptflow.git
 ```
 
 ### Create custom tool package
-Run below command under root folder to create your tool project quickly:
+Run below command under the root folder to create your tool project quickly:
 ```
 python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
 ```
