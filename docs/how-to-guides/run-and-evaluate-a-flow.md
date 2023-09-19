@@ -203,6 +203,5 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 ## Next steps
 
 Learn more about:
-- [Conditional flow with activate](./conditional-flow-with-activate.md)
 - [Tune prompts with variants](./tune-prompts-with-variants.md)
 - [Deploy a flow](./deploy-a-flow/index.md)

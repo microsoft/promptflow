@@ -1,4 +1,4 @@
-# Create a conditional flow
+# Develop conditional flow
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
@@ -6,7 +6,7 @@ This is an experimental feature, and may change at any time. Learn [more](faq.md
 
 In Prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
 
-This guide will help you learn how to create a conditional flow using activate config.
+This guide will help you learn how to develop a conditional flow using activate config.
 
 ## Prerequisites
 
@@ -65,11 +65,5 @@ activate:
 
 Let's illustrate how to use activate config with practical examples.
 
-- If-Else scenario: Learn how to create a conditional flow for if-else scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-if-else)
+- If-Else scenario: Learn how to develop a conditional flow for if-else scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-if-else)
 - Switch scenario: Explore conditional flow for switch scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-switch)
-
-## Next steps
-
-Learn more about:
-- [Tune prompts with variants](./tune-prompts-with-variants.md)
-- [Deploy a flow](./deploy-a-flow/index.md)
