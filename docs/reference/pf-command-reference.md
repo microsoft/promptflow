@@ -50,7 +50,7 @@ Create an evaluation prompt flow
 pf flow init --flow <path-to-flow-direcotry> --type evaluation
 ```
 
-Create a flow in exsiting folder
+Create a flow in existing folder
 
 ```bash
 pf flow init --flow <path-to-existing-folder> --entry <entry.py> --function <function-name> --prompt-template <path-to-prompt-template.md>
@@ -452,7 +452,7 @@ pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --colum
 
 `--file -f`
 
-Local path to the YAML file containing the prompt flow run specification; can be overrided by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
+Local path to the YAML file containing the prompt flow run specification; can be overwritten by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
 
 `--flow`
 

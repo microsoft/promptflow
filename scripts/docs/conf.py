@@ -30,7 +30,7 @@ extensions = [
 # specifying the natural language populates some key tags
 language = "en"
 
-# spcify charset as utf-8 to accept chinese punctuation
+# specify charset as utf-8 to accept chinese punctuation
 charset_type = "utf-8"
 
 autosummary_generate = True

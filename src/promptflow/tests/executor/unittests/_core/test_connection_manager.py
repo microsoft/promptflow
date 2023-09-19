@@ -11,7 +11,7 @@ def get_connection_dict():
             "type": "AzureOpenAIConnection",
             "value": {
                 "api_key": "<azure-openai-key>",
-                "api_base": "https://gpt-test-eus.openai.azure.com/",
+                "api_base": "<api-base>",
                 "api_type": "azure",
                 "api_version": "2023-07-01-preview",
             },
