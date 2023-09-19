@@ -73,6 +73,7 @@ class RunOperations(_ScopeDependentOperations):
     attaches it as an attribute.
     """
 
+    # add "_" in front of the constant to hide them from the docstring
     _DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
     _ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
 
