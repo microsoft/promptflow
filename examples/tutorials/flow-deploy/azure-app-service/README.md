@@ -32,12 +32,12 @@ The two scripts will do the following things:
 
 Example command to use bash script:
 ```shell
-bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registery> -g <resource_group>
+bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registry> -g <resource_group>
 ```
 
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registery> -g <resource_group>
+.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
 ```
 Note that the `name` will produce a unique FQDN as AppName.azurewebsites.net.
 

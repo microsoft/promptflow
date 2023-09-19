@@ -30,7 +30,7 @@ from promptflow._sdk._utils import (
 )
 
 # silence RemovedIn20Warning to avoid unexpected warning message printed to users
-# TODO(2587221, zhengfeiwang: migrate to SQLAlchemy 2.0)
+# TODO(2587221: migrate to SQLAlchemy 2.0)
 os.environ["SQLALCHEMY_SILENCE_UBER_WARNING"] = "1"
 
 session_maker = None
@@ -41,10 +41,10 @@ def support_transaction(engine):
     # workaround to make SQLite support transaction; reference to SQLAlchemy doc:
     # https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#serializable-isolation-savepoints-transactional-ddl
     @event.listens_for(engine, "connect")
-    def do_connect(dbapi_connection, connection_record):
-        # disable pysqlite's emitting of the BEGIN statement entirely.
+    def do_connect(db_api_connection, connection_record):
+        # disable pysqlite emitting of the BEGIN statement entirely.
         # also stops it from emitting COMMIT before any DDL.
-        dbapi_connection.isolation_level = None
+        db_api_connection.isolation_level = None
 
     @event.listens_for(engine, "begin")
     def do_begin(conn):
@@ -115,7 +115,7 @@ def generate_legacy_tablename(engine, tablename: str) -> str:
             ).first()
             current_schema_version = result[0]
     except (OperationalError, TypeError):
-        # schema info table not exists(OperationlError) or no version for the table(TypeError)
+        # schema info table not exists(OperationalError) or no version for the table(TypeError)
         # legacy tablename fallbacks to "v0_{timestamp}" - use timestamp to avoid duplication
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         current_schema_version = f"0_{timestamp}"
@@ -131,7 +131,7 @@ def get_db_schema_version(engine, tablename: str) -> int:
             ).first()
             return int(result[0])
     except (OperationalError, TypeError):
-        # schema info table not exists(OperationlError) or no version for the table(TypeError)
+        # schema info table not exists(OperationalError) or no version for the table(TypeError)
         # version fallbacks to 0
         return 0
 
