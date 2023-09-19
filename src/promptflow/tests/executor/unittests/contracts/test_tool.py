@@ -1,5 +1,5 @@
 import pytest
-from promptflow.contracts.tool import deserialize_enum, ValueType, ConnectionType, \
+from promptflow.contracts.tool import _deserialize_enum, ValueType, ConnectionType, \
     InputDefinition, OutputDefinition, Tool, ToolType
 from promptflow.contracts.types import Secret, PromptTemplate
 from promptflow.contracts.run_info import Status
@@ -16,11 +16,11 @@ class TestStatus(Enum):
 
 @pytest.mark.unittest
 def test_deserialize_enum():
-    assert deserialize_enum(Status, "Running") == Status.Running
-    assert deserialize_enum(Status, "running") == Status.Running
-    assert deserialize_enum(Status, "FAILED") == Status.Failed
-    assert deserialize_enum(Status, "UNKNOWN") == "UNKNOWN"
-    assert deserialize_enum(TestStatus, "Running") == "Running"
+    assert _deserialize_enum(Status, "Running") == Status.Running
+    assert _deserialize_enum(Status, "running") == Status.Running
+    assert _deserialize_enum(Status, "FAILED") == Status.Failed
+    assert _deserialize_enum(Status, "UNKNOWN") == "UNKNOWN"
+    assert _deserialize_enum(TestStatus, "Running") == "Running"
 
 
 @pytest.mark.unittest
@@ -279,17 +279,17 @@ class TestTool:
             type=ToolType.LLM,
             inputs={"input1": InputDefinition(type=[ValueType.STRING])},
         )
-        assert tool1.require_connection()
+        assert tool1._require_connection()
         tool2 = Tool(
             name="Test Tool2",
             type=ToolType._ACTION,
             inputs={"input1": InputDefinition(type=[ValueType.STRING])},
             connection_type=["AzureContentSafetyConnection"],
         )
-        assert tool2.require_connection()
+        assert tool2._require_connection()
         tool3 = Tool(
             name="Test Tool3",
             type=ToolType._ACTION,
             inputs={"input1": InputDefinition(type=[ValueType.STRING])},
         )
-        assert not tool3.require_connection()
+        assert not tool3._require_connection()
