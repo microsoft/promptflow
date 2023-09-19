@@ -46,32 +46,23 @@ activate:
 
 ::::
 
+### Notice
+1. There are two scenarios where nodes might be bypassed even without an activate config or when conditions aren't met:
+- If a node has activate config and the node pointed to by `activate.when` is bypassed, it will also be bypassed.
+  ![activate_when_bypassed](../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
+- If a node does not have activate config but depends on other nodes that have been bypassed, it will also be bypassed.
+  ![dependencies_bypassed](../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
+2. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
+   ![provide_default_value](../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
+3. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This can lead to flow failures due to a lack of valid values on the flow output.
+   ![output_bypassed](../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
+
 ## Example flow
 
 Let's illustrate how to use activate config with practical examples.
 
 - If-Else scenario: Learn how to create a conditional flow for if-else scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-if-else)
 - Switch scenario: Explore conditional flow for switch scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-switch)
-
-
-## Troubleshoot
-
-If you encounter any issues or errors while using `activate config` in Prompt flow, this section provides guidance and solutions for common error codes. Refer to the following error codes and their respective solutions to quickly and efficiently resolve issues during your flow development.
-
-1. ReferenceNodeBypassed
-- Error message:
-- Error description:
-- Solution:
-2. OutputReferenceBypassed
-- Error message:
-- Error description:
-- Solution:
-3. OutputReferenceNotExist
-- Error message:
-- Error description:
-- Solution:
-
-These error codes and their respective solutions should help you troubleshoot common issues related to `activate config` and ensure the smooth execution of your conditional flow. If you continue to experience difficulties, please consult our comprehensive documentation or reach out to our support team for assistance.
 
 ## Next steps
 
