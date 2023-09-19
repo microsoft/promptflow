@@ -133,7 +133,8 @@ class FlowValidator:
                 msg_format = (
                     "Failed to parse the flow input. The value for flow input '{flow_input_name}'{line_info} "
                     "was interpreted as JSON string since its type is '{value_type}'. However, the value "
-                    "'{input_value}' is invalid for JSON parsing. Please make sure your inputs are properly formatted. "
+                    "'{input_value}' is invalid for JSON parsing. Error details: {error_details}. "
+                    "Please make sure your inputs are properly formatted. "
                     "For example, use double quotes instead of single quotes."
                 )
                 raise InputParseError(
@@ -142,6 +143,7 @@ class FlowValidator:
                     line_info=line_info,
                     input_value=inputs[k],
                     value_type=v.type,
+                    error_details=str(e),
                 ) from e
             except Exception as e:
                 line_info = "" if idx is None else f" in line {idx} of input data"
