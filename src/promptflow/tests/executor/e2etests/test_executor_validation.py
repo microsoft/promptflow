@@ -290,7 +290,7 @@ class TestValidation:
                 {"num": "22"},
                 SingleNodeValidationError,
                 (
-                    "Single node validation failed. Node 'bad_node_name' is not found in flow "
+                    "Validation failed when attempting to execute the node. Node 'bad_node_name' is not found in flow "
                     "'flow.dag.yaml'. Please change node name or correct the flow file."
                 ),
             ),
@@ -301,7 +301,7 @@ class TestValidation:
                 {"num": "22"},
                 SingleNodeValidationError,
                 (
-                    "Single node validation failed. Properties 'source' or 'type' are not "
+                    "Validation failed when attempting to execute the node. Properties 'source' or 'type' are not "
                     "specified for Node 'divide_num' in flow 'flow.dag.yaml'. Please make sure "
                     "these properties are in place and try again."
                 ),

@@ -276,7 +276,8 @@ class FlowExecutor:
         if node is None:
             raise SingleNodeValidationError(
                 message_format=(
-                    "Single node validation failed. Node '{node_name}' is not found in flow '{flow_file}'. "
+                    "Validation failed when attempting to execute the node. "
+                    "Node '{node_name}' is not found in flow '{flow_file}'. "
                     "Please change node name or correct the flow file."
                 ),
                 node_name=node_name,
@@ -285,7 +286,7 @@ class FlowExecutor:
         if not node.source or not node.type:
             raise SingleNodeValidationError(
                 message_format=(
-                    "Single node validation failed. "
+                    "Validation failed when attempting to execute the node. "
                     "Properties 'source' or 'type' are not specified for Node '{node_name}' in flow '{flow_file}'. "
                     "Please make sure these properties are in place and try again."
                 ),
