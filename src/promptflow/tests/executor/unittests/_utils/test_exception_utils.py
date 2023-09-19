@@ -229,6 +229,29 @@ class TestExceptionPresenter:
             },
         }
 
+    def test_error_codes_for_general_exception(self):
+        with pytest.raises(CustomizedException) as e:
+            raise_general_exception()
+
+        presenter = ExceptionPresenter.create(e.value)
+        assert presenter.error_codes == ["SystemError", "CustomizedException"]
+
+    def test_error_codes_romptflow_exception(self):
+        with pytest.raises(ToolExecutionError) as e:
+            raise_tool_execution_error()
+        presenter = ExceptionPresenter.create(e.value)
+        assert presenter.error_codes == ["UserError", "ToolExecutionError"]
+
+        with pytest.raises(PromptflowException) as e:
+            raise_promptflow_exception()
+        presenter = ExceptionPresenter.create(e.value)
+        assert presenter.error_codes == ["SystemError", "ZeroDivisionError"]
+
+        with pytest.raises(PromptflowException) as e:
+            raise_promptflow_exception_without_inner_exception()
+        presenter = ExceptionPresenter.create(e.value)
+        assert presenter.error_codes == ["SystemError"]
+
 
 @pytest.mark.unittest
 class TestErrorResponse:

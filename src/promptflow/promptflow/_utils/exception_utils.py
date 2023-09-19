@@ -198,6 +198,52 @@ class ExceptionPresenter:
             "innerException": inner_exception,
         }
 
+    @property
+    def error_codes(self):
+        """The hierarchy of the error codes.
+
+        For general exceptions, the hierarchy should be:
+        ["SystemError", {exception type name}]
+        """
+        error_codes: list[str] = [infer_error_code_from_class(SystemErrorException), self._ex.__class__.__name__]
+        return error_codes
+
+    @property
+    def error_code_recursed(self):
+        """Returns a dict of the error codes for this exception.
+
+        It is populated in a recursive manner, using the source from `error_codes` property.
+        i.e. For PromptflowException, such as ToolExcutionError which inherits from UserErrorException,
+        The result would be:
+
+          {
+            "code": "UserError",
+            "innerError": {
+              "code": "ToolExecutionError",
+              "innerError": None,
+            },
+          }
+
+        For other exception types, such as ValueError, the result would be:
+
+          {
+            "code": "SystemError",
+            "innerError": {
+              "code": "ValueError",
+              "innerError": None,
+            },
+          }
+        """
+        current_error = None
+        reversed_error_codes = reversed(self.error_codes) if self.error_codes else []
+        for code in reversed_error_codes:
+            current_error = {
+                "code": code,
+                "innerError": current_error,
+            }
+
+        return current_error
+
     def to_dict(self, *, include_debug_info=False):
         """Return a dict representation of the exception.
 
@@ -211,16 +257,12 @@ class ExceptionPresenter:
             return self._ex.to_dict(include_debug_info=include_debug_info)
 
         # Otherwise, return general dict representation of the exception.
-        result = {
-            "code": infer_error_code_from_class(SystemErrorException),
-            "message": str(self._ex),
-            "messageFormat": "",
-            "messageParameters": {},
-            "innerError": {
-                "code": self._ex.__class__.__name__,
-                "innerError": None,
-            },
-        }
+        result = {"message": str(self._ex), "messageFormat": "", "messageParameters": {}}
+        if self.error_code_recursed:
+            result.update(self.error_code_recursed)
+        else:
+            result["code"] = infer_error_code_from_class(SystemErrorException)
+            result["innerError"] = None
         if include_debug_info:
             result["debugInfo"] = self.debug_info
 
@@ -229,31 +271,24 @@ class ExceptionPresenter:
 
 class PromptflowExceptionPresenter(ExceptionPresenter):
     @property
-    def error_code_recursed(self):
-        """Returns a dict of the error codes for this exception.
+    def error_codes(self):
+        """The hierarchy of the error codes.
 
-        It is populated in a recursive manner, using the source from `error_codes` property.
-        i.e. For ToolExcutionError which inherits from UserErrorException,
-        The result would be:
+        For subclass of PromptflowException, use the ex.error_codes directly.
 
-          {
-            "code": "UserErrorException",
-            "innerError": {
-              "code": "ToolExecutionError",
-              "innerError": None,
-            },
-          }
-
+        For PromptflowException (not a subclass), the ex.error_code is None.
+        The result should be:
+        ["SystemError", {inner_exception type name if exist}]
         """
-        current_error = None
-        reversed_error_codes = reversed(self._ex.error_codes) if self._ex.error_codes else []
-        for code in reversed_error_codes:
-            current_error = {
-                "code": code,
-                "innerError": current_error,
-            }
+        if self._ex.error_codes:
+            return self._ex.error_codes
 
-        return current_error
+        # For PromptflowException (not a subclass), the ex.error_code is None.
+        # Handle this case specifically.
+        error_codes: list[str] = [infer_error_code_from_class(SystemErrorException)]
+        if self._ex.inner_exception:
+            error_codes.append(infer_error_code_from_class(self._ex.inner_exception.__class__))
+        return error_codes
 
     def to_dict(self, *, include_debug_info=False):
         result = {
@@ -266,17 +301,8 @@ class PromptflowExceptionPresenter(ExceptionPresenter):
         if self.error_code_recursed:
             result.update(self.error_code_recursed)
         else:
-            # For PromptflowException (not a subclass), the error_code_recursed is None.
-            # Handle this case specifically.
             result["code"] = infer_error_code_from_class(SystemErrorException)
-            if self._ex.inner_exception:
-                # Set the type of inner_exception as the inner error
-                result["innerError"] = {
-                    "code": infer_error_code_from_class(self._ex.inner_exception.__class__),
-                    "innerError": None,
-                }
-            else:
-                result["innerError"] = None
+            result["innerError"] = None
         if self._ex.additional_info:
             result["additionalInfo"] = [{"type": k, "info": v} for k, v in self._ex.additional_info.items()]
         if include_debug_info:

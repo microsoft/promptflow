@@ -24,12 +24,15 @@ class PackageToolNotFoundError(ValidationException):
     pass
 
 
-class LoadToolError(ValidationException):
+class MissingRequiredInputs(ValidationException):
     pass
 
 
-class MissingRequiredInputs(LoadToolError):
-    pass
+class ToolLoadError(UserErrorException):
+    """Exception raised when tool load failed."""
+
+    def __init__(self, *, module: str = None):
+        super().__init__(target=ErrorTarget.TOOL, module=module)
 
 
 class ToolExecutionError(UserErrorException):

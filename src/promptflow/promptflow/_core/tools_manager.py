@@ -14,7 +14,7 @@ from typing import Callable, List, Mapping, Optional, Tuple, Union
 import pkg_resources
 import yaml
 
-from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError
+from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -213,8 +213,12 @@ class BuiltinsManager:
                 message=f"Required inputs {list(missing_inputs)} are not provided for tool '{tool_name}'.",
                 target=ErrorTarget.EXECUTOR,
             )
+        try:
+            api = getattr(provider_class(**init_inputs_values), method_name)
+        except Exception as ex:
+            raise ToolLoadError(target=ErrorTarget.TOOL, module=module_name) from ex
         # Return the init_inputs to update node inputs in the afterward steps
-        return getattr(provider_class(**init_inputs_values), method_name), init_inputs
+        return api, init_inputs
 
     @staticmethod
     def load_tool_by_api_name(api_name: str) -> Tool:
