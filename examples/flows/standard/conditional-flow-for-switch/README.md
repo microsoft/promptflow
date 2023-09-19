@@ -13,6 +13,8 @@ In this flow, we set the background to the search function of a certain mall, us
 - The `product_recommendation`, `order_search`, and `product_information` nodes are configured with activate config and are only executed when the output from `class_check` meets the specified conditions.
 - The `generate_response` node generates user-facing output.
 
+For example, as the shown below, the input query is "When will my order be shipped" and the LLM node classifies the user intent as "order_search", resulting in both the `product_information` and `product_recommendation` nodes being bypassed and only the `order_search` node being executed, and then generating the outputs.
+
 ![conditional_flow_for_switch](conditional_flow_for_switch.png)
 
 ## Prerequisites
