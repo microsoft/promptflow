@@ -8,7 +8,7 @@ a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("./promptflow/_sdk/_serving/static/", "promptflow/_sdk/_serving/static/")],
+    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("../../../../../src/promptflow/promptflow/_sdk/_serving/static/", "promptflow/_sdk/_serving/static/")],
     hiddenimports=["bs4"],
     hookspath=[],
     hooksconfig={},

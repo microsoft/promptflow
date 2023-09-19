@@ -4,22 +4,33 @@ We will use [web-classification](../../../flows/standard/web-classification/READ
 
 Please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](../../../flows/standard/web-classification/README.md#Prerequisites) for a comprehensive list of prerequisites and installation instructions.
 
-## Build a flow as docker format
-
-Note that all dependent connections must be created before building as docker.
+## Build a flow as executable format
+Note that all dependent connections must be created before building as executable.
 ```bash
 # create connection if not created before
 pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
-
-Use the command below to build a flow as docker format app:
-
+Use the command below to build a flow as executable format app:
 ```bash
-pf flow build --source ../../../flows/standard/web-classification --output target --format docker
+pf flow build --source ../../../flows/standard/web-classification --output target --format executable
 ```
-## Package flow model
-### Prepare an entry file
-A Python entry file is included as the entry point for the bundled app. We offer a Python file named `app.py`` here, which enables you to serve a flow folder as an endpoint.
+
+### Executable format folder structure
+Exported files & its dependencies are located in the same folder. The structure is as below:
+- flow: the folder contains all the flow files.
+  - ...
+- connections: the folder contains yaml files to create all related connections.
+  - ...
+- app.py: the entry file is included as the entry point for the bundled application.
+- app.spec: the spec file tells PyInstaller how to process your script.
+- settings.json: a json file to store the settings of the executable application.
+- README.md: Simple introduction of the files.
+
+## Distribute flow
+You need to install PyInstaller first by running `pip install pyinstaller` before distributing the flow.
+### A sample script of the entry file
+A Python entry file is included as the entry point for the bundled app. We generate a Python file named `app.py` here, 
+which enables you to serve a flow folder as an endpoint.
 
 ```python
 import os
@@ -52,7 +63,6 @@ def set_environment_variable(file_path) -> None:
 if __name__ == "__main__":
     create_connections("connections")
     set_environment_variable("settings.json")
-    # Execute 'pf flow serve' command
     # setup argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -83,10 +93,13 @@ if __name__ == "__main__":
     serve_flow(args)
 ```
 
-### Prepare a spec file
-The spec file tells PyInstaller how to process your script. It encodes the script names and most of the options you give to the pyinstaller command. The spec file is actually executable Python code. PyInstaller builds the app by executing the contents of the spec file.
+### A sample script of the spec file
+The spec file tells PyInstaller how to process your script. It encodes the script names and most of the options you 
+give to the pyinstaller command. The spec file is actually executable Python code. 
+PyInstaller builds the app by executing the contents of the spec file.
 
-To streamline this process, we offer a `app.spec`` spec file that bundles the application into a single folder. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html).
+To streamline this process, we offer a `app.spec` spec file that bundles the application into a single folder. 
+For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html).
 
 ```spec
 # -*- mode: python ; coding: utf-8 -*-
@@ -94,12 +107,11 @@ To streamline this process, we offer a `app.spec`` spec file that bundles the ap
 
 block_cipher = None
 
-
 a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("./promptflow/_sdk/_serving/static/", "promptflow/_sdk/_serving/static/")],
+    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("../../../../../src/promptflow/promptflow/_sdk/_serving/static/", "promptflow/_sdk/_serving/static/")],
     hiddenimports=["bs4"],
     hookspath=[],
     hooksconfig={},
@@ -141,15 +153,20 @@ coll = COLLECT(
 )
 ```
 
-### Package flow using Pyinstaller
-PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
+### Distribute flow using Pyinstaller
+PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and 
+library your script needs in order to execute. Then it collects copies of all those files, including the active Python 
+interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
 
-Once you've placed the spec file `app.spec` and Python entry script `app.py` in the `target` folder generated in the [Build a flow as docker format](#build-a-flow-as-docker-format), you can package the flow model by using the following command:
+Once you've build a flow as executable format following [Build a flow as executable format](#build-a-flow-as-executable-format), 
+you can distribute the flow by using the following command:
 ```shell
 cd target
 pyinstaller app.spec
 ```
-It will create two folders named `build` and `dist` within your specified output directory, denoted as `target`. The `build` folder houses various log and working files, while the `dist` folder contains the `app` executable folder. Inside the `dist` folder, you will discover the bundled application intended for distribution to your users.
+It will create two folders named `build` and `dist` within your specified output directory, denoted as `target`. 
+The `build` folder houses various log and working files, while the `dist` folder contains the `app` executable folder. 
+Inside the `dist` folder, you will discover the bundled application intended for distribution to your users.
 
 
 #### Connections
@@ -171,7 +188,7 @@ Then they can open another terminal to test the endpoint with the following comm
 ```shell
 curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
 ```
-Also, the development server has a built-in web page they can use to test the flow by openning 'http://localhost:8080' in the browser. The expected result is as follows if the flow served successfully, and the process will keep alive until it be killed manually.
+Also, the development server has a built-in web page they can use to test the flow by opening 'http://localhost:8080' in the browser. The expected result is as follows if the flow served successfully, and the process will keep alive until it be killed manually.
 
 To your users, the app is self-contained. They do not need to install any particular version of Python or any modules. They do not need to have Python installed at all.
 

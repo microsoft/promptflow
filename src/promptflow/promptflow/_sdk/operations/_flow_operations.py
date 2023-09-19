@@ -370,7 +370,8 @@ class FlowOperations:
 
         environment_config = self._build_environment_config(flow_dag_path)
         hidden_imports = []
-        if environment_config.get("python_requirements_txt", None) and (flow_dag_path.parent / "requirements.txt").is_file():
+        if (environment_config.get("python_requirements_txt", None) and
+                (flow_dag_path.parent / "requirements.txt").is_file()):
             with open(flow_dag_path.parent / "requirements.txt", 'r', encoding='utf-8') as file:
                 file_content = file.read()
             hidden_imports = file_content.splitlines()
@@ -383,7 +384,7 @@ class FlowOperations:
             render_context={
                 "hidden_imports": hidden_imports,
                 "static_dir":  (sdk_dir/"_serving"/"static").as_posix(),
-           },
+            },
         )
 
     def build(

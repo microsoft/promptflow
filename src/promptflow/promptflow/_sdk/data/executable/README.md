@@ -3,9 +3,9 @@ Exported entry file & its dependencies are located in the same folder. The struc
   - ...
 - connections: the folder contains yaml files to create all related connections
   - ...
-- app.py: the entry file is included as the entry point for the bundled app.
+- app.py: the entry file is included as the entry point for the bundled application.
 - app.spec: the spec file tells PyInstaller how to process your script.
-- settings.json: a json file to store the settings of the docker image.
+- settings.json: a json file to store the settings of the executable application.
 - README.md: the readme file to describe how to use the exported files and scripts.
 
 Please refer to [official doc](https://microsoft.github.io/promptflow/how-to-guides/deploy-a-flow/index.html)

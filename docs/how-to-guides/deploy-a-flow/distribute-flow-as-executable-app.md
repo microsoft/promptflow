@@ -3,63 +3,47 @@
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-There are Four steps to package a flow and deploy in locals:
-1. Build the flow as docker format.
-2. Prepare an entry file.
-3. Prepare a spec file.
-4. Package flow using [Pyinstaller](https://pyinstaller.org/en/stable/requirements.html#).
+There are two steps to package a flow and deploy in locals:
+1. Build the flow as executable format.
+2. Distribute flow using [Pyinstaller](https://pyinstaller.org/en/stable/requirements.html#).
 
 
-## Build a flow as docker format
+## Build a flow as executable format
 
-::::{tab-set}
-:::{tab-item} CLI
-:sync: CLI
-
-Note that all dependent connections must be created before building as docker.
+Note that all dependent connections must be created before building as executable.
 ```bash
 # create connection if not created before
 pf connection create --file ../../../examples/connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 
-Use the command below to build a flow as docker format:
+Use the command below to build a flow as executable format:
 ```bash
-pf flow build --source <path-to-your-flow-folder> --output <your-output-dir> --format docker
+pf flow build --source <path-to-your-flow-folder> --output <your-output-dir> --format executable
 ```
-:::
-:::{tab-item} VS Code Extension
-:sync: VSC
 
-Click the button below to build a flow as docker format:
-![img](../../media/how-to-guides/vscode_export_as_docker.png)
-:::
-::::
+### Executable format folder structure
 
-Note that all dependent connections must be created before exporting as docker.
-
-### Docker format folder structure
-
-Exported Dockerfile & its dependencies are located in the same folder. The structure is as below:
-- flow: the folder contains all the flow files
+Exported files & its dependencies are located in the same folder. The structure is as below:
+- flow: the folder contains all the flow files.
   - ...
-- connections: the folder contains yaml files to create all related connections
+- connections: the folder contains yaml files to create all related connections.
   - ...
-- Dockerfile: the dockerfile to build the image
-- start.sh: the script used in `CMD` of `Dockerfile` to start the service
-- settings.json: a json file to store the settings of the docker image
-- README.md: Simple introduction of the files
+- app.py: the entry file is included as the entry point for the bundled application.
+- app.spec: the spec file tells PyInstaller how to process your script.
+- settings.json: a json file to store the settings of the executable application.
+- README.md: Simple introduction of the files.
 
-## Package flow model
+## Distribute flow 
 We are going to use the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) as
 an example to show how to package flow model with Pyinstaller.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+refer to [Setup connection for web-classificaion](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
-Additionally, please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions.
+Additionally, please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions. And you need to install PyInstaller first by running `pip install pyinstaller` before distributing the flow.
 
-### Prepare an entry file
-A Python entry file is included as the entry point for the bundled app. We offer a Python file named `app.py`` here, which enables you to serve a flow folder as an endpoint.
+### A sample script of the entry file
+A Python entry file is included as the entry point for the bundled app. We generate a Python file named `app.py` here, which enables you to serve a flow folder as an endpoint.
 
 ```python
 import os
@@ -90,7 +74,6 @@ def set_environment_variable(file_path) -> None:
 if __name__ == "__main__":
     create_connections("connections")
     set_environment_variable("settings.json")
-    # Execute 'pf flow serve' command
     # setup argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -121,10 +104,10 @@ if __name__ == "__main__":
     serve_flow(args)
 ```
 
-### Prepare a spec file
+### A sample script of the spec file
 The spec file tells PyInstaller how to process your script. It encodes the script names and most of the options you give to the pyinstaller command. The spec file is actually executable Python code. PyInstaller builds the app by executing the contents of the spec file.
 
-To streamline this process, we offer a `app.spec`` spec file that bundles the application into a single folder. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html).
+To streamline this process, we offer a `app.spec` spec file that bundles the application into a single folder. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html).
 
 ```spec
 # -*- mode: python ; coding: utf-8 -*-
@@ -137,8 +120,8 @@ a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("./promptflow/_sdk/_serving/static/", "promptflow/_sdk/_serving/static/")],
-    hiddenimports=["bs4"],
+    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), (<static_folder_of_promptflow_package>, "promptflow/_sdk/_serving/static/")],
+    hiddenimports=[<required_package_of_the_flow>],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -179,10 +162,10 @@ coll = COLLECT(
 )
 ```
 
-### Package flow using Pyinstaller
+### Distribute flow using Pyinstaller
 PyInstaller reads a spec file or Python script written by you. It analyzes your code to discover every other module and library your script needs in order to execute. Then it collects copies of all those files, including the active Python interpreter, and puts them with your script in a single folder, or optionally in a single executable file. 
 
-Once you've placed the spec file `app.spec` and Python entry script `app.py` in the <your-output-dir> folder generated in the [Build a flow as docker format](#build-a-flow-as-docker-format), you can package the flow model by using the following command:
+Once you've build a flow as executable format following [Build a flow as executable format](#build-a-flow-as-executable-format), you can distribute the flow by using the following command:
 ```bash
 cd <your-output-dir>
 pyinstaller app.spec
@@ -208,7 +191,7 @@ Then they can open another terminal to test the endpoint with the following comm
 ```bash
 curl http://localhost:8080/score --data '{"url":"https://play.google.com/store/apps/details?id=com.twitter.android"}' -X POST  -H "Content-Type: application/json"
 ```
-Also, the development server has a built-in web page they can use to test the flow by openning 'http://localhost:8080' in the browser. The expected result is as follows if the flow served successfully, and the process will keep alive until it be killed manually.
+Also, the development server has a built-in web page they can use to test the flow by opening 'http://localhost:8080' in the browser. The expected result is as follows if the flow served successfully, and the process will keep alive until it be killed manually.
 
 To your users, the app is self-contained. They do not need to install any particular version of Python or any modules. They do not need to have Python installed at all.
 
@@ -217,7 +200,7 @@ To your users, the app is self-contained. They do not need to install any partic
 
 ## Known issues
 1. Note that Python 3.10.0 contains a bug making it unsupportable by PyInstaller. PyInstaller will also not work with beta releases of Python 3.13.
-2. If you meet warning logs like "3082 WARNING: lib not found: libopenblas64__v0.3.23-293-gc2f4bdbb-gcc_10_3_0-65e29aac85b9409a6008e2dc84b1cc09.dll dependency of ...\envs\pyins39\lib\site-packages\numpy\core\_multiarray_umath.cp39-win_amd64.pyd" in conda environment, please place the dll file in the root folder of the conda environment, e.g. "..\envs\pyins39\".
+2. If you meet warning logs like `3082 WARNING: lib not found: libopenblas64__v0.3.23-293-gc2f4bdbb-gcc_10_3_0-65e29aac85b9409a6008e2dc84b1cc09.dll dependency of ...\envs\pyins39\lib\site-packages\numpy\core\_multiarray_umath.cp39-win_amd64.pyd` in conda environment, please place the dll file in the root folder of the conda environment, e.g. "..\envs\pyins39\".
 
 ## Next steps
 - Try the example [here](https://github.com/microsoft/promptflow/blob/main/examples/tutorials/flow-deploy)

@@ -29,7 +29,6 @@ def set_environment_variable(file_path) -> None:
 if __name__ == "__main__":
     create_connections("connections")
     set_environment_variable("settings.json")
-    # Execute 'pf flow serve' command
     # setup argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
