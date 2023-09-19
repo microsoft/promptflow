@@ -1,7 +1,7 @@
 # Develop conditional flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
 In Prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
