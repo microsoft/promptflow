@@ -356,6 +356,36 @@ class FlowOperations:
             },
         )
 
+    def _export_to_executable(
+        self,
+        flow_dag_path: Path,
+        output_dir: Path,
+        *,
+        env_var_names: List[str],
+    ):
+        (output_dir / "settings.json").write_text(
+            data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
+            encoding="utf-8",
+        )
+
+        environment_config = self._build_environment_config(flow_dag_path)
+        hidden_imports = []
+        if environment_config.get("python_requirements_txt", None) and (flow_dag_path.parent / "requirements.txt").is_file():
+            with open(flow_dag_path.parent / "requirements.txt", 'r', encoding='utf-8') as file:
+                file_content = file.read()
+            hidden_imports = file_content.splitlines()
+
+        sdk_dir = Path(__file__).parent.parent
+
+        copy_tree_respect_template_and_ignore_file(
+            source=Path(__file__).parent.parent / "data" / "executable",
+            target=output_dir,
+            render_context={
+                "hidden_imports": hidden_imports,
+                "static_dir":  (sdk_dir/"_serving"/"static").as_posix(),
+           },
+        )
+
     def build(
         self,
         flow: Union[str, PathLike],
@@ -370,7 +400,7 @@ class FlowOperations:
 
         :param flow: path to the flow directory or flow dag to export
         :type flow: Union[str, PathLike]
-        :param format: export format, support "docker" only for now
+        :param format: export format, support "docker" and "executable" only for now
         :type format: str
         :param output: output directory
         :type output: Union[str, PathLike]
@@ -392,7 +422,7 @@ class FlowOperations:
         if not flow_dag_path.is_file():
             raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
 
-        if format not in ["docker"]:
+        if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
 
         if variant:
@@ -428,6 +458,12 @@ class FlowOperations:
                 output_dir=output_dir,
                 connection_paths=connection_paths,
                 flow_name=flow_dag_path.parent.stem,
+                env_var_names=env_var_names,
+            )
+        elif format == "executable":
+            self._export_to_executable(
+                flow_dag_path=new_flow_dag_path,
+                output_dir=output_dir,
                 env_var_names=env_var_names,
             )
 

@@ -50,8 +50,8 @@ def set_environment_variable(file_path) -> None:
 
 
 if __name__ == "__main__":
-    create_connections("./connections")
-    set_environment_variable("./settings.json")
+    create_connections("connections")
+    set_environment_variable("settings.json")
     # Execute 'pf flow serve' command
     # setup argparse
     parser = argparse.ArgumentParser()
@@ -99,9 +99,9 @@ a = Analysis(
     ['app.py'],
     pathex=[],
     binaries=[],
-    datas=[("./connections", "connections"), ("./flow", "flow"), ("./settings.json", ".")],
-    hiddenimports=["promptflow", "promptflow-tools", "bs4"],
-    hookspath=["."],
+    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("./promptflow/_sdk/_serving/static/", "promptflow/_sdk/_serving/static/")],
+    hiddenimports=["bs4"],
+    hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
