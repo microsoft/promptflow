@@ -194,9 +194,9 @@ class TestValidation:
                 (
                     "Failed to parse the flow input. The value for flow input 'key' was "
                     "interpreted as JSON string since its type is 'list'. However, the value "
-                    "'['hello']' is invalid for JSON parsing. Error details: Expecting value: "
-                    "line 1 column 2 (char 1). Please make sure your inputs are properly "
-                    "formatted. For example, use double quotes instead of single quotes."
+                    "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
+                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are "
+                    "properly formatted. For example, use double quotes instead of single quotes."
                 ),
             ),
         ],
@@ -251,9 +251,21 @@ class TestValidation:
                 ),
                 "InputTypeError",
             ),
+            (
+                "flow_with_list_input",
+                [{"key": "['hello']"}],
+                (
+                    "Failed to parse the flow input. The value for flow input 'key' in line 0 of input data was "
+                    "interpreted as JSON string since its type is 'list'. However, the value "
+                    "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
+                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are "
+                    "properly formatted. For example, use double quotes instead of single quotes."
+                ),
+                "InputParseError",
+            ),
         ],
     )
-    def test_bulk_run_input_type_invalid(self, flow_folder, batch_input, error_message, error_class, dev_connections):
+    def test_bulk_run_input_invalid(self, flow_folder, batch_input, error_message, error_class, dev_connections):
         # Bulk run - the input is from sample.json
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         bulk_result = executor.exec_bulk(

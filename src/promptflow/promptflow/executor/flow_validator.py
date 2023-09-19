@@ -130,30 +130,33 @@ class FlowValidator:
                     updated_inputs[k] = v.type.parse(inputs[k])
             except JSONDecodeError as e:
                 line_info = "" if idx is None else f" in line {idx} of input data"
+                flow_input_info = f"'{k}'{line_info}"
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+
                 msg_format = (
-                    "Failed to parse the flow input. The value for flow input '{flow_input_name}'{line_info} "
+                    "Failed to parse the flow input. The value for flow input {flow_input_info} "
                     "was interpreted as JSON string since its type is '{value_type}'. However, the value "
-                    "'{input_value}' is invalid for JSON parsing. Error details: {error_details}. "
+                    "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
                     "Please make sure your inputs are properly formatted. "
                     "For example, use double quotes instead of single quotes."
                 )
                 raise InputParseError(
                     message_format=msg_format,
-                    flow_input_name=k,
-                    line_info=line_info,
+                    flow_input_info=flow_input_info,
                     input_value=inputs[k],
                     value_type=v.type,
-                    error_details=str(e),
+                    error_type_and_message=error_type_and_message,
                 ) from e
             except Exception as e:
                 line_info = "" if idx is None else f" in line {idx} of input data"
+                flow_input_info = f"'{k}'{line_info}"
                 msg_format = (
-                    "The input for flow is incorrect. The value for flow input '{flow_input_name}'{line_info} "
+                    "The input for flow is incorrect. The value for flow input {flow_input_info} "
                     "does not match the expected type '{expected_type}'. Please change flow input type "
                     "or adjust the input value in your input data."
                 )
                 raise InputTypeError(
-                    message_format=msg_format, flow_input_name=k, line_info=line_info, expected_type=v.type
+                    message_format=msg_format, flow_input_info=flow_input_info, expected_type=v.type
                 ) from e
         return updated_inputs
 
