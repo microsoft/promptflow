@@ -164,12 +164,11 @@ class BuiltinsManager:
         return getattr(provider_class(**init_inputs_values), method_name), init_inputs
 
     @staticmethod
-    def _load_script_tool(tool_name, class_name, module_name, method_name, node_inputs: Mapping[str, InputAssignment]):
+    def _load_script_tool(module, tool_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]):
         """Load script in tool with given import path and node inputs."""
-        m = importlib.import_module(module_name)
         if class_name is None:
-            return getattr(m, method_name), {}
-        provider_class = getattr(m, class_name)
+            return getattr(module, method_name), {}
+        provider_class = getattr(module, class_name)
         # Note: v -- type is InputAssignment
         init_inputs = provider_class.get_initialize_inputs()
         init_inputs_values = {}
@@ -337,7 +336,7 @@ class ToolLoader:
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f, initialize_inputs = collect_tool_function_with_init_inputs_in_module(m)
-        return _parse_tool_from_function(f, initialize_inputs)
+        return m, _parse_tool_from_function(f, initialize_inputs)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
