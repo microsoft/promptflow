@@ -2,10 +2,18 @@
 
 This example is a conditional flow for switch scenario.
 
-In this flow, with the search function of a certain mall as the background, the LLM node analyzes the user intention according to the input query and returns one of "product_recommendation", "order_search" and "product_info". The `class_check` node will output the specific user intention and select the corresponding node for execution, and perform different processing logic on the query,
-and then generate user-facing output.
-
 By following this example, you will learn how to create a conditional flow using the `activate config`.
+
+## Flow description
+
+In this flow, we set the background to the search function of a certain mall, use `activate config` to implement switch logic and determine user intent based on the input queries to achieve dynamic processing and generate user-oriented output.
+
+- The `classify_with_llm` node analyzes user intent based on input query and provides one of the following results: "product_recommendation," "order_search," or "product_info".
+- The `class_check` node generates the correctly formatted user intent.
+- The `product_recommendation`, `order_search`, and `product_information` nodes are configured with activate config and are only executed when the output from `class_check` meets the specified conditions.
+- The `generate_response` node generates user-facing output.
+
+![conditonal_flow_for_switch](conditonal_flow_for_switch.png)
 
 ## Prerequisites
 
@@ -49,7 +57,7 @@ pf flow test --flow . --inputs query="When will my order be shipped?"
 run_name="conditional_flow_for_switch_"$(openssl rand -hex 12)
 
 # create run
-pf run create --flow . --data ./data.jsonl --stream --name $run_name
+pf run create --flow . --data ./data.jsonl --column-mapping query='${data.query}' --stream --name $run_name
 ```
 
 - List and show run metadata
