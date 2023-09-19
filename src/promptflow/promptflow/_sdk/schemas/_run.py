@@ -29,6 +29,26 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
     idle_time_before_shutdown_minutes = fields.Int()
 
 
+class RemotePathStr(fields.Str):
+    default_error_messages = {
+        "invalid_path": "Invalid remote path. "
+        "Currently only azureml://xxx or public URL(e.g. http://xxx) are supported.",
+    }
+
+    def _validate(self, value):
+        from promptflow.azure._utils.gerneral import is_remote_uri
+
+        # inherited validations like required, allow_none, etc.
+        super(RemotePathStr, self)._validate(value)
+
+        if value is None:
+            return
+        if not is_remote_uri(value):
+            raise self.make_error(
+                "invalid_path",
+            )
+
+
 class RunSchema(YamlFileSchema):
     """Base schema for all run schemas."""
 
@@ -51,7 +71,7 @@ class RunSchema(YamlFileSchema):
     )
     connections = fields.Dict(keys=fields.Str(), values=fields.Dict(keys=fields.Str()))
     # inputs field
-    data = fields.Str()
+    data = UnionField([LocalPathField(), RemotePathStr()])
     column_mapping = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()
