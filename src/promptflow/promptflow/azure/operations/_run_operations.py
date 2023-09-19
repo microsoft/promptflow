@@ -51,7 +51,7 @@ from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -121,10 +121,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        url = (
-            f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid="
-            f"{self._common_azure_url_pattern}&flight=promptfilestorage,PFSourceRun=false"
-        )
+        url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
         return url
 
     def _get_input_portal_url_from_input_uri(self, input_uri):
@@ -556,7 +553,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         flow = load_flow(run.flow)
-        # ignore .promptflow/dag.toos.json only for run submission scenario
+        # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
         return flow.path
 

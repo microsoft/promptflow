@@ -45,6 +45,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+cov.xml
 *.cover
 *.py,cover
 .hypothesis/
@@ -179,3 +180,4 @@ scripts/docs/_build/
 
 .index
 .pdfs
+config.json

@@ -529,7 +529,7 @@ class PromptflowIgnoreFile(IgnoreFile):
         return result
 
 
-def _generate_metas_from_files(
+def _generate_meta_from_files(
     tools: List[Tuple[str, str]], flow_directory: Path, tools_dict: dict, exception_dict: dict
 ) -> None:
     with _change_working_dir(flow_directory), inject_sys_path(flow_directory):
@@ -554,7 +554,7 @@ def _generate_tool_meta(
     tools_dict = manager.dict()
     exception_dict = manager.dict()
     p = multiprocessing.Process(
-        target=_generate_metas_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
+        target=_generate_meta_from_files, args=(tools, flow_directory, tools_dict, exception_dict)
     )
     p.start()
     p.join(timeout=timeout)

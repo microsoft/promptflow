@@ -55,6 +55,18 @@ class InvalidBulkTestRequest(ValidationException):
         )
 
 
+class InputMappingError(ValidationException):
+    def __init__(
+        self,
+        target: ErrorTarget = ErrorTarget.EXECUTOR,
+        **kwargs,
+    ):
+        super().__init__(
+            target=target,
+            **kwargs,
+        )
+
+
 class InvalidFlowRequest(ValidationException):
     def __init__(
         self,
@@ -123,10 +135,6 @@ class NodeCircularDependency(InvalidFlowRequest):
     pass
 
 
-class NodeConcurrencyNotFound(SystemErrorException):
-    pass
-
-
 class NodeReferenceError(UserErrorException):
     """Exception raised when node reference not found or unsupported"""
 
@@ -154,6 +162,10 @@ class ReferenceNodeBypassed(NodeReferenceError):
 
 
 class NodeOutputNotFound(UserErrorException):
+    pass
+
+
+class SingleNodeValidationError(UserErrorException):
     pass
 
 
