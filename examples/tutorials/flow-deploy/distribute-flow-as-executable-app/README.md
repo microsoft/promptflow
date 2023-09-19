@@ -196,4 +196,4 @@ To your users, the app is self-contained. They do not need to install any partic
 
 ## Known issues
 1. Note that Python 3.10.0 contains a bug making it unsupportable by PyInstaller. PyInstaller will also not work with beta releases of Python 3.13.
-2. If you meet warning logs like "3082 WARNING: lib not found: libopenblas64__v0.3.23-293-gc2f4bdbb-gcc_10_3_0-65e29aac85b9409a6008e2dc84b1cc09.dll dependency of ...\envs\pyins39\lib\site-packages\numpy\core\_multiarray_umath.cp39-win_amd64.pyd" in conda environment, please place the dll file in the root folder of the conda environment, e.g. "..\envs\pyins39\".
+2. If you meet warning logs like `3082 WARNING: lib not found: **-gcc_10_3_0-65e29aac85b9409a6008e2dc84b1cc09.dll dependency of ...\envs\pyins39\lib\site-packages\numpy\core\_multiarray_**.cp39-win_amd64.pyd` in conda environment, please place the dll file in the root folder of the conda environment, e.g. "..\envs\pyins39\".
