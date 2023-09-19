@@ -11,6 +11,7 @@ on:
       - 'docs/**'
       - 'scripts/docs/**'
       - '.github/workflows/build_doc_ci.yml'
+      - 'src/promptflow/promptflow/**'
 
 env:
   packageSetupType: promptflow_with_extra

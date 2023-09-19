@@ -16,6 +16,7 @@ env:
 jobs:
   authorize:
     environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
       ${{ github.event_name == 'pull_request_target' &&
       github.event.pull_request.head.repo.full_name != github.repository &&
       'external' || 'internal' }}
@@ -32,6 +33,8 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
@@ -73,12 +76,12 @@ jobs:
         az account show
         pip install langchain
         python scripts/building/run_coverage_tests.py `
-          -p ${{ github.workspace }}/src/promptflow/promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests `
+          -p ${{ env.testWorkingDirectory }}/promptflow `
+          -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}`
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
@@ -96,6 +99,8 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
@@ -103,6 +108,6 @@ jobs:
         testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.7
+        coverageThreshold: 70
         token: ${{ secrets.GITHUB_TOKEN }}
         context: test/executor_e2e

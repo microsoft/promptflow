@@ -165,6 +165,10 @@ class NodeOutputNotFound(UserErrorException):
     pass
 
 
+class SingleNodeValidationError(UserErrorException):
+    pass
+
+
 class LineExecutionTimeoutError(UserErrorException):
     """Exception raised when single line execution timeout"""
 
