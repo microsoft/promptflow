@@ -93,9 +93,9 @@ class LineExecutionProcessPool:
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
             # available_max_worker_count = get_available_max_worker_count()
-            self._n_process = 8
+            self._n_process = 4
         else:
-            self._n_process = 8
+            self._n_process = 4
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
