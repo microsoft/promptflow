@@ -158,15 +158,9 @@ class RunTracker(ThreadLocalSingleton):
         )
         self._node_runs[run_id] = run_info
 
-    def _is_root_run(self, run_info: FlowRunInfo) -> bool:
-        return run_info.run_id == run_info.root_run_id
-
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
-        # Skip serializable check for root run output since it's a collection of flow run outputs,
-        # which already passed the check.
-        # And we will change root run output to list instead of dict, which is not compatiable
-        # with the _assert_flow_output_serializable method.
-        if output and not self._is_root_run(run_info):
+        # If output is a list, it is output of root run which already passes the serialization check.
+        if output and not isinstance(output, list):
             try:
                 self._assert_flow_output_serializable(output)
             except Exception as e:

@@ -681,7 +681,7 @@ class FlowExecutor:
         # Otherwise, the line run will be treated as a root run.
         # TODO: Refactor to use separate data strucure for
         # flow run and root run.
-        line_run_id = str(uuid.uuid4()) if line_number is None else f"{run_id}_{line_number}"
+        line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
         run_tracker = RunTracker(
             self._run_tracker._storage, self._run_tracker._run_mode, self._run_tracker.node_log_manager
         )
