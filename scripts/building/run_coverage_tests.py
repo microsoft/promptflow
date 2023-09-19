@@ -91,6 +91,7 @@ if __name__ == "__main__":
     # coverage run --rcfile='' --source='' --branch -m pytest --junit-xml=test-results.xml -ra ./tests/*/unittests/
     run_command(pytest_command)
     if args.coverage_config:
+        run_command(["coverage", "combine"])
         run_command(["coverage", "report"])
         run_command(["coverage", "html"])
         run_command(["coverage", "xml"])
