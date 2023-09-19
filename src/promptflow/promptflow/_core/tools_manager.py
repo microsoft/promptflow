@@ -216,7 +216,15 @@ class BuiltinsManager:
         try:
             api = getattr(provider_class(**init_inputs_values), method_name)
         except Exception as ex:
-            raise ToolLoadError(target=ErrorTarget.TOOL, module=module_name) from ex
+            raise ToolLoadError(
+                module=module_name,
+                message_format=(
+                    "Load package tool failed, tool: '{tool_name}', module: '{module_name}', exception: {exception}"
+                ),
+                tool_name=tool_name,
+                module_name=module_name,
+                exception=str(ex),
+            ) from ex
         # Return the init_inputs to update node inputs in the afterward steps
         return api, init_inputs
 

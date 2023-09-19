@@ -31,8 +31,8 @@ class MissingRequiredInputs(ValidationException):
 class ToolLoadError(UserErrorException):
     """Exception raised when tool load failed."""
 
-    def __init__(self, *, module: str = None):
-        super().__init__(target=ErrorTarget.TOOL, module=module)
+    def __init__(self, module: str = None, **kwargs):
+        super().__init__(target=ErrorTarget.TOOL, module=module, **kwargs)
 
 
 class ToolExecutionError(UserErrorException):

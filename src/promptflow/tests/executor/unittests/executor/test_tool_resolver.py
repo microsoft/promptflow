@@ -13,6 +13,7 @@ from promptflow.executor._errors import (
     InvalidConnectionType,
     InvalidSource,
     NodeInputValidationError,
+    ResolveToolError,
     ValueTypeUnresolved,
 )
 from promptflow.executor._tool_resolver import ToolResolver, ResolvedTool
@@ -86,18 +87,22 @@ class TestToolResolver:
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.source = mocker.Mock(type=None)
 
-        with pytest.raises(NotImplementedError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "Tool type" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NotImplementedError)
+        assert "Tool type" in exec_info.value.message
 
     def test_resolve_tool_by_node_with_invalid_source_type(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PYTHON
         node.source = mocker.Mock(type=None)
 
-        with pytest.raises(NotImplementedError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "Tool source type" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NotImplementedError)
+        assert "Tool source type" in exec_info.value.message
 
         node.type = ToolType.CUSTOM_LLM
         node.source = mocker.Mock(type=None)
@@ -109,8 +114,9 @@ class TestToolResolver:
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.source = None
 
-        with pytest.raises(UserErrorException):
+        with pytest.raises(ResolveToolError) as ex:
             resolver.resolve_tool_by_node(node)
+        assert isinstance(ex.value.inner_exception, UserErrorException)
 
     def test_resolve_tool_by_node_with_no_source_path(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
