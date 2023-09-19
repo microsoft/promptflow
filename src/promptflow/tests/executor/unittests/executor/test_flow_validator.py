@@ -98,8 +98,7 @@ class TestFlowValidator:
                     "Failed to parse the flow input. The value for flow input 'key' was "
                     "interpreted as JSON string since its type is 'list'. However, the value "
                     "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
-                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are "
-                    "properly formatted. For example, use double quotes instead of single quotes."
+                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are properly formatted."
                 ),
             ),
             (
@@ -111,13 +110,14 @@ class TestFlowValidator:
                     "Failed to parse the flow input. The value for flow input 'key' in line 0 of input data was "
                     "interpreted as JSON string since its type is 'list'. However, the value "
                     "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
-                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are "
-                    "properly formatted. For example, use double quotes instead of single quotes."
+                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are properly formatted."
                 ),
             ),
         ],
     )
-    def test_resolve_flow_inputs_type_json_error(self, flow_folder, inputs, index, error_type, error_message):
+    def test_resolve_flow_inputs_type_json_error_for_list_type(
+        self, flow_folder, inputs, index, error_type, error_message
+    ):
         flow_yaml = get_yaml_file(flow_folder)
         with open(flow_yaml, "r") as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))

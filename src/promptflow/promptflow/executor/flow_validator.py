@@ -137,8 +137,7 @@ class FlowValidator:
                     "Failed to parse the flow input. The value for flow input {flow_input_info} "
                     "was interpreted as JSON string since its type is '{value_type}'. However, the value "
                     "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
-                    "Please make sure your inputs are properly formatted. "
-                    "For example, use double quotes instead of single quotes."
+                    "Please make sure your inputs are properly formatted."
                 )
                 raise InputParseError(
                     message_format=msg_format,

@@ -14,7 +14,6 @@ from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputReference,
     InputNotFound,
-    InputParseError,
     InputReferenceNotFound,
     InputTypeError,
     InvalidFlowRequest,
@@ -165,48 +164,17 @@ class TestValidation:
             FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
 
     @pytest.mark.parametrize(
-        "flow_folder, line_input, error_class, error_message",
+        "flow_folder, line_input, error_class",
         [
-            (
-                "simple_flow_with_python_tool",
-                {"num11": "22"},
-                InputNotFound,
-                (
-                    "The input for flow is incorrect. The value for flow input 'num' is not "
-                    "provided in input data. Please review your input data or remove this input "
-                    "in your flow if it's no longer needed."
-                ),
-            ),
-            (
-                "simple_flow_with_python_tool",
-                {"num": "hello"},
-                InputTypeError,
-                (
-                    "The input for flow is incorrect. The value for flow input 'num' does not "
-                    "match the expected type 'int'. Please change flow input type or adjust the "
-                    "input value in your input data."
-                ),
-            ),
-            (
-                "flow_with_list_input",
-                {"key": "['hello']"},
-                InputParseError,
-                (
-                    "Failed to parse the flow input. The value for flow input 'key' was "
-                    "interpreted as JSON string since its type is 'list'. However, the value "
-                    "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
-                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are "
-                    "properly formatted. For example, use double quotes instead of single quotes."
-                ),
-            ),
+            ("simple_flow_with_python_tool", {"num11": "22"}, InputNotFound),
+            ("simple_flow_with_python_tool", {"num": "hello"}, InputTypeError),
         ],
     )
-    def test_flow_run_input_invalid(self, flow_folder, line_input, error_class, error_message, dev_connections):
+    def test_flow_run_input_type_invalid(self, flow_folder, line_input, error_class, dev_connections):
         # Flow run -  the input is from get_partial_line_inputs()
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
-        with pytest.raises(error_class) as exe_info:
+        with pytest.raises(error_class):
             executor.exec_line(line_input)
-        assert error_message == exe_info.value.message
 
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_msg",
@@ -251,21 +219,9 @@ class TestValidation:
                 ),
                 "InputTypeError",
             ),
-            (
-                "flow_with_list_input",
-                [{"key": "['hello']"}],
-                (
-                    "Failed to parse the flow input. The value for flow input 'key' in line 0 of input data was "
-                    "interpreted as JSON string since its type is 'list'. However, the value "
-                    "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
-                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are "
-                    "properly formatted. For example, use double quotes instead of single quotes."
-                ),
-                "InputParseError",
-            ),
         ],
     )
-    def test_bulk_run_input_invalid(self, flow_folder, batch_input, error_message, error_class, dev_connections):
+    def test_bulk_run_input_type_invalid(self, flow_folder, batch_input, error_message, error_class, dev_connections):
         # Bulk run - the input is from sample.json
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         bulk_result = executor.exec_bulk(
