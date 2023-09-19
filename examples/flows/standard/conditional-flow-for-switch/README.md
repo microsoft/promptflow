@@ -13,7 +13,7 @@ In this flow, we set the background to the search function of a certain mall, us
 - The `product_recommendation`, `order_search`, and `product_information` nodes are configured with activate config and are only executed when the output from `class_check` meets the specified conditions.
 - The `generate_response` node generates user-facing output.
 
-![conditonal_flow_for_switch](conditonal_flow_for_switch.png)
+![conditional_flow_for_switch](conditional_flow_for_switch.png)
 
 ## Prerequisites
 
