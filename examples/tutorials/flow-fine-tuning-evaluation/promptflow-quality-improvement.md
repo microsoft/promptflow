@@ -126,7 +126,7 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 Run the following command to test your prompt with this dataset:
 
 <!-- >The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify. -->
->The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.deployment_name=<model_name>...`to specify.
+> The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.deployment_name=<model_name>...`to specify.
 
 ```bash
 pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream
@@ -142,7 +142,7 @@ pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column
 > pf run create --flow C:\Users\promptflow\examples\flows\chat\chat_math_variant --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
 > ``` -->
 
-> ⚠ The run name must be unique. Please specify a new name in `--name`. 
+> ℹ️ The run name must be unique. Please specify a new name in `--name`. 
 > If you see "Run 'base_run' already exists.", you can specify another name. But please remember the name you specified, because you'll need it in the next step.
 
 
@@ -196,7 +196,7 @@ You can visualize and compare the output line by line of `base_run` and `eval_ru
 ```bash
 pf run visualize --name 'base_run,eval_run'
 ```
-> ⚠ For Windows CMD users, please use double quotes instead of single quotes in the `--name` argument. The command should be like this:
+> ℹ️ For Windows CMD users, please use double quotes instead of single quotes in the `--name` argument. The command should be like this:
 > ```sh
 > pf run visualize --name "base_run,eval_run"
 > ```
@@ -314,7 +314,7 @@ pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/da
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
 ```
-> If encounter the 'execution timeout' error, just try again. It might be caused by the LLM service congestion.
+<!-- > If encounter the 'execution timeout' error, just try again. It might be caused by the LLM service congestion. -->
 
 Get metrics of the all evaluations:
 ```bash
