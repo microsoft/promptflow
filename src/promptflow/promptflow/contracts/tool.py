@@ -37,11 +37,11 @@ class ValueType(str, Enum):
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
-        """Get `ValueType` by value.
+        """Get :class:`~promptflow.contracts.tool.ValueType` by value.
 
-        :param t: The value needs to get its `ValueType`
+        :param t: The value needs to get its :class:`~promptflow.contracts.tool.ValueType`
         :type t: Any
-        :return: The `ValueType` of the given value
+        :return: The :class:`~promptflow.contracts.tool.ValueType` of the given value
         :rtype: ~promptflow.contracts.tool.ValueType
         """
 
@@ -63,12 +63,12 @@ class ValueType(str, Enum):
 
     @staticmethod
     def from_type(t: type) -> "ValueType":
-        """Get `ValueType` by type.
+        """Get :class:`~promptflow.contracts.tool.ValueType` by type.
 
-        :param t: The type needs to get its `ValueType`
+        :param t: The type needs to get its :class:`~promptflow.contracts.tool.ValueType`
         :type t: type
-        :return: The `ValueType` of the given type
-        :rtype: ~promptflow.contracts.ValueType
+        :return: The :class:`~promptflow.contracts.tool.ValueType` of the given type
+        :rtype: ~promptflow.contracts.tool.ValueType
         """
 
         if t == int:
@@ -88,9 +88,9 @@ class ValueType(str, Enum):
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
-        """Parse value to the given `ValueType`.
+        """Parse value to the given :class:`~promptflow.contracts.tool.ValueType`.
 
-        :param v: The value needs to be parsed to the given `ValueType`
+        :param v: The value needs to be parsed to the given :class:`~promptflow.contracts.tool.ValueType`
         :type v: Any
         :return: The parsed value
         :rtype: Any
