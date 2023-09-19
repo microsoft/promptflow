@@ -1,4 +1,5 @@
 [run]
+parallel = true
 omit =
     */promptflow/_cli/*
     */promptflow/_sdk/*
