@@ -34,7 +34,7 @@ node_variants:
             type: code
             path: chat.jinja2
           inputs:
-            deployment_name: gpt-35-turbo
+            deployment_name: gpt-4
             max_tokens: 256
             temperature: 0
             chat_history: ${inputs.chat_history}
@@ -49,7 +49,7 @@ node_variants:
             type: code
             path: chat_variant_1.jinja2
           inputs:
-            deployment_name: gpt-35-turbo
+            deployment_name: gpt-4
             max_tokens: 256
             temperature: 0
             chat_history: ${inputs.chat_history}
@@ -64,7 +64,7 @@ node_variants:
             type: code
             path: chat_variant_2.jinja2
           inputs:
-            deployment_name: gpt-35-turbo
+            deployment_name: gpt-4
             max_tokens: 256
             temperature: 0
             chat_history: ${inputs.chat_history}

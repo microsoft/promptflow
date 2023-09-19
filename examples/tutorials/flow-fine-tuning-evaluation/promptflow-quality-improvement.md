@@ -50,7 +50,7 @@ In the `examples/flows/chat` folder, you can see a `basic-chat` folder, which re
 cd promptflow/examples/flows/chat
 ```
 
-To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, you can see that tasks and targets are mentioned in the system prompt as:
+To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, rewrite the system prompt as:
 
 ```
 system:
@@ -125,23 +125,24 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 
 Run the following command to test your prompt with this dataset:
 
->The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
+<!-- >The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify. -->
+>The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.deployment_name=<model_name>...`to specify.
 
 ```bash
-pf run create --flow ./basic-chat --data ./chatmathvariant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
+pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream
 ```
-> ⚠ For Azure Open AI, run the following command instead:
+<!-- > ⚠ For Azure Open AI, run the following command instead:
 > ```bash
 > pf run create --flow ./chat_math_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
-> ```
+> ``` -->
 
-> ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
+<!-- > ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
 
 > ```bash 
 > pf run create --flow C:\Users\promptflow\examples\flows\chat\chat_math_variant --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
-> ```
+> ``` -->
 
-> ⚠ The run name must be unique. Please specify a new name in `--name`. <br> 
+> ⚠ The run name must be unique. Please specify a new name in `--name`. 
 > If you see "Run 'base_run' already exists.", you can specify another name. But please remember the name you specified, because you'll need it in the next step.
 
 
@@ -174,17 +175,18 @@ This can show the line by line input and output of the run:
 
 Next, create an **evaluation run** to calculate the accuracy of the answers based on the previous run.
 
-In the `promptflow/examples/flows/evaluation` folder, you can see a `eval-accuracy-maths-to-code` folder, which represents an evaluation flow. We'll use this flow to evaluate the accuracy of the answers.
+In the `promptflow/examples/flows/evaluation` folder, you can see a `eval-chat-math` folder, which represents an evaluation flow. We'll use this flow to evaluate the accuracy of the answers.
 
 ```bash
 cd promptflow/examples/flows/evaluation
 ```
 
 ```bash
-pf run create --flow ./eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
+pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
 ```
+> If needed, specify the run name which you want to evaluate in `--run` argument, and specify this evaluation run name in `--name` argument.
 
-Then get metrics of the `eval_run` (specify another customized or random run name in `--name` argument):
+Then get metrics of the `eval_run`:
 ```bash
 pf run show-metrics --name eval_run
 ```
@@ -279,15 +281,15 @@ assistant:
 ```
 </details>
 
-These two jinjia files are specified in the `flow.dag.yaml` file, which defines the flow structure. You can see that the `chat` node has 3 variants, which point to these 3 Jinjia files.
+These two jinja files are specified in the `flow.dag.yaml` file, which defines the flow structure. You can see that the `chat` node has 3 variants, which point to these 3 Jinja files.
 
 ### Test and evaluate your prompt variants
 
-First, you need to modify your flow to add two more prompt variants into the chat node, in addition to the existed default one. In the flow.dag.yaml file, you can see 3 variants definition of the `chat` node, which point to these 3 Jinjia files.
+First, you need to modify your flow to add two more prompt variants into the chat node, in addition to the existed default one. In the flow.dag.yaml file, you can see 3 variants definition of the `chat` node, which point to these 3 Jinja files.
 
 Run the CLI command below to start the experiment: test all variants, evaluate them, get the visualized comparison results of the experiment.
 
-> ℹ️ By default, the connection is set to `open_ai_connection` and and the model is set to `gpt-4` for each variant, as specified in the `flow.dag.yaml` file. However, you have the flexibility to specify a different connection and model by adding `--connections chat.connection=<your_connection_name> chat.model=<model_name>` in the test run command.
+> ℹ️ By default, the connection is set to `open_ai_connection` and and the model is set to `gpt-4` for each variant, as specified in the `flow.dag.yaml` file. However, you have the flexibility to specify a different connection and model by adding `--connections chat.connection=<your_connection_name> chat.deployment_name=<model_name>` in the test run command.
 
 ```bash
 cd promptflow/examples/flows
@@ -296,22 +298,23 @@ cd promptflow/examples/flows
 ```bash
 # Test and evaluate variant_0:
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
 # Evaluate-run
-pf run create --flow ./evaluation/eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
 
 # Test and evaluate variant_1:
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
 # Evaluate-run
-pf run create --flow ./evaluation/eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
 
-# Test and evaluate variant_2:
+# Test and evaluate variant_2: 
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
 # Evaluate-run
-pf run create --flow ./evaluation/eval-accuracy-maths-to-code --data ./chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
 ```
+> If encounter the 'execution timeout' error, just try again. It might be caused by the LLM service congestion.
 
 Get metrics of the all evaluations:
 ```bash
