@@ -48,19 +48,7 @@ if __name__ == "__main__":
     run_command(["pip", "list"])
     run_command(["pip", "show", "promptflow", "promptflow-sdk"])
 
-    pytest_command = ["pytest", "--junit-xml=test-results.xml"]
-    pytest_command += test_paths_list
-    if args.coverage_config:
-        if args.p:
-            cov_path_list = [f"--cov={path}" for path in args.p]
-            pytest_command += cov_path_list
-        pytest_command += [  # noqa: W503
-            "--cov-branch",
-            "--cov-report=term",
-            "--cov-report=html",
-            "--cov-report=xml",
-        ]
-        pytest_command = pytest_command + [f"--cov-config={args.coverage_config}"]
+    pytest_command = ["pytest", "--junit-xml=test-results.xml"] + test_paths_list
     pytest_command += [
         "-n",
         args.n,
@@ -88,5 +76,23 @@ if __name__ == "__main__":
     if args.model_name:
         pytest_command = pytest_command + ["--model-name", args.model_name]
 
+    if args.coverage_config:
+        if args.p:
+            cov_path_list = "--source=" + ", ".join(args.p)
+        coverage_config = f"--rcfile={args.coverage_config}"
+        pytest_command = [
+            "coverage",
+            "run",
+            f"{coverage_config}",
+            f"{cov_path_list}",
+            "--branch",
+            "-m",
+        ] + pytest_command
+    # coverage run coverage_config cov_path_list --branch -m + pytest_command
+    # covergae html
+    # coverage report
     # pytest --junit-xml=test-results.xml --cov=azure.ai.ml --cov-report=html --cov-report=xml -ra ./tests/*/unittests/
     run_command(pytest_command)
+    if args.coverage_config:
+        run_command(["coverage", "report"])
+        run_command(["coverage", "html"])
