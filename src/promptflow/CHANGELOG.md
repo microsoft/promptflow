@@ -6,6 +6,8 @@
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+
+### Other Changes
 - [Executor][Internal] Improve inputs mapping's error message: enrich single node execution errors
 
 ## 0.1.0b6 (2023.09.15)
