@@ -10,7 +10,7 @@ Below is a table of important doc pages.
 |----------------|----------------|
 |Quick start|[Get started with prompt flow](./how-to-guides/quick-start.md)|
 |Concepts|[Flows](./concepts/concept-flows.md)<br> [Tools](./concepts/concept-tools.md)<br> [Connections](./concepts/concept-connections.md)<br> [Variants](./concepts/concept-variants.md)<br> |
-|How-to guides|[How to initialize and test a flow](./how-to-guides/init-and-test-a-flow.md) <br>[How to run and evaluate a flow](./how-to-guides/run-and-evaluate-a-flow.md)<br>[How to tune prompts using variants](./how-to-guides/tune-prompts-with-variants.md)<br>[How to create a conditional flow with activate config](./how-to-guides/conditional-flow-with-activate.md)<br>[How to deploy a flow](./how-to-guides/deploy-a-flow/index.md)<br>[How to create and use your own tool package](./how-to-guides/how-to-create-and-use-your-own-tool-package.md)|
+|How-to guides|[How to initialize and test a flow](./how-to-guides/init-and-test-a-flow.md) <br>[How to run and evaluate a flow](./how-to-guides/run-and-evaluate-a-flow.md)<br>[How to tune prompts using variants](./how-to-guides/tune-prompts-with-variants.md)<br>[How to deploy a flow](./how-to-guides/deploy-a-flow/index.md)<br>[How to create and use your own tool package](./how-to-guides/how-to-create-and-use-your-own-tool-package.md)|
 |Tools reference|[LLM tool](./tools-reference/llm-tool.md)<br> [Prompt tool](./tools-reference/prompt-tool.md)<br> [Python tool](./tools-reference/python-tool.md)<br> [SERP API tool](./tools-reference/serp-api-tool.md)<br> [Embedding tool](./tools-reference/embedding_tool.md)||
 
 
