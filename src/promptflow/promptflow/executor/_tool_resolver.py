@@ -212,10 +212,15 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        f, tool = self._tool_loader.load_tool_for_script_node(node)
+        tool = self._tool_loader.load_tool_for_script_node(node)
+        updated_node = copy.deepcopy(node)
         if convert_input_types:
-            node = self._convert_node_literal_input_types(node, tool)
-        return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
+            updated_node = self._convert_node_literal_input_types(updated_node, tool)
+        callable, init_args = BuiltinsManager._load_script_tool(
+            tool.name, tool.class_name, tool.module, tool.function, updated_node.inputs
+        )
+        self._remove_init_args(updated_node.inputs, init_args)
+        return ResolvedTool(node=updated_node, definition=tool, callable=callable, init_args=init_args)
 
     def _resolve_package_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         tool: Tool = self._tool_loader.load_tool_for_package_node(node)

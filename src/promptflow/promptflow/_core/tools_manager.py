@@ -16,7 +16,7 @@ import yaml
 from promptflow._core._errors import MissingRequiredInputs, PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
-    collect_tool_function_in_module,
+    collect_tool_function_with_init_inputs_in_module,
     generate_prompt_tool,
     generate_python_tool,
     load_python_module_from_file,
@@ -121,6 +121,34 @@ class BuiltinsManager:
     @staticmethod
     def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]):
         """Load package in tool with given import path and node inputs."""
+        m = importlib.import_module(module_name)
+        if class_name is None:
+            return getattr(m, method_name), {}
+        provider_class = getattr(m, class_name)
+        # Note: v -- type is InputAssignment
+        init_inputs = provider_class.get_initialize_inputs()
+        init_inputs_values = {}
+        for k, v in node_inputs.items():
+            if k not in init_inputs:
+                continue
+            if v.value_type != InputValueType.LITERAL:
+                raise ValueError(
+                    f"Input {k!r} for tool '{tool_name}' only supports literal values for initialization,"
+                    + f" got {v.serialize()!r}"
+                )
+            init_inputs_values[k] = v.value
+        missing_inputs = set(provider_class.get_required_initialize_inputs()) - set(init_inputs_values)
+        if missing_inputs:
+            raise MissingRequiredInputs(
+                message=f"Required inputs {list(missing_inputs)} are not provided for tool '{tool_name}'.",
+                target=ErrorTarget.EXECUTOR,
+            )
+        # Return the init_inputs to update node inputs in the afterward steps
+        return getattr(provider_class(**init_inputs_values), method_name), init_inputs
+
+    @staticmethod
+    def _load_script_tool(tool_name, class_name, module_name, method_name, node_inputs: Mapping[str, InputAssignment]):
+        """Load script in tool with given import path and node inputs."""
         m = importlib.import_module(module_name)
         if class_name is None:
             return getattr(m, method_name), {}
@@ -291,8 +319,8 @@ class ToolLoader:
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f = collect_tool_function_in_module(m)
-        return f, _parse_tool_from_function(f)
+        f, initialize_inputs = collect_tool_function_with_init_inputs_in_module(m)
+        return _parse_tool_from_function(f, initialize_inputs)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"

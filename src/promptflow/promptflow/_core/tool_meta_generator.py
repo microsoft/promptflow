@@ -8,6 +8,7 @@ This file can generate a meta file for the given prompt template or a python fil
 import importlib.util
 import inspect
 import json
+import os
 import re
 import types
 from dataclasses import asdict
@@ -111,13 +112,24 @@ def collect_tool_methods_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f):
+def collect_tool_methods_with_init_inputs_in_module(m):
+    tools = []
+    for _, obj in inspect.getmembers(m):
+        if isinstance(obj, type) and issubclass(obj, ToolProvider) and obj.__module__ == m.__name__:
+            for _, method in inspect.getmembers(obj):
+                if is_tool(method):
+                    tools.append((method, obj.get_initialize_inputs()))
+    return tools
+
+
+def _parse_tool_from_function(f, initialize_inputs=None):
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
+        setattr(f.__original_function, "__module__", f.__module__)
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f)
+        inputs, _, _ = function_to_interface(f, initialize_inputs)
     except Exception as e:
         raise BadFunctionInterface(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
     class_name = None
@@ -149,7 +161,8 @@ def generate_python_tools_in_module_as_dict(module):
 def load_python_module_from_file(src_file: Path):
     # Here we hard code the module name as __pf_main__ since it is invoked as a main script in pf.
     src_file = Path(src_file).resolve()  # Make sure the path is absolute to align with python import behavior.
-    spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
+    module_name = os.path.splitext(src_file.name)[0]
+    spec = importlib.util.spec_from_file_location(module_name, location=src_file)
     if spec is None or spec.loader is None:
         raise PythonLoaderNotFound(f"Failed to load python file '{src_file}', please make sure it is a valid .py file.")
     m = importlib.util.module_from_spec(spec)
@@ -182,6 +195,21 @@ def collect_tool_function_in_module(m):
         tool_names = ", ".join(t.__name__ for t in tools)
         raise MultipleToolsDefined(f"Expected 1 but collected {len(tools)} tools: {tool_names}.")
     return tools[0]
+
+
+def collect_tool_function_with_init_inputs_in_module(m):
+    functions = collect_tool_functions_in_module(m)
+    methods = collect_tool_methods_with_init_inputs_in_module(m)
+    num_tools = len(functions) + len(methods)
+    if num_tools == 0:
+        raise NoToolDefined("No tool found in the python script.")
+    elif num_tools > 1:
+        tool_names = ", ".join(t.__name__ for t in functions + methods)
+        raise MultipleToolsDefined(f"Expected 1 but collected {num_tools} tools: {tool_names}.")
+    if functions:
+        return functions[0], None
+    else:
+        return methods[0][0], methods[0][1]
 
 
 def generate_python_tool(name, content, source=None):
