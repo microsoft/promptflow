@@ -96,3 +96,4 @@ if __name__ == "__main__":
     if args.coverage_config:
         run_command(["coverage", "report"])
         run_command(["coverage", "html"])
+        run_command(["coverage", "xml"])
