@@ -7,6 +7,9 @@
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
 
+### Other Changes
+- [Executor][Internal] Improve error message with more details and actionable information.
+
 ## 0.1.0b6 (2023.09.15)
 
 ### Features Added
