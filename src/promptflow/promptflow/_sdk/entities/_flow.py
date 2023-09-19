@@ -21,7 +21,6 @@ from promptflow._sdk._constants import (
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .._constants import DAG_FILE_NAME
-from .._errors import ConnectionNotFoundError
 from ._validation import SchemaValidatableMixin
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -43,6 +42,8 @@ class FlowBase(abc.ABC):
 
 
 class Flow(FlowBase):
+    """This class is used to represent a flow."""
+
     def __init__(
         self,
         code: str,
@@ -100,24 +101,17 @@ class Flow(FlowBase):
 
             return ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
 
-    @classmethod
-    def _get_local_connections(cls, executable):
-        from promptflow._sdk._pf_client import PFClient
-
-        connection_names = executable.get_connection_names()
-        local_client = PFClient()
-        result = {}
-        for n in connection_names:
-            try:
-                conn = local_client.connections.get(name=n, with_secrets=True)
-                result[n] = conn._to_execution_connection_dict()
-            except ConnectionNotFoundError:
-                # ignore when connection not found since it can be configured with env var.
-                raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
-        return result
-
 
 class ProtectedFlow(Flow, SchemaValidatableMixin):
+    """This class is used to hide internal interfaces from user.
+
+    User interface should be carefully designed to avoid breaking changes, while developers may need to change internal
+    interfaces to improve the code quality. On the other hand, making all internal interfaces private will make it
+    strange to use them everywhere inside this package.
+
+    Ideally, developers should always initialize ProtectedFlow object instead of Flow object.
+    """
+
     def __init__(
         self,
         code: str,

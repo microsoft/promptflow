@@ -46,6 +46,7 @@ from promptflow._sdk._constants import (
     CommonYamlFields,
 )
 from promptflow._sdk._errors import (
+    ConnectionNotFoundError,
     DecryptConnectionError,
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
@@ -729,3 +730,23 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
                 .encode("utf-8")
                 .replace(b"\r\n", b"\n"),
             )
+
+
+def get_local_connections_from_executable(executable):
+    """Get local connections from executable.
+
+    Please avoid using this function anymore, and we should remove this function once all references are removed.
+    """
+    from promptflow._sdk._pf_client import PFClient
+
+    connection_names = executable.get_connection_names()
+    local_client = PFClient()
+    result = {}
+    for n in connection_names:
+        try:
+            conn = local_client.connections.get(name=n, with_secrets=True)
+            result[n] = conn._to_execution_connection_dict()
+        except ConnectionNotFoundError:
+            # ignore when connection not found since it can be configured with env var.
+            raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
+    return result

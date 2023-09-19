@@ -358,7 +358,6 @@ class TestFlowLocalOperations:
                     "text_content": {"type": ["string"]},
                     "url": {"type": ["string"]},
                 },
-                # TODO: should we resolve the source path here?
                 "source": "./classify_with_llm.jinja2",
                 "type": "llm",
             },
