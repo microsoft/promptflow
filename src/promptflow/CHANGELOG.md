@@ -1,5 +1,12 @@
 # Release History
 
+## 0.1.0b7 (Upcoming)
+
+### Features Added
+
+### Bugs Fixed
+- [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+
 ## 0.1.0b6 (2023.09.15)
 
 ### Features Added

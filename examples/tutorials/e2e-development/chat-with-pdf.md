@@ -236,12 +236,12 @@ The output will include something like below:
     "description": null,
     "tags": null,
     "properties": {
-        "flow_path": "/Users/jietong/Work/azure-promptflow/scratchpad/chat_with_pdf",
-        "output_path": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000"
+        "flow_path": "/Users/<user>/Work/azure-promptflow/scratchpad/chat_with_pdf",
+        "output_path": "/Users/<user>/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000"
     },
     "flow_name": "chat_with_pdf",
-    "data": "/Users/jietong/Work/azure-promptflow/scratchpad/chat_with_pdf/data/bert-paper-qna.jsonl",
-    "output": "/Users/jietong/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000/    flow_outputs/output.jsonl"
+    "data": "/Users/<user>/Work/azure-promptflow/scratchpad/chat_with_pdf/data/bert-paper-qna.jsonl",
+    "output": "/Users/<user>/.promptflow/.runs/chat_with_pdf_default_20230820_162219_559000/    flow_outputs/output.jsonl"
 }
 ```
 
