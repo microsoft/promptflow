@@ -18,7 +18,7 @@ from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 
 class PFClient:

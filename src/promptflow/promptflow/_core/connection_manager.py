@@ -110,7 +110,7 @@ class ConnectionManager:
             if module:
                 modules.add(module)
         for module in modules:
-            # Supress import error, as we have legacy module promptflow.tools.connections.
+            # Suppress import error, as we have legacy module promptflow.tools.connections.
             try_import(module, f"Import connection module {module!r} failed.", raise_error=False)
 
     @staticmethod
