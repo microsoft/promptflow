@@ -43,7 +43,7 @@ For more information see [develop the flow using different tools](./develop-stan
 ## Chain your flow - link nodes together
 Before linking nodes together, you need to define and expose an interface.
 
-For more information see [chain your flow](./develop-standard-flow.md#chain-your-flow-link-nodes-together).
+For more information see [chain your flow](./develop-standard-flow.md#chain-your-flow---link-nodes-together).
 
 
 ## Set flow output
