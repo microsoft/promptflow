@@ -12,10 +12,16 @@ from promptflow._core.tracer import Trace, Tracer, TraceType
 
 
 class LangChainEventType(Enum):
-    LLM = "LLM"
-    CHAIN = "CHAIN"
-    TOOL = "TOOL"
-    AGENT = "AGENT"
+    LLM = "LLM", 0
+    CHAIN = "CHAIN", 1
+    TOOL = "TOOL", 2
+    AGENT = "AGENT", 3
+
+    def __init__(self, _: str, level: int):
+        self._level = level
+
+    def __lt__(self, other: "LangChainEventType"):
+        return self._level < other._level
 
 
 class PromptFlowCallbackHandler(BaseCallbackHandler):
@@ -46,7 +52,11 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         if self._events_stack[-1] == event_type:
             self._events_stack.pop()
             return True
-        return False
+        elif self._events_stack[-1] < event_type:
+            return False
+        else:
+            self._events_stack.pop()
+            return self._try_pop_event_type(event_type)
 
     def _push(self, trace: Trace):
         if not self._tracer:
