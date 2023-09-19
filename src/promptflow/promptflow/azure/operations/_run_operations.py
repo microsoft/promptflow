@@ -73,8 +73,9 @@ class RunOperations(_ScopeDependentOperations):
     attaches it as an attribute.
     """
 
-    DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
-    ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
+    # add "_" in front of the constant to hide them from the docstring
+    _DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
+    _ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
 
     def __init__(
         self,
@@ -131,7 +132,7 @@ class RunOperations(_ScopeDependentOperations):
             return None
         if input_uri.startswith("azureml://"):
             # input uri is a datastore path
-            match = self.DATASTORE_PATH_PATTERN.match(input_uri)
+            match = self._DATASTORE_PATH_PATTERN.match(input_uri)
             if not match or len(match.groups()) != 2:
                 logger.warning(error_msg)
                 return None
@@ -156,7 +157,7 @@ class RunOperations(_ScopeDependentOperations):
         error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
         if not output_uri:
             return None
-        match = self.ASSET_ID_PATTERN.match(output_uri)
+        match = self._ASSET_ID_PATTERN.match(output_uri)
         if not match or len(match.groups()) != 2:
             logger.warning(error_msg)
             return None
