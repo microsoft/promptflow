@@ -356,6 +356,14 @@ def _exec_line(
             return result
 
 
+def trace_calls(frame, event, arg):
+    if event == "call":
+        print(f"Process: {os.getpid()}, Calling function======= {frame.f_code.co_name}")
+    elif event == "return":
+        print(f"Process: {os.getpid()}, Returning from function======= {frame.f_code.co_name}")
+    return trace_calls
+
+
 def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
@@ -363,6 +371,8 @@ def _process_wrapper(
     log_context_initilization_func,
     operation_contexts_dict: dict,
 ):
+    import sys
+    sys.setprofile(trace_calls)
     import threading
     import time
     logging_name = os.getpid()
