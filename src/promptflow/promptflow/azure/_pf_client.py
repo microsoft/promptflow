@@ -156,10 +156,10 @@ class PFClient:
         .. admonition::
             Data can be local file or remote path.
             - Example:
-                - ``data = "path/to/local/file"``
-                - ``data = "azureml:data_name:data_version"``
-                - ``data = "azureml://datastores/datastore_name/path/to/file"``
-                - ``data = "http://example.com/data.jsonl"``
+                - `data = "path/to/local/file"`
+                - `data = "azureml:data_name:data_version"`
+                - `data = "azureml://datastores/datastore_name/path/to/file"`
+                - `data = "https://example.com/data.jsonl"`
 
             Column mapping is a mapping from flow input name to specified values.
             If specified, the flow will be executed with provided value for specified inputs.

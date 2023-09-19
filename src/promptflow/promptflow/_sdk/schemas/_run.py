@@ -32,7 +32,7 @@ class ResourcesSchema(metaclass=PatchedSchemaMeta):
 class RemotePathStr(fields.Str):
     default_error_messages = {
         "invalid_path": "Invalid remote path. "
-        "Currently only azureml://xxx or public URL(e.g. http://xxx) are supported.",
+        "Currently only azureml://xxx or public URL(e.g. https://xxx) are supported.",
     }
 
     def _validate(self, value):
