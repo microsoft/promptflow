@@ -85,6 +85,7 @@ if __name__ == "__main__":
             "run",
             f"{coverage_config}",
             f"{cov_path_list}",
+            "--branch",
             "-m",
         ] + pytest_command
     # coverage run coverage_config cov_path_list --branch -m + pytest_command
