@@ -21,8 +21,8 @@ Each node in your flow can have an associated activate config, specifying when i
 You can manually change the flow.dag.yaml in the flow folder or use the visual editor in VS Code Extension to add activate config to nodes in the flow.
 
 ::::{tab-set}
-:::{tab-item} Yaml
-:sync: Yaml
+:::{tab-item} YAML
+:sync: YAML
 
 You can add activate config in the node section of flow yaml.
 ```yaml
