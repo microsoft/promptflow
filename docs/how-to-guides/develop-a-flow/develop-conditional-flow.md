@@ -37,10 +37,10 @@ activate:
 :sync: VS Code Extension
 
 - Click `Visual editor` in the flow.dag.yaml to enter the flow interface.
-![visual_editor](../media/how-to-guides/conditional-flow-with-activate/visual_editor.png)
+![visual_editor](../../media/how-to-guides/conditional-flow-with-activate/visual_editor.png)
 
 - Click on the `Activation config` section in the node you want to add and fill in the values for "when" and "is".
-![activate_config](../media/how-to-guides/conditional-flow-with-activate/activate_config.png)
+![activate_config](../../media/how-to-guides/conditional-flow-with-activate/activate_config.png)
 
 :::
 
@@ -49,17 +49,17 @@ activate:
 ### Notice
 1. There are two scenarios where nodes might be bypassed even without an activate config or when conditions aren't met:
 - If a node has activate config and the node pointed to by `activate.when` is bypassed, it will also be bypassed.
-  ![activate_when_bypassed](../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
+  ![activate_when_bypassed](../../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
 - If a node does not have activate config but depends on other nodes that have been bypassed, it will also be bypassed.
-  ![dependencies_bypassed](../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
+  ![dependencies_bypassed](../../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
 
 2. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
 
-    ![provide_default_value](../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
+    ![provide_default_value](../../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
 
 3. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This can lead to flow failures due to a lack of valid values on the flow output.
 
-    ![output_bypassed](../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
+    ![output_bypassed](../../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
 
 ## Example flow
 
