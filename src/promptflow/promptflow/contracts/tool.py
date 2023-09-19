@@ -14,7 +14,7 @@ from .types import PromptTemplate, Secret
 T = TypeVar("T", bound="Enum")
 
 
-def deserialize_enum(cls: Type[T], val) -> T:
+def _deserialize_enum(cls: Type[T], val) -> T:
     # Replace i with i.value because in Enum, i is always Enum object, only i.value could be str
     if not all(isinstance(i.value, str) for i in cls):
         return val

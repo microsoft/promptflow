@@ -7,6 +7,7 @@ from promptflow._core.tools_manager import connections
 from promptflow._sdk.entities._connection import AzureContentSafetyConnection
 from enum import Enum
 
+
 class TestStatus(Enum):
     Running = 1
     Preparing = 2
@@ -67,9 +68,9 @@ class TestValueType:
             (123, ValueType.STRING, "123"),
             ('["a", "b", "c"]', ValueType.LIST, ['a', 'b', 'c']),
             ('{"key": "value"}', ValueType.OBJECT, {'key': 'value'}),
-            ('[1,2,3]', ValueType.OBJECT, [1,2,3]),
+            ('[1, 2, 3]', ValueType.OBJECT, [1, 2, 3]),
             ('{', ValueType.OBJECT, '{'),
-            ([1,2,3], ValueType.OBJECT, [1,2,3]),
+            ([1, 2, 3], ValueType.OBJECT, [1, 2, 3]),
         ]
     )
     def test_parse(self, value, value_type, expected):
