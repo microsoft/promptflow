@@ -11,7 +11,7 @@ Note that all dependent connections must be created before building as executabl
 pf connection create --file ../../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
 ```
 Use the command below to build a flow as executable format app:
-```bash
+```shell
 pf flow build --source ../../../flows/standard/web-classification --output target --format executable
 ```
 
