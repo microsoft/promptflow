@@ -22,6 +22,7 @@ from promptflow.executor._errors import (
     NodeInputValidationError,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
+    ResolveToolError,
 )
 from promptflow.executor.flow_executor import BulkResult
 
@@ -32,12 +33,13 @@ from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_yaml_file
 @pytest.mark.e2etest
 class TestValidation:
     @pytest.mark.parametrize(
-        "flow_folder, yml_file, error_class, error_msg",
+        "flow_folder, yml_file, error_class, inner_class, error_msg",
         [
             (
                 "nodes_names_duplicated",
                 "flow.dag.yaml",
                 DuplicateNodeName,
+                None,
                 (
                     "Invalid node definitions found in the flow graph. Node with name 'stringify_num' appears more "
                     "than once in the node definitions in your flow, which is not allowed. To "
@@ -48,16 +50,19 @@ class TestValidation:
             (
                 "source_file_missing",
                 "flow.dag.jinja.yaml",
+                ResolveToolError,
                 InvalidSource,
                 (
-                    "Node source path 'summarize_text_content__variant_1.jinja2' is invalid on "
-                    "node 'summarize_text_content'."
+                    "Tool load failed in 'summarize_text_content': (InvalidSource) "
+                    "Node source path 'summarize_text_content__variant_1.jinja2' is invalid on node "
+                    "'summarize_text_content'."
                 ),
             ),
             (
                 "node_reference_not_found",
                 "flow.dag.yaml",
                 NodeReferenceNotFound,
+                None,
                 (
                     "Invalid node definitions found in the flow graph. Node 'divide_num_2' references a non-existent "
                     "node 'divide_num_3' in your flow. Please review your flow to ensure that the "
@@ -68,6 +73,7 @@ class TestValidation:
                 "node_circular_dependency",
                 "flow.dag.yaml",
                 NodeCircularDependency,
+                None,
                 (
                     "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
                     "among the nodes in your flow. Kindly review the reference relationships for "
@@ -79,6 +85,7 @@ class TestValidation:
                 "flow_input_reference_invalid",
                 "flow.dag.yaml",
                 InputReferenceNotFound,
+                None,
                 (
                     "Invalid node definitions found in the flow graph. Node 'divide_num' references flow input 'num_1' "
                     "which is not defined in your flow. To resolve this issue, please review your "
@@ -90,6 +97,7 @@ class TestValidation:
                 "flow_output_reference_invalid",
                 "flow.dag.yaml",
                 EmptyOutputReference,
+                None,
                 (
                     "The output 'content' for flow is incorrect. The reference is not specified for the output "
                     "'content' in the flow. To rectify this, ensure that you accurately specify "
@@ -100,6 +108,7 @@ class TestValidation:
                 "outputs_reference_not_valid",
                 "flow.dag.yaml",
                 OutputReferenceNotFound,
+                None,
                 (
                     "The output 'content' for flow is incorrect. The output 'content' references non-existent "
                     "node 'another_stringify_num' in your flow. To resolve this issue, please "
@@ -111,6 +120,7 @@ class TestValidation:
                 "outputs_with_invalid_flow_inputs_ref",
                 "flow.dag.yaml",
                 OutputReferenceNotFound,
+                None,
                 (
                     "The output 'num' for flow is incorrect. The output 'num' references non-existent flow "
                     "input 'num11' in your flow. Please carefully review your flow and correct "
@@ -120,21 +130,25 @@ class TestValidation:
         ],
     )
     def test_executor_create_failure_type_and_message(
-        self, flow_folder, yml_file, error_class, error_msg, dev_connections
+        self, flow_folder, yml_file, error_class, error_msg, inner_class, dev_connections
     ):
         with pytest.raises(error_class) as exc_info:
             FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
+        if isinstance(exc_info.value, ResolveToolError):
+            assert isinstance(exc_info.value.inner_exception, inner_class)
         assert error_msg == exc_info.value.message
 
     @pytest.mark.parametrize(
-        "flow_folder, yml_file, error_class",
+        "flow_folder, yml_file, error_class, inner_class",
         [
-            ("source_file_missing", "flow.dag.python.yaml", PythonParsingError),
+            ("source_file_missing", "flow.dag.python.yaml", ResolveToolError, PythonParsingError),
         ],
     )
-    def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, dev_connections):
-        with pytest.raises(error_class):
+    def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, inner_class, dev_connections):
+        with pytest.raises(error_class) as e:
             FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
+        if isinstance(e.value, ResolveToolError):
+            assert isinstance(e.value.inner_exception, inner_class)
 
     @pytest.mark.parametrize(
         "ordered_flow_folder,  unordered_flow_folder",
@@ -150,18 +164,20 @@ class TestValidation:
             assert node1.name == node2.name
 
     @pytest.mark.parametrize(
-        "flow_folder, error_class",
+        "flow_folder, error_class, inner_class",
         [
-            ("invalid_connection", ConnectionNotFound),
-            ("tool_type_missing", NotImplementedError),
-            ("wrong_module", FailedToImportModule),
-            ("wrong_api", APINotFound),
-            ("wrong_provider", APINotFound),
+            ("invalid_connection", ResolveToolError, ConnectionNotFound),
+            ("tool_type_missing", ResolveToolError, NotImplementedError),
+            ("wrong_module", FailedToImportModule, None),
+            ("wrong_api", ResolveToolError, APINotFound),
+            ("wrong_provider", ResolveToolError, APINotFound),
         ],
     )
-    def test_invalid_flow_dag(self, flow_folder, error_class, dev_connections):
-        with pytest.raises(error_class):
+    def test_invalid_flow_dag(self, flow_folder, error_class, inner_class, dev_connections):
+        with pytest.raises(error_class) as e:
             FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+        if isinstance(e.value, ResolveToolError):
+            assert isinstance(e.value.inner_exception, inner_class)
 
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class",
@@ -315,8 +331,9 @@ class TestValidation:
         ],
     )
     def test_flow_run_with_duplicated_inputs(self, flow_folder, msg, dev_connections):
-        with pytest.raises(NodeInputValidationError, match=msg):
+        with pytest.raises(ResolveToolError, match=msg) as e:
             FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
+        assert isinstance(e.value.inner_exception, NodeInputValidationError)
 
     @pytest.mark.parametrize(
         "flow_folder, batch_input, raise_on_line_failure, error_class",

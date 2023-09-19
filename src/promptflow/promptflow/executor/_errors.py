@@ -2,7 +2,14 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
+from promptflow._utils.exception_utils import ExceptionPresenter, RootErrorCode
+from promptflow.exceptions import (
+    ErrorTarget,
+    PromptflowException,
+    SystemErrorException,
+    UserErrorException,
+    ValidationException,
+)
 
 
 class InvalidCustomLLMTool(ValidationException):
@@ -172,3 +179,42 @@ class LineExecutionTimeoutError(UserErrorException):
         super().__init__(
             message=f"Line {line_number} execution timeout for exceeding {timeout} seconds", target=ErrorTarget.EXECUTOR
         )
+
+
+class ResolveToolError(PromptflowException):
+    """Exception raised when tool load failed."""
+
+    def __init__(self, *, node_name: str, target: ErrorTarget = ErrorTarget.EXECUTOR, module: str = None):
+        self._node_name = node_name
+        super().__init__(target=target, module=module)
+
+    @property
+    def message_format(self):
+        if self.inner_exception:
+            return "Tool load failed in '{node_name}': {error_type_and_message}"
+        else:
+            return "Tool load failed in '{node_name}'."
+
+    @property
+    def message_parameters(self):
+        error_type_and_message = None
+        if self.inner_exception:
+            error_type_and_message = f"({self.inner_exception.__class__.__name__}) {self.inner_exception}"
+
+        return {
+            "node_name": self._node_name,
+            "error_type_and_message": error_type_and_message,
+        }
+
+    @property
+    def additional_info(self):
+        """Get additional info from innererror when the innererror is PromptflowException"""
+        if isinstance(self.inner_exception, PromptflowException):
+            return self.inner_exception.additional_info
+        return None
+
+    @property
+    def error_codes(self):
+        if self.inner_exception:
+            return ExceptionPresenter.create(self.inner_exception).error_codes
+        return [RootErrorCode.SYSTEM_ERROR]

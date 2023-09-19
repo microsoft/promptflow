@@ -13,7 +13,7 @@ from typing import Callable, List, Mapping, Optional, Tuple, Union
 import pkg_resources
 import yaml
 
-from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError
+from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -161,7 +161,11 @@ class BuiltinsManager:
                 target=ErrorTarget.EXECUTOR,
             )
         # Return the init_inputs to update node inputs in the afterward steps
-        return getattr(provider_class(**init_inputs_values), method_name), init_inputs
+        try:
+            api = getattr(provider_class(**init_inputs_values), method_name)
+        except Exception as ex:
+            raise ToolLoadError(target=ErrorTarget.TOOL, module=module_name) from ex
+        return api, init_inputs
 
     @staticmethod
     def load_tool_by_api_name(api_name: str) -> Tool:
