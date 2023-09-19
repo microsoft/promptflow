@@ -51,7 +51,7 @@ class RunSchema(YamlFileSchema):
     )
     connections = fields.Dict(keys=fields.Str(), values=fields.Dict(keys=fields.Str()))
     # inputs field
-    data = LocalPathField()
+    data = fields.Str()
     column_mapping = fields.Dict(keys=fields.Str)
     # runtime field, only available for cloud run
     runtime = fields.Str()
