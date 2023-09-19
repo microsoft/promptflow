@@ -55,7 +55,6 @@ if __name__ == "__main__":
             cov_path_list = [f"--cov={path}" for path in args.p]
             pytest_command += cov_path_list
         pytest_command += [  # noqa: W503
-            "--cov-branch",
             "--cov-report=term",
             "--cov-report=html",
             "--cov-report=xml",
