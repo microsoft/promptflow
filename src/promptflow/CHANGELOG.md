@@ -1,10 +1,39 @@
 # Release History
 
-## 0.1.0b5 (Upcoming)
+## 0.1.0b7 (Upcoming)
 
-### Features added
+### Features Added
+
+### Bugs Fixed
+- [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+
+### Other Changes
+- [Executor][Internal] Improve error message with more details and actionable information.
+
+## 0.1.0b6 (2023.09.15)
+
+### Features Added
+
+- [promptflow][Feature] Store token metrics in run properties
+
+### Bugs Fixed
+
+- Refine error message body for flow_validator.py
+- Refine error message body for run_tracker.py
+- [Executor][Internal] Add some unit test to improve code coverage of log/metric
+- [SDK/CLI] Update portal link to remove flight.
+- [Executor][Internal] Improve inputs mapping's error message.
+- [API] Resolve warnings/errors of sphinx build
+
+## 0.1.0b5 (2023.09.08)
+
+### Features Added
 
 - **pf run visualize**: support lineage graph & display name in visualize page
+
+### Bugs Fixed
+
+- Add missing requirement `psutil` in `setup.py`
 
 ## 0.1.0b4 (2023.09.04)
 

@@ -5,7 +5,7 @@ import abc
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
@@ -82,7 +82,7 @@ class _Connection(YAMLTranslatableMixin):
         # | <user-input>     | prompt input | prompt input        | raise error          |
         # --------------------------------------------------------------------------------
         self.secrets = secrets or {}
-        self._secrets = {**self.secrets}  # Unscrubbed secrets
+        self._secrets = {**self.secrets}  # Un-scrubbed secrets
         self.expiry_time = kwargs.get("expiry_time", None)
         self.created_date = kwargs.get("created_date", None)
         self.last_modified_date = kwargs.get("last_modified_date", None)
@@ -102,7 +102,8 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
-    def keys(self):
+    def keys(self) -> List:
+        """Return keys of the connection properties."""
         return list(self.configs.keys()) + list(self.secrets.keys())
 
     def __getitem__(self, item):
@@ -179,7 +180,12 @@ class _Connection(YAMLTranslatableMixin):
         pass
 
     @classmethod
-    @abc.abstractmethod
+    def _from_mt_rest_object(cls, mt_rest_obj) -> "_Connection":
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        obj = type_cls._from_mt_rest_object(mt_rest_obj)
+        return obj
+
+    @classmethod
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
         # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
         type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
@@ -236,7 +242,7 @@ class _Connection(YAMLTranslatableMixin):
         )
         return connection
 
-    def to_execution_connection_dict(self) -> dict:
+    def _to_execution_connection_dict(self) -> dict:
         value = {**self.configs, **self.secrets}
         secret_keys = list(self.secrets.keys())
         return {
@@ -247,7 +253,7 @@ class _Connection(YAMLTranslatableMixin):
         }
 
     @classmethod
-    def from_execution_connection_dict(cls, name, data) -> "_Connection":
+    def _from_execution_connection_dict(cls, name, data) -> "_Connection":
         type_cls, _ = cls._resolve_cls_and_type(data={"type": data.get("type")[: -len("Connection")]})
         value_dict = data.get("value", {})
         if type_cls == CustomConnection:
@@ -287,12 +293,26 @@ class _StrongTypeConnection(_Connection):
         obj._secrets = {**obj.secrets}
         return obj
 
+    @classmethod
+    def _from_mt_rest_object(cls, mt_rest_obj):
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        obj = type_cls(
+            name=mt_rest_obj.connection_name,
+            expiry_time=mt_rest_obj.expiry_time,
+            created_date=mt_rest_obj.created_date,
+            last_modified_date=mt_rest_obj.last_modified_date,
+            **mt_rest_obj.configs,
+        )
+        return obj
+
     @property
     def api_key(self):
-        return self.secrets.get("api_key", "***")
+        """Return the api key."""
+        return self.secrets.get("api_key", SCRUBBED_VALUE)
 
     @api_key.setter
     def api_key(self, value):
+        """Set the api key."""
         self.secrets["api_key"] = value
 
 
@@ -507,8 +527,7 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):
-    """
-    Azure Content Safety connection.
+    """Azure Content Safety connection.
 
     :param api_key: The api key.
     :type api_key: str
@@ -613,12 +632,6 @@ class CustomConnection(_Connection):
     TYPE = ConnectionType.CUSTOM
 
     def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
-        if not secrets:
-            raise ValueError(
-                "Secrets is required for custom connection, "
-                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
-                "to initialize custom connection."
-            )
         super().__init__(secrets=secrets, configs=configs, **kwargs)
 
     @classmethod
@@ -644,11 +657,18 @@ class CustomConnection(_Connection):
         return super().__getattribute__(item)
 
     def is_secret(self, item):
+        """Check if item is a secret."""
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
         return item in self.secrets
 
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
+        if not self.secrets:
+            raise ValueError(
+                "Secrets is required for custom connection, "
+                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                "to initialize custom connection."
+            )
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
         }
@@ -700,6 +720,32 @@ class CustomConnection(_Connection):
             expiry_time=orm_object.expiryTime,
             created_date=orm_object.createdDate,
             last_modified_date=orm_object.lastModifiedDate,
+        )
+
+    @classmethod
+    def _from_mt_rest_object(cls, mt_rest_obj):
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        if not mt_rest_obj.custom_configs:
+            mt_rest_obj.custom_configs = {}
+        configs = {
+            k: v.value
+            for k, v in mt_rest_obj.custom_configs.items()
+            if v.config_value_type == ConfigValueType.STRING.value
+        }
+
+        secrets = {
+            k: v.value
+            for k, v in mt_rest_obj.custom_configs.items()
+            if v.config_value_type == ConfigValueType.SECRET.value
+        }
+
+        return cls(
+            name=mt_rest_obj.connection_name,
+            configs=configs,
+            secrets=secrets,
+            expiry_time=mt_rest_obj.expiry_time,
+            created_date=mt_rest_obj.created_date,
+            last_modified_date=mt_rest_obj.last_modified_date,
         )
 
 

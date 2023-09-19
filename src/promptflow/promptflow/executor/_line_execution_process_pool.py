@@ -1,11 +1,15 @@
 import contextvars
+import math
 import multiprocessing
+import os
 import queue
 from datetime import datetime
 from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Process, Queue
 from multiprocessing.pool import ThreadPool
+
+import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
@@ -294,12 +298,12 @@ def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
     output_queue: Queue,
-    log_context_initilization_func,
+    log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
-    if log_context_initilization_func:
-        with log_context_initilization_func():
+    if log_context_initialization_func:
+        with log_context_initialization_func():
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
     else:
         exec_line_for_queue(executor_creation_func, input_queue, output_queue)
@@ -363,11 +367,6 @@ def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, st
 
 
 def get_available_max_worker_count():
-    import math
-    import os
-
-    import psutil
-
     pid = os.getpid()
     mem_info = psutil.virtual_memory()
     total_memory = mem_info.total / (1024 * 1024)  # in MB

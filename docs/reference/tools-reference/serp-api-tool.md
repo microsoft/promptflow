@@ -13,7 +13,7 @@ Sign up at [SERP API homepage](https://serpapi.com/)
 
 
 ## Connection
-Connnection is the model used to establish connections with Serp API.
+Connection is the model used to establish connections with Serp API.
 
 | Type        | Name     | API KEY  |
 |-------------|----------|----------|

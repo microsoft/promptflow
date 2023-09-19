@@ -2,7 +2,7 @@ import pytest
 import yaml
 
 from promptflow.contracts.flow import Flow
-from promptflow.executor._errors import InvalidFlowRequest
+from promptflow.executor._errors import InputParseError, InvalidFlowRequest
 from promptflow.executor.flow_validator import FlowValidator
 
 from ...utils import WRONG_FLOW_ROOT, get_yaml_file
@@ -32,34 +32,32 @@ class TestFlowValidator:
             (
                 "nodes_cycle",
                 (
-                    "Node circular dependency has been detected among the nodes in your flow. "
-                    "Kindly review the reference relationships for the nodes "
-                    "['first_node', 'second_node'] and resolve the circular reference issue in "
-                    "the flow."
+                    "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
+                    "among the nodes in your flow. Kindly review the reference relationships for the nodes "
+                    "['first_node', 'second_node'] and resolve the circular reference issue in the flow."
                 ),
             ),
             (
                 "nodes_cycle_with_skip",
                 (
-                    "Node circular dependency has been detected among the nodes in your flow. "
-                    "Kindly review the reference relationships for the "
-                    "nodes ['first_node', 'second_node'] and resolve the circular reference issue "
-                    "in the flow."
+                    "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
+                    "among the nodes in your flow. Kindly review the reference relationships for the nodes "
+                    "['first_node', 'second_node'] and resolve the circular reference issue in the flow."
                 ),
             ),
             (
                 "nodes_cycle_with_activate",
                 (
-                    "Node circular dependency has been detected among the nodes in your flow. "
-                    "Kindly review the reference relationships for the nodes ['first_node', "
-                    "'second_node'] and resolve the circular reference issue in the flow."
+                    "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
+                    "among the nodes in your flow. Kindly review the reference relationships "
+                    "for the nodes ['first_node', 'second_node'] and resolve the circular reference issue in the flow."
                 ),
             ),
             (
                 "wrong_node_reference",
                 (
-                    "Node 'second_node' references a non-existent node 'third_node' in your flow. "
-                    "Please review your flow to ensure that the node "
+                    "Invalid node definitions found in the flow graph. Node 'second_node' references a non-existent "
+                    "node 'third_node' in your flow. Please review your flow to ensure that the node "
                     "name is accurately specified."
                 ),
             ),
@@ -87,3 +85,43 @@ class TestFlowValidator:
         print(flow.outputs)
         assert flow.outputs["content"] is not None
         assert flow.outputs.get("aggregate_content") is None
+
+    @pytest.mark.parametrize(
+        "flow_folder, inputs, index, error_type, error_message",
+        [
+            (
+                "flow_with_list_input",
+                {"key": "['hello']"},
+                None,
+                InputParseError,
+                (
+                    "Failed to parse the flow input. The value for flow input 'key' was "
+                    "interpreted as JSON string since its type is 'list'. However, the value "
+                    "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
+                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are properly formatted."
+                ),
+            ),
+            (
+                "flow_with_list_input",
+                {"key": "['hello']"},
+                0,
+                InputParseError,
+                (
+                    "Failed to parse the flow input. The value for flow input 'key' in line 0 of input data was "
+                    "interpreted as JSON string since its type is 'list'. However, the value "
+                    "'['hello']' is invalid for JSON parsing. Error details: (JSONDecodeError) "
+                    "Expecting value: line 1 column 2 (char 1). Please make sure your inputs are properly formatted."
+                ),
+            ),
+        ],
+    )
+    def test_resolve_flow_inputs_type_json_error_for_list_type(
+        self, flow_folder, inputs, index, error_type, error_message
+    ):
+        flow_yaml = get_yaml_file(flow_folder)
+        with open(flow_yaml, "r") as fin:
+            flow = Flow.deserialize(yaml.safe_load(fin))
+
+        with pytest.raises(error_type) as exe_info:
+            FlowValidator.resolve_flow_inputs_type(flow, inputs, idx=index)
+        assert error_message == exe_info.value.message

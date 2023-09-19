@@ -1,10 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-# ---------------------------------------------------------
-# Copyright (c) Microsoft Corporation. All rights reserved.
-# ---------------------------------------------------------
-"""service_calller.py, module for interacting with the AzureML service."""
+"""service_caller.py, module for interacting with the AzureML service."""
 import json
 import logging
 import os
@@ -44,7 +41,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
     def __init__(self):
         super().__init__()
-        self._request_id = None
+        self._request_id = str(uuid.uuid4())
         self._from_cli = False
 
     def _get_telemetry_values(self, *args, **kwargs):
@@ -58,7 +55,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
 
 def _request_wrapper():
-    """Wrapper for request. Will refress request id and pretty print exception."""
+    """Wrapper for request. Will refresh request id and pretty print exception."""
     def exception_wrapper(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -126,10 +123,7 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
     def _get_headers(self):
         token = self._credential.get_token("https://management.azure.com/.default")
-        custom_header = {
-            "Authorization": "Bearer " + token.token,
-            "x-ms-client-request-id": str(uuid.uuid4())
-        }
+        custom_header = {"Authorization": "Bearer " + token.token, "x-ms-client-request-id": self._request_id}
         return custom_header
 
     def _set_headers_with_user_aml_token(self, headers):

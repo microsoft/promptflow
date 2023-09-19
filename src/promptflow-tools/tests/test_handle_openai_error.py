@@ -32,7 +32,7 @@ class TestHandleOpenAIError:
             aoai_provider.chat(prompt=prompt, deployment_name="gpt-35-turbo")
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    def test_aoai_authencation_error_with_bad_api_key(self, azure_open_ai_connection):
+    def test_aoai_authentication_error_with_bad_api_key(self, azure_open_ai_connection):
         azure_open_ai_connection.api_key = "hello"
         prompt_template = "please complete this sentence: world war II "
         raw_message = (

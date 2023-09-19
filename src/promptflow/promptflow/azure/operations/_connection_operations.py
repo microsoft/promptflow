@@ -16,10 +16,10 @@ from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
 
 class ConnectionOperations(_ScopeDependentOperations):
-    """FlowOperations.
+    """ConnectionOperations.
 
     You should not instantiate this class directly. Instead, you should
-    create an MLClient instance that instantiates it for you and
+    create an PFClient instance that instantiates it for you and
     attaches it as an attribute.
     """
 
@@ -49,7 +49,7 @@ class ConnectionOperations(_ScopeDependentOperations):
             body=rest_conn,
         )
 
-        return _Connection._from_rest_object(rest_conn_result)
+        return _Connection._from_mt_rest_object(rest_conn_result)
 
     def get(self, name, **kwargs):
         rest_conn = self._service_caller.get_connection(
@@ -59,8 +59,7 @@ class ConnectionOperations(_ScopeDependentOperations):
             connection_name=name,
             **kwargs,
         )
-
-        return _Connection._from_rest_object(rest_conn)
+        return _Connection._from_mt_rest_object(rest_conn)
 
     def delete(self, name, **kwargs):
         return self._service_caller.delete_connection(
@@ -78,8 +77,7 @@ class ConnectionOperations(_ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             **kwargs,
         )
-
-        return [Connection._from_rest_object(conn) for conn in rest_connections]
+        return [_Connection._from_mt_rest_object(conn) for conn in rest_connections]
 
     def list_connection_specs(self, **kwargs):
         results = self._service_caller.list_connection_specs(

@@ -47,13 +47,13 @@ jobs:
         with:
           submodules: true
 
-      - name: Override version with PR number
+      - name: Override version with workflow run number
         id: override_version
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'push'
         run: |
-          echo "VERSION = \"0.0.${{ github.event.pull_request.number }}\"" > src/${{ inputs.SourceFolderName }}/promptflow/version.txt
-          echo "VERSION: 0.0.${{ github.event.pull_request.number }}"
-          echo "version=0.0.${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          echo "VERSION = \"0.0.${{ github.run_number }}\"" > src/${{ inputs.SourceFolderName }}/promptflow/version.txt
+          echo "VERSION: 0.0.${{ github.run_number }}"
+          echo "version=0.0.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up conda environment
         uses: conda-incubator/setup-miniconda@v2

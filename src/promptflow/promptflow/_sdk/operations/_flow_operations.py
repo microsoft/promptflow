@@ -48,7 +48,7 @@ class FlowOperations:
         node: str = None,
         environment_variables: dict = None,
     ) -> dict:
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :type flow: Union[str, PathLike]
@@ -84,7 +84,7 @@ class FlowOperations:
         stream_log: bool = True,
         allow_generator_output: bool = True,
     ):
-        """Test flow or node
+        """Test flow or node.
 
         :param flow: path to flow directory to test
         :param inputs: Input data for the flow test
@@ -193,8 +193,7 @@ class FlowOperations:
                 show_step_output=kwargs.get("show_step_output", False),
             )
 
-    @classmethod
-    def _build_environment_config(cls, flow_dag_path: Path):
+    def _build_environment_config(self, flow_dag_path: Path):
         flow_info = yaml.safe_load(flow_dag_path.read_text())
         # standard env object:
         # environment:
@@ -224,7 +223,10 @@ class FlowOperations:
         return env_obj
 
     @classmethod
-    def _dump_connection(cls, connection, output_path: Path):
+    def _refine_connection_name(cls, connection_name: str):
+        return connection_name.replace(" ", "_")
+
+    def _dump_connection(self, connection, output_path: Path):
         # connection yaml should be a dict instead of ordered dict
         connection_dict = connection._to_dict()
         connection_yaml = {
@@ -238,7 +240,8 @@ class FlowOperations:
         else:
             secret_dict = connection_yaml
 
-        env_var_names = [f"{connection.name}_{secret_key}".upper() for secret_key in connection.secrets]
+        connection_var_name = self._refine_connection_name(connection.name)
+        env_var_names = [f"{connection_var_name}_{secret_key}".upper() for secret_key in connection.secrets]
         for secret_key, secret_env in zip(connection.secrets, env_var_names):
             secret_dict[secret_key] = "${env:" + secret_env + "}"
 
@@ -259,8 +262,7 @@ class FlowOperations:
             f.write(dump_yaml(sorted_connection_dict, sort_keys=False))
         return env_var_names
 
-    @classmethod
-    def _migrate_connections(cls, connection_names: List[str], output_dir: Path):
+    def _migrate_connections(self, connection_names: List[str], output_dir: Path):
         from promptflow._sdk._pf_client import PFClient
 
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -269,8 +271,9 @@ class FlowOperations:
         connection_paths, env_var_names = [], {}
         for connection_name in connection_names:
             connection = local_client.connections.get(name=connection_name, with_secrets=True)
-            connection_paths.append(output_dir / f"{connection_name}.yaml")
-            for env_var_name in cls._dump_connection(
+            connection_var_name = self._refine_connection_name(connection_name)
+            connection_paths.append(output_dir / f"{connection_var_name}.yaml")
+            for env_var_name in self._dump_connection(
                 connection,
                 connection_paths[-1],
             ):
@@ -283,9 +286,8 @@ class FlowOperations:
 
         return connection_paths, list(env_var_names.keys())
 
-    @classmethod
     def _export_flow_connections(
-        cls,
+        self,
         flow_dag_path: Path,
         *,
         output_dir: Path,
@@ -294,14 +296,13 @@ class FlowOperations:
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
 
-        return cls._migrate_connections(
+        return self._migrate_connections(
             connection_names=executable.get_connection_names(),
             output_dir=output_dir,
         )
 
-    @classmethod
     def _build_flow(
-        cls,
+        self,
         flow_dag_path: Path,
         *,
         output: Union[str, PathLike],
@@ -327,9 +328,8 @@ class FlowOperations:
             generate_flow_tools_json(flow_copy_target)
         return flow_copy_target / flow_dag_path.name
 
-    @classmethod
     def _export_to_docker(
-        cls,
+        self,
         flow_dag_path: Path,
         output_dir: Path,
         *,
@@ -342,7 +342,7 @@ class FlowOperations:
             encoding="utf-8",
         )
 
-        environment_config = cls._build_environment_config(flow_dag_path)
+        environment_config = self._build_environment_config(flow_dag_path)
 
         # TODO: make below strings constants
         copy_tree_respect_template_and_ignore_file(
@@ -356,9 +356,8 @@ class FlowOperations:
             },
         )
 
-    @classmethod
     def build(
-        cls,
+        self,
         flow: Union[str, PathLike],
         *,
         output: Union[str, PathLike],
@@ -407,7 +406,7 @@ class FlowOperations:
         else:
             output_flow_dir = output_dir / "flow"
 
-        new_flow_dag_path = cls._build_flow(
+        new_flow_dag_path = self._build_flow(
             flow_dag_path=flow_dag_path,
             output=output_flow_dir,
             tuning_node=tuning_node,
@@ -418,13 +417,13 @@ class FlowOperations:
             return
 
         # use new flow dag path below as origin one may miss additional includes
-        connection_paths, env_var_names = cls._export_flow_connections(
+        connection_paths, env_var_names = self._export_flow_connections(
             flow_dag_path=new_flow_dag_path,
             output_dir=output_dir / "connections",
         )
 
         if format == "docker":
-            cls._export_to_docker(
+            self._export_to_docker(
                 flow_dag_path=new_flow_dag_path,
                 output_dir=output_dir,
                 connection_paths=connection_paths,
@@ -432,7 +431,6 @@ class FlowOperations:
                 env_var_names=env_var_names,
             )
 
-    @classmethod
     @contextlib.contextmanager
     def _resolve_additional_includes(cls, flow_dag_path: Path) -> Iterable[Path]:
         if _get_additional_includes(flow_dag_path):

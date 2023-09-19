@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from tabulate import tabulate
 
 from promptflow._sdk._utils import print_red_error, print_yellow_warning
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.utils import is_in_ci_pipeline
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 
@@ -299,7 +300,7 @@ def _calculate_column_widths(df: pd.DataFrame, terminal_width: int) -> List[int]
 
     current_available_width = available_width - sum(column_widths.values())
     if current_available_width > 0:
-        # second round: assign left available wdith to those columns that need more
+        # second round: assign left available width to those columns that need more
         # assign with greedy, sort recorded columns first from longest to shortest;
         # iterate and try to meet each column's expected width
         column_avg_tuples = _build_sorted_column_widths_tuple_list(
@@ -334,6 +335,12 @@ def pretty_print_dataframe_as_table(df: pd.DataFrame) -> None:
     print(tabulate(df, headers="keys", tablefmt="grid", maxcolwidths=column_widths, maxheadercolwidths=column_widths))
 
 
+def is_format_exception():
+    if os.environ.get("PROMPTFLOW_STRUCTURE_EXCEPTION_OUTPUT", "false").lower() == "true":
+        return True
+    return False
+
+
 def exception_handler(command: str):
     """Catch known cli exceptions."""
 
@@ -342,9 +349,18 @@ def exception_handler(command: str):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except PromptflowException as e:
-                print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
-                exit(1)
+            except Exception as e:
+                if is_format_exception():
+                    # When the flag format_exception is set in command,
+                    # it will write a json with exception info and command to stderr.
+                    error_msg = ExceptionPresenter.create(e).to_dict(include_debug_info=True)
+                    error_msg["command"] = " ".join(sys.argv)
+                    sys.stderr.write(json.dumps(error_msg))
+                if isinstance(e, PromptflowException):
+                    print_red_error(f"{command} failed with {e.__class__.__name__}: {str(e)}")
+                    exit(1)
+                else:
+                    raise e
 
         return wrapper
 
@@ -369,8 +385,8 @@ def get_secret_input(prompt, mask="*"):
         # For some reason, mypy reports that msvcrt doesn't have getch, ignore this warning:
         from msvcrt import getch  # type: ignore
     else:  # macOS and Linux
-        import tty
         import termios
+        import tty
 
         def getch():
             fd = sys.stdin.fileno()

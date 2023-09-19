@@ -1,7 +1,7 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
-exclude: '(^docs/)|flows|examples|scripts|src/promptflow/promptflow/azure/_restclient|src/promptflow/tests/test_configs|src/promptflow-tools'
+exclude: '(^docs/)|flows|examples|scripts|src/promptflow/promptflow/azure/_restclient/|src/promptflow/tests/test_configs|src/promptflow-tools'
 
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -23,6 +23,11 @@ repos:
       rev: v2.3.0
       hooks:
           - id: flake8
+    - repo: https://github.com/streetsidesoftware/cspell-cli
+      rev: v6.31.0
+      hooks:
+      - id: cspell
+        args: ['--config', '.cspell.json', "--no-must-find-files"]
     - repo: https://github.com/hadialqattan/pycln
       rev: v2.1.2 # Possible releases: https://github.com/hadialqattan/pycln/tags
       hooks:
