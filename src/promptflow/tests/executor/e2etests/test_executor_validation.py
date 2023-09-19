@@ -7,6 +7,7 @@ import pytest
 from promptflow._core._errors import FlowOutputUnserializable
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
+from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
@@ -314,7 +315,7 @@ class TestValidation:
         # Single Node run - the inputs are from flow_inputs + dependency_nodes_outputs
         with pytest.raises(error_class) as exe_info:
             FlowExecutor.load_and_exec_node(
-                flow_file="flow.dag.yaml",
+                flow_file=DAG_FILE_NAME,
                 node_name=node_name,
                 flow_inputs=line_input,
                 dependency_nodes_outputs={},
