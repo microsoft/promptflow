@@ -157,6 +157,7 @@ class RunTracker(ThreadLocalSingleton):
             api_calls=[],
         )
         self._node_runs[run_id] = run_info
+        return run_info
 
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
         if output:

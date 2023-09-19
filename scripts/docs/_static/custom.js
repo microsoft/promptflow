@@ -30,7 +30,7 @@ window.onload = () => {
 };
 
 // This is used to control homepage background
-if (window.location.pathname === "/" || window.location.pathname === "/index.html") {
+if (window.location.pathname === "/promptflow/" || window.location.pathname === "/promptflow/index.html") {
   var observer = new MutationObserver(function(mutations) {
     const dark = document.documentElement.dataset.theme == 'dark';
     document.body.style.backgroundSize = "100%";
