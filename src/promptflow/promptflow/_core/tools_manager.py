@@ -246,7 +246,7 @@ class ToolsManager:
         if tool not in self._tools:
             raise ValueError(f"Tool {tool} is not loaded")
 
-    # TODO: Remove this method. The code path will not be used in code-first exprience.
+    # TODO: Remove this method. The code path will not be used in code-first experience.
     # Customers are familiar with the term "node", so we use it in error message.
     @staticmethod
     def _load_custom_tool(tool: Tool, node_name: str) -> Callable:
@@ -274,7 +274,7 @@ class ToolLoader:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
 
-    # TODO: Replace NotImpelementedError with NotSupported in the future.
+    # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
         if node.source is None:
             raise UserErrorException(f"Node {node.name} does not have source defined.")
