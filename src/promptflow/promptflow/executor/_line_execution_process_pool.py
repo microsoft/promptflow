@@ -92,10 +92,10 @@ class LineExecutionProcessPool:
         # Starting a new process in non-fork mode requires to allocate memory. Determine the maximum number of processes
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
-            available_max_worker_count = get_available_max_worker_count()
-            self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
+            # available_max_worker_count = get_available_max_worker_count()
+            self._n_process = 1
         else:
-            self._n_process = min(self._worker_count, self._nlines)
+            self._n_process = 1
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
