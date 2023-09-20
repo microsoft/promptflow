@@ -16,7 +16,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import log_progress, set_context
+from promptflow._utils.utils import log_progress, set_context, generate_elapsed_time_messages
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -294,6 +294,14 @@ def _exec_line(
     return result
 
 
+def trace_calls(frame, event, arg):
+    if event == "call":
+        print(f"Process: {os.getpid()}, Calling function {frame.f_code.co_name}")
+    elif event == "return":
+        print(f"Process: {os.getpid()}, Returning from function {frame.f_code.co_name}")
+    return trace_calls
+
+
 def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
@@ -301,12 +309,27 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    import sys
+    sys.setprofile(trace_calls)
+    import threading
+    import time
+    logging_name = os.getpid()
+    interval_seconds = 5
+    start_time = time.perf_counter()
+    thread_id = threading.current_thread().ident
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
-    if log_context_initialization_func:
-        with log_context_initialization_func():
+    with RepeatLogTimer(
+        interval_seconds=5,
+        logger=bulk_logger,
+        level=INFO,
+        log_message_function=generate_elapsed_time_messages,
+        args=(logging_name, start_time, interval_seconds, thread_id)
+    ):
+        if log_context_initialization_func:
+            with log_context_initialization_func():
+                exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        else:
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
-    else:
-        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):

@@ -130,7 +130,7 @@ def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
     while i > 0:
         frame_summary = frame_summaries[i]
         if frame_summary.filename == flow_execution_context.__file__:
-            return frame_summaries[i + 1 :]
+            return frame_summaries[i + 1:]
         i -= 1
     return frame_summaries
 
@@ -146,6 +146,11 @@ def generate_elapsed_time_messages(func_name: str, start_time: float, interval: 
     import sys
 
     frames = sys._current_frames()
+    for thread_id, frame in frames.items():
+        print("Thread ID: %s, Process ID: %s" % (thread_id, os.getpid()))
+        print("Stack Trace: %s" % os.getpid())
+        print("\n".join(traceback.format_stack(frame)))
+        print()
     if thread_id not in frames:
         thread_msg = (
             f"thread {thread_id} cannot be found in sys._current_frames, "
