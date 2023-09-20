@@ -95,6 +95,7 @@ class MyClass:
     - Single backticks (`): Single backticks are used to represent inline code elements within the text. It is typically used to highlight function names, variable names, or any other code elements within the documentation.
     - Double backticks(``): Double backticks are typically used to highlight a literal value.
 
+8. If there are any class level constants you don't want to expose to doc site, make sure to add `_` in front of the constant to hide it.
 
 ### Write function docstring
 
