@@ -145,7 +145,7 @@ class FileHandlerConcurrentWrapper(logging.Handler):
 
 def get_logger(name: str) -> logging.Logger:
     logger = logging.Logger(name)
-    # logger.addHandler(FileHandlerConcurrentWrapper())
+    logger.addHandler(FileHandlerConcurrentWrapper())
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(CredentialScrubberFormatter(fmt=LOG_FORMAT, datefmt=DATETIME_FORMAT))
     logger.addHandler(stdout_handler)
