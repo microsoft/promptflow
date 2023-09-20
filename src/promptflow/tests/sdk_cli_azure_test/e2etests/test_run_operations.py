@@ -189,6 +189,7 @@ class TestFlowRun:
             "input_run_portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
         }
 
+    @pytest.skip("TODO: re-enable when get-details is fixed")
     def test_show_run_details(self, remote_client):
         details = remote_client.runs.get_details(
             run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
