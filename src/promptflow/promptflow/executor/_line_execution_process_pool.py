@@ -201,7 +201,7 @@ class LineExecutionProcessPool:
                 logger.error(
                     f"Process {idx}, process_pid:{process.pid} Line {line_number} execution failed: {traceback_str}")
                 self.end_process(process)
-                process, input_queue, output_queue = self._new_process()
+                # process, input_queue, output_queue = self._new_process()
             self._processing_idx.pop(line_number)
             log_progress(
                 logger=bulk_logger,
