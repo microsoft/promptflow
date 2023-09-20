@@ -6,6 +6,7 @@
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+- Read/write log file with encoding specified.
 
 ### Other Changes
 - [Executor][Internal] Improve error message with more details and actionable information.
