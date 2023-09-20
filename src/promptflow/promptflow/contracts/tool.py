@@ -173,13 +173,11 @@ class ConnectionType:
         from promptflow._core.tools_manager import connections
 
         val = type(val) if not isinstance(val, type) else val
-        return val in connections.values()
+        return val in connections.values() or ConnectionType.is_custom_strong_type(val)
 
     @staticmethod
     def is_custom_strong_type(val):
-        # Use this condition to filter redundant imports
-        if not ConnectionType.is_connection_value(val):
-            return False
+        """Check if the given value is a custom strong type connection."""
 
         from promptflow._sdk.entities import CustomStrongTypeConnection
 

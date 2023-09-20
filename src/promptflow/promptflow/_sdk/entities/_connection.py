@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import abc
 import copy
+import importlib
 import json
 from os import PathLike
 from pathlib import Path
@@ -11,6 +12,8 @@ from typing import Dict, List, Union
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
+    SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
+    SCHEMA_KEYS_CONTEXT_SECRET_KEY,
     SCRUBBED_VALUE,
     SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
@@ -42,6 +45,7 @@ from promptflow._sdk.schemas._connection import (
     SerpConnectionSchema,
     WeaviateConnectionSchema,
 )
+from promptflow.contracts.types import Secret
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -174,8 +178,6 @@ class _Connection(YAMLTranslatableMixin):
         type_str = cls._casting_type(type_str)
         type_cls = _supported_types.get(type_str)
         if type_cls is None:
-            # Should check for custom strong type connection. When update, the custom_type should match
-            # if not should throw an error msg like this indication current custom type and supported one.
             raise ValueError(
                 f"connection_type {type_str!r} is not supported. Supported types are: {list(_supported_types.keys())}"
             )
@@ -192,7 +194,6 @@ class _Connection(YAMLTranslatableMixin):
         return obj
 
     @classmethod
-    @abc.abstractmethod
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
         # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
         type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
@@ -239,9 +240,6 @@ class _Connection(YAMLTranslatableMixin):
             BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent if yaml_path else Path("../../azure/_entities/"),
             PARAMS_OVERRIDE_KEY: params_override,
         }
-        connection_spec = kwargs.pop("connection_spec", None)
-        if connection_spec:
-            context["connection_spec"] = connection_spec
         connection_type, type_str = cls._resolve_cls_and_type(data, params_override)
         connection = connection_type._load_from_dict(
             data=data,
@@ -271,9 +269,6 @@ class _Connection(YAMLTranslatableMixin):
             configs = {k: v for k, v in value_dict.items() if k not in secrets}
             return CustomConnection(name=name, configs=configs, secrets=secrets)
         return type_cls(name=name, **value_dict)
-
-    def is_type_not_set(self):
-        return self.TYPE == ConnectionType._NOT_SET
 
 
 class _StrongTypeConnection(_Connection):
@@ -644,9 +639,6 @@ class CustomStrongTypeConnection(_Connection):
     def is_custom_strong_type(self):
         return True
 
-    def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
-        pass
-
     def _to_orm_object(self) -> ORMConnection:
         pass
 
@@ -660,7 +652,6 @@ class CustomConnection(_Connection):
     :type secrets: Dict[str, str]
     :param name: Connection name
     :type name: str
-    :is_custom_strong_type: Whether the custom connection is strong type.
     """
 
     TYPE = ConnectionType.CUSTOM
@@ -688,6 +679,49 @@ class CustomConnection(_Connection):
         self.custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
 
     @classmethod
+    def _get_custom_keys(cls, data):
+        # The data could be either from yaml or from DB.
+        # If from yaml, 'custom_type' and 'module' are outside the configs of data.
+        # If from DB, 'custom_type' and 'module' are within the configs of data.
+        if not data.get(CustomStrongTypeConnectionConfigs.TYPE) or not data.get(
+            CustomStrongTypeConnectionConfigs.MODULE
+        ):
+            if (
+                not data["configs"][CustomStrongTypeConnectionConfigs.FULL_TYPE]
+                or not data["configs"][CustomStrongTypeConnectionConfigs.FULL_MODULE]
+            ):
+                raise ValueError("custom_type and module are required for custom strong type connections.")
+            else:
+                m = data["configs"][CustomStrongTypeConnectionConfigs.FULL_MODULE]
+                custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.FULL_TYPE]
+        else:
+            m = data[CustomStrongTypeConnectionConfigs.MODULE]
+            custom_cls = data[CustomStrongTypeConnectionConfigs.TYPE]
+
+        try:
+            module = importlib.import_module(m)
+            cls = getattr(module, custom_cls)
+        except ImportError:
+            raise ValueError(
+                f"Can't find module {m} in current environment. Please check the module is correctly configured."
+            )
+        except AttributeError:
+            raise ValueError(
+                f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+            )
+
+        schema_configs = {}
+        schema_secrets = {}
+
+        for k, v in cls.__annotations__.items():
+            if v == Secret:
+                schema_secrets[k] = v
+            else:
+                schema_configs[k] = v
+
+        return schema_configs, schema_secrets
+
+    @classmethod
     def _get_schema_cls(cls, is_custom_strong_type=False):
         if is_custom_strong_type:
             return CustomStrongTypeConnectionSchema
@@ -703,7 +737,12 @@ class CustomConnection(_Connection):
         )
         schema_cls = cls._get_schema_cls(is_custom_strong_type=is_custom_strong_type)
         try:
-            loaded_data = schema_cls(context=context).load(data, **kwargs)
+            if is_custom_strong_type:
+                schema_config_keys, schema_secret_keys = cls._get_custom_keys(data)
+                context[SCHEMA_KEYS_CONTEXT_CONFIG_KEY] = schema_config_keys
+                context[SCHEMA_KEYS_CONTEXT_SECRET_KEY] = schema_secret_keys
+            schema_ins = schema_cls(context=context)
+            loaded_data = schema_ins.load(data, **kwargs)
         except Exception as e:
             raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
         return cls(
@@ -722,10 +761,10 @@ class CustomConnection(_Connection):
             # Usually obj.configs will not reach here
             # This is added to handle copy.deepcopy loop issue
             return super().__getattribute__("configs")
-        if hasattr(self, "secrets") and item in self.secrets:
+        if item in self.secrets:
             logger.warning("Please use connection.secrets[key] to access secrets.")
             return self.secrets[item]
-        if hasattr(self, "configs") and item in self.configs:
+        if item in self.configs:
             logger.warning("Please use connection.configs[key] to access configs.")
             return self.configs[item]
         return super().__getattribute__(item)
@@ -838,14 +877,7 @@ class CustomConnection(_Connection):
 
         module = importlib.import_module(module_name)
         custom_defined_connection_class = getattr(module, custom_type_class_name)
-
-        instance_dict = {}
-        for key, value in self.configs.items():
-            if key not in [CustomStrongTypeConnectionConfigs.FULL_MODULE, CustomStrongTypeConnectionConfigs.FULL_TYPE]:
-                instance_dict[key] = value
-        for key, value in self.secrets.items():
-            instance_dict[key] = value
-        connection_instance = custom_defined_connection_class(**instance_dict)
+        connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance
 

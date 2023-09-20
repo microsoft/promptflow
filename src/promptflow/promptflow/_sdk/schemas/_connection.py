@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 import copy
 
-from marshmallow import ValidationError, fields, pre_dump, validates
+from marshmallow import fields, pre_dump, validates
 
-from promptflow._sdk._constants import ConnectionType
+from promptflow._sdk._constants import SCHEMA_KEYS_CONTEXT_CONFIG_KEY, SCHEMA_KEYS_CONTEXT_SECRET_KEY, ConnectionType
 from promptflow._sdk.schemas._base import YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
 from promptflow._utils.utils import camel_to_snake
@@ -118,16 +118,19 @@ class CustomStrongTypeConnectionSchema(CustomConnectionSchema):
     module = fields.Str(required=True)
     custom_type = fields.Str(required=True)
 
-    @validates("module")
-    def validate_module(self, value):
-        if "connection_spec" in self.context and value != self.context["connection_spec"]["module"]:
-            raise ValidationError(
-                f'Unknown module type {value}. Supported: {self.context["connection_spec"]["module"]}'
-            )
+    # TODO: validate configs and secrets
+    @validates("configs")
+    def validate_configs(self, value):
+        schema_config_keys = self.context.get(SCHEMA_KEYS_CONTEXT_CONFIG_KEY, None)
+        if schema_config_keys:
+            for key in value:
+                if key not in schema_config_keys:
+                    raise ValueError(f"Invalid config key {key}, please check the schema.")
 
-    @validates("custom_type")
-    def validate_custom_type(self, value):
-        if "connection_spec" in self.context and value != self.context["connection_spec"]["connectionType"]:
-            raise ValidationError(
-                f'Unknown connection type {value}. Supported: {self.context["connection_spec"]["connectionType"]}'
-            )
+    @validates("secrets")
+    def validate_secrets(self, value):
+        schema_secret_keys = self.context.get(SCHEMA_KEYS_CONTEXT_SECRET_KEY, None)
+        if schema_secret_keys:
+            for key in value:
+                if key not in schema_secret_keys:
+                    raise ValueError(f"Invalid secret key {key}, please check the schema.")

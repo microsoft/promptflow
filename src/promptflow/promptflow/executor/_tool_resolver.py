@@ -54,7 +54,6 @@ class ToolResolver:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
 
         if isinstance(connection_value, CustomConnection) and connection_value.is_custom_strong_type():
-            # Do we need to do some check here instead of return directly?
             return connection_value.convert_to_custom_strong_type_connection()
 
         # Check if type matched

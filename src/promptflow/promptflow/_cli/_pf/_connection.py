@@ -8,14 +8,7 @@ import logging
 from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
-from promptflow._cli._utils import (
-    activate_action,
-    check_custom_connection_type_match,
-    confirm,
-    exception_handler,
-    get_secret_input,
-    print_yellow_warning,
-)
+from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
@@ -201,16 +194,13 @@ def list_connection():
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
 
 
-# connection_spec is used for verifying fields of custom strong type connection during the process of loading a schema.
-# Check \promptflow\src\promptflow\promptflow\_sdk\schemas\_connection.py::CustomStrongTypeConnectionSchema
-def _upsert_connection_from_file(file, params_override=None, connection_spec=None):
+def _upsert_connection_from_file(file, params_override=None):
     # Note: This function is used for pfutil, do not edit it.
     params_override = params_override or []
     params_override.append(load_yaml(file))
-    connection = load_connection(source=file, params_override=params_override, connection_spec=connection_spec)
+    connection = load_connection(source=file, params_override=params_override)
     existing_connection = _client.connections.get(connection.name, raise_error=False)
     if existing_connection:
-        check_custom_connection_type_match(existing_connection, connection)
         connection = _Connection._load(data=existing_connection._to_dict(), params_override=params_override)
         validate_and_interactive_get_secrets(connection, is_update=True)
         # Set the secrets not scrubbed, as _to_dict() dump scrubbed connections.
