@@ -70,15 +70,15 @@ class TestChatWithPDF(BaseTest):
         details = self.pf.get_details(run)
         self.assertEqual(details.shape[0], 3)
 
-    # def test_bulk_run_mapping_missing_one_column(self):
-    #     # in this case, run won't be created.
-    #     with self.assertRaises(ValidationException):
-    #         self.create_chat_run(
-    #             column_mapping={
-    #                 "question": "${data.question}",
-    #                 "pdf_url": "${data.pdf_url}",
-    #             }
-    #         )
+    def test_bulk_run_mapping_missing_one_column(self):
+        # in this case, run won't be created.
+        with self.assertRaises(ValidationException):
+            self.create_chat_run(
+                column_mapping={
+                    "question": "${data.question}",
+                    "pdf_url": "${data.not_exist}",
+                }
+            )
 
     def test_bulk_run_invalid_mapping(self):
         # in this case, run won't be created.
