@@ -15,6 +15,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
+TOOL_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "package_tool"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
 
 
@@ -225,3 +226,30 @@ def copy_extra_files(flow_path, extra_files):
         action = "Overwriting" if target_path.exists() else "Creating"
         print(f"{action} {target_path.resolve()}...")
         shutil.copy2(extra_file_path, target_path)
+
+
+class ToolPackageGenerator(BaseGenerator):
+    def __init__(self, tool_name):
+        self.tool_name = tool_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "tool.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["tool_name"]
+
+
+class SetupGenerator(BaseGenerator):
+    def __init__(self, package_name, tool_name):
+        self.package_name = package_name
+        self.tool_name = tool_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "setup.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["tool_name"]

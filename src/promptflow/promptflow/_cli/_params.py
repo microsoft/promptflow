@@ -255,6 +255,14 @@ def add_parser_build(parent_parser, entity_name: str):
     parser.set_defaults(sub_action="build")
 
 
+def add_param_package(parser):
+    parser.add_argument("--package", type="str", help="The package name to create.")
+
+
+def add_param_tool(parser):
+    parser.add_argument("--tool", type="str", required=True, help="The tool name to create.")
+
+
 def add_param_debug(parser):
     parser.add_argument(
         "-d",

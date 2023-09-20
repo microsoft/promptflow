@@ -39,27 +39,36 @@ class ToolInvoker(ABC):
         return cls._active_tool_invoker
 
 
-def tool(f: Callable) -> Callable:
+def tool(name: str = None, description: str = None, type: str = None) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
 
-    :param f: The tool function.
-    :type f: Callable
+    :param name: The tool name.
+    :type name: str
+    :param description: The tool description.
+    :type description: str
+    :param type: The tool type.
+    :type type: str
     :return: The decorated function.
     :rtype: Callable
     """
 
-    @functools.wraps(f)
-    def new_f(*args, **kwargs):
-        tool_invoker = ToolInvoker.active_instance()
-        # If there is no active tool invoker for tracing or other purposes, just call the function.
-        if tool_invoker is None:
-            return f(*args, **kwargs)
-        return tool_invoker.invoke_tool(f, *args, **kwargs)
+    def tool_decorator(f: Callable) -> Callable:
+        @functools.wraps(f)
+        def new_f(*args, **kwargs):
+            tool_invoker = ToolInvoker.active_instance()
+            # If there is no active tool invoker for tracing or other purposes, just call the function.
+            if tool_invoker is None:
+                return f(*args, **kwargs)
+            return tool_invoker.invoke_tool(f, *args, **kwargs)
 
-    new_f.__original_function = f
-    f.__wrapped_function = new_f
-    new_f.__tool = None  # This will be set when generating the tool definition.
-    return new_f
+        new_f.__original_function = f
+        f.__wrapped_function = new_f
+        new_f.__tool = None  # This will be set when generating the tool definition.
+        new_f.__name = name
+        new_f.__description = description
+        new_f.__type = type
+        return new_f
+    return tool_decorator
 
 
 def parse_all_args(argnames, args, kwargs) -> dict:
