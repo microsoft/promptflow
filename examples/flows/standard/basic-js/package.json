@@ -13,6 +13,10 @@
     "@azure/openai": "^1.0.0-beta.1",
     "prompt-flow": "^0.0.1"
   },
+  "devDependencies": {
+    "vite": "^2.6.4",
+    "typescript": "^4.3.5"
+  },
   "engines": {
     "node": ">=12.0.0",
     "prompt-flow": "^0.0.1"
