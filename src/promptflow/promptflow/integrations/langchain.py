@@ -53,10 +53,11 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
             self._events_stack.pop()
             return True
         elif self._events_stack[-1] < event_type:
-            return False
-        else:
             self._events_stack.pop()
+            self._pop()
             return self._try_pop_event_type(event_type)
+        else:
+            return False
 
     def _push(self, trace: Trace):
         if not self._tracer:
