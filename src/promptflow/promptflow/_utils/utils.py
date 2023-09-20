@@ -17,6 +17,7 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
+from promptflow._utils.logger_utils import logger
 
 T = TypeVar("T")
 
@@ -147,10 +148,8 @@ def generate_elapsed_time_messages(func_name: str, start_time: float, interval: 
 
     frames = sys._current_frames()
     for thread_id, frame in frames.items():
-        print("Thread ID: %s, Process ID: %s" % (thread_id, os.getpid()))
-        print("Stack Trace: %s" % os.getpid())
-        print("\n".join(traceback.format_stack(frame)))
-        print()
+        logger.info(
+            f"Thread ID: {thread_id}, Process ID: {os.getpid()}, Stack Trace: {(traceback.format_stack(frame))}")
     if thread_id not in frames:
         thread_msg = (
             f"thread {thread_id} cannot be found in sys._current_frames, "

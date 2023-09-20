@@ -296,9 +296,9 @@ def _exec_line(
 
 def trace_calls(frame, event, arg):
     if event == "call":
-        print(f"Process: {os.getpid()}, Calling function {frame.f_code.co_name}")
+        logger.info(f"Process: {os.getpid()}, Calling function {frame.f_code.co_name}")
     elif event == "return":
-        print(f"Process: {os.getpid()}, Returning from function {frame.f_code.co_name}")
+        logger.info(f"Process: {os.getpid()}, Returning from function {frame.f_code.co_name}")
     return trace_calls
 
 
