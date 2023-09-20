@@ -4,7 +4,7 @@ PACKAGE_NAME = "my-tools-package-with-cstc"
 
 setup(
     name=PACKAGE_NAME,
-    version="0.0.1dev0",
+    version="0.0.5",
     description="This is my tools package",
     packages=find_packages(),
     entry_points={
