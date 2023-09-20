@@ -2,9 +2,14 @@
 
 ## 0.1.0b7 (Upcoming)
 
-### Bugs Fixed
+### Features Added
 
+### Bugs Fixed
+- [Flow build] Fix flow build file name and environment variable name when connection name contains space.
 - Reserve `.promptflow` folder when dump run snapshot
+
+### Other Changes
+- [Executor][Internal] Improve error message with more details and actionable information.
 
 ## 0.1.0b6 (2023.09.15)
 

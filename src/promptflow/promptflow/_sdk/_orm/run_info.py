@@ -34,7 +34,7 @@ class RunInfo(Base):
     status = Column(TEXT, nullable=False)
     display_name = Column(TEXT)  # can be edited by users
     description = Column(TEXT)  # updated by users
-    tags = Column(TEXT)  # updated by users, json(list of jsons) string
+    tags = Column(TEXT)  # updated by users, json(list of json) string
     # properties: flow path, output path..., json string
     # as we can parse and get all information from parsing the YAML in memory,
     # we don't need to store any extra information in the database at all;

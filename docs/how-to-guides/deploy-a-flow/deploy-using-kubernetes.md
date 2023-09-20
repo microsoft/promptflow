@@ -54,7 +54,7 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy with Kubernetes.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+refer to [Setup connection for web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
 Additionally, please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions.
 
