@@ -414,7 +414,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
     while True:
         try:
-            args = input_queue.get(1)
+            args = input_queue.get(timeout=1)
             if args is None:
                 print(f"Process {os.getpid()} queue1 empty, exit. args:{args}")
             else:
