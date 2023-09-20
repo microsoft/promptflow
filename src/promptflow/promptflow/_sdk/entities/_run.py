@@ -51,7 +51,7 @@ class Run(YAMLTranslatableMixin):
     :type flow: Path
     :param name: Name of the run.
     :type name: Optional[str]
-    :param data: Input data for the run.
+    :param data: Input data for the run. Local path or remote uri(starts with azureml: or public URL) are supported. Note: remote uri is only supported for cloud run. # noqa: E501
     :type data: Optional[str]
     :param variant: Variant of the run.
     :type variant: Optional[str]

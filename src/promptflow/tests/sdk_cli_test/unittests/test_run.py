@@ -92,6 +92,14 @@ class TestRun:
         run = load_run(source=source, params_override=[{"name": run_id}])
         assert run.environment_variables == {"FOO": "BAR"}
 
+    def test_data_not_exist_validation_error(self):
+        source = f"{RUNS_DIR}/sample_bulk_run.yaml"
+        with pytest.raises(ValidationError) as e:
+            load_run(source=source, params_override=[{"data": "not_exist"}])
+
+        assert "Can't find directory or file" in str(e.value)
+        assert "Invalid remote path." in str(e.value)
+
     @pytest.mark.parametrize(
         "source, error_msg",
         [
