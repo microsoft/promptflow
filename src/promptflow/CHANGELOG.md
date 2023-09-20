@@ -6,6 +6,7 @@
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+- Reserve `.promptflow` folder when dump run snapshot.
 - Read/write log file with encoding specified.
 
 ### Other Changes
@@ -25,6 +26,7 @@
 - [SDK/CLI] Update portal link to remove flight.
 - [Executor][Internal] Improve inputs mapping's error message.
 - [API] Resolve warnings/errors of sphinx build
+- [SDK/CLI] Fix no-index error for `pfazure get-details`.
 
 ## 0.1.0b5 (2023.09.08)
 

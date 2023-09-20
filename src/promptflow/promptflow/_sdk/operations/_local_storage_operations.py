@@ -212,8 +212,7 @@ class LocalStorageOperations(AbstractRunStorage):
         shutil.copytree(
             flow.code.as_posix(),
             self._snapshot_folder_path,
-            # ignore .promptflow/ and .runs, otherwise will raise RecursionError
-            ignore=shutil.ignore_patterns(".*"),
+            ignore=shutil.ignore_patterns("__pycache__"),
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
