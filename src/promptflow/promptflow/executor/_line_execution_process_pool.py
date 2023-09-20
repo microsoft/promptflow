@@ -328,7 +328,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
     while True:
         try:
-            args = input_queue.get(1)
+            args = input_queue.get(timeout=1)
             inputs, line_number, run_id, variant_id, validate_inputs = args[:5]
             result = _exec_line(
                 executor=executor,
