@@ -24,6 +24,7 @@
 - [SDK/CLI] Update portal link to remove flight.
 - [Executor][Internal] Improve inputs mapping's error message.
 - [API] Resolve warnings/errors of sphinx build
+- [SDK/CLI] Fix no-index error for `pfazure get-details`.
 
 ## 0.1.0b5 (2023.09.08)
 
