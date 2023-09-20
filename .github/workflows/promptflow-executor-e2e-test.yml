@@ -82,7 +82,7 @@ jobs:
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}`
           --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
-          --enable-cov-branch false
+          --disable-cov-branch
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
