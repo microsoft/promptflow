@@ -77,7 +77,7 @@ class LoggerOperations(LogContext):
         if log_path.exists():
             # Clean up previous log content
             try:
-                with open(log_path, 'w') as file:
+                with open(log_path, "w") as file:
                     file.truncate(0)
             except Exception as e:
                 logger.warning(f"Failed to clean up the previous log content because {e}")
@@ -212,8 +212,7 @@ class LocalStorageOperations(AbstractRunStorage):
         shutil.copytree(
             flow.code.as_posix(),
             self._snapshot_folder_path,
-            # ignore .promptflow/ and .runs, otherwise will raise RecursionError
-            ignore=shutil.ignore_patterns(".*"),
+            ignore=shutil.ignore_patterns("__pycache__"),
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one
