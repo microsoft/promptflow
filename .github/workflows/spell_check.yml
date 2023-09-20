@@ -26,7 +26,7 @@ jobs:
 
       - name: Run cspell
         run: |-
-          cspell lint "**" > cspell_check.log
+          cspell lint "**" > cspell_check.log || true
           if [ -s cspell_check.log ]; then
             echo -e "\e[91mNote: If the detected words are expected, add them into ".cspell.json" which is at the repo root folder.\e[0m" 
             echo -e "====================== Summary of cspell errors ======================"

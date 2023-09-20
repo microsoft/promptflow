@@ -45,6 +45,7 @@ from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
     BASE_IMAGE,
+    CHILD_RUNS_PAGE_SIZE,
     PYTHON_REQUIREMENTS_TXT,
 )
 from promptflow.azure._load_functions import load_flow
@@ -73,8 +74,9 @@ class RunOperations(_ScopeDependentOperations):
     attaches it as an attribute.
     """
 
-    DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
-    ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
+    # add "_" in front of the constant to hide them from the docstring
+    _DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
+    _ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
 
     def __init__(
         self,
@@ -131,7 +133,7 @@ class RunOperations(_ScopeDependentOperations):
             return None
         if input_uri.startswith("azureml://"):
             # input uri is a datastore path
-            match = self.DATASTORE_PATH_PATTERN.match(input_uri)
+            match = self._DATASTORE_PATH_PATTERN.match(input_uri)
             if not match or len(match.groups()) != 2:
                 logger.warning(error_msg)
                 return None
@@ -156,7 +158,7 @@ class RunOperations(_ScopeDependentOperations):
         error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
         if not output_uri:
             return None
-        match = self.ASSET_ID_PATTERN.match(output_uri)
+        match = self._ASSET_ID_PATTERN.match(output_uri)
         if not match or len(match.groups()) != 2:
             logger.warning(error_msg)
             return None
@@ -271,7 +273,7 @@ class RunOperations(_ScopeDependentOperations):
         """
         run = Run._validate_and_return_run_name(run)
         self._check_cloud_run_completed(run_name=run)
-        child_runs = self._get_child_runs_from_pfs(run)
+        child_runs = self._get_flow_runs_pagination(run)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
         data = {}
         columns = []
@@ -290,6 +292,27 @@ class RunOperations(_ScopeDependentOperations):
         """Check if the cloud run is completed."""
         run = self.get(run=run_name)
         run._check_run_status_is_completed()
+
+    def _get_flow_runs_pagination(self, name: str) -> List[dict]:
+        # call childRuns API with pagination to avoid PFS OOM
+        # different from UX, run status should be completed here
+        flow_runs = []
+        start_index, end_index = 0, CHILD_RUNS_PAGE_SIZE - 1
+        while True:
+            current_flow_runs = self._service_caller.get_child_runs(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=name,
+                start_index=start_index,
+                end_index=end_index,
+            )
+            # no data in current page
+            if len(current_flow_runs) == 0:
+                break
+            start_index, end_index = start_index + CHILD_RUNS_PAGE_SIZE, end_index + CHILD_RUNS_PAGE_SIZE
+            flow_runs += current_flow_runs
+        return flow_runs
 
     def _extract_metrics_from_metric_service_response(self, values) -> dict:
         """Get metrics from the metric service response."""
@@ -628,20 +651,6 @@ class RunOperations(_ScopeDependentOperations):
         # use hexdigest to avoid non-ascii characters in session id
         session_id = str(hashlib.sha256(session_id.encode()).hexdigest())[:48]
         return session_id
-
-    def _get_child_runs_from_pfs(self, run_id: str):
-        """Get the child runs from the PFS."""
-        headers = self._get_headers()
-        endpoint_url = self._run_history_endpoint_url.replace("/history/v1.0", "/flow/api")
-        url = endpoint_url + f"/BulkRuns/{run_id}/childRuns"
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            runs = response.json()
-            return runs
-        else:
-            raise RunRequestException(
-                f"Failed to get child runs from service. Code: {response.status_code}, text: {response.text}"
-            )
 
     def _get_inputs_outputs_from_child_runs(self, runs: List[Dict[str, Any]]):
         """Get the inputs and outputs from the child runs."""

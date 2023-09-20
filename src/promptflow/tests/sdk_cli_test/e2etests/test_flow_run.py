@@ -589,6 +589,12 @@ class TestFlowRun:
         # 5 nodes web classification flow DAG
         assert len([_ for _ in (Path(run_output_path) / "node_artifacts").iterdir()]) == 5
 
+    def test_run_snapshot_with_flow_tools_json(self, local_client, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
+        assert (local_storage._snapshot_folder_path / ".promptflow").is_dir()
+        assert (local_storage._snapshot_folder_path / ".promptflow" / "flow.tools.json").is_file()
+
     def test_get_metrics_format(self, local_client, pf) -> None:
         run1 = create_run_against_multi_line_data(pf)
         run2 = create_run_against_run(pf, run1)
