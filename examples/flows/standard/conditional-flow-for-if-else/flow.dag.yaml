@@ -1,0 +1,47 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  question:
+    type: string
+    default: What is Prompt flow?
+outputs:
+  answer:
+    type: string
+    reference: ${generate_result.output}
+nodes:
+- name: content_safety_check
+  type: python
+  source:
+    type: code
+    path: content_safety_check.py
+  inputs:
+    text: ${inputs.question}
+- name: llm_result
+  type: python
+  source:
+    type: code
+    path: llm_result.py
+  inputs:
+    question: ${inputs.question}
+  activate:
+    when: ${content_safety_check.output}
+    is: true
+- name: default_result
+  type: python
+  source:
+    type: code
+    path: default_result.py
+  inputs:
+    question: ${inputs.question}
+  activate:
+    when: ${content_safety_check.output}
+    is: false
+- name: generate_result
+  type: python
+  source:
+    type: code
+    path: generate_result.py
+  inputs:
+    llm_result: ${llm_result.output}
+    default_result: ${default_result.output}
+environment:
+    python_requirements_txt: requirements.txt

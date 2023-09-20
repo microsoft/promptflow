@@ -78,7 +78,7 @@ class InputAssignment:
 
         :param value: The string to be deserialized.
         :type value: str
-        :return: The input assignment of referenece types.
+        :return: The input assignment of reference types.
         :rtype: InputAssignment
         """
         if FlowInputAssignment.is_flow_input(value):

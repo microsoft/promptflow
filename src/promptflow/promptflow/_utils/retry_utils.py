@@ -33,18 +33,18 @@ def retry(exception_to_check: Union[Exception, Tuple[Exception]], tries=4, delay
     def deco_retry(f):
         @wraps(f)
         def f_retry(*args, **kwargs):
-            mtries, mdelay = tries, delay
-            while mtries > 1:
+            retry_times, delay_seconds = tries, delay
+            while retry_times > 1:
                 try:
                     if logger:
-                        logger.info("Running %s, %d more tries to go.", str(f), mtries)
+                        logger.info("Running %s, %d more tries to go.", str(f), retry_times)
                     return f(*args, **kwargs)
                 except exception_to_check:
-                    time.sleep(mdelay)
-                    mtries -= 1
-                    mdelay *= backoff
+                    time.sleep(delay_seconds)
+                    retry_times -= 1
+                    delay_seconds *= backoff
                     if logger:
-                        logger.warning("%s, Retrying in %d seconds...", str(exception_to_check), mdelay)
+                        logger.warning("%s, Retrying in %d seconds...", str(exception_to_check), delay_seconds)
             return f(*args, **kwargs)
 
         return f_retry  # true decorator
