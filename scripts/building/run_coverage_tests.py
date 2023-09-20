@@ -30,6 +30,12 @@ if __name__ == "__main__":
         type=str,
         default="",
     )
+    parser.add_argument(
+        "--enable-cov-branch",
+        help="Whether to enable branch coverage calculation",
+        type=bool,
+        default=True,
+    )
 
     args = parser.parse_args()
     print("Working directory: " + str(os.getcwd()))
@@ -41,6 +47,7 @@ if __name__ == "__main__":
     print("Args.model-name: " + str(args.model_name))
     print("Args.timeout: " + str(args.timeout))
     print("Args.coverage-config: " + str(args.coverage_config))
+    print("Args.enable-cov-branch: " + str(args.enable_cov_branch))
 
     test_paths_list = [str(Path(path).absolute()) for path in args.t]
 
@@ -54,6 +61,8 @@ if __name__ == "__main__":
         if args.p:
             cov_path_list = [f"--cov={path}" for path in args.p]
             pytest_command += cov_path_list
+        if args.enable_cov_branch:
+            pytest_command += ["--cov-branch"]
         pytest_command += [  # noqa: W503
             "--cov-report=term",
             "--cov-report=html",
