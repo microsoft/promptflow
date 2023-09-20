@@ -1,0 +1,23 @@
+{
+  "name": "prompt-flow-basic-js-flow",
+  "version": "0.0.1",
+  "main": "dist/index.cjs",
+  "source": "index.ts",
+  "browser": "dist/index.js",
+  "license": "MIT",
+  "author": {
+    "name": "XXX",
+    "email": "xxx@microsoft.com"
+  },
+  "dependencies": {
+    "@azure/openai": "^1.0.0-beta.1",
+    "prompt-flow": "^0.0.1"
+  },
+  "engines": {
+    "node": ">=12.0.0",
+    "prompt-flow": "^0.0.1"
+  },
+  "scripts": {
+    "compile": "vite build --outDir dist --format cjs --minify --emptyOutDir --sourcemap inline"
+  }
+}
