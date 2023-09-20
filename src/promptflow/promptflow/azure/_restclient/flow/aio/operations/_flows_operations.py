@@ -2087,7 +2087,7 @@ class FlowsOperations:
         flow_id: str,
         experiment_id: str,
         **kwargs: Any
-    ) -> "_models.FlowRuntimeDto":
+    ) -> "_models.FlowSessionDto":
         """get_flow_session_status.
 
         :param subscription_id: The Azure Subscription ID.
@@ -2101,11 +2101,11 @@ class FlowsOperations:
         :param experiment_id:
         :type experiment_id: str
         :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: FlowRuntimeDto, or the result of cls(response)
-        :rtype: ~flow.models.FlowRuntimeDto
+        :return: FlowSessionDto, or the result of cls(response)
+        :rtype: ~flow.models.FlowSessionDto
         :raises: ~azure.core.exceptions.HttpResponseError
         """
-        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowRuntimeDto"]
+        cls = kwargs.pop('cls', None)  # type: ClsType["_models.FlowSessionDto"]
         error_map = {
             401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
         }
@@ -2131,7 +2131,7 @@ class FlowsOperations:
             error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
             raise HttpResponseError(response=response, model=error)
 
-        deserialized = self._deserialize('FlowRuntimeDto', pipeline_response)
+        deserialized = self._deserialize('FlowSessionDto', pipeline_response)
 
         if cls:
             return cls(pipeline_response, deserialized, {})
