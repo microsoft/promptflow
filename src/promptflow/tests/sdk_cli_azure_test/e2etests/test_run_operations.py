@@ -225,8 +225,25 @@ class TestFlowRun:
         assert "error" in run._to_dict()
 
     def test_archive_and_restore_run(self, remote_client):
-        run_id = ""
+        from promptflow._sdk._constants import RunHistoryKeys
+
+        run_meta_data = RunHistoryKeys.RunMetaData
+        hidden = RunHistoryKeys.HIDDEN
+
+        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # test archive
         remote_client.runs.archive(run=run_id)
+        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is True
+
+        # test restore
+        remote_client.runs.restore(run=run_id)
+        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is False
+
+    def test_update_run(self, remote_client):
+        pass
 
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
