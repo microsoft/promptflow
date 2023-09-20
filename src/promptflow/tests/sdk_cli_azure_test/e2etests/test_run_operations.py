@@ -224,6 +224,10 @@ class TestFlowRun:
         # error info will store in run dict
         assert "error" in run._to_dict()
 
+    def test_archive_and_restore_run(self, remote_client):
+        run_id = ""
+        remote_client.runs.archive(run=run_id)
+
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification_with_additional_include",
