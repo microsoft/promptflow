@@ -18,7 +18,6 @@ def load_common(
     source: Union[str, PathLike, IO[AnyStr]],
     relative_origin: str = None,
     params_override: Optional[list] = None,
-    connection_spec: str = None,
     **kwargs,
 ):
     """Private function to load a yaml file to an entity object.
@@ -55,7 +54,6 @@ def load_common(
             data=yaml_dict,
             yaml_path=relative_origin,
             params_override=params_override,
-            connection_spec=connection_spec,
             **kwargs,
         )
     except Exception as e:
@@ -79,12 +77,11 @@ def load_run(
 
 def load_connection(
     source: Union[str, PathLike, IO[AnyStr]],
-    connection_spec=None,
     **kwargs,
 ):
     if Path(source).name.endswith(".env"):
         return _load_env_to_connection(source, **kwargs)
-    return load_common(_Connection, source, connection_spec=connection_spec, **kwargs)
+    return load_common(_Connection, source, **kwargs)
 
 
 def _load_env_to_connection(

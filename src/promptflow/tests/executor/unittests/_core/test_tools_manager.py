@@ -137,33 +137,33 @@ class TestToolsManager:
         assert str(ex.value) == error_message
 
     def test_collect_package_tools_and_connections(self):
-        keys = ["my_tool_package.tools.my_tool_1.my_tool"]
+        keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(tools) == 1
         assert specs == {
-            "my_tool_package.connections.MyFirstConnection": {
+            "my_tool_package.connections.MySecondConnection": {
                 "connectionCategory": "CustomKeys",
                 "flowValueType": "CustomConnection",
-                "connectionType": "MyFirstConnection",
-                "ConnectionTypeDisplayName": "MyFirstConnection",
+                "connectionType": "MySecondConnection",
+                "ConnectionTypeDisplayName": "MySecondConnection",
                 "configSpecs": [
-                    {"name": "api_key", "displayName": "Api Key", "configValueType": "Secret", "isOptional": True},
+                    {"name": "api_key", "displayName": "Api Key", "configValueType": "Secret", "isOptional": False},
                     {"name": "api_base", "displayName": "Api Base", "configValueType": "str", "isOptional": True},
                 ],
                 "module": "my_tool_package.connections",
                 "package": "my-tools-package-with-cstc",
-                "package_version": "0.0.4",
+                "package_version": "0.0.5",
             }
         }
         expected_template = {
             "name": "<connection-name>",
             "type": "custom",
-            "custom_type": "MyFirstConnection",
+            "custom_type": "MySecondConnection",
             "module": "my_tool_package.connections",
             "package": "my-tools-package-with-cstc",
-            "package_version": "0.0.4",
+            "package_version": "0.0.5",
             "configs": {"api_base": "<api-base>"},
             "secrets": {"api_key": "<api-key>"},
         }
-        loaded_yaml = yaml.safe_load(templates["my_tool_package.connections.MyFirstConnection"])
+        loaded_yaml = yaml.safe_load(templates["my_tool_package.connections.MySecondConnection"])
         assert loaded_yaml == expected_template

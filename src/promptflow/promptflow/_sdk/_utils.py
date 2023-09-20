@@ -8,8 +8,8 @@ import logging
 import multiprocessing
 import os
 import re
-import sys
 import shutil
+import sys
 import tempfile
 import zipfile
 from contextlib import contextmanager
@@ -34,6 +34,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    HOME_PROMPT_FLOW_DIR,
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
@@ -45,7 +46,6 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
-    HOME_PROMPT_FLOW_DIR,
 )
 from promptflow._sdk._errors import (
     ConnectionNotFoundError,
@@ -756,12 +756,12 @@ def get_local_connections_from_executable(executable):
 
 def get_current_env_name():
     # Check if it's a Conda environment
-    conda_env = os.environ.get('CONDA_DEFAULT_ENV')
+    conda_env = os.environ.get("CONDA_DEFAULT_ENV")
     if conda_env:
         return conda_env
 
     # Check if it's a virtualenv environment
-    virtual_env_path = os.environ.get('VIRTUAL_ENV')
+    virtual_env_path = os.environ.get("VIRTUAL_ENV")
     if virtual_env_path:
         return os.path.basename(virtual_env_path)
 
@@ -769,11 +769,11 @@ def get_current_env_name():
     # TODO: This might be hack, seek better way
     python_exec_path = sys.executable
     if python_exec_path:
-        env_path_parts = python_exec_path.split('envs')[1]
+        env_path_parts = python_exec_path.split("envs")[1]
         return env_path_parts.split(os.sep)[1]
 
     # If it's neither Conda nor virtualenv, return 'default'
-    return 'default'
+    return "default"
 
 
 def refresh_connections_dir(connection_spec_files, connection_template_yamls):
@@ -785,7 +785,7 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
 
     if connection_spec_files and connection_template_yamls:
         for connection_name, content in connection_spec_files.items():
-            file_name = connection_name + ".schema.json"
+            file_name = connection_name + ".spec.json"
             with open(connections_dir / file_name, "w") as f:
                 json.dump(content, f, indent=2)
 

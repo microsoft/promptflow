@@ -26,11 +26,7 @@ from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_spec,
     generate_custom_strong_type_connection_template,
 )
-from promptflow._utils.tool_utils import (
-    function_to_tool_definition,
-    get_prompt_param_name_from_func,
-    is_custom_tool_package,
-)
+from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -97,27 +93,23 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 tool["package_version"] = entry_point.dist.version
                 all_package_tools[identifier] = tool
 
-                if is_custom_tool_package(m):
-                    # Get custom strong type connection definition
-                    custom_strong_type_connections_classes = [
-                        obj
-                        for name, obj in inspect.getmembers(module)
-                        if inspect.isclass(obj) and ConnectionType.is_custom_strong_type_connection(obj)
-                    ]
+                # Get custom strong type connection definition
+                custom_strong_type_connections_classes = [
+                    obj
+                    for name, obj in inspect.getmembers(module)
+                    if inspect.isclass(obj) and ConnectionType.is_custom_strong_type(obj)
+                ]
 
-                    if custom_strong_type_connections_classes:
-                        for cls in custom_strong_type_connections_classes:
-                            identifier = f"{cls.__module__}.{cls.__name__}"
-                            connection_spec = generate_custom_strong_type_connection_spec(
-                                cls, entry_point.dist.project_name, entry_point.dist.version
-                            )
-                            all_package_connection_specs[identifier] = connection_spec
-                            all_package_connection_templates[
-                                identifier
-                            ] = generate_custom_strong_type_connection_template(
-                                cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
-                            )
-
+                if custom_strong_type_connections_classes:
+                    for cls in custom_strong_type_connections_classes:
+                        identifier = f"{cls.__module__}.{cls.__name__}"
+                        connection_spec = generate_custom_strong_type_connection_spec(
+                            cls, entry_point.dist.project_name, entry_point.dist.version
+                        )
+                        all_package_connection_specs[identifier] = connection_spec
+                        all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
+                            cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
+                        )
         except Exception as e:
             msg = (
                 f"Failed to load tools from package {entry_point.dist.project_name}: {e},"

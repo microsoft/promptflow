@@ -52,7 +52,7 @@ LOCAL_STORAGE_BATCH_SIZE = 1
 
 
 class CustomStrongTypeConnectionConfigs:
-    PREFIX = "azureml.connection."
+    PREFIX = "promptflow.custom.connection."
     TYPE = "custom_type"
     MODULE = "module"
     FULL_TYPE = PREFIX + TYPE

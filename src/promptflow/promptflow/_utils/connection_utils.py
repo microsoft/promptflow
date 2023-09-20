@@ -2,8 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from dataclasses import fields
-
 from jinja2 import Template
 
 
@@ -19,14 +17,18 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
         "package_version": package_version,
     }
 
-    for field in fields(cls):
+    for k, typ in cls.__annotations__.items():
         spec = {
-            "name": field.name,
-            "displayName": field.name.replace("_", " ").title(),
-            "configValueType": field.type.__name__,
-            "isOptional": field.default is not None,
+            "name": k,
+            "displayName": k.replace("_", " ").title(),
+            "configValueType": typ.__name__,
         }
+        if hasattr(cls, k):
+            spec["isOptional"] = getattr(cls, k, None) is not None
+        else:
+            spec["isOptional"] = False
         connection_spec["configSpecs"].append(spec)
+
     return connection_spec
 
 

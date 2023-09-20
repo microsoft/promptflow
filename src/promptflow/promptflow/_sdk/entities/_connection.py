@@ -42,7 +42,6 @@ from promptflow._sdk.schemas._connection import (
     SerpConnectionSchema,
     WeaviateConnectionSchema,
 )
-from promptflow.contracts.types import Secret
 
 logger = LoggerFactory.get_logger(name=__name__)
 PROMPTFLOW_CONNECTIONS = "promptflow.connections"
@@ -215,7 +214,6 @@ class _Connection(YAMLTranslatableMixin):
         data: Dict = None,
         yaml_path: Union[PathLike, str] = None,
         params_override: list = None,
-        connection_spec=None,
         **kwargs,
     ) -> "_Connection":
         """Load a job object from a yaml file.
@@ -241,6 +239,7 @@ class _Connection(YAMLTranslatableMixin):
             BASE_PATH_CONTEXT_KEY: Path(yaml_path).parent if yaml_path else Path("../../azure/_entities/"),
             PARAMS_OVERRIDE_KEY: params_override,
         }
+        connection_spec = kwargs.pop("connection_spec", None)
         if connection_spec:
             context["connection_spec"] = connection_spec
         connection_type, type_str = cls._resolve_cls_and_type(data, params_override)
@@ -633,29 +632,14 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
 
 
 class CustomStrongTypeConnection(_Connection):
-    def __init__(self, **kwargs):
-        configs = {}
-        secrets = {}
-        for k, v in self.__class__.__annotations__.items():
-            field_value = kwargs.get(k, None)
-            if v == Secret:
-                secrets[k] = field_value
-            else:
-                configs[k] = field_value
-        # For custom connection secrets are not checked? So does CustomStrongTypeConnection?
-        # if not secrets:
-        #     raise ValueError(f"Secrets is required for {_Connection.__class__.__name__}.")
+    def __init__(
+        self,
+        secrets: Dict[str, str],
+        configs: Dict[str, str] = None,
+        **kwargs,
+    ):
         module = self.__class__.__module__
         super().__init__(secrets=secrets, configs=configs, module=module, **kwargs)
-
-    def __setattr__(self, key, value):
-        if key in self.__annotations__:
-            if isinstance(value, Secret):
-                self.secrets[key] = value
-            else:
-                self.configs[key] = value
-        else:
-            super().__setattr__(key, value)
 
     def is_custom_strong_type(self):
         return True
@@ -685,12 +669,11 @@ class CustomConnection(_Connection):
         self,
         secrets: Dict[str, str],
         configs: Dict[str, str] = None,
-        is_azureml_custom_strong_type_connection=False,
         **kwargs,
     ):
         # When create connection through file, we can't check if it is custom strong type through self.custom_type
-        # So we need a hint 'is_custom_strong_type' to indicate it.
-        if is_azureml_custom_strong_type_connection:
+        # So we need a hint 'is_promptflow_custom_strong_type_connection' to indicate it.
+        if kwargs.pop("is_promptflow_custom_strong_type_connection", False):
             configs.update(
                 {CustomStrongTypeConnectionConfigs.FULL_TYPE: kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)}
             )
@@ -725,19 +708,9 @@ class CustomConnection(_Connection):
             raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
         return cls(
             base_path=context[BASE_PATH_CONTEXT_KEY],
-            is_azureml_custom_strong_type_connection=is_custom_strong_type,
+            is_promptflow_custom_strong_type_connection=is_custom_strong_type,
             **loaded_data,
         )
-
-    def __setattr__(self, key, value):
-        if hasattr(self, "custom_type") and self.is_custom_strong_type():
-            if isinstance(value, Secret) and hasattr(self, "secrets") and key in self.secrets:
-                self.secrets[key] = value
-                return
-            if not isinstance(value, Secret) and hasattr(self, "configs") and key in self.configs:
-                self.configs[key] = value
-                return
-        super().__setattr__(key, value)
 
     def __getattr__(self, item):
         # Note: This is added for compatibility with promptflow.connections custom connection usage.

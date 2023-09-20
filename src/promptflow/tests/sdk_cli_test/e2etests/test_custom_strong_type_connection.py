@@ -29,7 +29,7 @@ CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
 class TestCustomStrongTypeConnection:
     def test_connection_operations(self):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = MyCustomConnection(name=name, api_key="test", api_base="test")
+        conn = MyCustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
         # Create
         _client.connections.create_or_update(conn)
         # Get
@@ -39,21 +39,21 @@ class TestCustomStrongTypeConnection:
             "type": "custom",
             "configs": {
                 "api_base": "test",
-                "azureml.connection.custom_type": "MyCustomConnection",
-                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.custom.connection.custom_type": "MyCustomConnection",
+                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
         # Update
-        conn.api_base = "test2"
+        conn.configs["api_base"] = "test2"
         result = _client.connections.create_or_update(conn)
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
             "module": "promptflow.connections",
             "type": "custom",
             "configs": {
                 "api_base": "test2",
-                "azureml.connection.custom_type": "MyCustomConnection",
-                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.custom.connection.custom_type": "MyCustomConnection",
+                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -68,7 +68,7 @@ class TestCustomStrongTypeConnection:
 
     def test_connection_update(self):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = MyCustomConnection(name=name, api_key="test", api_base="test")
+        conn = MyCustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
         # Create
         _client.connections.create_or_update(conn)
         # Get
@@ -78,21 +78,21 @@ class TestCustomStrongTypeConnection:
             "type": "custom",
             "configs": {
                 "api_base": "test",
-                "azureml.connection.custom_type": "MyCustomConnection",
-                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.custom.connection.custom_type": "MyCustomConnection",
+                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
         # Update
-        custom_conn.api_base = "test2"
+        custom_conn.configs["api_base"] = "test2"
         result = _client.connections.create_or_update(custom_conn)
         assert pydash.omit(result._to_dict(), ["created_date", "last_modified_date", "name"]) == {
             "module": "promptflow.connections",
             "type": "custom",
             "configs": {
                 "api_base": "test2",
-                "azureml.connection.custom_type": "MyCustomConnection",
-                "azureml.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.custom.connection.custom_type": "MyCustomConnection",
+                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -108,11 +108,11 @@ class TestCustomStrongTypeConnection:
     def test_connection_get_and_update(self):
         # Test api key not updated
         name = f"Connection_{str(uuid.uuid4())[:4]}"
-        conn = MyCustomConnection(name=name, api_key="test", api_base="test")
+        conn = MyCustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
         result = _client.connections.create_or_update(conn)
-        assert result.api_key == SCRUBBED_VALUE
+        assert result.secrets["api_key"] == SCRUBBED_VALUE
         # Update api_base only Assert no exception
-        result.api_base = "test2"
+        result.configs["api_base"] = "test2"
         result = _client.connections.create_or_update(result)
         assert result._to_dict()["configs"]["api_base"] == "test2"
         # Assert value not scrubbed

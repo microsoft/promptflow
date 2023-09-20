@@ -129,9 +129,3 @@ def get_inputs_for_prompt_template(template_str):
 def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
     return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
-
-
-def is_custom_tool_package(module_name: str):
-    if module_name:
-        return not module_name.startswith("promptflow.tools")
-    return False
