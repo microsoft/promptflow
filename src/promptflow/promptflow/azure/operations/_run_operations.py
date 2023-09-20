@@ -34,6 +34,7 @@ from promptflow._sdk._constants import (
     AzureRunTypes,
     ListViewType,
     RunDataKeys,
+    RunHistoryKeys,
     RunStatus,
 )
 from promptflow._sdk._errors import RunNotFoundError, UpdateRunError
@@ -368,7 +369,7 @@ class RunOperations(_ScopeDependentOperations):
         run = Run._validate_and_return_run_name(run)
         return self._get_run_from_run_history(flow_run_id=run, **kwargs)
 
-    def _get_run_from_run_history(self, flow_run_id, **kwargs):
+    def _get_run_from_run_history(self, flow_run_id, original_form=False, **kwargs):
         """Get run info from run history"""
         headers = self._get_headers()
         url = self._run_history_endpoint_url + "/rundata"
@@ -383,6 +384,9 @@ class RunOperations(_ScopeDependentOperations):
         response = requests.post(url, headers=headers, json=payload)
         if response.status_code == 200:
             run = response.json()
+            # if original_form is True, return the original run data from run history, mainly for test use
+            if original_form:
+                return run
             run_data = self._refine_run_data_from_run_history(run)
             run = Run._from_run_history_entity(run_data)
             return run
@@ -398,7 +402,7 @@ class RunOperations(_ScopeDependentOperations):
 
         Generate the portal url, input and output value from run history data.
         """
-        run_data = run_data["runMetadata"]
+        run_data = run_data[RunHistoryKeys.RunMetaData]
         # add cloud run url
         run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_data["runId"])
 
@@ -461,7 +465,7 @@ class RunOperations(_ScopeDependentOperations):
 
         run = Run._validate_and_return_run_name(run)
         payload = {
-            "hidden": True,
+            RunHistoryKeys.HIDDEN: True,
         }
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
@@ -475,7 +479,7 @@ class RunOperations(_ScopeDependentOperations):
         """
         run = Run._validate_and_return_run_name(run)
         payload = {
-            "hidden": False,
+            RunHistoryKeys.HIDDEN: False,
         }
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
@@ -825,10 +829,9 @@ class RunOperations(_ScopeDependentOperations):
         response = requests.patch(url, headers=headers, json=payload)
 
         if response.status_code == 200:
-            run = response.json()
-            run_data = self._refine_run_data_from_run_history(run)
-            run = Run._from_run_history_entity(run_data)
-            return run
+            # the modify api returns different data format compared with get api, so we use get api here to
+            # return standard Run object
+            return self.get(run=run_id)
         else:
             raise RunRequestException(
                 f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
