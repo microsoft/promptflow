@@ -6,6 +6,8 @@ import functools
 import uuid
 from datetime import datetime
 
+from promptflow._telemetry.telemetry import TelemetryMixin
+
 
 class ActivityType(object):
     """The type of activity (code) monitored.
@@ -50,7 +52,8 @@ def log_activity(
     :return: None
     """
     activity_info = {
-        "activity_id": str(uuid.uuid4()),
+        # TODO(2699383): use same request id with service caller
+        "request_id": str(uuid.uuid4()),
         "activity_name": activity_name,
         "activity_type": activity_type,
     }
@@ -87,16 +90,12 @@ def log_activity(
             return  # pylint: disable=lost-exception
 
 
-def extract_pf_client_info(self):
-    """Extract pf client info from given pf client instance."""
-    from promptflow.azure import PFClient
-
+def extract_telemetry_info(self):
+    """Extract pf telemetry info from given telemetry mix-in instance."""
     result = {}
     try:
-        if isinstance(self, PFClient):
-            result["workspace_name"] = self._ml_client.workspace_name
-            result["subscription_id"] = self._ml_client.subscription_id
-            result["resource_group_name"] = self._ml_client.resource_group_name
+        if isinstance(self, TelemetryMixin):
+            return self._get_telemetry_values()
     except Exception:
         pass
     return result
@@ -131,7 +130,7 @@ def monitor_operation(
 
             logger = get_telemetry_logger()
 
-            custom_dimensions.update(extract_pf_client_info(self))
+            custom_dimensions.update(extract_telemetry_info(self))
 
             with log_activity(logger, activity_name, activity_type, custom_dimensions):
                 return f(self, *args, **kwargs)

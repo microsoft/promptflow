@@ -47,6 +47,7 @@ class Configuration(object):
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
+        # TODO(2699422): check extension's consent value when call's from extension
         return self._get_config(key=self.COLLECT_TELEMETRY)
 
     def set_telemetry_consent(self, value):

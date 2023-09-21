@@ -8,8 +8,9 @@ from opencensus.ext.azure.common import utils
 from opencensus.ext.azure.common.protocol import Data, Envelope, Message
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 
-from promptflow._cli._configuration import Configuration
+# TODO: make sure extension set this?
 from promptflow._cli._user_agent import USER_AGENT
+from promptflow._sdk._configuration import Configuration
 
 # b4ff2b60-2f72-4a5f-b7a6-571318b50ab2
 # TODO: replace with prod app insights
@@ -30,7 +31,7 @@ def get_appinsights_log_handler():
         custom_properties = {
             "python_version": platform.python_version(),
             "user_agent": USER_AGENT,
-            "installation_id": config.get_or_set_user_id(),
+            "installation_id": config.get_or_set_installation_id(),
         }
 
         handler = AzureMLSDKLogHandler(
@@ -48,14 +49,14 @@ def get_appinsights_log_handler():
 class AzureMLSDKLogHandler(AzureLogHandler):
     """Customized AzureLogHandler for AzureML SDK"""
 
-    def __init__(self, custom_properties, enable_telemetry, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, custom_properties, enable_telemetry, **kwargs):
+        super().__init__(**kwargs)
 
-        self._is_telemetry_collection_disabled = not enable_telemetry
+        self._is_telemetry_enabled = enable_telemetry
         self._custom_properties = custom_properties
 
     def emit(self, record):
-        if self._is_telemetry_collection_disabled:
+        if not self._is_telemetry_enabled:
             return
 
         try:
@@ -72,8 +73,8 @@ class AzureMLSDKLogHandler(AzureLogHandler):
     # logic has been added to the beginning. Without this, the base class would still send telemetry even if
     # enable_telemetry had been set to true.
     def log_record_to_envelope(self, record):
-        if self._is_telemetry_collection_disabled:
-            return None
+        if not self._is_telemetry_enabled:
+            return
 
         envelope = create_envelope(self.options.instrumentation_key, record)
 

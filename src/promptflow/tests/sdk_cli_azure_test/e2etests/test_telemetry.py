@@ -8,8 +8,8 @@ import time
 
 import pytest
 
-from promptflow._cli._configuration import Configuration
-from promptflow._cli._pf._run import show_run
+from promptflow._sdk._configuration import Configuration
+from promptflow._sdk._utils import call_from_extension
 from promptflow._telemetry.logging_handler import AzureMLSDKLogHandler, get_appinsights_log_handler
 
 
@@ -49,7 +49,7 @@ class TestTelemetry:
         with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, AzureMLSDKLogHandler)
-            assert handler._is_telemetry_collection_disabled is False
+            assert handler._is_telemetry_enabled is False
             logger.addHandler(handler)
             logger.info("test_logging_handler")
             logger.warning("test_logging_handler")
@@ -58,31 +58,20 @@ class TestTelemetry:
         with environment_variable_overwrite("TELEMETRY_ENABLED", "false"):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, AzureMLSDKLogHandler)
-            assert handler._is_telemetry_collection_disabled is True
+            assert handler._is_telemetry_enabled is True
 
         # write config
         with cli_consent_config_overwrite(True):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, AzureMLSDKLogHandler)
-            assert handler._is_telemetry_collection_disabled is False
+            assert handler._is_telemetry_enabled is False
 
         with cli_consent_config_overwrite(False):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, AzureMLSDKLogHandler)
-            assert handler._is_telemetry_collection_disabled is True
+            assert handler._is_telemetry_enabled is True
 
-    def test_cli_telemetry(self):
-        with cli_consent_config_overwrite(True):
-            try:
-                show_run(name="not_exist")
-            except Exception:
-                pass
-        time.sleep(1000)
-
-    def test_sdk_telemetry(self, pf):
-        with cli_consent_config_overwrite(True):
-            try:
-                pf.run.get("not_exist")
-            except Exception:
-                pass
-        time.sleep(1000)
+    def test_call_from_extension(self):
+        assert call_from_extension() is False
+        with environment_variable_overwrite("USER_AGENT", "prompt-flow-extension/1.0.0"):
+            assert call_from_extension() is True

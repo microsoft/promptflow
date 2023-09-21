@@ -41,6 +41,7 @@ from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
 from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
@@ -67,7 +68,7 @@ class RunRequestException(Exception):
         super().__init__(message)
 
 
-class RunOperations(_ScopeDependentOperations):
+class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
@@ -121,6 +122,18 @@ class RunOperations(_ScopeDependentOperations):
         """Get the endpoint url for the workspace."""
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._common_azure_url_pattern
+
+    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """Return the telemetry values of run operations.
+
+        :return: The telemetry values
+        :rtype: Dict
+        """
+        return {
+            "subscription_id": self._operation_scope.subscription_id,
+            "resource_group_name": self._operation_scope.resource_group_name,
+            "workspace_name": self._operation_scope.workspace_name,
+        }
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""

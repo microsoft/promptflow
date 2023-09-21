@@ -19,6 +19,7 @@ from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow.contracts._run_management import RunMetadata, RunVisualization
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -26,11 +27,11 @@ RUNNING_STATUSES = RunStatus.get_running_statuses()
 logger = logging.getLogger(LOGGER_NAME)
 
 
-class RunOperations:
+class RunOperations(TelemetryMixin):
     """RunOperations."""
 
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @monitor_operation(activity_name="pf.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(

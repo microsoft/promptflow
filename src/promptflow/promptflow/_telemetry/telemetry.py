@@ -4,11 +4,25 @@
 import logging
 import os
 
-from promptflow._cli._configuration import Configuration
+from promptflow._sdk._configuration import Configuration
 from promptflow._telemetry.logging_handler import get_appinsights_log_handler
 
 TELEMETRY_ENABLED = "TELEMETRY_ENABLED"
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
+
+
+class TelemetryMixin(object):
+    def __init__(self, **kwargs):
+        # Need to call init for potential parent, otherwise it won't be initialized.
+        super().__init__(**kwargs)
+
+    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """Return the telemetry values of object.
+
+        :return: The telemetry values
+        :rtype: Dict
+        """
+        return {}
 
 
 def is_telemetry_enabled():
@@ -17,6 +31,8 @@ def is_telemetry_enabled():
     2. running `pf config set cli.telemetry_enable=true` command.
     If None of the above is set, will prompt an input to ask user to enable telemetry.
     """
+    # won't log telemetry by default
+    # TODO(2699390): change default telemetry logging behavior when finalized.
     telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
     if telemetry_enabled is not None:
         return str(telemetry_enabled).lower() == "true"

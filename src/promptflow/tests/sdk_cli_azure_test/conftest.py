@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import os
 
 import pytest
 from azure.ai.ml import MLClient
@@ -34,6 +35,8 @@ def ml_client(
 
 @pytest.fixture()
 def remote_client() -> PFClient:
+    # enable telemetry for test
+    os.environ["TELEMETRY_ENABLED"] = "true"
     return PFClient(
         credential=get_cred(),
         subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
@@ -44,6 +47,8 @@ def remote_client() -> PFClient:
 
 @pytest.fixture()
 def remote_client_int() -> PFClient:
+    # enable telemetry for test
+    os.environ["TELEMETRY_ENABLED"] = "true"
     client = MLClient(
         credential=get_cred(),
         subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
@@ -55,6 +60,8 @@ def remote_client_int() -> PFClient:
 
 @pytest.fixture()
 def pf(remote_client) -> PFClient:
+    # enable telemetry for test
+    os.environ["TELEMETRY_ENABLED"] = "true"
     return remote_client
 
 
