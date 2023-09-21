@@ -37,5 +37,4 @@ We are working on more official deployment guides for other hosting providers, a
 deploy-using-dev-server
 deploy-using-docker
 deploy-using-kubernetes
-distribute-flow-as-executable-app
 ```
