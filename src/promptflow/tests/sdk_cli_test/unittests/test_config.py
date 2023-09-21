@@ -30,6 +30,6 @@ class TestConfig:
         config.set_telemetry_consent(True)
         assert config.get_telemetry_consent() is True
 
-    def test_get_or_set_user_id(self, config):
-        user_id = config.get_or_set_user_id()
+    def test_get_or_set_installation_id(self, config):
+        user_id = config.get_or_set_installation_id()
         assert user_id is not None

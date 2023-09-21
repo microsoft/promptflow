@@ -15,7 +15,7 @@ class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
     COLLECT_TELEMETRY = "cli.collect_telemetry"
-    USER_ID = "cli.user_session_id"
+    INSTALLATION_ID = "cli.installation_id"
 
     def __init__(self):
         self.config = {}
@@ -49,14 +49,14 @@ class Configuration(object):
         """Set the telemetry consent value and store in local."""
         self._set_config(key=self.COLLECT_TELEMETRY, value=value)
 
-    def get_or_set_user_id(self):
-        """Get user id if exists, otherwise set user id and return it."""
-        user_id = self._get_config(key=self.USER_ID)
+    def get_or_set_installation_id(self):
+        """Get user id if exists, otherwise set installation id and return it."""
+        user_id = self._get_config(key=self.INSTALLATION_ID)
         if user_id:
             return user_id
         else:
             user_id = str(uuid.uuid4())
-            self._set_config(key=self.USER_ID, value=user_id)
+            self._set_config(key=self.INSTALLATION_ID, value=user_id)
             return user_id
 
     def _to_dict(self):
