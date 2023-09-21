@@ -39,7 +39,13 @@ class ToolInvoker(ABC):
         return cls._active_tool_invoker
 
 
-def tool(name: str = None, description: str = None, type: str = None) -> Callable:
+def tool(
+        func=None,
+        *,
+        name: str = None,
+        description: str = None,
+        type: str = None
+) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
 
     :param name: The tool name.
