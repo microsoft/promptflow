@@ -628,17 +628,22 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
 class CustomStrongTypeConnection(_Connection):
     """Custom strong type connection.
 
+    .. note::
+
+        This connection type should not be used directly. Below is an example of how to use CustomStrongTypeConnection:
+
+        .. code-block:: python
+
+            class MyCustomConnection(CustomStrongTypeConnection):
+                api_key: Secret
+                api_base: str
+
     :param configs: The configs kv pairs.
     :type configs: Dict[str, str]
     :param secrets: The secrets kv pairs.
     :type secrets: Dict[str, str]
     :param name: Connection name
     :type name: str
-
-    This connection type should not be used directly. Below is an example of how to use CustomStrongTypeConnection:
-    class MyCustomConnection(CustomStrongTypeConnection):
-        api_key: Secret
-        api_base: str
     """
 
     def __init__(
@@ -661,14 +666,11 @@ class CustomStrongTypeConnection(_Connection):
         self.module = kwargs.get("module", self.__class__.__module__)
         self.custom_type = custom_type or self.__class__.__name__
 
-    def is_custom_strong_type(self):
-        return True
-
     def _to_orm_object(self) -> ORMConnection:
-        custom_connection = self.convert_to_custom()
+        custom_connection = self._convert_to_custom()
         return custom_connection._to_orm_object()
 
-    def convert_to_custom(self):
+    def _convert_to_custom(self):
         # update configs
         self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: self.custom_type})
         self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: self.module})
@@ -729,7 +731,7 @@ class CustomStrongTypeConnection(_Connection):
         context[SCHEMA_KEYS_CONTEXT_CONFIG_KEY] = schema_config_keys
         context[SCHEMA_KEYS_CONTEXT_SECRET_KEY] = schema_secret_keys
 
-        return (super()._load_from_dict(data, context, additional_message, **kwargs)).convert_to_custom()
+        return (super()._load_from_dict(data, context, additional_message, **kwargs))._convert_to_custom()
 
 
 class CustomConnection(_Connection):
@@ -889,13 +891,13 @@ class CustomConnection(_Connection):
             last_modified_date=mt_rest_obj.last_modified_date,
         )
 
-    def is_custom_strong_type(self):
+    def _is_custom_strong_type(self):
         return (
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in self.configs
             and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         )
 
-    def convert_to_custom_strong_type(self):
+    def _convert_to_custom_strong_type(self):
         module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
         custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
         import importlib
