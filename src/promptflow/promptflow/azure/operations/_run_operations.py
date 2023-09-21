@@ -30,13 +30,14 @@ from pandas import DataFrame
 
 from promptflow._sdk._constants import (
     LOGGER_NAME,
+    MAX_SHOW_DETAILS_RESULTS,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
     RunDataKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
@@ -45,7 +46,7 @@ from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
     BASE_IMAGE,
-    CHILD_RUNS_PAGE_SIZE,
+    CLOUD_RUNS_PAGE_SIZE,
     PYTHON_REQUIREMENTS_TXT,
 )
 from promptflow.azure._load_functions import load_flow
@@ -198,8 +199,21 @@ class RunOperations(_ScopeDependentOperations):
             self.stream(run=run.name)
         return self.get(run=run.name)
 
-    def list(self, max_results, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs):
-        """List runs in the workspace with index service call."""
+    def list(
+        self, max_results: int = CLOUD_RUNS_PAGE_SIZE, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
+    ) -> List[Run]:
+        """List runs in the workspace.
+
+        :param max_results: The max number of runs to return, defaults to 25
+        :type max_results: int
+        :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
+        :type list_view_type: ListViewType
+        :return: The list of runs.
+        :rtype: List[~promptflow.entities.Run]
+        """
+        if not isinstance(max_results, int) or max_results < 0:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         headers = self._get_headers()
         filter_archived = []
         if list_view_type == ListViewType.ACTIVE_ONLY:
@@ -208,6 +222,10 @@ class RunOperations(_ScopeDependentOperations):
             filter_archived = ["true"]
         elif list_view_type == ListViewType.ALL:
             filter_archived = ["true", "false"]
+        else:
+            raise RunOperationParameterError(
+                f"Invalid list view type: {list_view_type!r}, expecting one of ['ActiveOnly', 'ArchivedOnly', 'All']"
+            )
 
         pay_load = {
             "filters": [
@@ -263,17 +281,34 @@ class RunOperations(_ScopeDependentOperations):
         metrics = self._get_metrics_from_metric_service(run)
         return metrics
 
-    def get_details(self, run: Union[str, Run], **kwargs) -> DataFrame:
+    def get_details(
+        self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
+    ) -> DataFrame:
         """Get the details from the run.
+
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
 
         :param run: The run
         :type run: str
-        :return: The details
+        :param max_results: The max number of runs to return, defaults to 25
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        # if all_results is True, set max_results to sys.maxsize
+        if all_results:
+            max_results = sys.maxsize
+
+        if not isinstance(max_results, int) or max_results < 1:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         run = Run._validate_and_return_run_name(run)
         self._check_cloud_run_completed(run_name=run)
-        child_runs = self._get_flow_runs_pagination(run)
+        child_runs = self._get_flow_runs_pagination(run, max_results=max_results)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
         data = {}
         columns = []
@@ -293,12 +328,12 @@ class RunOperations(_ScopeDependentOperations):
         run = self.get(run=run_name)
         run._check_run_status_is_completed()
 
-    def _get_flow_runs_pagination(self, name: str) -> List[dict]:
+    def _get_flow_runs_pagination(self, name: str, max_results: int) -> List[dict]:
         # call childRuns API with pagination to avoid PFS OOM
         # different from UX, run status should be completed here
         flow_runs = []
-        start_index, end_index = 0, CHILD_RUNS_PAGE_SIZE - 1
-        while True:
+        start_index, end_index = 0, CLOUD_RUNS_PAGE_SIZE - 1
+        while start_index < max_results:
             current_flow_runs = self._service_caller.get_child_runs(
                 subscription_id=self._operation_scope.subscription_id,
                 resource_group_name=self._operation_scope.resource_group_name,
@@ -310,9 +345,9 @@ class RunOperations(_ScopeDependentOperations):
             # no data in current page
             if len(current_flow_runs) == 0:
                 break
-            start_index, end_index = start_index + CHILD_RUNS_PAGE_SIZE, end_index + CHILD_RUNS_PAGE_SIZE
+            start_index, end_index = start_index + CLOUD_RUNS_PAGE_SIZE, end_index + CLOUD_RUNS_PAGE_SIZE
             flow_runs += current_flow_runs
-        return flow_runs
+        return flow_runs[0:max_results]
 
     def _extract_metrics_from_metric_service_response(self, values) -> dict:
         """Get metrics from the metric service response."""

@@ -10,6 +10,7 @@ from typing import Callable, Dict, List, Optional, Tuple
 import pandas as pd
 
 from promptflow._cli._params import (
+    add_param_all_results,
     add_param_columns_mapping,
     add_param_connections,
     add_param_environment_variables,
@@ -215,13 +216,6 @@ pf run list --output table
         type=int,
         default=MAX_LIST_CLI_RESULTS,
         help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
-    )
-    add_param_all_results = lambda parser: parser.add_argument(  # noqa: E731
-        "--all-results",
-        action="store_true",
-        dest="all_results",
-        default=False,
-        help="Returns all results",
     )
     add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
         "--archived-only",
