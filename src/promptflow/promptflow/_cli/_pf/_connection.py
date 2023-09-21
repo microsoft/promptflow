@@ -8,7 +8,7 @@ import logging
 from functools import partial
 
 from promptflow._cli._params import add_param_set, logging_params
-from promptflow._cli._utils import activate_action, confirm, exception_handler, print_yellow_warning, get_secret_input
+from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient

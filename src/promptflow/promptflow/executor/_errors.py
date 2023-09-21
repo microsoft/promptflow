@@ -123,6 +123,10 @@ class InputTypeError(InvalidFlowRequest):
     pass
 
 
+class InputParseError(InvalidFlowRequest):
+    pass
+
+
 class InvalidConnectionType(InvalidFlowRequest):
     pass
 
@@ -162,6 +166,10 @@ class ReferenceNodeBypassed(NodeReferenceError):
 
 
 class NodeOutputNotFound(UserErrorException):
+    pass
+
+
+class SingleNodeValidationError(UserErrorException):
     pass
 
 
