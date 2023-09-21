@@ -37,7 +37,7 @@ def print_stream_and_return_full_answer(stream):
 
 
 def main_loop(url: str):
-    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
 
     history = []
     while True:
@@ -64,4 +64,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main_loop("https://arxiv.org/pdf/1810.04805.pdf")
+    main()

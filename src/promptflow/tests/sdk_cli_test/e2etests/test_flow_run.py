@@ -7,7 +7,7 @@ import pytest
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
 from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
@@ -17,7 +17,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import MappingSourceNotFound
+from promptflow.executor.flow_executor import InputMappingError
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -292,7 +292,7 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(MappingSourceNotFound) as e:
+        with pytest.raises(InputMappingError) as e:
             pf.run(
                 name=run_name,
                 run=failed_run,
@@ -530,7 +530,7 @@ class TestFlowRun:
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(MappingSourceNotFound):
+        with pytest.raises(InputMappingError):
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=data_path,
@@ -588,6 +588,12 @@ class TestFlowRun:
         assert (Path(run_output_path) / "node_artifacts").is_dir()
         # 5 nodes web classification flow DAG
         assert len([_ for _ in (Path(run_output_path) / "node_artifacts").iterdir()]) == 5
+
+    def test_run_snapshot_with_flow_tools_json(self, local_client, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
+        assert (local_storage._snapshot_folder_path / ".promptflow").is_dir()
+        assert (local_storage._snapshot_folder_path / ".promptflow" / "flow.tools.json").is_file()
 
     def test_get_metrics_format(self, local_client, pf) -> None:
         run1 = create_run_against_multi_line_data(pf)
@@ -680,3 +686,9 @@ class TestFlowRun:
         run_dict = run._to_dict()
         assert "error" in run_dict
         assert run_dict["error"] == exception
+
+    def test_system_metrics_in_properties(self, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        assert FlowRunProperties.SYSTEM_METRICS in run.properties
+        assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
+        assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]

@@ -101,3 +101,26 @@ class TestConnectionOperations:
         ]
         for spec in expected_config_specs:
             assert spec in result["AzureOpenAI"]["config_specs"]
+
+    def test_get_connection(self, connection_ops):
+        # Note: No secrets will be returned by MT api
+        result = connection_ops.get(name="azure_open_ai_connection")
+        assert (
+            result._to_dict().items()
+            > {
+                "api_type": "azure",
+                "module": "promptflow.connections",
+                "name": "azure_open_ai_connection",
+            }.items()
+        )
+
+        result = connection_ops.get(name="custom_connection")
+        assert (
+            result._to_dict().items()
+            > {
+                "name": "custom_connection",
+                "module": "promptflow.connections",
+                "configs": {},
+                "secrets": {},
+            }.items()
+        )

@@ -81,7 +81,7 @@ We use and recommend the following workflow:
      You can request that the issue be assigned to you. Note: The issue filer and
      the implementer don't have to be the same person.
 2. Create a personal fork of the repository on GitHub (if you don't already have one).
-3. In your fork, create a branch off of main (`git checkout -b mybranch`).
+3. In your fork, create a branch off of main (`git checkout -b my_branch`).
    - Name the branch so that it clearly communicates your intentions, such as
      "issue-123" or "githubhandle-issue".
 4. Make and commit your changes to your branch.

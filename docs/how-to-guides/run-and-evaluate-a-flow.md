@@ -154,7 +154,7 @@ After the run is finished, you can evaluate the run with below command, compared
 eval_flow = "evaluation/eval-classification-accuracy"
 data= "standard/web-classification/data.jsonl"
 
-# run the flow with exisiting run
+# run the flow with existing run
 eval_run = pf.run(
     flow=eval_flow,
     data=data,

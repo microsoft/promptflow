@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-"""service_calller.py, module for interacting with the AzureML service."""
+"""service_caller.py, module for interacting with the AzureML service."""
 import json
 import logging
 import os
@@ -55,7 +55,7 @@ class RequestTelemetryMixin(TelemetryMixin):
 
 
 def _request_wrapper():
-    """Wrapper for request. Will refress request id and pretty print exception."""
+    """Wrapper for request. Will refresh request id and pretty print exception."""
     def exception_wrapper(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -601,3 +601,29 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 f"Response headers: {response.headers}."
             )
         return deserialized
+
+    @_request_wrapper()
+    def get_child_runs(
+            self,
+            subscription_id,  # type: str
+            resource_group_name,  # type: str
+            workspace_name,  # type: str
+            flow_run_id,  # type: str
+            index=None,  # type: Optional[int]
+            start_index=None,  # type: Optional[int]
+            end_index=None,  # type: Optional[int]
+            **kwargs  # type: Any
+        ):
+        """Get child runs of a flow run."""
+        headers = self._get_headers()
+        return self.caller.bulk_runs.get_flow_child_runs(
+            subscription_id=subscription_id,
+            resource_group_name=resource_group_name,
+            workspace_name=workspace_name,
+            flow_run_id=flow_run_id,
+            index=index,
+            start_index=start_index,
+            end_index=end_index,
+            headers=headers,
+            **kwargs
+        )
