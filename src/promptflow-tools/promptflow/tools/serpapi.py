@@ -85,7 +85,7 @@ class SerpAPI(ToolProvider):
                 params["safeSearch"] = "Strict"
 
         if int(num) > 0:
-            # to combine multiple engines togather, we use "num" as the parameter for such purpose
+            # to combine multiple engines together, we use "num" as the parameter for such purpose
             if params["engine"].lower() == "google":
                 params["num"] = int(num)
             else:

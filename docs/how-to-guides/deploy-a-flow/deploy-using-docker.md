@@ -46,14 +46,14 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy with docker.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+refer to [Setup connection for web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
 ## Build a flow as docker format app
 
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../flows/standard/web-classification --output build --format docker
+pf flow build --source ../../flows/standard/web-classification --output dist --format docker
 ```
 
 Note that all dependent connections must be created before exporting as docker.
@@ -65,7 +65,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 Run the command below to build image:
 
 ```bash
-docker build build -t web-classification-serve
+docker build dist -t web-classification-serve
 ```
 
 ### Run Docker image

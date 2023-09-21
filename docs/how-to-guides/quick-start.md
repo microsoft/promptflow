@@ -110,6 +110,7 @@ inputs:
     default: https://play.google.com/store/apps/details?id=com.twitter.android
 ...
 ```
+See more details of this topic in [Develop a flow](./develop-a-flow/index.md).
 
 ### Create necessary connections
 
@@ -216,7 +217,7 @@ print(conn)
 
 ::::
 
-Learn more on more actions like delete conection in: [Manage connections](./manage-connections.md).
+Learn more on more actions like delete connection in: [Manage connections](./manage-connections.md).
 
 ### Test the flow
 Assuming you are in working directory `promptflow/examples/flows/standard/`
@@ -283,6 +284,7 @@ See more details of this topic in [Initialize and test a flow](./init-and-test-a
 ## Next steps
 
 Learn more on how to:
+- [Develop a flow](./develop-a-flow/index.md): details on how to develop a flow by writing a flow yaml from scratch.
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
 - [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.

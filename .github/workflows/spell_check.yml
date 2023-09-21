@@ -1,0 +1,36 @@
+name: Spell check CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  Spell_Check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+
+      - name: Install cspell
+        run: npm install -g cspell
+
+      - name: Run cspell
+        run: |-
+          cspell lint "**" > cspell_check.log || true
+          if [ -s cspell_check.log ]; then
+            echo -e "\e[91mNote: If the detected words are expected, add them into ".cspell.json" which is at the repo root folder.\e[0m" 
+            echo -e "====================== Summary of cspell errors ======================"
+            echo -e "\e[31m$(cat cspell_check.log)\e[0m" 
+            exit 1
+          fi
+          

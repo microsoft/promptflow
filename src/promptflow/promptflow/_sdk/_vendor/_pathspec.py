@@ -171,10 +171,10 @@ class RegexPattern(Pattern):
     @classmethod
     def pattern_to_regex(cls, pattern: str) -> Tuple[str, bool]:
         """
-        Convert the pattern into an uncompiled regular expression.
+        Convert the pattern into an un-compiled regular expression.
         *pattern* (:class:`str`) is the pattern to convert into a regular
         expression.
-        Returns the uncompiled regular expression (:class:`str` or :data:`None`),
+        Returns the un-compiled regular expression (:class:`str` or :data:`None`),
         and whether matched files should be included (:data:`True`),
         excluded (:data:`False`), or is a null-operation (:data:`None`).
             .. NOTE:: The default implementation simply returns *pattern* and
@@ -225,7 +225,7 @@ class GitWildMatchPattern(RegexPattern):
         Convert the pattern into a regular expression.
         *pattern* (:class:`str` or :class:`bytes`) is the pattern to convert
         into a regular expression.
-        Returns the uncompiled regular expression (:class:`str`, :class:`bytes`,
+        Returns the un-compiled regular expression (:class:`str`, :class:`bytes`,
         or :data:`None`); and whether matched files should be included
         (:data:`True`), excluded (:data:`False`), or if it is a
         null-operation (:data:`None`).
@@ -271,7 +271,7 @@ class GitWildMatchPattern(RegexPattern):
             override_regex = None
 
             # Split pattern into segments.
-            pattern_segs = pattern.split("/")
+            pattern_segments = pattern.split("/")
 
             # Normalize pattern to make processing easier.
 
@@ -279,34 +279,34 @@ class GitWildMatchPattern(RegexPattern):
             # Collapse each sequence down to one double-asterisk. Iterate over
             # the segments in reverse and remove the duplicate double
             # asterisks as we go.
-            for i in range(len(pattern_segs) - 1, 0, -1):
-                prev = pattern_segs[i - 1]
-                seg = pattern_segs[i]
+            for i in range(len(pattern_segments) - 1, 0, -1):
+                prev = pattern_segments[i - 1]
+                seg = pattern_segments[i]
                 if prev == "**" and seg == "**":
-                    del pattern_segs[i]
+                    del pattern_segments[i]
 
-            if len(pattern_segs) == 2 and pattern_segs[0] == "**" and not pattern_segs[1]:
+            if len(pattern_segments) == 2 and pattern_segments[0] == "**" and not pattern_segments[1]:
                 # EDGE CASE: The '**/' pattern should match everything except
                 # individual files in the root directory. This case cannot be
                 # adequately handled through normalization. Use the override.
                 override_regex = "^.+(?P<ps_d>/).*$"
 
-            if not pattern_segs[0]:
+            if not pattern_segments[0]:
                 # A pattern beginning with a slash ('/') will only match paths
                 # directly on the root directory instead of any descendant
                 # paths. So, remove empty first segment to make pattern relative
                 # to root.
-                del pattern_segs[0]
+                del pattern_segments[0]
 
-            elif len(pattern_segs) == 1 or (len(pattern_segs) == 2 and not pattern_segs[1]):
+            elif len(pattern_segments) == 1 or (len(pattern_segments) == 2 and not pattern_segments[1]):
                 # A single pattern without a beginning slash ('/') will match
                 # any descendant path. This is equivalent to "**/{pattern}". So,
                 # prepend with double-asterisks to make pattern relative to
                 # root.
                 # EDGE CASE: This also holds for a single pattern with a
                 # trailing slash (e.g. dir/).
-                if pattern_segs[0] != "**":
-                    pattern_segs.insert(0, "**")
+                if pattern_segments[0] != "**":
+                    pattern_segments.insert(0, "**")
 
             else:
                 # EDGE CASE: A pattern without a beginning slash ('/') but
@@ -315,24 +315,24 @@ class GitWildMatchPattern(RegexPattern):
                 # according to `git check-ignore` (v2.4.1).
                 pass
 
-            if not pattern_segs:
+            if not pattern_segments:
                 # After resolving the edge cases, we end up with no pattern at
                 # all. This must be because the pattern is invalid.
                 raise GitWildMatchPatternError(f"Invalid git pattern: {original_pattern!r}")
 
-            if not pattern_segs[-1] and len(pattern_segs) > 1:
+            if not pattern_segments[-1] and len(pattern_segments) > 1:
                 # A pattern ending with a slash ('/') will match all descendant
                 # paths if it is a directory but not if it is a regular file.
                 # This is equivalent to "{pattern}/**". So, set last segment to
                 # a double-asterisk to include all descendants.
-                pattern_segs[-1] = "**"
+                pattern_segments[-1] = "**"
 
             if override_regex is None:
                 # Build regular expression from pattern.
                 output = ["^"]
                 need_slash = False
-                end = len(pattern_segs) - 1
-                for i, seg in enumerate(pattern_segs):
+                end = len(pattern_segments) - 1
+                for i, seg in enumerate(pattern_segments):
                     if seg == "**":
                         if i == 0 and i == end:
                             # A pattern consisting solely of double-asterisks ('**')
