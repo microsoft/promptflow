@@ -33,3 +33,7 @@ class TestConfig:
     def test_get_or_set_installation_id(self, config):
         user_id = config.get_or_set_installation_id()
         assert user_id is not None
+
+    def test_config_instance(self, config):
+        new_config = Configuration.get_instance()
+        assert new_config is config

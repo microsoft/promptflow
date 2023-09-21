@@ -28,6 +28,7 @@ class Configuration(object):
 
     @classmethod
     def get_instance(cls):
+        """Use this to get instance to avoid multiple copies of same global config."""
         if cls._instance is None:
             cls._instance = Configuration()
         return cls._instance
