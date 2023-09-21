@@ -1,7 +1,7 @@
 # Custom tool package creation and usage
 In this document, we will guide you through the process of developing your own tool package, offering detailed steps and advice on how to utilize your creation.
 
-The custom tool is a prompt flow tool developed by yourself. If you find it useful, you can follow this guidance to make it a tool package. This will enable you to conveniently reuse it, share it with your team, or distribute it to anyone in the world.
+The custom tool is the prompt flow tool developed by yourself. If you find it useful, you can follow this guidance to make it a tool package. This will enable you to conveniently reuse it, share it with your team, or distribute it to anyone in the world.
 
 After successful installation of the package, your custom "tool" will show up in VSCode extension as below: 
 ![custom-tool-list](../media/contributing/custom-tool-list-in-extension.png)
