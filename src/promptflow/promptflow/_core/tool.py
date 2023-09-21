@@ -58,22 +58,25 @@ def tool(
     :rtype: Callable
     """
 
-    def tool_decorator(f: Callable) -> Callable:
-        @functools.wraps(f)
+    def tool_decorator(func: Callable) -> Callable:
+        @functools.wraps(func)
         def new_f(*args, **kwargs):
             tool_invoker = ToolInvoker.active_instance()
             # If there is no active tool invoker for tracing or other purposes, just call the function.
             if tool_invoker is None:
-                return f(*args, **kwargs)
-            return tool_invoker.invoke_tool(f, *args, **kwargs)
+                return func(*args, **kwargs)
+            return tool_invoker.invoke_tool(func, *args, **kwargs)
 
-        new_f.__original_function = f
-        f.__wrapped_function = new_f
+        new_f.__original_function = func
+        func.__wrapped_function = new_f
         new_f.__tool = None  # This will be set when generating the tool definition.
         new_f.__name = name
         new_f.__description = description
         new_f.__type = type
         return new_f
+    # enable use decorator without "()" if all arguments are default values
+    if func is not None:
+        return tool_decorator(func)
     return tool_decorator
 
 
