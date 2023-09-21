@@ -13,6 +13,7 @@ from flask import Flask, jsonify, request, url_for
 from jinja2 import Template
 
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
 from promptflow._sdk._serving.utils import (
@@ -23,7 +24,6 @@ from promptflow._sdk._serving.utils import (
     streaming_response_required,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
-from promptflow._sdk.entities._flow import Flow
 from promptflow._version import VERSION
 
 from .swagger import generate_swagger
@@ -40,7 +40,7 @@ class PromptflowServingApp(Flask):
             # parse promptflow project path
             self.project_path = os.getenv("PROMPTFLOW_PROJECT_PATH", ".")
             logger.info(f"Project path: {self.project_path}")
-            self.flow_entity = Flow.load(self.project_path)
+            self.flow_entity = load_flow(self.project_path)
             static_folder = kwargs.get("static_folder", None)
             self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
             logger.info(f"Static_folder: {self.static_folder}")

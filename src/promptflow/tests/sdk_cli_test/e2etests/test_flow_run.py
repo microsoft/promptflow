@@ -9,10 +9,10 @@ from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
 from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
@@ -313,7 +313,7 @@ class TestFlowRun:
         assert run.status == "Completed"
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
-        flow = Flow.load(f"{FLOWS_DIR}/web_classification_no_variants")
+        flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow)
         assert local_aoai_connection.name in connections
 
