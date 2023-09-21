@@ -24,6 +24,11 @@ from promptflow.executor._errors import LineExecutionTimeoutError
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import DEFAULT_CONCURRENCY_BULK, FlowExecutor
 from promptflow.storage import AbstractRunStorage
+from promptflow._core.tool import ToolInvoker
+from promptflow.executor._tool_invoker import DefaultToolInvoker
+from promptflow.tools import aoai, openai  # noqa: F401
+import threading
+import time
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 
@@ -363,8 +368,6 @@ def _process_wrapper(
     log_context_initilization_func,
     operation_contexts_dict: dict,
 ):
-    import threading
-    import time
     logging_name = os.getpid()
     interval_seconds = 10
     start_time = time.perf_counter()
@@ -429,13 +432,10 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 
 def create_executor_legacy(*, flow, connections, loaded_tools, cache_manager, storage):
     """This is a legacy method to create a flow executor, will be deprecated with the legacy pf portal."""
-    from promptflow._core.tool import ToolInvoker
-    from promptflow.executor._tool_invoker import DefaultToolInvoker
 
     ToolInvoker.activate(DefaultToolInvoker())
     run_tracker = RunTracker(run_storage=storage)
     # import these to make sure LLM tool works.
-    from promptflow.tools import aoai, openai  # noqa: F401
 
     return FlowExecutor(
         flow=flow,
