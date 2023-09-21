@@ -84,6 +84,7 @@ class TestChatWithPDFAzure(BaseTest):
 
         # run won't be failed, only line runs inside it will be failed.
         self.assertEqual(run.status, "Completed")
+        # TODO: get line run results when supported.
 
     def test_bulk_run_invalid_mapping(self):
         run = self.create_chat_run(
