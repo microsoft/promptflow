@@ -11,8 +11,13 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
-from promptflow._sdk._constants import LOGGER_NAME, MAX_RUN_LIST_RESULTS, ListViewType, RunStatus, \
-    MAX_SHOW_DETAILS_RESULTS
+from promptflow._sdk._constants import (
+    LOGGER_NAME,
+    MAX_RUN_LIST_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
+    ListViewType,
+    RunStatus,
+)
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import incremental_print, safe_parse_object_list
@@ -179,7 +184,12 @@ class RunOperations:
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
-    def get_details(self, name: Union[str, Run], max_results: int=MAX_SHOW_DETAILS_RESULTS, all_results: bool = False) -> pd.DataFrame:
+    def get_details(
+            self,
+            name: Union[str, Run],
+            max_results: int=MAX_SHOW_DETAILS_RESULTS,
+            all_results: bool = False
+    ) -> pd.DataFrame:
         """Get the details from the run.
 
         .. note::
