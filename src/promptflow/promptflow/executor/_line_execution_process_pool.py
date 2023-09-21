@@ -366,11 +366,11 @@ def _process_wrapper(
     import threading
     import time
     logging_name = os.getpid()
-    interval_seconds = 120
+    interval_seconds = 10
     start_time = time.perf_counter()
     thread_id = threading.current_thread().ident
     with RepeatLogTimer(
-        interval_seconds=120,
+        interval_seconds=10,
         logger=bulk_logger,
         level=INFO,
         log_message_function=generate_elapsed_time_messages,
@@ -404,7 +404,7 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
     while True:
         try:
-            args = input_queue.get(1)
+            args = input_queue.get(timeout=1)
             if args is None:
                 logger.info(f"Process {os.getpid()} queue1 empty, exit. args:{args}")
             else:
