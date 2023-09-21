@@ -52,6 +52,7 @@ def get_metadata(name: str):
     metadata = RunMetadata(
         name=run.name,
         display_name=run.display_name,
+        create_time=run.created_on,
         tags=run.tags,
         lineage=run.run,
         metrics=local_storage_op.load_metrics(),
