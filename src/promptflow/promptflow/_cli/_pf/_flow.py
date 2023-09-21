@@ -300,8 +300,10 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
     print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
     if flow_type == "chat":
         flow_test_args = "--interactive"
-        print("The generated chat flow is requiring a connection named open_ai_connection, "
-              "please follow the steps in README.md to create if you haven't done that.")
+        print(
+            "The generated chat flow is requiring a connection named open_ai_connection, "
+            "please follow the steps in README.md to create if you haven't done that."
+        )
     else:
         flow_test_args = f"--input {os.path.join(flow_name, 'data.jsonl')}"
     flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
@@ -434,9 +436,8 @@ def validate_flow(args):
     validation_result = pf_client.flows.validate(
         flow=args.source,
     )
-    if validation_result:
-        print(json.dumps(validation_result, indent=4))
+    print(repr(validation_result))
+    if not validation_result.passed:
         exit(1)
     else:
-        print("Flow is valid.")
         exit(0)

@@ -6,19 +6,12 @@ import json
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-from typing import Iterable, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
 
-from promptflow._sdk._constants import (
-    BASE_PATH_CONTEXT_KEY,
-    CHAT_HISTORY,
-    DAG_FILE_NAME,
-    DEFAULT_ENCODING,
-    FLOW_TOOLS_JSON,
-    LOCAL_MGMT_DB_PATH,
-    PROMPT_FLOW_DIR_NAME,
-)
+from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, LOCAL_MGMT_DB_PATH
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -28,9 +21,10 @@ from promptflow._sdk._utils import (
     generate_random_string,
     parse_variant,
 )
+from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import UserErrorException
 
 
 class FlowOperations:
@@ -383,14 +377,7 @@ class FlowOperations:
         output_dir = Path(output)
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        flow_path = Path(flow)
-        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-            flow_dag_path = flow_path / DAG_FILE_NAME
-        else:
-            flow_dag_path = flow_path
-
-        if not flow_dag_path.is_file():
-            raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
+        flow = load_flow(flow)
 
         if format not in ["docker"]:
             raise ValueError(f"Unsupported export format: {format}")
@@ -407,7 +394,7 @@ class FlowOperations:
             output_flow_dir = output_dir / "flow"
 
         new_flow_dag_path = self._build_flow(
-            flow_dag_path=flow_dag_path,
+            flow_dag_path=flow.flow_dag_path,
             output=output_flow_dir,
             tuning_node=tuning_node,
             node_variant=node_variant,
@@ -427,7 +414,7 @@ class FlowOperations:
                 flow_dag_path=new_flow_dag_path,
                 output_dir=output_dir,
                 connection_paths=connection_paths,
-                flow_name=flow_dag_path.parent.stem,
+                flow_name=flow.name,
                 env_var_names=env_var_names,
             )
 
@@ -442,7 +429,7 @@ class FlowOperations:
         else:
             yield flow_dag_path
 
-    def validate(self, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> dict:
+    def validate(self, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> ValidationResult:
         """
         Validate flow.
 
@@ -450,58 +437,42 @@ class FlowOperations:
         :type flow: Union[str, PathLike]
         :param raise_error: whether raise error when validation failed
         :type raise_error: bool
-        :return: dict of validation result
-        :rtype: dict
+        :return: a validation result object
+        :rtype: ValidationResult
         """
 
-        flow_path = Path(flow)
-        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-            flow_dag_path = flow_path / DAG_FILE_NAME
-        else:
-            flow_dag_path = flow_path
-
-        if not flow_dag_path.is_file():
-            raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
+        flow = load_flow(source=flow)
 
         # TODO: put off this if we do path existence check in FlowSchema on fields other than additional_includes
-        flow_dag_obj = yaml.safe_load(flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
-        from promptflow._sdk.schemas._flow import FlowSchema
+        validation_result = flow._validate()
 
-        # TODO: check path existence of additional_includes in FlowSchema
-        validation_result = FlowSchema(context={BASE_PATH_CONTEXT_KEY: flow_dag_path.parent}).validate(flow_dag_obj)
+        source_path_mapping = {}
+        flow_tools, tools_errors = self._generate_tools_meta(
+            flow=flow.flow_dag_path,
+            source_path_mapping=source_path_mapping,
+        )
 
-        with self._resolve_additional_includes(flow_dag_path) as new_flow_dag_path:
-            flow_tools = generate_flow_tools_json(
-                flow_directory=new_flow_dag_path.parent,
-                dump=False,
-                raise_error=False,
-                include_errors_in_output=True,
-            )
-            tools_errors = {}
-            if "code" in flow_tools:
-                nodes_with_error = [
-                    node_name for node_name, message in flow_tools["code"].items() if isinstance(message, str)
-                ]
-                for node_name in nodes_with_error:
-                    tools_errors[node_name] = flow_tools["code"].pop(node_name)
-
-        # generate flow tools json
-        flow_tools_json_path = flow_dag_path.parent / PROMPT_FLOW_DIR_NAME / FLOW_TOOLS_JSON
-
-        flow_tools_json_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(flow_tools_json_path, "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(flow_tools, f, indent=4)
+        flow.tools_meta_path.write_text(
+            data=json.dumps(flow_tools, indent=4),
+            encoding=DEFAULT_ENCODING,
+        )
 
         if tools_errors:
-            validation_result["tool-meta"] = tools_errors
+            for source_name, message in tools_errors.items():
+                for yaml_path in source_path_mapping.get(source_name, []):
+                    validation_result.append_error(
+                        yaml_path=yaml_path,
+                        message=message,
+                    )
 
-        if validation_result and raise_error:
-            raise UserErrorException(
-                "Validation failed:\n%s" % json.dumps(validation_result, indent=4),
-                target=ErrorTarget.CONTROL_PLANE_SDK,
-            )
+        # flow in control plane is read-only, so resolve location makes sense even in SDK experience
+        validation_result.resolve_location_for_diagnostics(flow.flow_dag_path)
 
-        # TODO: convert return value to a ValidationResult object
+        flow._try_raise(
+            validation_result,
+            raise_error=raise_error,
+        )
+
         return validation_result
 
     def _generate_tools_meta(
@@ -509,6 +480,7 @@ class FlowOperations:
         flow: Union[str, PathLike],
         *,
         source_name: str = None,
+        source_path_mapping: Dict[str, List[str]] = None,
     ) -> Tuple[dict, dict]:
         """Generate flow tools meta for a specific flow or a specific node in the flow.
 
@@ -522,19 +494,15 @@ class FlowOperations:
         :type flow: Union[str, PathLike]
         :param source_name: source name to generate tools meta. If not specified, generate tools meta for all sources.
         :type source_name: str
+        :param source_path_mapping: If passed in None, do nothing; if passed in a dict, will record all reference yaml
+                                    paths for each source.
+        :type source_path_mapping: Dict[str, List[str]]
         :return: dict of tools meta and dict of tools errors
         :rtype: Tuple[dict, dict]
         """
-        flow_path = Path(flow)
-        if flow_path.is_dir() and (flow_path / DAG_FILE_NAME).is_file():
-            flow_dag_path = flow_path / DAG_FILE_NAME
-        else:
-            flow_dag_path = flow_path
+        flow = load_flow(source=flow)
 
-        if not flow_dag_path.is_file():
-            raise ValueError(f"Flow dag file {flow_dag_path.as_posix()} does not exist.")
-
-        with self._resolve_additional_includes(flow_dag_path) as new_flow_dag_path:
+        with self._resolve_additional_includes(flow.flow_dag_path) as new_flow_dag_path:
             flow_tools = generate_flow_tools_json(
                 flow_directory=new_flow_dag_path.parent,
                 dump=False,
@@ -542,9 +510,9 @@ class FlowOperations:
                 include_errors_in_output=True,
                 target_source=source_name,
                 used_packages_only=True,
+                source_path_mapping=source_path_mapping,
             )
 
-        # TODO: do you need flow.tools.json['package']?
         flow_tools_meta = flow_tools.pop("code", {})
 
         tools_errors = {}
