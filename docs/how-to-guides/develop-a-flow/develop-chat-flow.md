@@ -14,6 +14,14 @@ The most important elements that differentiate a chat flow from a standard flow 
 - **Chat Input**: Chat input refers to the messages or queries submitted by users to the chatbot. Effectively handling chat input is crucial for a successful conversation, as it involves understanding user intentions, extracting relevant information, and triggering appropriate responses.
 
 - **Chat History**: Chat history is the record of all interactions between the user and the chatbot, including both user inputs and AI-generated outputs. Maintaining chat history is essential for keeping track of the conversation context and ensuring the AI can generate contextually relevant responses. Chat History is a special type of chat flow input, that stores chat messages in a structured format.
+    
+    An example of Chat History:
+    ```python
+    [
+      {"inputs": {"question": "What types of container software there are?"}, "outputs": {"answer": "There are several types of container software available, including: Docker, Kubernetes"}},
+      {"inputs": {"question": "What's the different between them?"}, "outputs": {"answer": "The main difference between the various container software systems is their functionality and purpose. Here are some key differences between them..."}},
+    ] 
+    ```
 
 You can set **is_chat_input**/**is_chat_history** to **true** to add chat_input/chat_history to the chat flow.
 ```yaml
