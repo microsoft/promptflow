@@ -7,7 +7,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Type, TypeVar
 
-from promptflow._core.iterator_proxy import IteratorProxy
+from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.contracts.tool import ConnectionType
 
 T = TypeVar("T")
@@ -64,7 +64,7 @@ def serialize(value: object, remove_null=False) -> dict:
         return value.value
     if isinstance(value, list):
         return [serialize(v, remove_null) for v in value]
-    if isinstance(value, IteratorProxy):
+    if isinstance(value, GeneratorProxy):
         return [serialize(v, remove_null) for v in value.items]
     #  Note that custom connection check should before dict check
     if ConnectionType.is_connection_value(value):

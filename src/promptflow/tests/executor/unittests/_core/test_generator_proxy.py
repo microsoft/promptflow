@@ -1,6 +1,6 @@
 import pytest
 
-from promptflow._core.iterator_proxy import IteratorProxy, generate_from_proxy
+from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 
 
 def generator():
@@ -9,8 +9,8 @@ def generator():
 
 
 @pytest.mark.unittest
-def test_iterator_proxy_next():
-    proxy = IteratorProxy(generator())
+def test_generator_proxy_next():
+    proxy = GeneratorProxy(generator())
     assert proxy.items == []
     assert next(proxy) == 0
     assert next(proxy) == 1
@@ -23,9 +23,9 @@ def test_iterator_proxy_next():
 
 
 @pytest.mark.unittest
-def test_iterator_proxy_iter():
+def test_generator_proxy_iter():
     original_generator = generator()
-    proxy = IteratorProxy(generator())
+    proxy = GeneratorProxy(generator())
 
     for num in proxy:
         assert num == next(original_generator)
@@ -34,8 +34,8 @@ def test_iterator_proxy_iter():
 
 
 @pytest.mark.unittest
-def test_iterator_from_proxy():
-    proxy = IteratorProxy(generator())
+def test_generate_from_proxy():
+    proxy = GeneratorProxy(generator())
     original_generator = generator()
 
     for i in generate_from_proxy(proxy):

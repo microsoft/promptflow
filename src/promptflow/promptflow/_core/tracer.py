@@ -10,7 +10,7 @@ from contextvars import ContextVar
 from datetime import datetime
 from typing import Optional
 
-from promptflow._core.iterator_proxy import IteratorProxy, generate_from_proxy
+from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
@@ -76,7 +76,7 @@ class Tracer(ThreadLocalSingleton):
     def to_serializable(obj):
         if isinstance(obj, dict) and all(isinstance(k, str) for k in obj.keys()):
             return {k: Tracer.to_serializable(v) for k, v in obj.items()}
-        if isinstance(obj, IteratorProxy):
+        if isinstance(obj, GeneratorProxy):
             return obj
         try:
             obj = serialize(obj)
@@ -107,7 +107,7 @@ class Tracer(ThreadLocalSingleton):
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._trace_stack[-1]
         if isinstance(output, Iterator):
-            output = IteratorProxy(output)
+            output = GeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
         if error is not None:
@@ -115,7 +115,7 @@ class Tracer(ThreadLocalSingleton):
         self._trace_stack[-1].end_time = datetime.utcnow().timestamp()
         self._trace_stack.pop()
 
-        if isinstance(output, IteratorProxy):
+        if isinstance(output, GeneratorProxy):
             return generate_from_proxy(output)
         else:
             return output

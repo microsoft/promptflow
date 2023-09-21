@@ -2,21 +2,19 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from collections.abc import Iterator
 
+class GeneratorProxy:
+    """A proxy for generator that can record all items that have been yielded from the generator."""
 
-class IteratorProxy:
-    """A proxy for iterator that can record all items that have been yielded from the generator."""
-
-    def __init__(self, iterator: Iterator):
-        self._iterator = iterator
+    def __init__(self, generator):
+        self._generator = generator
         self._items = []
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        item = next(self._iterator)
+        item = next(self._generator)
         self._items.append(item)
         return item
 
@@ -25,5 +23,5 @@ class IteratorProxy:
         return self._items
 
 
-def generate_from_proxy(proxy: IteratorProxy):
+def generate_from_proxy(proxy: GeneratorProxy):
     yield from proxy
