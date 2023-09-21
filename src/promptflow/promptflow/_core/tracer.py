@@ -5,9 +5,9 @@
 import inspect
 import json
 import logging
+from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from types import GeneratorType
 from typing import Optional
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
@@ -106,7 +106,7 @@ class Tracer(ThreadLocalSingleton):
 
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._trace_stack[-1]
-        if isinstance(output, GeneratorType):
+        if isinstance(output, Iterator):
             output = GeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)
