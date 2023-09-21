@@ -31,8 +31,12 @@ def is_telemetry_enabled():
     2. running `pf config set cli.telemetry_enable=true` command.
     If None of the above is set, will prompt an input to ask user to enable telemetry.
     """
-    # won't log telemetry by default
-    # TODO(2699390): change default telemetry logging behavior when finalized.
+    from promptflow._utils.utils import is_in_ci_pipeline
+
+    if not is_in_ci_pipeline():
+        # won't log telemetry by default
+        # TODO(2699390): change default telemetry logging behavior when finalized.
+        return False
     telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
     if telemetry_enabled is not None:
         return str(telemetry_enabled).lower() == "true"
