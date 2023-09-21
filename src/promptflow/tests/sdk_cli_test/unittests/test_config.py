@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import pytest
 
-from promptflow._cli.configuration import Configuration
+from promptflow._sdk._configuration import Configuration
 
 
 @pytest.fixture
@@ -14,12 +14,13 @@ def config():
 @pytest.mark.unittest
 class TestConfig:
     def test_set_config(self, config):
-        config.set_config("test_key", "test_value")
-        assert config.get_config("test_key") == "test_value"
+        config._set_config("a.b.c.test_key", "test_value")
+        assert config._get_config("a.b.c.test_key") == "test_value"
+        assert config.config == {"a": {"b": {"c": {"test_key": "test_value"}}}}
 
     def test_get_config(self, config):
-        config.set_config("test_key", "test_value")
-        assert config.get_config("test_key") == "test_value"
+        config._set_config("test_key", "test_value")
+        assert config._get_config("test_key") == "test_value"
 
     def test_get_telemetry_consent(self, config):
         config.set_telemetry_consent(True)

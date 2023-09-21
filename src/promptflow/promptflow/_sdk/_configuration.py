@@ -6,14 +6,16 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+import pydash
+
 from promptflow._sdk._utils import dump_yaml
 
 
 class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
-    COLLECT_TELEMETRY = "collect_telemetry"
-    USER_ID = "user_id"
+    COLLECT_TELEMETRY = "cli.collect_telemetry"
+    USER_ID = "cli.user_id"
 
     def __init__(self):
         self.config = {}
@@ -27,34 +29,34 @@ class Configuration(object):
     def get_instance(cls):
         return Configuration()
 
-    def set_config(self, key, value):
+    def _set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
-        self.config[key] = value
+        pydash.set_(self.config, key, value)
         with open(self.CONFIG_PATH, "w") as f:
             f.write(dump_yaml(self.config))
 
-    def get_config(self, key):
+    def _get_config(self, key):
         try:
-            return self.config.get(key, None)
+            return pydash.get(self.config, key, None)
         except Exception:  # pylint: disable=broad-except
             return None
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
-        return self.get_config(key=self.COLLECT_TELEMETRY)
+        return self._get_config(key=self.COLLECT_TELEMETRY)
 
     def set_telemetry_consent(self, value):
         """Set the telemetry consent value and store in local."""
-        self.set_config(key=self.COLLECT_TELEMETRY, value=value)
+        self._set_config(key=self.COLLECT_TELEMETRY, value=value)
 
     def get_or_set_user_id(self):
         """Get user id if exists, otherwise set user id and return it."""
-        user_id = self.get_config(key=self.USER_ID)
+        user_id = self._get_config(key=self.USER_ID)
         if user_id:
             return user_id
         else:
             user_id = str(uuid.uuid4())
-            self.set_config(key=self.USER_ID, value=user_id)
+            self._set_config(key=self.USER_ID, value=user_id)
             return user_id
 
     def _to_dict(self):
