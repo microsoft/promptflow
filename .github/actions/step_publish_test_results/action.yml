@@ -43,6 +43,19 @@ runs:
       check_name: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       comment_title: "${{ inputs.testResultTitle }} [${{ steps.display_env.outputs.GITHUB_HEAD_REF }}](https://github.com/microsoft/promptflow/actions/workflows/${{ inputs.testActionFileName }}?query=branch:${{ steps.display_env.outputs.GITHUB_HEAD_REF }}++)"
       files: "artifacts/**/test-*.xml"
+  - name: Code Coverage Summary
+    if: ${{ inputs.coverageThreshold != 0 }}
+    uses: irongut/CodeCoverageSummary@v1.3.0
+    with:
+      filename: "artifacts/Test Results (Python ${{ inputs.pythonVersion }}) (OS ${{ inputs.osVersion }})/coverage.xml"
+      badge: true
+      fail_below_min: true
+      format: markdown
+      hide_branch_rate: false
+      hide_complexity: true
+      indicators: true
+      output: both
+      thresholds: '${{ inputs.coverageThreshold }} 80'
   - name: Sending PR status to checkenforcer
     run: |-
       gh api \

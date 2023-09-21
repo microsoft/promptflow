@@ -1,6 +1,6 @@
-# Percieved Intelligence Evaluation
+# Perceived Intelligence Evaluation
 
-This is a flow leverage llm to eval percieved intelligence.
+This is a flow leverage llm to eval perceived intelligence.
 Perceived intelligence is the degree to which a bot can impress the user with its responses, by showing originality, insight, creativity, knowledge, and adaptability.
 
 Tools used in this flow：

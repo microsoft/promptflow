@@ -10,7 +10,7 @@ from dotenv import dotenv_values
 from ._utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._flow import Flow
+from .entities._flow import ProtectedFlow
 
 
 def load_common(
@@ -59,7 +59,7 @@ def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
     **kwargs,
 ):
-    return Flow.load(source, **kwargs)
+    return ProtectedFlow.load(source, **kwargs)
 
 
 def load_run(

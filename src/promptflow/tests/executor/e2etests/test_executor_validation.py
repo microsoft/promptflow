@@ -1,11 +1,13 @@
 import json
 import sys
+from pathlib import Path
 
 import pytest
 
 from promptflow._core._errors import FlowOutputUnserializable
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
+from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
@@ -22,6 +24,7 @@ from promptflow.executor._errors import (
     NodeInputValidationError,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
+    SingleNodeValidationError,
 )
 from promptflow.executor.flow_executor import BulkResult
 
@@ -281,6 +284,29 @@ class TestValidation:
                     "inputs of node 'divide_num'. Please review the node definition in your flow."
                 ),
             ),
+            (
+                FLOW_ROOT,
+                "simple_flow_with_python_tool",
+                "bad_node_name",
+                {"num": "22"},
+                SingleNodeValidationError,
+                (
+                    "Validation failed when attempting to execute the node. Node 'bad_node_name' is not found in flow "
+                    "'flow.dag.yaml'. Please change node name or correct the flow file."
+                ),
+            ),
+            (
+                WRONG_FLOW_ROOT,
+                "node_missing_type_or_source",
+                "divide_num",
+                {"num": "22"},
+                SingleNodeValidationError,
+                (
+                    "Validation failed when attempting to execute the node. Properties 'source' or 'type' are not "
+                    "specified for Node 'divide_num' in flow 'flow.dag.yaml'. Please make sure "
+                    "these properties are in place and try again."
+                ),
+            ),
         ],
     )
     def test_single_node_input_type_invalid(
@@ -289,11 +315,12 @@ class TestValidation:
         # Single Node run - the inputs are from flow_inputs + dependency_nodes_outputs
         with pytest.raises(error_class) as exe_info:
             FlowExecutor.load_and_exec_node(
-                flow_file=get_yaml_file(flow_folder, path_root),
+                flow_file=DAG_FILE_NAME,
                 node_name=node_name,
                 flow_inputs=line_input,
                 dependency_nodes_outputs={},
                 connections=dev_connections,
+                working_dir=Path(path_root) / flow_folder,
                 raise_ex=True,
             )
 

@@ -80,10 +80,10 @@ class Divider:
             new_doc = re.findall(pattern, docstring[pos1[i1][1]:pos1[i1 + 1][0]], re.DOTALL)
             if new_doc:
                 func_line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
-                lspace_num = (len(func_line) - len(func_line.lstrip()) + 4)
+                empty_line_num = (len(func_line) - len(func_line.lstrip()) + 4)
                 func_body = origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
                 code_doc = list(re.finditer(pattern, func_body, re.DOTALL))
-                format_new_doc = Divider.format_indentation(new_doc[0], lspace_num)
+                format_new_doc = Divider.format_indentation(new_doc[0], empty_line_num)
                 is_replace_doc = len(code_doc) > 0 and (re.sub(r'\s+', '', func_body[0:code_doc[0].start()]) == '')
                 if is_replace_doc:
                     code += part_full_code.replace(code_doc[0].group(), format_new_doc.strip(), 1)
@@ -96,10 +96,10 @@ class Divider:
         return code
 
     @classmethod
-    def format_indentation(cls, text, lspace_num):
+    def format_indentation(cls, text, empty_line_num):
         lines = text.splitlines()
         last_line_space_num = len(lines[-1]) - len(lines[-1].lstrip())
-        need_add_space = max(lspace_num - last_line_space_num, 0) * ' '
+        need_add_space = max(empty_line_num - last_line_space_num, 0) * ' '
         lines[0] = last_line_space_num * ' ' + lines[0].lstrip()  # Align the first row to the last row
         indented_lines = [(need_add_space + line).rstrip() for line in lines]
         indented_string = '\n'.join(indented_lines)
