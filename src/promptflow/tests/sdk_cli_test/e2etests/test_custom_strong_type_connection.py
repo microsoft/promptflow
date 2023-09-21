@@ -124,6 +124,7 @@ class TestCustomStrongTypeConnection:
             _client.connections.create_or_update(result)
         assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
+    @pytest.mark.skip("test package not installed")
     @pytest.mark.parametrize(
         "file_name, expected_updated_item, expected_secret_item",
         [

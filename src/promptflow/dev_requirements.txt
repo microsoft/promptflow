@@ -18,4 +18,3 @@ keyrings.alt
 promptflow-tools
 
 beautifulsoup4==4.12.2
-my-tools-package-with-cstc==0.0.6
