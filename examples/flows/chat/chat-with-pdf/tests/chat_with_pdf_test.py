@@ -72,7 +72,7 @@ class TestChatWithPDF(BaseTest):
         self.assertEqual(details.shape[0], 3)
 
     def test_bulk_run_mapping_missing_one_column(self):
-        # in this case, run won't be created.
+        # in this case, run won't be created because the question column is missed in the data
         data_path = os.path.join(
             self.flow_path, "data/invalid-data-missing-column.jsonl"
         )
