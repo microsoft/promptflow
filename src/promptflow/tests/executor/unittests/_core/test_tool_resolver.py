@@ -272,7 +272,7 @@ class TestToolResolver:
 
         node = Node(
             name="mock",
-            tool = None,
+            tool=None,
             inputs={
                 "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
                 "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
@@ -302,7 +302,7 @@ class TestToolResolver:
 
         node = Node(
             name="mock",
-            tool = None,
+            tool=None,
             inputs={
                 "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
                 "prompt": InputAssignment(value="{{text}}", value_type=InputValueType.LITERAL),
@@ -336,7 +336,7 @@ class TestToolResolver:
 
         node = Node(
             name="mock",
-            tool = None,
+            tool=None,
             inputs={
                 "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
                 "prompt": InputAssignment(value="{{text}}", value_type=InputValueType.LITERAL),
@@ -362,7 +362,7 @@ class TestToolResolver:
         tool = Tool(name="mock", type=ToolType.CUSTOM_LLM, inputs={"prompt": InputDefinition(type=["PromptTemplate"])})
         node = Node(
             name="mock",
-            tool = None,
+            tool=None,
             inputs={"text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL)},
             connection="conn_name",
             provider="mock",
