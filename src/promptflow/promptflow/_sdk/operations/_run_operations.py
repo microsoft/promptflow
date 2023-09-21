@@ -11,13 +11,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
-from promptflow._sdk._constants import (
-    LOGGER_NAME,
-    MAX_RUN_LIST_RESULTS,
-    MAX_SHOW_DETAILS_RESULTS,
-    ListViewType,
-    RunStatus,
-)
+from promptflow._sdk._constants import LOGGER_NAME, MAX_RUN_LIST_RESULTS, ListViewType, RunStatus, \
+    MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import incremental_print, safe_parse_object_list
@@ -184,9 +179,7 @@ class RunOperations:
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
-    def get_details(
-        self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
-    ) -> pd.DataFrame:
+    def get_details(self, name: Union[str, Run], max_results: int=MAX_SHOW_DETAILS_RESULTS, all_results: bool = False) -> pd.DataFrame:
         """Get the details from the run.
 
         .. note::
@@ -213,8 +206,8 @@ class RunOperations:
         run = self.get(name=name)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
-        inputs = {key: value for key, value in local_storage.load_inputs().items()[0:max_results]}
-        outputs = {key: value for key, value in local_storage.load_outputs().items()[0:max_results]}
+        inputs =  local_storage.load_inputs()
+        outputs = local_storage.load_outputs()
         data = {}
         columns = []
         for k in inputs:
@@ -225,7 +218,7 @@ class RunOperations:
             new_k = f"outputs.{k}"
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
-        df = pd.DataFrame(data).reindex(columns=columns)
+        df = pd.DataFrame(data).head(max_results).reindex(columns=columns)
         return df
 
     def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
