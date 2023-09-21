@@ -21,6 +21,7 @@
     "**/*.jsonl",
     "**/*.xml",
     "**/*.txt",
+    ".gitignore",
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/tests/**",

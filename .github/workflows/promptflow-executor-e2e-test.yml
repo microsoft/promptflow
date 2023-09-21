@@ -81,7 +81,8 @@ jobs:
           -l eastus `
           -m "all" `
           -n ${{ steps.cpu-cores.outputs.count }}`
-          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
+          --disable-cov-branch
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3

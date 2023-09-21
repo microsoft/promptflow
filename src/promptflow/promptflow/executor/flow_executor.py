@@ -36,6 +36,7 @@ from promptflow.executor._errors import (
     NodeOutputNotFound,
     OutputReferenceBypassed,
     OutputReferenceNotExist,
+    SingleNodeValidationError,
 )
 from promptflow.executor._flow_nodes_scheduler import (
     DEFAULT_CONCURRENCY_BULK,
@@ -273,9 +274,25 @@ class FlowExecutor:
             flow = Flow.deserialize(yaml.safe_load(fin))
         node = flow.get_node(node_name)
         if node is None:
-            raise ValueError(f"Node {node_name} not found in flow {flow_file}.")
+            raise SingleNodeValidationError(
+                message_format=(
+                    "Validation failed when attempting to execute the node. "
+                    "Node '{node_name}' is not found in flow '{flow_file}'. "
+                    "Please change node name or correct the flow file."
+                ),
+                node_name=node_name,
+                flow_file=flow_file,
+            )
         if not node.source or not node.type:
-            raise ValueError(f"Node {node_name} is not a valid node in flow {flow_file}.")
+            raise SingleNodeValidationError(
+                message_format=(
+                    "Validation failed when attempting to execute the node. "
+                    "Properties 'source' or 'type' are not specified for Node '{node_name}' in flow '{flow_file}'. "
+                    "Please make sure these properties are in place and try again."
+                ),
+                node_name=node_name,
+                flow_file=flow_file,
+            )
 
         flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
@@ -485,7 +502,14 @@ class FlowExecutor:
             # For PromptflowException, we already do classification, so throw directly.
             raise e
         except Exception as e:
-            raise Exception(f"Failed to run aggregation nodes:\n {e}.") from e
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+            raise UnexpectedError(
+                message_format=(
+                    "Unexpected error occurred while executing the aggregated nodes. "
+                    "Please fix or contact support for assistance. The error details: {error_type_and_message}."
+                ),
+                error_type_and_message=error_type_and_message,
+            ) from e
 
     @staticmethod
     def _try_get_aggregation_input(val: InputAssignment, aggregation_inputs: dict):
