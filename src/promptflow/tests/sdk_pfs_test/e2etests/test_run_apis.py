@@ -26,25 +26,25 @@ def create_run_against_multi_line_data(client: PFClient) -> Run:
 class TestRunAPIs:
     def test_list_runs(self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations) -> None:
         create_run_against_multi_line_data(pf_client)
-        runs = pfs_op.list().json
+        runs = pfs_op.list_runs().json
         assert len(runs) >= 1
 
     def test_get_run(self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        run_from_pfs = pfs_op.get(name=run.name).json
+        run_from_pfs = pfs_op.get_run(name=run.name).json
         assert run_from_pfs["name"] == run.name
         assert run_from_pfs["properties"] == run.properties
 
     def test_get_not_exist_run(self, pfs_op: PFSOperations) -> None:
         random_name = str(uuid.uuid4())
-        response = pfs_op.get(name=random_name)
+        response = pfs_op.get_run(name=random_name)
         assert response.status_code == 404
 
     def test_get_run_metadata(
         self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
     ) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        metadata = pfs_op.get_metadata(name=run.name).json
+        metadata = pfs_op.get_run_metadata(name=run.name).json
         for field in fields(RunMetadata):
             assert field.name in metadata
         assert metadata["name"] == run.name
@@ -54,7 +54,7 @@ class TestRunAPIs:
         self, pf_client: PFClient, local_aoai_connection: Connection, pfs_op: PFSOperations
     ) -> None:
         run = create_run_against_multi_line_data(pf_client)
-        detail = pfs_op.get_detail(name=run.name).json
+        detail = pfs_op.get_run_detail(name=run.name).json
         for field in fields(RunDetail):
             assert field.name in detail
         assert isinstance(detail["flow_runs"], list)
