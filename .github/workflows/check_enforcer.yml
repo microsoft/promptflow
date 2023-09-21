@@ -1,10 +1,12 @@
 name: GitHub Event Handler
 
 on:
-  status
+  status:
+  check_suite:
+    types: [completed]
 
 env:
-  head_sha: ${{ github.sha }}
+  head_sha: ${{ github.event_name == 'status' && github.sha || github.event.check_suite.head_sha }}
 
 jobs:
   event-handler:
