@@ -501,6 +501,14 @@ class RunOperations(_ScopeDependentOperations):
     ) -> Run:
         """Update a run. May update the display name, description or tags.
 
+        .. note::
+
+            - Display name and description are strings, and tags is a dictionary of key-value pairs, both key and value
+            are also strings.
+
+            - Tags is a dictionary of key-value pairs. Updating tags will overwrite the existing key-value pair,
+            but will not delete the existing key-value pairs.
+
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]
         :param display_name: The display name
@@ -509,6 +517,7 @@ class RunOperations(_ScopeDependentOperations):
         :type description: Optional[str]
         :param tags: The tags
         :type tags: Optional[Dict[str, str]]
+        :raises UpdateRunError: If nothing or wrong type values provided to update the run.
         :return: The run object
         :rtype: ~promptflow.entities.Run
         """

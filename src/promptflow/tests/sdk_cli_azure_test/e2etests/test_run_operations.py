@@ -243,7 +243,21 @@ class TestFlowRun:
         assert run_data[hidden] is False
 
     def test_update_run(self, remote_client):
-        pass
+        test_mark = str(uuid.uuid4())
+
+        new_display_name = f"test_display_name_{test_mark}"
+        new_description = f"test_description_{test_mark}"
+        new_tags = {"test_tag": test_mark}
+
+        run = remote_client.runs.update(
+            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+            display_name=new_display_name,
+            description=new_description,
+            tags=new_tags,
+        )
+        assert run.display_name == new_display_name
+        assert run.description == new_description
+        assert run.tags["test_tag"] == test_mark
 
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
