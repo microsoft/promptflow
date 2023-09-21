@@ -16,6 +16,7 @@ class Configuration(object):
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
     COLLECT_TELEMETRY = "cli.collect_telemetry"
     INSTALLATION_ID = "cli.installation_id"
+    _instance = None
 
     def __init__(self):
         self.config = {}
@@ -27,7 +28,9 @@ class Configuration(object):
 
     @classmethod
     def get_instance(cls):
-        return Configuration()
+        if cls._instance is None:
+            cls._instance = Configuration()
+        return cls._instance
 
     def _set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
