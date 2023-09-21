@@ -5,6 +5,7 @@ Exported entry file & its dependencies are located in the same folder. The struc
   - ...
 - app.py: the entry file is included as the entry point for the bundled application.
 - app.spec: the spec file tells PyInstaller how to process your script.
+- main.py: it will start streamlit service and be called by the entry file.
 - settings.json: a json file to store the settings of the executable application.
 - README.md: the readme file to describe how to use the exported files and scripts.
 

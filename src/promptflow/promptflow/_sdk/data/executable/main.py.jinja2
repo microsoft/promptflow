@@ -1,0 +1,66 @@
+import json
+import os
+import streamlit as st
+from pathlib import Path
+
+from promptflow._sdk._utils import print_yellow_warning
+from promptflow._sdk._serving.flow_invoker import FlowInvoker
+
+
+invoker = None
+
+
+def start():
+    def clear_chat() -> None:
+        st.session_state.messages = []
+
+    def show_conversation() -> None:
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+        if st.session_state.messages:
+            for role, message in st.session_state.messages:
+                st.chat_message(role).write(message)
+
+
+    def submit(**kwargs) -> None:
+        container.chat_message("user").write(json.dumps(kwargs))
+        st.session_state.messages.append(("user", json.dumps(kwargs)))
+        response = run_flow(kwargs)
+        container.chat_message("assistant").write(response)
+        st.session_state.messages.append(("assistant", response))
+
+
+    def run_flow(data: dict) -> dict:
+        global invoker
+        if not invoker:
+            flow = Path(__file__).parent / "flow"
+            os.chdir(flow)
+            invoker = FlowInvoker(flow, connection_provider="local")
+        result = invoker.invoke(data)
+        print_yellow_warning(f"Result: {result}")
+        return result
+
+
+    st.title("Test {{flow_name}}")
+    st.chat_message("assistant").write("Hello 👋, please input following flow inputs.")
+    container = st.container()
+    with container:
+        show_conversation()
+
+    with st.form(key='input_form', clear_on_submit=True):
+    {% for flow_input, default_value in flow_inputs.items() %}
+    {{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
+    {% endfor %}
+
+        cols = st.columns(7)
+        submit_bt = cols[0].form_submit_button(label='Submit')
+        clear_bt = cols[1].form_submit_button(label='Clear')
+
+    if submit_bt:
+        submit({{flow_inputs_params}})
+
+    if clear_bt:
+        clear_chat()
+
+if __name__ == "__main__":
+    start()

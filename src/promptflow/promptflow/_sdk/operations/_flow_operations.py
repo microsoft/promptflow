@@ -3,9 +3,11 @@
 # ---------------------------------------------------------
 import contextlib
 import json
+import importlib
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
+import subprocess
 from typing import Iterable, List, Tuple, Union
 
 import yaml
@@ -361,8 +363,17 @@ class FlowOperations:
         flow_dag_path: Path,
         output_dir: Path,
         *,
+        flow_name: str,
         env_var_names: List[str],
     ):
+        try:
+            import streamlit
+            import PyInstaller
+        except ImportError as ex:
+            raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
+
+        from promptflow.contracts.flow import Flow as ExecutableFlow
+
         (output_dir / "settings.json").write_text(
             data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
             encoding="utf-8",
@@ -376,16 +387,27 @@ class FlowOperations:
                 file_content = file.read()
             hidden_imports = file_content.splitlines()
 
-        sdk_dir = Path(__file__).parent.parent
+        runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
+
+        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
+        flow_inputs = {flow_input: value.default for flow_input, value in executable.inputs.items()}
+        flow_inputs_params =  ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
+        flow_inputs_params = ",".join(flow_inputs_params)
 
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
             render_context={
                 "hidden_imports": hidden_imports,
-                "static_dir":  (sdk_dir/"_serving"/"static").as_posix(),
+                "flow_name": flow_name,
+                "runtime_interpreter_path": runtime_interpreter_path,
+                "flow_inputs": flow_inputs,
+                "flow_inputs_params": flow_inputs_params
             },
         )
+        spec_file = (output_dir / "app.spec").as_posix()
+        subprocess.run(['pyinstaller', spec_file], check=True)
+        print("hahahah")
 
     def build(
         self,
@@ -465,6 +487,7 @@ class FlowOperations:
             self._export_to_executable(
                 flow_dag_path=new_flow_dag_path,
                 output_dir=output_dir,
+                flow_name=flow_dag_path.parent.stem,
                 env_var_names=env_var_names,
             )
 

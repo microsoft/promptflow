@@ -1,14 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import copy_metadata
 
+datas = [('connections', 'connections'), ('flow', 'flow'), ('settings.json', '.'), ('main.py', '.'), ('{{runtime_interpreter_path}}', './streamlit/runtime')]
+datas += collect_data_files('streamlit')
+datas += copy_metadata('streamlit')
 
 block_cipher = None
 
 
 a = Analysis(
-    ['app.py'],
+    ['app.py', 'main.py'],
     pathex=[],
     binaries=[],
-    datas=[("connections", "connections"), ("flow", "flow"), ("settings.json", "."), ("{{static_dir}}", "promptflow/_sdk/_serving/static")],
+    datas=datas,
     hiddenimports={{hidden_imports}},
     hookspath=[],
     hooksconfig={},
