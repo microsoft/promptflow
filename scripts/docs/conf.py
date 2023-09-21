@@ -21,7 +21,6 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "matplotlib.sphinxext.plot_directive",
-    "numpydoc",
     "sphinx_togglebutton",
     'myst_parser',
     "sphinx.builders.linkcheck",
@@ -31,7 +30,7 @@ extensions = [
 # specifying the natural language populates some key tags
 language = "en"
 
-# spcify charset as utf-8 to accept chinese punctuation
+# specify charset as utf-8 to accept chinese punctuation
 charset_type = "utf-8"
 
 autosummary_generate = True

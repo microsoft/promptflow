@@ -90,7 +90,7 @@ pfazure run list
 pfazure run list --max-results 10
 # List active and archived runs status:
 pfazure run list --include-archived
-# List arhived runs status only:
+# List archived runs status only:
 pfazure run list --archived-only
 # List all runs status as table:
 pfazure run list --output table

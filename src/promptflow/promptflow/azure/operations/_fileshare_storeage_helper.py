@@ -129,12 +129,12 @@ class FlowFileStorageClient(FileStorageClient):
                     )
             else:
                 if show_progress:
-                    with FileUploadProgressBar(msg=msg) as pbar:
+                    with FileUploadProgressBar(msg=msg) as progress_bar:
                         self.directory_client.upload_file(
                             file_name=dest,
                             data=data,
                             validate_content=validate_content,
-                            raw_response_hook=pbar.update_to,
+                            raw_response_hook=progress_bar.update_to,
                         )
                 else:
                     self.directory_client.upload_file(file_name=dest, data=data, validate_content=validate_content)
@@ -174,7 +174,7 @@ class FlowFileStorageClient(FileStorageClient):
         travers_recursively(child_dir=subdir, source_dir=source)
 
         if show_progress:
-            with DirectoryUploadProgressBar(dir_size=get_directory_size(source_path), msg=msg) as pbar:
+            with DirectoryUploadProgressBar(dir_size=get_directory_size(source_path), msg=msg) as progress_bar:
                 for src, destination in upload_paths:
                     self.upload_file(
                         src,
@@ -182,7 +182,7 @@ class FlowFileStorageClient(FileStorageClient):
                         in_directory=True,
                         subdirectory_client=subdir,
                         show_progress=show_progress,
-                        callback=pbar.update_to,
+                        callback=progress_bar.update_to,
                     )
         else:
             for src, destination in upload_paths:

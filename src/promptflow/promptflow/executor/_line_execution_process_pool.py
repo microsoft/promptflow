@@ -1,15 +1,17 @@
 import contextvars
-import multiprocessing
-import queue
 import math
+import multiprocessing
 import os
 import psutil
 import traceback
+import queue
 from datetime import datetime
 from functools import partial
 from logging import INFO
 from multiprocessing import Manager, Process, Queue
 from multiprocessing.pool import ThreadPool
+
+import psutil
 
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
@@ -365,7 +367,7 @@ def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
     output_queue: Queue,
-    log_context_initilization_func,
+    log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
     logging_name = os.getpid()

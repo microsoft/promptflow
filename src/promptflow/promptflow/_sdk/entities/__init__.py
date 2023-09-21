@@ -17,6 +17,7 @@ from ._connection import (
     FormRecognizerConnection,
 )
 from ._run import Run
+from ._validation import ValidationResult
 
 __all__ = [
     # Connection
@@ -31,4 +32,5 @@ __all__ = [
     "FormRecognizerConnection",
     # Run
     "Run",
+    "ValidationResult",
 ]
