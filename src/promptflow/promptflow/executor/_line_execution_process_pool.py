@@ -3,6 +3,9 @@ import math
 import multiprocessing
 import os
 import queue
+import threading
+import time
+import sys
 from datetime import datetime
 from functools import partial
 from logging import INFO
@@ -16,7 +19,7 @@ from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
 from promptflow._utils.thread_utils import RepeatLogTimer
-from promptflow._utils.utils import log_progress, set_context
+from promptflow._utils.utils import log_progress, set_context, generate_elapsed_time_messages
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -109,6 +112,7 @@ class LineExecutionProcessPool:
         input_queue = Queue()
         output_queue = Queue()
         current_log_context = LogContext.get_current()
+        logger.info(f"Starting a new process with process id {os.getpid()}.")
         process = Process(
             target=_process_wrapper,
             args=(
@@ -128,11 +132,16 @@ class LineExecutionProcessPool:
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         process, input_queue, output_queue = self._new_process()
+        logger.info(f"Process {idx} started. process_pid:{process.pid}==================")
         while True:
+            if not process.is_alive():
+                logger.info(f"Process {idx} exited, process_pid:{process.pid}==================")
             try:
+                logger.info(f"Process {idx} waiting for task. process_pid:{process.pid}=======================")
                 args = task_queue.get(timeout=1)
+                logger.info(f"Process {idx} got task. args: {args}. process_pid:{process.pid}=======================")
             except queue.Empty:
-                logger.info(f"Process {idx} queue empty, exit.")
+                logger.info(f"Process {idx} queue empty, exit. process_pid:{process.pid}=======================")
                 self.end_process(process)
                 return
 
@@ -145,25 +154,43 @@ class LineExecutionProcessPool:
             completed = False
 
             while datetime.now().timestamp() - start_time.timestamp() <= timeout_time:
+                logger.info(
+                    f"Process {idx}, Line {line_number} waiting for output. process_pid: {process.pid}=============")
+                if not process.is_alive():
+                    logger.warning(f"Process {idx}, Line {line_number} process exited. process_pid:{process.pid}")
                 try:
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
                     message = output_queue.get(timeout=1)
                     if isinstance(message, LineResult):
+                        logger.info(f"Process {idx}, Line {line_number} completed. process_pid:{process.pid}")
                         completed = True
                         result_list.append(message)
                         break
                     elif isinstance(message, FlowRunInfo):
+                        logger.info(
+                            f"Process {idx}, Line {line_number} process_pid:{process.pid} FlowRunInfo completed.")
+                        logger.info(
+                            f"Process {idx}, Line {line_number} process_pid:{process.pid} FlowRunInfo: {message}")
+                        logger.info(
+                            f"Process {idx}, Line {line_number} process_pid:{process.pid} Fstatus: {message.status}")
                         self._storage.persist_flow_run(message)
                     elif isinstance(message, NodeRunInfo):
+                        logger.info(
+                            f"Process {idx}, Line {line_number} process_pid:{process.pid} NodeRunInfo completed.")
+                        logger.info(
+                            f"Process {idx}, Line {line_number} process_pid:{process.pid} NodeRunInfo: {message}.")
                         self._storage.persist_node_run(message)
                 except queue.Empty:
+                    logger.info(
+                        f"Process {idx}, Line {line_number} process_pid:{process.pid} queue.Empty")
                     continue
 
             self._completed_idx[line_number] = process.name
             # Handling the timeout of a line execution process.
             if not completed:
-                logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
+                logger.info(
+                    f"Process {idx}, Line {line_number} process_pid:{process.pid} queue.Empty, timeout.")
                 ex = LineExecutionTimeoutError(line_number, timeout_time)
                 result = self._generate_line_result_for_exception(
                     inputs, run_id, line_number, self._flow_id, start_time, ex
@@ -263,6 +290,7 @@ def _exec_line(
     variant_id,
     validate_inputs,
 ):
+    logger.info(f"Enter _exec_line, Process {os.getpid()}, Line {index} started.")
     try:
         line_result = executor.exec_line(
             inputs=inputs,
@@ -294,6 +322,14 @@ def _exec_line(
     return result
 
 
+def trace_calls(frame, event, arg):
+    if event == "call":
+        print(f"Process: {os.getpid()}, Calling function {frame.f_code.co_name}")
+    elif event == "return":
+        print(f"Process: {os.getpid()}, Returning from function {frame.f_code.co_name}")
+    return trace_calls
+
+
 def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
@@ -301,12 +337,25 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
-    if log_context_initialization_func:
-        with log_context_initialization_func():
+    sys.setprofile(trace_calls)
+    logging_name = os.getpid()
+    interval_seconds = 5
+    start_time = time.perf_counter()
+    thread_id = threading.current_thread().ident
+    with RepeatLogTimer(
+        interval_seconds=5,
+        logger=bulk_logger,
+        level=INFO,
+        log_message_function=generate_elapsed_time_messages,
+        args=(logging_name, start_time, interval_seconds, thread_id)
+    ):
+        # Update the operation context for the new process.
+        OperationContext.get_instance().update(operation_contexts_dict)
+        if log_context_initialization_func:
+            with log_context_initialization_func():
+                exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        else:
             exec_line_for_queue(executor_creation_func, input_queue, output_queue)
-    else:
-        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):

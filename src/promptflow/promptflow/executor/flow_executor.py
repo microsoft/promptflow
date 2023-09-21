@@ -717,6 +717,7 @@ class FlowExecutor:
         :return: The result of executing the line.
         :rtype: ~promptflow.executor._result.LineResult
         """
+        logger.info(f"Enter the exec_line, Process {os.getpid()}, Line {index} started.")
         self._node_concurrency = node_concurrency
         inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
@@ -857,6 +858,7 @@ class FlowExecutor:
         Returns:
             LineResult: Line run result
         """
+        logger.info(f"Enter exec, Process {os.getpid()}, Line {line_number} started.")
         run_id = run_id or str(uuid.uuid4())
         line_run_id = run_id if line_number is None else f"{run_id}_{line_number}"
         run_tracker = RunTracker(
@@ -873,6 +875,7 @@ class FlowExecutor:
             index=line_number,
             variant_id=variant_id,
         )
+        logger.info(f"LineResult {line_number}: node_runs {node_runs}")
         context = FlowExecutionContext(
             name=self._flow.name,
             run_tracker=run_tracker,
@@ -889,9 +892,12 @@ class FlowExecutor:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
+            logger.info(f"LineResult {line_number}: output {output}")
+            logger.info(f"LineResult {line_number}: nodes_outputs {nodes_outputs}")
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+            logger.info(f"LineResult {line_number}: aggregation_inputs {aggregation_inputs}")
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -901,6 +907,7 @@ class FlowExecutor:
             run_tracker.persist_flow_run(run_info)
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
+        logger.info(f"LineResult {line_number}: node_runs {node_runs}")
         return LineResult(output, aggregation_inputs, run_info, node_runs)
 
     def _extract_outputs(self, nodes_outputs, bypassed_nodes, flow_inputs):
