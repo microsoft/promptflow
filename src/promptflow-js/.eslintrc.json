@@ -24,7 +24,37 @@
     {
       "files": ["*.ts", "*.tsx"],
       "extends": ["plugin:@nx/typescript"],
-      "rules": {}
+      "rules": {
+        "@typescript-eslint/naming-convention": [
+          "error",
+          {
+            "selector": "typeLike",
+            "format": ["PascalCase"]
+          },
+          {
+            "selector": "variable",
+            "format": ["camelCase", "UPPER_CASE", "PascalCase"],
+            "leadingUnderscore": "allow",
+            "trailingUnderscore": "forbid"
+          },
+          {
+            "selector": "interface",
+            "format": ["PascalCase"],
+            "custom": {
+              "regex": "^I[A-Z]",
+              "match": true
+            }
+          },
+          {
+            "selector": ["classMethod"],
+            "format": ["camelCase"]
+          },
+          {
+            "selector": ["function"],
+            "format": ["camelCase"]
+          }
+        ]
+      }
     },
     {
       "files": ["*.js", "*.jsx"],

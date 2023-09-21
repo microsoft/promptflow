@@ -1,1 +1,1 @@
-export * from './lib/connections';
+export * from './connections';
