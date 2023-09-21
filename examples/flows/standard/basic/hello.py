@@ -38,7 +38,7 @@ def my_python_tool(
         load_dotenv()
 
     if "AZURE_OPENAI_API_KEY" not in os.environ:
-        raise Exception("Please sepecify environment variables: AZURE_OPENAI_API_KEY")
+        raise Exception("Please specify environment variables: AZURE_OPENAI_API_KEY")
 
     conn = dict(
         api_key=os.environ["AZURE_OPENAI_API_KEY"],

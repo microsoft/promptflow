@@ -14,7 +14,7 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../../flows/standard/web-classification --output build --format docker
+pf flow build --source ../../../flows/standard/web-classification --output dist --format docker
 ```
 
 ## Deploy with Docker
@@ -25,7 +25,7 @@ Like other Dockerfile, you need to build the image first. You can tag the image 
 Run the command below to build image:
 
 ```shell
-docker build build -t web-classification-serve
+docker build dist -t web-classification-serve
 ```
 
 ### Run Docker image

@@ -35,7 +35,7 @@ def get_wiki_url(entity: str, count=2):
             if mw_divs:  # mismatch
                 result_titles = [decode_str(div.get_text().strip()) for div in mw_divs]
                 result_titles = [remove_nested_parentheses(result_title) for result_title in result_titles]
-                print(f"Could not find {entity}. Similar ententity: {result_titles[:count]}.")
+                print(f"Could not find {entity}. Similar entity: {result_titles[:count]}.")
                 url_list.extend(
                     [f"https://en.wikipedia.org/w/index.php?search={result_title}" for result_title in result_titles]
                 )
