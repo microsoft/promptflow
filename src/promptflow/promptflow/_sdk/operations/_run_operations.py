@@ -185,10 +185,10 @@ class RunOperations:
         return self.get(name)
 
     def get_details(
-            self,
-            name: Union[str, Run],
-            max_results: int=MAX_SHOW_DETAILS_RESULTS,
-            all_results: bool = False
+        self,
+        name: Union[str, Run],
+        max_results: int = MAX_SHOW_DETAILS_RESULTS,
+        all_results: bool = False
     ) -> pd.DataFrame:
         """Get the details from the run.
 
@@ -216,7 +216,7 @@ class RunOperations:
         run = self.get(name=name)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
-        inputs =  local_storage.load_inputs()
+        inputs = local_storage.load_inputs()
         outputs = local_storage.load_outputs()
         data = {}
         columns = []
