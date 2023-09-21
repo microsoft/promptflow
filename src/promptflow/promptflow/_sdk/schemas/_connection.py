@@ -3,9 +3,14 @@
 # ---------------------------------------------------------
 import copy
 
-from marshmallow import fields, pre_dump, validates
+from marshmallow import ValidationError, fields, pre_dump, validates
 
-from promptflow._sdk._constants import SCHEMA_KEYS_CONTEXT_CONFIG_KEY, SCHEMA_KEYS_CONTEXT_SECRET_KEY, ConnectionType
+from promptflow._sdk._constants import (
+    SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
+    SCHEMA_KEYS_CONTEXT_SECRET_KEY,
+    ConnectionType,
+    CustomStrongTypeConnectionConfigs,
+)
 from promptflow._sdk.schemas._base import YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
 from promptflow._utils.utils import camel_to_snake
@@ -124,8 +129,8 @@ class CustomStrongTypeConnectionSchema(CustomConnectionSchema):
         schema_config_keys = self.context.get(SCHEMA_KEYS_CONTEXT_CONFIG_KEY, None)
         if schema_config_keys:
             for key in value:
-                if key not in schema_config_keys:
-                    raise ValueError(f"Invalid config key {key}, please check the schema.")
+                if CustomStrongTypeConnectionConfigs.is_custom_key(key) and key not in schema_config_keys:
+                    raise ValidationError(f"Invalid config key {key}, please check the schema.")
 
     @validates("secrets")
     def validate_secrets(self, value):
@@ -133,4 +138,4 @@ class CustomStrongTypeConnectionSchema(CustomConnectionSchema):
         if schema_secret_keys:
             for key in value:
                 if key not in schema_secret_keys:
-                    raise ValueError(f"Invalid secret key {key}, please check the schema.")
+                    raise ValidationError(f"Invalid secret key {key}, please check the schema.")

@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import abc
-import copy
 import importlib
 import json
 from os import PathLike
@@ -627,24 +626,7 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
 
 
 class CustomStrongTypeConnection(_Connection):
-    def __init__(
-        self,
-        secrets: Dict[str, str],
-        configs: Dict[str, str] = None,
-        **kwargs,
-    ):
-        module = self.__class__.__module__
-        super().__init__(secrets=secrets, configs=configs, module=module, **kwargs)
-
-    def is_custom_strong_type(self):
-        return True
-
-    def _to_orm_object(self) -> ORMConnection:
-        pass
-
-
-class CustomConnection(_Connection):
-    """Custom connection.
+    """Custom strong type connection.
 
     :param configs: The configs kv pairs.
     :type configs: Dict[str, str]
@@ -652,9 +634,12 @@ class CustomConnection(_Connection):
     :type secrets: Dict[str, str]
     :param name: Connection name
     :type name: str
-    """
 
-    TYPE = ConnectionType.CUSTOM
+    This connection type should not be used directly. Below is an example of how to use CustomStrongTypeConnection:
+    class MyCustomConnection(CustomStrongTypeConnection):
+        api_key: Secret
+        api_base: str
+    """
 
     def __init__(
         self,
@@ -662,21 +647,34 @@ class CustomConnection(_Connection):
         configs: Dict[str, str] = None,
         **kwargs,
     ):
-        # When create connection through file, we can't check if it is custom strong type through self.custom_type
-        # So we need a hint 'is_promptflow_custom_strong_type_connection' to indicate it.
-        if kwargs.pop("is_promptflow_custom_strong_type_connection", False):
-            configs.update(
-                {CustomStrongTypeConnectionConfigs.FULL_TYPE: kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)}
-            )
-            configs.update(
-                {
-                    CustomStrongTypeConnectionConfigs.FULL_MODULE: kwargs.get(
-                        CustomStrongTypeConnectionConfigs.MODULE, None
-                    )
-                }
-            )
-        super().__init__(secrets=secrets, configs=configs, **kwargs)
-        self.custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
+        # There are two cases to init a Custom strong type connection:
+        # 1. The connection is created through SDK PFClient, custom_type and custom_module are not in the kwargs.
+        # 2. The connection is loaded from template file, custom_type and custom_module are in the kwargs.
+        custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
+        custom_module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, None)
+        if custom_type:
+            configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: custom_type})
+        if custom_module:
+            configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: custom_module})
+        self.kwargs = kwargs
+        super().__init__(configs=configs, secrets=secrets, **kwargs)
+        self.module = kwargs.get("module", self.__class__.__module__)
+        self.custom_type = custom_type or self.__class__.__name__
+
+    def is_custom_strong_type(self):
+        return True
+
+    def _to_orm_object(self) -> ORMConnection:
+        custom_connection = self.convert_to_custom()
+        return custom_connection._to_orm_object()
+
+    def convert_to_custom(self):
+        # update configs
+        self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: self.custom_type})
+        self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: self.module})
+
+        custom_connection = CustomConnection(configs=self.configs, secrets=self.secrets, **self.kwargs)
+        return custom_connection
 
     @classmethod
     def _get_custom_keys(cls, data):
@@ -687,13 +685,13 @@ class CustomConnection(_Connection):
             CustomStrongTypeConnectionConfigs.MODULE
         ):
             if (
-                not data["configs"][CustomStrongTypeConnectionConfigs.FULL_TYPE]
-                or not data["configs"][CustomStrongTypeConnectionConfigs.FULL_MODULE]
+                not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
+                or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
             ):
                 raise ValueError("custom_type and module are required for custom strong type connections.")
             else:
-                m = data["configs"][CustomStrongTypeConnectionConfigs.FULL_MODULE]
-                custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.FULL_TYPE]
+                m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
+                custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         else:
             m = data[CustomStrongTypeConnectionConfigs.MODULE]
             custom_cls = data[CustomStrongTypeConnectionConfigs.TYPE]
@@ -722,34 +720,58 @@ class CustomConnection(_Connection):
         return schema_configs, schema_secrets
 
     @classmethod
-    def _get_schema_cls(cls, is_custom_strong_type=False):
-        if is_custom_strong_type:
-            return CustomStrongTypeConnectionSchema
+    def _get_schema_cls(cls):
+        return CustomStrongTypeConnectionSchema
+
+    @classmethod
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
+        schema_config_keys, schema_secret_keys = cls._get_custom_keys(data)
+        context[SCHEMA_KEYS_CONTEXT_CONFIG_KEY] = schema_config_keys
+        context[SCHEMA_KEYS_CONTEXT_SECRET_KEY] = schema_secret_keys
+
+        return (super()._load_from_dict(data, context, additional_message, **kwargs)).convert_to_custom()
+
+
+class CustomConnection(_Connection):
+    """Custom connection.
+
+    :param configs: The configs kv pairs.
+    :type configs: Dict[str, str]
+    :param secrets: The secrets kv pairs.
+    :type secrets: Dict[str, str]
+    :param name: Connection name
+    :type name: str
+    """
+
+    TYPE = ConnectionType.CUSTOM
+
+    def __init__(
+        self,
+        secrets: Dict[str, str],
+        configs: Dict[str, str] = None,
+        **kwargs,
+    ):
+        super().__init__(secrets=secrets, configs=configs, **kwargs)
+
+    @classmethod
+    def _get_schema_cls(cls):
         return CustomConnectionSchema
 
     @classmethod
     def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
-        # Note here are two cases:
-        # 1. When create/load connection data from yaml, the custom_type and module are outside the configs of data.
-        # 2. When update/load connection data from DB, the custom_type and module are within the configs of data.
-        is_custom_strong_type = data.get(CustomStrongTypeConnectionConfigs.TYPE) or (
-            data.get("configs") and data.get("configs").get(CustomStrongTypeConnectionConfigs.FULL_TYPE)
+        # If context has params_override, it means the data would be updated by overridden values.
+        # Provide CustomStrongTypeConnectionSchema if 'custom_type' in params_override, else CustomConnectionSchema.
+        # For example:
+        #   If a user updates an existing connection by re-upserting a connection file,
+        #   the 'data' from DB is CustomConnection,
+        #   but 'params_override' would actually contain custom strong type connection data.
+        is_custom_strong_type = data.get(CustomStrongTypeConnectionConfigs.TYPE) or any(
+            CustomStrongTypeConnectionConfigs.TYPE in d for d in context.get(PARAMS_OVERRIDE_KEY, [])
         )
-        schema_cls = cls._get_schema_cls(is_custom_strong_type=is_custom_strong_type)
-        try:
-            if is_custom_strong_type:
-                schema_config_keys, schema_secret_keys = cls._get_custom_keys(data)
-                context[SCHEMA_KEYS_CONTEXT_CONFIG_KEY] = schema_config_keys
-                context[SCHEMA_KEYS_CONTEXT_SECRET_KEY] = schema_secret_keys
-            schema_ins = schema_cls(context=context)
-            loaded_data = schema_ins.load(data, **kwargs)
-        except Exception as e:
-            raise Exception(f"Load connection failed with {str(e)}. f{(additional_message or '')}.")
-        return cls(
-            base_path=context[BASE_PATH_CONTEXT_KEY],
-            is_promptflow_custom_strong_type_connection=is_custom_strong_type,
-            **loaded_data,
-        )
+        if is_custom_strong_type:
+            return CustomStrongTypeConnection._load_from_dict(data, context, additional_message, **kwargs)
+
+        return super()._load_from_dict(data, context, additional_message, **kwargs)
 
     def __getattr__(self, item):
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
@@ -814,7 +836,7 @@ class CustomConnection(_Connection):
         unsecure_connection = False
         custom_type = None
         for k, v in json.loads(orm_object.customConfigs).items():
-            if k == CustomStrongTypeConnectionConfigs.FULL_TYPE:
+            if k == CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY:
                 custom_type = v["value"]
                 continue
             if not v["configValueType"] == ConfigValueType.SECRET.value:
@@ -868,11 +890,14 @@ class CustomConnection(_Connection):
         )
 
     def is_custom_strong_type(self):
-        return self.custom_type is not None
+        return (
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in self.configs
+            and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
+        )
 
-    def convert_to_custom_strong_type_connection(self):
-        module_name = self.configs.get(CustomStrongTypeConnectionConfigs.FULL_MODULE)
-        custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.FULL_TYPE)
+    def convert_to_custom_strong_type(self):
+        module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
+        custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
         import importlib
 
         module = importlib.import_module(module_name)
@@ -880,21 +905,6 @@ class CustomConnection(_Connection):
         connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance
-
-    @classmethod
-    def convert_strong_type_to_custom(cls, custom_str_type_connection: _Connection):
-        attributes = copy.copy(vars(custom_str_type_connection))
-        attributes["module"] = PROMPTFLOW_CONNECTIONS
-        # update configs
-        configs = {}
-        configs.update({CustomStrongTypeConnectionConfigs.FULL_TYPE: custom_str_type_connection.__class__.__name__})
-        configs.update({CustomStrongTypeConnectionConfigs.FULL_MODULE: custom_str_type_connection.__module__})
-        configs.update(**custom_str_type_connection.configs)
-
-        attributes["configs"] = configs
-        attributes["custom_type"] = custom_str_type_connection.__class__.__name__
-        custom_connection = CustomConnection(**attributes)
-        return custom_connection
 
 
 _supported_types = {

@@ -1007,6 +1007,20 @@ class TestCli:
                 },
                 ("configs.key1", "new_value"),
             ),
+            (
+                "custom_strong_type_connection.yaml",
+                {
+                    "module": "promptflow.connections",
+                    "type": "custom",
+                    "configs": {
+                        "api_base": "This is my first connection.",
+                        "promptflow.connection.custom_type": "MyFirstConnection",
+                        "promptflow.connection.module": "my_tool_package.connections",
+                    },
+                    "secrets": {"api_key": SCRUBBED_VALUE},
+                },
+                ("configs.api_base", "new_value"),
+            ),
         ],
     )
     def test_connection_create_update(self, file_name, expected, update_item, capfd, local_client):

@@ -54,11 +54,18 @@ LOCAL_STORAGE_BATCH_SIZE = 1
 
 
 class CustomStrongTypeConnectionConfigs:
-    PREFIX = "promptflow.custom.connection."
+    PREFIX = "promptflow.connection."
     TYPE = "custom_type"
     MODULE = "module"
-    FULL_TYPE = PREFIX + TYPE
-    FULL_MODULE = PREFIX + MODULE
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+        ]
 
 
 class RunTypes:

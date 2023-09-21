@@ -39,8 +39,8 @@ class TestCustomStrongTypeConnection:
             "type": "custom",
             "configs": {
                 "api_base": "test",
-                "promptflow.custom.connection.custom_type": "MyCustomConnection",
-                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.custom_type": "MyCustomConnection",
+                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -52,8 +52,8 @@ class TestCustomStrongTypeConnection:
             "type": "custom",
             "configs": {
                 "api_base": "test2",
-                "promptflow.custom.connection.custom_type": "MyCustomConnection",
-                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.custom_type": "MyCustomConnection",
+                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -78,8 +78,8 @@ class TestCustomStrongTypeConnection:
             "type": "custom",
             "configs": {
                 "api_base": "test",
-                "promptflow.custom.connection.custom_type": "MyCustomConnection",
-                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.custom_type": "MyCustomConnection",
+                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -91,8 +91,8 @@ class TestCustomStrongTypeConnection:
             "type": "custom",
             "configs": {
                 "api_base": "test2",
-                "promptflow.custom.connection.custom_type": "MyCustomConnection",
-                "promptflow.custom.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
+                "promptflow.connection.custom_type": "MyCustomConnection",
+                "promptflow.connection.module": "sdk_cli_test.e2etests.test_custom_strong_type_connection",
             },
             "secrets": {"api_key": "******"},
         }
@@ -136,7 +136,7 @@ class TestCustomStrongTypeConnection:
         name = f"Connection_{str(uuid.uuid4())[:4]}"
         result = _upsert_connection_from_file(file=CONNECTION_ROOT / file_name, params_override=[{"name": name}])
         assert result is not None
-        assert result.configs[CustomStrongTypeConnectionConfigs.FULL_MODULE] == "my_tool_package.connections"
+        assert result.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY] == "my_tool_package.connections"
         update_file_name = f"update_{file_name}"
         result = _upsert_connection_from_file(file=CONNECTION_ROOT / update_file_name, params_override=[{"name": name}])
         # Test secrets not updated, and configs updated
