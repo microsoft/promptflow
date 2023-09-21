@@ -87,16 +87,30 @@ def log_activity(
             return  # pylint: disable=lost-exception
 
 
-def monitor_with_activity(
+def extract_pf_client_info(self):
+    """Extract pf client info from given pf client instance."""
+    from promptflow.azure import PFClient
+
+    result = {}
+    try:
+        if isinstance(self, PFClient):
+            result["workspace_name"] = self._ml_client.workspace_name
+            result["subscription_id"] = self._ml_client.subscription_id
+            result["resource_group_name"] = self._ml_client.resource_group_name
+    except Exception:
+        pass
+    return result
+
+
+def monitor_operation(
     activity_name,
     activity_type=ActivityType.INTERNALCALL,
     custom_dimensions=None,
 ):
-    """Add a wrapper for monitoring an activity (code).
+    """A wrapper for monitoring an activity in operations class.
 
-    An activity is a logical block of code that consumers want to monitor.
-    To monitor, use the ``@monitor_with_activity`` decorator. As an alternative, you can also wrap the
-    logical block of code with the ``log_activity()`` method.
+    To monitor, use the ``@monitor_operation`` decorator.
+    Note: this decorator should only use in operations class methods.
 
     :param activity_name: The name of the activity. The name should be unique per the wrapped logical code block.
     :type activity_name: str
@@ -107,13 +121,18 @@ def monitor_with_activity(
     :type custom_dimensions: dict
     :return:
     """
+    if not custom_dimensions:
+        custom_dimensions = {}
 
     def monitor(f):
         @functools.wraps(f)
-        def wrapper(*args, **kwargs):
+        def wrapper(self, *args, **kwargs):
             from promptflow._telemetry.telemetry import get_telemetry_logger
 
             logger = get_telemetry_logger()
+
+            custom_dimensions.update(extract_pf_client_info(self))
+
             with log_activity(logger, activity_name, activity_type, custom_dimensions):
                 return f(*args, **kwargs)
 

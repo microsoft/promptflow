@@ -36,7 +36,6 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
 from promptflow._sdk.entities import Run
-from promptflow._telemetry.activity import ActivityType, monitor_with_activity
 
 
 def add_run_parser(subparsers):
@@ -516,7 +515,6 @@ def list_runs(
         print(json.dumps(json_list, indent=4))
 
 
-@monitor_with_activity(activity_name="pf.runs.get", activity_type=ActivityType.PUBLICAPI)
 @exception_handler("Show run")
 def show_run(name: str) -> None:
     pf_client = PFClient()

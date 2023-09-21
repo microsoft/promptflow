@@ -18,6 +18,7 @@ from promptflow._sdk._utils import incremental_print, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
 from promptflow._sdk.entities import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
+from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow.contracts._run_management import RunMetadata, RunVisualization
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
@@ -31,6 +32,7 @@ class RunOperations:
     def __init__(self):
         pass
 
+    @monitor_operation(activity_name="pf.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(
         self,
         max_results: Optional[int] = MAX_RUN_LIST_RESULTS,
@@ -53,6 +55,7 @@ class RunOperations:
             message_generator=lambda x: f"Error parsing run {x.name!r}, skipped.",
         )
 
+    @monitor_operation(activity_name="pf.runs.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str) -> Run:
         """Get a run entity.
 
@@ -67,6 +70,7 @@ class RunOperations:
         except RunNotFoundError as e:
             raise e
 
+    @monitor_operation(activity_name="pf.runs.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, run: Run, **kwargs) -> Run:
         """Create or update a run.
 
@@ -98,6 +102,7 @@ class RunOperations:
             f'Output path: "{run._output_path}"\n'
         )
 
+    @monitor_operation(activity_name="pf.runs.stream", activity_type=ActivityType.PUBLICAPI)
     def stream(self, name: Union[str, Run]) -> Run:
         """Stream run logs to the console.
 
@@ -131,6 +136,7 @@ class RunOperations:
             print(error_message)
         return run
 
+    @monitor_operation(activity_name="pf.runs.archive", activity_type=ActivityType.PUBLICAPI)
     def archive(self, name: Union[str, Run]) -> Run:
         """Archive a run.
 
@@ -143,6 +149,7 @@ class RunOperations:
         ORMRun.get(name).archive()
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.restore", activity_type=ActivityType.PUBLICAPI)
     def restore(self, name: Union[str, Run]) -> Run:
         """Restore a run.
 
@@ -155,6 +162,7 @@ class RunOperations:
         ORMRun.get(name).restore()
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.update", activity_type=ActivityType.PUBLICAPI)
     def update(
         self,
         name: Union[str, Run],
@@ -178,6 +186,7 @@ class RunOperations:
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
+    @monitor_operation(activity_name="pf.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(self, name: Union[str, Run]) -> pd.DataFrame:
         """Get run inputs and outputs.
 
@@ -205,6 +214,7 @@ class RunOperations:
         df = pd.DataFrame(data).reindex(columns=columns)
         return df
 
+    @monitor_operation(activity_name="pf.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
     def get_metrics(self, name: Union[str, Run]) -> Dict[str, Any]:
         """Get run metrics.
 
@@ -246,6 +256,7 @@ class RunOperations:
         # if html_path is specified, not open it in webbrowser(as it comes from VSC)
         dump_html(html_string, html_path=html_path, open_html=html_path is None)
 
+    @monitor_operation(activity_name="pf.runs.visualize", activity_type=ActivityType.PUBLICAPI)
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
         """Visualize run(s).
 

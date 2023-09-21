@@ -73,5 +73,16 @@ class TestTelemetry:
 
     def test_cli_telemetry(self):
         with cli_consent_config_overwrite(True):
-            show_run(name="not_exist")
+            try:
+                show_run(name="not_exist")
+            except Exception:
+                pass
+        time.sleep(1000)
+
+    def test_sdk_telemetry(self, pf):
+        with cli_consent_config_overwrite(True):
+            try:
+                pf.run.get("not_exist")
+            except Exception:
+                pass
         time.sleep(1000)

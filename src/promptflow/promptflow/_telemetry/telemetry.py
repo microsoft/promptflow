@@ -8,8 +8,6 @@ from promptflow._cli._configuration import Configuration
 from promptflow._telemetry.logging_handler import get_appinsights_log_handler
 
 TELEMETRY_ENABLED = "TELEMETRY_ENABLED"
-# TODO: increase the timeout
-TELEMETRY_PROMPT_TIMEOUT_SECONDS = 10
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
 
 
@@ -26,16 +24,6 @@ def is_telemetry_enabled():
     telemetry_consent = config.get_telemetry_consent()
     if telemetry_consent is not None:
         return telemetry_consent
-    result = input(
-        # TODO: refine the wording
-        "Do you consent to telemetry data collection? (Y/N) ",
-    )
-    if result and result.lower() == "y":
-        config.set_telemetry_consent(True)
-        return True
-    else:
-        config.set_telemetry_consent(False)
-        return False
 
 
 def get_telemetry_logger():

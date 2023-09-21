@@ -32,6 +32,7 @@ def get_appinsights_log_handler():
             "user_id": config.get_or_set_user_id(),
         }
 
+        # TODO: use different instrumentation key for Europe
         handler = AzureMLSDKLogHandler(
             connection_string=f"InstrumentationKey={instrumentation_key}",
             custom_properties=custom_properties,
