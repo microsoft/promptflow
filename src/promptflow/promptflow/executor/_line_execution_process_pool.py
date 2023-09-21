@@ -11,8 +11,6 @@ from logging import INFO
 from multiprocessing import Manager, Process, Queue
 from multiprocessing.pool import ThreadPool
 
-import psutil
-
 from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
@@ -117,15 +115,15 @@ class LineExecutionProcessPool:
         manager = Manager()
         input_queue = manager.Queue()
         output_queue = manager.Queue()
-        current_log_context = LogContext.get_current()
+        # current_log_context = LogContext.get_current()
         process = Process(
             target=_process_wrapper,
             args=(
                 self._executor_creation_func,
                 input_queue,
                 output_queue,
-                current_log_context.get_initializer() if current_log_context else None,
-                OperationContext.get_instance().get_context_dict(),
+                # current_log_context.get_initializer() if current_log_context else None,
+                # OperationContext.get_instance().get_context_dict(),
             ),
         )
         process.start()
@@ -367,8 +365,8 @@ def _process_wrapper(
     executor_creation_func,
     input_queue: Queue,
     output_queue: Queue,
-    log_context_initialization_func,
-    operation_contexts_dict: dict,
+    # log_context_initialization_func,
+    # operation_contexts_dict: dict,
 ):
     logging_name = os.getpid()
     interval_seconds = 10
@@ -382,12 +380,12 @@ def _process_wrapper(
         args=(logging_name, start_time, interval_seconds, thread_id)
     ):
         # Update the operation context for the new process.
-        OperationContext.get_instance().update(operation_contexts_dict)
-        if log_context_initilization_func:
-            with log_context_initilization_func():
-                exec_line_for_queue(executor_creation_func, input_queue, output_queue)
-        else:
-            exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        # OperationContext.get_instance().update(operation_contexts_dict)
+        # if log_context_initialization_func:
+        #     with log_context_initialization_func():
+        #         exec_line_for_queue(executor_creation_func, input_queue, output_queue)
+        # else:
+        exec_line_for_queue(executor_creation_func, input_queue, output_queue)
 
 
 def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunStorage):
