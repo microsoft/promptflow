@@ -9,10 +9,10 @@ from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
 from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
@@ -247,6 +247,18 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
+    def test_custom_strong_type_connection_basic_flow(self, local_client, pf, is_custom_tool_pkg_installed):
+        if is_custom_tool_pkg_installed:
+            result = pf.run(
+                flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
+                data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+                connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+            )
+            run = local_client.runs.get(name=result.name)
+            assert run.status == "Completed"
+        else:
+            pytest.skip("Custom tool package 'my_tools_package_with_cstc' not installed.")
+
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
         with pytest.raises(Exception) as e:
@@ -313,7 +325,7 @@ class TestFlowRun:
         assert run.status == "Completed"
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
-        flow = Flow.load(f"{FLOWS_DIR}/web_classification_no_variants")
+        flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow)
         assert local_aoai_connection.name in connections
 
@@ -588,6 +600,12 @@ class TestFlowRun:
         assert (Path(run_output_path) / "node_artifacts").is_dir()
         # 5 nodes web classification flow DAG
         assert len([_ for _ in (Path(run_output_path) / "node_artifacts").iterdir()]) == 5
+
+    def test_run_snapshot_with_flow_tools_json(self, local_client, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
+        assert (local_storage._snapshot_folder_path / ".promptflow").is_dir()
+        assert (local_storage._snapshot_folder_path / ".promptflow" / "flow.tools.json").is_file()
 
     def test_get_metrics_format(self, local_client, pf) -> None:
         run1 = create_run_against_multi_line_data(pf)

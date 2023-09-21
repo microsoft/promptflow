@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import copy
+from json import JSONDecodeError
 from typing import Any, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
@@ -11,6 +12,7 @@ from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputReference,
     InputNotFound,
+    InputParseError,
     InputReferenceNotFound,
     InputTypeError,
     NodeCircularDependency,
@@ -20,6 +22,8 @@ from promptflow.executor._errors import (
 
 
 class FlowValidator:
+    """This is a validation class designed to verify the integrity and validity of flow definitions and input data."""
+
     @staticmethod
     def _ensure_nodes_order(flow: Flow):
         dependencies = {n.name: set() for n in flow.nodes}
@@ -105,36 +109,71 @@ class FlowValidator:
 
     @staticmethod
     def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        Resolve inputs by type if existing. Ignore missing inputs. This method is used for PRS case
+        """Resolve inputs by type if existing. Ignore missing inputs.
 
-        return:
-            type converted inputs
+        :param flow: The `flow` parameter is of type `Flow` and represents a flow object
+        :type flow: ~promptflow.contracts.flow.Flow
+        :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
+            flow inputs, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :param idx: The `idx` parameter is an optional integer that represents the line index of the input
+            data. It is used to provide additional information in case there is an error with the input data
+        :type idx: Optional[int]
+        :return: The updated inputs with values are type-converted based on the expected type specified
+            in the `flow` object.
+        :rtype: Mapping[str, Any]
         """
         updated_inputs = {k: v for k, v in inputs.items()}
         for k, v in flow.inputs.items():
             try:
                 if k in inputs:
                     updated_inputs[k] = v.type.parse(inputs[k])
-            except Exception as e:
-                line_info = "" if idx is None else f"in line {idx} of input data"
+            except JSONDecodeError as e:
+                line_info = "" if idx is None else f" in line {idx} of input data"
+                flow_input_info = f"'{k}'{line_info}"
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+
                 msg_format = (
-                    "The input for flow is incorrect. The value for flow input '{flow_input_name}' {line_info} "
+                    "Failed to parse the flow input. The value for flow input {flow_input_info} "
+                    "was interpreted as JSON string since its type is '{value_type}'. However, the value "
+                    "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
+                    "Please make sure your inputs are properly formatted."
+                )
+                raise InputParseError(
+                    message_format=msg_format,
+                    flow_input_info=flow_input_info,
+                    input_value=inputs[k],
+                    value_type=v.type,
+                    error_type_and_message=error_type_and_message,
+                ) from e
+            except Exception as e:
+                line_info = "" if idx is None else f" in line {idx} of input data"
+                flow_input_info = f"'{k}'{line_info}"
+                msg_format = (
+                    "The input for flow is incorrect. The value for flow input {flow_input_info} "
                     "does not match the expected type '{expected_type}'. Please change flow input type "
                     "or adjust the input value in your input data."
                 )
                 raise InputTypeError(
-                    message_format=msg_format, flow_input_name=k, line_info=line_info, expected_type=v.type
+                    message_format=msg_format, flow_input_info=flow_input_info, expected_type=v.type
                 ) from e
         return updated_inputs
 
     @staticmethod
     def ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
+        """Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
-        return:
-            type converted inputs
+        :param flow: The `flow` parameter is of type `Flow` and represents a flow object
+        :type flow: ~promptflow.contracts.flow.Flow
+        :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
+            flow inputs, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :param idx: The `idx` parameter is an optional integer that represents the line index of the input
+            data. It is used to provide additional information in case there is an error with the input data
+        :type idx: Optional[int]
+        :return: The updated inputs, where the values are type-converted based on the expected
+            type specified in the `flow` object.
+        :rtype: Mapping[str, Any]
         """
         for k, v in flow.inputs.items():
             if k not in inputs:
@@ -148,12 +187,19 @@ class FlowValidator:
         return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
 
     @staticmethod
-    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]):
-        """
-        Filter the flow inputs for node and resolve the value by type.
+    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Filter the flow inputs for node and resolve the value by type.
 
-        return:
-            the resolved flow inputs which are needed by the node only
+        :param flow: The `flow` parameter is an instance of the `Flow` class. It represents the flow or
+            workflow that contains the node and inputs
+        :type flow: ~promptflow.contracts.flow.Flow
+        :param node: The `node` parameter is an instance of the `Node` class
+        :type node: ~promptflow.contracts.flow.Node
+        :param inputs: A dictionary containing the input values for the node. The keys are the names of the
+            input variables, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :return: the resolved flow inputs which are needed by the node only by the node only.
+        :rtype: Mapping[str, Any]
         """
         updated_inputs = {}
         inputs = inputs or {}

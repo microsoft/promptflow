@@ -53,7 +53,7 @@ def get_readme_description_first_sentence(readme) -> str:
         return ""
 
 
-def write_readme(workflow_telemetrys, readme_telemetrys):
+def write_readme(workflow_telemetry, readme_telemetry):
     global BRANCH
 
     ReadmeStepsManage.git_base_dir()
@@ -84,7 +84,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         "notebooks": [],
     }
 
-    for workflow_telemetry in workflow_telemetrys:
+    for workflow_telemetry in workflow_telemetry:
         notebook_name = f"{workflow_telemetry.name}.ipynb"
         gh_working_dir = workflow_telemetry.gh_working_dir
         pipeline_name = workflow_telemetry.workflow_name
@@ -160,7 +160,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
 
     # Adjust tutorial names:
 
-    for readme_telemetry in readme_telemetrys:
+    for readme_telemetry in readme_telemetry:
         if readme_telemetry.readme_name.endswith("README.md"):
             notebook_name = readme_telemetry.readme_folder.split("/")[-1]
         else:
@@ -269,8 +269,8 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
 
 if __name__ == "__main__":
     input_glob = ["examples/**/*.ipynb"]
-    workflow_telemetrys = []
-    workflow_generator.main(input_glob, workflow_telemetrys)
+    workflow_telemetry = []
+    workflow_generator.main(input_glob, workflow_telemetry)
 
     input_glob_readme = [
         "examples/flows/**/README.md",
@@ -278,7 +278,7 @@ if __name__ == "__main__":
         "examples/tutorials/**/chat*.md",
         "examples/tutorials/**/README.md",
     ]
-    readme_telemetrys = []
-    readme_generator.main(input_glob_readme, readme_telemetrys)
+    readme_telemetry = []
+    readme_generator.main(input_glob_readme, readme_telemetry)
 
-    write_readme(workflow_telemetrys, readme_telemetrys)
+    write_readme(workflow_telemetry, readme_telemetry)

@@ -67,6 +67,35 @@ class ACIAdvanceSettings(msrest.serialization.Model):
         self.dns_name_label = kwargs.get('dns_name_label', None)
 
 
+class Activate(msrest.serialization.Model):
+    """Activate.
+
+    :ivar when:
+    :vartype when: str
+    :ivar is_property: Anything.
+    :vartype is_property: any
+    """
+
+    _attribute_map = {
+        'when': {'key': 'when', 'type': 'str'},
+        'is_property': {'key': 'is', 'type': 'object'},
+    }
+
+    def __init__(
+        self,
+        **kwargs
+    ):
+        """
+        :keyword when:
+        :paramtype when: str
+        :keyword is_property: Anything.
+        :paramtype is_property: any
+        """
+        super(Activate, self).__init__(**kwargs)
+        self.when = kwargs.get('when', None)
+        self.is_property = kwargs.get('is_property', None)
+
+
 class AdhocTriggerScheduledCommandJobRequest(msrest.serialization.Model):
     """AdhocTriggerScheduledCommandJobRequest.
 
@@ -10568,14 +10597,20 @@ class ConnectionOverrideSetting(msrest.serialization.Model):
     :vartype node_input_name: str
     :ivar node_deployment_name_input:
     :vartype node_deployment_name_input: str
+    :ivar node_model_input:
+    :vartype node_model_input: str
     :ivar connection_name:
     :vartype connection_name: str
     :ivar deployment_name:
     :vartype deployment_name: str
+    :ivar model:
+    :vartype model: str
     :ivar connection_types:
     :vartype connection_types: list[str or ~flow.models.ConnectionType]
     :ivar capabilities:
     :vartype capabilities: ~flow.models.AzureOpenAIModelCapabilities
+    :ivar model_enum:
+    :vartype model_enum: list[str]
     """
 
     _attribute_map = {
@@ -10583,10 +10618,13 @@ class ConnectionOverrideSetting(msrest.serialization.Model):
         'node_name': {'key': 'nodeName', 'type': 'str'},
         'node_input_name': {'key': 'nodeInputName', 'type': 'str'},
         'node_deployment_name_input': {'key': 'nodeDeploymentNameInput', 'type': 'str'},
+        'node_model_input': {'key': 'nodeModelInput', 'type': 'str'},
         'connection_name': {'key': 'connectionName', 'type': 'str'},
         'deployment_name': {'key': 'deploymentName', 'type': 'str'},
+        'model': {'key': 'model', 'type': 'str'},
         'connection_types': {'key': 'connectionTypes', 'type': '[str]'},
         'capabilities': {'key': 'capabilities', 'type': 'AzureOpenAIModelCapabilities'},
+        'model_enum': {'key': 'modelEnum', 'type': '[str]'},
     }
 
     def __init__(
@@ -10602,24 +10640,33 @@ class ConnectionOverrideSetting(msrest.serialization.Model):
         :paramtype node_input_name: str
         :keyword node_deployment_name_input:
         :paramtype node_deployment_name_input: str
+        :keyword node_model_input:
+        :paramtype node_model_input: str
         :keyword connection_name:
         :paramtype connection_name: str
         :keyword deployment_name:
         :paramtype deployment_name: str
+        :keyword model:
+        :paramtype model: str
         :keyword connection_types:
         :paramtype connection_types: list[str or ~flow.models.ConnectionType]
         :keyword capabilities:
         :paramtype capabilities: ~flow.models.AzureOpenAIModelCapabilities
+        :keyword model_enum:
+        :paramtype model_enum: list[str]
         """
         super(ConnectionOverrideSetting, self).__init__(**kwargs)
         self.connection_source_type = kwargs.get('connection_source_type', None)
         self.node_name = kwargs.get('node_name', None)
         self.node_input_name = kwargs.get('node_input_name', None)
         self.node_deployment_name_input = kwargs.get('node_deployment_name_input', None)
+        self.node_model_input = kwargs.get('node_model_input', None)
         self.connection_name = kwargs.get('connection_name', None)
         self.deployment_name = kwargs.get('deployment_name', None)
+        self.model = kwargs.get('model', None)
         self.connection_types = kwargs.get('connection_types', None)
         self.capabilities = kwargs.get('capabilities', None)
+        self.model_enum = kwargs.get('model_enum', None)
 
 
 class ConnectionSpec(msrest.serialization.Model):
@@ -16416,14 +16463,16 @@ class FlowNode(msrest.serialization.Model):
 
     :ivar name:
     :vartype name: str
-    :ivar type: Possible values include: "llm", "python", "action", "prompt".
+    :ivar type: Possible values include: "llm", "python", "action", "prompt", "custom_llm".
     :vartype type: str or ~flow.models.ToolType
     :ivar source:
     :vartype source: ~flow.models.NodeSource
-    :ivar comment:
-    :vartype comment: str
     :ivar inputs: Dictionary of :code:`<any>`.
     :vartype inputs: dict[str, any]
+    :ivar comment:
+    :vartype comment: str
+    :ivar activate:
+    :vartype activate: ~flow.models.Activate
     :ivar api:
     :vartype api: str
     :ivar provider:
@@ -16442,8 +16491,9 @@ class FlowNode(msrest.serialization.Model):
         'name': {'key': 'name', 'type': 'str'},
         'type': {'key': 'type', 'type': 'str'},
         'source': {'key': 'source', 'type': 'NodeSource'},
-        'comment': {'key': 'comment', 'type': 'str'},
         'inputs': {'key': 'inputs', 'type': '{object}'},
+        'comment': {'key': 'comment', 'type': 'str'},
+        'activate': {'key': 'activate', 'type': 'Activate'},
         'api': {'key': 'api', 'type': 'str'},
         'provider': {'key': 'provider', 'type': 'str'},
         'connection': {'key': 'connection', 'type': 'str'},
@@ -16459,14 +16509,16 @@ class FlowNode(msrest.serialization.Model):
         """
         :keyword name:
         :paramtype name: str
-        :keyword type: Possible values include: "llm", "python", "action", "prompt".
+        :keyword type: Possible values include: "llm", "python", "action", "prompt", "custom_llm".
         :paramtype type: str or ~flow.models.ToolType
         :keyword source:
         :paramtype source: ~flow.models.NodeSource
-        :keyword comment:
-        :paramtype comment: str
         :keyword inputs: Dictionary of :code:`<any>`.
         :paramtype inputs: dict[str, any]
+        :keyword comment:
+        :paramtype comment: str
+        :keyword activate:
+        :paramtype activate: ~flow.models.Activate
         :keyword api:
         :paramtype api: str
         :keyword provider:
@@ -16484,8 +16536,9 @@ class FlowNode(msrest.serialization.Model):
         self.name = kwargs.get('name', None)
         self.type = kwargs.get('type', None)
         self.source = kwargs.get('source', None)
-        self.comment = kwargs.get('comment', None)
         self.inputs = kwargs.get('inputs', None)
+        self.comment = kwargs.get('comment', None)
+        self.activate = kwargs.get('activate', None)
         self.api = kwargs.get('api', None)
         self.provider = kwargs.get('provider', None)
         self.connection = kwargs.get('connection', None)
@@ -16820,7 +16873,7 @@ class FlowRunRecordBaseInfo(msrest.serialization.Model):
     :vartype tags: dict[str, str]
     :ivar status: Possible values include: "Started", "Completed", "Failed", "Cancelled",
      "NotStarted", "Running", "Queued", "Paused", "Unapproved", "Starting", "Preparing",
-     "CancelRequested", "Pausing", "Finalizing", "Canceled".
+     "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed".
     :vartype status: str or ~flow.models.FlowRunStatusEnum
     :ivar flow_id:
     :vartype flow_id: str
@@ -16887,7 +16940,7 @@ class FlowRunRecordBaseInfo(msrest.serialization.Model):
         :paramtype tags: dict[str, str]
         :keyword status: Possible values include: "Started", "Completed", "Failed", "Cancelled",
          "NotStarted", "Running", "Queued", "Paused", "Unapproved", "Starting", "Preparing",
-         "CancelRequested", "Pausing", "Finalizing", "Canceled".
+         "CancelRequested", "Pausing", "Finalizing", "Canceled", "Bypassed".
         :paramtype status: str or ~flow.models.FlowRunStatusEnum
         :keyword flow_id:
         :paramtype flow_id: str
@@ -17508,6 +17561,205 @@ class FlowSampleDto(msrest.serialization.Model):
         self.is_archived = kwargs.get('is_archived', None)
         self.vm_size = kwargs.get('vm_size', None)
         self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
+
+
+class FlowSessionDto(msrest.serialization.Model):
+    """FlowSessionDto.
+
+    :ivar session_id:
+    :vartype session_id: str
+    :ivar base_image:
+    :vartype base_image: str
+    :ivar packages:
+    :vartype packages: list[str]
+    :ivar vm_size:
+    :vartype vm_size: str
+    :ivar max_idle_time_seconds:
+    :vartype max_idle_time_seconds: long
+    :ivar runtime_name:
+    :vartype runtime_name: str
+    :ivar runtime_description:
+    :vartype runtime_description: str
+    :ivar runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
+     "TrainingSession".
+    :vartype runtime_type: str or ~flow.models.RuntimeType
+    :ivar environment:
+    :vartype environment: str
+    :ivar status: Possible values include: "Unavailable", "Failed".
+    :vartype status: str or ~flow.models.RuntimeStatusEnum
+    :ivar status_message:
+    :vartype status_message: str
+    :ivar error: The error response.
+    :vartype error: ~flow.models.ErrorResponse
+    :ivar from_existing_endpoint:
+    :vartype from_existing_endpoint: bool
+    :ivar endpoint_name:
+    :vartype endpoint_name: str
+    :ivar from_existing_deployment:
+    :vartype from_existing_deployment: bool
+    :ivar deployment_name:
+    :vartype deployment_name: str
+    :ivar identity:
+    :vartype identity: ~flow.models.ManagedServiceIdentity
+    :ivar instance_type:
+    :vartype instance_type: str
+    :ivar instance_count:
+    :vartype instance_count: int
+    :ivar compute_instance_name:
+    :vartype compute_instance_name: str
+    :ivar docker_image:
+    :vartype docker_image: str
+    :ivar published_port:
+    :vartype published_port: int
+    :ivar target_port:
+    :vartype target_port: int
+    :ivar from_existing_custom_app:
+    :vartype from_existing_custom_app: bool
+    :ivar custom_app_name:
+    :vartype custom_app_name: str
+    :ivar assigned_to:
+    :vartype assigned_to: ~flow.models.AssignedUser
+    :ivar endpoint_url:
+    :vartype endpoint_url: str
+    :ivar created_on:
+    :vartype created_on: ~datetime.datetime
+    :ivar modified_on:
+    :vartype modified_on: ~datetime.datetime
+    :ivar owner:
+    :vartype owner: ~flow.models.SchemaContractsCreatedBy
+    """
+
+    _attribute_map = {
+        'session_id': {'key': 'sessionId', 'type': 'str'},
+        'base_image': {'key': 'baseImage', 'type': 'str'},
+        'packages': {'key': 'packages', 'type': '[str]'},
+        'vm_size': {'key': 'vmSize', 'type': 'str'},
+        'max_idle_time_seconds': {'key': 'maxIdleTimeSeconds', 'type': 'long'},
+        'runtime_name': {'key': 'runtimeName', 'type': 'str'},
+        'runtime_description': {'key': 'runtimeDescription', 'type': 'str'},
+        'runtime_type': {'key': 'runtimeType', 'type': 'str'},
+        'environment': {'key': 'environment', 'type': 'str'},
+        'status': {'key': 'status', 'type': 'str'},
+        'status_message': {'key': 'statusMessage', 'type': 'str'},
+        'error': {'key': 'error', 'type': 'ErrorResponse'},
+        'from_existing_endpoint': {'key': 'fromExistingEndpoint', 'type': 'bool'},
+        'endpoint_name': {'key': 'endpointName', 'type': 'str'},
+        'from_existing_deployment': {'key': 'fromExistingDeployment', 'type': 'bool'},
+        'deployment_name': {'key': 'deploymentName', 'type': 'str'},
+        'identity': {'key': 'identity', 'type': 'ManagedServiceIdentity'},
+        'instance_type': {'key': 'instanceType', 'type': 'str'},
+        'instance_count': {'key': 'instanceCount', 'type': 'int'},
+        'compute_instance_name': {'key': 'computeInstanceName', 'type': 'str'},
+        'docker_image': {'key': 'dockerImage', 'type': 'str'},
+        'published_port': {'key': 'publishedPort', 'type': 'int'},
+        'target_port': {'key': 'targetPort', 'type': 'int'},
+        'from_existing_custom_app': {'key': 'fromExistingCustomApp', 'type': 'bool'},
+        'custom_app_name': {'key': 'customAppName', 'type': 'str'},
+        'assigned_to': {'key': 'assignedTo', 'type': 'AssignedUser'},
+        'endpoint_url': {'key': 'endpointUrl', 'type': 'str'},
+        'created_on': {'key': 'createdOn', 'type': 'iso-8601'},
+        'modified_on': {'key': 'modifiedOn', 'type': 'iso-8601'},
+        'owner': {'key': 'owner', 'type': 'SchemaContractsCreatedBy'},
+    }
+
+    def __init__(
+        self,
+        **kwargs
+    ):
+        """
+        :keyword session_id:
+        :paramtype session_id: str
+        :keyword base_image:
+        :paramtype base_image: str
+        :keyword packages:
+        :paramtype packages: list[str]
+        :keyword vm_size:
+        :paramtype vm_size: str
+        :keyword max_idle_time_seconds:
+        :paramtype max_idle_time_seconds: long
+        :keyword runtime_name:
+        :paramtype runtime_name: str
+        :keyword runtime_description:
+        :paramtype runtime_description: str
+        :keyword runtime_type: Possible values include: "ManagedOnlineEndpoint", "ComputeInstance",
+         "TrainingSession".
+        :paramtype runtime_type: str or ~flow.models.RuntimeType
+        :keyword environment:
+        :paramtype environment: str
+        :keyword status: Possible values include: "Unavailable", "Failed".
+        :paramtype status: str or ~flow.models.RuntimeStatusEnum
+        :keyword status_message:
+        :paramtype status_message: str
+        :keyword error: The error response.
+        :paramtype error: ~flow.models.ErrorResponse
+        :keyword from_existing_endpoint:
+        :paramtype from_existing_endpoint: bool
+        :keyword endpoint_name:
+        :paramtype endpoint_name: str
+        :keyword from_existing_deployment:
+        :paramtype from_existing_deployment: bool
+        :keyword deployment_name:
+        :paramtype deployment_name: str
+        :keyword identity:
+        :paramtype identity: ~flow.models.ManagedServiceIdentity
+        :keyword instance_type:
+        :paramtype instance_type: str
+        :keyword instance_count:
+        :paramtype instance_count: int
+        :keyword compute_instance_name:
+        :paramtype compute_instance_name: str
+        :keyword docker_image:
+        :paramtype docker_image: str
+        :keyword published_port:
+        :paramtype published_port: int
+        :keyword target_port:
+        :paramtype target_port: int
+        :keyword from_existing_custom_app:
+        :paramtype from_existing_custom_app: bool
+        :keyword custom_app_name:
+        :paramtype custom_app_name: str
+        :keyword assigned_to:
+        :paramtype assigned_to: ~flow.models.AssignedUser
+        :keyword endpoint_url:
+        :paramtype endpoint_url: str
+        :keyword created_on:
+        :paramtype created_on: ~datetime.datetime
+        :keyword modified_on:
+        :paramtype modified_on: ~datetime.datetime
+        :keyword owner:
+        :paramtype owner: ~flow.models.SchemaContractsCreatedBy
+        """
+        super(FlowSessionDto, self).__init__(**kwargs)
+        self.session_id = kwargs.get('session_id', None)
+        self.base_image = kwargs.get('base_image', None)
+        self.packages = kwargs.get('packages', None)
+        self.vm_size = kwargs.get('vm_size', None)
+        self.max_idle_time_seconds = kwargs.get('max_idle_time_seconds', None)
+        self.runtime_name = kwargs.get('runtime_name', None)
+        self.runtime_description = kwargs.get('runtime_description', None)
+        self.runtime_type = kwargs.get('runtime_type', None)
+        self.environment = kwargs.get('environment', None)
+        self.status = kwargs.get('status', None)
+        self.status_message = kwargs.get('status_message', None)
+        self.error = kwargs.get('error', None)
+        self.from_existing_endpoint = kwargs.get('from_existing_endpoint', None)
+        self.endpoint_name = kwargs.get('endpoint_name', None)
+        self.from_existing_deployment = kwargs.get('from_existing_deployment', None)
+        self.deployment_name = kwargs.get('deployment_name', None)
+        self.identity = kwargs.get('identity', None)
+        self.instance_type = kwargs.get('instance_type', None)
+        self.instance_count = kwargs.get('instance_count', None)
+        self.compute_instance_name = kwargs.get('compute_instance_name', None)
+        self.docker_image = kwargs.get('docker_image', None)
+        self.published_port = kwargs.get('published_port', None)
+        self.target_port = kwargs.get('target_port', None)
+        self.from_existing_custom_app = kwargs.get('from_existing_custom_app', None)
+        self.custom_app_name = kwargs.get('custom_app_name', None)
+        self.assigned_to = kwargs.get('assigned_to', None)
+        self.endpoint_url = kwargs.get('endpoint_url', None)
+        self.created_on = kwargs.get('created_on', None)
+        self.modified_on = kwargs.get('modified_on', None)
+        self.owner = kwargs.get('owner', None)
 
 
 class FlowSnapshot(msrest.serialization.Model):
@@ -23090,16 +23342,16 @@ class NodeSource(msrest.serialization.Model):
 
     :ivar type:
     :vartype type: str
-    :ivar path:
-    :vartype path: str
     :ivar tool:
     :vartype tool: str
+    :ivar path:
+    :vartype path: str
     """
 
     _attribute_map = {
         'type': {'key': 'type', 'type': 'str'},
-        'path': {'key': 'path', 'type': 'str'},
         'tool': {'key': 'tool', 'type': 'str'},
+        'path': {'key': 'path', 'type': 'str'},
     }
 
     def __init__(
@@ -23109,15 +23361,15 @@ class NodeSource(msrest.serialization.Model):
         """
         :keyword type:
         :paramtype type: str
-        :keyword path:
-        :paramtype path: str
         :keyword tool:
         :paramtype tool: str
+        :keyword path:
+        :paramtype path: str
         """
         super(NodeSource, self).__init__(**kwargs)
         self.type = kwargs.get('type', None)
-        self.path = kwargs.get('path', None)
         self.tool = kwargs.get('tool', None)
+        self.path = kwargs.get('path', None)
 
 
 class NodeTelemetryMetaInfo(msrest.serialization.Model):
@@ -32175,11 +32427,14 @@ class ServiceLogRequest(msrest.serialization.Model):
     :vartype log_level: str or ~flow.models.LogLevel
     :ivar message:
     :vartype message: str
+    :ivar timestamp:
+    :vartype timestamp: ~datetime.datetime
     """
 
     _attribute_map = {
         'log_level': {'key': 'logLevel', 'type': 'str'},
         'message': {'key': 'message', 'type': 'str'},
+        'timestamp': {'key': 'timestamp', 'type': 'iso-8601'},
     }
 
     def __init__(
@@ -32192,10 +32447,13 @@ class ServiceLogRequest(msrest.serialization.Model):
         :paramtype log_level: str or ~flow.models.LogLevel
         :keyword message:
         :paramtype message: str
+        :keyword timestamp:
+        :paramtype timestamp: ~datetime.datetime
         """
         super(ServiceLogRequest, self).__init__(**kwargs)
         self.log_level = kwargs.get('log_level', None)
         self.message = kwargs.get('message', None)
+        self.timestamp = kwargs.get('timestamp', None)
 
 
 class SetupFlowSessionRequest(msrest.serialization.Model):
@@ -32463,6 +32721,8 @@ class SparkJob(msrest.serialization.Model):
     :vartype output_data_bindings: dict[str, ~flow.models.OutputDataBinding]
     :ivar conf: Dictionary of :code:`<string>`.
     :vartype conf: dict[str, str]
+    :ivar environment_variables: Dictionary of :code:`<string>`.
+    :vartype environment_variables: dict[str, str]
     :ivar provisioning_state: Possible values include: "Succeeded", "Failed", "Canceled",
      "InProgress".
     :vartype provisioning_state: str or ~flow.models.JobProvisioningState
@@ -32518,6 +32778,7 @@ class SparkJob(msrest.serialization.Model):
         'input_data_bindings': {'key': 'inputDataBindings', 'type': '{InputDataBinding}'},
         'output_data_bindings': {'key': 'outputDataBindings', 'type': '{OutputDataBinding}'},
         'conf': {'key': 'conf', 'type': '{str}'},
+        'environment_variables': {'key': 'environmentVariables', 'type': '{str}'},
         'provisioning_state': {'key': 'provisioningState', 'type': 'str'},
         'parent_job_name': {'key': 'parentJobName', 'type': 'str'},
         'display_name': {'key': 'displayName', 'type': 'str'},
@@ -32570,6 +32831,8 @@ class SparkJob(msrest.serialization.Model):
         :paramtype output_data_bindings: dict[str, ~flow.models.OutputDataBinding]
         :keyword conf: Dictionary of :code:`<string>`.
         :paramtype conf: dict[str, str]
+        :keyword environment_variables: Dictionary of :code:`<string>`.
+        :paramtype environment_variables: dict[str, str]
         :keyword provisioning_state: Possible values include: "Succeeded", "Failed", "Canceled",
          "InProgress".
         :paramtype provisioning_state: str or ~flow.models.JobProvisioningState
@@ -32624,6 +32887,7 @@ class SparkJob(msrest.serialization.Model):
         self.input_data_bindings = kwargs.get('input_data_bindings', None)
         self.output_data_bindings = kwargs.get('output_data_bindings', None)
         self.conf = kwargs.get('conf', None)
+        self.environment_variables = kwargs.get('environment_variables', None)
         self.provisioning_state = kwargs.get('provisioning_state', None)
         self.parent_job_name = kwargs.get('parent_job_name', None)
         self.display_name = kwargs.get('display_name', None)
@@ -35179,7 +35443,7 @@ class Tool(msrest.serialization.Model):
 
     :ivar name:
     :vartype name: str
-    :ivar type: Possible values include: "llm", "python", "action", "prompt".
+    :ivar type: Possible values include: "llm", "python", "action", "prompt", "custom_llm".
     :vartype type: str or ~flow.models.ToolType
     :ivar inputs: This is a dictionary.
     :vartype inputs: dict[str, ~flow.models.InputDefinition]
@@ -35243,7 +35507,7 @@ class Tool(msrest.serialization.Model):
         """
         :keyword name:
         :paramtype name: str
-        :keyword type: Possible values include: "llm", "python", "action", "prompt".
+        :keyword type: Possible values include: "llm", "python", "action", "prompt", "custom_llm".
         :paramtype type: str or ~flow.models.ToolType
         :keyword inputs: This is a dictionary.
         :paramtype inputs: dict[str, ~flow.models.InputDefinition]
@@ -36904,7 +37168,19 @@ class WorkspaceConnectionSpec(msrest.serialization.Model):
     :ivar connection_category: Possible values include: "PythonFeed", "ACR", "Git", "S3",
      "Snowflake", "AzureSqlDb", "AzureSynapseAnalytics", "AzureMySqlDb", "AzurePostgresDb",
      "AzureDataLakeGen2", "Redis", "ApiKey", "AzureOpenAI", "CognitiveSearch", "CognitiveService",
-     "CustomKeys".
+     "CustomKeys", "AzureAIContentSafety", "CosmosDb", "CosmosDbMongoDbApi", "AzureDataExplorer",
+     "AzureMariaDb", "AzureDatabricksDeltaLake", "AzureSqlMi", "AzureTableStorage",
+     "AmazonRdsForOracle", "AmazonRdsForSqlServer", "AmazonRedshift", "Db2", "Drill",
+     "GoogleBigQuery", "Greenplum", "Hbase", "Hive", "Impala", "Informix", "MariaDb",
+     "MicrosoftAccess", "MySql", "Netezza", "Oracle", "Phoenix", "PostgreSql", "Presto",
+     "SapOpenHub", "SapBw", "SapHana", "SapTable", "Spark", "SqlServer", "Sybase", "Teradata",
+     "Vertica", "Cassandra", "Couchbase", "MongoDbV2", "MongoDbAtlas", "AmazonS3Compatible",
+     "FileServer", "FtpServer", "GoogleCloudStorage", "Hdfs", "OracleCloudStorage", "Sftp",
+     "GenericHttp", "ODataRest", "Odbc", "GenericRest", "AmazonMws", "Concur", "Dynamics",
+     "DynamicsAx", "DynamicsCrm", "GoogleAdWords", "Hubspot", "Jira", "Magento", "Marketo",
+     "Office365", "Eloqua", "Responsys", "OracleServiceCloud", "PayPal", "QuickBooks", "Salesforce",
+     "SalesforceServiceCloud", "SalesforceMarketingCloud", "SapCloudForCustomer", "SapEcc",
+     "ServiceNow", "SharePointOnlineList", "Shopify", "Square", "WebTable", "Xero", "Zoho".
     :vartype connection_category: str or ~flow.models.ConnectionCategory
     :ivar flow_value_type: Possible values include: "int", "double", "bool", "string", "secret",
      "prompt_template", "object", "list", "BingConnection", "OpenAIConnection",
@@ -36942,7 +37218,19 @@ class WorkspaceConnectionSpec(msrest.serialization.Model):
         :keyword connection_category: Possible values include: "PythonFeed", "ACR", "Git", "S3",
          "Snowflake", "AzureSqlDb", "AzureSynapseAnalytics", "AzureMySqlDb", "AzurePostgresDb",
          "AzureDataLakeGen2", "Redis", "ApiKey", "AzureOpenAI", "CognitiveSearch", "CognitiveService",
-         "CustomKeys".
+         "CustomKeys", "AzureAIContentSafety", "CosmosDb", "CosmosDbMongoDbApi", "AzureDataExplorer",
+         "AzureMariaDb", "AzureDatabricksDeltaLake", "AzureSqlMi", "AzureTableStorage",
+         "AmazonRdsForOracle", "AmazonRdsForSqlServer", "AmazonRedshift", "Db2", "Drill",
+         "GoogleBigQuery", "Greenplum", "Hbase", "Hive", "Impala", "Informix", "MariaDb",
+         "MicrosoftAccess", "MySql", "Netezza", "Oracle", "Phoenix", "PostgreSql", "Presto",
+         "SapOpenHub", "SapBw", "SapHana", "SapTable", "Spark", "SqlServer", "Sybase", "Teradata",
+         "Vertica", "Cassandra", "Couchbase", "MongoDbV2", "MongoDbAtlas", "AmazonS3Compatible",
+         "FileServer", "FtpServer", "GoogleCloudStorage", "Hdfs", "OracleCloudStorage", "Sftp",
+         "GenericHttp", "ODataRest", "Odbc", "GenericRest", "AmazonMws", "Concur", "Dynamics",
+         "DynamicsAx", "DynamicsCrm", "GoogleAdWords", "Hubspot", "Jira", "Magento", "Marketo",
+         "Office365", "Eloqua", "Responsys", "OracleServiceCloud", "PayPal", "QuickBooks", "Salesforce",
+         "SalesforceServiceCloud", "SalesforceMarketingCloud", "SapCloudForCustomer", "SapEcc",
+         "ServiceNow", "SharePointOnlineList", "Shopify", "Square", "WebTable", "Xero", "Zoho".
         :paramtype connection_category: str or ~flow.models.ConnectionCategory
         :keyword flow_value_type: Possible values include: "int", "double", "bool", "string", "secret",
          "prompt_template", "object", "list", "BingConnection", "OpenAIConnection",

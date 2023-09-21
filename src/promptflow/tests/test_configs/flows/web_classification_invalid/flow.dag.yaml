@@ -45,7 +45,7 @@ nodes:
   source:
     type: code
     path: prepare_examples.py
-  inputs: {}
+  inputs:
 - name: classify_with_llm
   type: llm
   source:
