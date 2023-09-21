@@ -8,7 +8,6 @@ from opencensus.ext.azure.common import utils
 from opencensus.ext.azure.common.protocol import Data, Envelope, Message
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 
-# TODO: make sure extension set this?
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._configuration import Configuration
 
@@ -22,15 +21,17 @@ def get_appinsights_log_handler():
     """
     Enable the OpenCensus logging handler for specified logger and instrumentation key to send info to AppInsights.
     """
+    from promptflow._sdk._utils import setup_user_agent_to_operation_context
     from promptflow._telemetry.telemetry import is_telemetry_enabled
 
     try:
         # TODO: use different instrumentation key for Europe
         instrumentation_key = INSTRUMENTATION_KEY
         config = Configuration.get_instance()
+        user_agent = setup_user_agent_to_operation_context(USER_AGENT)
         custom_properties = {
             "python_version": platform.python_version(),
-            "user_agent": USER_AGENT,
+            "user_agent": user_agent,
             "installation_id": config.get_or_set_installation_id(),
         }
 
