@@ -15,7 +15,7 @@ class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
     COLLECT_TELEMETRY = "cli.collect_telemetry"
-    USER_ID = "cli.user_id"
+    USER_ID = "cli.user_session_id"
 
     def __init__(self):
         self.config = {}
