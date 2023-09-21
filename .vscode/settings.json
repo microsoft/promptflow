@@ -22,4 +22,7 @@
     }
   ],
   "eslint.execArgv": ["--max_old_space_size=8192"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
 }
