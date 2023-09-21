@@ -9,12 +9,9 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
+from promptflow._core._errors import NotSupported
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.tools_manager import (
-    BuiltinsManager,
-    ToolLoader,
-    connection_type_to_api_mapping,
-)
+from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
@@ -116,7 +113,11 @@ class ToolResolver:
                 return self._integrate_prompt_in_package_node(node, resolved_tool)
             raise NotImplementedError(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
         else:
-            raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+            # According to Node.type definition, this will happen only when node.type is None or ToolType.ACTION.
+            # Both of them are user error.
+            # If we add new type in future, deserialization will raise exception in advance.
+            # TODO: Remove this error handling and raise exception directly in deserialization.
+            raise NotSupported(f"Tool type {node.type} is not supported yet.")
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
