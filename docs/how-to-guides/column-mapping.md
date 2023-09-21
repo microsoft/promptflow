@@ -9,7 +9,7 @@ If specified, the flow will be executed with provided value for specified inputs
 The following types of values in column mapping are supported:
 
 - `${data.<column_name>}` to reference from your test dataset.
-- `${run.outputs.<output_name>}` to reference from your flow output.
+- `${run.outputs.<output_name>}` to reference from referenced run's output. **Note**: this only supported when `--run` is provided for `pf run`.
 - `STATIC_VALUE` to create static value for all lines for specified column.
 
 ## Flow inputs override priority
@@ -63,4 +63,4 @@ Since the flow will return each inputs in output, we can get the actual inputs f
 - Input "input1" has value "val1_in_column_mapping" since it's specified as constance in `column_mapping`.
 - Input "input2" has value "default_val2" since it used default value in flow dag.
 - Input "input3" has value "val3_in_data" since it's specified as data reference in `column_mapping`.
-- Input "input4" has value "val3_in_data" since it has same name column in provided data.
+- Input "input4" has value "val4_in_data" since it has same name column in provided data.
