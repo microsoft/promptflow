@@ -14,7 +14,7 @@ PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
 def is_telemetry_enabled():
     """Check if telemetry is enabled. User can enable telemetry by
     1. setting environment variable TELEMETRY_ENABLED to true.
-    2. running `promptflow telemetry enable` command.
+    2. running `pf config set cli.telemetry_enable=true` command.
     If None of the above is set, will prompt an input to ask user to enable telemetry.
     """
     telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
@@ -28,6 +28,7 @@ def is_telemetry_enabled():
 
 def get_telemetry_logger():
     current_logger = logging.getLogger(PROMPTFLOW_LOGGER_NAMESPACE)
+    # avoid telemetry log appearing in higher level loggers
     current_logger.propagate = False
     current_logger.setLevel(logging.INFO)
     handler = get_appinsights_log_handler()

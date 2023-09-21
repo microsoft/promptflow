@@ -134,7 +134,7 @@ def monitor_operation(
             custom_dimensions.update(extract_pf_client_info(self))
 
             with log_activity(logger, activity_name, activity_type, custom_dimensions):
-                return f(*args, **kwargs)
+                return f(self, *args, **kwargs)
 
         return wrapper
 

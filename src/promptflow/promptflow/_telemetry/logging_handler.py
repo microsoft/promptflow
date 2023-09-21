@@ -24,15 +24,15 @@ def get_appinsights_log_handler():
     from promptflow._telemetry.telemetry import is_telemetry_enabled
 
     try:
+        # TODO: use different instrumentation key for Europe
         instrumentation_key = INSTRUMENTATION_KEY
         config = Configuration.get_instance()
         custom_properties = {
             "python_version": platform.python_version(),
             "user_agent": USER_AGENT,
-            "user_id": config.get_or_set_user_id(),
+            "installation_id": config.get_or_set_user_id(),
         }
 
-        # TODO: use different instrumentation key for Europe
         handler = AzureMLSDKLogHandler(
             connection_string=f"InstrumentationKey={instrumentation_key}",
             custom_properties=custom_properties,
@@ -104,6 +104,7 @@ def create_envelope(instrumentation_key, record):
         tags=dict(utils.azure_monitor_context),
         time=utils.timestamp_to_iso_str(record.created),
     )
+    # remove unnecessary tags in telemetry
     envelope.tags["ai.operation.id"] = getattr(
         record,
         "traceId",
