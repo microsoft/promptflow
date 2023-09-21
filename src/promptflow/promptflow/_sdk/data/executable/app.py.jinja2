@@ -3,7 +3,7 @@ import os
 import sys
 
 from promptflow._cli._pf._connection import create_connection
-from streamlit.web import cli as stcli
+from streamlit.web import cli as st_cli
 from streamlit.runtime import exists
 
 from main import start
@@ -35,4 +35,4 @@ if __name__ == "__main__":
         start()
     else:
         sys.argv = ["streamlit", "run", "main.py", "--global.developmentMode=false"]
-        stcli.main(prog_name="streamlit")
+        st_cli.main(prog_name="streamlit")

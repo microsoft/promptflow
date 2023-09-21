@@ -362,7 +362,7 @@ class FlowOperations:
     ):
         try:
             import streamlit
-            import PyInstaller
+            import PyInstaller # noqa: F401
         except ImportError as ex:
             raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
 
@@ -385,7 +385,7 @@ class FlowOperations:
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
         flow_inputs = {flow_input: value.default for flow_input, value in executable.inputs.items()}
-        flow_inputs_params =  ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
+        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
         copy_tree_respect_template_and_ignore_file(
