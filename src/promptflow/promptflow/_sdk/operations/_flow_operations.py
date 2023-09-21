@@ -3,7 +3,7 @@
 # ---------------------------------------------------------
 import contextlib
 import json
-import importlib
+import os
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -405,9 +405,15 @@ class FlowOperations:
                 "flow_inputs_params": flow_inputs_params
             },
         )
-        spec_file = (output_dir / "app.spec").as_posix()
-        subprocess.run(['pyinstaller', spec_file], check=True)
-        print("hahahah")
+        try:
+            current_directory = os.getcwd()
+            os.chdir(output_dir.as_posix())
+            subprocess.run(["pyinstaller", "app.spec"], shell=True, check=True)
+            print("PyInstaller command executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running PyInstaller: {e}")
+        finally:
+            os.chdir(current_directory)
 
     def build(
         self,
