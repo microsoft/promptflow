@@ -197,7 +197,7 @@ class TestFlowRun:
 
         assert details.shape[0] == 20
 
-        # get first 100 results while it only has 40
+        # get first 1000 results while it only has 40
         details = remote_client.runs.get_details(run=run, max_results=1000)
         assert details.shape[0] == 40
 

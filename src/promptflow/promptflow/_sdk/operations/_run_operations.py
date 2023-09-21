@@ -11,8 +11,14 @@ from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 
-from promptflow._sdk._constants import LOGGER_NAME, MAX_RUN_LIST_RESULTS, ListViewType, RunStatus
-from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError
+from promptflow._sdk._constants import (
+    LOGGER_NAME,
+    MAX_RUN_LIST_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
+    ListViewType,
+    RunStatus,
+)
+from promptflow._sdk._errors import InvalidRunStatusError, RunExistsError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._orm import RunInfo as ORMRun
 from promptflow._sdk._utils import incremental_print, safe_parse_object_list
 from promptflow._sdk._visualize_functions import dump_html, generate_html_string
@@ -178,20 +184,37 @@ class RunOperations:
         ORMRun.get(name).update(display_name=display_name, description=description, tags=tags, **kwargs)
         return self.get(name)
 
-    def get_details(self, name: Union[str, Run]) -> pd.DataFrame:
-        """Get run inputs and outputs.
+    def get_details(
+        self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
+    ) -> pd.DataFrame:
+        """Get the details from the run.
 
-        :param name: name of the run.
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
+
+        :param name: The run
         :type name: str
-        :return: Run details.
-        :rtype: ~pandas.DataFrame
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :return: The details data frame.
+        :rtype: pandas.DataFrame
         """
+        # if all_results is True, set max_results to sys.maxsize
+        if all_results:
+            max_results = sys.maxsize
+
+        if not isinstance(max_results, int) or max_results < 1:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         name = Run._validate_and_return_run_name(name)
         run = self.get(name=name)
         run._check_run_status_is_completed()
         local_storage = LocalStorageOperations(run=run)
-        inputs = local_storage.load_inputs()
-        outputs = local_storage.load_outputs()
+        inputs = {key: value for key, value in local_storage.load_inputs().items()[0:max_results]}
+        outputs = {key: value for key, value in local_storage.load_outputs().items()[0:max_results]}
         data = {}
         columns = []
         for k in inputs:

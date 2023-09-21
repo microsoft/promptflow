@@ -292,7 +292,7 @@ class RunOperations(_ScopeDependentOperations):
 
         :param run: The run
         :type run: str
-        :param max_results: The max number of runs to return, defaults to 25
+        :param max_results: The max number of runs to return, defaults to 100
         :type max_results: int
         :param all_results: Whether to return all results, defaults to False
         :type all_results: bool
