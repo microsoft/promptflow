@@ -6,7 +6,7 @@ from functools import wraps
 
 from flask import jsonify
 
-from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._errors import ConnectionNotFoundError, RunNotFoundError
 
 
 def api_wrapper(func):
@@ -15,12 +15,12 @@ def api_wrapper(func):
         try:
             result = func(*args, **kwargs)
             return result
-        except RunNotFoundError as e:
-            response = jsonify({"error_message": str(e)})
+        except (ConnectionNotFoundError, RunNotFoundError):
+            response = jsonify({"error_message": "Not Found"})
             response.status_code = 404
             return response
-        except Exception as e:  # pylint: disable=broad-except
-            response = jsonify({"error_message": str(e)})
+        except Exception:  # pylint: disable=broad-except
+            response = jsonify({"error_message": "Internal Server Error"})
             response.status_code = 500
             return response
 
