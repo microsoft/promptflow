@@ -3,7 +3,6 @@ source =
     */promptflow/_sdk/_service/*
 omit =
     */promptflow/_cli/*
-    */promptflow/_sdk/*
     */promptflow/azure/*
     */promptflow/entities/*
     */promptflow/operations/*
