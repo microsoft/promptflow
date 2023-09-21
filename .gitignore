@@ -182,3 +182,8 @@ scripts/docs/_build/
 .pdfs
 config.json
 src/promptflow/promptflow/azure/_restclient/swagger.json
+
+# js
+node_modules
+npm-debug.log
+yarn-error.log

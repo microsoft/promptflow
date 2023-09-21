@@ -1,0 +1,11 @@
+{
+  "name": "promptflow-js",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": "https://github.com/microsoft/promptflow",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}
