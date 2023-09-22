@@ -15,6 +15,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!**/promptflow-js/**/lib
 lib64/
 parts/
 sdist/
