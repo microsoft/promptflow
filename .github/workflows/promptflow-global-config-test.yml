@@ -1,8 +1,5 @@
 name: promptflow-global-config-test
 on:
-  push:
-    branches:
-      - brynn/support-config-connection-provider
   schedule:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request_target:
