@@ -1,0 +1,8 @@
+name: my_custom_strong_type_connection
+type: custom
+custom_type: MyFirstConnection
+module: my_tool_package.connections
+configs:
+  api_base: "This is my first connection."
+secrets:  # must-have
+  api_key: "<to-be-replaced>"
