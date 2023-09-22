@@ -23,7 +23,7 @@ def add_config_set(subparsers):
         epilog=epilog,
         add_params=[add_param_set_positional] + logging_params,
         subparsers=subparsers,
-        help_message="Set promptflow configs for current user.",
+        help_message="Set promptflow configs for current user, configs will be stored at ~/.promptflow/pf.yaml.",
         action_param_name="sub_action",
     )
 

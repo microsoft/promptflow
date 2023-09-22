@@ -88,7 +88,8 @@ class LocalAzureConnectionOperations:
         :type name: str
         """
         raise NotImplementedError(
-            "Delete connection is not supported for workspace connection, please go to Azure Portal to delete it."
+            "Delete workspace connection is not supported in promptflow, "
+            "please manage it in workspace portal, az ml cli or AzureML SDK."
         )
 
     def create_or_update(self, connection: _Connection, **kwargs):
@@ -98,6 +99,6 @@ class LocalAzureConnectionOperations:
         :type connection: ~promptflow.sdk.entities._connection._Connection
         """
         raise NotImplementedError(
-            "Create or update connection is not supported for workspace connection, "
-            "please go to Azure Portal to create or update it."
+            "Create or update workspace connection is not supported in promptflow, "
+            "please manage it in workspace portal, az ml cli or AzureML SDK."
         )

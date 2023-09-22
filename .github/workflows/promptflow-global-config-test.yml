@@ -93,7 +93,7 @@ jobs:
           ${{ env.testWorkingDirectory }}/htmlcov/
   publish-test-results:
     name: "Publish Tests Results"
-    needs: sdk_cli_tests
+    needs: sdk_cli_global_config_tests
     runs-on: ubuntu-latest
     permissions: write-all
     if: always()

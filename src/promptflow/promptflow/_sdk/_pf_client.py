@@ -174,9 +174,11 @@ class PFClient:
             if self._connection_provider == ConnectionProvider.LOCAL.value:
                 logger.debug("Using local connection operations.")
                 self._connections = ConnectionOperations()
-            else:
+            elif self._connection_provider.startswith(ConnectionProvider.AZURE.value):
                 logger.debug("Using local azure connection operations.")
                 self._connections = LocalAzureConnectionOperations(self._connection_provider)
+            else:
+                raise ValueError(f"Unsupported connection provider: {self._connection_provider}")
         return self._connections
 
     @property
