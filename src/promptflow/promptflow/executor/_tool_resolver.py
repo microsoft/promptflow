@@ -10,11 +10,8 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.tools_manager import (
-    BuiltinsManager,
-    ToolLoader,
-    connection_type_to_api_mapping,
-)
+from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
@@ -55,6 +52,10 @@ class ToolResolver:
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+
+        if isinstance(connection_value, CustomConnection) and connection_value._is_custom_strong_type():
+            return connection_value._convert_to_custom_strong_type()
+
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (

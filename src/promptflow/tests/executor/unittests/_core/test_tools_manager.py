@@ -1,10 +1,17 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from promptflow import tool
 from promptflow._core._errors import NotSupported, PackageToolNotFoundError
-from promptflow._core.tools_manager import NodeSourcePathEmpty, ToolLoader, collect_package_tools, gen_tool_by_source
+from promptflow._core.tools_manager import (
+    NodeSourcePathEmpty,
+    ToolLoader,
+    collect_package_tools,
+    collect_package_tools_and_connections,
+    gen_tool_by_source,
+)
 from promptflow.contracts.flow import Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
@@ -128,3 +135,36 @@ class TestToolsManager:
         with pytest.raises(error_code) as ex:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
+
+    @pytest.mark.skip("test package not installed")
+    def test_collect_package_tools_and_connections(self):
+        keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
+        tools, specs, templates = collect_package_tools_and_connections(keys)
+        assert len(tools) == 1
+        assert specs == {
+            "my_tool_package.connections.MySecondConnection": {
+                "connectionCategory": "CustomKeys",
+                "flowValueType": "CustomConnection",
+                "connectionType": "MySecondConnection",
+                "ConnectionTypeDisplayName": "MySecondConnection",
+                "configSpecs": [
+                    {"name": "api_key", "displayName": "Api Key", "configValueType": "Secret", "isOptional": False},
+                    {"name": "api_base", "displayName": "Api Base", "configValueType": "str", "isOptional": True},
+                ],
+                "module": "my_tool_package.connections",
+                "package": "my-tools-package-with-cstc",
+                "package_version": "0.0.6",
+            }
+        }
+        expected_template = {
+            "name": "<connection-name>",
+            "type": "custom",
+            "custom_type": "MySecondConnection",
+            "module": "my_tool_package.connections",
+            "package": "my-tools-package-with-cstc",
+            "package_version": "0.0.6",
+            "configs": {"api_base": "<api-base>"},
+            "secrets": {"api_key": "<api-key>"},
+        }
+        loaded_yaml = yaml.safe_load(templates["my_tool_package.connections.MySecondConnection"])
+        assert loaded_yaml == expected_template

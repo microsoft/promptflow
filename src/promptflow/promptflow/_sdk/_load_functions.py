@@ -50,7 +50,12 @@ def load_common(
     cls, type_str = cls._resolve_cls_and_type(data=yaml_dict, params_override=params_override)
 
     try:
-        return cls._load(data=yaml_dict, yaml_path=relative_origin, params_override=params_override, **kwargs)
+        return cls._load(
+            data=yaml_dict,
+            yaml_path=relative_origin,
+            params_override=params_override,
+            **kwargs,
+        )
     except Exception as e:
         raise Exception(f"Load entity error: {e}") from e
 
