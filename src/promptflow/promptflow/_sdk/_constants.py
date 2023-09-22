@@ -50,7 +50,7 @@ LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
 AZURE_WORKSPACE_REGEX_FORMAT = (
     "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
-    "/providers/Microsoft.MachineLearningServices/workspaces/([^/]+)$"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
 
 DEFAULT_ENCODING = "utf-8"

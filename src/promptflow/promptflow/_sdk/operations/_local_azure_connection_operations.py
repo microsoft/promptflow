@@ -16,9 +16,7 @@ class LocalAzureConnectionOperations:
     def __init__(self, connection_provider):
         from promptflow.azure._pf_client import PFClient as PFAzureClient
 
-        self._connection_provider = connection_provider
-
-        subscription_id, resource_group, workspace_name = self._extract_workspace()
+        subscription_id, resource_group, workspace_name = self._extract_workspace(connection_provider)
         self._pfazure_client = PFAzureClient(
             credential=self._get_cred(),
             subscription_id=subscription_id,
@@ -39,17 +37,18 @@ class LocalAzureConnectionOperations:
 
         return credential
 
-    def _extract_workspace(self):
-        match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, self._connection_provider)
+    @classmethod
+    def _extract_workspace(cls, connection_provider):
+        match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, connection_provider)
         if not match:
             raise ValueError(
                 "Malformed connection provider string, expected azureml:/subscriptions/<subscription_id>/"
                 "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
-                f"workspaces/<workspace_name>, got {self._connection_provider}"
+                f"workspaces/<workspace_name>, got {connection_provider}"
             )
         subscription_id = match.group(1)
         resource_group = match.group(3)
-        workspace_name = match.group(4)
+        workspace_name = match.group(5)
         return subscription_id, resource_group, workspace_name
 
     def list(

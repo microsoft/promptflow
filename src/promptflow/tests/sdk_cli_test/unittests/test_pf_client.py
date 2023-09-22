@@ -1,8 +1,6 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-from typing import Callable
-
 import mock
 import pytest
 from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
@@ -11,19 +9,6 @@ from promptflow import PFClient
 from promptflow._core.operation_context import OperationContext
 from promptflow._sdk.operations._connection_operations import ConnectionOperations
 from promptflow._sdk.operations._local_azure_connection_operations import LocalAzureConnectionOperations
-
-
-class MockConfiguration(object):
-    _instance = None
-
-    def __init__(self, connection_provider: Callable):
-        setattr(self, "get_connection_provider", connection_provider)
-
-    @classmethod
-    def get_instance(cls):
-        if cls._instance is None:
-            cls._instance = MockConfiguration()
-        return cls._instance
 
 
 @pytest.mark.sdk_test
@@ -63,3 +48,18 @@ class TestPFClient:
             )
             client = PFClient()
             assert isinstance(client.connections, LocalAzureConnectionOperations)
+
+    def test_local_azure_connection_extract_workspace(self):
+        res = LocalAzureConnectionOperations._extract_workspace(
+            "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/789"
+        )
+        assert res == ("123", "456", "789")
+
+        res = LocalAzureConnectionOperations._extract_workspace(
+            "azureml:/subscriptions/123/resourcegroups/456/workspaces/789"
+        )
+        assert res == ("123", "456", "789")
+
+        with pytest.raises(ValueError) as e:
+            LocalAzureConnectionOperations._extract_workspace("azureml:xx")
+        assert "Malformed connection provider string" in str(e.value)
