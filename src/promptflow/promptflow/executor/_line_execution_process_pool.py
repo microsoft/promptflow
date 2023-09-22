@@ -159,9 +159,9 @@ class LineExecutionProcessPool:
                 self.end_process(process)
                 return
 
-            logger.info(f"Process {process.name}-{process.pid}-{line_number} started.")
             input_queue.put(args)
             inputs, line_number, run_id = args[:3]
+            logger.info(f"Process {process.name}-{process.pid}-{line_number} started.")
 
             self._processing_idx[line_number] = f"{process.name}::{process.pid}::{line_number}"
 
