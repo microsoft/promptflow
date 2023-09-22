@@ -1,0 +1,16 @@
+inputs:
+  text:
+    type: string
+outputs:
+  out:
+    type: string
+    reference: ${My_First_Tool_00f8.output}
+nodes:
+- name: My_First_Tool_00f8
+  type: python
+  source:
+    type: package
+    tool: my_tool_package.tools.my_tool_1.my_tool
+  inputs:
+    connection: my_custom_strong_type_connection
+    input_text: ${inputs.text}
