@@ -7,11 +7,19 @@ from streamlit.runtime import exists
 
 from main import start
 
+def is_yaml_file(file_path):
+    # Get the file extension
+    _, file_extension = os.path.splitext(file_path)
+
+    # Check if the file extension is ".yaml" or ".yml"
+    return file_extension.lower() in ('.yaml', '.yml')
+
 def create_connections(directory_path) -> None:
     for root, dirs, files in os.walk(directory_path):
         for file in files:
             file_path = os.path.join(root, file)
-            create_connection(file_path)
+            if is_yaml_file(file_path):
+                create_connection(file_path)
 
 
 if __name__ == "__main__":
