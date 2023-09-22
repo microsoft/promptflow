@@ -3,9 +3,10 @@
 Please add an informative description that covers that changes made by the pull request and link all relevant issues.
 
 # All Promptflow Contribution checklist:
-- [ ] **The pull request does not introduce [breaking changes]**
+- [ ] **The pull request does not introduce [breaking changes].**
 - [ ] **CHANGELOG is updated for new features, bug fixes or other significant changes.**
 - [ ] **I have read the [contribution guidelines](../CONTRIBUTING.md).**
+- [ ] **An issue is linked to the pull request.**
 
 ## General Guidelines and Best Practices
 - [ ] Title of the pull request is clear and informative.
