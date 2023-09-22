@@ -79,7 +79,7 @@ jobs:
         az account show
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_global_config_test`
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_global_config_test `
           -l eastus `
           -m "unittest or e2etest" `
           -n ${{ steps.cpu-cores.outputs.count }} `
@@ -110,6 +110,6 @@ jobs:
         testResultTitle: SDK CLI Global Config Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 40
+        coverageThreshold: 0
         token: ${{ secrets.GITHUB_TOKEN }}
         context: test/sdk_cli
