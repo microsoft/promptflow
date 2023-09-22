@@ -11,6 +11,7 @@ pytest-nunit
 pytest
 pydash
 wheel
+pyyaml
 azure-mgmt-storage==21.0.0
 # Note: This is possibly-insecure, do not add this to setup.
 keyrings.alt

@@ -3,17 +3,24 @@
 # ---------------------------------------------------------
 
 import argparse
+import importlib
 import json
 import logging
+import os
 from functools import partial
+from importlib.metadata import version
 
-from promptflow._cli._params import add_param_set, logging_params
+import yaml
+from promptflow._cli._params import add_param_set, logging_params, add_param_output
 from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._utils.connection_utils import (
+    generate_custom_strong_type_connection_template,
+    generate_custom_strong_type_connection_spec)
 
 logger = logging.getLogger(LOGGER_NAME)
 _client = PFClient()  # Do we have some function like PFClient.get_instance?
@@ -27,6 +34,14 @@ def add_param_name(parser, required=False):
     parser.add_argument("--name", "-n", type=str, help="Name of the connection.", required=required)
 
 
+def add_param_module(parser, required=False):
+    parser.add_argument("--module", "-m", type=str, help="Module of the connection.", required=required)
+
+
+def add_param_package(parser, required=False):
+    parser.add_argument("--package", type=str, help="Custom package name.", required=required)
+
+
 def add_connection_parser(subparsers):
     connection_parser = subparsers.add_parser(
         "connection", description="A CLI tool to manage connections for promptflow.", help="pf connection"
@@ -37,20 +52,20 @@ def add_connection_parser(subparsers):
     add_connection_show(subparsers)
     add_connection_list(subparsers)
     add_connection_delete(subparsers)
+    add_gen_connection_template(subparsers)
     connection_parser.set_defaults(action="connection")
 
 
 def add_connection_create(subparsers):
     epilog = """
-Examples:
-
-# Creating a connection with yaml file:
-pf connection create -f connection.yaml
-# Creating a connection with yaml file and overrides:
-pf connection create -f connection.yaml --set api_key="my_api_key"
-# Creating a custom connection with .env file, note that overrides specified by --set will be ignored:
-pf connection create -f .env --name custom
-"""
+    Examples:
+    # Creating a connection with yaml file:
+    pf connection create -f connection.yaml
+    # Creating a connection with yaml file and overrides:
+    pf connection create -f connection.yaml --set api_key="my_api_key"
+    # Creating a custom connection with .env file, note that overrides specified by --set will be ignored:
+    pf connection create -f .env --name custom
+    """
     activate_action(
         name="create",
         description="Create a connection.",
@@ -64,11 +79,11 @@ pf connection create -f .env --name custom
 
 def add_connection_update(subparsers):
     epilog = """
-Examples:
+    Examples:
 
-# Updating a connection:
-pf connection update -n my_connection --set api_key="my_api_key"
-"""
+    # Updating a connection:
+    pf connection update -n my_connection --set api_key="my_api_key"
+    """
     activate_action(
         name="update",
         description="Update a connection.",
@@ -82,11 +97,11 @@ pf connection update -n my_connection --set api_key="my_api_key"
 
 def add_connection_show(subparsers):
     epilog = """
-Examples:
-
-# Get and show a connection:
-pf connection show -n my_connection_name
-"""
+    Examples:
+    
+    # Get and show a connection:
+    pf connection show -n my_connection_name
+    """
     activate_action(
         name="show",
         description="Show a connection for promptflow.",
@@ -100,11 +115,11 @@ pf connection show -n my_connection_name
 
 def add_connection_delete(subparsers):
     epilog = """
-Examples:
-
-# Delete a connection:
-pf connection delete -n my_connection_name
-"""
+    Examples:
+    
+    # Delete a connection:
+    pf connection delete -n my_connection_name
+    """
     activate_action(
         name="delete",
         description="Delete a connection with specific name.",
@@ -118,11 +133,11 @@ pf connection delete -n my_connection_name
 
 def add_connection_list(subparsers):
     epilog = """
-Examples:
-
-# List all connections:
-pf connection list
-"""
+    Examples:
+    
+    # List all connections:
+    pf connection list
+    """
     activate_action(
         name="list",
         description="List all connections.",
@@ -130,6 +145,27 @@ pf connection list
         add_params=logging_params,
         subparsers=subparsers,
         help_message="List all connections.",
+        action_param_name="sub_action",
+    )
+
+
+def add_gen_connection_template(subparsers):
+    epilog = """
+    Examples:
+    
+    # Generate connection template:
+    pf connection gen-template -n my_connection_name -m my_module_name --package my_package_name --output ./output
+    """
+    activate_action(
+        name="gen-template",
+        description="Generate connection template.",
+        epilog=epilog,
+        add_params=[partial(add_param_name, required=True),
+                    partial(add_param_module, required=True),
+                    partial(add_param_package, required=True),
+                    add_param_output] + logging_params,
+        subparsers=subparsers,
+        help_message="Generate connection template.",
         action_param_name="sub_action",
     )
 
@@ -231,6 +267,22 @@ def delete_connection(name):
         print("The delete operation was canceled.")
 
 
+@exception_handler("Generate connection template")
+def gen_connection_template(name, module, package, output):
+    connection_module = importlib.import_module(module)
+    cls = getattr(connection_module, name)
+    package_version = version(package)
+    spec = generate_custom_strong_type_connection_spec(cls, package, package_version)
+    template = generate_custom_strong_type_connection_template(cls, spec, package, package_version)
+    file_path = os.path.join(output, "connection_template.yaml")
+    if not os.path.exists(output):
+        os.makedirs(output)
+
+    with open(file_path, 'w') as file:
+        yaml.dump(yaml.safe_load(template), file, sort_keys=False)
+        print(f"Completed to write the generated connection template to file {file_path}.")
+
+
 def dispatch_connection_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         create_connection(args.file, args.params_override, args.name)
@@ -242,3 +294,5 @@ def dispatch_connection_commands(args: argparse.Namespace):
         update_connection(args.name, args.params_override)
     elif args.sub_action == "delete":
         delete_connection(args.name)
+    elif args.sub_action == "gen-template":
+        gen_connection_template(args.name, args.module, args.package, args.output)
