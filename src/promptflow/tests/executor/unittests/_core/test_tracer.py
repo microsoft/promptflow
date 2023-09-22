@@ -76,6 +76,8 @@ class TestTracer:
         # Assert that the active tracer instance has the correct run_id
         assert Tracer.active_instance()._run_id == "test_run_id"
 
+        Tracer.end_tracing()
+
     def test_push_pop(self, caplog):
         # test the push method with a single trace
         Tracer.start_tracing("test_run_id")
