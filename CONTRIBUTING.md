@@ -72,9 +72,7 @@ your idea or change if you believe that a breaking change is warranted.
 
 We use and recommend the following workflow:
 
-1. Create an issue for your work.
-   - You can skip this step for trivial changes.
-   - Reuse an existing issue on the topic, if there is one.
+1. Create an issue for your work, or reuse an existing issue on the same topic.
    - Get agreement from the team and the community that your proposed change is
      a good one.
    - Clearly state that you are going to take on implementing it, if that's the case.
@@ -91,6 +89,7 @@ We use and recommend the following workflow:
    - State in the description what issue or improvement your change is addressing.
    - Verify that all the Continuous Integration checks are passing.
 8. Wait for feedback or approval of your changes from the code maintainers.
+   - If there is no response for a few days, you can create an issue to raise awareness; we will add issue assignee(s) who will contact you and loop related internal reviewer to follow up.
 9. When area owners have signed off, and all checks are green, your PR will be merged.
 
 ### Development scripts
