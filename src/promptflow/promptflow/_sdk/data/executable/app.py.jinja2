@@ -1,9 +1,8 @@
-import json
 import os
 import sys
 
 from promptflow._cli._pf._connection import create_connection
-from streamlit.web import cli as st_cli
+from streamlit.web import cli as stcli
 from streamlit.runtime import exists
 
 from main import start
@@ -15,22 +14,9 @@ def create_connections(directory_path) -> None:
             create_connection(file_path)
 
 
-def set_environment_variable(file_path) -> None:
-    with open(file_path, "r") as file:
-        json_data = json.load(file)
-    environment_variables = list(json_data.keys())
-    for environment_variable in environment_variables:
-        # Check if the required environment variable is set
-        if not os.environ.get(environment_variable):
-            print(f"{environment_variable} is not set.")
-            user_input = input(f"Please enter the value for {environment_variable}: ")
-            # Set the environment variable
-            os.environ[environment_variable] = user_input
-
-
 if __name__ == "__main__":
+
     create_connections(os.path.join(os.path.dirname(__file__), "connections"))
-    set_environment_variable(os.path.join(os.path.dirname(__file__), "settings.json"))
     if exists():
         start()
     else:

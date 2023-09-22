@@ -352,7 +352,7 @@ class FlowOperations:
             },
         )
 
-    def _export_to_executable(
+    def _build_as_executable(
         self,
         flow_dag_path: Path,
         output_dir: Path,
@@ -477,7 +477,7 @@ class FlowOperations:
                 env_var_names=env_var_names,
             )
         elif format == "executable":
-            self._export_to_executable(
+            self._build_as_executable(
                 flow_dag_path=new_flow_dag_path,
                 output_dir=output_dir,
                 flow_name=flow.name,

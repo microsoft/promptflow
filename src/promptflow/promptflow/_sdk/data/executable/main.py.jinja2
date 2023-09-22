@@ -41,13 +41,21 @@ def start():
         return result
 
 
-    st.title("Test {{flow_name}} APP")
+    st.title("{{flow_name}} APP")
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
     container = st.container()
     with container:
         show_conversation()
 
     with st.form(key='input_form', clear_on_submit=True):
+        with open(os.path.join(os.path.dirname(__file__), "settings.json"), "r") as file:
+            json_data = json.load(file)
+        environment_variables = list(json_data.keys())
+        for environment_variable in environment_variables:
+            secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here, if you input before, you can leave it blank.")
+            if secret_input != "":
+                os.environ[environment_variable] = secret_input
+
     {% for flow_input, default_value in flow_inputs.items() %}
     {{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
     {% endfor %}
