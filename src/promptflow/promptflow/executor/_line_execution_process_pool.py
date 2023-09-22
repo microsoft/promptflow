@@ -91,9 +91,11 @@ class LineExecutionProcessPool:
         # Starting a new process in non-fork mode requires to allocate memory. Determine the maximum number of processes
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
+            logger.info("Not using fork, determine the maximum number of processes based on available memory.")
             available_max_worker_count = get_available_max_worker_count()
             self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
         else:
+            logger.info("Using fork, determine the maximum number of processes based on worker_count and nlines.")
             self._n_process = min(self._worker_count, self._nlines)
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
@@ -157,6 +159,7 @@ class LineExecutionProcessPool:
                 self.end_process(process)
                 return
 
+            logger.info(f"Process {process.name}-{process.pid}-{line_number} started.")
             input_queue.put(args)
             inputs, line_number, run_id = args[:3]
 
@@ -201,6 +204,7 @@ class LineExecutionProcessPool:
             )
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
+        logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
         run_info = FlowRunInfo(
             run_id=f"{run_id}_{line_number}",
             status=Status.Failed,
@@ -301,9 +305,12 @@ def _exec_line(
             line_result.output = {}
         return line_result
     except Exception as e:
+        logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
         if executor._run_tracker.flow_run_list:
+            logger.info(f"Line {index}, Process {os.getpid()} have been added to flow run list.")
             run_info = executor._run_tracker.flow_run_list[0]
         else:
+            logger.info(f"Line {index}, Process {os.getpid()} have not been added to flow run list.")
             run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(
