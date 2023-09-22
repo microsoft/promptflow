@@ -108,6 +108,11 @@ class LineExecutionProcessPool:
     def _new_process(self):
         input_queue = Queue()
         output_queue = Queue()
+
+        # Put a start message and wait the subprocess be ready.
+        # Test if the subprocess can receive the message.
+        input_queue.put("start")
+
         current_log_context = LogContext.get_current()
         process = Process(
             target=_process_wrapper,
@@ -118,8 +123,19 @@ class LineExecutionProcessPool:
                 current_log_context.get_initializer() if current_log_context else None,
                 OperationContext.get_instance().get_context_dict(),
             ),
+            daemon=True
         )
         process.start()
+
+        try:
+            # Wait for subprocess send a ready message.
+            ready_msg = output_queue.get(timeout=30)
+            assert ready_msg == "ready"
+        except queue.Empty:
+            logger.info(f"Sub process {process.pid} did not send ready message, exit.")
+            self.end_process(process)
+            return None, None, None
+
         return process, input_queue, output_queue
 
     def end_process(self, process):
@@ -128,6 +144,11 @@ class LineExecutionProcessPool:
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         process, input_queue, output_queue = self._new_process()
+
+        if process is None:
+            logger.info(f"Process {idx} failed to start, exit.")
+            return
+
         while True:
             try:
                 args = task_queue.get(timeout=1)
@@ -139,7 +160,7 @@ class LineExecutionProcessPool:
             input_queue.put(args)
             inputs, line_number, run_id = args[:3]
 
-            self._processing_idx[line_number] = process.name
+            self._processing_idx[line_number] = f"{process.name}::{process.pid}::{line_number}"
 
             start_time = datetime.now()
             completed = False
@@ -301,6 +322,7 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
+    logger.info(f"Subprocess {os.getpid()} started.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():
@@ -326,9 +348,18 @@ def create_executor_fork(*, flow_executor: FlowExecutor, storage: AbstractRunSto
 def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue: Queue):
     run_storage = QueueRunStorage(output_queue)
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
+
+    # Wait for the start signal message
+    start_msg = input_queue.get()
+    logger.info(f"Process {os.getpid()} received start signal message: {start_msg}")
+
+    # Send a ready signal message
+    output_queue.put("ready")
+    logger.info(f"Process {os.getpid()} sent ready signal message.")
+
     while True:
         try:
-            args = input_queue.get(1)
+            args = input_queue.get(timeout=1)
             inputs, line_number, run_id, variant_id, validate_inputs = args[:5]
             result = _exec_line(
                 executor=executor,
