@@ -185,10 +185,7 @@ class RunOperations:
         return self.get(name)
 
     def get_details(
-        self,
-        name: Union[str, Run],
-        max_results: int = MAX_SHOW_DETAILS_RESULTS,
-        all_results: bool = False
+        self, name: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
     ) -> pd.DataFrame:
         """Get the details from the run.
 
@@ -196,12 +193,13 @@ class RunOperations:
 
             If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
 
-        :param name: The run
-        :type name: str
+        :param name: The run name or run object
+        :type name: Union[str, ~promptflow.sdk.entities.Run]
         :param max_results: The max number of runs to return, defaults to 100
         :type max_results: int
         :param all_results: Whether to return all results, defaults to False
         :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """

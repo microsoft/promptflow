@@ -30,6 +30,7 @@ from pandas import DataFrame
 
 from promptflow._sdk._constants import (
     LOGGER_NAME,
+    MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
@@ -200,7 +201,7 @@ class RunOperations(_ScopeDependentOperations):
         return self.get(run=run.name)
 
     def list(
-        self, max_results: int = CLOUD_RUNS_PAGE_SIZE, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
+        self, max_results: int = MAX_RUN_LIST_RESULTS, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
     ) -> List[Run]:
         """List runs in the workspace.
 
@@ -290,12 +291,13 @@ class RunOperations(_ScopeDependentOperations):
 
             If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
 
-        :param run: The run
-        :type run: str
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.sdk.entities.Run]
         :param max_results: The max number of runs to return, defaults to 100
         :type max_results: int
         :param all_results: Whether to return all results, defaults to False
         :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
         :return: The details data frame.
         :rtype: pandas.DataFrame
         """
