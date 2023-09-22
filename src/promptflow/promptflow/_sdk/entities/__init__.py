@@ -15,6 +15,7 @@ from ._connection import (
     QdrantConnection,
     WeaviateConnection,
     FormRecognizerConnection,
+    CustomStrongTypeConnection,
 )
 from ._run import Run
 from ._validation import ValidationResult
@@ -25,6 +26,7 @@ __all__ = [
     "AzureOpenAIConnection",
     "OpenAIConnection",
     "CustomConnection",
+    "CustomStrongTypeConnection",
     "CognitiveSearchConnection",
     "SerpConnection",
     "QdrantConnection",

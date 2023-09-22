@@ -105,3 +105,15 @@ def prepare_symbolic_flow() -> str:
             if not Path(file_name).exists():
                 os.symlink(source_folder / file_name, file_name)
     return target_folder
+
+
+@pytest.fixture
+def is_custom_tool_pkg_installed() -> bool:
+    try:
+        import my_tool_package  # noqa: F401
+
+        pkg_installed = True
+    except ImportError:
+        pkg_installed = False
+
+    return pkg_installed
