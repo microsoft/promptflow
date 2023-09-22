@@ -43,8 +43,8 @@ class LocalAzureConnectionOperations:
                 "workspaces/<workspace_name>"
             )
         subscription_id = match.group(1)
-        resource_group = match.group(2)
-        workspace_name = match.group(3)
+        resource_group = match.group(3)
+        workspace_name = match.group(4)
         return subscription_id, resource_group, workspace_name
 
     def list(
