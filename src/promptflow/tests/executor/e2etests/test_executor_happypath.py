@@ -272,7 +272,7 @@ class TestExecutor:
                 node_override={"classify_with_llm.connection": "dummy_connection"},
                 raise_ex=True,
             )
-        isinstance(e.value.inner_exception, ConnectionNotFound)
+        assert isinstance(e.value.inner_exception, ConnectionNotFound)
         assert "Connection 'dummy_connection' not found" in str(e.value)
 
     @pytest.mark.parametrize(

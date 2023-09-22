@@ -16,7 +16,7 @@ from promptflow.executor._errors import (
     ResolveToolError,
     ValueTypeUnresolved,
 )
-from promptflow.executor._tool_resolver import ToolResolver, ResolvedTool
+from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -106,9 +106,11 @@ class TestToolResolver:
 
         node.type = ToolType.CUSTOM_LLM
         node.source = mocker.Mock(type=None)
-        with pytest.raises(NotImplementedError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "Tool source type" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NotImplementedError)
+        assert "Tool source type" in exec_info.value.message
 
     def test_resolve_tool_by_node_with_no_source(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
@@ -123,8 +125,10 @@ class TestToolResolver:
         node.type = ToolType.PROMPT
         node.source = mocker.Mock(type=ToolSourceType.Package, path=None)
 
-        with pytest.raises(InvalidSource) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
+
+        assert isinstance(exec_info.value.inner_exception, InvalidSource)
         assert "Node source path" in exec_info.value.message
 
     def test_resolve_tool_by_node_with_duplicated_inputs(self, resolver, mocker):
@@ -132,9 +136,11 @@ class TestToolResolver:
         node.type = ToolType.PROMPT
         mocker.patch.object(resolver, "_load_source_content", return_value="{{template}}")
 
-        with pytest.raises(NodeInputValidationError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "These inputs are duplicated" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NodeInputValidationError)
+        assert "These inputs are duplicated" in exec_info.value.message
 
     def test_ensure_node_inputs_type(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
@@ -268,7 +274,7 @@ class TestToolResolver:
 
         mocker.patch(
             "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
-            return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection})
+            return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection}),
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
@@ -333,7 +339,7 @@ class TestToolResolver:
 
         mocker.patch(
             "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
-            return_value=(mock_package_func, {"conn": AzureOpenAIConnection})
+            return_value=(mock_package_func, {"conn": AzureOpenAIConnection}),
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
@@ -363,7 +369,11 @@ class TestToolResolver:
             return render_template_jinja2(prompt, **kwargs)
 
         tool_resolver = ToolResolver(working_dir=None, connections={})
-        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}",)
+        mocker.patch.object(
+            tool_resolver,
+            "_load_source_content",
+            return_value="{{text}}",
+        )
 
         tool = Tool(name="mock", type=ToolType.CUSTOM_LLM, inputs={"prompt": InputDefinition(type=["PromptTemplate"])})
         node = Node(

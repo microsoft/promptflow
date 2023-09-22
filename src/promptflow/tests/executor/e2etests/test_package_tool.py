@@ -132,8 +132,7 @@ class TestPackageTool:
             (
                 "tool_with_init_error",
                 "Tool load failed in 'tool_with_init_error': "
-                "(ToolLoadError) Load package tool failed, tool: 'Tool with init error', "
-                "module: 'tool_with_init_error', exception: Tool load error.",
+                "(ToolLoadError) Failed to load package tool 'Tool with init error': (Exception) Tool load error.",
             )
         ],
     )
