@@ -2,8 +2,7 @@ name: promptflow-sdk-pfs-e2e-test
 on:
   schedule:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
-  pull_request:
-    branches: [ main ]
+  pull_request_target:
     paths:
       - src/promptflow/**
       - scripts/**
