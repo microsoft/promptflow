@@ -1,15 +1,12 @@
-name: promptflow-global-config-test
+name: promptflow-sdk-pfs-e2e-test
 on:
-  push:
-    branches:
-      - brynn/support-config-connection-provider
   schedule:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request_target:
     paths:
       - src/promptflow/**
       - scripts/**
-      - '**promptflow-global-config-test.yml'
+      - '**promptflow-sdk-pfs-e2e-test.yml'
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
@@ -26,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: true
-  sdk_cli_global_config_tests:
+  sdk_pfs_e2e_test:
     needs: authorize
     strategy:
       fail-fast: false
@@ -36,8 +33,6 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
@@ -51,8 +46,8 @@ jobs:
         env | sort >> $GITHUB_OUTPUT
       id: display_env
       shell: bash -el {0}
-    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
-      uses: "./.github/actions/step_create_python_environment"
+    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+      uses: "./.github/actions/step_create_conda_environment"
       with:
         pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
@@ -79,12 +74,12 @@ jobs:
         az account show
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_global_config_test`
+          -t ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test `
           -l eastus `
-          -m "unittest or e2etest" `
+          -m "e2etest" `
           -n ${{ steps.cpu-cores.outputs.count }} `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
-    - name: Upload Test Results
+          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_pfs_test/.coveragerc
+    - name: Upload pytest test results
       if: always()
       uses: actions/upload-artifact@v3
       with:
@@ -94,23 +89,24 @@ jobs:
           ${{ env.testWorkingDirectory }}/htmlcov/
   publish-test-results:
     name: "Publish Tests Results"
-    needs: sdk_cli_global_config_tests
+    needs: sdk_pfs_e2e_test
     runs-on: ubuntu-latest
     permissions: write-all
     if: always()
 
     steps:
-    - name: checkout
-      uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha || github.ref }}
-    - name: Publish Test Results
-      uses: "./.github/actions/step_publish_test_results"
-      with:
-        testActionFileName: promptflow-sdk-cli-test.yml
-        testResultTitle: SDK CLI Test Result
-        osVersion: ubuntu-latest
-        pythonVersion: 3.9
-        coverageThreshold: 40
-        token: ${{ secrets.GITHUB_TOKEN }}
-        context: test/sdk_cli
+      - name: checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+      - name: Publish Test Results
+        uses: "./.github/actions/step_publish_test_results"
+        with:
+          testActionFileName: promptflow-sdk-pfs-e2e-test.yml
+          testResultTitle: SDK PFS E2E Test Result
+          osVersion: ubuntu-latest
+          pythonVersion: 3.9
+          coverageThreshold: 40
+          token: ${{ secrets.GITHUB_TOKEN }}
+          context: test/sdk_pfs_e2e_test
+  

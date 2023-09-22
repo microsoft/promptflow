@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Union
 import pandas as pd
 
 from ._configuration import Configuration
-from ._constants import LOGGER_NAME, ConnectionProvider
+from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
 from ._logger_factory import LoggerFactory
 from ._user_agent import USER_AGENT
 from ._utils import setup_user_agent_to_operation_context
@@ -134,15 +134,26 @@ class PFClient:
         """
         return self.runs.stream(run)
 
-    def get_details(self, run: Union[str, Run]) -> pd.DataFrame:
-        """Get run inputs and outputs.
+    def get_details(
+        self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
+    ) -> pd.DataFrame:
+        """Get the details from the run including inputs and outputs.
 
-        :param run: Run object or name of the run.
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
+
+        :param run: The run name or run object
         :type run: Union[str, ~promptflow.sdk.entities.Run]
-        :return: Run details.
-        :rtype: ~pandas.DataFrame
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
+        :return: The details data frame.
+        :rtype: pandas.DataFrame
         """
-        return self.runs.get_details(run)
+        return self.runs.get_details(name=run, max_results=max_results, all_results=all_results)
 
     def get_metrics(self, run: Union[str, Run]) -> Dict[str, Any]:
         """Get run metrics.

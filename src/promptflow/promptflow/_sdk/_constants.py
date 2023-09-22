@@ -288,5 +288,6 @@ class ConnectionProvider(str, Enum):
 
 SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
 
+LOCAL_SERVICE_PORT = 5000
 
 BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
