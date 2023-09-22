@@ -83,7 +83,6 @@ jobs:
           -l eastus `
           -m "unittest or e2etest" `
           -n ${{ steps.cpu-cores.outputs.count }} `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_global_config_test/.coveragerc
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3

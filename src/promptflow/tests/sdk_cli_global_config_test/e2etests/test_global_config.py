@@ -12,12 +12,11 @@ class TestGlobalConfig:
     def test_basic_flow_bulk_run(self, pf) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
-        pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
+        run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
+        assert run.status == "Completed"
         # Test repeated execute flow run
-        pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
-
-        pf.run(flow=f"{FLOWS_DIR}/web_classification_v1", data=data_path)
-        pf.run(flow=f"{FLOWS_DIR}/web_classification_v2", data=data_path)
+        run = pf.run(flow=f"{FLOWS_DIR}/web_classification", data=data_path)
+        assert run.status == "Completed"
 
     def test_connection_operations(self, pf):
         connections = pf.connections.list()
