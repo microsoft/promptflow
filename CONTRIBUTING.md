@@ -90,8 +90,8 @@ We use and recommend the following workflow:
    - Link the PR to the issue in step 1.
    - Verify that all the Continuous Integration checks are passing.
 8. Wait for feedback or approval of your changes from the code maintainers.
-   - If there is no response for a few days, you can create an issue to raise awareness.
-     Promptflow team will daily triage issues without assignee and add owner,
+   - If there is no response for a few days, you can create a new issue to raise awareness.
+     Promptflow team has triage process toward issues without assignee,
      then you can directly contact the issue owner to follow up (e.g. loop related internal reviewer).
 9. When area owners have signed off, and all checks are green, your PR will be merged.
 
