@@ -87,6 +87,7 @@ We use and recommend the following workflow:
 6. Run the relevant scripts in [the section below](https://github.com/microsoft/promptflow/blob/main/CONTRIBUTING.md#dev-scripts) to ensure that your build is clean and all tests are passing.
 7. Create a PR against the repository's **main** branch.
    - State in the description what issue or improvement your change is addressing.
+   - Link the PR to the issue in step 1.
    - Verify that all the Continuous Integration checks are passing.
 8. Wait for feedback or approval of your changes from the code maintainers.
    - If there is no response for a few days, you can create an issue to raise awareness; we will add issue assignee who will contact you and loop related internal reviewer to follow up.
