@@ -151,8 +151,10 @@ class LineExecutionProcessPool:
         # Start a new process if the current process is None and there are still tasks in the queue.
         # This is to avoid the situation that the process not started correctly.
         while process is None and not task_queue.empty():
-            logger.info(f"Process {idx} starting.")
+            logger.info(f"Process {idx} is creating...")
             process, input_queue, output_queue = self._new_process()
+            if process is not None:
+                break
             time.sleep(1)
 
         while True:
@@ -165,9 +167,10 @@ class LineExecutionProcessPool:
 
             input_queue.put(args)
             inputs, line_number, run_id = args[:3]
-            logger.info(f"Process {process.name}-{process.pid}-{line_number} started.")
+            logger.info(
+                f"Process name: {process.name}, Process id: {process.pid}, Linenumber: {line_number} start execution.")
 
-            self._processing_idx[line_number] = f"{process.name}::{process.pid}::{line_number}"
+            self._processing_idx[line_number] = f"Process name({process.name})-Process id({process.pid})"
 
             start_time = datetime.now()
             completed = False
