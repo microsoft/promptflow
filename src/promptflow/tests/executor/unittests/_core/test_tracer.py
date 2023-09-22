@@ -6,12 +6,13 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.trace import Trace, TraceType
 
 
+def generator():
+    for i in range(3):
+        yield i
+
+
 @pytest.mark.unittest
 class TestTracer:
-    def generator(self):
-        for i in range(3):
-            yield i
-
     def test_push_tool(self):
         # Define a mock tool function
         def mock_tool(a, b, c: AzureOpenAIConnection):
@@ -94,7 +95,7 @@ class TestTracer:
         assert trace1.children == [trace2]  # check if the first trace has the second trace as its child
 
         # test the pop method with generator output
-        tool_output = GeneratorProxy(self.generator())
+        tool_output = GeneratorProxy(generator())
         error1 = ValueError("something went wrong")
         output = Tracer.pop(output=tool_output, error=error1)
 
@@ -124,17 +125,10 @@ class TestTracer:
         # assert that the warning message is logged
         assert "Try to push trace but no active tracer in current context." in caplog.text
 
-    def test_to_serializable(self):
-        # create some sample objects to test
-        obj1 = {"name": "Alice", "age": 25}
-        obj2 = [1, 2, 3]
-        obj3 = GeneratorProxy(self.generator())
-        obj4 = 42
-
-        assert Tracer.to_serializable(obj1) == obj1
-        assert Tracer.to_serializable(obj2) == obj2
-        assert Tracer.to_serializable(obj3) == obj3
-        assert Tracer.to_serializable(obj4) == obj4
-
+    def test_unserializable_obj_to_serializable(self):
         # assert that the function returns a str object for unserializable objects
-        assert Tracer.to_serializable(self.generator) == str(self.generator)
+        assert Tracer.to_serializable(generator) == str(generator)
+
+    @pytest.mark.parametrize("obj", [({"name": "Alice", "age": 25}), ([1, 2, 3]), (GeneratorProxy(generator())), (42)])
+    def test_to_serializable(self, obj):
+        assert Tracer.to_serializable(obj) == obj
