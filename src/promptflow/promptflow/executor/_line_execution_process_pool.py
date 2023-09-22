@@ -1,5 +1,6 @@
 import contextvars
 import math
+import time
 import multiprocessing
 import os
 import queue
@@ -145,11 +146,14 @@ class LineExecutionProcessPool:
             process.kill()
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        process, input_queue, output_queue = self._new_process()
+        process = None
 
-        if process is None:
-            logger.info(f"Process {idx} failed to start, exit.")
-            return
+        # Start a new process if the current process is None and there are still tasks in the queue.
+        # This is to avoid the situation that the process not started correctly.
+        while process is None and not task_queue.empty():
+            logger.info(f"Process {idx} starting.")
+            process, input_queue, output_queue = self._new_process()
+            time.sleep(1)
 
         while True:
             try:
