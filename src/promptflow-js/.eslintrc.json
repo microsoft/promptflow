@@ -38,7 +38,8 @@
         "*.tsx"
       ],
       "extends": [
-        "plugin:@nx/typescript"
+        "plugin:@nx/typescript",
+        "plugin:prettier/recommended"
       ],
       "rules": {
         "@typescript-eslint/naming-convention": [
@@ -147,6 +148,13 @@
           {
             "ignoreCase": true,
             "ignoreDeclarationSort": true
+          }
+        ],
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          {
+            "argsIgnorePattern": "^_",
+            "varsIgnorePattern": "^_"
           }
         ]
       }
