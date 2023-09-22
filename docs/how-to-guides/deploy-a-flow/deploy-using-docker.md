@@ -46,7 +46,7 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy with docker.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+refer to [Setup connection for web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
 ## Build a flow as docker format app
 
