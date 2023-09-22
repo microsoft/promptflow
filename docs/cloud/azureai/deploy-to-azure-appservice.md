@@ -10,7 +10,7 @@ This example demos how to deploy [web-classification](https://github.com/microso
 Use the command below to build a flow as docker format app:
 
 ```bash
-pf flow build --source ../../flows/standard/web-classification --output build --format docker
+pf flow build --source ../../flows/standard/web-classification --output dist --format docker
 ```
 
 Note that all dependent connections must be created before building as docker.
@@ -27,14 +27,14 @@ The two scripts will do the following things:
 :::{tab-item} Bash
 Example command to use bash script:
 ```shell
-bash deploy.sh --path build -i <image_tag> --name my_app_23d8m -r <docker registery> -g <resource_group>
+bash deploy.sh --path dist -i <image_tag> --name my_app_23d8m -r <docker registry> -g <resource_group>
 ```
 See the full parameters by `bash deploy.sh -h`.
 :::
 :::{tab-item} PowerShell
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registery> -g <resource_group>
+.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
 ```
 See the full parameters by `.\deploy.ps1 -h`.
 :::

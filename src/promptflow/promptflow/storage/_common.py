@@ -14,7 +14,7 @@ def reconstruct_metrics_dict(metrics: dict) -> dict:
     }
 
     Output metrics example: {
-        "accurcacy": 0.9,
+        "accuracy": 0.9,
         "accuracy.variant0": 0.9,
         "accuracy.variant1": 0.9
     }

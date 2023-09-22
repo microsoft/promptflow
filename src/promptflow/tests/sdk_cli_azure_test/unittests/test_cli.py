@@ -67,6 +67,7 @@ class TestAzureCli:
             "test_run",
             "--max-results",
             "10",
+            "--all-results",
             *operation_scope_args,
         )
         mocked.assert_called_once()

@@ -23,6 +23,12 @@ repos:
       rev: v2.3.0
       hooks:
           - id: flake8
+    # Temporary disable this since it gets stuck when updating env
+#    - repo: https://github.com/streetsidesoftware/cspell-cli
+#      rev: v7.3.0
+#      hooks:
+#      - id: cspell
+#        args: ['--config', '.cspell.json', "--no-must-find-files"]
     - repo: https://github.com/hadialqattan/pycln
       rev: v2.1.2 # Possible releases: https://github.com/hadialqattan/pycln/tags
       hooks:

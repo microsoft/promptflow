@@ -4,6 +4,7 @@
 
 import importlib
 import importlib.util
+import inspect
 import logging
 import traceback
 from functools import partial
@@ -13,7 +14,7 @@ from typing import Callable, List, Mapping, Optional, Tuple, Union
 import pkg_resources
 import yaml
 
-from promptflow._core._errors import MissingRequiredInputs, PackageToolNotFoundError
+from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
     collect_tool_function_in_module,
@@ -21,9 +22,13 @@ from promptflow._core.tool_meta_generator import (
     generate_python_tool,
     load_python_module_from_file,
 )
+from promptflow._utils.connection_utils import (
+    generate_custom_strong_type_connection_spec,
+    generate_custom_strong_type_connection_template,
+)
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import Tool, ToolType
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 module_logger = logging.getLogger(__name__)
@@ -67,21 +72,78 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
     return all_package_tools
 
 
+def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
+    """Collect all tools and custom strong type connections from all installed packages."""
+    all_package_tools = {}
+    all_package_connection_specs = {}
+    all_package_connection_templates = {}
+    if keys is not None:
+        keys = set(keys)
+    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+        try:
+            list_tool_func = entry_point.resolve()
+            package_tools = list_tool_func()
+            for identifier, tool in package_tools.items():
+                #  Only load required tools to avoid unnecessary loading when keys is provided
+                if isinstance(keys, set) and identifier not in keys:
+                    continue
+                m = tool["module"]
+                module = importlib.import_module(m)  # Import the module to make sure it is valid
+                tool["package"] = entry_point.dist.project_name
+                tool["package_version"] = entry_point.dist.version
+                all_package_tools[identifier] = tool
+
+                # Get custom strong type connection definition
+                custom_strong_type_connections_classes = [
+                    obj
+                    for name, obj in inspect.getmembers(module)
+                    if inspect.isclass(obj) and ConnectionType.is_custom_strong_type(obj)
+                ]
+
+                if custom_strong_type_connections_classes:
+                    for cls in custom_strong_type_connections_classes:
+                        identifier = f"{cls.__module__}.{cls.__name__}"
+                        connection_spec = generate_custom_strong_type_connection_spec(
+                            cls, entry_point.dist.project_name, entry_point.dist.version
+                        )
+                        all_package_connection_specs[identifier] = connection_spec
+                        all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
+                            cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
+                        )
+        except Exception as e:
+            msg = (
+                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                + f" traceback: {traceback.format_exc()}"
+            )
+            module_logger.warning(msg)
+
+    return all_package_tools, all_package_connection_specs, all_package_connection_templates
+
+
 def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:
     if source.type == ToolSourceType.Package:
         package_tools = collect_package_tools()
         if source.tool in package_tools:
             return Tool.deserialize(package_tools[source.tool])
         raise PackageToolNotFoundError(
-            f"Package tool '{source.tool}' is not found in the current environment. "
-            f"All available package tools are: {list(package_tools.keys())}.",
+            message_format=(
+                "Package tool '{tool_key}' is not found in the current environment. "
+                "Available package tools include: '{available_tools}'. "
+                "Please ensure that the required tool package is installed in current environment."
+            ),
+            tool_key=source.tool,
+            available_tools=",".join(package_tools.keys()),
             target=ErrorTarget.EXECUTOR,
         )
     else:
         if not source.path:
             raise NodeSourcePathEmpty(
                 target=ErrorTarget.EXECUTOR,
-                message_format="The source path of node {node_name} is not defined. Please check your flow.",
+                message_format=(
+                    "Invalid node definitions found in the flow graph. The node '{node_name}' is missing its "
+                    "source path. Please kindly add the source path for the node '{node_name}' in the YAML file "
+                    "and try the operation again."
+                ),
                 node_name=name,
             )
         with open(working_dir / source.path) as fin:
@@ -94,7 +156,15 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
         elif tool_type == ToolType.LLM:
             return generate_prompt_tool(name, content)
         else:
-            raise NotImplementedError(f"Tool type {tool_type} is not supported yet.")
+            raise NotSupported(
+                message_format=(
+                    "The tool type {tool_type} is currently not supported for generating tools using source code. "
+                    "Please choose from the available types: {supported_types}. "
+                    "If you need further assistance, kindly contact support."
+                ),
+                tool_type=tool_type,
+                supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
+            )
 
 
 class BuiltinsManager:
@@ -229,6 +299,7 @@ class ToolsManager:
         if tool not in self._tools:
             raise ValueError(f"Tool {tool} is not loaded")
 
+    # TODO: Remove this method. The code path will not be used in code-first experience.
     # Customers are familiar with the term "node", so we use it in error message.
     @staticmethod
     def _load_custom_tool(tool: Tool, node_name: str) -> Callable:
@@ -256,6 +327,7 @@ class ToolLoader:
         self._working_dir = working_dir
         self._package_tools = collect_package_tools(package_tool_keys) if package_tool_keys else {}
 
+    # TODO: Replace NotImplementedError with NotSupported in the future.
     def load_tool_for_node(self, node: Node) -> Tool:
         if node.source is None:
             raise UserErrorException(f"Node {node.name} does not have source defined.")
@@ -269,9 +341,7 @@ class ToolLoader:
         elif node.type == ToolType.CUSTOM_LLM:
             if node.source.type == ToolSourceType.PackageWithPrompt:
                 return self.load_tool_for_package_node(node)
-            raise NotImplementedError(
-                f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
-            )
+            raise NotImplementedError(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
         else:
             raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
 

@@ -180,18 +180,39 @@ class TestFlowRun:
             "start_time": "2023-08-08T07:32:56.637761+00:00",
             "end_time": "2023-08-08T07:33:07.853922+00:00",
             "duration": "00:00:11.2161606",
-            "portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/classification_accuracy_eval_default_20230808_153241_422491/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus&flight=promptfilestorage,PFSourceRun=false",  # noqa: E501
+            "portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/classification_accuracy_eval_default_20230808_153241_422491/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
             "data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl",  # noqa: E501
             "data_portal_url": "https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab",  # noqa: E501
             "output": "azureml://locations/eastus/workspaces/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/versions/1",  # noqa: E501
             "output_portal_url": "https://ml.azure.com/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/1/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
             "run": "web_classification_default_20230804_143634_056856",
-            "input_run_portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus&flight=promptfilestorage,PFSourceRun=false",  # noqa: E501
+            "input_run_portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
         }
 
     def test_show_run_details(self, remote_client):
-        details = remote_client.runs.get_details(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # get first 20 results
+        details = remote_client.get_details(run=run, max_results=20)
+
+        assert details.shape[0] == 20
+
+        # get first 1000 results while it only has 40
+        details = remote_client.get_details(run=run, max_results=1000)
+        assert details.shape[0] == 40
+
+        # get all results
+        details = remote_client.get_details(
+            run=run,
+            all_results=True,
+        )
+        assert details.shape[0] == 40
+
+        # get all results even if max_results is set to 10
+        details = remote_client.get_details(
+            run=run,
+            max_results=10,
+            all_results=True,
         )
         assert details.shape[0] == 40
 

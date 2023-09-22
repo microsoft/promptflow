@@ -78,7 +78,7 @@ class AutoGPT:
             except Exception as e:
                 if "The API deployment for this resource does not exist" in str(e):
                     raise Exception(
-                        "Please fill in the deployment name of your Azure OpenAI resoure gpt-4 model.")
+                        "Please fill in the deployment name of your Azure OpenAI resource gpt-4 model.")
 
         elif isinstance(self.connection, OpenAIConnection):
             response = openai_chat(

@@ -255,6 +255,16 @@ def add_parser_build(parent_parser, entity_name: str):
     parser.set_defaults(sub_action="build")
 
 
+def add_param_all_results(parser):
+    parser.add_argument(
+        "--all-results",
+        action="store_true",
+        dest="all_results",
+        default=False,
+        help="Returns all results if specified.",
+    )
+
+
 def add_param_debug(parser):
     parser.add_argument(
         "-d",

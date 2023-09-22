@@ -18,8 +18,7 @@ class FlowJobType:
 DEFAULT_STORAGE = "workspaceworkingdirectory"
 PROMPTFLOW_FILE_SHARE_DIR = "Promptflows"
 
-CHILD_RUNS_PAGE_SIZE = 25  # align with UX
-NODE_RUNS_PAGE_SIZE = 25
+CLOUD_RUNS_PAGE_SIZE = 25  # align with UX
 
 SESSION_CREATION_TIMEOUT_SECONDS = 10 * 60  # 10 minutes
 PYTHON_REQUIREMENTS_TXT = "python_requirements_txt"

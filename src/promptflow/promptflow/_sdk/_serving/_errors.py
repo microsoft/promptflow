@@ -16,6 +16,23 @@ class MissingRequiredFlowInput(BadRequest):
     pass
 
 
+class FlowConnectionError(UserErrorException):
+    pass
+
+
+class UnsupportedConnectionProvider(FlowConnectionError):
+    def __init__(self, provider):
+        super().__init__(
+            message_format="Unsupported connection provider {provider}, " "supported are 'local' and typing.Callable.",
+            provider=provider,
+            target=ErrorTarget.FLOW_INVOKER,
+        )
+
+
+class UnexpectedConnectionProviderReturn(FlowConnectionError):
+    pass
+
+
 class MultipleStreamOutputFieldsNotSupported(UserErrorException):
     def __init__(self):
         super().__init__(
