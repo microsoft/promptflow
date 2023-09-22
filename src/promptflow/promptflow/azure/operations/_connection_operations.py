@@ -13,6 +13,7 @@ from azure.ai.ml._scope_dependent_operations import (
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.azure._entities._workspace_connection_spec import WorkspaceConnectionSpec
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -82,13 +83,11 @@ class ConnectionOperations(_ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             **kwargs,
         )
-        results = []
-        for conn in rest_connections:
-            try:
-                results.append(_Connection._from_mt_rest_object(conn))
-            except Exception as e:
-                logger.warning(f"Failed to parse connection {conn.connection_name}: {e}")
-        return results
+        return safe_parse_object_list(
+            obj_list=rest_connections,
+            parser=_Connection._from_mt_rest_object,
+            message_generator=lambda x: f"Failed to load connection {x.connection_name}, skipped.",
+        )
 
     def list_connection_specs(self, **kwargs):
         results = self._service_caller.list_connection_specs(
