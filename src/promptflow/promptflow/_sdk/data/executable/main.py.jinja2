@@ -42,7 +42,7 @@ def start():
 
 
     st.title("{{flow_name}} APP")
-    st.chat_message("assistant").write("Hello, please input following flow inputs.")
+    st.chat_message("assistant").write("Hello, please input following flow inputs and connection keys.")
     container = st.container()
     with container:
         show_conversation()
@@ -52,7 +52,7 @@ def start():
             json_data = json.load(file)
         environment_variables = list(json_data.keys())
         for environment_variable in environment_variables:
-            secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here, if you input before, you can leave it blank.")
+            secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
             if secret_input != "":
                 os.environ[environment_variable] = secret_input
 

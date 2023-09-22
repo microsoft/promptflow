@@ -402,7 +402,7 @@ class FlowOperations:
         try:
             current_directory = os.getcwd()
             os.chdir(output_dir.as_posix())
-            subprocess.run(["pyinstaller", "app.spec"], shell=True, check=True)
+            subprocess.run(["pyinstaller", "app.spec"], check=True)
             print("PyInstaller command executed successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Error running PyInstaller: {e}")
