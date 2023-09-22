@@ -10,9 +10,11 @@ from typing import Callable, Dict, List, Optional, Tuple
 import pandas as pd
 
 from promptflow._cli._params import (
+    add_param_all_results,
     add_param_columns_mapping,
     add_param_connections,
     add_param_environment_variables,
+    add_param_max_results,
     add_param_run_name,
     add_param_set,
     add_parser_build,
@@ -25,13 +27,7 @@ from promptflow._cli._utils import (
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
 )
-from promptflow._sdk._constants import (
-    LOGGER_NAME,
-    MAX_LIST_CLI_RESULTS,
-    MAX_SHOW_DETAILS_RESULTS,
-    CLIListOutputFormat,
-    get_list_view_type,
-)
+from promptflow._sdk._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, CLIListOutputFormat, get_list_view_type
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
@@ -208,21 +204,6 @@ pf run list --all-results
 # List all runs status as table:
 pf run list --output table
 """
-    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
-        "-r",
-        "--max-results",
-        dest="max_results",
-        type=int,
-        default=MAX_LIST_CLI_RESULTS,
-        help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
-    )
-    add_param_all_results = lambda parser: parser.add_argument(  # noqa: E731
-        "--all-results",
-        action="store_true",
-        dest="all_results",
-        default=False,
-        help="Returns all results",
-    )
     add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
         "--archived-only",
         action="store_true",

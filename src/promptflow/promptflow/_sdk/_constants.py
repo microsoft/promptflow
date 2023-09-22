@@ -46,6 +46,10 @@ WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "/providers/Microsoft.MachineLearningServices/workspaces/([^/]+)$"
+)
 
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
@@ -258,6 +262,11 @@ class RunDataKeys:
     INPUT_RUN_PORTAL_URL = "input_run_portal_url"
     OUTPUT = "output"
     OUTPUT_PORTAL_URL = "output_portal_url"
+
+
+class ConnectionProvider(str, Enum):
+    LOCAL = "local"
+    AZURE = "azure"
 
 
 SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}

@@ -3,12 +3,14 @@
 # ---------------------------------------------------------
 import abc
 import json
+import logging
 from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    LOGGER_NAME,
     PARAMS_OVERRIDE_KEY,
     SCRUBBED_VALUE,
     SCRUBBED_VALUE_NO_CHANGE,
@@ -40,7 +42,7 @@ from promptflow._sdk.schemas._connection import (
     WeaviateConnectionSchema,
 )
 
-logger = LoggerFactory.get_logger(name=__name__)
+logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
 class _Connection(YAMLTranslatableMixin):
@@ -296,12 +298,16 @@ class _StrongTypeConnection(_Connection):
     @classmethod
     def _from_mt_rest_object(cls, mt_rest_obj):
         type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        configs = mt_rest_obj.configs or {}
+        # For not ARM strong type connection, e.g. OpenAI, api_key will not be returned, but is required argument.
+        # For ARM strong type connection, api_key will be None and missing when conn._to_dict(), so set a scrubbed one.
+        configs.update({"api_key": SCRUBBED_VALUE})
         obj = type_cls(
             name=mt_rest_obj.connection_name,
             expiry_time=mt_rest_obj.expiry_time,
             created_date=mt_rest_obj.created_date,
             last_modified_date=mt_rest_obj.last_modified_date,
-            **mt_rest_obj.configs,
+            **configs,
         )
         return obj
 
