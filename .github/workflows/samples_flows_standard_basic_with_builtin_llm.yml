@@ -77,7 +77,7 @@ jobs:
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
+          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
