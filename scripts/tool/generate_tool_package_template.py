@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 from jinja2 import Environment, FileSystemLoader
+from pathlib import Path
 
 
 def make_pythonic_variable_name(input_string):
@@ -32,7 +33,8 @@ def create_tool_project_structure(destination: str, package_name: str, tool_name
         class_name = convert_tool_name_to_class_name(tool_name)
 
     # Load templates
-    file_loader = FileSystemLoader('scripts\\tool\\templates')
+    templates_abs_path = Path("scripts/tool/templates").resolve()
+    file_loader = FileSystemLoader(templates_abs_path)
     env = Environment(loader=file_loader)
 
     # Create new directory
