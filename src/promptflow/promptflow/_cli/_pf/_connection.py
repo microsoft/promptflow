@@ -32,7 +32,7 @@ def add_connection_parser(subparsers):
         "connection",
         description="""A CLI tool to manage connections for promptflow.
 
-        Your secrets will be encrypted using AES-128-CBC(https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) technology.""",  # noqa: E501
+        Your secrets will be encrypted using AES(Advanced Encryption Standard) technology.""",  # noqa: E501
         help="pf connection",
     )
     subparsers = connection_parser.add_subparsers()

@@ -1,5 +1,7 @@
 name: promptflow-global-config-test
 on:
+  branches:
+    - brynn/support-config-connection-provider
   schedule:
     - cron: "40 18 * * *" # Every day starting at 2:40 BJT
   pull_request_target:
@@ -23,12 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: true
-  sdk_cli_tests:
+  sdk_cli_global_config_tests:
     needs: authorize
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout

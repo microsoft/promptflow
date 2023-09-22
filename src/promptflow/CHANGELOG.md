@@ -5,6 +5,8 @@
 ### Features Added
 
 - **pf flow validate**: support validate flow
+- **pf config set**: support set user-level promptflow config.
+  - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
