@@ -35,24 +35,24 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
 
 
 def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
-    connection_template_str = """  
-    name: <connection-name>  
-    type: custom  
-    custom_type: {{ custom_type }}  
-    module: {{ module }}  
-    package: {{ package }}  
-    package_version: {{ package_version }}  
-    configs:  
-      {{ configs_comments }}{% for key, value in configs.items() %}  
-      {{ key }}: "{{ value -}}"{% endfor %}  
+    connection_template_str = """
+    name: <connection-name>
+    type: custom
+    custom_type: {{ custom_type }}
+    module: {{ module }}
+    package: {{ package }}
+    package_version: {{ package_version }}
+    configs:
+      {{ configs_comments }}{% for key, value in configs.items() %}
+      {{ key }}: "{{ value -}}"{% endfor %}
     secrets:  # must-have
-      {{ secrets_comments }}{% for key, value in secrets.items() %}  
-      {{ key }}: "{{ value -}}"{% endfor %}  
+      {{ secrets_comments }}{% for key, value in secrets.items() %}
+      {{ key }}: "{{ value -}}"{% endfor %}
     """
 
     connection_template = Template(connection_template_str)
 
-    # Extract configs and secrets 
+    # Extract configs and secrets
     configs = {}
     secrets = {}
     for spec in connection_spec["configSpecs"]:
@@ -67,7 +67,7 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
         secrets_comments = extract_comments(secrets.keys(), cls.__doc__)
         configs_comments = extract_comments(configs.keys(), cls.__doc__)
 
-    # Prepare data for template  
+    # Prepare data for template
     data = {
         "custom_type": cls.__name__,
         "module": cls.__module__,
