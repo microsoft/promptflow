@@ -89,7 +89,7 @@ We use and recommend the following workflow:
    - State in the description what issue or improvement your change is addressing.
    - Verify that all the Continuous Integration checks are passing.
 8. Wait for feedback or approval of your changes from the code maintainers.
-   - If there is no response for a few days, you can create an issue to raise awareness; we will add issue assignee(s) who will contact you and loop related internal reviewer to follow up.
+   - If there is no response for a few days, you can create an issue to raise awareness; we will add issue assignee who will contact you and loop related internal reviewer to follow up.
 9. When area owners have signed off, and all checks are green, your PR will be merged.
 
 ### Development scripts
