@@ -29,10 +29,11 @@ def set_environment_variable(file_path) -> None:
 
 
 if __name__ == "__main__":
-    create_connections("connections")
-    set_environment_variable("settings.json")
+    create_connections(os.path.join(os.path.dirname(__file__), "connections"))
+    set_environment_variable(os.path.join(os.path.dirname(__file__), "settings.json"))
     if exists():
         start()
     else:
-        sys.argv = ["streamlit", "run", "main.py", "--global.developmentMode=false"]
-        st_cli.main(prog_name="streamlit")
+        main_script = os.path.join(os.path.dirname(__file__), "main.py")
+        sys.argv = ["streamlit", "run", main_script, "--global.developmentMode=false"]
+        stcli.main(prog_name="streamlit")
