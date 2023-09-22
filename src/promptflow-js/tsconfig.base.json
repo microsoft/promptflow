@@ -15,6 +15,7 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
+      "@promptflowjs/connections": ["packages/connections/src/index.ts"],
       "connections": ["connections/src/index.ts"]
     }
   },
