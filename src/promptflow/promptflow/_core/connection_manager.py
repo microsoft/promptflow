@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, PROMPTFLOW_CONNECTIONS
+from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
@@ -55,6 +56,8 @@ class ConnectionManager:
                 secrets = {k: v for k, v in value.items() if k in secret_keys}
                 configs = {k: v for k, v in value.items() if k not in secrets}
                 connection_value = connection_class(configs=configs, secrets=secrets)
+                if CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in configs:
+                    connection_value.custom_type = configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
             else:
                 """
                 Note: Ignore non exists keys of connection class,
