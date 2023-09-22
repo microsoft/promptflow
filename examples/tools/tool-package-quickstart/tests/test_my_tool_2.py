@@ -1,13 +1,13 @@
 import pytest
 import unittest
 
-from my_tool_package.connections import MySecondConnection
+from my_tool_package.connections import MyFirstConnection
 from my_tool_package.tools.my_tool_2 import MyTool
 
 
 @pytest.fixture
-def my_custom_connection() -> MySecondConnection:
-    my_custom_connection = MySecondConnection(api_key="my_api_key")
+def my_custom_connection() -> MyFirstConnection:
+    my_custom_connection = MyFirstConnection(api_key="my_api_key")
     return my_custom_connection
 
 

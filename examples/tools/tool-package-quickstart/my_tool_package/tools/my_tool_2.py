@@ -1,5 +1,5 @@
 from promptflow import ToolProvider, tool
-from my_tool_package.connections import MySecondConnection
+from my_tool_package.connections import MyFirstConnection
 
 
 class MyTool(ToolProvider):
@@ -7,7 +7,7 @@ class MyTool(ToolProvider):
     Doc reference :
     """
 
-    def __init__(self, connection: MySecondConnection):
+    def __init__(self, connection: MyFirstConnection):
         super().__init__()
         self.connection = connection
 
