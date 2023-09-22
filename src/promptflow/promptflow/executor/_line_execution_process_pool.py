@@ -92,12 +92,12 @@ class LineExecutionProcessPool:
         # Starting a new process in non-fork mode requires to allocate memory. Determine the maximum number of processes
         # based on available memory to avoid memory bursting.
         if not self._use_fork:
-            logger.info("Not using fork, determine the maximum number of processes based on available memory.")
             available_max_worker_count = get_available_max_worker_count()
             self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
+            logger.info(f"Not using fork, process count: {self._n_process}")
         else:
-            logger.info("Using fork, determine the maximum number of processes based on worker_count and nlines.")
             self._n_process = min(self._worker_count, self._nlines)
+            logger.info(f"Using fork, process count: {self._n_process}")
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
@@ -135,7 +135,7 @@ class LineExecutionProcessPool:
             ready_msg = output_queue.get(timeout=30)
             assert ready_msg == "ready"
         except queue.Empty:
-            logger.info(f"Sub process {process.pid} did not send ready message, exit.")
+            logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end_process(process)
             return None, None, None
 
@@ -333,7 +333,7 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    logger.info(f"Subprocess {os.getpid()} started.")
+    logger.info(f"Process {os.getpid()} started.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():
