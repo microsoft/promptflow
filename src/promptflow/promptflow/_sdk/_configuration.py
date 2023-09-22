@@ -82,7 +82,6 @@ class Configuration(object):
         from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 
         path = Path(".") if path is None else Path(path)
-
         if path.is_file():
             found_path = path
         else:

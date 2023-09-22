@@ -29,7 +29,11 @@ def add_param_name(parser, required=False):
 
 def add_connection_parser(subparsers):
     connection_parser = subparsers.add_parser(
-        "connection", description="A CLI tool to manage connections for promptflow.", help="pf connection"
+        "connection",
+        description="""A CLI tool to manage connections for promptflow.
+
+        Your secrets will be encrypted using AES-128-CBC(https://en.wikipedia.org/wiki/Advanced_Encryption_Standard) technology.""",  # noqa: E501
+        help="pf connection",
     )
     subparsers = connection_parser.add_subparsers()
     add_connection_create(subparsers)
