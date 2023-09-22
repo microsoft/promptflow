@@ -202,10 +202,14 @@ class ExceptionPresenter:
     def error_codes(self):
         """The hierarchy of the error codes.
 
+        We follow the "Microsoft REST API Guidelines" to define error codes in a hierarchy style.
+        See the below link for details:
+        https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
+
         For general exceptions, the hierarchy should be:
         ["SystemError", {exception type name}]
         """
-        error_codes: list[str] = [infer_error_code_from_class(SystemErrorException), self._ex.__class__.__name__]
+        error_codes = [infer_error_code_from_class(SystemErrorException), self._ex.__class__.__name__]
         return error_codes
 
     @property
@@ -258,11 +262,8 @@ class ExceptionPresenter:
 
         # Otherwise, return general dict representation of the exception.
         result = {"message": str(self._ex), "messageFormat": "", "messageParameters": {}}
-        if self.error_code_recursed:
-            result.update(self.error_code_recursed)
-        else:
-            result["code"] = infer_error_code_from_class(SystemErrorException)
-            result["innerError"] = None
+        result.update(self.error_code_recursed)
+
         if include_debug_info:
             result["debugInfo"] = self.debug_info
 
@@ -273,6 +274,10 @@ class PromptflowExceptionPresenter(ExceptionPresenter):
     @property
     def error_codes(self):
         """The hierarchy of the error codes.
+
+        We follow the "Microsoft REST API Guidelines" to define error codes in a hierarchy style.
+        See the below link for details:
+        https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
 
         For subclass of PromptflowException, use the ex.error_codes directly.
 
@@ -285,7 +290,7 @@ class PromptflowExceptionPresenter(ExceptionPresenter):
 
         # For PromptflowException (not a subclass), the ex.error_code is None.
         # Handle this case specifically.
-        error_codes: list[str] = [infer_error_code_from_class(SystemErrorException)]
+        error_codes = [infer_error_code_from_class(SystemErrorException)]
         if self._ex.inner_exception:
             error_codes.append(infer_error_code_from_class(self._ex.inner_exception.__class__))
         return error_codes
@@ -298,11 +303,7 @@ class PromptflowExceptionPresenter(ExceptionPresenter):
             "referenceCode": self._ex.reference_code,
         }
 
-        if self.error_code_recursed:
-            result.update(self.error_code_recursed)
-        else:
-            result["code"] = infer_error_code_from_class(SystemErrorException)
-            result["innerError"] = None
+        result.update(self.error_code_recursed)
         if self._ex.additional_info:
             result["additionalInfo"] = [{"type": k, "info": v} for k, v in self._ex.additional_info.items()]
         if include_debug_info:

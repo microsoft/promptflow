@@ -47,7 +47,7 @@ def test_resolve_tool_error_with_none_inner():
     assert exception.inner_exception is None
     assert exception.message == "Tool load failed in 'MyTool'."
     assert exception.additional_info is None
-    assert exception.error_codes == ["SystemError"]
+    assert exception.error_codes == ["SystemError", "ResolveToolError"]
     assert exception.reference_code == "Executor"
 
 

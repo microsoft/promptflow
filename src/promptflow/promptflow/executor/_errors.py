@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-from promptflow._utils.exception_utils import ExceptionPresenter, RootErrorCode
+from promptflow._utils.exception_utils import ExceptionPresenter, infer_error_code_from_class
 from promptflow.exceptions import (
     ErrorTarget,
     PromptflowException,
@@ -190,7 +190,12 @@ class LineExecutionTimeoutError(UserErrorException):
 
 
 class ResolveToolError(PromptflowException):
-    """Exception raised when tool load failed."""
+    """Exception raised when tool load failed.
+
+    It is used to append the name of the node in question to the error message to improve the user experience.
+    ResolveToolError has no classification of its own.
+    So we need to rely on inner_error to redefine its additional_info and error_codes.
+    """
 
     def __init__(self, *, node_name: str, target: ErrorTarget = ErrorTarget.EXECUTOR, module: str = None):
         self._node_name = node_name
@@ -223,6 +228,15 @@ class ResolveToolError(PromptflowException):
 
     @property
     def error_codes(self):
+        """The hierarchy of the error codes.
+
+        We follow the "Microsoft REST API Guidelines" to define error codes in a hierarchy style.
+        See the below link for details:
+        https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
+
+        Due to ResolveToolError has no classification of its own.
+        Its error_codes respect the inner_error.
+        """
         if self.inner_exception:
             return ExceptionPresenter.create(self.inner_exception).error_codes
-        return [RootErrorCode.SYSTEM_ERROR]
+        return [infer_error_code_from_class(SystemErrorException), self.__class__.__name__]
