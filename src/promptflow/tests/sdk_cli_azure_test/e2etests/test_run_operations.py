@@ -193,9 +193,9 @@ class TestFlowRun:
         run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
 
         # get first 20 results
-        # details = remote_client.get_details(run=run, max_results=20)
-        #
-        # assert details.shape[0] == 20
+        details = remote_client.get_details(run=run, max_results=20)
+
+        assert details.shape[0] == 20
 
         # get first 1000 results while it only has 40
         details = remote_client.get_details(run=run, max_results=1000)
