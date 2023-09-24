@@ -21,14 +21,14 @@ def pfbytes_encoder(obj):
     if isinstance(obj, PFBytes):
         file_name = f"{id(obj)}.{obj.mime_type.split('/')[-1]}"  # A simple unique file name based on object id
         obj.save_to_file(file_name)
-        return {"fileType": obj.mime_type, "path": file_name}
+        return {"pf_mime_type": obj.mime_type, "path": file_name}
     raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
 
 
 def pfbytes_decoder(dct):
     """Loads PFBytes from a file."""
-    if "fileType" in dct and "path" in dct:
-        return PFBytes.load_from_file(dct["fileType"], dct["path"])
+    if "pf_mime_type" in dct and "path" in dct:
+        return PFBytes.load_from_file(dct["pf_mime_type"], dct["path"])
     return dct
 
 
