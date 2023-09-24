@@ -142,11 +142,13 @@ class LineExecutionProcessPool:
         return process, input_queue, output_queue
 
     def end_process(self, process):
+        if process is None:
+            return
         if process.is_alive():
             process.kill()
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        process = None
+        process, input_queue, output_queue = None, None, None
 
         # Start a new process if the current process is None and there are still tasks in the queue.
         # This is to avoid the situation that the process not started correctly.
