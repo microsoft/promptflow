@@ -156,7 +156,8 @@ class LineExecutionProcessPool:
                and not task_queue.empty()):
             logger.info(f"Process {idx} is creating...")
             process, input_queue, output_queue = self._new_process()
-            if process is not None:
+            if (process is not None and input_queue is not None
+                    and output_queue is not None):
                 break
             time.sleep(1)
 
