@@ -17,7 +17,7 @@ class PFBytes:
             return cls(mime_type, file.read())
 
 
-def pfbytes_encoder(obj):
+def pfbytes_file_reference_encoder(obj):
     """Dumps PFBytes to a file and returns its reference."""
     if isinstance(obj, PFBytes):
         file_name = f"{id(obj)}.{obj.mime_type.split('/')[-1]}"  # A simple unique file name based on object id
@@ -26,7 +26,7 @@ def pfbytes_encoder(obj):
     raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
 
 
-def pfbytes_decoder(dct):
+def pfbytes_file_reference_decoder(dct):
     """Loads PFBytes from a file."""
     if "pf_mime_type" in dct and "path" in dct:
         return PFBytes.load_from_file(dct["pf_mime_type"], dct["path"])
@@ -56,11 +56,11 @@ data = {
 
 # Test file-based encode/decode
 # Dump data to JSON string
-json_str = json.dumps(data, default=pfbytes_encoder)
+json_str = json.dumps(data, default=pfbytes_file_reference_encoder)
 print(json_str)
 
 # Load data back from JSON string
-loaded_data = json.loads(json_str, object_hook=pfbytes_decoder)
+loaded_data = json.loads(json_str, object_hook=pfbytes_file_reference_decoder)
 print(loaded_data)
 print(isinstance(loaded_data["myImage"], PFBytes))  # This should print True
 print(loaded_data["myImage"].bytes)  # Should print the mock binary data
