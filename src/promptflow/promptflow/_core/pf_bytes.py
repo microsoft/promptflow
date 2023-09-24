@@ -16,6 +16,13 @@ class PFBytes:
         with open(file_path, 'rb') as file:
             return cls(mime_type, file.read())
 
+    def save_to_base64(self):
+        return base64.b64encode(self.bytes).decode('utf-8')
+
+    @classmethod
+    def load_from_base64(cls, mime_type, base64_str):
+        return cls(mime_type, base64.b64decode(base64_str))
+
 
 def pfbytes_file_reference_encoder(obj):
     """Dumps PFBytes to a file and returns its reference."""
@@ -36,7 +43,7 @@ def pfbytes_file_reference_decoder(dct):
 def pfbytes_base64_encoder(obj):
     """Encodes PFBytes to base64."""
     if isinstance(obj, PFBytes):
-        encoded_bytes = base64.b64encode(obj.bytes).decode('utf-8')
+        encoded_bytes = obj.save_to_base64()
         return {"pf_mime_type": obj.mime_type, "base64": encoded_bytes}
     raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
 
@@ -44,7 +51,7 @@ def pfbytes_base64_encoder(obj):
 def pfbytes_base64_decoder(dct):
     """Decodes PFBytes from a base64 string."""
     if "pf_mime_type" in dct and "base64" in dct:
-        decoded_bytes = base64.b64decode(dct["base64"])
+        decoded_bytes = PFBytes.load_from_base64(dct["pf_mime_type"], dct["base64"])
         return PFBytes(dct["pf_mime_type"], decoded_bytes)
     return dct
 
