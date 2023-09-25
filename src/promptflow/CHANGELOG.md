@@ -4,11 +4,19 @@
 
 ### Features Added
 
+- **pf flow validate**: support validate flow
+
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+- Reserve `.promptflow` folder when dump run snapshot.
+- Read/write log file with encoding specified.
+- Avoid inconsistent error message when executor exits abnormally.
 
-### Other Changes
+### Improvements
 - [Executor][Internal] Improve error message with more details and actionable information.
+- [SDK/CLI] `pf/pfazure run show-details`:
+  - Add `--max-results` option to control the number of results to display.
+  - Add `--all-results` option to display all results.
 
 ## 0.1.0b6 (2023.09.15)
 
