@@ -4,7 +4,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 
-from ..utils import get_yaml_file
+from ..utils import get_flow_sample_inputs, get_yaml_file
 
 
 @pytest.mark.usefixtures("dev_connections")
@@ -42,14 +42,18 @@ class TestExecutorTraces:
 
         return get_trace
 
-    def test_executor_openai_api_flow(self, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file("openai_api_flow"), dev_connections)
-        inputs = {"question": "What's your name?", "chat_history": []}
+    @pytest.mark.parametrize("flow_folder", ["openai_chat_api_flow", "openai_completion_api_flow"])
+    def test_executor_openai_api_flow(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        inputs = get_flow_sample_inputs(flow_folder)
         flow_result = executor.exec_line(inputs)
 
         assert isinstance(flow_result.output, dict)
         assert flow_result.run_info.status == Status.Completed
         assert flow_result.run_info.api_calls is not None
+
+        assert "total_tokens" in flow_result.run_info.system_metrics
+        assert flow_result.run_info.system_metrics["total_tokens"] > 0
 
         get_traced = False
         for api_call in flow_result.run_info.api_calls:
