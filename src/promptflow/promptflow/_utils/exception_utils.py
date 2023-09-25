@@ -158,7 +158,7 @@ class ErrorResponse:
 class ExceptionPresenter:
     """A class that can extract information from the exception instance.
 
-    It is designed to work for both PropmtflowException and other exceptions.
+    It is designed to work for both PromptflowException and other exceptions.
     """
 
     def __init__(self, ex: Exception):

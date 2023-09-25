@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import os
 from os import PathLike
 from pathlib import Path
@@ -8,13 +9,18 @@ from typing import Any, Dict, List, Union
 
 import pandas as pd
 
-from ._constants import MAX_SHOW_DETAILS_RESULTS
+from ._configuration import Configuration
+from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._logger_factory import LoggerFactory
 from ._user_agent import USER_AGENT
 from ._utils import setup_user_agent_to_operation_context
 from .entities import Run
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._flow_operations import FlowOperations
+from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
+
+logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
 def _create_run(run: Run, **kwargs):
@@ -27,7 +33,9 @@ class PFClient:
 
     def __init__(self):
         self._runs = RunOperations()
-        self._connections = ConnectionOperations()
+        self._connection_provider = Configuration.get_instance().get_connection_provider()
+        # Lazy init to avoid azure credential requires too early
+        self._connections = None
         self._flows = FlowOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
@@ -173,6 +181,15 @@ class PFClient:
     @property
     def connections(self) -> ConnectionOperations:
         """Connection operations that can manage connections."""
+        if not self._connections:
+            if self._connection_provider == ConnectionProvider.LOCAL.value:
+                logger.debug("Using local connection operations.")
+                self._connections = ConnectionOperations()
+            elif self._connection_provider.startswith(ConnectionProvider.AZURE.value):
+                logger.debug("Using local azure connection operations.")
+                self._connections = LocalAzureConnectionOperations(self._connection_provider)
+            else:
+                raise ValueError(f"Unsupported connection provider: {self._connection_provider}")
         return self._connections
 
     @property
