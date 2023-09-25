@@ -3,9 +3,14 @@
 # ---------------------------------------------------------
 import copy
 
-from marshmallow import fields, pre_dump
+from marshmallow import ValidationError, fields, pre_dump, validates
 
-from promptflow._sdk._constants import ConnectionType
+from promptflow._sdk._constants import (
+    SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
+    SCHEMA_KEYS_CONTEXT_SECRET_KEY,
+    ConnectionType,
+    CustomStrongTypeConnectionConfigs,
+)
 from promptflow._sdk.schemas._base import YamlFileSchema
 from promptflow._sdk.schemas._fields import StringTransformedEnum
 from promptflow._utils.utils import camel_to_snake
@@ -111,3 +116,26 @@ class CustomConnectionSchema(ConnectionSchema):
     configs = fields.Dict(keys=fields.Str(), values=fields.Str())
     # Secrets is a must-have field for CustomConnection
     secrets = fields.Dict(keys=fields.Str(), values=fields.Str(), required=True)
+
+
+class CustomStrongTypeConnectionSchema(CustomConnectionSchema):
+    name = fields.Str(attribute="name")
+    module = fields.Str(required=True)
+    custom_type = fields.Str(required=True)
+
+    # TODO: validate configs and secrets
+    @validates("configs")
+    def validate_configs(self, value):
+        schema_config_keys = self.context.get(SCHEMA_KEYS_CONTEXT_CONFIG_KEY, None)
+        if schema_config_keys:
+            for key in value:
+                if CustomStrongTypeConnectionConfigs.is_custom_key(key) and key not in schema_config_keys:
+                    raise ValidationError(f"Invalid config key {key}, please check the schema.")
+
+    @validates("secrets")
+    def validate_secrets(self, value):
+        schema_secret_keys = self.context.get(SCHEMA_KEYS_CONTEXT_SECRET_KEY, None)
+        if schema_secret_keys:
+            for key in value:
+                if key not in schema_secret_keys:
+                    raise ValidationError(f"Invalid secret key {key}, please check the schema.")
