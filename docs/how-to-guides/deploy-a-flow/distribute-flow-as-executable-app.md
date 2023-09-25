@@ -163,7 +163,7 @@ if __name__ == "__main__":
 ### A template script of the spec file
 The spec file tells PyInstaller how to process your script. It encodes the script names and most of the options you give to the pyinstaller command. The spec file is actually executable Python code. PyInstaller builds the app by executing the contents of the spec file.
 
-To streamline this process, we offer a `app.spec` spec file that bundles the application into a single file. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html). Please replace {{streamlit_runtime_interpreter_path}} with the path of streamlit runtime interpreter in your environment.
+To streamline this process, we offer a `app.spec` spec file that bundles the application into a single file. For additional information on spec files, you can refer to the [Using Spec Files](https://pyinstaller.org/en/stable/spec-files.html). Please replace `streamlit_runtime_interpreter_path` with the path of streamlit runtime interpreter in your environment.
 
 ```spec
 # -*- mode: python ; coding: utf-8 -*-
