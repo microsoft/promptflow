@@ -12,6 +12,7 @@ from promptflow._sdk.entities import (
     FormRecognizerConnection,
     OpenAIConnection,
     SerpConnection,
+    CustomStrongTypeConnection,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.contracts.types import Secret
@@ -35,6 +36,7 @@ __all__ = [
     "CognitiveSearchConnection",
     "FormRecognizerConnection",
     "CustomConnection",
+    "CustomStrongTypeConnection",
 ]
 
 register_connections(
