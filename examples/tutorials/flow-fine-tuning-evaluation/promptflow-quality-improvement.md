@@ -139,7 +139,6 @@ Run the following command to test your prompt with this dataset:
 <!-- > The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.model=<model_name>...`to specify. -->
 
 ```bash
-run_name="base_run"
 pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream  --name base_run
 ```
 <!-- > ⚠ For Azure Open AI, run the following command instead:
