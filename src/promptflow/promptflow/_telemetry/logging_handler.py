@@ -9,7 +9,6 @@ from opencensus.ext.azure.log_exporter import AzureEventHandler
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._configuration import Configuration
 
-# b4ff2b60-2f72-4a5f-b7a6-571318b50ab2
 # TODO: replace with prod app insights
 INSTRUMENTATION_KEY = "b4ff2b60-2f72-4a5f-b7a6-571318b50ab2"
 
