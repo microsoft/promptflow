@@ -109,7 +109,7 @@ class LineProcessManager:
         process_name = self.process.name if self.process else None
         process_pid = self.process.pid if self.process else None
         logger.info(
-            f"Process name: {process_name}, Process id: {process_pid}, Linenumber: {line_number} start execution.")
+            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution.")
         return f"Process name({process_name})-Process id({process_pid})"
 
     def completed_process_name(self):
