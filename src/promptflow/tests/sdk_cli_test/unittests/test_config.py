@@ -21,7 +21,8 @@ class TestConfig:
     def test_set_config(self, config):
         config.set_config("a.b.c.test_key", "test_value")
         assert config.get_config("a.b.c.test_key") == "test_value"
-        assert config.config == {"a": {"b": {"c": {"test_key": "test_value"}}}}
+        # global config may contain other keys
+        assert config.config["a"] == {"b": {"c": {"test_key": "test_value"}}}
 
     def test_get_config(self, config):
         config.set_config("test_key", "test_value")
