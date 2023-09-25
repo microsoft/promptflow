@@ -15,6 +15,7 @@ from promptflow.executor._errors import (
     InputParseError,
     InputReferenceNotFound,
     InputTypeError,
+    InvalidAggregationInput,
     NodeCircularDependency,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
@@ -237,6 +238,54 @@ class FlowValidator:
                         expected_type=flow.inputs[v.value].type,
                     ) from e
         return updated_inputs
+
+    @staticmethod
+    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
+        """Validate the aggregation inputs according to the flow inputs."""
+        for key, value in aggregated_flow_inputs.items():
+            if key in aggregation_inputs:
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. The input '{input_key}' appears in both "
+                        "aggregated flow input and aggregated reference input. "
+                        "Please remove one of them and try the operation again."
+                    ),
+                    input_key=key,
+                )
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. "
+                        "The value for aggregated flow input '{input_key}' should be a list, "
+                        "but received {value_type}. Please adjust the input value to match the expected format."
+                    ),
+                    input_key=key,
+                    value_type=type(value).__name__,
+                )
+
+        for key, value in aggregation_inputs.items():
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. "
+                        "The value for aggregated reference input '{input_key}' should be a list, "
+                        "but received {value_type}. Please adjust the input value to match the expected format."
+                    ),
+                    input_key=key,
+                    value_type=type(value).__name__,
+                )
+
+        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
+        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
+        if len(set(inputs_len.values())) > 1:
+            raise InvalidAggregationInput(
+                message_format=(
+                    "The input for aggregation is incorrect. "
+                    "The length of all aggregated inputs should be the same. Current input lengths are: "
+                    "{key_len}. Please adjust the input value in your input data."
+                ),
+                key_len=inputs_len,
+            )
 
     @staticmethod
     def _ensure_outputs_valid(flow: Flow):
