@@ -1,5 +1,15 @@
 import base64
 import json
+import uuid
+
+MIME_TYPE_FILE_EXTENSION_MAP = {
+    "image/bmp": "bmp",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/svg+xml": "svg",
+    "image/tiff": "tiff",
+}
 
 
 class PFBytes:
@@ -27,7 +37,9 @@ class PFBytes:
 def pfbytes_file_reference_encoder(obj):
     """Dumps PFBytes to a file and returns its reference."""
     if isinstance(obj, PFBytes):
-        file_name = f"{id(obj)}.{obj.mime_type.split('/')[-1]}"  # A simple unique file name based on object id
+        file_name = f"{uuid.uuid4()}"
+        if obj.mime_type in MIME_TYPE_FILE_EXTENSION_MAP:
+            file_name += f".{MIME_TYPE_FILE_EXTENSION_MAP[obj.mime_type]}"
         obj.save_to_file(file_name)
         return {"pf_mime_type": obj.mime_type, "path": file_name}
     raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
@@ -58,7 +70,7 @@ def pfbytes_base64_decoder(dct):
 
 data = {
     "name": "John Doe",
-    "myImage": PFBytes("image/png", b"Some mock binary data...")  # using mock bytes data for simplicity
+    "myImage": PFBytes("image/png", b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00d\x00\x00\x00K\x01\x03\x00\x00\x00\xbc\xd6\xb0\xf4\x00\x00\x00\x06PLTE\xfe\x00\x00\xff\xff\xff\x8aA\xe7\xb4\x00\x00\x00\x01bKGD\x00\x88\x05\x1dH\x00\x00\x00\tpHYs\x00\x00\x0b\x12\x00\x00\x0b\x12\x01\xd2\xdd~\xfc\x00\x00\x00\x07tIME\x07\xe5\x04\x1b\x10\x1c#\xa0\xf3\xd9\x90\x00\x00\x00\x12IDAT8\xcbc`\x18\x05\xa3`\x14\x8c\x02t\x00\x00\x04\x1a\x00\x01\xa3`\x95\xfb\x00\x00\x00\x00IEND\xaeB`\x82")  # using mock bytes data for simplicity
 }
 
 # Test file-based encode/decode
