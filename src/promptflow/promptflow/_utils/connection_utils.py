@@ -2,9 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import re
-import textwrap
+import io
 
 from jinja2 import Template
+from ruamel.yaml import YAML
 
 
 def generate_custom_strong_type_connection_spec(cls, package, package_version):
@@ -43,10 +44,9 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
     package: {{ package }}
     package_version: {{ package_version }}
     configs:
-      {{ configs_comments }}{% for key, value in configs.items() %}
+      {% for key, value in configs.items() %}
       {{ key }}: "{{ value -}}"{% endfor %}
-    secrets:  # must-have
-      {{ secrets_comments }}{% for key, value in secrets.items() %}
+    secrets:  # must-have{% for key, value in secrets.items() %}
       {{ key }}: "{{ value -}}"{% endfor %}
     """
 
@@ -61,12 +61,6 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
         else:
             configs[spec["name"]] = "<" + spec["name"].replace("_", "-") + ">"
 
-    # Extract docstring comments
-    secrets_comments, configs_comments = "", ""
-    if cls.__doc__ is not None:
-        secrets_comments = extract_comments(secrets.keys(), cls.__doc__)
-        configs_comments = extract_comments(configs.keys(), cls.__doc__)
-
     # Prepare data for template
     data = {
         "custom_type": cls.__name__,
@@ -74,16 +68,49 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
         "package": package,
         "package_version": package_version,
         "configs": configs,
-        "secrets": secrets,
-        "secrets_comments": secrets_comments,
-        "configs_comments": configs_comments,
+        "secrets": secrets
     }
 
-    return connection_template.render(data)
+    connection_template_with_data = connection_template.render(data)
+    connection_template_with_comments = render_comments(
+        connection_template_with_data,
+        cls,
+        secrets.keys(),
+        configs.keys())
+
+    return connection_template_with_comments
 
 
-def extract_comments(keys, doc):
-    pattern = "|".join(rf"(?:\:param {key}.*|\:type {key}.*)" for key in keys)
-    comments = '\n'.join(re.findall(pattern, doc, re.MULTILINE))
-    indented_comments = textwrap.indent(comments, ' ' * 6)
-    return '"""\n' + indented_comments + '\n      """'
+def render_comments(connection_template, cls, secrets, configs):
+    if cls.__doc__ is not None:
+        yaml = YAML()
+        data = yaml.load(connection_template)
+        comments_map = extract_comments_mapping(list(secrets) + list(configs), cls.__doc__)
+        # Add comments for secret keys
+        for key in secrets:
+            if comments_map[key] != "":
+                data['secrets'].yaml_set_comment_before_after_key(key, before=comments_map[key] + '\n')
+
+        # Add comments for config keys
+        for key in configs:
+            if comments_map[key] != "":
+                data['configs'].yaml_set_comment_before_after_key(key, before=comments_map[key] + '\n')
+
+        # Dump data object back to string
+        buf = io.StringIO()
+        yaml.dump(data, buf)
+        connection_template_with_comments = buf.getvalue()
+
+        return connection_template_with_comments
+
+    return connection_template
+
+
+def extract_comments_mapping(keys, doc):
+    comments_map = {}
+    for key in keys:
+        pattern = rf"(?:\:param {key}.*|\:type {key}.*)"
+        comment = ' '.join(re.findall(pattern, doc, re.MULTILINE))
+        comments_map[key] = comment
+
+    return comments_map
