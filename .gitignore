@@ -84,7 +84,11 @@ profile_default/
 ipython_config.py
 
 # Vscode
-.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
 #   intended to run in multiple environments; otherwise, check them in:
@@ -182,3 +186,5 @@ scripts/docs/_build/
 .pdfs
 config.json
 src/promptflow/promptflow/azure/_restclient/swagger.json
+
+node_modules/
