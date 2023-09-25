@@ -6,7 +6,6 @@ import time
 
 from jinja2 import Template
 from openai.error import APIError, OpenAIError, RateLimitError, ServiceUnavailableError, Timeout, APIConnectionError
-from promptflow.contracts.multimedia import Image
 from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
@@ -105,9 +104,6 @@ def parse_chat(chat_str):
             if last_message["role"] == "function":
                 last_message["name"], last_message["content"] = parse_function_role_prompt(chunk)
             else:
-                if "Image" in chunk:
-                    chunk = chunk.split("\n")
-                    chunk = [Image.get_by_hash(x).to_openai_dict() if x.startswith("Image(") else x for x in chunk]
                 last_message["content"] = chunk
         else:
             if chunk.strip() == "":

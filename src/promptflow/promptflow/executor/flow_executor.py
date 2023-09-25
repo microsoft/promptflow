@@ -26,7 +26,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import ChatInputList, Image
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ValueType
@@ -820,39 +820,18 @@ class FlowExecutor:
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
                 updated_inputs[key] = Image.from_file(updated_inputs[key])
-            elif value.type == ValueType.LIST:
-                updated_inputs[key] = FlowExecutor._convert_image_to_bytes_within_list(updated_inputs[key])
         return updated_inputs
 
-    @staticmethod
-    def _convert_image_to_bytes_within_list(input_list: list) -> list:
-        for i in range(len(input_list)):
-            if isinstance(input_list[i], list):
-                input_list[i] = FlowExecutor._convert_image_to_bytes_within_list(input_list[i])
-            elif isinstance(input_list[i], dict):
-                input_list[i] = FlowExecutor._convert_image_to_bytes_within_dict(input_list[i])
-        input_list = ChatInputList(input_list)
-        return input_list
-
-    @staticmethod
-    def _convert_image_to_bytes_within_dict(input_dict: dict) -> dict:
-        if "image" in input_dict:
-            return Image.from_dict(input_dict)
-        for key, value in input_dict.items():
-            if isinstance(value, list):
-                input_dict[key] = FlowExecutor._convert_image_to_bytes_within_list(value)
-            elif isinstance(value, dict):
-                input_dict[key] = FlowExecutor._convert_image_to_bytes_within_dict(value)
-        return input_dict
-
     def _save_image_from_output(self, output: dict, output_dir: str):
+        # TODO: The output directory should be configurable.
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         for key, value in output.items():
             if isinstance(value, Image):
-                path = output_dir / f"{key}.{value.get_extension()}"
+                relative_path = f"{key}.{value.get_extension()}"
+                path = output_dir / relative_path
                 value.save(path)
-                output[key] = str(path)
+                output[key] = relative_path
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
