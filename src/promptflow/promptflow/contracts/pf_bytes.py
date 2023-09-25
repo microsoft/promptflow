@@ -3,7 +3,7 @@ import uuid
 import os
 
 from os import PathLike
-from typing import Callable, List, Dict, Union
+from typing import Callable, Dict, Union
 
 
 MIME_TYPE_FILE_EXTENSION_MAP = {
