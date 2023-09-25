@@ -42,14 +42,15 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
-class LineProcess:
+class LineProcessManager:
     def __init__(self, executor_creation_func):
         self.process = None
         self.input_queue = None
         self.output_queue = None
+        self.is_ready = False
         self._executor_creation_func = executor_creation_func
 
-    def _new_process(self):
+    def start_new_process(self):
         input_queue = Queue()
         output_queue = Queue()
 
@@ -73,39 +74,40 @@ class LineProcess:
         )
         process.start()
 
+        self.process = process
+        self.input_queue = input_queue
+        self.output_queue = output_queue
+
         try:
             # Wait for subprocess send a ready message.
             ready_msg = output_queue.get(timeout=30)
             logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
+            self.is_ready = True
         except queue.Empty:
             logger.info(f"Process {process.pid} did not send ready message, exit.")
-            self.end_process(process)
-            return None, None, None
+            self.end_process()
+            self.start_new_process()
 
-        return process, input_queue, output_queue
-
-    def is_process_none(self):
-        return any(var is None for var in (self.process, self.input_queue, self.output_queue))
-
-    def end_process(self, process):
+    def end_process(self):
         # When process failed to start and the task_queue is empty.
         # The process will no longer re-created, and the process is None.
-        if process is None:
+        if self.process is None:
             return
-        if process.is_alive():
-            process.kill()
+        if self.process.is_alive():
+            self.process.kill()
 
-    def start(self, task_queue: Queue, idx: int):
-        # Start a new process if the current process is None and there are still tasks in the queue.
-        # This is to avoid the situation that the process not started correctly.
-        while self.is_process_none() and not task_queue.empty():
-            logger.info(f"Process {idx} is creating...")
-            new_process = self._new_process()
-            if new_process is not None:
-                self.process, self.input_queue, self.output_queue = new_process
-            if not self.is_process_none():
-                return self.process, self.input_queue, self.output_queue
-            time.sleep(1)
+    def put(self, args):
+        self.input_queue.put(args)
+
+    def format_current_process(self, line_number: int):
+        process_name = self.process.name if self.process else None
+        process_pid = self.process.pid if self.process else None
+        logger.info(
+            f"Process name: {process_name}, Process id: {process_pid}, Linenumber: {line_number} start execution.")
+        return f"Process name({process_name})-Process id({process_pid})"
+
+    def complete_current_process(self):
+        return self.process.name
 
 
 class LineExecutionProcessPool:
@@ -174,40 +176,24 @@ class LineExecutionProcessPool:
             self._pool.close()
             self._pool.join()
 
-    def init_process(self):
-        return LineProcess(self._executor_creation_func)
-
-    def finish_line_processing(self, line_number, result_list, total_count):
-        self._processing_idx.pop(line_number)
-        log_progress(
-            logger=bulk_logger,
-            count=len(result_list),
-            total_count=total_count,
-            formatter="Finished {count} / {total_count} lines.",
-        )
-
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        new_process = self.init_process().start(task_queue, idx)
-
-        if new_process is not None:
-            process, input_queue, output_queue = new_process
-        else:
-            return
+        process_manger = LineProcessManager(self._executor_creation_func)
+        process_manger.start_new_process()
+        while not process_manger.is_ready and not task_queue.empty():
+            process_manger.start_new_process()
+            time.sleep(1)
 
         while True:
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 logger.info(f"Process {idx} queue empty, exit.")
-                self.init_process().end_process(process)
+                process_manger.end_process()
                 return
 
-            input_queue.put(args)
+            process_manger.put(args)
             inputs, line_number, run_id = args[:3]
-            logger.info(
-                f"Process name: {process.name}, Process id: {process.pid}, Linenumber: {line_number} start execution.")
-
-            self._processing_idx[line_number] = f"Process name({process.name})-Process id({process.pid})"
+            self._processing_idx[line_number] = process_manger.format_current_process(line_number)
 
             start_time = datetime.now()
             completed = False
@@ -216,7 +202,7 @@ class LineExecutionProcessPool:
                 try:
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
-                    message = output_queue.get(timeout=1)
+                    message = process_manger.output_queue.get(timeout=1)
                     if isinstance(message, LineResult):
                         completed = True
                         result_list.append(message)
@@ -228,7 +214,7 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     continue
 
-            self._completed_idx[line_number] = process.name
+            self._completed_idx[line_number] = process_manger.complete_current_process()
             # Handling the timeout of a line execution process.
             if not completed:
                 logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -237,14 +223,17 @@ class LineExecutionProcessPool:
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
-                self.init_process().end_process(process)
-                new_process = self.init_process().start(task_queue, idx)
-                if new_process is not None:
-                    process, input_queue, output_queue = new_process
-                else:
-                    self.finish_line_processing(line_number, result_list, self._nlines)
-                    return
-            self.finish_line_processing(line_number, result_list, self._nlines)
+                self._completed_idx[line_number] = process_manger.complete_current_process()
+                process_manger.end_process()
+                process_manger.start_new_process()
+
+            self._processing_idx.pop(line_number)
+            log_progress(
+                logger=bulk_logger,
+                count=len(result_list),
+                total_count=self._nlines,
+                formatter="Finished {count} / {total_count} lines.",
+            )
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
