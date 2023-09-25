@@ -109,7 +109,7 @@ def render_comments(connection_template, cls, secrets, configs):
 def extract_comments_mapping(keys, doc):
     comments_map = {}
     for key in keys:
-        pattern = rf"(?:\:param {key}.*|\:type {key}.*)"
+        pattern = rf"(?:\:param {key}:.*|\:type {key}:.*)"
         comment = ' '.join(re.findall(pattern, doc, re.MULTILINE))
         comments_map[key] = comment
 
