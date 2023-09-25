@@ -109,11 +109,18 @@ def render_comments(connection_template, cls, secrets, configs):
 def extract_comments_mapping(keys, doc):
     comments_map = {}
     for key in keys:
-        param_pattern = rf":param {key}: (.*)"
-        key_description = ' '.join(re.findall(param_pattern, doc)).rstrip('.')
-        type_pattern = rf":type {key}: (.*)"
-        key_type = ' '.join(re.findall(type_pattern, doc)).rstrip('.')
-        if key_type != "" or key_description != "":
-            comments_map[key] = ', '.join([key_type, key_description])
+        try:
+            param_pattern = rf":param {key}: (.*)"
+            key_description = ' '.join(re.findall(param_pattern, doc))
+            type_pattern = rf":type {key}: (.*)"
+            key_type = ' '.join(re.findall(type_pattern, doc)).rstrip('.')
+            if key_type and key_description:
+                comments_map[key] = ', '.join([key_type, key_description])
+            elif key_type:
+                comments_map[key] = key_type
+            elif key_description:
+                comments_map[key] = key_description
+        except re.error:
+            print(f"An error occurred when extract comments about key: {key}.")
 
     return comments_map
