@@ -107,7 +107,7 @@ def prepare_symbolic_flow() -> str:
     return target_folder
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def install_custom_tool_pkg():
     is_installed = False
     try:
