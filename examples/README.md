@@ -7,7 +7,7 @@
 
 **Install dependencies**
 
-- Bootstrap your python environment. 
+- Bootstrap your python environment.
   - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
@@ -29,11 +29,12 @@
 | [chat-with-pdf](tutorials/e2e-development/chat-with-pdf.md) | [![samples_tutorials_e2e_development_chat_with_pdf](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml) |  Retrieval Augmented Generation (or RAG) has become a prevalent pattern to build intelligent application with Large Language Models (or LLMs) since it can infuse external knowledge into the model, which is not trained with those up-to-date or proprietary information |
 | [azure-app-service](tutorials/flow-deploy/azure-app-service/README.md) | [![samples_tutorials_flow_deploy_azure_app_service](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_azure_app_service.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_azure_app_service.yml) |  This example demos how to deploy a flow using Azure App Service |
 | [docker](tutorials/flow-deploy/docker/README.md) | [![samples_tutorials_flow_deploy_docker](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_docker.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_docker.yml) |  This example demos how to deploy flow as a docker app |
+| [kubernetes](tutorials/flow-deploy/kubernetes/README.md) | [![samples_tutorials_flow_deploy_kubernetes](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_kubernetes.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tutorials_flow_deploy_kubernetes.yml) |  This example demos how to deploy flow as a Kubernetes app |
 
 
 ### Flows ([flows](flows))
 
-#### [Standard flows](flows/standard/) 
+#### [Standard flows](flows/standard/)
 
 | path | status | description |
 ------|--------|-------------
@@ -42,6 +43,7 @@
 | [basic-with-builtin-llm](flows/standard/basic-with-builtin-llm/README.md) | [![samples_flows_standard_basic_with_builtin_llm](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic_with_builtin_llm.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic_with_builtin_llm.yml) |  A basic standard flow that calls Azure OpenAI with builtin llm tool |
 | [basic-with-connection](flows/standard/basic-with-connection/README.md) | [![samples_flows_standard_basic_with_connection](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic_with_connection.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_basic_with_connection.yml) |  A basic standard flow that using custom python tool calls Azure OpenAI with connection info stored in custom connection |
 | [conditional-flow-for-if-else](flows/standard/conditional-flow-for-if-else/README.md) | [![samples_flows_standard_conditional_flow_for_if_else](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_conditional_flow_for_if_else.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_conditional_flow_for_if_else.yml) |  This example is a conditional flow for if-else scenario |
+| [conditional-flow-for-switch](flows/standard/conditional-flow-for-switch/README.md) | [![samples_flows_standard_conditional_flow_for_switch](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_conditional_flow_for_switch.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_conditional_flow_for_switch.yml) |  This example is a conditional flow for switch scenario |
 | [customer-intent-extraction](flows/standard/customer-intent-extraction/README.md) | [![samples_flows_standard_customer_intent_extraction](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_customer_intent_extraction.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_customer_intent_extraction.yml) |  This sample is using OpenAI chat model(ChatGPT/GPT4) to identify customer intent from customer's question |
 | [flow-with-additional-includes](flows/standard/flow-with-additional-includes/README.md) | [![samples_flows_standard_flow_with_additional_includes](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_additional_includes.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_additional_includes.yml) |  User sometimes need to reference some common files or folders, this sample demos how to solve the problem using additional_includes |
 | [flow-with-symlinks](flows/standard/flow-with-symlinks/README.md) | [![samples_flows_standard_flow_with_symlinks](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_symlinks.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_flows_standard_flow_with_symlinks.yml) |  User sometimes need to reference some common files or folders, this sample demos how to solve the problem using symlinks |

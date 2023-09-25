@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import copy
+from json import JSONDecodeError
 from typing import Any, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
@@ -11,8 +12,10 @@ from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputReference,
     InputNotFound,
+    InputParseError,
     InputReferenceNotFound,
     InputTypeError,
+    InvalidAggregationInput,
     NodeCircularDependency,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
@@ -126,15 +129,34 @@ class FlowValidator:
             try:
                 if k in inputs:
                     updated_inputs[k] = v.type.parse(inputs[k])
-            except Exception as e:
-                line_info = "" if idx is None else f"in line {idx} of input data"
+            except JSONDecodeError as e:
+                line_info = "" if idx is None else f" in line {idx} of input data"
+                flow_input_info = f"'{k}'{line_info}"
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+
                 msg_format = (
-                    "The input for flow is incorrect. The value for flow input '{flow_input_name}' {line_info} "
+                    "Failed to parse the flow input. The value for flow input {flow_input_info} "
+                    "was interpreted as JSON string since its type is '{value_type}'. However, the value "
+                    "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
+                    "Please make sure your inputs are properly formatted."
+                )
+                raise InputParseError(
+                    message_format=msg_format,
+                    flow_input_info=flow_input_info,
+                    input_value=inputs[k],
+                    value_type=v.type,
+                    error_type_and_message=error_type_and_message,
+                ) from e
+            except Exception as e:
+                line_info = "" if idx is None else f" in line {idx} of input data"
+                flow_input_info = f"'{k}'{line_info}"
+                msg_format = (
+                    "The input for flow is incorrect. The value for flow input {flow_input_info} "
                     "does not match the expected type '{expected_type}'. Please change flow input type "
                     "or adjust the input value in your input data."
                 )
                 raise InputTypeError(
-                    message_format=msg_format, flow_input_name=k, line_info=line_info, expected_type=v.type
+                    message_format=msg_format, flow_input_info=flow_input_info, expected_type=v.type
                 ) from e
         return updated_inputs
 
@@ -216,6 +238,54 @@ class FlowValidator:
                         expected_type=flow.inputs[v.value].type,
                     ) from e
         return updated_inputs
+
+    @staticmethod
+    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
+        """Validate the aggregation inputs according to the flow inputs."""
+        for key, value in aggregated_flow_inputs.items():
+            if key in aggregation_inputs:
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. The input '{input_key}' appears in both "
+                        "aggregated flow input and aggregated reference input. "
+                        "Please remove one of them and try the operation again."
+                    ),
+                    input_key=key,
+                )
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. "
+                        "The value for aggregated flow input '{input_key}' should be a list, "
+                        "but received {value_type}. Please adjust the input value to match the expected format."
+                    ),
+                    input_key=key,
+                    value_type=type(value).__name__,
+                )
+
+        for key, value in aggregation_inputs.items():
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. "
+                        "The value for aggregated reference input '{input_key}' should be a list, "
+                        "but received {value_type}. Please adjust the input value to match the expected format."
+                    ),
+                    input_key=key,
+                    value_type=type(value).__name__,
+                )
+
+        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
+        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
+        if len(set(inputs_len.values())) > 1:
+            raise InvalidAggregationInput(
+                message_format=(
+                    "The input for aggregation is incorrect. "
+                    "The length of all aggregated inputs should be the same. Current input lengths are: "
+                    "{key_len}. Please adjust the input value in your input data."
+                ),
+                key_len=inputs_len,
+            )
 
     @staticmethod
     def _ensure_outputs_valid(flow: Flow):

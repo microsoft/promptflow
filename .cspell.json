@@ -21,13 +21,13 @@
     "**/*.jsonl",
     "**/*.xml",
     "**/*.txt",
+    ".gitignore",
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/tests/**",
     "**/flow.dag.yaml"
   ],
   "words": [
-    "propmtflow",
     "aoai",
     "amlignore",
     "mldesigner",
