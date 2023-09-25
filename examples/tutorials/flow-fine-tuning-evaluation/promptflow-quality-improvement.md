@@ -47,21 +47,31 @@ Next, let's get started with customizing the flow for a specific task.
 In the `examples/flows/chat` folder, you can see a `basic-chat` folder, which represents a chat template flow as same as the one you created in the [Quick Start](../../../README.md#get-started-with-prompt-flow-⚡) guidance. We'll use this flow as a starting point to build a math problem solver.
 
 ```bash
-cd promptflow/examples/flows/chat
+cd promptflow/examples/flows/chat/basic-chat/
 ```
 
-To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, rewrite the system prompt as:
+To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, update the prompt as below:
 
 ```
 system:
 You are an assistant to calculate the answer to the provided math problems. 
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
+
+{% for item in chat_history %}
+user:
+{{item.inputs.question}}
+assistant:
+{{item.outputs.answer}}
+{% endfor %}
+
+user:
+{{question}}
 ```
 
-Before run, check your connection settings in `flow.dag.yaml` file. The default connection name is `open_ai_connection`, and the default model is `gpt-turbo-3.5`. If you have a different connection name or model, please modify the `flow.dag.yaml` file accordingly.
+Before run, check your connection settings in `flow.dag.yaml` file. The default connection name is `open_ai_connection`, and the default model is `gpt-3.5-turbo`. If you have a different connection name or model, please modify the `flow.dag.yaml` file accordingly.
 
 ><details>
-><summary>(click to toggle details) For Azure Open AI, please modify the `flow.dag.yaml` file to specify your connection and deployment</summary>
+><summary>(click to toggle details) For example, if you use Azure Open AI, please modify the `flow.dag.yaml` file to specify your connection and deployment</summary>
 >
 > Replace the 'node:' section with following content, specify the 'connection_name' to your Azure Open AI connection, and specify the 'deployment_name' to the model deployment you'd like to use.
 > ```yaml
@@ -82,9 +92,10 @@ Before run, check your connection settings in `flow.dag.yaml` file. The default 
 > ```
 </details>
 
-Keep staying in the `promptflow/examples/flows/chat` path, run the following command to test the flow with a simple math problem:
+Go back to the `promptflow/examples/flows/chat` path, run the following command to test the flow with a simple math problem:
 
 ```bash
+cd ..
 pf flow test --flow ./basic-chat --inputs question="1+1=?"
 ```
 This will yield the following output:
@@ -99,14 +110,13 @@ Sometime, the question may be challenging. Now, let's test it with a complex mat
 ```bash
 pf flow test --flow ./basic-chat --inputs question="We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?"
 ```
-
 The output is:
 ```json
 {
     "answer": "-1"
 }
 ```
-However, the correct answer is 5 (Don't be surprised if you got the correct answer, as the randiness of LLM). The output answer is incorrect! It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
+However, the correct answer is 5, so the output answer is incorrect! (Don't be surprised if you got the correct answer, as the randiness of LLM. You can try multiple times for different answers.) It indicates that we need to further evaluate the performance. Therefore, in the next step, we will test the flow with more math problems to better evaluate the quality.
 
 ### Evaluate the quality of your prompt
 
@@ -125,11 +135,12 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 
 Run the following command to test your prompt with this dataset:
 
-<!-- >The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify. -->
-> The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.deployment_name=<model_name>...`to specify.
+>The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
+<!-- > The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.model=<model_name>...`to specify. -->
 
 ```bash
-pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream
+run_name="base_run"
+pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream  --name base_run
 ```
 <!-- > ⚠ For Azure Open AI, run the following command instead:
 > ```bash
