@@ -49,7 +49,8 @@ def start():
         environment_variables = list(json_data.keys())
         for environment_variable in environment_variables:
             secret_input = st.text_input(label=environment_variable, type="password",
-                                         placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
+                                         placeholder=f"Please input {environment_variable} here. If you input before, "
+                                                     f"you can leave it blank.")
             if secret_input != "":
                 os.environ[environment_variable] = secret_input
 
