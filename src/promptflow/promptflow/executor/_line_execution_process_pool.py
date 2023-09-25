@@ -183,7 +183,12 @@ class LineExecutionProcessPool:
             process.kill()
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        process, input_queue, output_queue = LineProcess(self._executor_creation_func).start(task_queue, idx)
+        new_process = LineProcess(self._executor_creation_func).start(task_queue, idx)
+
+        if new_process is not None:
+            process, input_queue, output_queue = new_process
+        else:
+            return
 
         while True:
             try:
@@ -229,7 +234,6 @@ class LineExecutionProcessPool:
                 )
                 result_list.append(result)
                 self.end_process(process)
-                process, input_queue, output_queue = LineProcess(self._executor_creation_func).start(task_queue, idx)
             self._processing_idx.pop(line_number)
             log_progress(
                 logger=bulk_logger,
@@ -237,6 +241,11 @@ class LineExecutionProcessPool:
                 total_count=self._nlines,
                 formatter="Finished {count} / {total_count} lines.",
             )
+            new_process = LineProcess(self._executor_creation_func).start(task_queue, idx)
+            if new_process is not None:
+                process, input_queue, output_queue = new_process
+            else:
+                return
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
