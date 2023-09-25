@@ -34,12 +34,15 @@ def environment_variable_overwrite(key, val):
 @contextlib.contextmanager
 def cli_consent_config_overwrite(val):
     config = Configuration.get_instance()
+    original_consent = config.get_telemetry_consent()
     config.set_telemetry_consent(val)
     try:
         yield
     finally:
-        if os.path.exists(Configuration.CONFIG_PATH):
-            os.remove(Configuration.CONFIG_PATH)
+        if original_consent:
+            config.set_telemetry_consent(original_consent)
+        else:
+            config.set_telemetry_consent(False)
 
 
 @pytest.mark.e2etest
@@ -50,7 +53,7 @@ class TestTelemetry:
         with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            assert handler._is_telemetry_enabled is False
+            assert handler._is_telemetry_enabled is True
             logger.addHandler(handler)
             logger.info("test_logging_handler")
             logger.warning("test_logging_handler")
@@ -59,18 +62,18 @@ class TestTelemetry:
         with environment_variable_overwrite("TELEMETRY_ENABLED", "false"):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            assert handler._is_telemetry_enabled is True
+            assert handler._is_telemetry_enabled is False
 
         # write config
         with cli_consent_config_overwrite(True):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            assert handler._is_telemetry_enabled is False
+            assert handler._is_telemetry_enabled is True
 
         with cli_consent_config_overwrite(False):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
-            assert handler._is_telemetry_enabled is True
+            assert handler._is_telemetry_enabled is False
 
     def test_call_from_extension(self):
         assert call_from_extension() is False
