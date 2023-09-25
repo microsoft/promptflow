@@ -99,6 +99,9 @@ class LineProcessManager:
     def put(self, args):
         self.input_queue.put(args)
 
+    def get(self):
+        self.output_queue.get(timeout=1)
+
     def format_current_process(self, line_number: int):
         process_name = self.process.name if self.process else None
         process_pid = self.process.pid if self.process else None
@@ -201,7 +204,7 @@ class LineExecutionProcessPool:
                 try:
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
-                    message = process_manger.output_queue.get(timeout=1)
+                    message = process_manger.get()
                     if isinstance(message, LineResult):
                         completed = True
                         result_list.append(message)
