@@ -177,7 +177,7 @@ class LineExecutionProcessPool:
     def init_process(self):
         return LineProcess(self._executor_creation_func)
 
-    def finish_line_processing(self, line_number, result_list, bulk_logger, total_count):
+    def finish_line_processing(self, line_number, result_list, total_count):
         self._processing_idx.pop(line_number)
         log_progress(
             logger=bulk_logger,
@@ -242,9 +242,9 @@ class LineExecutionProcessPool:
                 if new_process is not None:
                     process, input_queue, output_queue = new_process
                 else:
-                    self.finish_line_processing(line_number, result_list, bulk_logger, self._nlines)
+                    self.finish_line_processing(line_number, result_list, self._nlines)
                     return
-            self.finish_line_processing(line_number, result_list, bulk_logger, self._nlines)
+            self.finish_line_processing(line_number, result_list, self._nlines)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
