@@ -174,16 +174,11 @@ class LineExecutionProcessPool:
             self._pool.close()
             self._pool.join()
 
-    def end_process(self, process):
-        # When process failed to start and the task_queue is empty.
-        # The process will no longer re-created, and the process is None.
-        if process is None:
-            return
-        if process.is_alive():
-            process.kill()
+    def init_process(self):
+        return LineProcess(self._executor_creation_func)
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        new_process = LineProcess(self._executor_creation_func).start(task_queue, idx)
+        new_process = self.init_process().start(task_queue, idx)
 
         if new_process is not None:
             process, input_queue, output_queue = new_process
@@ -195,7 +190,7 @@ class LineExecutionProcessPool:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 logger.info(f"Process {idx} queue empty, exit.")
-                self.end_process(process)
+                self.init_process().end_process(process)
                 return
 
             input_queue.put(args)
@@ -233,7 +228,7 @@ class LineExecutionProcessPool:
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
-                self.end_process(process)
+                self.init_process().end_process(process)
             self._processing_idx.pop(line_number)
             log_progress(
                 logger=bulk_logger,
@@ -241,7 +236,7 @@ class LineExecutionProcessPool:
                 total_count=self._nlines,
                 formatter="Finished {count} / {total_count} lines.",
             )
-            new_process = LineProcess(self._executor_creation_func).start(task_queue, idx)
+            new_process = self.init_process().start(task_queue, idx)
             if new_process is not None:
                 process, input_queue, output_queue = new_process
             else:
