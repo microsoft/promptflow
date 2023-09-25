@@ -121,6 +121,6 @@ def extract_comments_mapping(keys, doc):
             elif key_description:
                 comments_map[key] = key_description
         except re.error:
-            print(f"An error occurred when extract comments about key: {key}.")
+            print("An error occurred when extract comments mapping.")
 
     return comments_map
