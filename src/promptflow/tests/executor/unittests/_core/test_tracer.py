@@ -97,7 +97,7 @@ class TestTracer:
         assert trace1.children == [trace2]  # check if the first trace has the second trace as its child
 
         # test the pop method with generator output
-        tool_output = GeneratorProxy(generator())
+        tool_output = generator()
         error1 = ValueError("something went wrong")
         output = Tracer.pop(output=tool_output, error=error1)
 
@@ -107,7 +107,7 @@ class TestTracer:
 
         assert len(tracer._trace_stack) == 1
         assert tracer._trace_stack[-1].name == "test1"
-        assert trace2.output == tool_output
+        assert isinstance(trace2.output, GeneratorProxy)
         assert trace2.error == {
             "message": str(error1),
             "type": type(error1).__qualname__,
