@@ -11,7 +11,8 @@ from functools import partial
 from importlib.metadata import version
 
 from ruamel.yaml import YAML
-from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, logging_params, add_param_output
+from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, logging_params, \
+    add_param_output
 from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
 from promptflow._sdk._constants import LOGGER_NAME, MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
