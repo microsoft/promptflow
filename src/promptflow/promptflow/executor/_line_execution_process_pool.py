@@ -126,6 +126,8 @@ class LineExecutionProcessPool:
                 current_log_context.get_initializer() if current_log_context else None,
                 OperationContext.get_instance().get_context_dict(),
             ),
+            # Set the process as a daemon process to automatically terminated and release system resources
+            # when the main process exits.
             daemon=True
         )
         process.start()
@@ -133,7 +135,7 @@ class LineExecutionProcessPool:
         try:
             # Wait for subprocess send a ready message.
             ready_msg = output_queue.get(timeout=30)
-            assert ready_msg == "ready"
+            logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
         except queue.Empty:
             logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end_process(process)
@@ -142,6 +144,8 @@ class LineExecutionProcessPool:
         return process, input_queue, output_queue
 
     def end_process(self, process):
+        # When process failed to start and the task_queue is empty.
+        # The process will no longer re-created, and the process is None.
         if process is None:
             return
         if process.is_alive():
@@ -152,12 +156,10 @@ class LineExecutionProcessPool:
 
         # Start a new process if the current process is None and there are still tasks in the queue.
         # This is to avoid the situation that the process not started correctly.
-        while ((process is None or input_queue is None or output_queue is None)
-               and not task_queue.empty()):
+        while any(var is None for var in (process, input_queue, output_queue)) and not task_queue.empty():
             logger.info(f"Process {idx} is creating...")
             process, input_queue, output_queue = self._new_process()
-            if (process is not None and input_queue is not None
-                    and output_queue is not None):
+            if process and input_queue and output_queue:
                 break
             time.sleep(1)
 
