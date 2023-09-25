@@ -608,3 +608,13 @@ class TestFlowRun:
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
             assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
+
+    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/partial_fail",
+            data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
+            runtime=runtime,
+        )
+        pf.runs.stream(run=run.name)
+        detail = remote_client.get_details(run=run.name)
+        assert len(detail) == 3
