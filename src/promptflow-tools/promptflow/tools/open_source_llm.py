@@ -198,7 +198,7 @@ class LlamaContentFormatter(ContentFormatterBase):
                 raise OpenSourceLLMUserError(message=e.message)
 
             if len(chunks) <= index + 1:
-                message="Unexpected chat format. Please ensure the query matches the chat format of the model used."
+                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
                 raise OpenSourceLLMUserError(message=message)
 
             chat_list.append({
