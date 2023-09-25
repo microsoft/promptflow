@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 from typing import Dict
 
 from azure.ai.ml._scope_dependent_operations import (
@@ -10,9 +11,14 @@ from azure.ai.ml._scope_dependent_operations import (
     _ScopeDependentOperations,
 )
 
+from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._logger_factory import LoggerFactory
+from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.azure._entities._workspace_connection_spec import WorkspaceConnectionSpec
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
+
+logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
 class ConnectionOperations(_ScopeDependentOperations):
@@ -77,7 +83,11 @@ class ConnectionOperations(_ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
             **kwargs,
         )
-        return [_Connection._from_mt_rest_object(conn) for conn in rest_connections]
+        return safe_parse_object_list(
+            obj_list=rest_connections,
+            parser=_Connection._from_mt_rest_object,
+            message_generator=lambda x: f"Failed to load connection {x.connection_name}, skipped.",
+        )
 
     def list_connection_specs(self, **kwargs):
         results = self._service_caller.list_connection_specs(
