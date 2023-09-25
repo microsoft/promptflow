@@ -1025,7 +1025,9 @@ class TestCli:
             ),
         ],
     )
-    def test_connection_create_update(self, file_name, expected, update_item, capfd, local_client):
+    def test_connection_create_update(
+        self, install_custom_tool_pkg, file_name, expected, update_item, capfd, local_client
+    ):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
         run_pf_command("connection", "create", "--file", f"{CONNECTIONS_DIR}/{file_name}", "--name", f"{name}")
         out, err = capfd.readouterr()

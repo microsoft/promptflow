@@ -124,14 +124,15 @@ class TestCustomStrongTypeConnection:
             _client.connections.create_or_update(result)
         assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
-    @pytest.mark.usefixtures("install_custom_tool_pkg")
     @pytest.mark.parametrize(
         "file_name, expected_updated_item, expected_secret_item",
         [
             ("custom_strong_type_connection.yaml", ("api_base", "new_value"), ("api_key", "<to-be-replaced>")),
         ],
     )
-    def test_upsert_connection_from_file(self, file_name, expected_updated_item, expected_secret_item):
+    def test_upsert_connection_from_file(
+        self, install_custom_tool_pkg, file_name, expected_updated_item, expected_secret_item
+    ):
         from promptflow._cli._pf._connection import _upsert_connection_from_file
 
         name = f"Connection_{str(uuid.uuid4())[:4]}"

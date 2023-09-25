@@ -673,7 +673,10 @@ class CustomStrongTypeConnection(_Connection):
         self.package_version = kwargs.get(CustomStrongTypeConnectionConfigs.PACKAGE_VERSION, None)
 
     def __getattribute__(self, item):
-        annotations = super().__getattribute__("__class__").__annotations__
+        if "__annotations__" in super().__getattribute__("__class__").__dict__:
+            annotations = super().__getattribute__("__class__").__annotations__
+        else:
+            annotations = {}
         if item in annotations:
             if isinstance(item, Secret):
                 logger.warning("Please use connection.secrets[key] to access secrets.")
