@@ -39,6 +39,7 @@ REQUIRES = [
     "marshmallow>=3.5,<4.0.0",
     "pyyaml>=5.1.0,<7.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
+    "vcrpy>=5.1.0,<6.0.0",  # used to record and replay http requests for pfazure tests
 ]
 
 setup(
