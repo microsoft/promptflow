@@ -34,7 +34,7 @@ user:
             API.CHAT)
         assert len(response) > 25
 
-    def test_osllm_con_url_chat(self, gpt2_custom_connection):
+    def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.configs['endpoint_url']
         try:
             os = OpenSourceLLM(gpt2_custom_connection)
@@ -43,7 +43,7 @@ user:
         except OpenSourceLLMKeyValidationError:
             pass
 
-    def test_osllm_con_key_chat(self, gpt2_custom_connection):
+    def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.secrets['endpoint_api_key']
         try:
             os = OpenSourceLLM(gpt2_custom_connection)
@@ -52,7 +52,7 @@ user:
         except OpenSourceLLMKeyValidationError:
             pass
 
-    def test_osllm_con_model_chat(self, gpt2_custom_connection):
+    def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.configs['model_family']
         try:
             os = OpenSourceLLM(gpt2_custom_connection)
@@ -61,15 +61,15 @@ user:
         except OpenSourceLLMKeyValidationError:
             pass
 
-    def test_osllm_escape_chat(self):
+    def test_open_source_llm_escape_chat(self):
         danger = r"The quick \brown fox\tjumped\\over \the \\boy\r\n"
         out_of_danger = ContentFormatterBase.escape_special_characters(danger)
         assert out_of_danger == "The quick \\brown fox\\tjumped\\\\over \\the \\\\boy\\r\\n"
 
-    def test_osllm_llama_parse_chat_with_chat(self):
+    def test_open_source_llm_llama_parse_chat_with_chat(self):
         LlamaContentFormatter.parse_chat(self.chat_prompt)
 
-    def test_osllm_llama_parse_multi_turn(self):
+    def test_open_source_llm_llama_parse_multi_turn(self):
         multi_turn_chat = """user:
 You are a AI which helps Customers answer questions.
 
@@ -83,7 +83,7 @@ Why was that the greatest movie of all time?
 """
         LlamaContentFormatter.parse_chat(multi_turn_chat)
 
-    def test_osllm_llama_parse_system_not_accepted(self):
+    def test_open_source_llm_llama_parse_system_not_accepted(self):
         bad_chat_prompt = """system:
 You are a AI which helps Customers answer questions.
 
@@ -95,30 +95,28 @@ user:
         except OpenSourceLLMUserError:
             pass
 
-    def test_osllm_llama_parse_system_not_accepted(self):
+    def test_open_source_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
 You are a AI which helps Customers answer questions.
 
 user:
-{self.completion_prompt}
 
-assistant:
-
-"""
+user:
+{self.completion_prompt}"""
         try:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
             assert False
         except OpenSourceLLMUserError:
             pass
 
-    def test_osllm_llama_parse_chat_with_comp(self):
+    def test_open_source_llm_llama_parse_chat_with_comp(self):
         try:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
             assert False
         except OpenSourceLLMUserError:
             pass
 
-    def test_osllm_llama_req_chat(self, gpt2_custom_connection):
+    def test_open_source_llm_llama_req_chat(self, gpt2_custom_connection):
         gpt2_custom_connection.configs['endpoint_url'] += 'completely/real/endpoint'
         os = OpenSourceLLM(gpt2_custom_connection)
         try:

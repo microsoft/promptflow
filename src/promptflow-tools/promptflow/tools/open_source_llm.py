@@ -24,7 +24,8 @@ from promptflow.tools.exception import (
 valid_llama_roles = {"user", "assistant"}
 mir_deployment_name_config = "azureml-model-deployment"
 
-def handle_oneline_endpoint_error(max_retries: int = 1, #3,
+
+def handle_oneline_endpoint_error(max_retries: int = 3,
                                   initial_delay: float = 1,
                                   exponential_base: float = 2):
     def deco_retry(func):
@@ -105,7 +106,6 @@ class ContentFormatterBase:
             r'\\([\\\"a-zA-Z])',
             r'\\\1',
             prompt)
-
 
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
@@ -198,8 +198,9 @@ class LlamaContentFormatter(ContentFormatterBase):
                 raise OpenSourceLLMUserError(message=e.message)
 
             if len(chunks) <= index + 1:
-                raise OpenSourceLLMUserError(message="Unexpected chat format. Please ensure the query matches the chat format of the model used.")
-            
+                message="Unexpected chat format. Please ensure the query matches the chat format of the model used."
+                raise OpenSourceLLMUserError(message=message)
+
             chat_list.append({
                 "role": role,
                 "content": chunks[index+1]
@@ -221,7 +222,7 @@ class LlamaContentFormatter(ContentFormatterBase):
             {
                 "input_data":
                 {
-                    "input_string": prompt_value, 
+                    "input_string": prompt_value,
                     "parameters": model_kwargs
                 }
             }
