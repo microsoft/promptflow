@@ -65,7 +65,7 @@ class OpenAIMetricsCalculator:
         if not model:
             raise CalculatingMetricsError(
                 "Cannot get a valid model to calculate metrics. "
-                "Plaease specify a engine for AzureOpenAI API or a model for OpenAI API."
+                "Please specify a engine for AzureOpenAI API or a model for OpenAI API."
             )
         return model
 
