@@ -10,7 +10,7 @@ from dotenv import dotenv_values
 from ._utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._flow import Flow
+from .entities._flow import ProtectedFlow
 
 
 def load_common(
@@ -50,7 +50,12 @@ def load_common(
     cls, type_str = cls._resolve_cls_and_type(data=yaml_dict, params_override=params_override)
 
     try:
-        return cls._load(data=yaml_dict, yaml_path=relative_origin, params_override=params_override, **kwargs)
+        return cls._load(
+            data=yaml_dict,
+            yaml_path=relative_origin,
+            params_override=params_override,
+            **kwargs,
+        )
     except Exception as e:
         raise Exception(f"Load entity error: {e}") from e
 
@@ -59,7 +64,7 @@ def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
     **kwargs,
 ):
-    return Flow.load(source, **kwargs)
+    return ProtectedFlow.load(source, **kwargs)
 
 
 def load_run(

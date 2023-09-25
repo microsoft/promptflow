@@ -98,8 +98,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     output_telemetry.gh_working_dir = gh_working_dir
 
 
-def write_workflows(notebooks, output_telemetries=None):
-    output_telemetries = output_telemetries if output_telemetries else []
+def write_workflows(notebooks, output_telemetries=[]):
     # process notebooks
     for notebook in notebooks:
         # get notebook name
@@ -143,7 +142,7 @@ def no_readme_generation_filter(item, index, array) -> bool:
         return False  # not generate readme
 
 
-def main(input_glob, output_files=None):
+def main(input_glob, output_files=[]):
     # get list of workflows
 
     notebooks = _get_paths(
