@@ -14,6 +14,7 @@ from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -238,6 +239,8 @@ class RunTracker(ThreadLocalSingleton):
             return ConnectionType.serialize_conn(val)
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
+        if isinstance(val, Image):
+            return val.serialize()
         try:
             json.dumps(val)
             return val

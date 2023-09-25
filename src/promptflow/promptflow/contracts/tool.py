@@ -34,6 +34,7 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    IMAGE = "image"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":

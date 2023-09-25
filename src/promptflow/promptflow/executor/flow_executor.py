@@ -26,8 +26,10 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
+from promptflow.contracts.multimedia import ChatInputList, Image
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
@@ -294,7 +296,7 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -660,7 +662,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -718,7 +720,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -733,6 +735,7 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
+        self._save_image_from_output(line_result.output, self._working_dir)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -776,7 +779,7 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         inputs = [
-            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            FlowExecutor._process_input_values(self._flow.inputs, each_line_input)
             for each_line_input in inputs
         ]
         run_id = run_id or str(uuid.uuid4())
@@ -799,12 +802,57 @@ class FlowExecutor:
         )
 
     @staticmethod
+    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
+        return FlowExecutor._convert_image_to_bytes(inputs, inputs_with_default_value)
+
+    @staticmethod
     def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if key not in updated_inputs and (value and value.default):
                 updated_inputs[key] = value.default
         return updated_inputs
+
+    @staticmethod
+    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+        updated_inputs = dict(line_inputs or {})
+        for key, value in inputs.items():
+            if value.type == ValueType.IMAGE:
+                updated_inputs[key] = Image.from_file(updated_inputs[key])
+            elif value.type == ValueType.LIST:
+                updated_inputs[key] = FlowExecutor._convert_image_to_bytes_within_list(updated_inputs[key])
+        return updated_inputs
+
+    @staticmethod
+    def _convert_image_to_bytes_within_list(input_list: list) -> list:
+        for i in range(len(input_list)):
+            if isinstance(input_list[i], list):
+                input_list[i] = FlowExecutor._convert_image_to_bytes_within_list(input_list[i])
+            elif isinstance(input_list[i], dict):
+                input_list[i] = FlowExecutor._convert_image_to_bytes_within_dict(input_list[i])
+        input_list = ChatInputList(input_list)
+        return input_list
+
+    @staticmethod
+    def _convert_image_to_bytes_within_dict(input_dict: dict) -> dict:
+        if "image" in input_dict:
+            return Image.from_dict(input_dict)
+        for key, value in input_dict.items():
+            if isinstance(value, list):
+                input_dict[key] = FlowExecutor._convert_image_to_bytes_within_list(value)
+            elif isinstance(value, dict):
+                input_dict[key] = FlowExecutor._convert_image_to_bytes_within_dict(value)
+        return input_dict
+
+    def _save_image_from_output(self, output: dict, output_dir: str):
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        for key, value in output.items():
+            if isinstance(value, Image):
+                path = output_dir / f"{key}.{value.get_extension()}"
+                value.save(path)
+                output[key] = str(path)
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
