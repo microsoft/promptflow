@@ -100,7 +100,10 @@ class LineProcessManager:
         self.input_queue.put(args)
 
     def get(self):
-        self.output_queue.get(timeout=1)
+        return self.output_queue.get(timeout=1)
+
+    def is_ready(self):
+        return self.is_ready
 
     def format_current_process(self, line_number: int):
         process_name = self.process.name if self.process else None
