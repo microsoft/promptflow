@@ -673,18 +673,22 @@ class CustomStrongTypeConnection(_Connection):
         self.package_version = kwargs.get(CustomStrongTypeConnectionConfigs.PACKAGE_VERSION, None)
 
     def __getattribute__(self, item):
-        if "__annotations__" in super().__getattribute__("__class__").__dict__:
-            annotations = super().__getattribute__("__class__").__annotations__
-        else:
-            annotations = {}
+        annotations = getattr(super().__getattribute__("__class__"), "__annotations__", {})
         if item in annotations:
-            if isinstance(item, Secret):
-                logger.warning("Please use connection.secrets[key] to access secrets.")
+            if annotations[item] == Secret:
                 return self.secrets[item]
             else:
-                logger.warning("Please use connection.configs[key] to access configs.")
                 return self.configs[item]
         return super().__getattribute__(item)
+
+    def __setattr__(self, key, value):
+        annotations = getattr(super().__getattribute__("__class__"), "__annotations__", {})
+        if key in annotations:
+            if annotations[key] == Secret:
+                self.secrets[key] = value
+            else:
+                self.configs[key] = value
+        return super().__setattr__(key, value)
 
     def _to_orm_object(self) -> ORMConnection:
         custom_connection = self._convert_to_custom()
