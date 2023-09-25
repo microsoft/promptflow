@@ -1,8 +1,11 @@
 {
   "root": true,
-  "ignorePatterns": [
-    "**/*"
-  ],
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": "latest"
+  },
+  "ignorePatterns": ["**/generated/*", "node_modules/*", "dist/*"],
+  "parser": "@typescript-eslint/parser",
   "plugins": [],
   "overrides": [
     {
@@ -138,30 +141,19 @@
             "argsIgnorePattern": "^_",
             "varsIgnorePattern": "^_"
           }
+        ],
+        "unicorn/no-null": "error",
+        "unicorn/prefer-switch": [
+          "error",
+          {
+            "minimumCases": 3
+          }
+        ],
+        "unicorn/prefer-ternary": [
+          "error",
+          "only-single-line"
         ]
       }
-    },
-    {
-      "files": [
-        "*.js",
-        "*.jsx"
-      ],
-      "extends": [
-        "plugin:@nx/javascript"
-      ],
-      "rules": {}
-    },
-    {
-      "files": [
-        "*.spec.ts",
-        "*.spec.tsx",
-        "*.spec.js",
-        "*.spec.jsx"
-      ],
-      "env": {
-        "jest": true
-      },
-      "rules": {}
     }
   ]
 }

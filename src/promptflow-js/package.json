@@ -5,11 +5,15 @@
   "repository": "https://github.com/microsoft/promptflow",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "build": "yarn workspace @promptflow-js/core run build && yarn workspace @promptflow-js/connections run build && yarn workspace @promptflow-js/cli run build"
+  },
   "workspaces": [
     "packages/*"
   ],
   "devDependencies": {
     "@microsoft/eslint-plugin-sdl": "^0.2.0",
+    "@types/node": "^20.6.5",
     "@typescript-eslint/eslint-plugin": "^6.7.2",
     "@typescript-eslint/parser": "^6.7.2",
     "eslint": "^8.50.0",

@@ -1,0 +1,17 @@
+{
+  "name": "@promptflow-js/core",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "typings": "dist/index.d.ts",
+  "repository": "https://github.com/microsoft/promptflow",
+  "license": "MIT",
+  "dependencies": {
+    "sqlite": "^5.0.1",
+    "sqlite3": "^5.1.6"
+  },
+  "scripts": {
+    "build": "tsc ./src/index --outDir ./dist --declaration",
+    "lint": "eslint ./src"
+  }
+}

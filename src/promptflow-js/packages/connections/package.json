@@ -1,0 +1,14 @@
+{
+  "name": "@promptflow-js/connections",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "repository": "https://github.com/microsoft/promptflow",
+  "license": "MIT",
+  "dependencies": {
+    "@promptflow-js/core": "*"
+  },
+  "scripts": {
+    "build": "tsc src/index.ts --outDir dist --declaration",
+    "lint": "eslint src"
+  }
+}
