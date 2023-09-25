@@ -2,10 +2,8 @@
   "name": "@promptflowjs/connections",
   "version": "0.0.1",
   "dependencies": {
-    "sqlite": "5.0.1",
-    "sqlite3": "5.1.6"
+    "@promptflowjs/core": "^0.0.1"
   },
   "main": "./index.js",
-  "module": "./index.mjs",
   "typings": "./index.d.ts"
 }

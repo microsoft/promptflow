@@ -1,8 +1,10 @@
 {
   "name": "@promptflowjs/core",
   "version": "0.0.1",
-  "dependencies": {},
+  "dependencies": {
+    "sqlite": "5.0.1",
+    "sqlite3": "5.1.6"
+  },
   "main": "./index.js",
-  "module": "./index.mjs",
   "typings": "./index.d.ts"
 }
