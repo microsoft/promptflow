@@ -39,9 +39,13 @@ class Configuration(object):
         if not os.path.exists(self.CONFIG_PATH):
             with open(self.CONFIG_PATH, "w") as f:
                 f.write(dump_yaml({}))
-        self.config = load_yaml(self.CONFIG_PATH)
-        if not self.config:
-            self.config = {}
+        self._config = load_yaml(self.CONFIG_PATH)
+        if not self._config:
+            self._config = {}
+
+    @property
+    def config(self):
+        return self._config
 
     @classmethod
     def get_instance(cls):
