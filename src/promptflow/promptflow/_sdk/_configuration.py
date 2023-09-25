@@ -40,6 +40,8 @@ class Configuration(object):
             with open(self.CONFIG_PATH, "w") as f:
                 f.write(dump_yaml({}))
         self.config = load_yaml(self.CONFIG_PATH)
+        if not self.config:
+            self.config = {}
 
     @classmethod
     def get_instance(cls):
