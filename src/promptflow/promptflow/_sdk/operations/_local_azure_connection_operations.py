@@ -14,28 +14,18 @@ logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 class LocalAzureConnectionOperations:
     def __init__(self, connection_provider):
+        from azure.identity import DefaultAzureCredential
+
         from promptflow.azure._pf_client import PFClient as PFAzureClient
 
         subscription_id, resource_group, workspace_name = self._extract_workspace(connection_provider)
         self._pfazure_client = PFAzureClient(
-            credential=self._get_cred(),
+            # TODO: disable interactive credential when starting as a service
+            credential=DefaultAzureCredential(exclude_interactive_browser_credential=False),
             subscription_id=subscription_id,
             resource_group_name=resource_group,
             workspace_name=workspace_name,
         )
-
-    @classmethod
-    def _get_cred(cls):
-        """get credential for azure storage"""
-        from azure.identity import AzureCliCredential, DefaultAzureCredential
-
-        try:
-            credential = AzureCliCredential()
-            credential.get_token("https://management.azure.com/.default")
-        except Exception:
-            credential = DefaultAzureCredential()
-
-        return credential
 
     @classmethod
     def _extract_workspace(cls, connection_provider):
