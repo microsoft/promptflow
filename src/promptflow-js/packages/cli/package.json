@@ -9,5 +9,6 @@
   },
   "main": "./index.js",
   "module": "./index.mjs",
-  "typings": "./index.d.ts"
+  "typings": "./index.d.ts",
+  "bin": "./index.js"
 }
