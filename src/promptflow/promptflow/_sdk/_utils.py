@@ -711,7 +711,9 @@ def setup_user_agent_to_operation_context(user_agent):
 
     update_user_agent_from_env_var()
     # Append user agent
-    OperationContext.get_instance().append_user_agent(user_agent)
+    context = OperationContext.get_instance()
+    context.append_user_agent(user_agent)
+    return context.get_user_agent()
 
 
 def call_from_extension() -> bool:

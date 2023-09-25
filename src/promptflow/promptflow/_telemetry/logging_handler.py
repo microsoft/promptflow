@@ -4,9 +4,7 @@
 import logging
 import platform
 
-from opencensus.ext.azure.common import utils
-from opencensus.ext.azure.common.protocol import Data, Envelope, Message
-from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure.log_exporter import AzureEventHandler
 
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._configuration import Configuration
@@ -35,7 +33,7 @@ def get_appinsights_log_handler():
             "installation_id": config.get_or_set_installation_id(),
         }
 
-        handler = AzureMLSDKLogHandler(
+        handler = PromptFlowSDKLogHandler(
             connection_string=f"InstrumentationKey={instrumentation_key}",
             custom_properties=custom_properties,
             enable_telemetry=is_telemetry_enabled(),
@@ -47,16 +45,17 @@ def get_appinsights_log_handler():
 
 
 # cspell:ignore AzureMLSDKLogHandler
-class AzureMLSDKLogHandler(AzureLogHandler):
-    """Customized AzureLogHandler for AzureML SDK"""
+class PromptFlowSDKLogHandler(AzureEventHandler):
+    """Customized AzureLogHandler for PromptFlow SDK"""
 
     def __init__(self, custom_properties, enable_telemetry, **kwargs):
         super().__init__(**kwargs)
 
         self._is_telemetry_enabled = enable_telemetry
-        self._custom_properties = custom_properties
+        self._custom_dimensions = custom_properties
 
     def emit(self, record):
+        # skip logging if telemetry is disabled
         if not self._is_telemetry_enabled:
             return
 
@@ -70,51 +69,17 @@ class AzureMLSDKLogHandler(AzureLogHandler):
             # ignore any exceptions, telemetry collection errors shouldn't block an operation
             return
 
-    # The code below is vendored from opencensus-ext-azure's AzureLogHandler base class, but the telemetry disabling
-    # logic has been added to the beginning. Without this, the base class would still send telemetry even if
-    # enable_telemetry had been set to true.
     def log_record_to_envelope(self, record):
+        # skip logging if telemetry is disabled
         if not self._is_telemetry_enabled:
             return
-
-        envelope = create_envelope(self.options.instrumentation_key, record)
-
-        properties = {
-            "process": record.processName,
-            "module": record.module,
+        custom_dimensions = {
             "level": record.levelname,
         }
-        properties.update(self._custom_properties)
+        custom_dimensions.update(self._custom_dimensions)
+        if hasattr(record, "custom_dimensions") and isinstance(record.custom_dimensions, dict):
+            record.custom_dimensions.update(custom_dimensions)
+        else:
+            record.custom_dimensions = custom_dimensions
 
-        if hasattr(record, "properties") and isinstance(record.properties, dict):
-            properties.update(record.properties)
-
-        if not record.exc_info:
-            envelope.name = "Microsoft.ApplicationInsights.Message"
-            data = Message(
-                message=self.format(record),
-                severityLevel=max(0, record.levelno - 1) // 10,
-                properties=properties,
-            )
-            envelope.data = Data(baseData=data, baseType="MessageData")
-        return envelope
-
-
-def create_envelope(instrumentation_key, record):
-    envelope = Envelope(
-        iKey=instrumentation_key,
-        tags=dict(utils.azure_monitor_context),
-        time=utils.timestamp_to_iso_str(record.created),
-    )
-    # remove unnecessary tags in telemetry
-    envelope.tags["ai.operation.id"] = getattr(
-        record,
-        "traceId",
-        "00000000000000000000000000000000",
-    )
-    envelope.tags["ai.operation.parentId"] = "|{}.{}.".format(
-        envelope.tags["ai.operation.id"],
-        getattr(record, "spanId", "0000000000000000"),
-    )
-
-    return envelope
+        return super().log_record_to_envelope(record=record)

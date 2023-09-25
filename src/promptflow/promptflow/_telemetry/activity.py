@@ -63,8 +63,8 @@ def log_activity(
     start_time = datetime.utcnow()
     completion_status = ActivityCompletionStatus.SUCCESS
 
-    message = "ActivityStarted, {}".format(activity_name)
-    logger.info(message, extra={"properties": activity_info})
+    message = f"{activity_name}.start"
+    logger.info(message, extra={"custom_dimensions": activity_info})
     exception = None
 
     try:
@@ -79,13 +79,11 @@ def log_activity(
 
             activity_info["completion_status"] = completion_status
             activity_info["duration_ms"] = duration_ms
-            message = "ActivityCompleted: Activity={}, HowEnded={}, Duration={} [ms]".format(
-                activity_name, completion_status, duration_ms
-            )
+            message = f"{activity_name}.complete"
             if exception:
-                logger.error(message, extra={"properties": activity_info})
+                logger.error(message, extra={"custom_dimensions": activity_info})
             else:
-                logger.info(message, extra={"properties": activity_info})
+                logger.info(message, extra={"custom_dimensions": activity_info})
         except Exception:  # pylint: disable=broad-except
             return  # pylint: disable=lost-exception
         # raise the exception to align with the behavior of the with statement
