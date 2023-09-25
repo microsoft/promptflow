@@ -28,15 +28,9 @@ class TelemetryMixin(object):
 def is_telemetry_enabled():
     """Check if telemetry is enabled. User can enable telemetry by
     1. setting environment variable TELEMETRY_ENABLED to true.
-    2. running `pf config set cli.telemetry_enable=true` command.
-    If None of the above is set, will prompt an input to ask user to enable telemetry.
+    2. running `pf config set cli.collect_telemetry=true` command.
+    If None of the above is set, telemetry is disabled by default.
     """
-    from promptflow._utils.utils import is_in_ci_pipeline
-
-    if not is_in_ci_pipeline():
-        # won't log telemetry by default
-        # TODO(2699390): change default telemetry logging behavior when finalized.
-        return False
     telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
     if telemetry_enabled is not None:
         return str(telemetry_enabled).lower() == "true"
@@ -44,6 +38,7 @@ def is_telemetry_enabled():
     telemetry_consent = config.get_telemetry_consent()
     if telemetry_consent is not None:
         return telemetry_consent
+    return False
 
 
 def get_telemetry_logger():
