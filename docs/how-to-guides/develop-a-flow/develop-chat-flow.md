@@ -9,13 +9,13 @@ find additional information about flow yaml schema in [Flow YAML Schema](../../r
 
 ## Flow input data
 
-The most important elements that differentiate a chat flow from a standard flow are **Chat Input** and **Chat History**. A chat flow can have multiple inputs, but **Chat History** and **Chat Input** are required inputs in chat flow.
+The most important elements that differentiate a chat flow from a standard flow are **chat input** and **chat history**. A chat flow can have multiple inputs, but **chat history** and **chat input** are required inputs in chat flow.
 
 - **Chat Input**: Chat input refers to the messages or queries submitted by users to the chatbot. Effectively handling chat input is crucial for a successful conversation, as it involves understanding user intentions, extracting relevant information, and triggering appropriate responses.
 
-- **Chat History**: Chat history is the record of all interactions between the user and the chatbot, including both user inputs and AI-generated outputs. Maintaining chat history is essential for keeping track of the conversation context and ensuring the AI can generate contextually relevant responses. Chat History is a special type of chat flow input, that stores chat messages in a structured format.
+- **Chat History**: Chat history is the record of all interactions between the user and the chatbot, including both user inputs and AI-generated outputs. Maintaining chat history is essential for keeping track of the conversation context and ensuring the AI can generate contextually relevant responses. Chat history is a special type of chat flow input, that stores chat messages in a structured format.
     
-    An example of Chat History:
+    An example of chat history:
     ```python
     [
       {"inputs": {"question": "What types of container software there are?"}, "outputs": {"answer": "There are several types of container software available, including: Docker, Kubernetes"}},
