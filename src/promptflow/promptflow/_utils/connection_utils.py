@@ -88,13 +88,13 @@ def render_comments(connection_template, cls, secrets, configs):
         comments_map = extract_comments_mapping(list(secrets) + list(configs), cls.__doc__)
         # Add comments for secret keys
         for key in secrets:
-            if comments_map[key] != "":
-                data['secrets'].yaml_set_comment_before_after_key(key, before=comments_map[key] + '\n')
+            if key in comments_map.keys():
+                data['secrets'].yaml_add_eol_comment(comments_map[key] + '\n', key)
 
         # Add comments for config keys
         for key in configs:
-            if comments_map[key] != "":
-                data['configs'].yaml_set_comment_before_after_key(key, before=comments_map[key] + '\n')
+            if key in comments_map.keys():
+                data['configs'].yaml_add_eol_comment(comments_map[key] + '\n', key)
 
         # Dump data object back to string
         buf = io.StringIO()
@@ -109,8 +109,11 @@ def render_comments(connection_template, cls, secrets, configs):
 def extract_comments_mapping(keys, doc):
     comments_map = {}
     for key in keys:
-        pattern = rf"(?:\:param {key}:.*|\:type {key}:.*)"
-        comment = ' '.join(re.findall(pattern, doc, re.MULTILINE))
-        comments_map[key] = comment
+        param_pattern = rf":param {key}: (.*)"
+        key_description = ' '.join(re.findall(param_pattern, doc)).rstrip('.')
+        type_pattern = rf":type {key}: (.*)"
+        key_type = ' '.join(re.findall(type_pattern, doc)).rstrip('.')
+        if key_type != "" or key_description != "":
+            comments_map[key] = ', '.join([key_type, key_description])
 
     return comments_map
