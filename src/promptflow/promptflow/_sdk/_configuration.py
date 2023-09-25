@@ -14,7 +14,7 @@ from azure.ai.ml._utils.utils import load_yaml
 
 from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import dump_yaml
+from promptflow._sdk._utils import call_from_extension, dump_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -27,7 +27,8 @@ class ConfigFileNotFound(ValidationException):
 class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
-    COLLECT_TELEMETRY = "cli.collect_telemetry"
+    COLLECT_TELEMETRY = "cli.telemetry_enabled"
+    EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
@@ -141,7 +142,8 @@ class Configuration(object):
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
-        # TODO(2699422): check extension's consent value when call's from extension
+        if call_from_extension():
+            return self.get_config(key=self.EXTENSION_COLLECT_TELEMETRY)
         return self.get_config(key=self.COLLECT_TELEMETRY)
 
     def set_telemetry_consent(self, value):
