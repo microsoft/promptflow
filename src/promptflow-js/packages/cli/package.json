@@ -1,7 +1,12 @@
 {
   "name": "@promptflowjs/cli",
   "version": "0.0.1",
-  "dependencies": {},
+  "dependencies": {
+    "@promptflowjs/cli": "^0.0.1",
+    "commander": "^11.0.0",
+    "inquirer": "^9.2.11",
+    "ora": "^7.0.1"
+  },
   "main": "./index.js",
   "module": "./index.mjs",
   "typings": "./index.d.ts"
