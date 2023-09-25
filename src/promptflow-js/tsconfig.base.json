@@ -24,6 +24,9 @@
       "@promptflowjs/connections": [
         "packages/connections/src/index.ts"
       ],
+      "@promptflowjs/core": [
+        "packages/core/src/index.ts"
+      ],
       "connections": [
         "connections/src/index.ts"
       ]
