@@ -7,7 +7,7 @@ class PFBytes(bytes):
 
 
 class Image(PFBytes):
-    def __init__(self, bytes: PFBytes, mime_type: str="image/*"):
+    def __init__(self, bytes: PFBytes, mime_type: str = "image/*"):
         self._hash = hash(bytes)
         self._mime_type = mime_type
         super().__init__()
