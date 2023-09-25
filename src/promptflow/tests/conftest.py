@@ -107,13 +107,19 @@ def prepare_symbolic_flow() -> str:
     return target_folder
 
 
-@pytest.fixture
-def is_custom_tool_pkg_installed() -> bool:
+@pytest.fixture()
+def install_custom_tool_pkg():
+    is_installed = False
     try:
         import my_tool_package  # noqa: F401
 
-        pkg_installed = True
-    except ImportError:
-        pkg_installed = False
+        is_installed = True
 
-    return pkg_installed
+    except ImportError:
+        import subprocess
+        import sys
+
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
+    yield
+    if not is_installed:
+        subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "test-custom-tools"])
