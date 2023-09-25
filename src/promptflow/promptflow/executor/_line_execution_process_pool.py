@@ -177,6 +177,15 @@ class LineExecutionProcessPool:
     def init_process(self):
         return LineProcess(self._executor_creation_func)
 
+    def finish_line_processing(self, line_number, result_list, bulk_logger, total_count):
+        self._processing_idx.pop(line_number)
+        log_progress(
+            logger=bulk_logger,
+            count=len(result_list),
+            total_count=total_count,
+            formatter="Finished {count} / {total_count} lines.",
+        )
+
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         new_process = self.init_process().start(task_queue, idx)
 
@@ -229,18 +238,13 @@ class LineExecutionProcessPool:
                 )
                 result_list.append(result)
                 self.init_process().end_process(process)
-            self._processing_idx.pop(line_number)
-            log_progress(
-                logger=bulk_logger,
-                count=len(result_list),
-                total_count=self._nlines,
-                formatter="Finished {count} / {total_count} lines.",
-            )
-            new_process = self.init_process().start(task_queue, idx)
-            if new_process is not None:
-                process, input_queue, output_queue = new_process
-            else:
-                return
+                new_process = self.init_process().start(task_queue, idx)
+                if new_process is not None:
+                    process, input_queue, output_queue = new_process
+                else:
+                    self.finish_line_processing(line_number, result_list, bulk_logger, self._nlines)
+                    return
+            self.finish_line_processing(line_number, result_list, bulk_logger, self._nlines)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
