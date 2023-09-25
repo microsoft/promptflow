@@ -1,0 +1,3 @@
+/dist
+/coverage
+**/vite.config.ts
