@@ -190,8 +190,29 @@ class TestFlowRun:
         }
 
     def test_show_run_details(self, remote_client):
-        details = remote_client.runs.get_details(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # get first 20 results
+        details = remote_client.get_details(run=run, max_results=20)
+
+        assert details.shape[0] == 20
+
+        # get first 1000 results while it only has 40
+        details = remote_client.get_details(run=run, max_results=1000)
+        assert details.shape[0] == 40
+
+        # get all results
+        details = remote_client.get_details(
+            run=run,
+            all_results=True,
+        )
+        assert details.shape[0] == 40
+
+        # get all results even if max_results is set to 10
+        details = remote_client.get_details(
+            run=run,
+            max_results=10,
+            all_results=True,
         )
         assert details.shape[0] == 40
 
@@ -587,3 +608,13 @@ class TestFlowRun:
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
             assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
+
+    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/partial_fail",
+            data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
+            runtime=runtime,
+        )
+        pf.runs.stream(run=run.name)
+        detail = remote_client.get_details(run=run.name)
+        assert len(detail) == 3
