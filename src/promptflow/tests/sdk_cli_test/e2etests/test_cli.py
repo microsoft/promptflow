@@ -86,6 +86,8 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        # Check the CLI works correctly when the parameter is surrounded by quotation, as below shown:
+        # --param "key=value" key="value"
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
             run_pf_command(
@@ -94,8 +96,8 @@ class TestCli:
                 "--flow",
                 f"{FLOWS_DIR}/classification_accuracy_evaluation",
                 "--column-mapping",
-                "groundtruth=${data.answer}",
-                "prediction=${run.outputs.category}",
+                "'groundtruth=${data.answer}'",
+                "prediction='${run.outputs.category}'",
                 "variant_id=${data.variant_id}",
                 "--data",
                 f"{DATAS_DIR}/webClassification3.jsonl",
@@ -219,7 +221,7 @@ class TestCli:
             f"description={description}",
         )
         run = local_client.runs.get(run_id)
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -237,7 +239,7 @@ class TestCli:
             f"description={description}",
             cwd=f"{RUNS_DIR}",
         )
-        assert run.display_name == display_name
+        assert display_name in run.display_name
         assert run.tags == {"key": "val"}
         assert run.description == description
 
@@ -309,7 +311,7 @@ class TestCli:
                 "answer=Channel",
                 "evidence=Url",
                 "--variant",
-                "${summarize_text_content.variant_1}",
+                "'${summarize_text_content.variant_1}'",
             )
             output_path = Path(temp_dir) / ".promptflow" / "flow-summarize_text_content-variant_1.output.json"
             assert output_path.exists()
@@ -768,6 +770,20 @@ class TestCli:
         detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
 
+        # Test streaming output
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
         # Validate terminal output
         chat_list = ["hi", "what is chat gpt?"]
         run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--interactive", "--verbose")
@@ -775,8 +791,7 @@ class TestCli:
         # Check node output
         assert "chat_node:" in outerr.out
         assert "show_answer:" in outerr.out
-        # TODO Checkout user code stdout
-        # assert "print:" in outerr.out
+        assert "[show_answer]: print:" in outerr.out
 
         chat_list = ["hi", "what is chat gpt?"]
         with pytest.raises(SystemExit):
@@ -804,6 +819,41 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
+
+    def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
+        chat_list = ["hi", "what is chat gpt?"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_defined_chat_history",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_defined_chat_history" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        # Test is_chat_history is set False
+        with pytest.raises(SystemExit):
+            chat_list = ["hi", "what is chat gpt?"]
+            run_pf_command(
+                "flow",
+                "test",
+                "--flow",
+                f"{FLOWS_DIR}/chat_flow_without_defined_chat_history",
+                "--interactive",
+            )
+        outerr = capsys.readouterr()
+        assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     def test_flow_test_inputs(self, capsys, caplog):
         # Flow test missing required inputs
@@ -957,6 +1007,20 @@ class TestCli:
                 },
                 ("configs.key1", "new_value"),
             ),
+            # (
+            #     "custom_strong_type_connection.yaml",
+            #     {
+            #         "module": "promptflow.connections",
+            #         "type": "custom",
+            #         "configs": {
+            #             "api_base": "This is my first connection.",
+            #             "promptflow.connection.custom_type": "MyFirstConnection",
+            #             "promptflow.connection.module": "my_tool_package.connections",
+            #         },
+            #         "secrets": {"api_key": SCRUBBED_VALUE},
+            #     },
+            #     ("configs.api_base", "new_value"),
+            # ),
         ],
     )
     def test_connection_create_update(self, file_name, expected, update_item, capfd, local_client):
@@ -1052,3 +1116,46 @@ class TestCli:
         assert "Executing node print_val. node run id:" not in f.getvalue()
         # executor logs won't stream
         assert "Node print_val completes." not in f.getvalue()
+
+    def test_format_cli_exception(self, capsys):
+        from promptflow._sdk.operations._connection_operations import ConnectionOperations
+
+        with patch.dict(os.environ, {"PROMPTFLOW_STRUCTURE_EXCEPTION_OUTPUT": "true"}):
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "connection",
+                    "show",
+                    "--name",
+                    "invalid_connection_name",
+                )
+            outerr = capsys.readouterr()
+            assert outerr.err
+            error_msg = json.loads(outerr.err)
+            assert error_msg["code"] == "ConnectionNotFoundError"
+
+            def mocked_connection_get(*args, **kwargs):
+                raise Exception("mock exception")
+
+            with patch.object(ConnectionOperations, "get") as mock_connection_get:
+                mock_connection_get.side_effect = mocked_connection_get
+                with pytest.raises(Exception):
+                    run_pf_command(
+                        "connection",
+                        "show",
+                        "--name",
+                        "invalid_connection_name",
+                    )
+                outerr = capsys.readouterr()
+                assert outerr.err
+                error_msg = json.loads(outerr.err)
+                assert error_msg["code"] == "SystemError"
+
+        with pytest.raises(SystemExit):
+            run_pf_command(
+                "connection",
+                "show",
+                "--name",
+                "invalid_connection_name",
+            )
+        outerr = capsys.readouterr()
+        assert not outerr.err

@@ -19,7 +19,10 @@ nodes:
     type: code
     path: extract_query_from_question.jinja2
   inputs:
+    # This is for easily switch between openai and azure openai.
+    # deployment_name is required by azure openai, model is required by openai.
     deployment_name: gpt-35-turbo
+    model: gpt-3.5-turbo
     temperature: '0.7'
     top_p: '1.0'
     stop: ''
@@ -60,7 +63,10 @@ nodes:
     type: code
     path: augmented_chat.jinja2
   inputs:
+    # This is to easily switch between openai and azure openai.
+    # deployment_name is required by azure openai, model is required by openai.
     deployment_name: gpt-35-turbo
+    model: gpt-3.5-turbo
     temperature: '0.8'
     question: ${inputs.question}
     chat_history: ${inputs.chat_history}

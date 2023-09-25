@@ -1,14 +1,67 @@
 # Release History
 
-## v0.1.0b3 (2023.08.30)
+## 0.1.0b7 (Upcoming)
+
+### Features Added
+
+- **pf flow validate**: support validate flow
+- **pf config set**: support set user-level promptflow config.
+  - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
+
+### Bugs Fixed
+- [Flow build] Fix flow build file name and environment variable name when connection name contains space.
+- Reserve `.promptflow` folder when dump run snapshot.
+- Read/write log file with encoding specified.
+- Avoid inconsistent error message when executor exits abnormally.
+- Align inputs & outputs row number in case partial completed run will break `pfazure run show-details`.
+
+### Improvements
+- [Executor][Internal] Improve error message with more details and actionable information.
+- [SDK/CLI] `pf/pfazure run show-details`:
+  - Add `--max-results` option to control the number of results to display.
+  - Add `--all-results` option to display all results.
+
+## 0.1.0b6 (2023.09.15)
+
+### Features Added
+
+- [promptflow][Feature] Store token metrics in run properties
+
+### Bugs Fixed
+
+- Refine error message body for flow_validator.py
+- Refine error message body for run_tracker.py
+- [Executor][Internal] Add some unit test to improve code coverage of log/metric
+- [SDK/CLI] Update portal link to remove flight.
+- [Executor][Internal] Improve inputs mapping's error message.
+- [API] Resolve warnings/errors of sphinx build
+
+## 0.1.0b5 (2023.09.08)
+
+### Features Added
+
+- **pf run visualize**: support lineage graph & display name in visualize page
+
+### Bugs Fixed
+
+- Add missing requirement `psutil` in `setup.py`
+
+## 0.1.0b4 (2023.09.04)
+
+### Features added
+
+- Support `pf flow build` commands
+
+## 0.1.0b3 (2023.08.30)
 
 - Minor bug fixes.
 
-## v0.1.0b2 (2023.08.29)
+## 0.1.0b2 (2023.08.29)
 
 - First preview version with major CLI & SDK features.
 
 ### Features added
+
 - **pf flow**: init/test/serve/export
 - **pf run**: create/update/stream/list/show/show-details/show-metrics/visualize/archive/restore/export
 - **pf connection**: create/update/show/list/delete
@@ -16,6 +69,6 @@
     - **pfazure run**: create/list/stream/show/show-details/show-metrics/visualize
 
 
-## v0.1.0b1 (2023.07.20)
+## 0.1.0b1 (2023.07.20)
 
 - Stub version in Pypi.

@@ -21,6 +21,11 @@ param(
 [string] $TempDocPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
 [string] $PkgSrcPath = [System.IO.Path]::Combine($RepoRootPath, "src\promptflow\promptflow")
 [string] $OutPath = [System.IO.Path]::Combine($ScriptPath, "_build")
+[string] $SphinxApiDoc = [System.IO.Path]::Combine($DocPath, "sphinx_apidoc.log")
+[string] $SphinxBuildDoc = [System.IO.Path]::Combine($DocPath, "sphinx_build.log")
+[string] $WarningErrorPattern = "WARNING:|ERROR:|CRITICAL:"
+$apidocWarningsAndErrors = $null
+$buildWarningsAndErrors = $null
 
 if (-not $SkipInstall){
     # Prepare doc generation packages
@@ -65,7 +70,15 @@ if($WithReferenceDoc){
     }
     Remove-Item $RefDocPath -Recurse -Force
     Write-Host "===============Build Promptflow Reference Doc==============="
-    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath"
+    sphinx-apidoc --module-first --no-headings --no-toc --implicit-namespaces "$PkgSrcPath" -o "$RefDocPath" | Tee-Object -FilePath $SphinxApiDoc 
+    $apidocWarningsAndErrors = Select-String -Path $SphinxApiDoc -Pattern $WarningErrorPattern
+
+    Write-Host "=============== Overwrite promptflow.connections.rst ==============="
+    # We are doing this overwrite because the connection entities are also defined in the promptflow.entities module
+    # and it will raise duplicate object description error if we don't do so when we run sphinx-build later.
+    $ConnectionRst = [System.IO.Path]::Combine($RepoRootPath, "scripts\docs\promptflow.connections.rst")
+    $AutoGenConnectionRst = [System.IO.Path]::Combine($RefDocPath, "promptflow.connections.rst")
+    Copy-Item -Path $ConnectionRst -Destination $AutoGenConnectionRst -Force
 }
 
 
@@ -78,7 +91,22 @@ if($WarningAsError){
 if($BuildLinkCheck){
     $BuildParams.Add("-blinkcheck")
 }
-sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams
+sphinx-build $TempDocPath $OutPath -c $ScriptPath $BuildParams | Tee-Object -FilePath $SphinxBuildDoc
+$buildWarningsAndErrors = Select-String -Path $SphinxBuildDoc -Pattern $WarningErrorPattern
 
 Write-Host "Clean path: $TempDocPath"
 Remove-Item $TempDocPath -Recurse -Confirm:$False -Force
+
+if ($apidocWarningsAndErrors) {  
+    Write-Host "=============== API doc warnings and errors ==============="  
+    foreach ($line in $apidocWarningsAndErrors) {  
+        Write-Host $line -ForegroundColor Red  
+    }  
+}  
+  
+if ($buildWarningsAndErrors) {  
+    Write-Host "=============== Build warnings and errors ==============="  
+    foreach ($line in $buildWarningsAndErrors) {  
+        Write-Host $line -ForegroundColor Red  
+    }  
+} 

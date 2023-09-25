@@ -27,10 +27,12 @@ from promptflow._sdk._constants import (
     ConnectionFields,
 )
 from promptflow._sdk._errors import InvalidFlowError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     parse_variant,
     update_dict_value_with_connections,
@@ -61,7 +63,7 @@ def _load_flow_dag(flow_path: Path):
     return flow_path, flow_dag
 
 
-def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None):
+def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = None, drop_node_variants: bool = False):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
 
     # check tuning_node & variant
@@ -75,7 +77,7 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
         except KeyError as e:
             raise InvalidFlowError(f"Variant {variant} not found for node {tuning_node}") from e
     try:
-        node_variants = flow_dag.get(NODE_VARIANTS, {})
+        node_variants = flow_dag.pop(NODE_VARIANTS, {}) if drop_node_variants else flow_dag.get(NODE_VARIANTS, {})
         updated_nodes = []
         for node in flow_dag.get(NODES, []):
             if not node.get(USE_VARIANTS, False):
@@ -157,7 +159,14 @@ def remove_additional_includes(flow_path: Path):
 
 
 @contextlib.contextmanager
-def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant: str = None, connections: dict = None):
+def variant_overwrite_context(
+    flow_path: Path,
+    tuning_node: str = None,
+    variant: str = None,
+    connections: dict = None,
+    *,
+    drop_node_variants: bool = False,
+):
     """Override variant and connections in the flow."""
     # TODO: unify variable names: flow_dir_path, flow_dag_path, flow_path
     flow_dag_path, _ = _load_flow_dag(flow_path)
@@ -166,10 +175,10 @@ def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant:
         # Merge the flow folder and additional includes to temp folder.
         with _merge_local_code_and_additional_includes(code_path=flow_path) as temp_dir:
             # always overwrite variant since we need to overwrite default variant if not specified.
-            overwrite_variant(Path(temp_dir), tuning_node, variant)
+            overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
             remove_additional_includes(Path(temp_dir))
-            flow = Flow.load(temp_dir)
+            flow = load_flow(temp_dir)
             yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
@@ -177,7 +186,7 @@ def variant_overwrite_context(flow_path: Path, tuning_node: str = None, variant:
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dag_file = Path(temp_dir) / DAG_FILE_NAME
             shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
-            overwrite_variant(Path(temp_dir), tuning_node, variant)
+            overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
             flow = Flow(code=flow_dir_path, path=temp_dag_file)
             yield flow
@@ -198,7 +207,7 @@ class SubmitterHelper:
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return Flow._get_local_connections(executable=executable)
+        return get_local_connections_from_executable(executable=executable)
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict):
@@ -217,7 +226,7 @@ class SubmitterHelper:
         for n in connection_names:
             try:
                 conn = local_client.connections.get(name=n, with_secrets=True)
-                result[n] = conn.to_execution_connection_dict()
+                result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:
                     raise e
@@ -244,8 +253,11 @@ class RunSubmitter:
         if run.run is not None:
             if isinstance(run.run, str):
                 run.run = self.run_operations.get(name=run.run)
-            if not isinstance(run.run, Run):
+            elif not isinstance(run.run, Run):
                 raise TypeError(f"Referenced run must be a Run instance, got {type(run.run)}")
+            else:
+                # get the run again to make sure it's status is latest
+                run.run = self.run_operations.get(name=run.run.name)
             if run.run.status != Status.Completed.value:
                 raise ValueError(f"Referenced run {run.run.name} is not completed, got status {run.run.status}")
             run.run.outputs = self.run_operations._get_outputs(run.run)
@@ -283,12 +295,13 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
             logger.warning(f"Run {run.name} failed when executing in executor.")
             exception = e
-            # for user error, swallow stack trace and return failed run since user don't need the strack trace
+            # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):
                 # for other errors, raise it to user to help debug root cause.
                 raise e
@@ -299,14 +312,17 @@ class RunSubmitter:
             local_storage.dump_snapshot(flow)
             local_storage.dump_inputs(mapped_inputs)
             # result: outputs and metrics
-            # TODO: retrieve root run system metrics from executor return, we might store it in db
             local_storage.persist_result(bulk_result)
-            local_storage.dump_exception(exception)
+            # exceptions
+            local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
+            # system metrics: token related
+            system_metrics = {} if bulk_result is None else bulk_result.get_openai_metrics()
 
             self.run_operations.update(
                 name=run.name,
                 status=status,
                 end_time=datetime.datetime.now(),
+                system_metrics=system_metrics,
             )
 
     def _resolve_data(self, run: Run):
@@ -317,10 +333,14 @@ class RunSubmitter:
         for input_key, local_file in input_dicts.items():
             result[input_key] = load_data(local_file)
         if run.run is not None:
-            variant_output = reverse_transpose(self.run_operations._get_outputs(run.run))
-            result["run.outputs"] = variant_output
-            variant_input = reverse_transpose(self.run_operations._get_inputs(run.run))
-            result["run.inputs"] = variant_input
+            referenced_outputs = self.run_operations._get_outputs(run.run)
+            if referenced_outputs:
+                variant_output = reverse_transpose(referenced_outputs)
+                result["run.outputs"] = variant_output
+            referenced_inputs = self.run_operations._get_inputs(run.run)
+            if referenced_inputs:
+                variant_input = reverse_transpose(referenced_inputs)
+                result["run.inputs"] = variant_input
         return result
 
     @classmethod

@@ -11,7 +11,12 @@ from sqlalchemy import TEXT, Boolean, Column, Index
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import declarative_base
 
-from promptflow._sdk._constants import RUN_INFO_CREATED_ON_INDEX_NAME, RUN_INFO_TABLENAME, ListViewType
+from promptflow._sdk._constants import (
+    RUN_INFO_CREATED_ON_INDEX_NAME,
+    RUN_INFO_TABLENAME,
+    FlowRunProperties,
+    ListViewType,
+)
 from promptflow._sdk._errors import RunExistsError, RunNotFoundError
 
 from .retry import sqlite_retry
@@ -29,7 +34,7 @@ class RunInfo(Base):
     status = Column(TEXT, nullable=False)
     display_name = Column(TEXT)  # can be edited by users
     description = Column(TEXT)  # updated by users
-    tags = Column(TEXT)  # updated by users, json(list of jsons) string
+    tags = Column(TEXT)  # updated by users, json(list of json) string
     # properties: flow path, output path..., json string
     # as we can parse and get all information from parsing the YAML in memory,
     # we don't need to store any extra information in the database at all;
@@ -89,6 +94,7 @@ class RunInfo(Base):
         tags: Optional[Dict[str, str]] = None,
         start_time: Optional[Union[str, datetime.datetime]] = None,
         end_time: Optional[Union[str, datetime.datetime]] = None,
+        system_metrics: Optional[Dict[str, int]] = None,
     ) -> None:
         update_dict = {}
         if status is not None:
@@ -110,7 +116,20 @@ class RunInfo(Base):
             self.end_time = end_time if isinstance(end_time, str) else end_time.isoformat()
             update_dict["end_time"] = self.end_time
         with mgmt_db_session() as session:
-            session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
+            # if not update system metrics, we can directly update the row;
+            # otherwise, we need to get properties first, update the dict and finally update the row
+            if system_metrics is None:
+                session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
+            else:
+                # with high concurrency on same row, we may lose the earlier commit
+                # we regard it acceptable as it should be an edge case to update properties
+                # on same row with high concurrency;
+                # if it's a concern, we can move those properties to an extra column
+                run_info = session.query(RunInfo).filter(RunInfo.name == self.name).first()
+                props = json.loads(run_info.properties)
+                props[FlowRunProperties.SYSTEM_METRICS] = system_metrics.copy()
+                update_dict["properties"] = json.dumps(props)
+                session.query(RunInfo).filter(RunInfo.name == self.name).update(update_dict)
             session.commit()
 
     @staticmethod

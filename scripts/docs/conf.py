@@ -21,7 +21,6 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "matplotlib.sphinxext.plot_directive",
-    "numpydoc",
     "sphinx_togglebutton",
     'myst_parser',
     "sphinx.builders.linkcheck",
@@ -31,7 +30,7 @@ extensions = [
 # specifying the natural language populates some key tags
 language = "en"
 
-# spcify charset as utf-8 to accept chinese punctuation
+# specify charset as utf-8 to accept chinese punctuation
 charset_type = "utf-8"
 
 autosummary_generate = True
@@ -49,10 +48,11 @@ exclude_patterns = [
 
 # Options for the linkcheck builder
 linkcheck_ignore = [
-    r"https://(ms\.)?portal\.azure\.com/",
-    r"https://aka\.ms/acs-doc",
-    r"https://github\.com/microsoft/promptflow",
     r"https://platform\.openai\.com/",
+    # These are used in card links, for example 'xx.html', .md can't be resolved.
+    r"^(?!https?)",
+    "deploy-using-docker.html",
+    "deploy-using-kubernetes.html",
 ]
 
 linkcheck_exclude_documents = ["contributing"]

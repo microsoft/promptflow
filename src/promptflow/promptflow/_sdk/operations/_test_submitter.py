@@ -5,13 +5,13 @@
 import contextlib
 import json
 import logging
-import sys
+import re
 import time
 from pathlib import Path
 from types import GeneratorType
-from typing import Any, Iterable, Mapping
+from typing import Any, Mapping
 
-from promptflow._sdk._constants import CHAT_HISTORY, LOGGER_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
@@ -132,7 +132,7 @@ class TestSubmitter:
         self,
         inputs: Mapping[str, Any],
         environment_variables: dict = None,
-        stream: bool = True,
+        stream_log: bool = True,
         allow_generator_output: bool = False,
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
@@ -143,36 +143,24 @@ class TestSubmitter:
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream):
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
             flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+            flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggr_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
-                line_result.node_run_infos.update(aggr_results.node_run_infos)
-                line_result.run_info.metrics = aggr_results.metrics
+                aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+                line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                line_result.run_info.metrics = aggregation_results.metrics
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
+                generator_outputs = self._get_generator_outputs(line_result.output)
+                if generator_outputs:
+                    logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
             return line_result
-
-    def interactive_test(self, inputs: Mapping[str, Any], environment_variables: dict = None):
-        from promptflow.executor.flow_executor import FlowExecutor
-
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
-        # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
-        environment_variables = environment_variables if environment_variables else {}
-        SubmitterHelper.init_env(environment_variables=environment_variables)
-
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=False):
-            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
-            # TODO modify to call the method in the flow server
-            flow_executor.enable_streaming_for_llm_flow(lambda: True)
-            line_result = flow_executor._exec(inputs, allow_generator_output=True)
-        return line_result
 
     def node_test(
         self,
@@ -200,7 +188,7 @@ class TestSubmitter:
             )
             return result
 
-    def _chat_flow(self, inputs, environment_variables: dict = None, show_step_output=False):
+    def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """
         Interact with Chat Flow. Do the following:
             1. Combine chat_history and user input as the input for each round of the chat flow.
@@ -216,49 +204,49 @@ class TestSubmitter:
             yield
             logger.setLevel(origin_level)
 
-        @contextlib.contextmanager
-        def add_prefix():
-            write = sys.stdout.write
-
-            def prefix_output(*args, **kwargs):
-                if args[0].strip():
-                    write(f"{Fore.LIGHTBLUE_EX}[{self.dataplane_flow.name}]: ")
-                write(*args, **kwargs)
-
-            sys.stdout.write = prefix_output
-            yield
-            sys.stdout.write = write
+        def show_node_log_and_output(node_run_infos, show_node_output):
+            """Show stdout and output of nodes."""
+            for node_name, node_result in node_run_infos.items():
+                # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
+                pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
+                node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+                if node_logs:
+                    for log in node_logs.rstrip("\n").split("\n"):
+                        print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                        print(log)
+                if show_node_output:
+                    print(f"{Fore.CYAN}{node_name}: ", end="")
+                    # TODO executor return a type string of generator
+                    node_output = node_result.output
+                    if isinstance(node_result.output, GeneratorType):
+                        node_output = "".join(get_result_output(node_output))
+                    print(f"{Fore.LIGHTWHITE_EX}{node_output}")
 
         def print_chat_output(output):
-            chat_output = output
-            if isinstance(output, Iterable):
-                chat_output = ""
-                for event in output:
+            if isinstance(output, GeneratorType):
+                for event in get_result_output(output):
                     print(event, end="")
                     # For better animation effects
                     time.sleep(0.01)
-                    chat_output += event
                 # Print a new line at the end of the response
                 print()
             else:
-                print(chat_output)
-            return chat_output
+                print(output)
 
-        def get_generator_values(generator):
-            if isinstance(generator, GeneratorType):
-                if generator not in generator_record:
-                    generator_record[generator] = list(generator)
-                return generator_record[generator]
-            else:
-                return generator
+        def get_result_output(output):
+            if isinstance(output, GeneratorType):
+                if output in generator_record:
+                    output = iter(generator_record[output].items)
+                else:
+                    proxy = output.gi_frame.f_locals["proxy"]
+                    generator_record[output] = proxy
+            return output
 
-        def resolve_generator(flow_result, flow_outputs, node_outputs):
-            flow_outputs = flow_outputs or {}
-            node_outputs = node_outputs or {}
+        def resolve_generator(flow_result):
             # resolve generator in flow result
             for k, v in flow_result.run_info.output.items():
                 if isinstance(v, GeneratorType):
-                    flow_output = flow_outputs.get(k, "".join(v))
+                    flow_output = "".join(get_result_output(v))
                     flow_result.run_info.output[k] = flow_output
                     flow_result.run_info.result[k] = flow_output
                     flow_result.output[k] = flow_output
@@ -266,7 +254,7 @@ class TestSubmitter:
             # resolve generator in node outputs
             for node_name, node in flow_result.node_run_infos.items():
                 if isinstance(node.output, GeneratorType):
-                    node_output = node_outputs.get(node_name, "".join(node.output))
+                    node_output = "".join(get_result_output(node.output))
                     node.output = node_output
                     node.result = node_output
 
@@ -296,52 +284,26 @@ class TestSubmitter:
                 break
             inputs = inputs or {}
             inputs[input_name] = input_value
-            inputs[CHAT_HISTORY] = chat_history
+            inputs[chat_history_name] = chat_history
             with change_logger_level(level=logging.WARNING):
                 chat_inputs, _ = self._resolve_data(inputs=inputs)
 
-            with add_prefix():
-                flow_result = self.interactive_test(
-                    inputs=chat_inputs,
-                    environment_variables=environment_variables,
-                )
-                self._raise_error_when_test_failed(flow_result, show_trace=True)
-            node_outputs = {}
-            if show_step_output:
-                for node_name, node_result in flow_result.node_run_infos.items():
-                    print(f"{Fore.CYAN}{node_name}: ", end="")
-                    try:
-                        # TODO executor return a type string of generator
-                        node_output = node_result.output
-                        if isinstance(node_result.output, GeneratorType):
-                            node_output = "".join(get_generator_values(node_result.output))
-                        print(f"{Fore.LIGHTWHITE_EX}{json.dumps(node_output, indent=4)}")
-                    except Exception:  # pylint: disable=broad-except
-                        print(f"{Fore.LIGHTWHITE_EX}{node_output}")
-                    node_outputs[node_name] = node_output
+            flow_result = self.flow_test(
+                inputs=chat_inputs,
+                environment_variables=environment_variables,
+                stream_log=False,
+                allow_generator_output=True,
+            )
+            self._raise_error_when_test_failed(flow_result, show_trace=True)
+            show_node_log_and_output(flow_result.node_run_infos, show_step_output)
 
             print(f"{Fore.YELLOW}Bot: ", end="")
-            chat_output = get_generator_values(flow_result.output[output_name])
-            chat_output = print_chat_output(chat_output)
+            print_chat_output(flow_result.output[output_name])
+            flow_result = resolve_generator(flow_result)
             flow_outputs = {k: v for k, v in flow_result.output.items()}
-            flow_outputs[output_name] = chat_output
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
-            flow_result = resolve_generator(flow_result, flow_outputs, node_outputs)
             self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
-
-    def _get_streaming_nodes(self):
-        """Get streaming node that is llm node and the node output is only referenced by flow output."""
-        # TODO remove it after executor exposing this method.
-        streaming_nodes = []
-        for node in self.dataplane_flow.nodes:
-            if (
-                self.dataplane_flow.is_llm_node(node)
-                and self.dataplane_flow.is_referenced_by_flow_output(node)
-                and not self.dataplane_flow.is_referenced_by_other_node(node)
-            ):
-                streaming_nodes.append(node)
-        return streaming_nodes
 
     @staticmethod
     def _dump_result(flow_folder, prefix, flow_result=None, node_result=None):
@@ -390,3 +352,8 @@ class TestSubmitter:
             if show_trace:
                 print(stack_trace)
             raise UserErrorException(f"{error_type}: {error_message}")
+
+    @staticmethod
+    def _get_generator_outputs(outputs):
+        outputs = outputs or {}
+        return {key: outputs for key, output in outputs.items() if isinstance(output, GeneratorType)}

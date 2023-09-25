@@ -46,14 +46,14 @@ def get_readme_description_first_sentence(readme) -> str:
                     if sentence == "":
                         sentence += line.strip()
                     elif line.strip() != "":
-                        sentence += line.strip()
+                        sentence += ' ' + line.strip()
             return sentence
     except Exception:
         print(f"Error during reading {readme}")
         return ""
 
 
-def write_readme(workflow_telemetrys, readme_telemetrys):
+def write_readme(workflow_telemetry, readme_telemetry):
     global BRANCH
 
     ReadmeStepsManage.git_base_dir()
@@ -84,7 +84,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         "notebooks": [],
     }
 
-    for workflow_telemetry in workflow_telemetrys:
+    for workflow_telemetry in workflow_telemetry:
         notebook_name = f"{workflow_telemetry.name}.ipynb"
         gh_working_dir = workflow_telemetry.gh_working_dir
         pipeline_name = workflow_telemetry.workflow_name
@@ -93,7 +93,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
         # For workflows, open ipynb as raw json and
         # setup description at .metadata.description
         description = get_notebook_readme_description(workflow_telemetry.notebook)
-        notebook_path = gh_working_dir.replace("examples/", "")
+        notebook_path = gh_working_dir.replace("examples/", "") + f"/{notebook_name}"
         if gh_working_dir.startswith("examples/flows/standard"):
             flows["notebooks"].append(
                 {
@@ -160,7 +160,7 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
 
     # Adjust tutorial names:
 
-    for readme_telemetry in readme_telemetrys:
+    for readme_telemetry in readme_telemetry:
         if readme_telemetry.readme_name.endswith("README.md"):
             notebook_name = readme_telemetry.readme_folder.split("/")[-1]
         else:
@@ -269,15 +269,16 @@ def write_readme(workflow_telemetrys, readme_telemetrys):
 
 if __name__ == "__main__":
     input_glob = ["examples/**/*.ipynb"]
-    workflow_telemetrys = []
-    workflow_generator.main(input_glob, workflow_telemetrys)
+    workflow_telemetry = []
+    workflow_generator.main(input_glob, workflow_telemetry)
 
     input_glob_readme = [
         "examples/flows/**/README.md",
         "examples/connections/**/README.md",
         "examples/tutorials/**/chat*.md",
+        "examples/tutorials/**/README.md",
     ]
-    readme_telemetrys = []
-    readme_generator.main(input_glob_readme, readme_telemetrys)
+    readme_telemetry = []
+    readme_generator.main(input_glob_readme, readme_telemetry)
 
-    write_readme(workflow_telemetrys, readme_telemetrys)
+    write_readme(workflow_telemetry, readme_telemetry)

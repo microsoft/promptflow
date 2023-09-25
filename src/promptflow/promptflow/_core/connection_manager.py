@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY, CONNECTION_SECRET_KEYS, PROMPTFLOW_CONNECTIONS
+from promptflow._sdk._constants import CustomStrongTypeConnectionConfigs
 from promptflow._utils.utils import try_import
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.types import Secret
@@ -42,7 +43,8 @@ class ConnectionManager:
         for key, connection_dict in _dict.items():
             typ = connection_dict.get("type")
             if typ not in cls_mapping:
-                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {cls_mapping.keys()}.")
+                supported = [key for key in cls_mapping.keys() if not key.startswith("_")]
+                raise ValueError(f"Unknown connection {key!r} type {typ!r}, supported are {supported}.")
             value = connection_dict.get("value", {})
             connection_class = cls_mapping[typ]
 
@@ -54,6 +56,8 @@ class ConnectionManager:
                 secrets = {k: v for k, v in value.items() if k in secret_keys}
                 configs = {k: v for k, v in value.items() if k not in secrets}
                 connection_value = connection_class(configs=configs, secrets=secrets)
+                if CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in configs:
+                    connection_value.custom_type = configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
             else:
                 """
                 Note: Ignore non exists keys of connection class,
@@ -109,7 +113,7 @@ class ConnectionManager:
             if module:
                 modules.add(module)
         for module in modules:
-            # Supress import error, as we have legacy module promptflow.tools.connections.
+            # Suppress import error, as we have legacy module promptflow.tools.connections.
             try_import(module, f"Import connection module {module!r} failed.", raise_error=False)
 
     @staticmethod

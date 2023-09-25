@@ -16,6 +16,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
+from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -51,32 +52,32 @@ class TestFlowRun:
         run = remote_client.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_basic_evaluation(self, remote_client_int, runtime_int):
+    def test_basic_evaluation(self, pf, runtime):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
-        run = remote_client_int.run(
+        run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=data_path,
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(run, Run)
-        run = remote_client_int.runs.stream(run=run.name)
+        run = pf.runs.stream(run=run.name)
         assert run.status == RunStatus.COMPLETED
 
-        eval_run = remote_client_int.run(
+        eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             data=data_path,
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(eval_run, Run)
-        remote_client_int.runs.stream(run=eval_run.name)
+        pf.runs.stream(run=eval_run.name)
 
         # evaluation run without data
-        eval_run = remote_client_int.run(
+        eval_run = pf.run(
             flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
             run=run,
             column_mapping={
@@ -84,10 +85,10 @@ class TestFlowRun:
                 "groundtruth": "${run.inputs.url}",
                 "prediction": "${run.outputs.category}",
             },
-            runtime=runtime_int,
+            runtime=runtime,
         )
         assert isinstance(eval_run, Run)
-        remote_client_int.runs.stream(run=eval_run.name)
+        pf.runs.stream(run=eval_run.name)
 
     def test_run_with_connection_overwrite(self, remote_client, pf, runtime):
         run = pf.run(
@@ -179,18 +180,39 @@ class TestFlowRun:
             "start_time": "2023-08-08T07:32:56.637761+00:00",
             "end_time": "2023-08-08T07:33:07.853922+00:00",
             "duration": "00:00:11.2161606",
-            "portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/classification_accuracy_eval_default_20230808_153241_422491/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus&flight=promptfilestorage,PFSourceRun=false",  # noqa: E501
+            "portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/classification_accuracy_eval_default_20230808_153241_422491/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
             "data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl",  # noqa: E501
             "data_portal_url": "https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab",  # noqa: E501
             "output": "azureml://locations/eastus/workspaces/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/versions/1",  # noqa: E501
             "output_portal_url": "https://ml.azure.com/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/1/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
             "run": "web_classification_default_20230804_143634_056856",
-            "input_run_portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus&flight=promptfilestorage,PFSourceRun=false",  # noqa: E501
+            "input_run_portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
         }
 
     def test_show_run_details(self, remote_client):
-        details = remote_client.runs.get_details(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # get first 20 results
+        details = remote_client.get_details(run=run, max_results=20)
+
+        assert details.shape[0] == 20
+
+        # get first 1000 results while it only has 40
+        details = remote_client.get_details(run=run, max_results=1000)
+        assert details.shape[0] == 40
+
+        # get all results
+        details = remote_client.get_details(
+            run=run,
+            all_results=True,
+        )
+        assert details.shape[0] == 40
+
+        # get all results even if max_results is set to 10
+        details = remote_client.get_details(
+            run=run,
+            max_results=10,
+            all_results=True,
         )
         assert details.shape[0] == 40
 
@@ -353,6 +375,13 @@ class TestFlowRun:
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
 
+        with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
+            RunOperations, "get"
+        ), patch.object(FlowServiceCaller, "create_flow_session"):
+            mock_submit.side_effect = submit
+            # automatic is a reserved runtime name, will use automatic runtime if specified.
+            pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl", runtime="automatic")
+
     def test_automatic_runtime_with_environment(self, pf):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
@@ -511,8 +540,6 @@ class TestFlowRun:
         def submit(*args, **kwargs):
             body = kwargs.get("body", None)
             assert flow_session_id == body.session_id
-            # session id also contains alias
-            assert flow_lineage_id in flow_session_id
             assert flow_lineage_id == body.flow_lineage_id
             return body
 
@@ -521,7 +548,6 @@ class TestFlowRun:
             RunOperations, "get"
         ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
-            # no runtime provided, will use automatic runtime
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -537,3 +563,58 @@ class TestFlowRun:
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
             )
+
+    @pytest.mark.skip(reason="temporarily disable this for service-side error.")
+    def test_automatic_runtime_creation_failure(self, pf):
+
+        with pytest.raises(FlowRequestException) as e:
+            pf.runs._resolve_runtime(
+                run=Run(
+                    flow=Path(f"{FLOWS_DIR}/basic-with-connection"),
+                    resources={"instance_type": "not_exist"},
+                ),
+                flow_path=Path(f"{FLOWS_DIR}/basic-with-connection"),
+                runtime=None,
+            )
+        assert "Session creation failed for" in str(e.value)
+
+    def test_run_submission_exception(self, remote_client):
+        from azure.core.exceptions import HttpResponseError
+
+        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
+
+        def fake_submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            request_id_in_headers = headers["x-ms-client-request-id"]
+            # request id in headers should be same with request id in service caller
+            assert request_id_in_headers == remote_client.runs._service_caller._request_id
+            raise HttpResponseError("customized error message.")
+
+        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
+            FlowServiceCaller, "_set_headers_with_user_aml_token"
+        ):
+            mock_request.side_effect = fake_submit
+            with pytest.raises(FlowRequestException) as e:
+                original_request_id = remote_client.runs._service_caller._request_id
+                remote_client.runs._service_caller.submit_bulk_run(
+                    subscription_id="fake_subscription_id",
+                    resource_group_name="fake_resource_group",
+                    workspace_name="fake_workspace_name",
+                )
+                # request id has been updated
+                assert original_request_id != remote_client.runs._service_caller._request_id
+
+            # original error message should be included in FlowRequestException
+            assert "customized error message" in str(e.value)
+            # request id should be included in FlowRequestException
+            assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
+
+    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/partial_fail",
+            data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
+            runtime=runtime,
+        )
+        pf.runs.stream(run=run.name)
+        detail = remote_client.get_details(run=run.name)
+        assert len(detail) == 3

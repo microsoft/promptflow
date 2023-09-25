@@ -23,6 +23,9 @@ def no_readme_generation_filter(item: Path, index, array) -> bool:
     If there is no steps in the readme, then no generation
     """
     try:
+        if 'build' in str(item):  # skip build folder
+            return False
+
         full_text = readme_parser(item.relative_to(ReadmeStepsManage.git_base_dir()))
         if full_text == "":
             return False
@@ -38,7 +41,6 @@ def main(input_glob, output_files=[]):
     readme_items = sorted([j for i in globs for j in i])
 
     readme_items = local_filter(no_readme_generation_filter, readme_items)
-
     for readme in readme_items:
         readme_telemetry = Telemetry()
         workflow_name = readme.relative_to(ReadmeStepsManage.git_base_dir())

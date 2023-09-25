@@ -21,11 +21,14 @@ with open("CHANGELOG.md", encoding="utf-8") as f:
     changelog = f.read()
 
 REQUIRES = [
+    "psutil",  # Get process information when bulk run
     "openai>=0.27.8,<0.28.0",  # promptflow.core.api_injector
     "flask>=2.2.3,<3.0.0",  # Serving endpoint requirements
     "dataset>=1.6.0,<2.0.0",  # promptflow.storage
     "sqlalchemy>=1.4.48,<2.0.0",  # sqlite requirements
-    "pandas>=1.5.3,<2.0.0",  # load data requirements
+    # note that pandas 1.5.3 is the only version to test in ci before promptflow 0.1.0b7 is released
+    # and pandas 2.x.x will be the only version to test in ci after that.
+    "pandas>=1.5.3,<3.0.0",  # load data requirements
     "python-dotenv>=1.0.0,<2.0.0",  # control plane sdk requirements, to load .env file
     "keyring>=24.2.0,<25.0.0",  # control plane sdk requirements, to access system keyring service
     "pydash>=5.1.2,<6.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
@@ -39,6 +42,8 @@ REQUIRES = [
     "pyyaml>=5.1.0,<7.0.0",
     "gitpython>=3.1.24,<4.0.0",  # used git info to generate flow id
     "tiktoken>=0.4.0"
+    "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
+    "waitress>=2.1.2,<3.0.0",  # used to serve local service
 ]
 
 setup(

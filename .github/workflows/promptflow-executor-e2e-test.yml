@@ -2,21 +2,29 @@ name: promptflow-executor-e2e-test
 on:
   schedule:
     - cron: "40 20 * * *" # Every day starting at 4:40 BJT
-  pull_request:
-    branches: [ main ]
+  pull_request_target:
     paths:
       - src/promptflow/**
       - scripts/**
-      - .github/workflows/promptflow-executor-e2e-test.yml
+      - '**promptflow-executor-e2e-test.yml'
   workflow_dispatch:
 env:
-  TENANT_ID: "${{ secrets.TENANT_ID }}"
-  CLIENT_ID: "${{ secrets.CLIENT_ID }}"
-  CLIENT_SECRET: "${{ secrets.CLIENT_SECRET }}"
-  packageSetupType: promptflow_open_source
+  packageSetupType: promptflow_with_extra
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
 jobs:
+  authorize:
+    environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
+      ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
   executor_e2e_tests:
+    needs: authorize
     strategy:
       fail-fast: false
       matrix:
@@ -25,6 +33,8 @@ jobs:
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Display and Set Environment Variables
       run: |
         if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
@@ -37,9 +47,9 @@ jobs:
         fi
         env | sort >> $GITHUB_OUTPUT
       id: display_env
-      shell: bash -el {0}
-    - name: Conda Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
-      uses: "./.github/actions/step_create_conda_environment"
+      shell: bash
+    - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+      uses: "./.github/actions/step_create_python_environment"
       with:
         pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
     - name: Build wheel
@@ -59,22 +69,20 @@ jobs:
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
     - name: Run Coverage Test
-      shell: bash -l {0}
+      shell: pwsh
       working-directory: ${{ github.workspace }}
-      run: |-
-        set -x -e
-        export IS_IN_CI_PIPELINE="true"
+      run: |
+        gci env:* | sort-object name
         az account show
-        conda activate release-env
-        export PYTHONPATH=${{ github.workspace }}/src/promptflow
         pip install langchain
-        python scripts/building/run_coverage_tests.py \
-          -p ${{ github.workspace }}/src/promptflow/promptflow \
-          -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests \
-          -l eastus \
-          -m "all" \
-          -n ${{ steps.cpu-cores.outputs.count }} \
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/executor/.coveragerc
+        python scripts/building/run_coverage_tests.py `
+          -p ${{ env.testWorkingDirectory }}/promptflow `
+          -t ${{ env.testWorkingDirectory }}/tests/executor/e2etests `
+          -l eastus `
+          -m "all" `
+          -n ${{ steps.cpu-cores.outputs.count }}`
+          --coverage-config ${{ env.testWorkingDirectory }}/tests/executor/.coveragerc `
+          --disable-cov-branch
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
@@ -87,20 +95,20 @@ jobs:
     name: "Publish Tests Results"
     needs: executor_e2e_tests
     runs-on: ubuntu-latest
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
+    permissions: write-all
     if: always()
-
     steps:
     - name: checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
+        testActionFileName: promptflow-executor-e2e-test.yml
+        testResultTitle: Executor E2E Test Result
         osVersion: ubuntu-latest
         pythonVersion: 3.9
-        coverageThreshold: 0.55
+        coverageThreshold: 70
         token: ${{ secrets.GITHUB_TOKEN }}
+        context: test/executor_e2e

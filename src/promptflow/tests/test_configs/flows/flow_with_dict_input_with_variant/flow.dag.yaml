@@ -1,0 +1,27 @@
+inputs:
+  key:
+    type: object
+outputs:
+  output:
+    type: string
+    reference: ${print_val.output.value}
+nodes:
+- name: print_val
+  use_variants: true
+  type: python
+  source:
+    type: code
+    path: print_val.py
+node_variants:
+  print_val:
+    default_variant_id: variant1
+    variants:
+      variant1:
+        node:
+          type: python
+          source:
+            type: code
+            path: print_val.py
+          inputs:
+            key: ${inputs.key}
+            conn: mock_custom_connection

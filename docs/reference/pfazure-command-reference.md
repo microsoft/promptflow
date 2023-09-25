@@ -1,7 +1,7 @@
 # pfazure
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
 Manage prompt flow resources on Azure with the prompt flow CLI.
@@ -48,7 +48,7 @@ pfazure run create [--file]
 
 `--file -f`
 
-Local path to the YAML file containing the prompt flow run specification; can be overrided by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
+Local path to the YAML file containing the prompt flow run specification; can be overwritten by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
 
 `--flow`
 

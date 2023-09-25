@@ -2,17 +2,20 @@ from pathlib import Path
 
 import pytest
 
+from promptflow._core.tools_manager import ToolLoader
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
+from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
+    InvalidSource,
     NodeInputValidationError,
     ValueTypeUnresolved,
 )
-from promptflow.executor._tool_resolver import ToolResolver
+from promptflow.executor._tool_resolver import ToolResolver, ResolvedTool
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -27,7 +30,6 @@ class TestToolResolver:
 
     def test_resolve_tool_by_node_with_diff_type(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
-        node.source = mocker.Mock(type=ToolSourceType.Package)
 
         mocker.patch.object(
             resolver,
@@ -49,8 +51,14 @@ class TestToolResolver:
             "_resolve_llm_node",
             return_value=mocker.Mock(node=node, definition=None, callable=None, init_args=None),
         )
+        mocker.patch.object(
+            resolver,
+            "_integrate_prompt_in_package_node",
+            return_value=mocker.Mock(node=node, definition=None, callable=None, init_args=None),
+        )
 
         node.type = ToolType.PYTHON
+        node.source = mocker.Mock(type=ToolSourceType.Package)
         resolver.resolve_tool_by_node(node)
         resolver._resolve_package_node.assert_called_once()
 
@@ -60,12 +68,19 @@ class TestToolResolver:
         resolver._resolve_script_node.assert_called_once()
 
         node.type = ToolType.PROMPT
-        resolver._resolve_prompt_node(node)
+        resolver.resolve_tool_by_node(node)
         resolver._resolve_prompt_node.assert_called_once()
 
         node.type = ToolType.LLM
-        resolver._resolve_llm_node(node)
+        resolver.resolve_tool_by_node(node)
         resolver._resolve_llm_node.assert_called_once()
+
+        resolver._resolve_package_node.reset_mock()
+        node.type = ToolType.CUSTOM_LLM
+        node.source = mocker.Mock(type=ToolSourceType.PackageWithPrompt)
+        resolver.resolve_tool_by_node(node)
+        resolver._resolve_package_node.assert_called_once()
+        resolver._integrate_prompt_in_package_node.assert_called_once()
 
     def test_resolve_tool_by_node_with_invalid_type(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
@@ -84,12 +99,36 @@ class TestToolResolver:
             resolver.resolve_tool_by_node(node)
         assert "Tool source type" in exec_info.value.args[0]
 
+        node.type = ToolType.CUSTOM_LLM
+        node.source = mocker.Mock(type=None)
+        with pytest.raises(NotImplementedError) as exec_info:
+            resolver.resolve_tool_by_node(node)
+        assert "Tool source type" in exec_info.value.args[0]
+
     def test_resolve_tool_by_node_with_no_source(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.source = None
 
         with pytest.raises(UserErrorException):
             resolver.resolve_tool_by_node(node)
+
+    def test_resolve_tool_by_node_with_no_source_path(self, resolver, mocker):
+        node = mocker.Mock(name="node", tool=None, inputs={})
+        node.type = ToolType.PROMPT
+        node.source = mocker.Mock(type=ToolSourceType.Package, path=None)
+
+        with pytest.raises(InvalidSource) as exec_info:
+            resolver.resolve_tool_by_node(node)
+        assert "Node source path" in exec_info.value.message
+
+    def test_resolve_tool_by_node_with_duplicated_inputs(self, resolver, mocker):
+        node = mocker.Mock(name="node", tool=None, inputs={})
+        node.type = ToolType.PROMPT
+        mocker.patch.object(resolver, "_load_source_content", return_value="{{template}}")
+
+        with pytest.raises(NodeInputValidationError) as exec_info:
+            resolver.resolve_tool_by_node(node)
+        assert "These inputs are duplicated" in exec_info.value.args[0]
 
     def test_ensure_node_inputs_type(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
@@ -192,7 +231,7 @@ class TestToolResolver:
             tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert "Invalid connection" in exe_info.value.message
 
-        # Case 5: normal return
+        # Case 5: Normal case
         tool = Tool(
             name="mock",
             type="python",
@@ -210,3 +249,125 @@ class TestToolResolver:
         key, conn = tool_resolver._resolve_llm_connection_to_inputs(node, tool)
         assert key == "conn"
         assert isinstance(conn, AzureOpenAIConnection)
+
+    def test_resolve_llm_node(self, mocker):
+        def mock_llm_api_func(prompt: PromptTemplate, **kwargs):
+            from promptflow.tools.template_rendering import render_template_jinja2
+
+            return render_template_jinja2(prompt, **kwargs)
+
+        tool_loader = ToolLoader(working_dir=None)
+        tool = Tool(name="mock", type=ToolType.LLM, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
+        mocker.patch.object(tool_loader, "load_tool_for_llm_node", return_value=tool)
+
+        mocker.patch(
+            "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
+            return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection})
+        )
+
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver._tool_loader = tool_loader
+        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}")
+
+        node = Node(
+            name="mock",
+            tool=None,
+            inputs={
+                "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
+            },
+            connection="conn_name",
+            provider="mock",
+        )
+        resolved_tool = tool_resolver._resolve_llm_node(node, convert_input_types=True)
+        assert len(resolved_tool.node.inputs) == 1
+        kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
+        assert resolved_tool.callable(**kwargs) == "Hello World!"
+
+    def test_resolve_script_node(self, mocker):
+        def mock_python_func(conn: AzureOpenAIConnection, prompt: PromptTemplate, **kwargs):
+            from promptflow.tools.template_rendering import render_template_jinja2
+
+            assert isinstance(conn, AzureOpenAIConnection)
+            return render_template_jinja2(prompt, **kwargs)
+
+        tool_loader = ToolLoader(working_dir=None)
+        tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(mock_python_func, tool))
+
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver._tool_loader = tool_loader
+
+        node = Node(
+            name="mock",
+            tool=None,
+            inputs={
+                "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                "prompt": InputAssignment(value="{{text}}", value_type=InputValueType.LITERAL),
+                "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
+            },
+            connection="conn_name",
+            provider="mock",
+        )
+        resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
+        kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
+        assert resolved_tool.callable(**kwargs) == "Hello World!"
+
+    def test_resolve_package_node(self, mocker):
+        def mock_package_func(prompt: PromptTemplate, **kwargs):
+            from promptflow.tools.template_rendering import render_template_jinja2
+
+            return render_template_jinja2(prompt, **kwargs)
+
+        tool_loader = ToolLoader(working_dir=None)
+        tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
+        mocker.patch.object(tool_loader, "load_tool_for_package_node", return_value=tool)
+
+        mocker.patch(
+            "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
+            return_value=(mock_package_func, {"conn": AzureOpenAIConnection})
+        )
+
+        connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        tool_resolver._tool_loader = tool_loader
+
+        node = Node(
+            name="mock",
+            tool=None,
+            inputs={
+                "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
+                "prompt": InputAssignment(value="{{text}}", value_type=InputValueType.LITERAL),
+                "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
+            },
+            connection="conn_name",
+            provider="mock",
+        )
+        resolved_tool = tool_resolver._resolve_package_node(node, convert_input_types=True)
+        assert len(resolved_tool.node.inputs) == 2
+        kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
+        assert resolved_tool.callable(**kwargs) == "Hello World!"
+
+    def test_integrate_prompt_in_package_node(self, mocker):
+        def mock_package_func(prompt: PromptTemplate, **kwargs):
+            from promptflow.tools.template_rendering import render_template_jinja2
+
+            return render_template_jinja2(prompt, **kwargs)
+
+        tool_resolver = ToolResolver(working_dir=None, connections={})
+        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}",)
+
+        tool = Tool(name="mock", type=ToolType.CUSTOM_LLM, inputs={"prompt": InputDefinition(type=["PromptTemplate"])})
+        node = Node(
+            name="mock",
+            tool=None,
+            inputs={"text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL)},
+            connection="conn_name",
+            provider="mock",
+        )
+        resolved_tool = ResolvedTool(node=node, callable=mock_package_func, definition=tool, init_args=None)
+        resolved_tool = tool_resolver._integrate_prompt_in_package_node(node, resolved_tool)
+        kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
+        assert resolved_tool.callable(**kwargs) == "Hello World!"

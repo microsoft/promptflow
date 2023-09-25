@@ -67,9 +67,9 @@ def fetch_text_content_from_url(url: str, count: int = 10):
 @tool
 def search_result_from_url(url_list: list, count: int = 10):
     results = []
-    patial_func_of_fetch_text_content_from_url = partial(fetch_text_content_from_url, count=count)
+    partial_func_of_fetch_text_content_from_url = partial(fetch_text_content_from_url, count=count)
     with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = executor.map(patial_func_of_fetch_text_content_from_url, url_list)
+        futures = executor.map(partial_func_of_fetch_text_content_from_url, url_list)
         for feature in futures:
             results.append(feature)
     return results

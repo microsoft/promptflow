@@ -14,7 +14,6 @@ nodes:
     path: test.py
   inputs:
     text: ${second_node}
-  aggregation: true
 - name: first_node
   type: python
   source:
@@ -22,7 +21,6 @@ nodes:
     path: test.py
   inputs:
     text: ${inputs.text}
-  aggregation: true
 - name: second_node
   type: python
   source:
@@ -30,4 +28,3 @@ nodes:
     path: test.py
   inputs:
     text: ${first_node}
-  aggregation: true

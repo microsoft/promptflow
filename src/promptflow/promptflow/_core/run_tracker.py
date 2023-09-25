@@ -8,6 +8,7 @@ from datetime import datetime
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
+from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
@@ -17,9 +18,9 @@ from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
-from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import DummyRunStorage
 
 
 class RunTracker(ThreadLocalSingleton):
@@ -129,6 +130,36 @@ class RunTracker(ThreadLocalSingleton):
         self.node_log_manager.set_node_context(run_id, node, index)
         return run_info
 
+    def bypass_node_run(
+        self,
+        node,
+        flow_run_id,
+        parent_run_id,
+        run_id,
+        outputs,
+        index,
+        variant_id,
+    ):
+        run_info = RunInfo(
+            node=node,
+            run_id=run_id,
+            flow_run_id=flow_run_id,
+            parent_run_id=parent_run_id,
+            status=Status.Bypassed,
+            inputs=None,
+            output=outputs,
+            metrics=None,
+            error=None,
+            start_time=datetime.utcnow(),
+            end_time=datetime.utcnow(),
+            result=outputs,
+            index=index,
+            variant_id=variant_id,
+            api_calls=[],
+        )
+        self._node_runs[run_id] = run_info
+        return run_info
+
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
         if output:
             try:
@@ -188,7 +219,14 @@ class RunTracker(ThreadLocalSingleton):
     ):
         run_info = self._flow_runs.get(run_id) or self._node_runs.get(run_id)
         if run_info is None:
-            raise RunRecordNotFound(message=f"Run {run_id} not found", target=ErrorTarget.RUN_TRACKER)
+            raise RunRecordNotFound(
+                message_format=(
+                    "Run record with ID '{run_id}' was not tracked in promptflow execution. "
+                    "Please contact support for further assistance."
+                ),
+                target=ErrorTarget.RUN_TRACKER,
+                run_id=run_id,
+            )
         if isinstance(run_info, FlowRunInfo):
             self._flow_run_postprocess(run_info, result, ex)
         elif isinstance(run_info, RunInfo):
@@ -219,14 +257,26 @@ class RunTracker(ThreadLocalSingleton):
         }
 
     def _assert_flow_output_serializable(self, output: Any) -> Any:
-        try:
-            return {k: self._ensure_serializable_value(v) for k, v in output.items()}
-        except Exception as e:
-            # If it is flow output not node output, raise an exception.
-            raise UserErrorException(
-                f"Flow output must be json serializable, dump json failed: {e}",
-                target=ErrorTarget.FLOW_EXECUTOR,
-            ) from e
+        serializable_output = {}
+        for k, v in output.items():
+            try:
+                serializable_output[k] = self._ensure_serializable_value(v)
+            except Exception as e:
+                # If a specific key-value pair is not serializable, raise an exception with the key.
+                error_type_and_message = f"({e.__class__.__name__}) {e}"
+                message_format = (
+                    "The output '{output_name}' for flow is incorrect. The output value is not JSON serializable. "
+                    "JSON dump failed: {error_type_and_message}. Please verify your flow output and "
+                    "make sure the value serializable."
+                )
+                raise FlowOutputUnserializable(
+                    message_format=message_format,
+                    target=ErrorTarget.FLOW_EXECUTOR,
+                    output_name=k,
+                    error_type_and_message=error_type_and_message,
+                ) from e
+
+        return serializable_output
 
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
@@ -255,7 +305,12 @@ class RunTracker(ThreadLocalSingleton):
         run_info = self._node_runs.get(run_id) or self._flow_runs.get(run_id)
         if run_info is None:
             raise RunRecordNotFound(
-                message=f"Run {run_id} not found when tracking inputs", target=ErrorTarget.RUN_TRACKER
+                message_format=(
+                    "Run record with ID '{run_id}' was not tracked in promptflow execution. "
+                    "Please contact support for further assistance."
+                ),
+                target=ErrorTarget.RUN_TRACKER,
+                run_id=run_id,
             )
         return run_info
 
@@ -279,7 +334,7 @@ class RunTracker(ThreadLocalSingleton):
         child_run_infos = self.collect_child_node_runs(run_id)
         traces = []
         for node_run_info in child_run_infos:
-            traces.extend(node_run_info.api_calls)
+            traces.extend(node_run_info.api_calls or [])
         return traces
 
     OPENAI_AGGREGATE_METRICS = ["total_tokens"]
@@ -309,27 +364,24 @@ class RunTracker(ThreadLocalSingleton):
         status_summary = {}
         line_status = {}
         for run_info in node_run_infos:
+            node_name = run_info.node
             if run_info.index is not None:
                 if run_info.index not in line_status.keys():
                     line_status[run_info.index] = True
 
-                line_status[run_info.index] = line_status[run_info.index] and run_info.status == Status.Completed
+                line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
+                    Status.Completed,
+                    Status.Bypassed,
+                )
 
-                node_name = run_info.node
-                if "__pf__.nodes." + node_name + ".completed" not in status_summary.keys():
-                    status_summary["__pf__.nodes." + node_name + ".completed"] = 0
-                    status_summary["__pf__.nodes." + node_name + ".failed"] = 0
-
-                # Only consider Completed and Failed status, because the UX only support two status.
-                if run_info.status in (Status.Completed, Status.Failed):
-                    status_summary["__pf__.nodes." + node_name + f".{run_info.status.value}".lower()] += 1
+                # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
+                if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
+                    node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
+                    status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
 
             # For reduce node, the index is None.
             else:
-                node_name = run_info.node
-                status_summary["__pf__.nodes." + node_name + ".completed"] = (
-                    1 if run_info.status == Status.Completed else 0
-                )
+                status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
         status_summary["__pf__.lines.completed"] = sum(line_status.values())
         status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]
@@ -337,7 +389,3 @@ class RunTracker(ThreadLocalSingleton):
 
     def persist_status_summary(self, status_summary: Dict[str, int], run_id: str):
         self._storage.persist_status_summary(status_summary, run_id)
-
-
-class RunRecordNotFound(ValidationException):
-    pass

@@ -67,6 +67,8 @@ def build_poll_operation_status_request(
     subscription_id,  # type: str
     resource_group_name,  # type: str
     workspace_name,  # type: str
+    session_id,  # type: str
+    action_type,  # type: Union[str, "_models.SetupFlowSessionAction"]
     location,  # type: str
     operation_id,  # type: str
     **kwargs  # type: Any
@@ -77,11 +79,13 @@ def build_poll_operation_status_request(
 
     accept = "application/json"
     # Construct URL
-    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/locations/{location}/operations/{operationId}')
+    url = kwargs.pop("template_url", '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/{sessionId}/{actionType}/locations/{location}/operations/{operationId}')
     path_format_arguments = {
         "subscriptionId": _SERIALIZER.url("subscription_id", subscription_id, 'str'),
         "resourceGroupName": _SERIALIZER.url("resource_group_name", resource_group_name, 'str'),
         "workspaceName": _SERIALIZER.url("workspace_name", workspace_name, 'str'),
+        "sessionId": _SERIALIZER.url("session_id", session_id, 'str'),
+        "actionType": _SERIALIZER.url("action_type", action_type, 'str'),
         "location": _SERIALIZER.url("location", location, 'str'),
         "operationId": _SERIALIZER.url("operation_id", operation_id, 'str'),
     }
@@ -211,6 +215,8 @@ class FlowSessionsOperations(object):
         subscription_id,  # type: str
         resource_group_name,  # type: str
         workspace_name,  # type: str
+        session_id,  # type: str
+        action_type,  # type: Union[str, "_models.SetupFlowSessionAction"]
         location,  # type: str
         operation_id,  # type: str
         api_version="1.0.0",  # type: Optional[str]
@@ -226,6 +232,10 @@ class FlowSessionsOperations(object):
         :type resource_group_name: str
         :param workspace_name: The name of the workspace.
         :type workspace_name: str
+        :param session_id:
+        :type session_id: str
+        :param action_type:
+        :type action_type: str or ~flow.models.SetupFlowSessionAction
         :param location:
         :type location: str
         :param operation_id:
@@ -250,6 +260,8 @@ class FlowSessionsOperations(object):
             subscription_id=subscription_id,
             resource_group_name=resource_group_name,
             workspace_name=workspace_name,
+            session_id=session_id,
+            action_type=action_type,
             location=location,
             operation_id=operation_id,
             api_version=api_version,
@@ -274,5 +286,5 @@ class FlowSessionsOperations(object):
 
         return deserialized
 
-    poll_operation_status.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/locations/{location}/operations/{operationId}'}  # type: ignore
+    poll_operation_status.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/FlowSessions/{sessionId}/{actionType}/locations/{location}/operations/{operationId}'}  # type: ignore
 

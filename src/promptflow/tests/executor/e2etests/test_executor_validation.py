@@ -1,16 +1,20 @@
 import json
+import sys
+from pathlib import Path
 
 import pytest
 
+from promptflow._core._errors import FlowOutputUnserializable
 from promptflow._core.tool_meta_generator import PythonParsingError
 from promptflow._core.tools_manager import APINotFound
+from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow.contracts._errors import FailedToImportModule
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import (
     ConnectionNotFound,
     DuplicateNodeName,
-    EmptyOutputError,
+    EmptyOutputReference,
     InputNotFound,
     InputReferenceNotFound,
     InputTypeError,
@@ -20,6 +24,7 @@ from promptflow.executor._errors import (
     NodeInputValidationError,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
+    SingleNodeValidationError,
 )
 from promptflow.executor.flow_executor import BulkResult
 
@@ -30,18 +35,107 @@ from ..utils import FLOW_ROOT, WRONG_FLOW_ROOT, get_yaml_file
 @pytest.mark.e2etest
 class TestValidation:
     @pytest.mark.parametrize(
-        "flow_folder, yml_file, error_class",
+        "flow_folder, yml_file, error_class, error_msg",
         [
-            ("nodes_names_duplicated", "flow.dag.yaml", DuplicateNodeName),
-            ("source_file_missing", "flow.dag.python.yaml", PythonParsingError),
-            ("source_file_missing", "flow.dag.jinja.yaml", InvalidSource),
-            ("node_reference_not_found", "flow.dag.yaml", NodeReferenceNotFound),
-            ("node_circular_dependency", "flow.dag.yaml", NodeCircularDependency),
-            ("flow_input_reference_invalid", "flow.dag.yaml", InputReferenceNotFound),
-            ("flow_output_reference_invalid", "flow.dag.yaml", EmptyOutputError),
+            (
+                "nodes_names_duplicated",
+                "flow.dag.yaml",
+                DuplicateNodeName,
+                (
+                    "Invalid node definitions found in the flow graph. Node with name 'stringify_num' appears more "
+                    "than once in the node definitions in your flow, which is not allowed. To "
+                    "address this issue, please review your flow and either rename or remove "
+                    "nodes with identical names."
+                ),
+            ),
+            (
+                "source_file_missing",
+                "flow.dag.jinja.yaml",
+                InvalidSource,
+                (
+                    "Node source path 'summarize_text_content__variant_1.jinja2' is invalid on "
+                    "node 'summarize_text_content'."
+                ),
+            ),
+            (
+                "node_reference_not_found",
+                "flow.dag.yaml",
+                NodeReferenceNotFound,
+                (
+                    "Invalid node definitions found in the flow graph. Node 'divide_num_2' references a non-existent "
+                    "node 'divide_num_3' in your flow. Please review your flow to ensure that the "
+                    "node name is accurately specified."
+                ),
+            ),
+            (
+                "node_circular_dependency",
+                "flow.dag.yaml",
+                NodeCircularDependency,
+                (
+                    "Invalid node definitions found in the flow graph. Node circular dependency has been detected "
+                    "among the nodes in your flow. Kindly review the reference relationships for "
+                    "the nodes ['divide_num', 'divide_num_1', 'divide_num_2'] and resolve the "
+                    "circular reference issue in the flow."
+                ),
+            ),
+            (
+                "flow_input_reference_invalid",
+                "flow.dag.yaml",
+                InputReferenceNotFound,
+                (
+                    "Invalid node definitions found in the flow graph. Node 'divide_num' references flow input 'num_1' "
+                    "which is not defined in your flow. To resolve this issue, please review your "
+                    "flow, ensuring that you either add the missing flow inputs or adjust node "
+                    "reference to the correct flow input."
+                ),
+            ),
+            (
+                "flow_output_reference_invalid",
+                "flow.dag.yaml",
+                EmptyOutputReference,
+                (
+                    "The output 'content' for flow is incorrect. The reference is not specified for the output "
+                    "'content' in the flow. To rectify this, ensure that you accurately specify "
+                    "the reference in the flow."
+                ),
+            ),
+            (
+                "outputs_reference_not_valid",
+                "flow.dag.yaml",
+                OutputReferenceNotFound,
+                (
+                    "The output 'content' for flow is incorrect. The output 'content' references non-existent "
+                    "node 'another_stringify_num' in your flow. To resolve this issue, please "
+                    "carefully review your flow and correct the reference definition for the "
+                    "output in question."
+                ),
+            ),
+            (
+                "outputs_with_invalid_flow_inputs_ref",
+                "flow.dag.yaml",
+                OutputReferenceNotFound,
+                (
+                    "The output 'num' for flow is incorrect. The output 'num' references non-existent flow "
+                    "input 'num11' in your flow. Please carefully review your flow and correct "
+                    "the reference definition for the output in question."
+                ),
+            ),
         ],
     )
-    def test_executor_create(self, flow_folder, yml_file, error_class, dev_connections):
+    def test_executor_create_failure_type_and_message(
+        self, flow_folder, yml_file, error_class, error_msg, dev_connections
+    ):
+        with pytest.raises(error_class) as exc_info:
+            FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
+        assert error_msg == exc_info.value.message
+
+    @pytest.mark.parametrize(
+        "flow_folder, yml_file, error_class",
+        [
+            ("source_file_missing", "flow.dag.python.yaml", PythonParsingError),
+        ],
+    )
+    def test_executor_create_failure_type(self, flow_folder, yml_file, error_class, dev_connections):
         with pytest.raises(error_class):
             FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT, yml_file), dev_connections)
 
@@ -61,8 +155,6 @@ class TestValidation:
     @pytest.mark.parametrize(
         "flow_folder, error_class",
         [
-            ("outputs_reference_not_valid", OutputReferenceNotFound),
-            ("outputs_with_invalid_flow_inputs_ref", OutputReferenceNotFound),
             ("invalid_connection", ConnectionNotFound),
             ("tool_type_missing", NotImplementedError),
             ("wrong_module", FailedToImportModule),
@@ -88,18 +180,46 @@ class TestValidation:
             executor.exec_line(line_input)
 
     @pytest.mark.parametrize(
+        "flow_folder, line_input, error_class, error_msg",
+        [
+            (
+                "flow_output_unserializable",
+                {"num": "22"},
+                FlowOutputUnserializable,
+                (
+                    "The output 'content' for flow is incorrect. The output value is not JSON serializable. "
+                    "JSON dump failed: (TypeError) Object of type UnserializableClass is not JSON serializable. "
+                    "Please verify your flow output and make sure the value serializable."
+                ),
+            ),
+        ],
+    )
+    def test_flow_run_execution_errors(self, flow_folder, line_input, error_class, error_msg, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
+        # For now, there exception is designed to be swallowed in executor. But Run Info would have the error details
+        res = executor.exec_line(line_input)
+        assert error_msg == res.run_info.error["message"]
+
+    @pytest.mark.parametrize(
         "flow_folder, batch_input, error_message, error_class",
         [
             (
                 "simple_flow_with_python_tool",
                 [{"num11": "22"}],
-                "Input 'num' in line 0 is not provided for flow.",
+                (
+                    "The value for flow input 'num' is not provided in line 0 of input data. "
+                    "Please review your input data or remove this input in your flow if it's no longer needed."
+                ),
                 "InputNotFound",
             ),
             (
                 "simple_flow_with_python_tool",
                 [{"num": "hello"}],
-                "Input 'num' in line 0 for flow 'default_flow' of value hello is not type int.",
+                (
+                    "The input for flow is incorrect. The value for flow input 'num' in line 0 of input data does not "
+                    "match the expected type 'int'. Please change flow input type or adjust the input value in "
+                    "your input data."
+                ),
                 "InputTypeError",
             ),
         ],
@@ -110,34 +230,101 @@ class TestValidation:
         bulk_result = executor.exec_bulk(
             batch_input,
         )
-        assert error_message in str(
-            bulk_result.line_results[0].run_info.error
-        ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
+        if (
+            (sys.version_info.major == 3)
+            and (sys.version_info.minor >= 11)
+            and ((sys.platform == "linux") or (sys.platform == "darwin"))
+        ):
+            # Python >= 3.11 has a different error message on linux and macos
+            error_message_compare = error_message.replace("int", "ValueType.INT")
+            assert error_message_compare in str(
+                bulk_result.line_results[0].run_info.error
+            ), f"Expected message {error_message_compare} but got {str(bulk_result.line_results[0].run_info.error)}"
+        else:
+            assert error_message in str(
+                bulk_result.line_results[0].run_info.error
+            ), f"Expected message {error_message} but got {str(bulk_result.line_results[0].run_info.error)}"
         assert error_class in str(
             bulk_result.line_results[0].run_info.error
         ), f"Expected message {error_class} but got {str(bulk_result.line_results[0].run_info.error)}"
 
     @pytest.mark.parametrize(
-        "path_root, flow_folder, node_name, line_input, error_class",
+        "path_root, flow_folder, node_name, line_input, error_class, error_msg",
         [
-            (FLOW_ROOT, "simple_flow_with_python_tool", "divide_num", {"num11": "22"}, InputNotFound),
-            (FLOW_ROOT, "simple_flow_with_python_tool", "divide_num", {"num": "hello"}, InputTypeError),
-            (WRONG_FLOW_ROOT, "flow_input_reference_invalid", "divide_num", {"num": "22"}, InputNotFound),
+            (
+                FLOW_ROOT,
+                "simple_flow_with_python_tool",
+                "divide_num",
+                {"num11": "22"},
+                InputNotFound,
+                (
+                    "The input for node is incorrect. Node input 'num' is not found in input data "
+                    "for node 'divide_num'. Please verify the inputs data for the node."
+                ),
+            ),
+            (
+                FLOW_ROOT,
+                "simple_flow_with_python_tool",
+                "divide_num",
+                {"num": "hello"},
+                InputTypeError,
+                (
+                    "The input for node is incorrect. Value for input 'num' of node 'divide_num' "
+                    "is not type 'int'. Please review and rectify the input data."
+                ),
+            ),
+            (
+                WRONG_FLOW_ROOT,
+                "flow_input_reference_invalid",
+                "divide_num",
+                {"num": "22"},
+                InputNotFound,
+                (
+                    "The input for node is incorrect. Node input 'num_1' is not found from flow "
+                    "inputs of node 'divide_num'. Please review the node definition in your flow."
+                ),
+            ),
+            (
+                FLOW_ROOT,
+                "simple_flow_with_python_tool",
+                "bad_node_name",
+                {"num": "22"},
+                SingleNodeValidationError,
+                (
+                    "Validation failed when attempting to execute the node. Node 'bad_node_name' is not found in flow "
+                    "'flow.dag.yaml'. Please change node name or correct the flow file."
+                ),
+            ),
+            (
+                WRONG_FLOW_ROOT,
+                "node_missing_type_or_source",
+                "divide_num",
+                {"num": "22"},
+                SingleNodeValidationError,
+                (
+                    "Validation failed when attempting to execute the node. Properties 'source' or 'type' are not "
+                    "specified for Node 'divide_num' in flow 'flow.dag.yaml'. Please make sure "
+                    "these properties are in place and try again."
+                ),
+            ),
         ],
     )
     def test_single_node_input_type_invalid(
-        self, path_root: str, flow_folder, node_name, line_input, error_class, dev_connections
+        self, path_root: str, flow_folder, node_name, line_input, error_class, error_msg, dev_connections
     ):
         # Single Node run - the inputs are from flow_inputs + dependency_nodes_outputs
-        with pytest.raises(error_class):
+        with pytest.raises(error_class) as exe_info:
             FlowExecutor.load_and_exec_node(
-                flow_file=get_yaml_file(flow_folder, path_root),
+                flow_file=DAG_FILE_NAME,
                 node_name=node_name,
                 flow_inputs=line_input,
                 dependency_nodes_outputs={},
                 connections=dev_connections,
+                working_dir=Path(path_root) / flow_folder,
                 raise_ex=True,
             )
+
+        assert error_msg == exe_info.value.message
 
     @pytest.mark.parametrize(
         "flow_folder, msg",

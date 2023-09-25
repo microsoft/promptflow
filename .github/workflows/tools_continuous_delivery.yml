@@ -9,58 +9,7 @@ on:
       - '!README.*'
       - '!src/promptflow-tools/tests/**'
 
-  workflow_dispatch:
-    inputs:
-      ReleaseType:
-        description: 'Official release or test'
-        required: true
-        default: "Release"
-        type: choice
-        options:
-          - "Release"
-          - "Test"
-      UploadAsLatest:
-        description: 'True to upload the distribution as latest'
-        required: true
-        default: "False"
-        type: choice
-        options:
-          - "True"
-          - "False"
-      SourceFolderName:
-        description: 'The source folder of the distribution'
-        required: true
-        default: "promptflow-tools"
-        type: string
-
 jobs:
-  approve_manual_release:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    name: Approve manual release
-    permissions:
-      issues: write
-    steps:
-      - name: Wait for approval
-        uses: trstringer/manual-approval@v1
-        timeout-minutes: 60
-        with:
-          secret: ${{ github.TOKEN }}
-          approvers: 16oeahr,chjinche,DaweiCai
-          minimum-approvals: 1
-          issue-title: "Request to release new promptflow-tools version."
-  
-  manual_release:
-    needs: approve_manual_release
-    uses: ./.github/workflows/wheel_distributing.yml
-    name: Manual release
-    with:
-      ReleaseType: ${{ inputs.ReleaseType }}
-      UploadAsLatest: ${{ inputs.UploadAsLatest }}
-      SourceFolderName: ${{ inputs.SourceFolderName }}
-      ConfigsFolderPath: "scripts/distributing/configs"
-    secrets: inherit
-
   continuous_delivery_release:
     if: github.event_name == 'push'
     uses: ./.github/workflows/wheel_distributing.yml

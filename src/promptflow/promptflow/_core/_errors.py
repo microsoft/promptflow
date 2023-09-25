@@ -1,7 +1,21 @@
 from traceback import TracebackException
 
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_EXECUTION_ERROR, last_frame_info
-from promptflow.exceptions import ErrorTarget, UserErrorException, ValidationException
+from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
+
+
+class UnexpectedError(SystemErrorException):
+    """Exception raised for unexpected errors that should not occur under normal circumstances."""
+
+    pass
+
+
+class NotSupported(UserErrorException):
+    """This exception should be raised when a feature is not supported by the package or product.
+    Customers should take action, such as upgrading the package or using the product in the correct way, to resolve it.
+    """
+
+    pass
 
 
 class PackageToolNotFoundError(ValidationException):
@@ -114,4 +128,12 @@ class MetaFileNotFound(GenerateMetaUserError):
 
 
 class MetaFileReadError(GenerateMetaUserError):
+    pass
+
+
+class RunRecordNotFound(SystemErrorException):
+    pass
+
+
+class FlowOutputUnserializable(UserErrorException):
     pass

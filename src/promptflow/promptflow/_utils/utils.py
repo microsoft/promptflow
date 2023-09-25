@@ -168,17 +168,6 @@ def set_context(context: contextvars.Context):
         var.set(value)
 
 
-# TODO: refactor and use pf version, for EPR
-# used in exceptions.py ("componentName": f"{ERROR_RESPONSE_COMPONENT_NAME}/{get_runtime_version()}",)
-def get_runtime_version():
-    build_info = os.environ.get("BUILD_INFO", "")
-    try:
-        build_info_dict = json.loads(build_info)
-        return build_info_dict["build_number"]
-    except Exception:
-        return "unknown"
-
-
 def convert_inputs_mapping_to_param(inputs_mapping: dict):
     """Use this function to convert inputs_mapping to a string that can be passed to component as a string parameter,
     we have to do this since we can't pass a dict as a parameter to component.

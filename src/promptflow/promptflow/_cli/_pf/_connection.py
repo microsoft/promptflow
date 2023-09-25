@@ -3,14 +3,13 @@
 # ---------------------------------------------------------
 
 import argparse
-import getpass
 import json
 import logging
 from functools import partial
 
-from promptflow._cli._params import add_param_set, logging_params
-from promptflow._cli._utils import activate_action, confirm, exception_handler
-from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._cli._params import add_param_all_results, add_param_max_results, add_param_set, logging_params
+from promptflow._cli._utils import activate_action, confirm, exception_handler, get_secret_input, print_yellow_warning
+from promptflow._sdk._constants import LOGGER_NAME, MAX_LIST_CLI_RESULTS
 from promptflow._sdk._load_functions import load_connection
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import load_yaml
@@ -30,7 +29,11 @@ def add_param_name(parser, required=False):
 
 def add_connection_parser(subparsers):
     connection_parser = subparsers.add_parser(
-        "connection", description="A CLI tool to manage connections for promptflow.", help="pf connection"
+        "connection",
+        description="""A CLI tool to manage connections for promptflow.
+
+        Your secrets will be encrypted using AES(Advanced Encryption Standard) technology.""",  # noqa: E501
+        help="pf connection",
     )
     subparsers = connection_parser.add_subparsers()
     add_connection_create(subparsers)
@@ -128,7 +131,7 @@ pf connection list
         name="list",
         description="List all connections.",
         epilog=epilog,
-        add_params=logging_params,
+        add_params=[add_param_max_results, add_param_all_results] + logging_params,
         subparsers=subparsers,
         help_message="List all connections.",
         action_param_name="sub_action",
@@ -149,7 +152,12 @@ def validate_and_interactive_get_secrets(connection, is_update=False):
         if not missing_secrets_prompt:
             print(prompt)
             missing_secrets_prompt = True
-        connection.secrets[name] = getpass.getpass(prompt=f"{name}: ")
+        while True:
+            secret = get_secret_input(prompt=f"{name}: ")
+            if secret:
+                break
+            print_yellow_warning("Secret can't be empty.")
+        connection.secrets[name] = secret
     if missing_secrets_prompt:
         print("=================== Required secrets collected ===================")
     return connection
@@ -185,8 +193,8 @@ def show_connection(name):
 
 
 @exception_handler("Connection list")
-def list_connection():
-    connections = _client.connections.list()
+def list_connection(max_results=MAX_LIST_CLI_RESULTS, all_results=False):
+    connections = _client.connections.list(max_results, all_results)
     print(json.dumps([connection._to_dict() for connection in connections], indent=4))
 
 
@@ -233,7 +241,7 @@ def dispatch_connection_commands(args: argparse.Namespace):
     elif args.sub_action == "show":
         show_connection(args.name)
     elif args.sub_action == "list":
-        list_connection()
+        list_connection(args.max_results, args.all_results)
     elif args.sub_action == "update":
         update_connection(args.name, args.params_override)
     elif args.sub_action == "delete":

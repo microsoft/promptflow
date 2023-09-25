@@ -8,7 +8,6 @@ from enum import Enum
 from traceback import TracebackException, format_tb
 from types import TracebackType
 
-from promptflow._constants import ERROR_RESPONSE_COMPONENT_NAME
 from promptflow.exceptions import PromptflowException, SystemErrorException, UserErrorException, ValidationException
 
 ADDITIONAL_INFO_USER_EXECUTION_ERROR = "ToolExecutionErrorDetails"
@@ -107,14 +106,14 @@ class ErrorResponse:
         return user_execution_error_info
 
     def to_dict(self):
-        from promptflow._utils.utils import get_runtime_version
+        from promptflow._core.operation_context import OperationContext
 
         return {
             "error": self._error_dict,
             "correlation": None,  # TODO: to be implemented
             "environment": None,  # TODO: to be implemented
             "location": None,  # TODO: to be implemented
-            "componentName": f"{ERROR_RESPONSE_COMPONENT_NAME}/{get_runtime_version()}",
+            "componentName": OperationContext.get_instance().get_user_agent(),
             "time": datetime.utcnow().isoformat(),
         }
 
@@ -159,7 +158,7 @@ class ErrorResponse:
 class ExceptionPresenter:
     """A class that can extract information from the exception instance.
 
-    It is designed to work for both PropmtflowException and other exceptions.
+    It is designed to work for both PromptflowException and other exceptions.
     """
 
     def __init__(self, ex: Exception):
@@ -288,7 +287,7 @@ class PromptflowExceptionPresenter(ExceptionPresenter):
 
 class JsonSerializedPromptflowException(Exception):
     """Json serialized PromptflowException.
-    This exception only has one argument message to voide the
+    This exception only has one argument message to avoid the
     argument missing error when load/dump with pickle in multiprocessing.
     Ref: https://bugs.python.org/issue32696
 

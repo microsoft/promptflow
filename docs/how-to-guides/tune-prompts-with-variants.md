@@ -1,7 +1,7 @@
 # Tune prompts using variants
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](https://aka.ms/azuremlexperimental).
+This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
 To better understand this part, please read [Quick start](./quick-start.md) and [Run and evaluate a flow](./run-and-evaluate-a-flow.md) first.
@@ -110,6 +110,6 @@ After the variant run is created, you can evaluate the variant run with a evalua
 ## Next steps
 
 Learn more about:
-- [Run and evluate a flow](./run-and-evaluate-a-flow.md)
-- [Deploy and export a flow](./deploy-and-export-a-flow.md)
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+- [Deploy a flow](./deploy-a-flow/index.md)
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)

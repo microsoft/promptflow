@@ -30,6 +30,8 @@ RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 BASE_PATH_CONTEXT_KEY = "base_path"
+SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
+SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
 PARAMS_OVERRIDE_KEY = "params_override"
 FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
@@ -46,9 +48,28 @@ WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
 
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
+
+
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "promptflow.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+        ]
 
 
 class RunTypes:
@@ -140,6 +161,7 @@ class FlowRunProperties:
     OUTPUT_PATH = "output_path"
     NODE_VARIANT = "node_variant"
     RUN = "run"
+    SYSTEM_METRICS = "system_metrics"
 
 
 class CommonYamlFields:
@@ -207,13 +229,11 @@ VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
 VIS_LIB_CDN_LINK_TMPL = (
     "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
 )
-VIS_LIB_VERSION = "0.0.26"
+VIS_LIB_VERSION = "0.0.28"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
-    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
-    "&flight=promptfilestorage,PFPackageTools,PFRunList,PromptBatchRunDesignV2,PFSourceRun"
-    "&runId={names}"
+    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
 
 
@@ -261,4 +281,13 @@ class RunDataKeys:
     OUTPUT_PORTAL_URL = "output_portal_url"
 
 
+class ConnectionProvider(str, Enum):
+    LOCAL = "local"
+    AZURE = "azureml"
+
+
 SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
+
+LOCAL_SERVICE_PORT = 5000
+
+BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"

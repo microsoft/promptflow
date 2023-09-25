@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import concurrent
 import copy
+import hashlib
 import json
 import logging
 import os
@@ -28,23 +29,33 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from pandas import DataFrame
 
 from promptflow._sdk._constants import (
+    LINE_NUMBER,
     LOGGER_NAME,
+    MAX_RUN_LIST_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
     RunDataKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
-from promptflow.azure._constants._flow import BASE_IMAGE, PYTHON_REQUIREMENTS_TXT
+from promptflow.azure._constants._flow import (
+    AUTOMATIC_RUNTIME,
+    AUTOMATIC_RUNTIME_NAME,
+    BASE_IMAGE,
+    CLOUD_RUNS_PAGE_SIZE,
+    PYTHON_REQUIREMENTS_TXT,
+)
 from promptflow.azure._load_functions import load_flow
+from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -59,15 +70,16 @@ class RunRequestException(Exception):
 
 
 class RunOperations(_ScopeDependentOperations):
-    """FlowRunOperations.
+    """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
     create an PFClient instance that instantiates it for you and
     attaches it as an attribute.
     """
 
-    DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
-    ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
+    # add "_" in front of the constant to hide them from the docstring
+    _DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
+    _ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
 
     def __init__(
         self,
@@ -114,10 +126,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
-        url = (
-            f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid="
-            f"{self._common_azure_url_pattern}&flight=promptfilestorage,PFSourceRun=false"
-        )
+        url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
         return url
 
     def _get_input_portal_url_from_input_uri(self, input_uri):
@@ -127,7 +136,7 @@ class RunOperations(_ScopeDependentOperations):
             return None
         if input_uri.startswith("azureml://"):
             # input uri is a datastore path
-            match = self.DATASTORE_PATH_PATTERN.match(input_uri)
+            match = self._DATASTORE_PATH_PATTERN.match(input_uri)
             if not match or len(match.groups()) != 2:
                 logger.warning(error_msg)
                 return None
@@ -152,7 +161,7 @@ class RunOperations(_ScopeDependentOperations):
         error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
         if not output_uri:
             return None
-        match = self.ASSET_ID_PATTERN.match(output_uri)
+        match = self._ASSET_ID_PATTERN.match(output_uri)
         if not match or len(match.groups()) != 2:
             logger.warning(error_msg)
             return None
@@ -168,9 +177,17 @@ class RunOperations(_ScopeDependentOperations):
         return custom_header
 
     def create_or_update(self, run: Run, **kwargs) -> Run:
-        stream = kwargs.pop("stream", False)
+        """Create or update a run.
 
-        rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"))
+        :param run: Run object to create or update.
+        :type run: ~promptflow.entities.Run
+        :return: Run object created or updated.
+        :rtype: ~promptflow.entities.Run
+        """
+        stream = kwargs.pop("stream", False)
+        reset = kwargs.pop("reset_runtime", False)
+
+        rest_obj = self._resolve_dependencies_in_parallel(run=run, runtime=kwargs.get("runtime"), reset=reset)
 
         self._service_caller.submit_bulk_run(
             subscription_id=self._operation_scope.subscription_id,
@@ -184,8 +201,21 @@ class RunOperations(_ScopeDependentOperations):
             self.stream(run=run.name)
         return self.get(run=run.name)
 
-    def list(self, max_results, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs):
-        """List runs in the workspace with index service call."""
+    def list(
+        self, max_results: int = MAX_RUN_LIST_RESULTS, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
+    ) -> List[Run]:
+        """List runs in the workspace.
+
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
+        :type list_view_type: ListViewType
+        :return: The list of runs.
+        :rtype: List[~promptflow.entities.Run]
+        """
+        if not isinstance(max_results, int) or max_results < 0:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         headers = self._get_headers()
         filter_archived = []
         if list_view_type == ListViewType.ACTIVE_ONLY:
@@ -194,6 +224,10 @@ class RunOperations(_ScopeDependentOperations):
             filter_archived = ["true"]
         elif list_view_type == ListViewType.ALL:
             filter_archived = ["true", "false"]
+        else:
+            raise RunOperationParameterError(
+                f"Invalid list view type: {list_view_type!r}, expecting one of ['ActiveOnly', 'ArchivedOnly', 'All']"
+            )
 
         pay_load = {
             "filters": [
@@ -249,18 +283,58 @@ class RunOperations(_ScopeDependentOperations):
         metrics = self._get_metrics_from_metric_service(run)
         return metrics
 
-    def get_details(self, run: Union[str, Run], **kwargs) -> DataFrame:
+    def get_details(
+        self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
+    ) -> DataFrame:
         """Get the details from the run.
 
-        :param run: The run
-        :type run: str
-        :return: The details
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.sdk.entities.Run]
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
+        :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        # if all_results is True, set max_results to sys.maxsize
+        if all_results:
+            max_results = sys.maxsize
+
+        if not isinstance(max_results, int) or max_results < 1:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         run = Run._validate_and_return_run_name(run)
         self._check_cloud_run_completed(run_name=run)
-        child_runs = self._get_child_runs_from_pfs(run)
+        child_runs = self._get_flow_runs_pagination(run, max_results=max_results)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
+
+        # if there is any line run failed, the number of inputs and outputs will be different
+        # this will result in pandas raising ValueError, so we need to handle mismatched case
+        # if all line runs are failed, no need to fill the outputs
+        if len(outputs) > 0:
+            # get total number of line runs from inputs
+            num_line_runs = len(list(inputs.values())[0])
+            num_outputs = len(list(outputs.values())[0])
+            if num_line_runs > num_outputs:
+                # build full set with None as placeholder
+                filled_outputs = {}
+                output_keys = list(outputs.keys())
+                for k in output_keys:
+                    filled_outputs[k] = [None] * num_line_runs
+                filled_outputs[LINE_NUMBER] = list(range(num_line_runs))
+                for i in range(num_outputs):
+                    line_number = outputs[LINE_NUMBER][i]
+                    for k in output_keys:
+                        filled_outputs[k][line_number] = outputs[k][i]
+                # replace defective outputs with full set
+                outputs = copy.deepcopy(filled_outputs)
+
         data = {}
         columns = []
         for k in inputs:
@@ -272,12 +346,35 @@ class RunOperations(_ScopeDependentOperations):
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
         df = pd.DataFrame(data).reindex(columns=columns)
+        if f"outputs.{LINE_NUMBER}" in columns:
+            df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df
 
     def _check_cloud_run_completed(self, run_name: str) -> bool:
         """Check if the cloud run is completed."""
         run = self.get(run=run_name)
         run._check_run_status_is_completed()
+
+    def _get_flow_runs_pagination(self, name: str, max_results: int) -> List[dict]:
+        # call childRuns API with pagination to avoid PFS OOM
+        # different from UX, run status should be completed here
+        flow_runs = []
+        start_index, end_index = 0, CLOUD_RUNS_PAGE_SIZE - 1
+        while start_index < max_results:
+            current_flow_runs = self._service_caller.get_child_runs(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=name,
+                start_index=start_index,
+                end_index=end_index,
+            )
+            # no data in current page
+            if len(current_flow_runs) == 0:
+                break
+            start_index, end_index = start_index + CLOUD_RUNS_PAGE_SIZE, end_index + CLOUD_RUNS_PAGE_SIZE
+            flow_runs += current_flow_runs
+        return flow_runs[0:max_results]
 
     def _extract_metrics_from_metric_service_response(self, values) -> dict:
         """Get metrics from the metric service response."""
@@ -312,9 +409,15 @@ class RunOperations(_ScopeDependentOperations):
     def _is_system_metric(metric: str) -> bool:
         """Check if the metric is system metric.
 
-        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.failed, __pf__.nodes.xx.completed
+        Current we have some system metrics like: __pf__.lines.completed, __pf__.lines.bypassed,
+        __pf__.lines.failed, __pf__.nodes.xx.completed
         """
-        return metric.endswith(".completed") or metric.endswith(".failed") or metric.endswith(".is_completed")
+        return (
+            metric.endswith(".completed")
+            or metric.endswith(".bypassed")
+            or metric.endswith(".failed")
+            or metric.endswith(".is_completed")
+        )
 
     def get(self, run: str, **kwargs) -> Run:
         """Get a run.
@@ -409,10 +512,24 @@ class RunOperations(_ScopeDependentOperations):
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    def archive(self, run_name):
+    def archive(self, run: str) -> Run:
+        """Archive a run.
+
+        :param run: The run name
+        :type run: str
+        :return: The run
+        :rtype: Run
+        """
         pass
 
-    def restore(self, run_name):
+    def restore(self, run: str) -> Run:
+        """Restore a run.
+
+        :param run: The run name
+        :type run: str
+        :return: The run
+        :rtype: Run
+        """
         pass
 
     def _get_log(self, flow_run_id: str) -> str:
@@ -521,7 +638,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         flow = load_flow(run.flow)
-        # ignore .promptflow/dag.toos.json only for run submission scenario
+        # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
         return flow.path
 
@@ -532,28 +649,20 @@ class RunOperations(_ScopeDependentOperations):
             # fall back to unknown user when failed to get credential.
             user_alias = "unknown_user"
         flow_id = get_flow_lineage_id(flow_dir=flow)
-        return f"{user_alias}_{flow_id}"
-
-    def _get_child_runs_from_pfs(self, run_id: str):
-        """Get the child runs from the PFS."""
-        headers = self._get_headers()
-        endpoint_url = self._run_history_endpoint_url.replace("/history/v1.0", "/flow/api")
-        url = endpoint_url + f"/BulkRuns/{run_id}/childRuns"
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            runs = response.json()
-            return runs
-        else:
-            raise RunRequestException(
-                f"Failed to get child runs from service. Code: {response.status_code}, text: {response.text}"
-            )
+        session_id = f"{user_alias}_{flow_id}"
+        # hash and truncate to avoid the session id getting too long
+        # backend has a 64 bit limit for session id.
+        # use hexdigest to avoid non-ascii characters in session id
+        session_id = str(hashlib.sha256(session_id.encode()).hexdigest())[:48]
+        return session_id
 
     def _get_inputs_outputs_from_child_runs(self, runs: List[Dict[str, Any]]):
         """Get the inputs and outputs from the child runs."""
         inputs = {}
         outputs = {}
+        outputs[LINE_NUMBER] = []
         for run in runs:
-            run_inputs, run_outputs = run["inputs"], run["output"]
+            index, run_inputs, run_outputs = run["index"], run["inputs"], run["output"]
             if isinstance(run_inputs, dict):
                 for k, v in run_inputs.items():
                     if k not in inputs:
@@ -564,10 +673,11 @@ class RunOperations(_ScopeDependentOperations):
                     if k not in outputs:
                         outputs[k] = []
                     outputs[k].append(v)
+                outputs[LINE_NUMBER].append(index)
         return inputs, outputs
 
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
-        """Visualize run(s).
+        """Visualize run(s) using Azure AI portal.
 
         :param runs: Names of the runs, or list of run objects.
         :type runs: Union[str, ~promptflow.sdk.entities.Run, List[str], List[~promptflow.sdk.entities.Run]]
@@ -616,7 +726,7 @@ class RunOperations(_ScopeDependentOperations):
             environment[PYTHON_REQUIREMENTS_TXT] = requirements
         return environment
 
-    def _resolve_session(self, run, session_id):
+    def _resolve_session(self, run, session_id, reset=None):
         from promptflow.azure._restclient.flow.models import CreateFlowSessionRequest
 
         if run._resources is not None:
@@ -642,6 +752,18 @@ class RunOperations(_ScopeDependentOperations):
             python_pip_requirements=pip_requirements,
             base_image=base_image,
         )
+        if reset:
+            # if reset is set, will reset it before creating again.
+            logger.warning(f"Resetting session {session_id} before creating it.")
+            request.action = SetupFlowSessionAction.RESET
+            self._service_caller.create_flow_session(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                session_id=session_id,
+                body=request,
+            )
+        request.action = SetupFlowSessionAction.INSTALL
         self._service_caller.create_flow_session(
             subscription_id=self._operation_scope.subscription_id,
             resource_group_name=self._operation_scope.resource_group_name,
@@ -650,35 +772,33 @@ class RunOperations(_ScopeDependentOperations):
             body=request,
         )
 
-    def _resolve_automatic_runtime(self, run, flow_path, session_id):
+    def _resolve_automatic_runtime(self, run, session_id, reset=None):
         logger.warning(
-            f"Using automatic runtime, if it's first time you submit flow {flow_path}, "
-            "it may take a while to build run time and request may fail with timeout error. "
+            f"You're using {AUTOMATIC_RUNTIME}, if it's first time you're using it, "
+            "it may take a while to build runtime and request may fail with timeout error. "
             "Wait a while and resubmit same flow can successfully start the run."
         )
-        runtime_name = "automatic"
-        self._resolve_session(run=run, session_id=session_id)
+        runtime_name = AUTOMATIC_RUNTIME_NAME
+        self._resolve_session(run=run, session_id=session_id, reset=reset)
         return runtime_name
 
-    def _resolve_runtime(self, run, flow_path, runtime):
+    def _resolve_runtime(self, run, flow_path, runtime, reset=None):
         runtime = run._runtime or runtime
         session_id = self._get_session_id(flow=flow_path)
 
-        if runtime:
-            if not isinstance(runtime, str):
-                raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
-        else:
-            runtime = self._resolve_automatic_runtime(run=run, flow_path=flow_path, session_id=session_id)
-
+        if runtime is None or runtime == AUTOMATIC_RUNTIME_NAME:
+            runtime = self._resolve_automatic_runtime(run=run, session_id=session_id, reset=reset)
+        elif not isinstance(runtime, str):
+            raise TypeError(f"runtime should be a string, got {type(runtime)} for {runtime}")
         return runtime, session_id
 
-    def _resolve_dependencies_in_parallel(self, run, runtime):
+    def _resolve_dependencies_in_parallel(self, run, runtime, reset=None):
         flow_path = run.flow
         with ThreadPoolExecutor() as pool:
             tasks = [
                 pool.submit(self._resolve_data_to_asset_id, run=run),
                 pool.submit(self._resolve_flow, run=run),
-                pool.submit(self._resolve_runtime, run=run, flow_path=flow_path, runtime=runtime),
+                pool.submit(self._resolve_runtime, run=run, flow_path=flow_path, runtime=runtime, reset=reset),
             ]
             concurrent.futures.wait(tasks, return_when=concurrent.futures.ALL_COMPLETED)
             task_results = [task.result() for task in tasks]

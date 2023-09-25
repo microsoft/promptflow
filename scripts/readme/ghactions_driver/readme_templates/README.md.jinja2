@@ -7,7 +7,7 @@
 
 **Install dependencies**
 
-- Bootstrap your python environment. 
+- Bootstrap your python environment.
   - e.g: create a new [conda](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) environment. `conda create -n pf-examples python=3.9`.
   - install required packages in python environment : `pip install -r requirements.txt`
     - show installed sdk: `pip show promptflow`
@@ -30,7 +30,7 @@
 
 ### Flows ([flows](flows))
 
-#### [Standard flows](flows/standard/) 
+#### [Standard flows](flows/standard/)
 
 | path | status | description |
 ------|--------|-------------
@@ -58,11 +58,6 @@
 {% for connection in connections.readmes %}| [{{ connection.name }}]({{ connection.path }}) | [![{{connection.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{connection.yaml_name}}) | {{ connection.description }} |
 {% endfor %}
 
-### Flow Deploy ([tutorials/flow-deploy/](tutorials/flow-deploy/))
-
-| path | status | description |
-------|--------|-------------
-| [deploy.md](tutorials/flow-deploy/deploy.md) | | deploy flow as endpoint
 
 ## SDK examples
 
@@ -92,4 +87,4 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 ## Reference
 
-* [Promptflow documentation](https://microsoft.github.io/promptflow)
+* [Promptflow documentation](https://microsoft.github.io/promptflow/)

@@ -2,19 +2,23 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import abc
+import importlib
 import json
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
+    SCHEMA_KEYS_CONTEXT_CONFIG_KEY,
+    SCHEMA_KEYS_CONTEXT_SECRET_KEY,
     SCRUBBED_VALUE,
     SCRUBBED_VALUE_NO_CHANGE,
     SCRUBBED_VALUE_USER_INPUT,
     ConfigValueType,
     ConnectionType,
+    CustomStrongTypeConnectionConfigs,
 )
 from promptflow._sdk._errors import UnsecureConnectionError
 from promptflow._sdk._logger_factory import LoggerFactory
@@ -33,17 +37,34 @@ from promptflow._sdk.schemas._connection import (
     AzureOpenAIConnectionSchema,
     CognitiveSearchConnectionSchema,
     CustomConnectionSchema,
+    CustomStrongTypeConnectionSchema,
     FormRecognizerConnectionSchema,
     OpenAIConnectionSchema,
     QdrantConnectionSchema,
     SerpConnectionSchema,
     WeaviateConnectionSchema,
 )
+from promptflow.contracts.types import Secret
 
 logger = LoggerFactory.get_logger(name=__name__)
+PROMPTFLOW_CONNECTIONS = "promptflow.connections"
 
 
 class _Connection(YAMLTranslatableMixin):
+    """A connection entity that stores the connection information.
+
+    :param name: Connection name
+    :type name: str
+    :param type: Possible values include: "OpenAI", "AzureOpenAI", "Custom".
+    :type type: str
+    :param module: The module of connection class, used for execution.
+    :type module: str
+    :param configs: The configs kv pairs.
+    :type configs: Dict[str, str]
+    :param secrets: The secrets kv pairs.
+    :type secrets: Dict[str, str]
+    """
+
     TYPE = ConnectionType._NOT_SET
 
     def __init__(
@@ -54,13 +75,6 @@ class _Connection(YAMLTranslatableMixin):
         secrets: Dict[str, str] = None,
         **kwargs,
     ):
-        """
-        :param name: Connection name
-        :param type: Possible values include: "OpenAI", "AzureOpenAI", "Custom".
-        :param module: The module of connection class, used for execution.
-        :param configs: The configs kv pairs.
-        :param secrets: The secrets kv pairs.
-        """
         self.name = name
         self.type = self.TYPE
         self.class_name = f"{self.TYPE.value}Connection"  # The type in executor connection dict
@@ -75,7 +89,7 @@ class _Connection(YAMLTranslatableMixin):
         # | <user-input>     | prompt input | prompt input        | raise error          |
         # --------------------------------------------------------------------------------
         self.secrets = secrets or {}
-        self._secrets = {**self.secrets}  # Unscrubbed secrets
+        self._secrets = {**self.secrets}  # Un-scrubbed secrets
         self.expiry_time = kwargs.get("expiry_time", None)
         self.created_date = kwargs.get("created_date", None)
         self.last_modified_date = kwargs.get("last_modified_date", None)
@@ -95,7 +109,8 @@ class _Connection(YAMLTranslatableMixin):
             return type_dict.get(typ)
         return snake_to_camel(typ)
 
-    def keys(self):
+    def keys(self) -> List:
+        """Return keys of the connection properties."""
         return list(self.configs.keys()) + list(self.secrets.keys())
 
     def __getitem__(self, item):
@@ -172,7 +187,12 @@ class _Connection(YAMLTranslatableMixin):
         pass
 
     @classmethod
-    @abc.abstractmethod
+    def _from_mt_rest_object(cls, mt_rest_obj) -> "_Connection":
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        obj = type_cls._from_mt_rest_object(mt_rest_obj)
+        return obj
+
+    @classmethod
     def _from_orm_object_with_secrets(cls, orm_object: ORMConnection):
         # !!! Attention !!!: Do not use this function to user facing api, use _from_orm_object to remove secrets.
         type_cls, _ = cls._resolve_cls_and_type(data={"type": orm_object.connectionType})
@@ -229,7 +249,7 @@ class _Connection(YAMLTranslatableMixin):
         )
         return connection
 
-    def to_execution_connection_dict(self) -> dict:
+    def _to_execution_connection_dict(self) -> dict:
         value = {**self.configs, **self.secrets}
         secret_keys = list(self.secrets.keys())
         return {
@@ -240,7 +260,7 @@ class _Connection(YAMLTranslatableMixin):
         }
 
     @classmethod
-    def from_execution_connection_dict(cls, name, data) -> "_Connection":
+    def _from_execution_connection_dict(cls, name, data) -> "_Connection":
         type_cls, _ = cls._resolve_cls_and_type(data={"type": data.get("type")[: -len("Connection")]})
         value_dict = data.get("value", {})
         if type_cls == CustomConnection:
@@ -280,22 +300,46 @@ class _StrongTypeConnection(_Connection):
         obj._secrets = {**obj.secrets}
         return obj
 
+    @classmethod
+    def _from_mt_rest_object(cls, mt_rest_obj):
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        configs = mt_rest_obj.configs or {}
+        # For not ARM strong type connection, e.g. OpenAI, api_key will not be returned, but is required argument.
+        # For ARM strong type connection, api_key will be None and missing when conn._to_dict(), so set a scrubbed one.
+        configs.update({"api_key": SCRUBBED_VALUE})
+        obj = type_cls(
+            name=mt_rest_obj.connection_name,
+            expiry_time=mt_rest_obj.expiry_time,
+            created_date=mt_rest_obj.created_date,
+            last_modified_date=mt_rest_obj.last_modified_date,
+            **configs,
+        )
+        return obj
+
     @property
     def api_key(self):
-        return self.secrets.get("api_key", "***")
+        """Return the api key."""
+        return self.secrets.get("api_key", SCRUBBED_VALUE)
 
     @api_key.setter
     def api_key(self, value):
+        """Set the api key."""
         self.secrets["api_key"] = value
 
 
 class AzureOpenAIConnection(_StrongTypeConnection):
-    """
+    """Azure Open AI connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param api_type: The api type, default "azure".
+    :type api_type: str
     :param api_version: The api version, default "2023-07-01-preview".
+    :type api_version: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.AZURE_OPEN_AI
@@ -313,34 +357,44 @@ class AzureOpenAIConnection(_StrongTypeConnection):
 
     @property
     def api_base(self):
+        """Return the connection api base."""
         return self.configs.get("api_base")
 
     @api_base.setter
     def api_base(self, value):
+        """Set the connection api base."""
         self.configs["api_base"] = value
 
     @property
     def api_type(self):
+        """Return the connection api type."""
         return self.configs.get("api_type")
 
     @api_type.setter
     def api_type(self, value):
+        """Set the connection api type."""
         self.configs["api_type"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
 
 class OpenAIConnection(_StrongTypeConnection):
-    """
+    """Open AI connection.
+
     :param api_key: The api key.
-    :param organization: The organization, optional.
+    :type api_key: str
+    :param organization: Optional. The unique identifier for your organization which can be used in API requests.
+    :type organization: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.OPEN_AI
@@ -356,17 +410,22 @@ class OpenAIConnection(_StrongTypeConnection):
 
     @property
     def organization(self):
+        """Return the connection organization."""
         return self.configs.get("organization")
 
     @organization.setter
     def organization(self, value):
+        """Set the connection organization."""
         self.configs["organization"] = value
 
 
 class SerpConnection(_StrongTypeConnection):
-    """
+    """Serp connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.SERP
@@ -398,10 +457,14 @@ class _EmbeddingStoreConnection(_StrongTypeConnection):
 
 
 class QdrantConnection(_EmbeddingStoreConnection):
-    """
+    """Qdrant connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.QDRANT
@@ -412,10 +475,14 @@ class QdrantConnection(_EmbeddingStoreConnection):
 
 
 class WeaviateConnection(_EmbeddingStoreConnection):
-    """
+    """Weaviate connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.WEAVIATE
@@ -426,11 +493,16 @@ class WeaviateConnection(_EmbeddingStoreConnection):
 
 
 class CognitiveSearchConnection(_StrongTypeConnection):
-    """
+    """Cognitive Search connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param api_base: The api base.
+    :type api_base: str
     :param api_version: The api version, default "2023-07-01-Preview".
+    :type api_version: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.COGNITIVE_SEARCH
@@ -446,28 +518,38 @@ class CognitiveSearchConnection(_StrongTypeConnection):
 
     @property
     def api_base(self):
+        """Return the connection api base."""
         return self.configs.get("api_base")
 
     @api_base.setter
     def api_base(self, value):
+        """Set the connection api base."""
         self.configs["api_base"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
 
 class AzureContentSafetyConnection(_StrongTypeConnection):
-    """
+    """Azure Content Safety connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param endpoint: The api endpoint.
+    :type endpoint: str
     :param api_version: The api version, default "2023-04-30-preview".
+    :type api_version: str
     :param api_type: The api type, default "Content Safety".
+    :type api_type: str
     :param name: Connection name.
+    :type name: str
     """
 
     TYPE = ConnectionType.AZURE_CONTENT_SAFETY
@@ -490,36 +572,48 @@ class AzureContentSafetyConnection(_StrongTypeConnection):
 
     @property
     def endpoint(self):
+        """Return the connection endpoint."""
         return self.configs.get("endpoint")
 
     @endpoint.setter
     def endpoint(self, value):
+        """Set the connection endpoint."""
         self.configs["endpoint"] = value
 
     @property
     def api_version(self):
+        """Return the connection api version."""
         return self.configs.get("api_version")
 
     @api_version.setter
     def api_version(self, value):
+        """Set the connection api version."""
         self.configs["api_version"] = value
 
     @property
     def api_type(self):
+        """Return the connection api type."""
         return self.configs.get("api_type")
 
     @api_type.setter
     def api_type(self, value):
+        """Set the connection api type."""
         self.configs["api_type"] = value
 
 
 class FormRecognizerConnection(AzureContentSafetyConnection):
-    """
+    """Form Recognizer connection.
+
     :param api_key: The api key.
+    :type api_key: str
     :param endpoint: The api endpoint.
+    :type endpoint: str
     :param api_version: The api version, default "2023-07-31".
+    :type api_version: str
     :param api_type: The api type, default "Form Recognizer".
+    :type api_type: str
     :param name: Connection name.
+    :type name: str
     """
 
     # Note: FormRecognizer and ContentSafety are using CognitiveService type in ARM, so keys are the same.
@@ -535,27 +629,155 @@ class FormRecognizerConnection(AzureContentSafetyConnection):
         return FormRecognizerConnectionSchema
 
 
-class CustomConnection(_Connection):
-    """
+class CustomStrongTypeConnection(_Connection):
+    """Custom strong type connection.
+
+    .. note::
+
+        This connection type should not be used directly. Below is an example of how to use CustomStrongTypeConnection:
+
+        .. code-block:: python
+
+            class MyCustomConnection(CustomStrongTypeConnection):
+                api_key: Secret
+                api_base: str
+
     :param configs: The configs kv pairs.
+    :type configs: Dict[str, str]
     :param secrets: The secrets kv pairs.
+    :type secrets: Dict[str, str]
     :param name: Connection name
+    :type name: str
+    """
+
+    def __init__(
+        self,
+        secrets: Dict[str, str],
+        configs: Dict[str, str] = None,
+        **kwargs,
+    ):
+        # There are two cases to init a Custom strong type connection:
+        # 1. The connection is created through SDK PFClient, custom_type and custom_module are not in the kwargs.
+        # 2. The connection is loaded from template file, custom_type and custom_module are in the kwargs.
+        custom_type = kwargs.get(CustomStrongTypeConnectionConfigs.TYPE, None)
+        custom_module = kwargs.get(CustomStrongTypeConnectionConfigs.MODULE, None)
+        if custom_type:
+            configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: custom_type})
+        if custom_module:
+            configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: custom_module})
+        self.kwargs = kwargs
+        super().__init__(configs=configs, secrets=secrets, **kwargs)
+        self.module = kwargs.get("module", self.__class__.__module__)
+        self.custom_type = custom_type or self.__class__.__name__
+
+    def _to_orm_object(self) -> ORMConnection:
+        custom_connection = self._convert_to_custom()
+        return custom_connection._to_orm_object()
+
+    def _convert_to_custom(self):
+        # update configs
+        self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: self.custom_type})
+        self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: self.module})
+
+        custom_connection = CustomConnection(configs=self.configs, secrets=self.secrets, **self.kwargs)
+        return custom_connection
+
+    @classmethod
+    def _get_custom_keys(cls, data):
+        # The data could be either from yaml or from DB.
+        # If from yaml, 'custom_type' and 'module' are outside the configs of data.
+        # If from DB, 'custom_type' and 'module' are within the configs of data.
+        if not data.get(CustomStrongTypeConnectionConfigs.TYPE) or not data.get(
+            CustomStrongTypeConnectionConfigs.MODULE
+        ):
+            if (
+                not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
+                or not data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
+            ):
+                raise ValueError("custom_type and module are required for custom strong type connections.")
+            else:
+                m = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY]
+                custom_cls = data["configs"][CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
+        else:
+            m = data[CustomStrongTypeConnectionConfigs.MODULE]
+            custom_cls = data[CustomStrongTypeConnectionConfigs.TYPE]
+
+        try:
+            module = importlib.import_module(m)
+            cls = getattr(module, custom_cls)
+        except ImportError:
+            raise ValueError(
+                f"Can't find module {m} in current environment. Please check the module is correctly configured."
+            )
+        except AttributeError:
+            raise ValueError(
+                f"Can't find class {custom_cls} in module {m}. Please check the custom_type is correctly configured."
+            )
+
+        schema_configs = {}
+        schema_secrets = {}
+
+        for k, v in cls.__annotations__.items():
+            if v == Secret:
+                schema_secrets[k] = v
+            else:
+                schema_configs[k] = v
+
+        return schema_configs, schema_secrets
+
+    @classmethod
+    def _get_schema_cls(cls):
+        return CustomStrongTypeConnectionSchema
+
+    @classmethod
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
+        schema_config_keys, schema_secret_keys = cls._get_custom_keys(data)
+        context[SCHEMA_KEYS_CONTEXT_CONFIG_KEY] = schema_config_keys
+        context[SCHEMA_KEYS_CONTEXT_SECRET_KEY] = schema_secret_keys
+
+        return (super()._load_from_dict(data, context, additional_message, **kwargs))._convert_to_custom()
+
+
+class CustomConnection(_Connection):
+    """Custom connection.
+
+    :param configs: The configs kv pairs.
+    :type configs: Dict[str, str]
+    :param secrets: The secrets kv pairs.
+    :type secrets: Dict[str, str]
+    :param name: Connection name
+    :type name: str
     """
 
     TYPE = ConnectionType.CUSTOM
 
-    def __init__(self, secrets: Dict[str, str], configs: Dict[str, str] = None, **kwargs):
-        if not secrets:
-            raise ValueError(
-                "Secrets is required for custom connection, "
-                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
-                "to initialize custom connection."
-            )
+    def __init__(
+        self,
+        secrets: Dict[str, str],
+        configs: Dict[str, str] = None,
+        **kwargs,
+    ):
         super().__init__(secrets=secrets, configs=configs, **kwargs)
 
     @classmethod
     def _get_schema_cls(cls):
         return CustomConnectionSchema
+
+    @classmethod
+    def _load_from_dict(cls, data: Dict, context: Dict, additional_message: str = None, **kwargs):
+        # If context has params_override, it means the data would be updated by overridden values.
+        # Provide CustomStrongTypeConnectionSchema if 'custom_type' in params_override, else CustomConnectionSchema.
+        # For example:
+        #   If a user updates an existing connection by re-upserting a connection file,
+        #   the 'data' from DB is CustomConnection,
+        #   but 'params_override' would actually contain custom strong type connection data.
+        is_custom_strong_type = data.get(CustomStrongTypeConnectionConfigs.TYPE) or any(
+            CustomStrongTypeConnectionConfigs.TYPE in d for d in context.get(PARAMS_OVERRIDE_KEY, [])
+        )
+        if is_custom_strong_type:
+            return CustomStrongTypeConnection._load_from_dict(data, context, additional_message, **kwargs)
+
+        return super()._load_from_dict(data, context, additional_message, **kwargs)
 
     def __getattr__(self, item):
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
@@ -576,11 +798,18 @@ class CustomConnection(_Connection):
         return super().__getattribute__(item)
 
     def is_secret(self, item):
+        """Check if item is a secret."""
         # Note: This is added for compatibility with promptflow.connections custom connection usage.
         return item in self.secrets
 
     def _to_orm_object(self):
         # Both keys & secrets will be set in custom configs with value type specified for custom connection.
+        if not self.secrets:
+            raise ValueError(
+                "Secrets is required for custom connection, "
+                "please use CustomConnection(configs={key1: val1}, secrets={key2: val2}) "
+                "to initialize custom connection."
+            )
         custom_configs = {
             k: {"configValueType": ConfigValueType.STRING.value, "value": v} for k, v in self.configs.items()
         }
@@ -588,6 +817,7 @@ class CustomConnection(_Connection):
         custom_configs.update(
             {k: {"configValueType": ConfigValueType.SECRET.value, "value": v} for k, v in encrypted_secrets.items()}
         )
+
         return ORMConnection(
             connectionName=self.name,
             connectionType=self.type.value,
@@ -610,7 +840,11 @@ class CustomConnection(_Connection):
 
         secrets = {}
         unsecure_connection = False
+        custom_type = None
         for k, v in json.loads(orm_object.customConfigs).items():
+            if k == CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY:
+                custom_type = v["value"]
+                continue
             if not v["configValueType"] == ConfigValueType.SECRET.value:
                 continue
             try:
@@ -629,10 +863,54 @@ class CustomConnection(_Connection):
             name=orm_object.connectionName,
             configs=configs,
             secrets=secrets,
+            custom_type=custom_type,
             expiry_time=orm_object.expiryTime,
             created_date=orm_object.createdDate,
             last_modified_date=orm_object.lastModifiedDate,
         )
+
+    @classmethod
+    def _from_mt_rest_object(cls, mt_rest_obj):
+        type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        if not mt_rest_obj.custom_configs:
+            mt_rest_obj.custom_configs = {}
+        configs = {
+            k: v.value
+            for k, v in mt_rest_obj.custom_configs.items()
+            if v.config_value_type == ConfigValueType.STRING.value
+        }
+
+        secrets = {
+            k: v.value
+            for k, v in mt_rest_obj.custom_configs.items()
+            if v.config_value_type == ConfigValueType.SECRET.value
+        }
+
+        return cls(
+            name=mt_rest_obj.connection_name,
+            configs=configs,
+            secrets=secrets,
+            expiry_time=mt_rest_obj.expiry_time,
+            created_date=mt_rest_obj.created_date,
+            last_modified_date=mt_rest_obj.last_modified_date,
+        )
+
+    def _is_custom_strong_type(self):
+        return (
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in self.configs
+            and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
+        )
+
+    def _convert_to_custom_strong_type(self):
+        module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
+        custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
+        import importlib
+
+        module = importlib.import_module(module_name)
+        custom_defined_connection_class = getattr(module, custom_type_class_name)
+        connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
+
+        return connection_instance
 
 
 _supported_types = {

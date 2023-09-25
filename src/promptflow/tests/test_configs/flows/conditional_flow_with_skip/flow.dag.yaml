@@ -5,7 +5,7 @@ inputs:
 outputs:
   string:
     type: string
-    reference: ${conditional_node.output}
+    reference: ${print_result.output}
 nodes:
 - name: is_even
   type: python
@@ -25,3 +25,10 @@ nodes:
   source:
     type: code
     path: conditional_node.py
+- name: print_result
+  type: python
+  inputs:
+    message: ${conditional_node.output}
+  source:
+    type: code
+    path: print_result.py

@@ -8,6 +8,8 @@ from functools import cached_property
 
 
 class ErrorTarget(str, Enum):
+    """The target of the error, indicates which part of the system the error occurs."""
+
     EXECUTOR = "Executor"
     FLOW_EXECUTOR = "FlowExecutor"
     NODE_EXECUTOR = "NodeExecutor"
@@ -19,6 +21,7 @@ class ErrorTarget(str, Enum):
     RUN_STORAGE = "RunStorage"
     CONTROL_PLANE_SDK = "ControlPlaneSDK"
     SERVING_APP = "ServingApp"
+    FLOW_INVOKER = "FlowInvoker"
 
 
 class PromptflowException(Exception):
@@ -52,6 +55,7 @@ class PromptflowException(Exception):
 
     @property
     def message(self):
+        """The error message."""
         if self._message:
             return self._message
 
@@ -62,10 +66,12 @@ class PromptflowException(Exception):
 
     @property
     def message_format(self):
+        """The error message format."""
         return self._message_format
 
     @cached_property
     def message_parameters(self):
+        """The error message parameters."""
         if not self._kwargs:
             return {}
 
@@ -74,11 +80,12 @@ class PromptflowException(Exception):
 
     @cached_property
     def serializable_message_parameters(self):
+        """The serializable error message parameters."""
         return {k: str(v) for k, v in self.message_parameters.items()}
 
     @property
     def target(self):
-        """Return the error target.
+        """The error target.
 
         :return: The error target.
         :rtype: ErrorTarget
@@ -87,6 +94,7 @@ class PromptflowException(Exception):
 
     @target.setter
     def target(self, value):
+        """Set the error target."""
         self._target = value
 
     @property
@@ -100,10 +108,12 @@ class PromptflowException(Exception):
 
     @module.setter
     def module(self, value):
+        """Set the module of the error that occurs."""
         self._module = value
 
     @property
     def reference_code(self):
+        """The reference code of the error."""
         if self.module:
             return f"{self.target}/{self.module}"
         else:
@@ -155,6 +165,8 @@ class PromptflowException(Exception):
         return result
 
     def get_arguments_from_message_format(self, message_format):
+        """Get the arguments from the message format."""
+
         def iter_field_name():
             if not message_format:
                 return
@@ -185,4 +197,6 @@ class SystemErrorException(PromptflowException):
 
 
 class ValidationException(UserErrorException):
+    """Exception raised when validation fails."""
+
     pass

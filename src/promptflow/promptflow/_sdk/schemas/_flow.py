@@ -18,6 +18,7 @@ class FlowInputSchema(metaclass=PatchedSchemaMeta):
     # may need to delete the default type in the generated json schema to avoid false alarm
     default = fields.Raw()
     is_chat_input = fields.Bool()
+    is_chat_history = fields.Bool()
 
 
 class FlowOutputSchema(metaclass=PatchedSchemaMeta):

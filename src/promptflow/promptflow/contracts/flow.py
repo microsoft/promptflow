@@ -15,13 +15,15 @@ from promptflow.exceptions import ErrorTarget
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
-from ._errors import FailedToImportModule
+from ._errors import FailedToImportModule, NodeConditionConflict
 from .tool import ConnectionType, Tool, ToolType, ValueType
 
 logger = logging.getLogger(__name__)
 
 
 class InputValueType(Enum):
+    """The enum of input value type."""
+
     LITERAL = "Literal"
     FLOW_INPUT = "FlowInput"
     NODE_REFERENCE = "NodeReference"
@@ -33,12 +35,15 @@ FLOW_INPUT_PREFIXES = [FLOW_INPUT_PREFIX, "inputs."]  # Use a list for backward 
 
 @dataclass
 class InputAssignment:
+    """This class represents the assignment of an input value."""
+
     value: Any
     value_type: InputValueType = InputValueType.LITERAL
     section: str = ""
     property: str = ""
 
     def serialize(self):
+        """Serialize the input assignment to a string."""
         if self.value_type == InputValueType.FLOW_INPUT:
             return f"${{{FLOW_INPUT_PREFIX}{self.value}}}"
         elif self.value_type == InputValueType.NODE_REFERENCE:
@@ -51,6 +56,13 @@ class InputAssignment:
 
     @staticmethod
     def deserialize(value: str) -> "InputAssignment":
+        """Deserialize the input assignment from a string.
+
+        :param value: The string to be deserialized.
+        :type value: str
+        :return: The input assignment constructed from the string.
+        :rtype: InputAssignment
+        """
         literal_value = InputAssignment(value, InputValueType.LITERAL)
         if isinstance(value, str) and value.startswith("$") and len(value) > 2:
             value = value[1:]
@@ -62,13 +74,26 @@ class InputAssignment:
 
     @staticmethod
     def deserialize_reference(value: str) -> "InputAssignment":
-        """Deserialize the reference(including node/flow reference) part of an input assignment."""
+        """Deserialize the reference(including node/flow reference) part of an input assignment.
+
+        :param value: The string to be deserialized.
+        :type value: str
+        :return: The input assignment of reference types.
+        :rtype: InputAssignment
+        """
         if FlowInputAssignment.is_flow_input(value):
             return FlowInputAssignment.deserialize(value)
         return InputAssignment.deserialize_node_reference(value)
 
     @staticmethod
     def deserialize_node_reference(data: str) -> "InputAssignment":
+        """Deserialize the node reference part of an input assignment.
+
+        :param data: The string to be deserialized.
+        :type data: str
+        :return: Input assignment of node reference type.
+        :rtype: InputAssignment
+        """
         value_type = InputValueType.NODE_REFERENCE
         if "." not in data:
             return InputAssignment(data, value_type, "output")
@@ -81,10 +106,19 @@ class InputAssignment:
 
 @dataclass
 class FlowInputAssignment(InputAssignment):
+    """This class represents the assignment of a flow input value."""
+
     prefix: str = FLOW_INPUT_PREFIX
 
     @staticmethod
     def is_flow_input(input_value: str) -> bool:
+        """Check whether the input value is a flow input.
+
+        :param input_value: The input value to be checked.
+        :type input_value: str
+        :return: Whether the input value is a flow input.
+        :rtype: bool
+        """
         for prefix in FLOW_INPUT_PREFIXES:
             if input_value.startswith(prefix):
                 return True
@@ -92,6 +126,13 @@ class FlowInputAssignment(InputAssignment):
 
     @staticmethod
     def deserialize(value: str) -> "FlowInputAssignment":
+        """Deserialize the flow input assignment from a string.
+
+        :param value: The string to be deserialized.
+        :type value: str
+        :return: The flow input assignment constructed from the string.
+        :rtype: FlowInputAssignment
+        """
         for prefix in FLOW_INPUT_PREFIXES:
             if value.startswith(prefix):
                 return FlowInputAssignment(
@@ -101,6 +142,8 @@ class FlowInputAssignment(InputAssignment):
 
 
 class ToolSourceType(str, Enum):
+    """The enum of tool source type."""
+
     Code = "code"
     Package = "package"
     PackageWithPrompt = "package_with_prompt"
@@ -108,12 +151,21 @@ class ToolSourceType(str, Enum):
 
 @dataclass
 class ToolSource:
+    """This class represents the source of a tool."""
+
     type: ToolSourceType = ToolSourceType.Code
     tool: Optional[str] = None
     path: Optional[str] = None
 
     @staticmethod
     def deserialize(data: dict) -> "ToolSource":
+        """Deserialize the tool source from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The tool source constructed from the dict.
+        :rtype: ToolSource
+        """
         result = ToolSource(data.get("type", ToolSourceType.Code.value))
         if "tool" in data:
             result.tool = data["tool"]
@@ -123,13 +175,45 @@ class ToolSource:
 
 
 @dataclass
+class ActivateCondition:
+    """This class represents the activate condition of a node."""
+
+    condition: InputAssignment
+    condition_value: Any
+
+    @staticmethod
+    def deserialize(data: dict) -> "ActivateCondition":
+        """Deserialize the activate condition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The activate condition constructed from the dict.
+        :rtype: ActivateCondition
+        """
+        result = ActivateCondition(
+            condition=InputAssignment.deserialize(data["when"]),
+            condition_value=data["is"],
+        )
+        return result
+
+
+@dataclass
 class SkipCondition:
+    """This class represents the skip condition of a node."""
+
     condition: InputAssignment
     condition_value: Any
     return_value: InputAssignment
 
     @staticmethod
     def deserialize(data: dict) -> "SkipCondition":
+        """Deserialize the skip condition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The skip condition constructed from the dict.
+        :rtype: SkipCondition
+        """
         result = SkipCondition(
             condition=InputAssignment.deserialize(data["when"]),
             condition_value=data["is"],
@@ -140,6 +224,8 @@ class SkipCondition:
 
 @dataclass
 class Node:
+    """This class represents a node in a flow."""
+
     name: str
     tool: str
     inputs: Dict[str, InputAssignment]
@@ -154,8 +240,14 @@ class Node:
     source: Optional[ToolSource] = None
     type: Optional[ToolType] = None
     skip: Optional[SkipCondition] = None
+    activate: Optional[ActivateCondition] = None
 
     def serialize(self):
+        """Serialize the node to a dict.
+
+        :return: The dict of the node.
+        :rtype: dict
+        """
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v})
         self.inputs = self.inputs or {}
         data.update({"inputs": {name: i.serialize() for name, i in self.inputs.items()}})
@@ -166,6 +258,13 @@ class Node:
 
     @staticmethod
     def deserialize(data: dict) -> "Node":
+        """Deserialize the node from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The node constructed from the dict.
+        :rtype: Node
+        """
         node = Node(
             name=data.get("name"),
             tool=data.get("tool"),
@@ -185,16 +284,24 @@ class Node:
             node.type = ToolType(data["type"])
         if "skip" in data:
             node.skip = SkipCondition.deserialize(data["skip"])
+        if "activate" in data:
+            node.activate = ActivateCondition.deserialize(data["activate"])
+        if node.skip and node.activate:
+            raise NodeConditionConflict(f"Node {node.name!r} can't have both skip and activate condition.")
+
         return node
 
 
 @dataclass
 class FlowInputDefinition:
+    """This class represents the definition of a flow input."""
+
     type: ValueType
     default: str = None
     description: str = None
     enum: List[str] = None
     is_chat_input: bool = False
+    is_chat_history: bool = None
 
     def serialize(self):
         data = {}
@@ -207,21 +314,33 @@ class FlowInputDefinition:
             data["enum"] = self.enum
         if self.is_chat_input:
             data["is_chat_input"] = True
+        if self.is_chat_history:
+            data["is_chat_history"] = True
         return data
 
     @staticmethod
     def deserialize(data: dict) -> "FlowInputDefinition":
+        """Deserialize the flow input definition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow input definition constructed from the dict.
+        :rtype: FlowInputDefinition
+        """
         return FlowInputDefinition(
             ValueType(data["type"]),
             data.get("default", None),
             data.get("description", ""),
             data.get("enum", []),
             data.get("is_chat_input", False),
+            data.get("is_chat_history", None),
         )
 
 
 @dataclass
 class FlowOutputDefinition:
+    """This class represents the definition of a flow output."""
+
     type: ValueType
     reference: InputAssignment
     description: str = ""
@@ -229,6 +348,7 @@ class FlowOutputDefinition:
     is_chat_output: bool = False
 
     def serialize(self):
+        """Serialize the flow output definition to a dict."""
         data = {}
         data["type"] = self.type.value
         if self.reference:
@@ -243,6 +363,13 @@ class FlowOutputDefinition:
 
     @staticmethod
     def deserialize(data: dict):
+        """Deserialize the flow output definition from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow output definition constructed from the dict.
+        :rtype: FlowOutputDefinition
+        """
         return FlowOutputDefinition(
             ValueType(data["type"]),
             InputAssignment.deserialize(data.get("reference", "")),
@@ -254,11 +381,20 @@ class FlowOutputDefinition:
 
 @dataclass
 class NodeVariant:
+    """This class represents a node variant."""
+
     node: Node
     description: str = ""
 
     @staticmethod
     def deserialize(data: dict) -> "NodeVariant":
+        """Deserialize the node variant from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The node variant constructed from the dict.
+        :rtype: NodeVariant
+        """
         return NodeVariant(
             Node.deserialize(data["node"]),
             data.get("description", ""),
@@ -267,11 +403,20 @@ class NodeVariant:
 
 @dataclass
 class NodeVariants:
+    """This class represents the variants of a node."""
+
     default_variant_id: str  # The default variant id of the node
     variants: Dict[str, NodeVariant]  # The variants of the node
 
     @staticmethod
     def deserialize(data: dict) -> "NodeVariants":
+        """Deserialize the node variants from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The node variants constructed from the dict.
+        :rtype: NodeVariants
+        """
         variants = {}
         for variant_id, node in data["variants"].items():
             variants[variant_id] = NodeVariant.deserialize(node)
@@ -280,6 +425,8 @@ class NodeVariants:
 
 @dataclass
 class Flow:
+    """This class represents a flow."""
+
     id: str
     name: str
     nodes: List[Node]
@@ -289,6 +436,7 @@ class Flow:
     node_variants: Dict[str, NodeVariants] = None
 
     def serialize(self):
+        """Serialize the flow to a dict."""
         data = {
             "id": self.id,
             "name": self.name,
@@ -301,8 +449,8 @@ class Flow:
 
     @staticmethod
     def _import_requisites(tools, nodes):
+        """This function will import tools/nodes required modules to ensure type exists so flow can be executed."""
         try:
-            """This function will import tools/nodes required modules to ensure type exists so flow can be executed."""
             # Import tool modules to ensure register_builtins & registered_connections executed
             for tool in tools:
                 if tool.module:
@@ -319,6 +467,13 @@ class Flow:
 
     @staticmethod
     def deserialize(data: dict) -> "Flow":
+        """Deserialize the flow from a dict.
+
+        :param data: The dict to be deserialized.
+        :type data: dict
+        :return: The flow constructed from the dict.
+        :rtype: Flow
+        """
         tools = [Tool.deserialize(t) for t in data.get("tools") or []]
         nodes = [Node.deserialize(n) for n in data.get("nodes") or []]
         Flow._import_requisites(tools, nodes)
@@ -364,23 +519,19 @@ class Flow:
         return working_dir
 
     @staticmethod
-    def from_yaml(flow_file: Path, working_dir=None, gen_tool=True) -> "Flow":
+    def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
         with open(working_dir / flow_file, "r") as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))
-
-        # TODO: Postpone tool generation to flow execution in all scenarios and remove this parameter.
-        if not gen_tool:
-            return flow
-        from promptflow._core.tools_manager import gen_tool_by_source
-
-        for node in flow.nodes:
-            if node.source:
-                tool = gen_tool_by_source(node.name, node.source, node.type, working_dir)
-                node.tool = tool.name
-                flow.tools.append(tool)
+            flow._set_tool_loader(working_dir)
         return flow
+
+    def _set_tool_loader(self, working_dir):
+        package_tool_keys = [node.source.tool for node in self.nodes if node.source and node.source.tool]
+        from promptflow._core.tools_manager import ToolLoader
+
+        self._tool_loader = ToolLoader(working_dir, package_tool_keys)
 
     def _apply_node_overrides(self, node_overrides):
         """Apply node overrides to update the nodes in the flow.
@@ -409,19 +560,24 @@ class Flow:
         return self
 
     def has_aggregation_node(self):
+        """Return whether the flow has aggregation node."""
         return any(n.aggregation for n in self.nodes)
 
     def get_node(self, node_name):
+        """Return the node with the given name."""
         return next((n for n in self.nodes if n.name == node_name), None)
 
     def get_tool(self, tool_name):
+        """Return the tool with the given name."""
         return next((t for t in self.tools if t.name == tool_name), None)
 
     def is_reduce_node(self, node_name):
+        """Return whether the node is a reduce node."""
         node = next((n for n in self.nodes if n.name == node_name), None)
         return node is not None and node.aggregation
 
     def is_normal_node(self, node_name):
+        """Return whether the node is a normal node."""
         node = next((n for n in self.nodes if n.name == node_name), None)
         return node is not None and not node.aggregation
 
@@ -455,23 +611,21 @@ class Flow:
         return any(flow_node for flow_node in self.nodes if self.is_node_referenced_by(node, flow_node))
 
     def is_chat_flow(self):
+        """Return whether the flow is a chat flow."""
         chat_input_name = self.get_chat_input_name()
         return chat_input_name is not None
 
     def get_chat_input_name(self):
+        """Return the name of the chat input."""
         return next((name for name, i in self.inputs.items() if i.is_chat_input), None)
 
     def get_chat_output_name(self):
+        """Return the name of the chat output."""
         return next((name for name, o in self.outputs.items() if o.is_chat_output), None)
 
-    def get_connection_input_names_for_node(self, node_name):
-        """Return connection input names."""
-        node = self.get_node(node_name)
-        if not node:
-            return []
-        result = []
+    def _get_connection_name_from_tool(self, tool: Tool, node: Node):
+        connection_names = {}
         value_types = set({v.value for v in ValueType.__members__.values()})
-        tool = self.get_tool(node.tool)
         for k, v in tool.inputs.items():
             input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
             if all(typ.lower() in value_types for typ in input_type):
@@ -480,39 +634,39 @@ class Flow:
             input_assignment = node.inputs.get(k)
             # Add literal node assignment values to results, skip node reference
             if isinstance(input_assignment, InputAssignment) and input_assignment.value_type == InputValueType.LITERAL:
-                result.append(k)
-        return result
+                connection_names[k] = input_assignment.value
+        return connection_names
 
     def get_connection_names(self):
-        """Return the possible connection names in flow object."""
+        """Return connection names."""
         connection_names = set({})
-        tool_metas = {tool.name: tool for tool in self.tools}
-        value_types = set({v.value for v in ValueType.__members__.values()})
-        for node in self.nodes:
+        nodes = [
+            self._apply_default_node_variant(node, self.node_variants) if node.use_variants else node
+            for node in self.nodes
+        ]
+        for node in nodes:
             if node.connection:
-                # Some node has a separate field for connection.
                 connection_names.add(node.connection)
                 continue
-            # Get tool meta and return possible input name with connection type
-            if node.tool not in tool_metas:
-                msg = f"Node {node.name!r} references tool {node.tool!r} which is not in the flow {self.name!r}."
-                raise Exception(msg)
-            tool = tool_metas.get(node.tool)
-            # Force regard input type not in ValueType as connection type.
-            for k, v in tool.inputs.items():
-                input_type = [typ.value if isinstance(typ, Enum) else typ for typ in v.type]
-                if all(typ.lower() in value_types for typ in input_type):
-                    # All type is value type, the key is not a possible connection key.
-                    continue
-                input_assignment = node.inputs.get(k)
-                # Add literal node assignment values to results, skip node reference
-                if (
-                    isinstance(input_assignment, InputAssignment)
-                    and input_assignment.value_type == InputValueType.LITERAL
-                ):
-                    connection_names.add(input_assignment.value)
-        # Filter None and empty string out
+            if node.type == ToolType.PROMPT or node.type == ToolType.LLM:
+                continue
+            tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+            if tool:
+                connection_names.update(self._get_connection_name_from_tool(tool, node).values())
         return set({item for item in connection_names if item})
+
+    def get_connection_input_names_for_node(self, node_name):
+        """Return connection input names."""
+        node = self.get_node(node_name)
+        if node and node.use_variants:
+            node = self._apply_default_node_variant(node, self.node_variants)
+        # Ignore Prompt node and LLM node, due to they do not have connection inputs.
+        if not node or node.type == ToolType.PROMPT or node.type == ToolType.LLM:
+            return []
+        tool = self.get_tool(node.tool) or self._tool_loader.load_tool_for_node(node)
+        if tool:
+            return list(self._get_connection_name_from_tool(tool, node).keys())
+        return []
 
     def _replace_with_variant(self, variant_node: Node, variant_tools: list):
         for index, node in enumerate(self.nodes):

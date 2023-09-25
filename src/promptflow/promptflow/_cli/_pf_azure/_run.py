@@ -10,7 +10,13 @@ from typing import Optional
 
 import pandas as pd
 
-from promptflow._cli._params import add_param_debug, add_param_run_name, add_param_verbose, logging_params
+from promptflow._cli._params import (
+    add_param_all_results,
+    add_param_debug,
+    add_param_run_name,
+    add_param_verbose,
+    logging_params,
+)
 from promptflow._cli._pf._run import add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
@@ -69,8 +75,13 @@ pfazure run create --flow <path-to-flow-directory> --data <path-to-data-file> --
         )
 
     add_param_runtime = lambda parser: parser.add_argument("--runtime", type=str, help=argparse.SUPPRESS)  # noqa: E731
+    add_param_reset = lambda parser: parser.add_argument(  # noqa: E731
+        "--reset-runtime", action="store_true", help=argparse.SUPPRESS
+    )
     add_run_create_common(
-        subparsers, [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime], epilog=epilog
+        subparsers,
+        [add_param_data, _set_workspace_argument_for_subparsers, add_param_runtime, add_param_reset],
+        epilog=epilog,
     )
 
 
@@ -85,7 +96,7 @@ pfazure run list
 pfazure run list --max-results 10
 # List active and archived runs status:
 pfazure run list --include-archived
-# List arhived runs status only:
+# List archived runs status only:
 pfazure run list --archived-only
 # List all runs status as table:
 pfazure run list --output table
@@ -206,6 +217,7 @@ pfazure run show-details --name <name>
         _set_workspace_argument_for_subparsers,
         add_param_max_results,
         add_param_run_name,
+        add_param_all_results,
     ] + logging_params
 
     activate_action(
@@ -353,7 +365,12 @@ def add_parser_run_update(subparsers):
 def dispatch_run_commands(args: argparse.Namespace):
     if args.sub_action == "create":
         pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
-        create_run(create_func=functools.partial(pf.runs.create_or_update, runtime=args.runtime), args=args)
+        create_run(
+            create_func=functools.partial(
+                pf.runs.create_or_update, runtime=args.runtime, reset_runtime=args.reset_runtime
+            ),
+            args=args,
+        )
     elif args.sub_action == "list":
         list_runs(
             args.subscription,
@@ -368,7 +385,13 @@ def dispatch_run_commands(args: argparse.Namespace):
         show_run(args.subscription, args.resource_group, args.workspace_name, args.name)
     elif args.sub_action == "show-details":
         show_run_details(
-            args.subscription, args.resource_group, args.workspace_name, args.name, args.max_results, args.debug
+            args.subscription,
+            args.resource_group,
+            args.workspace_name,
+            args.name,
+            args.max_results,
+            args.all_results,
+            args.debug,
         )
     elif args.sub_action == "show-metrics":
         show_metrics(args.subscription, args.resource_group, args.workspace_name, args.name)
@@ -436,11 +459,13 @@ def show_run(subscription_id, resource_group, workspace_name, flow_run_id):
 
 
 @exception_handler("Show run details")
-def show_run_details(subscription_id, resource_group, workspace_name, flow_run_id, max_results, debug=False):
+def show_run_details(
+    subscription_id, resource_group, workspace_name, flow_run_id, max_results, all_results, debug=False
+):
     """Show a run details from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
-    details = pf.runs.get_details(run=flow_run_id)
-    pretty_print_dataframe_as_table(details.head(max_results))
+    details = pf.runs.get_details(run=flow_run_id, max_results=max_results, all_results=all_results)
+    pretty_print_dataframe_as_table(details)
 
 
 @exception_handler("Show run metrics")

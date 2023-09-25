@@ -4,6 +4,8 @@
 
 import argparse
 
+from azure.ai.ml.constants._common import MAX_LIST_CLI_RESULTS
+
 
 class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-access
     def __call__(self, parser, namespace, values, option_string=None):
@@ -11,11 +13,13 @@ class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-a
         super(AppendToDictAction, self).__call__(parser, namespace, action, option_string)
 
     def get_action(self, values, option_string):  # pylint: disable=no-self-use
+        from promptflow._sdk._utils import strip_quotation
+
         kwargs = {}
         for item in values:
             try:
-                key, value = item.split("=", 1)
-                kwargs[key] = value
+                key, value = strip_quotation(item).split("=", 1)
+                kwargs[key] = strip_quotation(value)
             except ValueError:
                 raise Exception("Usage error: {} KEY=VALUE [KEY=VALUE ...]".format(option_string))
         return kwargs
@@ -67,6 +71,16 @@ def add_param_set(parser):
         dest="params_override",
         action=AppendToDictAction,
         help="Update an object by specifying a property path and value to set. Example: --set "
+        "property1.property2=<value>.",
+        nargs="+",
+    )
+
+
+def add_param_set_positional(parser):
+    parser.add_argument(
+        "params_override",
+        action=AppendToDictAction,
+        help="Set an object by specifying a property path and value to set. Example: set "
         "property1.property2=<value>.",
         nargs="+",
     )
@@ -185,6 +199,27 @@ def add_param_variants(parser):
     )
 
 
+def add_param_max_results(parser):
+    parser.add_argument(  # noqa: E731
+        "-r",
+        "--max-results",
+        dest="max_results",
+        type=int,
+        default=MAX_LIST_CLI_RESULTS,
+        help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
+    )
+
+
+def add_param_all_results(parser):
+    parser.add_argument(  # noqa: E731
+        "--all-results",
+        action="store_true",
+        dest="all_results",
+        default=False,
+        help="Returns all results. Default to False.",
+    )
+
+
 def add_param_subscription(parser):
     parser.add_argument(
         "-s",
@@ -221,8 +256,17 @@ def add_param_workspace(parser):
     )
 
 
+def add_param_variant(parser):
+    parser.add_argument(
+        "--variant",
+        "-v",
+        type=str,
+        help="The variant to be used in flow, will use default variant if not specified.",
+    )
+
+
 def add_parser_build(parent_parser, entity_name: str):
-    description = f"Build a {entity_name} as a docker image or a package."
+    description = f"Build a {entity_name} for further sharing or deployment."
     parser = parent_parser.add_parser(
         "build",
         description=description,
@@ -231,16 +275,14 @@ def add_parser_build(parent_parser, entity_name: str):
     )
     add_param_source(parser)
     parser.add_argument("--output", "-o", required=True, type=str, help="The destination folder path.")
+    parser.add_argument("--format", "-f", type=str, help="The format to build with.", choices=["docker", "executable"])
+    # this is a hidden parameter for `mldesigner compile` command
     parser.add_argument(
-        "--format", "-f", required=True, type=str, help="The format to build with.", choices=["docker", "package"]
+        "--flow-only",
+        action="store_true",
+        help=argparse.SUPPRESS,
     )
-    parser.add_argument(
-        "--variant",
-        "-v",
-        type=str,
-        help="The variant to be used in flow in format of ${TUNING_NODE.VARIANT}, "
-        "will use default variant if not specified.",
-    )
+    add_param_variant(parser)
     add_param_verbose(parser)
     add_param_debug(parser)
     parser.set_defaults(sub_action="build")

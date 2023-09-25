@@ -7,17 +7,17 @@ import pytest
 
 from promptflow import PFClient
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
-from promptflow._sdk._constants import LocalStorageFilenames, RunStatus
+from promptflow._sdk._constants import FlowRunProperties, LocalStorageFilenames, RunStatus
 from promptflow._sdk._errors import InvalidFlowError, RunExistsError, RunNotFoundError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk._utils import _get_additional_includes
 from promptflow._sdk.entities import Run
-from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import MappingSourceNotFound
+from promptflow.executor.flow_executor import InputMappingError
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -247,6 +247,18 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
+    def test_custom_strong_type_connection_basic_flow(self, local_client, pf, is_custom_tool_pkg_installed):
+        if is_custom_tool_pkg_installed:
+            result = pf.run(
+                flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
+                data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+                connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+            )
+            run = local_client.runs.get(name=result.name)
+            assert run.status == "Completed"
+        else:
+            pytest.skip("Custom tool package 'my_tools_package_with_cstc' not installed.")
+
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
         with pytest.raises(Exception) as e:
@@ -257,19 +269,17 @@ class TestFlowRun:
             )
         assert "Connection 'Not_exist' required for flow" in str(e)
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_run_reference_failed_run(self, pf):
         failed_run = pf.run(
             flow=f"{FLOWS_DIR}/failed_flow",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        assert failed_run.status == "Failed"
+        # "update" run status to failed since currently all run will be completed unless there's bug
+        pf.runs.update(
+            name=failed_run.name,
+            status="Failed",
+        )
 
         run_name = str(uuid.uuid4())
         with pytest.raises(ValueError) as e:
@@ -285,6 +295,28 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=run_name)
 
+    def test_referenced_output_not_exist(self, pf):
+        # failed run won't generate output
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+
+        run_name = str(uuid.uuid4())
+        with pytest.raises(InputMappingError) as e:
+            pf.run(
+                name=run_name,
+                run=failed_run,
+                flow=f"{FLOWS_DIR}/failed_flow",
+                column_mapping={"text": "${run.outputs.text}"},
+            )
+        assert "Couldn't find these mapping relations: ${run.outputs.text}." in str(e.value)
+
+        # run should not be created
+        with pytest.raises(RunNotFoundError):
+            pf.runs.get(name=run_name)
+
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
             source=f"{RUNS_DIR}/run_with_connections.yaml",
@@ -293,7 +325,7 @@ class TestFlowRun:
         assert run.status == "Completed"
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
-        flow = Flow.load(f"{FLOWS_DIR}/web_classification_no_variants")
+        flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow)
         assert local_aoai_connection.name in connections
 
@@ -347,7 +379,7 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         assert run.name == name
-        assert run.display_name == display_name
+        assert f"{display_name}-default-" in run.display_name
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
@@ -358,8 +390,8 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert run.display_name == run.name
-        run = pf.runs.create_or_update(
+        assert "print_env_var-default-" in run.display_name
+        base_run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
@@ -367,7 +399,18 @@ class TestFlowRun:
                 display_name="my_run",
             )
         )
-        assert run.display_name == "my_run"
+        assert "my_run-default-" in base_run.display_name
+
+        run = pf.runs.create_or_update(
+            run=Run(
+                flow=Path(f"{FLOWS_DIR}/print_env_var"),
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
+                display_name="my_run",
+                run=base_run,
+            )
+        )
+        assert f"{base_run.display_name}-my_run-" in run.display_name
 
     def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -395,12 +438,6 @@ class TestFlowRun:
         assert 'Run status: "Completed"' in out
         assert "Output path: " in out
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_stream_incomplete_run_summary(
         self, azure_open_ai_connection: AzureOpenAIConnection, local_client, capfd, pf
     ) -> None:
@@ -416,7 +453,7 @@ class TestFlowRun:
         local_client.runs.stream(run.name)
         # assert error message in stream API
         out, _ = capfd.readouterr()
-        assert 'Run status: "Failed"' in out
+        assert 'Run status: "Completed"' in out
         # won't print exception, use can get it from run._to_dict()
         # assert "failed with exception" in out
 
@@ -463,12 +500,6 @@ class TestFlowRun:
         )
         pf.visualize([run1, run2])
 
-    @pytest.mark.skip(
-        reason=(
-            "BulkRun's raise_ex should be False, this case need to modify in Task 2626231: "
-            "[PromptFlow] Get line error info from LineResult's run_info."
-        )
-    )
     def test_incomplete_run_visualize(
         self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient, capfd: pytest.CaptureFixture
     ) -> None:
@@ -477,9 +508,11 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        # stream run to ensure it is terminated, and it is expected to fail
-        run = pf.runs.stream(name=failed_run.name)
-        assert run.status == RunStatus.FAILED
+        # "update" run status to failed since currently all run will be completed unless there's bug
+        pf.runs.update(
+            name=failed_run.name,
+            status="Failed",
+        )
 
         # patch logger.error to print, so that we can capture the error message using capfd
         from promptflow.azure.operations import _run_operations
@@ -509,7 +542,7 @@ class TestFlowRun:
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(MappingSourceNotFound):
+        with pytest.raises(InputMappingError):
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
                 data=data_path,
@@ -567,6 +600,12 @@ class TestFlowRun:
         assert (Path(run_output_path) / "node_artifacts").is_dir()
         # 5 nodes web classification flow DAG
         assert len([_ for _ in (Path(run_output_path) / "node_artifacts").iterdir()]) == 5
+
+    def test_run_snapshot_with_flow_tools_json(self, local_client, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        local_storage = LocalStorageOperations(local_client.runs.get(run.name))
+        assert (local_storage._snapshot_folder_path / ".promptflow").is_dir()
+        assert (local_storage._snapshot_folder_path / ".promptflow" / "flow.tools.json").is_file()
 
     def test_get_metrics_format(self, local_client, pf) -> None:
         run1 = create_run_against_multi_line_data(pf)
@@ -636,3 +675,32 @@ class TestFlowRun:
         # run should not be created
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=name)
+
+    def test_error_message_dump(self, pf):
+        failed_run = pf.run(
+            flow=f"{FLOWS_DIR}/failed_flow",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"text": "${data.url}"},
+        )
+        # even if all lines failed, the bulk run's status is completed.
+        assert failed_run.status == "Completed"
+        # error messages will store in local
+        local_storage = LocalStorageOperations(failed_run)
+
+        assert os.path.exists(local_storage._exception_path)
+        exception = local_storage.load_exception()
+        assert "Failed to run 1/1 lines: First error message is" in exception["message"]
+        # line run failures will be stored in additionalInfo
+        assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
+
+        # show run will get error message
+        run = pf.runs.get(name=failed_run.name)
+        run_dict = run._to_dict()
+        assert "error" in run_dict
+        assert run_dict["error"] == exception
+
+    def test_system_metrics_in_properties(self, pf) -> None:
+        run = create_run_against_multi_line_data(pf)
+        assert FlowRunProperties.SYSTEM_METRICS in run.properties
+        assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
+        assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]

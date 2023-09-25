@@ -14,11 +14,11 @@ inputs:
     type: object
     default:
       EMBEDDING_MODEL_DEPLOYMENT_NAME: text-embedding-ada-002
-      CHAT_MODEL_DEPLOYMENT_NAME: gpt-35-turbo # change to gpt-3.5-turbo when using openai
+      CHAT_MODEL_DEPLOYMENT_NAME: gpt-4
       PROMPT_TOKEN_LIMIT: 3000
-      MAX_COMPLETION_TOKENS: 256
+      MAX_COMPLETION_TOKENS: 1024
       VERBOSE: true
-      CHUNK_SIZE: 1024
+      CHUNK_SIZE: 256
       CHUNK_OVERLAP: 64
 outputs:
   answer:
@@ -77,3 +77,5 @@ nodes:
     question: ${inputs.question}
     history: ${inputs.chat_history}
     env_ready_signal: ${setup_env.output}
+environment:
+  python_requirements_txt: requirements.txt

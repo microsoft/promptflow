@@ -1,0 +1,41 @@
+name: Create promptflow release tag
+
+on:
+  workflow_dispatch:
+
+jobs:
+  create_release_tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: create branch
+        run: |
+          set -x -e
+
+          branch_name="${{ github.ref_name }}"
+          echo "branch name: $branch_name"
+
+          if [[ $branch_name != release/promptflow/* ]]; then
+            echo "not a release branch for promptflow, exiting..."
+            exit 1
+          fi
+
+          release_version=${branch_name#release/promptflow/}
+          echo "release version: $release_version"
+
+          echo "replacing version in src/promptflow/promptflow/_version.py..."
+          sed -i "s/0.0.1/$release_version/g" src/promptflow/promptflow/_version.py
+          echo "replaced src/promptflow/promptflow/_version.py:"
+          cat src/promptflow/promptflow/_version.py
+
+          git add src/promptflow/promptflow/_version.py
+          git config --global user.name 'promptflow release'
+          git config --global user.email 'aml-pt-eng@microsoft.com'
+          git commit -m "update version in _version.py for promptflow"
+          git push --set-upstream origin $branch_name
+
+          git tag promptflow_$release_version
+          git push origin --tags

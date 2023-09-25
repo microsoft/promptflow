@@ -1,17 +1,13 @@
 import logging
-import math
 import re
 
 
 class Settings:
-    divide_start = {
+    divide_file = {
         "py": r"(?<!.)(class|def)",
     }
-    divide_end = {
-        "py": r"\n(def|class)",
-    }
-    matchs = {
-        "py": r"((\n {,6})|^)(class|def)\s+(\w+)\s*(\([^)]*\))?\s*(->\s*\w+:|:) *"
+    divide_func = {
+        "py": r"((\n {,6})|^)(class|def)\s+(\S+(?=\())\s*(\([^)]*\))?\s*(->[^:]*:|:) *"
     }
 
 
@@ -20,25 +16,13 @@ class Divider:
 
     @classmethod
     def divide_file(cls, text) -> list[str]:
-        starts = re.finditer(Settings.divide_start[Divider.language], text)
-        ends = re.finditer(Settings.divide_end[Divider.language], text)
+        matches = list(re.finditer(Settings.divide_file[Divider.language], text))
         splitted_content = []
-        min_pos = math.inf
-
-        while True:
-            start = None
-            try:
-                start = next(starts).start()
-                end = next(ends).start()
-                if end < start:
-                    end = next(ends).start()
-                min_pos = min(min_pos, start)
-                splitted_content.append(text[start:end])
-            except Exception:  # pylint: disable=broad-except
-                if start is not None:
-                    min_pos = min(min_pos, start)
-                    splitted_content.append(text[start:])
-                break
+        min_pos = matches[0].start() if len(matches) > 0 else len(text)
+        for i in range(len(matches)):
+            start = matches[i].start()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            splitted_content.append(text[start:end])
         if min_pos != 0:
             splitted_content.insert(0, text[0:min_pos])
         return splitted_content
@@ -49,20 +33,27 @@ class Divider:
         Divide the content into two parts, but ensure that the function body is not split.
         """
         _, pos = Divider.get_functions_and_pos(text)
-        if len(pos) > 1:
+        if len(pos) > 1:  # Divide the code into two parts and every part start with a function.
             i = len(pos) // 2
             return [text[0:pos[i][0]], text[pos[i][0]:]]
-        return text
+        if len(pos) == 1:  # Divide the code into two parts, [function define + body, other body].
+            body = text[pos[0][1]:]
+            body_lines = body.split('\n')
+            body_ten_lines = '\n'.join(body_lines[0:10])
+            return [text[0:pos[0][1]] + body_ten_lines, body[len(body_ten_lines):]]
+        return [text]
 
     @classmethod
     def get_functions_and_pos(cls, text):
-        matches = re.finditer(Settings.matchs[Divider.language], text)
+        matches = re.finditer(Settings.divide_func[Divider.language], text)
         functions = []
         pos = []
         for match in matches:
             matched_text = match.group().replace('\n', '')
-            func = re.sub(r' +', ' ', matched_text)
-            functions.append(re.sub(r'[\s,]+\)', ')', func).strip())
+            func = re.sub(r' +', ' ', matched_text).replace(' :', ':')
+            func = re.sub(r'[\s,]+\)', ')', func)
+            func = re.sub(r'\([\s,]+', '(', func)
+            functions.append(func.strip())
             pos.append((match.start(), match.end()))
         return functions, pos
 
@@ -88,12 +79,14 @@ class Divider:
                 continue
             new_doc = re.findall(pattern, docstring[pos1[i1][1]:pos1[i1 + 1][0]], re.DOTALL)
             if new_doc:
-                line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
-                lspace_num = (len(line) - len(line.lstrip()) + 4)
-                code_doc = re.findall(pattern, origin_code[pos2[i2][1]:pos2[i2 + 1][0]], re.DOTALL)
-                format_new_doc = Divider.format_indentation(new_doc[0], lspace_num)
-                if code_doc:
-                    code += part_full_code.replace(code_doc[0], format_new_doc.strip(), 1)
+                func_line = origin_code[pos2[i2][0]:pos2[i2][1]].replace('\n', '')
+                empty_line_num = (len(func_line) - len(func_line.lstrip()) + 4)
+                func_body = origin_code[pos2[i2][1]:pos2[i2 + 1][0]]
+                code_doc = list(re.finditer(pattern, func_body, re.DOTALL))
+                format_new_doc = Divider.format_indentation(new_doc[0], empty_line_num)
+                is_replace_doc = len(code_doc) > 0 and (re.sub(r'\s+', '', func_body[0:code_doc[0].start()]) == '')
+                if is_replace_doc:
+                    code += part_full_code.replace(code_doc[0].group(), format_new_doc.strip(), 1)
                 else:
                     code += origin_code[pos2[i2][0]:pos2[i2][1]] + '\n' + format_new_doc + '\n' + origin_code[
                                                                                                   pos2[i2][1]:
@@ -103,10 +96,10 @@ class Divider:
         return code
 
     @classmethod
-    def format_indentation(cls, text, lspace_num):
+    def format_indentation(cls, text, empty_line_num):
         lines = text.splitlines()
         last_line_space_num = len(lines[-1]) - len(lines[-1].lstrip())
-        need_add_space = max(lspace_num - last_line_space_num, 0) * ' '
+        need_add_space = max(empty_line_num - last_line_space_num, 0) * ' '
         lines[0] = last_line_space_num * ' ' + lines[0].lstrip()  # Align the first row to the last row
         indented_lines = [(need_add_space + line).rstrip() for line in lines]
         indented_string = '\n'.join(indented_lines)

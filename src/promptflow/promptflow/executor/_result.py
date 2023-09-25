@@ -56,20 +56,20 @@ class BulkResult:
             if run_info.index not in line_status.keys():
                 line_status[run_info.index] = True
 
-            line_status[run_info.index] = line_status[run_info.index] and run_info.status == Status.Completed
+            line_status[run_info.index] = line_status[run_info.index] and run_info.status in (
+                Status.Completed,
+                Status.Bypassed,
+            )
 
             node_name = run_info.node
-            if "__pf__.nodes." + node_name + ".completed" not in status_summary.keys():
-                status_summary["__pf__.nodes." + node_name + ".completed"] = 0
-                status_summary["__pf__.nodes." + node_name + ".failed"] = 0
-
-            # Only consider Completed and Failed status, because the UX only support two status.
-            if run_info.status in (Status.Completed, Status.Failed):
-                status_summary["__pf__.nodes." + node_name + f".{run_info.status.value}".lower()] += 1
+            # Only consider Completed, Bypassed and Failed status, because the UX only support three status.
+            if run_info.status in (Status.Completed, Status.Bypassed, Status.Failed):
+                node_status_key = f"__pf__.nodes.{node_name}.{run_info.status.value.lower()}"
+                status_summary[node_status_key] = status_summary.setdefault(node_status_key, 0) + 1
 
         for run_info in aggr_run_infos:
             node_name = run_info.node
-            status_summary["__pf__.nodes." + node_name + ".completed"] = 1 if run_info.status == Status.Completed else 0
+            status_summary[f"__pf__.nodes.{node_name}.completed"] = 1 if run_info.status == Status.Completed else 0
 
         status_summary["__pf__.lines.completed"] = sum(line_status.values())
         status_summary["__pf__.lines.failed"] = len(line_status) - status_summary["__pf__.lines.completed"]

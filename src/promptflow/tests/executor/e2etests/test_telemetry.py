@@ -25,7 +25,7 @@ def mock_stream_chat(**kwargs):
     return stream_response(kwargs)
 
 
-@pytest.mark.skipif(sys.platform == "darwin", reason="Skip on Mac")
+@pytest.mark.skipif(sys.platform == "darwin" or sys.platform == "win32", reason="Skip on Mac and Windows")
 @pytest.mark.usefixtures("dev_connections")
 @pytest.mark.e2etest
 class TestExecutorTelemetry:
