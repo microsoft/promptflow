@@ -2,10 +2,13 @@
   "name": "@promptflowjs/cli",
   "version": "0.0.1",
   "dependencies": {
-    "@promptflowjs/cli": "^0.0.1",
+    "@promptflowjs/connections": "^0.0.1",
     "commander": "^11.0.0",
     "inquirer": "^9.2.11",
     "ora": "^7.0.1"
+  },
+  "scripts": {
+    "pf": "node ./index.js"
   },
   "main": "./index.js",
   "module": "./index.mjs",

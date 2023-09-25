@@ -1,7 +1,15 @@
 import { Command } from "commander";
 
-const pfCliProgram = new Command();
+console.log("Hello from Promptflow CLI!");
 
-pfCliProgram.name("pf");
+const pf = new Command();
 
-pfCliProgram.option("-v, --version", "output the current version");
+pf.name("pf");
+
+pf.command("connection").addCommand(
+  new Command("list").action(() => {
+    console.log("List connections");
+  }),
+);
+
+pf.parse(process.argv);
