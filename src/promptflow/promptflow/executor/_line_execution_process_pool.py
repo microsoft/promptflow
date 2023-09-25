@@ -42,6 +42,72 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
+class LineProcess:
+    def __init__(self, executor_creation_func):
+        self.process = None
+        self.input_queue = None
+        self.output_queue = None
+        self._executor_creation_func = executor_creation_func
+
+    def _new_process(self):
+        input_queue = Queue()
+        output_queue = Queue()
+
+        # Put a start message and wait the subprocess be ready.
+        # Test if the subprocess can receive the message.
+        input_queue.put("start")
+
+        current_log_context = LogContext.get_current()
+        process = Process(
+            target=_process_wrapper,
+            args=(
+                self._executor_creation_func,
+                input_queue,
+                output_queue,
+                current_log_context.get_initializer() if current_log_context else None,
+                OperationContext.get_instance().get_context_dict(),
+            ),
+            # Set the process as a daemon process to automatically terminated and release system resources
+            # when the main process exits.
+            daemon=True
+        )
+        process.start()
+
+        try:
+            # Wait for subprocess send a ready message.
+            ready_msg = output_queue.get(timeout=30)
+            logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
+        except queue.Empty:
+            logger.info(f"Process {process.pid} did not send ready message, exit.")
+            self.end_process(process)
+            return None, None, None
+
+        return process, input_queue, output_queue
+
+    def is_process_none(self):
+        return any(var is None for var in (self.process, self.input_queue, self.output_queue))
+
+    def end_process(self, process):
+        # When process failed to start and the task_queue is empty.
+        # The process will no longer re-created, and the process is None.
+        if process is None:
+            return
+        if process.is_alive():
+            process.kill()
+
+    def start(self, task_queue: Queue, idx: int):
+        # Start a new process if the current process is None and there are still tasks in the queue.
+        # This is to avoid the situation that the process not started correctly.
+        while self.is_process_none() and not task_queue.empty():
+            logger.info(f"Process {idx} is creating...")
+            new_process = self._new_process()
+            if new_process is not None:
+                self.process, self.input_queue, self.output_queue = new_process
+            if not self.is_process_none():
+                return self.process, self.input_queue, self.output_queue
+            time.sleep(1)
+
+
 class LineExecutionProcessPool:
     def __init__(
         self,
@@ -94,10 +160,10 @@ class LineExecutionProcessPool:
         if not self._use_fork:
             available_max_worker_count = get_available_max_worker_count()
             self._n_process = min(self._worker_count, self._nlines, available_max_worker_count)
-            logger.info(f"Not using fork, process count: {self._n_process}")
+            bulk_logger.info(f"Not using fork, process count: {self._n_process}")
         else:
             self._n_process = min(self._worker_count, self._nlines)
-            logger.info(f"Using fork, process count: {self._n_process}")
+            bulk_logger.info(f"Using fork, process count: {self._n_process}")
         pool = ThreadPool(self._n_process, initializer=set_context, initargs=(contextvars.copy_context(),))
         self._pool = pool
 
@@ -108,41 +174,6 @@ class LineExecutionProcessPool:
             self._pool.close()
             self._pool.join()
 
-    def _new_process(self):
-        input_queue = Queue()
-        output_queue = Queue()
-
-        # Put a start message and wait the subprocess be ready.
-        # Test if the subprocess can receive the message.
-        input_queue.put("start")
-
-        current_log_context = LogContext.get_current()
-        process = Process(
-            target=_process_wrapper,
-            args=(
-                self._executor_creation_func,
-                input_queue,
-                output_queue,
-                current_log_context.get_initializer() if current_log_context else None,
-                OperationContext.get_instance().get_context_dict(),
-            ),
-            # Set the process as a daemon process to automatically terminated and release system resources
-            # when the main process exits.
-            daemon=True
-        )
-        process.start()
-
-        try:
-            # Wait for subprocess send a ready message.
-            ready_msg = output_queue.get(timeout=30)
-            logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
-        except queue.Empty:
-            logger.info(f"Process {process.pid} did not send ready message, exit.")
-            self.end_process(process)
-            return None, None, None
-
-        return process, input_queue, output_queue
-
     def end_process(self, process):
         # When process failed to start and the task_queue is empty.
         # The process will no longer re-created, and the process is None.
@@ -152,16 +183,7 @@ class LineExecutionProcessPool:
             process.kill()
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        process, input_queue, output_queue = None, None, None
-
-        # Start a new process if the current process is None and there are still tasks in the queue.
-        # This is to avoid the situation that the process not started correctly.
-        while any(var is None for var in (process, input_queue, output_queue)) and not task_queue.empty():
-            logger.info(f"Process {idx} is creating...")
-            process, input_queue, output_queue = self._new_process()
-            if process and input_queue and output_queue:
-                break
-            time.sleep(1)
+        process, input_queue, output_queue = LineProcess(self._executor_creation_func).start(task_queue, idx)
 
         while True:
             try:
