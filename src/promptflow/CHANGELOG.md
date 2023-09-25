@@ -13,6 +13,7 @@
 - Reserve `.promptflow` folder when dump run snapshot.
 - Read/write log file with encoding specified.
 - Avoid inconsistent error message when executor exits abnormally.
+- Align inputs & outputs row number in case partial completed run will break `pfazure run show-details`.
 
 ### Improvements
 - [Executor][Internal] Improve error message with more details and actionable information.
