@@ -4,7 +4,7 @@
 
 The Prompt flow Open Source LLM tool enables you to utilize a variety of Open Source and Foundational Models, such as [Falcon](https://aka.ms/AAlc25c) or [Llama 2](https://aka.ms/AAlc258) for natural language processing, in PromptFlow.
 
-This Prompt flow provides a few different LLM APIs:
+This Prompt flow supports two different LLM API types:
 
 - **Completion**: to generate text based on provided prompts.
 - **Chat**: to facilitate interactive conversations with text-based inputs and responses.
@@ -35,8 +35,6 @@ The keys to set are:
 *These values can be found at the previously created Inferencing endpoint.*
 
 ## Inputs
-
-### Text Completion
 
 | Name                   | Type        | Description                                                                             | Required |
 |------------------------|-------------|-----------------------------------------------------------------------------------------|----------|

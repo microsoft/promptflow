@@ -1,6 +1,7 @@
 import functools
 import json
 import re
+import sys
 import time
 import urllib.request
 
@@ -12,12 +13,20 @@ from urllib.request import HTTPError
 from promptflow import ToolProvider, tool
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
-from promptflow.tools.common import render_jinja_template
+from promptflow.tools.common import render_jinja_template, validate_role
+from promptflow.tools.exception import (
+    OpenSourceLLMOnlineEndpointError,
+    OpenSourceLLMUserError,
+    OpenSourceLLMKeyValidationError,
+    ChatAPIInvalidRole
+)
 
+valid_llama_roles = {"user", "assistant"}
+mir_deployment_name_config = "azureml-model-deployment"
 
-def retry_and_handle_exceptions(max_retries: int = 3,
-                                initial_delay: float = 1,
-                                exponential_base: float = 2):
+def handle_oneline_endpoint_error(max_retries: int = 1, #3,
+                                  initial_delay: float = 1,
+                                  exponential_base: float = 2):
     def deco_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -27,13 +36,43 @@ def retry_and_handle_exceptions(max_retries: int = 3,
                     return func(*args, **kwargs)
                 except HTTPError as e:
                     if i == max_retries - 1:
-                        raise Exception("Func execution failed after {0} retries: {1}".format(max_retries, e))
+                        error_message = f"Exception hit calling Oneline Endpoint: {type(e).__name__}: {str(e)}"
+                        print(error_message, file=sys.stderr)
+                        raise OpenSourceLLMOnlineEndpointError(message=error_message)
+
                     delay *= exponential_base
                     delay_from_error_message = None
                     final_delay = delay_from_error_message if delay_from_error_message else delay
                     time.sleep(final_delay)
         return wrapper
     return deco_retry
+
+
+def format_generic_response_payload(output: bytes, response_key: str) -> str:
+    response_json = json.loads(output)
+    try:
+        if response_key is None:
+            return response_json[0]
+        else:
+            return response_json[0][response_key]
+    except KeyError as e:
+        if response_key is None:
+            message = f"""Expected the response to fit the following schema:
+                `[
+                    <text>
+                ]`
+                Instead, received {response_json} and access failed at key `{e}`.
+                """
+        else:
+            message = f"""Expected the response to fit the following schema:
+                `[
+                    {{
+                        "{response_key}": <text>
+                    }}
+                ]`
+                Instead, received {response_json} and access failed at key `{e}`.
+                """
+        raise OpenSourceLLMUserError(message=message)
 
 
 class ModelFamily(str, Enum):
@@ -62,24 +101,14 @@ class ContentFormatterBase:
     @staticmethod
     def escape_special_characters(prompt: str) -> str:
         """Escapes any special characters in `prompt`"""
-        escape_map = {
-            "\\": "\\\\",
-            '"': '\\"',
-            "\b": "\\b",
-            "\f": "\\f",
-            "\n": "\\n",
-            "\r": "\\r",
-            "\t": "\\t",
-        }
+        return re.sub(
+            r'\\([\\\"a-zA-Z])',
+            r'\\\1',
+            prompt)
 
-        # Replace each occurrence of the specified characters with their escaped versions
-        for escape_sequence, escaped_sequence in escape_map.items():
-            prompt = prompt.replace(escape_sequence, escaped_sequence)
-
-        return prompt
 
     @abstractmethod
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request body according to the input schema of
         the model. Returns bytes or seekable file like object in the
         format specified in the content_type request header.
@@ -96,83 +125,49 @@ class ContentFormatterBase:
 class GPT2ContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the OSS catalog."""
 
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         input_str = json.dumps(
             {
                 "inputs": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
                 "parameters": model_kwargs,
             }
         )
-        return str.encode(input_str)
+        return input_str
 
     def format_response_payload(self, output: bytes) -> str:
-        response_json = json.loads(output)
-        try:
-            return response_json[0]["0"]
-        except KeyError as e:
-            message = f"""Expected the response to fit the following schema:
-                `[
-                    {{
-                        "0": <text>
-                    }}
-                ]`
-                Instead, received {response_json} and access failed at key `{e}`.
-                """
-            raise KeyError(message)
+        return format_generic_response_payload(output, response_key="0")
 
 
 class HFContentFormatter(ContentFormatterBase):
     """Content handler for LLMs from the HuggingFace catalog."""
 
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         input_str = json.dumps(
             {
                 "inputs": [ContentFormatterBase.escape_special_characters(prompt)],
                 "parameters": model_kwargs,
             }
         )
-        return str.encode(input_str)
+        return input_str
 
     def format_response_payload(self, output: bytes) -> str:
-        response_json = json.loads(output)
-        try:
-            return response_json[0]["generated_text"]
-        except KeyError as e:
-            message = f"""Expected the response to fit the following schema:
-            `[
-                {{
-                    "generated_text": <text>
-                }}
-            ]`
-            Instead, received {response_json} and access failed at key `{e}`.
-            """
-            raise KeyError(message)
+        return format_generic_response_payload(output, response_key="generated_text")
 
 
 class DollyContentFormatter(ContentFormatterBase):
     """Content handler for the Dolly-v2-12b model"""
 
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         input_str = json.dumps(
             {
                 "input_data": {"input_string": [ContentFormatterBase.escape_special_characters(prompt)]},
                 "parameters": model_kwargs,
             }
         )
-        return str.encode(input_str)
+        return input_str
 
     def format_response_payload(self, output: bytes) -> str:
-        response_json = json.loads(output)
-        try:
-            return response_json[0]
-        except KeyError as e:
-            message = f"""Expected the response to fit the following schema:
-            `[
-                <text>
-            ]`
-            Instead, received {response_json} and access failed at key `{e}`.
-            """
-            raise KeyError(message)
+        return format_generic_response_payload(output, response_key=None)
 
 
 class LlamaContentFormatter(ContentFormatterBase):
@@ -184,97 +179,66 @@ class LlamaContentFormatter(ContentFormatterBase):
         self.chat_history = chat_history
 
     @staticmethod
-    def validate_role(role: str) -> None:
-        valid_roles = {"system", "user", "assistant"}
-        if role not in valid_roles:
-            valid_roles_str = ",".join([f"'{role}:\\n'" for role in valid_roles])
-            error_message = f"""The Chat API requires a specific format for prompt definition, and the prompt should
-            include separate lines as role delimiters: {valid_roles_str}. Current parsed role '{role}' does not
-            meet the requirement. If you intend to use the Completion API, please select the appropriate API type
-            and deployment name. If you do intend to use the Chat API, please refer to the guideline at
-            https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' in the name."""
-            raise Exception(error_message)
-
-    @staticmethod
     def parse_chat(chat_str: str) -> List[Dict[str, str]]:
         # LLaMa only supports below roles.
         separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
         chunks = re.split(separator, chat_str)
+
+        # remove any empty chunks
+        chunks = [c.strip() for c in chunks if c.strip()]
+
         chat_list = []
-        for chunk in chunks:
-            last_message = chat_list[-1] if len(chat_list) > 0 else None
-            if last_message and "role" in last_message and "content" not in last_message:
-                last_message["content"] = chunk
-            else:
-                if chunk.strip() == "":
-                    continue
-                role = chunk.strip().lower()
-                # appends consecutive user messages together to support workaround for system role
-                if last_message and last_message.get("role", "") == "user" and role not in {"user", "assistant"}:
-                    last_message["content"] += "\\n" + chunk
-                    continue
-                # Check if prompt follows chat api message format and has valid role.
-                LlamaContentFormatter.validate_role(role)
-                if last_message and last_message.get("role", "") == "user" and role == "user":
-                    continue
-                # system role not officially supported, so we hack a solution by making system role the user role
-                new_message = {"role": role} if role != "system" else {"role": "user"}
-                chat_list.append(new_message)
+        for index in range(0, len(chunks), 2):
+            role = chunks[index].lower()
+
+            # Check if prompt follows chat api message format and has valid role.
+            try:
+                validate_role(role, valid_llama_roles)
+            except ChatAPIInvalidRole as e:
+                raise OpenSourceLLMUserError(message=e.message)
+
+            if len(chunks) <= index + 1:
+                raise OpenSourceLLMUserError(message="Unexpected chat format. Please ensure the query matches the chat format of the model used.")
+            
+            chat_list.append({
+                "role": role,
+                "content": chunks[index+1]
+            })
 
         return chat_list
 
-    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> bytes:
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request according the the chosen api"""
         if "do_sample" not in model_kwargs:
             model_kwargs["do_sample"] = True
 
         if self.api == API.CHAT:
-            request_payload = render_jinja_template(
-                '{"input_data": {"input_string":{{history}}, "parameters": {{model_kwargs}}}}',
-                trim_blocks=False,
-                keep_trailing_newline=False,
-                **{
-                    "history": json.dumps(LlamaContentFormatter.parse_chat(self.chat_history)),
-                    "model_kwargs": json.dumps(model_kwargs)
-                })
+            prompt_value = LlamaContentFormatter.parse_chat(self.chat_history)
         else:
-            request_payload = render_jinja_template(
-                '{"input_data": {"input_string": ["{{prompt_token}}"], "parameters": {{model_kwargs}}}}',
-                trim_blocks=False,
-                keep_trailing_newline=False,
-                **{
-                    "prompt_token": ContentFormatterBase.escape_special_characters(prompt),
-                    "model_kwargs": json.dumps(model_kwargs)
-                })
-        return str.encode(request_payload)
+            prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
+
+        return json.dumps(
+            {
+                "input_data":
+                {
+                    "input_string": prompt_value, 
+                    "parameters": model_kwargs
+                }
+            }
+        )
 
     def format_response_payload(self, output: bytes) -> str:
         """Formats response"""
         response_json = json.loads(output)
 
-        try:
-            return response_json["output"] if self.api == API.CHAT else response_json["0"]
-        except KeyError as e:
-            schema = (
-                """
-            `{
-                "output": <text>
-            }`
-            """
-                if self.api == API.CHAT
-                else """
-            [
-                {
-                    "0": <text>
-                }
-            ]
-            """
-            )
-            message = f"""Expected the response to fit the following schema:
-            {schema}
-            Instead, received {response_json} and access failed at key `{e}`.
-            """
-            raise KeyError(message)
+        if self.api == API.CHAT and "output" in response_json:
+            return response_json["output"]
+        elif self.api == API.COMPLETION and len(response_json) > 0 and "0" in response_json[0]:
+            return response_json[0]["0"]
+        else:
+            error_message = f"Unexpected response format. Response: {response_json}"
+            print(error_message, file=sys.stderr)
+            raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
 
 class ContentFormatterFactory:
@@ -327,12 +291,10 @@ class AzureMLOnlineEndpoint:
         endpoint_url: str,
         endpoint_api_key: str,
         content_formatter: ContentFormatterBase,
-        deployment_name: Optional[str] = None,
         model_kwargs: Optional[Dict] = None,
     ):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
-        self.deployment_name = deployment_name
         self.content_formatter = content_formatter
         self.model_kwargs = model_kwargs
 
@@ -355,8 +317,9 @@ class AzureMLOnlineEndpoint:
         headers = {"Content-Type": "application/json", "Authorization": ("Bearer " + self.endpoint_api_key)}
 
         # If this is not set it'll use the default deployment on the endpoint.
-        if self.deployment_name is not None:
-            headers["azureml-model-deployment"] = self.deployment_name
+        if mir_deployment_name_config in self.model_kwargs:
+            headers[mir_deployment_name_config] = self.model_kwargs[mir_deployment_name_config]
+            del self.model_kwargs[mir_deployment_name_config]
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
         response = urllib.request.urlopen(req, timeout=50)
@@ -365,9 +328,7 @@ class AzureMLOnlineEndpoint:
 
     def __call__(
         self,
-        prompt: str,
-        stop: Optional[List[str]] = json.dumps({}),
-        **kwargs: Any,
+        prompt: str
     ) -> str:
         """Call out to an AzureML Managed Online endpoint.
         Args:
@@ -382,7 +343,8 @@ class AzureMLOnlineEndpoint:
         _model_kwargs = self.model_kwargs or {}
 
         body = self.content_formatter.format_request_payload(prompt, _model_kwargs)
-        endpoint_response = self._call_endpoint(body)
+        endpoint_request = str.encode(body)
+        endpoint_response = self._call_endpoint(endpoint_request)
         response = self.content_formatter.format_response_payload(endpoint_response)
         return response
 
@@ -397,34 +359,34 @@ class OpenSourceLLM(ToolProvider):
         conn_dict = dict(connection)
         for key in self.REQUIRED_CONFIG_KEYS:
             if key not in conn_dict:
-                accepted_keys = ",".join([key for key in self.REQUIRED_KEYS])
-                raise KeyError(
-                    f"""Required key `{key}` not found in given custom connection.
+                accepted_keys = ",".join([key for key in self.REQUIRED_CONFIG_KEYS])
+                raise OpenSourceLLMKeyValidationError(
+                    message=f"""Required key `{key}` not found in given custom connection.
                       Required keys are: {accepted_keys}."""
                 )
         for key in self.REQUIRED_SECRET_KEYS:
             if key not in conn_dict:
-                accepted_keys = ",".join([key for key in self.REQUIRED_KEYS])
-                raise KeyError(
-                    f"""Required secret key `{key}` not found in given custom connection.
+                accepted_keys = ",".join([key for key in self.REQUIRED_SECRET_KEYS])
+                raise OpenSourceLLMKeyValidationError(
+                    message=f"""Required secret key `{key}` not found in given custom connection.
                       Required keys are: {accepted_keys}."""
                 )
         try:
             self.model_family = ModelFamily[connection.configs['model_family']]
         except KeyError:
             accepted_models = ",".join([model.name for model in ModelFamily])
-            raise KeyError(
-                f"""Given model_family '{connection.configs['model_family']}' not recognized.
+            raise OpenSourceLLMKeyValidationError(
+                message=f"""Given model_family '{connection.configs['model_family']}' not recognized.
                   Supported models are: {accepted_models}."""
             )
         self.connection = connection
 
-    @retry_and_handle_exceptions()
+    @tool
+    @handle_oneline_endpoint_error()
     def call(
         self,
         prompt: PromptTemplate,
         api: API,
-        deployment_name: Optional[str] = None,
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
@@ -440,7 +402,6 @@ class OpenSourceLLM(ToolProvider):
             endpoint_url=self.connection.configs['endpoint_url'],
             endpoint_api_key=self.connection.secrets['endpoint_api_key'],
             content_formatter=content_formatter,
-            deployment_name=deployment_name,
             model_kwargs=model_kwargs
         )
 
@@ -448,19 +409,3 @@ class OpenSourceLLM(ToolProvider):
             return llm(prompt)
 
         return _do_llm(llm, prompt)
-
-
-@tool
-def call(
-        connection: CustomConnection,
-        prompt: PromptTemplate,
-        api: API,
-        deployment_name: Optional[str] = None,
-        model_kwargs: Optional[Dict] = {}
-):
-    return OpenSourceLLM(connection).call(
-        prompt=prompt,
-        api=api,
-        deployment_name=deployment_name,
-        model_kwargs=model_kwargs
-    )

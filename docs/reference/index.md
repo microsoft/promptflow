@@ -39,3 +39,11 @@ tools-reference/vector_db_lookup_tool
 tools-reference/embedding_tool
 tools-reference/open_source_llm-tool
 ```
+
+```{toctree}
+:caption: YAML Schema
+:maxdepth: 1
+
+flow-yaml-schema-reference.md
+
+```

@@ -1,8 +1,8 @@
-promptflow_openllm.tool.open_source_llm.OpenSourceLLM.call_with_custom_llm:
-  name: Open Source LLM - Custom LLM
-  description: Tool to use Azure Foundation Models
+promptflow.tools.open_source_llm.OpenSourceLLM.call:
+  name: Open Source LLM
+  description: Use an Open Source model from the Azure Model catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion API calls.
   type: custom_llm
-  module: promptflow_openllm.tool.open_source_llm
+  module: promptflow.tools.open_source_llm
   class_name: OpenSourceLLM
   function: call
   inputs:
@@ -13,10 +13,6 @@ promptflow_openllm.tool.open_source_llm.OpenSourceLLM.call_with_custom_llm:
       enum:
         - chat
         - completion
-      type:
-        - string
-    deployment_name:
-      default: ""
       type:
         - string
     model_kwargs:

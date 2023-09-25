@@ -44,6 +44,11 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
+@pytest.fixture
+def gpt2_custom_connection():
+    return ConnectionManager().get("gpt2_custom_connection")
+
+
 @pytest.fixture(autouse=True)
 def skip_if_no_key(request, mocker):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
