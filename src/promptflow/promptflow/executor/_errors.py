@@ -139,6 +139,10 @@ class NodeCircularDependency(InvalidFlowRequest):
     pass
 
 
+class InvalidNodeReference(InvalidFlowRequest):
+    pass
+
+
 class NodeReferenceError(UserErrorException):
     """Exception raised when node reference not found or unsupported"""
 

@@ -16,6 +16,7 @@ from promptflow.executor._errors import (
     InputReferenceNotFound,
     InputTypeError,
     InvalidAggregationInput,
+    InvalidNodeReference,
     NodeCircularDependency,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
@@ -28,12 +29,21 @@ class FlowValidator:
     @staticmethod
     def _ensure_nodes_order(flow: Flow):
         dependencies = {n.name: set() for n in flow.nodes}
+        aggregation_nodes = set(node.name for node in flow.nodes if node.aggregation)
         for n in flow.nodes:
             inputs_list = [i for i in n.inputs.values()]
             if n.skip:
                 inputs_list.extend([n.skip.condition, n.skip.return_value])
+                if (
+                    n.aggregation
+                    and n.skip.condition not in aggregation_nodes
+                    or n.skip.return_value not in aggregation_nodes
+                ):
+                    raise InvalidNodeReference()
             if n.activate:
                 inputs_list.extend([n.activate.condition])
+                if n.aggregation and n.activate.condition.value not in aggregation_nodes:
+                    raise InvalidNodeReference()
             for i in inputs_list:
                 if i.value_type != InputValueType.NODE_REFERENCE:
                     continue
@@ -47,6 +57,9 @@ class FlowValidator:
                         message_format=msg_format, node_name=n.name, reference_node_name=i.value
                     )
                 dependencies[n.name].add(i.value)
+            if not n.aggregation and dependencies[n.name].intersection(aggregation_nodes):
+                raise InvalidNodeReference()
+
         sorted_nodes = []
         picked = set()
         for _ in range(len(flow.nodes)):
