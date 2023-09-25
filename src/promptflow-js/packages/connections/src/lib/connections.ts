@@ -1,11 +1,11 @@
 import { Database } from "sqlite3";
 import { open } from "sqlite";
-import { homedir } from "os";
-import { join } from "path";
+import * as os from "os";
+import * as path from "path";
 
 export const connections = async (): Promise<string[]> => {
   const db = await open({
-    filename: join(homedir(), ".promptflow/pf.sqlite"),
+    filename: path.join(os.homedir(), ".promptflow/pf.sqlite"),
     driver: Database,
   });
 
