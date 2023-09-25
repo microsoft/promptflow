@@ -53,6 +53,8 @@ class LineProcessManager:
     def start_new_process(self):
         input_queue = Queue()
         output_queue = Queue()
+        self.input_queue = input_queue
+        self.output_queue = output_queue
 
         # Put a start message and wait the subprocess be ready.
         # Test if the subprocess can receive the message.
@@ -72,11 +74,9 @@ class LineProcessManager:
             # when the main process exits.
             daemon=True
         )
-        process.start()
 
         self.process = process
-        self.input_queue = input_queue
-        self.output_queue = output_queue
+        process.start()
 
         try:
             # Wait for subprocess send a ready message.
@@ -101,9 +101,6 @@ class LineProcessManager:
 
     def get(self):
         return self.output_queue.get(timeout=1)
-
-    def is_ready(self):
-        return self.is_ready
 
     def format_current_process(self, line_number: int):
         process_name = self.process.name if self.process else None
@@ -185,11 +182,11 @@ class LineExecutionProcessPool:
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         process_manger = LineProcessManager(self._executor_creation_func)
         process_manger.start_new_process()
-        while not process_manger.is_ready and not task_queue.empty():
-            time.sleep(1)
 
         while True:
             try:
+                while not process_manger.is_ready and not task_queue.empty():
+                    time.sleep(1)
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 logger.info(f"Process {idx} queue empty, exit.")
