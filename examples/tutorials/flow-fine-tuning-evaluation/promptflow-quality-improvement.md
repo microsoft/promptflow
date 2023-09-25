@@ -16,7 +16,7 @@ Before practicing, you can watch the video for a quick understand. This video sh
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=gcIe6nk2gA4
 " target="_blank"><img src="./media/Screenshot-video.png" 
-alt="video demo" border="10" /></a>
+alt="video demo" border="5" /></a>
 
 ## Hands-on practice
 
@@ -135,23 +135,44 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 
 Run the following command to test your prompt with this dataset:
 
->The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
-<!-- > The default model is `gpt-3.5-turbo`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name> <node_name>.model=<model_name>...`to specify. -->
+Firsr, set the environment variable `run_name` to specify the run name. 
 
 ```bash
-run_name="base_run"
-pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream  --name base_run
+base_run_name="base_run"
 ```
-<!-- > ⚠ For Azure Open AI, run the following command instead:
-> ```bash
-> pf run create --flow ./chat_math_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --name base_run --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream
-> ``` -->
+<details>
+<summary>For Windows CMD users, run commnad in toggle </summary>
 
-<!-- > ⚠ For Windows CMD users, please specify the absolute path of the flow and data file, and use double quotes in `--column-mapping`. The command should be like this:
+```bash
+set base_run_name=base_run
+```
+</details>
 
-> ```bash 
-> pf run create --flow C:\Users\promptflow\examples\flows\chat\chat_math_variant --data C:\Users\test\pf-test\test_data.jsonl --column-mapping question="${data.question}" chat_history=[] --name base_run --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream
-> ``` -->
+
+>ℹ️ The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
+
+```bash
+pf run create 
+    --flow ./basic-chat 
+    --data ./chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' chat_history=[] 
+    --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 
+    --stream  
+    --name $base_run_name
+```
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+pf run create 
+    --flow ./basic-chat 
+    --data ./chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' chat_history=[] 
+    --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 
+    --stream  
+    --name %base_run_name%
+```
+</details>
 
 > ℹ️ The run name must be unique. Please specify a new name in `--name`. 
 > If you see "Run 'base_run' already exists.", you can specify another name. But please remember the name you specified, because you'll need it in the next step.
@@ -161,8 +182,15 @@ When it completes, you can run the following command to see the details of resul
 > Specify the run name of your completed run in `--name` argument:
 
 ```bash
-pf run show-details --name base_run
+pf run show-details --name $base_run_name
 ```
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+pf run show-details --name %base_run_name%
+```
+</details>
 
 This can show the line by line input and output of the run:
 ```
@@ -192,25 +220,60 @@ In the `promptflow/examples/flows/evaluation` folder, you can see a `eval-chat-m
 cd promptflow/examples/flows/evaluation
 ```
 
+Run the following command to create an evaluation run:
+
 ```bash
-pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run base_run --name eval_run --stream
+eval_run_name="eval_run"
+pf run create 
+    --flow ./eval-chat-math 
+    --data ../chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --run $base_run_name 
+    --name $eval_run_name 
+    --stream
 ```
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+set eval_run_name=eval_run
+pf run create 
+    --flow ./eval-chat-math 
+    --data ../chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --run %base_run_name% 
+    --name %eval_run_name%
+    --stream
+```
+</details>
+
 > If needed, specify the run name which you want to evaluate in `--run` argument, and specify this evaluation run name in `--name` argument.
 
 Then get metrics of the `eval_run`:
 ```bash
-pf run show-metrics --name eval_run
+pf run show-metrics --name $eval_run_name
 ```
+
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+pf run show-details --name %eval_run_name%
+```
+</details>
 
 You can visualize and compare the output line by line of `base_run` and `eval_run` in a web browser:
 
 ```bash
-pf run visualize --name 'base_run,eval_run'
+pf run visualize --name "$base_run_name,$eval_run_name"
 ```
-> ℹ️ For Windows CMD users, please use double quotes instead of single quotes in the `--name` argument. The command should be like this:
-> ```sh
-> pf run visualize --name "base_run,eval_run"
-> ```
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+pf run visualize --name "%base_run_name%,%eval_run_name%"
+```
+</details>
 
 Because of the randomness of the LLM, the accuracy may vary. For example, in my run, the metrics are as follows:
 
@@ -306,32 +369,147 @@ Run the CLI command below to start the experiment: test all variants, evaluate t
 cd promptflow/examples/flows
 ```
 
+Set the environment variable `base_run_name` and `eval_run_name` to specify the run name.
+
+```bash
+base_run_name="base_run_variant_"
+eval_run_name="eval_run_variant_"
+```
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+set base_run_name=base_run_variant_
+set eval_run_name=eval_run_variant_
+```
+</details>
+
+Run the following command to test and evaluate the variants:
+
 ```bash
 # Test and evaluate variant_0:
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --name my_variant_0_run --stream 
+pf run create 
+    --flow ./chat/chat-math-variant 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' chat_history=[] 
+    --variant '${chat.variant_0}' 
+    --stream
+    --name "${base_run_name}0"
 # Evaluate-run
-pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_0_run --name eval_variant_0_run --stream
+pf run create 
+    --flow ./evaluation/eval-chat-math 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --stream
+    --run "${base_run_name}0"
+    --name "${eval_run_name}0"
 
 # Test and evaluate variant_1:
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name my_variant_1_run
+pf run create 
+    --flow ./chat/chat-math-variant 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' 
+    chat_history=[] 
+    --variant '${chat.variant_1}' 
+    --stream 
+    --name "${base_run_name}1"
 # Evaluate-run
-pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_1_run --name eval_variant_1_run --stream
+pf run create 
+    --flow ./evaluation/eval-chat-math 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --stream
+    --run "${base_run_name}1" 
+    --name "${eval_run_name}1"
 
 # Test and evaluate variant_2: 
 # Test-run
-pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name my_variant_2_run
+pf run create 
+    --flow ./chat/chat-math-variant 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' chat_history=[] -
+    -variant '${chat.variant_2}' 
+    --stream 
+    --name "${base_run_name}2" 
 # Evaluate-run
-pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run my_variant_2_run --name eval_variant_2_run --stream
+pf run create 
+    --flow ./evaluation/eval-chat-math 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --stream
+    --run "${base_run_name}2" 
+    --name "${eval_run_name}2"
 ```
 <!-- > If encounter the 'execution timeout' error, just try again. It might be caused by the LLM service congestion. -->
 
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+# Test and evaluate variant_0:
+# Test-run
+pf run create 
+    --flow ./chat/chat-math-variant 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' chat_history=[] 
+    --variant '${chat.variant_0}' 
+    --stream
+    --name %base_run_name%0
+# Evaluate-run
+pf run create 
+    --flow ./evaluation/eval-chat-math 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --stream
+    --run %base_run_name%0
+    --name %eval_run_name%0
+
+# Test and evaluate variant_1:
+# Test-run
+pf run create 
+    --flow ./chat/chat-math-variant 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' 
+    chat_history=[] 
+    --variant '${chat.variant_1}' 
+    --stream 
+    --name %base_run_name%1
+# Evaluate-run
+pf run create 
+    --flow ./evaluation/eval-chat-math 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --stream
+    --run %base_run_name%1
+    --name %eval_run_name%1
+
+# Test and evaluate variant_2: 
+# Test-run
+pf run create 
+    --flow ./chat/chat-math-variant 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping question='${data.question}' chat_history=[] -
+    -variant '${chat.variant_2}' 
+    --stream 
+    --name %base_run_name%2 
+# Evaluate-run
+pf run create 
+    --flow ./evaluation/eval-chat-math 
+    --data ./chat/chat-math-variant/data.jsonl 
+    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
+    --stream
+    --run %base_run_name%2
+    --name %eval_run_name%2
+```
+</details>
+
 Get metrics of the all evaluations:
 ```bash
-pf run show-metrics --name eval_variant_0_run
-pf run show-metrics --name eval_variant_1_run
-pf run show-metrics --name eval_variant_2_run
+pf run show-metrics --name "${eval_run_name}0"
+pf run show-metrics --name "${eval_run_name}1"
+pf run show-metrics --name "${eval_run_name}2"
 ```
 
 You may get the familiar output like this:
@@ -355,8 +533,16 @@ You may get the familiar output like this:
 
 Visualize the results:
 ```bash
-pf run visualize --name 'my_variant_0_run,eval_variant_0_run,my_variant_1_run,eval_variant_1_run,my_variant_2_run,eval_variant_2_run'
+pf run visualize --name "${base_run_name}0,${eval_run_name}0,${base_run_name}1,${eval_run_name}1,${base_run_name}2,${eval_run_name}2"
 ```
+
+<details>
+<summary>For Windows CMD users, run commnad in toggle</summary>
+
+```bash
+pf run visualize --name "%base_run_name%0,%eval_run_name%0,base_run_name%1,%eval_run_name%1,base_run_name%2,%eval_run_name%2"
+```
+</details>
 
 Click the HTML link, to get the experiment results. Click on column in the **Output** table will allow you to view the snapshot of each line.
 
