@@ -88,6 +88,9 @@ def log_activity(
                 logger.info(message, extra={"properties": activity_info})
         except Exception:  # pylint: disable=broad-except
             return  # pylint: disable=lost-exception
+        # raise the exception to align with the behavior of the with statement
+        if exception:
+            raise exception
 
 
 def extract_telemetry_info(self):
