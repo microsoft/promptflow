@@ -135,7 +135,7 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 
 Run the following command to test your prompt with this dataset:
 
-Firsr, set the environment variable `run_name` to specify the run name. 
+Firsr, set the environment variable `base_run_name` to specify the run name. 
 
 ```bash
 base_run_name="base_run"
@@ -152,25 +152,18 @@ set base_run_name=base_run
 >ℹ️ The default model is `gpt-turbo-3.5`, let's try `gpt-4` to see if it's smarter to get better results. Use `--connections <node_name>.connection=<connection_name>...`to specify.
 
 ```bash
-pf run create 
-    --flow ./basic-chat 
-    --data ./chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' chat_history=[] 
-    --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 
-    --stream  
-    --name $base_run_name
+pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream --name $base_run_name
 ```
+> ⚠ For Azure Open AI, run the following command instead:
+> ```bash
+> pf run create --flow ./chat_math_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream --name $base_run_name
+> ```
+
 <details>
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
 ```bash
-pf run create 
-    --flow ./basic-chat 
-    --data ./chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' chat_history=[] 
-    --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 
-    --stream  
-    --name %base_run_name%
+pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream --name %base_run_name%
 ```
 </details>
 
@@ -224,26 +217,14 @@ Run the following command to create an evaluation run:
 
 ```bash
 eval_run_name="eval_run"
-pf run create 
-    --flow ./eval-chat-math 
-    --data ../chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --run $base_run_name 
-    --name $eval_run_name 
-    --stream
+pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run $base_run_name --name $eval_run_name
 ```
 <details>
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
 ```bash
 set eval_run_name=eval_run
-pf run create 
-    --flow ./eval-chat-math 
-    --data ../chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --run %base_run_name% 
-    --name %eval_run_name%
-    --stream
+pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run %base_run_name% --name %eval_run_name% --stream
 ```
 </details>
 
@@ -389,58 +370,21 @@ Run the following command to test and evaluate the variants:
 ```bash
 # Test and evaluate variant_0:
 # Test-run
-pf run create 
-    --flow ./chat/chat-math-variant 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' chat_history=[] 
-    --variant '${chat.variant_0}' 
-    --stream
-    --name "${base_run_name}0"
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --stream  --name "${base_run_name}0"
 # Evaluate-run
-pf run create 
-    --flow ./evaluation/eval-chat-math 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --stream
-    --run "${base_run_name}0"
-    --name "${eval_run_name}0"
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run "${base_run_name}0" --name "${eval_run_name}0"
 
 # Test and evaluate variant_1:
 # Test-run
-pf run create 
-    --flow ./chat/chat-math-variant 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' 
-    chat_history=[] 
-    --variant '${chat.variant_1}' 
-    --stream 
-    --name "${base_run_name}1"
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name "${base_run_name}1"
 # Evaluate-run
-pf run create 
-    --flow ./evaluation/eval-chat-math 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --stream
-    --run "${base_run_name}1" 
-    --name "${eval_run_name}1"
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run "${base_run_name}1" --name "${eval_run_name}1"
 
 # Test and evaluate variant_2: 
 # Test-run
-pf run create 
-    --flow ./chat/chat-math-variant 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' chat_history=[] -
-    -variant '${chat.variant_2}' 
-    --stream 
-    --name "${base_run_name}2" 
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name "${base_run_name}2" 
 # Evaluate-run
-pf run create 
-    --flow ./evaluation/eval-chat-math 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --stream
-    --run "${base_run_name}2" 
-    --name "${eval_run_name}2"
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run "${base_run_name}2" --name "${eval_run_name}2"
 ```
 <!-- > If encounter the 'execution timeout' error, just try again. It might be caused by the LLM service congestion. -->
 
@@ -450,58 +394,21 @@ pf run create
 ```bash
 # Test and evaluate variant_0:
 # Test-run
-pf run create 
-    --flow ./chat/chat-math-variant 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' chat_history=[] 
-    --variant '${chat.variant_0}' 
-    --stream
-    --name %base_run_name%0
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_0}' --stream --name %base_run_name%0
 # Evaluate-run
-pf run create 
-    --flow ./evaluation/eval-chat-math 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --stream
-    --run %base_run_name%0
-    --name %eval_run_name%0
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run %base_run_name%0 --name %eval_run_name%0
 
 # Test and evaluate variant_1:
 # Test-run
-pf run create 
-    --flow ./chat/chat-math-variant 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' 
-    chat_history=[] 
-    --variant '${chat.variant_1}' 
-    --stream 
-    --name %base_run_name%1
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_1}' --stream --name %base_run_name%1
 # Evaluate-run
-pf run create 
-    --flow ./evaluation/eval-chat-math 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --stream
-    --run %base_run_name%1
-    --name %eval_run_name%1
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run %base_run_name%1 --name %eval_run_name%1
 
 # Test and evaluate variant_2: 
 # Test-run
-pf run create 
-    --flow ./chat/chat-math-variant 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping question='${data.question}' chat_history=[] -
-    -variant '${chat.variant_2}' 
-    --stream 
-    --name %base_run_name%2 
+pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --variant '${chat.variant_2}' --stream --name %base_run_name%2 
 # Evaluate-run
-pf run create 
-    --flow ./evaluation/eval-chat-math 
-    --data ./chat/chat-math-variant/data.jsonl 
-    --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' 
-    --stream
-    --run %base_run_name%2
-    --name %eval_run_name%2
+pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run %base_run_name%2 --name %eval_run_name%2
 ```
 </details>
 
