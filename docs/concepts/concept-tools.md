@@ -22,7 +22,7 @@ Our partners also contributes other useful tools for advanced scenarios, here ar
 ## Custom tools
 
 You can create your own tools that can be shared with your team or anyone in the world. 
-Learn more on [Custom tool package creation and usage](../how-to-guides/how-to-create-and-use-your-own-tool-package.md)
+Learn more on [Custom tool package creation and usage](../how-to-guides/develop-custom-tool/custom-tool-package-creation-and-usage.md)
 
 ## Next steps
 

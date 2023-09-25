@@ -4,7 +4,7 @@ In this document, we will guide you through the process of developing your own t
 The custom tool is the prompt flow tool developed by yourself. If you find it useful, you can follow this guidance to make it a tool package. This will enable you to conveniently reuse it, share it with your team, or distribute it to anyone in the world.
 
 After successful installation of the package, your custom "tool" will show up in VSCode extension as below: 
-![custom-tool-list](../media/contributing/custom-tool-list-in-extension.png)
+![custom-tool-list](../../media/contributing/custom-tool-list-in-extension.png)
 
 ## Create your own tool package
 Your tool package should be a python package. To try it quickly, just use [my-tools-package 0.0.1](https://pypi.org/project/my-tools-package/) and skip this section.
@@ -76,47 +76,6 @@ hello-world-proj/
     python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
     ```
     To populate your tool module, adhere to the pattern \<package_name\>.tools.\<tool_name\>, which represents the folder path to your tool within the package.
-
-    In the auto-generated tool yaml file, you can customize your tool's icon and structure by adding the tool icon's data URI and the structure path directly to the YAML file:
-    ```
-    my_tool_package.tools.my_tool_1.my_tool:
-      name: My First Tool
-      description: This is my first tool
-      icon: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADDklEQVR4nG1TTWicVRQ9933v+yYZax0a0hBDJ7EIjaUTjTO2KwlCCtaFriJ0oQUhmaVgQrIo5XMMUmNU1EVgxuLGHzCBoW50kQyhUG1DMtqknaS6sCYWaZr+pTOTmXnfe++6GG1V5qwu3HsO53LvodHZ2BoE1pjx3WT/5TP+fJ9MvXBOg0EgMP4GMyiZicv2obwp5w4NCqYXAXRjNBfLAqhPM0tmdpaW0i4AjOd7O98pJHrfvXCoDQB89gX+hdFcLCtg6bzvQzAYRKSJyCQSyeD0L7F+N+zMPxpxfqJI6Oz41cNPpChlT68diaeX4mEAIEM/UN0e0/L6ja7dIhjYvHWjRW1T8WJkZNCEt6NGOYH0yDVV+6OxNu949ApBLFRr5rPxZy/NyukrvkdEauf6bwk30jpx/8/fC0ozOfqRaLG4pYXx2NZgjeFeoxFxFKLWmjbHxVl/vk8SM9Mnm9jbZmtfh00l8YcRC01698TGes9+7Yn0rj2SyneDLWWD4+W7tB4OiWNK8cVPXy4sAiACgPdv8kBTBNPFeyiFWrDr1h28/l4rfTE8m3hONptoUDGXPzq68isaQALAjsGTWoMrDGEBsEKJmYnIWQTsIgD4PkQqBVu/BkSK6rX0mWV1Cx1KgRXDLd60GiRuExEDD6+WSj38iX/IACBLywipNjwDF6JsIEQgbntC3QeA8lfdhz0qRU3grDSduNZwBWGfhlXAufC2LuyrlSqsq19Odey5xOnW10KmvCCbxYzD+rz6fN/zAMDTcP4j0J1J6nQ7nTylr3844laa39pYfCw3m/v4nnx8ipTS1U1TlQ61sMabdcrBBwID0wOOSCYzwRCzu2G95TLom5IMPWUJcWOaHBFAkgVBk2BFpf/bn3l1xoixuZ7h9rfJHOzq+PnbbPaN5trWsdW+I/1C7RxXyrsWcp1QddteUAFNAAAKq9r3IXwfYmyuZ/hBmBrhzmRXZ+mDzt7i1P69jfqjuViWxuZiq0y4ag2+nzy6ciaTT8qheFoDBGoQ50wyH4zkYoPC4iUiHPgLhm17gdgF0NgAAAAASUVORK5CYII=
-      structure: test/my_first_tool
-      module: my_tool_package.tools.my_tool_1
-      function: my_tool
-      type: python
-      inputs:
-        connection:
-          type:
-          - CustomConnection
-        input_text:
-          type:
-          - string
-    ```
-    5.1 **Tool icon**: The tool icon is a graphic representation of your tool in the user interface (UI). If you don't supply a tool icon, the system will use a default one.
-    You can use the below command to generate your tool icon data uri:
-    ```
-    python scripts\tool\convert_image_to_data_url.py --image-path <image_input_path> -o <html_output_path>
-    ```    
-    For example:
-    ```
-    python scripts\tool\convert_image_to_data_url.py --image-path "AzureContentSafetyIcon.png" -o "output.html"
-    ```
-     - To run this script, `pip install pillow`.
-     - The supported image formats are `PNG`, `JPG`, and `SVG`.
-     - The output file's extension **must be** `html`.
-    This will generate an HTML file at the specified output file path. To see the result, open the file in a web browser.
-     - The script also checks the size of your image, and if necessary, automatically resizes it to 16*16 pixels. To maintain the quality of your image, consider the following suggestions:
-       - If possible, provide an image that is 16*16 pixels to avoid distortion from resizing.  
-       - Avoid complex images with a lot of detail or contrast, as they may not resize well.
-    
-    5.2 **Tool structure**: The tool structure path would be used by UI to display the tool's hierarchy structure.
-     - The structure string is case-insensitive and must contain characters from "a-zA-Z0-9-_".
-     - A maximum of three layers is permitted.
-
-
 6. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
     ```
     pytest tests
@@ -156,7 +115,7 @@ hello-world-proj/
    ``` 
 
 * Step3: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
-![auto-list-tool-in-extension](../media/contributing/auto-list-tool-in-extension.png)
+![auto-list-tool-in-extension](../../media/contributing/auto-list-tool-in-extension.png)
 
 
 ## FAQ
