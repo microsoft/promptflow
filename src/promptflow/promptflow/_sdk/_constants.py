@@ -283,7 +283,7 @@ class RunDataKeys:
 
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
-    AZURE = "azure"
+    AZURE = "azureml"
 
 
 SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
