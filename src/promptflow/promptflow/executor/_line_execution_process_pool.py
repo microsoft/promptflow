@@ -229,7 +229,7 @@ class LineExecutionProcessPool:
                 )
                 result_list.append(result)
                 self.end_process(process)
-                process, input_queue, output_queue = self._new_process()
+                process, input_queue, output_queue = LineProcess(self._executor_creation_func).start(task_queue, idx)
             self._processing_idx.pop(line_number)
             log_progress(
                 logger=bulk_logger,
