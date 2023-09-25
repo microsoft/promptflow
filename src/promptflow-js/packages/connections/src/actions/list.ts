@@ -7,7 +7,5 @@ export const list = async (): Promise<ConnectionDto[]> => {
     "SELECT connectionName, connectionType, configs, customConfigs FROM connection",
   );
 
-  console.log(connections);
-
   return connections;
 };
