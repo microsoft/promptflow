@@ -11,6 +11,6 @@
     "pf": "node ./index.js"
   },
   "main": "./index.js",
-  "typings": "./index.d.ts",
-  "bin": "./index.js"
+  "module": "./index.js",
+  "typings": "./index.d.ts"
 }

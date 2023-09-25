@@ -11,8 +11,7 @@
     "target": "es2015",
     "module": "esnext",
     "lib": [
-      "es2020",
-      "dom"
+      "es2020"
     ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
@@ -26,9 +25,6 @@
       ],
       "@promptflowjs/core": [
         "packages/core/src/index.ts"
-      ],
-      "connections": [
-        "connections/src/index.ts"
       ]
     }
   },

@@ -6,5 +6,6 @@
     "sqlite3": "5.1.6"
   },
   "main": "./index.js",
+  "module": "./index.js",
   "typings": "./index.d.ts"
 }
