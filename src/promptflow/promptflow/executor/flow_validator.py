@@ -48,7 +48,7 @@ class FlowValidator:
             if n.activate:
                 if n.aggregation and n.activate.condition.value not in aggregation_nodes:
                     msg_format = (
-                        "Invalid node definitions found in the flow graph. Non-aggregation nodes '{invalid_reference}' "
+                        "Invalid node definitions found in the flow graph. Non-aggregation node '{invalid_reference}' "
                         "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
                         "review and rectify the node reference."
                     )
