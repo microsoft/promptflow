@@ -49,14 +49,14 @@ if __name__ == "__main__":
         "--image-path",
         type=str,
         required=True,
-        help="Your image path",
+        help="Your image input path",
     )
     parser.add_argument(
         "--output",
         "-o",
         type=str,
         required=True,
-        help="Your image path",
+        help="Your image output path",
     )
     args = parser.parse_args()
     data_url = image_to_data_url(args.image_path)

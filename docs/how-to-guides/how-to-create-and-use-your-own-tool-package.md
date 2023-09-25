@@ -98,14 +98,20 @@ hello-world-proj/
     5.1 **Tool icon**: The tool icon is a graphic representation of your tool in the user interface (UI). If you don't supply a tool icon, the system will use a default one.
     You can use the below command to generate your tool icon data uri:
     ```
+    python scripts\tool\convert_image_to_data_url.py --image-path <image_input_path> -o <html_output_path>
+    ```    
+    For example:
+    ```
     python scripts\tool\convert_image_to_data_url.py --image-path "AzureContentSafetyIcon.png" -o "output.html"
     ```
      - To run this script, `pip install pillow`.
-     - The output file's extension must be `html`.
+     - The supported image formats are `PNG`, `JPG`, and `SVG`.
+     - The output file's extension **must be** `html`.
     This will generate an HTML file at the specified output file path. To see the result, open the file in a web browser.
      - The script also checks the size of your image, and if necessary, automatically resizes it to 16*16 pixels. To maintain the quality of your image, consider the following suggestions:
        - If possible, provide an image that is 16*16 pixels to avoid distortion from resizing.  
        - Avoid complex images with a lot of detail or contrast, as they may not resize well.
+    
     5.2 **Tool structure**: The tool structure path would be used by UI to display the tool's hierarchy structure.
      - The structure string is case-insensitive and must contain characters from "a-zA-Z0-9-_".
      - A maximum of three layers is permitted.
