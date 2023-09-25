@@ -608,3 +608,25 @@ class TestFlowRun:
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
             assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
+
+    def test_input_output_portal_url_parser(self, remote_client):
+        runs_op = remote_client.runs
+
+        # test input with datastore path
+        input_datastore_path = (
+            "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl"
+        )
+        expected_input_portal_url = (
+            f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid={runs_op._common_azure_url_pattern}"
+            f"&activeFilePath={path}#browseTab"
+        )
+        assert runs_op._get_input_portal_url_from_input_uri(input_datastore_path) == expected_input_portal_url
+
+        # test input with asset id
+        input_asset_id = (
+            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data/hod-qa-sample/versions/1"
+        )
+        expected_input_portal_url = (
+            f"https://ml.azure.com/data/hod-qa-sample/1/details?wsid={runs_op._common_azure_url_pattern}"
+        )
+        assert runs_op._get_input_portal_url_from_input_uri(input_asset_id) == expected_input_portal_url
