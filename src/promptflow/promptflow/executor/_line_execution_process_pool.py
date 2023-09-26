@@ -229,7 +229,8 @@ class LineExecutionProcessPool:
                 result_list.append(result)
                 self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
                 healthy_ensured_process.end()
-                healthy_ensured_process.start_new()
+                if not task_queue.empty():
+                    healthy_ensured_process.start_new()
 
             self._processing_idx.pop(line_number)
             log_progress(
