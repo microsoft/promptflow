@@ -3,12 +3,14 @@
 # ---------------------------------------------------------
 
 import collections
+import hashlib
 import json
 import logging
 import multiprocessing
 import os
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from contextlib import contextmanager
@@ -33,6 +35,7 @@ from promptflow._sdk._constants import (
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    HOME_PROMPT_FLOW_DIR,
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
@@ -750,3 +753,36 @@ def get_local_connections_from_executable(executable):
             # ignore when connection not found since it can be configured with env var.
             raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
     return result
+
+
+def _generate_connections_dir():
+    # Get Python executable path
+    python_path = sys.executable
+
+    # Hash the Python executable path
+    hash_object = hashlib.sha1(python_path.encode())
+    hex_dig = hash_object.hexdigest()
+
+    # Generate the connections system path using the hash
+    connections_dir = (HOME_PROMPT_FLOW_DIR / "envs" / hex_dig / "connections").resolve()
+    return connections_dir
+
+
+# This function is used by extension to generate the connection files every time collect tools.
+def refresh_connections_dir(connection_spec_files, connection_template_yamls):
+    connections_dir = _generate_connections_dir()
+    if os.path.isdir(connections_dir):
+        shutil.rmtree(connections_dir)
+    os.makedirs(connections_dir)
+
+    if connection_spec_files and connection_template_yamls:
+        for connection_name, content in connection_spec_files.items():
+            file_name = connection_name + ".spec.json"
+            with open(connections_dir / file_name, "w") as f:
+                json.dump(content, f, indent=2)
+
+        for connection_name, content in connection_template_yamls.items():
+            yaml_data = yaml.safe_load(content)
+            file_name = connection_name + ".template.yaml"
+            with open(connections_dir / file_name, "w") as f:
+                yaml.dump(yaml_data, f, sort_keys=False)
