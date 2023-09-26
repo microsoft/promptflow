@@ -5,6 +5,7 @@
 import datetime
 import json
 import logging
+import os
 import shutil
 from dataclasses import asdict, dataclass
 from functools import partial
@@ -35,6 +36,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
+from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
@@ -380,11 +382,27 @@ class LocalStorageOperations(AbstractRunStorage):
         )
         line_run_record.dump(self._run_infos_folder / filename)
 
+    def persist_line_output(self, line_result: LineResult) -> None:
+        """Persist line result to local storage."""
+        file_path = os.path.join(self._outputs_path, f"__pf_line_result_{line_result.run_info.index}.jsonl")
+        # TODO: Apply ImageBytes encoder
+        with open(file_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            f.write(json.dumps(line_result.output))
+
+    def _aggregate_line_outputs(self):
+        """Aggregate line outputs to flow outputs."""
+        with open(self._outputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
+            for file in os.listdir(self._outputs_path):
+                if file.startswith("__pf_line_result_"):
+                    with open(os.path.join(self._outputs_path, file), mode="r", encoding=DEFAULT_ENCODING) as f1:
+                        f.write(f1.read())
+                    os.remove(os.path.join(self._outputs_path, file))
+
     def persist_result(self, result: Optional[BulkResult]) -> None:
         """Persist outputs and metrics from return of executor."""
         if result is None:
             return
-        self.dump_outputs(result.outputs)
+        self._aggregate_line_outputs()
         self.dump_metrics(result.metrics)
 
     @staticmethod

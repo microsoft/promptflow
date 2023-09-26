@@ -210,6 +210,7 @@ class LineExecutionProcessPool:
                     if isinstance(message, LineResult):
                         completed = True
                         result_list.append(message)
+                        self._storage.persist_line_result(message)
                         break
                     elif isinstance(message, FlowRunInfo):
                         self._storage.persist_flow_run(message)
