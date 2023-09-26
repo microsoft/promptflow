@@ -1,0 +1,10 @@
+inputs: {}
+outputs: {}
+nodes:
+- name: tool_with_init_error
+  type: python
+  source:
+    type: package
+    tool: tool_with_init_error
+  inputs:
+    name: test_name
