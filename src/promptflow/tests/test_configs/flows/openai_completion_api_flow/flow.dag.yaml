@@ -1,0 +1,16 @@
+inputs:
+  prompt:
+    type: string
+outputs:
+  output:
+    type: string
+    reference: ${completion.output}
+nodes:
+- name: completion
+  type: python
+  source:
+    type: code
+    path: completion.py
+  inputs:
+    prompt: ${inputs.prompt}
+    connection: azure_open_ai_connection
