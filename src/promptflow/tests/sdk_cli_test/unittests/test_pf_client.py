@@ -63,3 +63,9 @@ class TestPFClient:
         with pytest.raises(ValueError) as e:
             LocalAzureConnectionOperations._extract_workspace("azureml:xx")
         assert "Malformed connection provider string" in str(e.value)
+
+        with pytest.raises(ValueError) as e:
+            LocalAzureConnectionOperations._extract_workspace(
+                "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/"
+            )
+        assert "Malformed connection provider string" in str(e.value)
