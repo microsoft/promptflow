@@ -27,7 +27,8 @@ class LangChainEventType(Enum):
 class PromptFlowCallbackHandler(BaseCallbackHandler):
     """:class:`~promptflow.integrations.langchain.PromptFlowCallbackHandler` implements the
     `langchain.callbacks.base.BaseCallbackHandler` interface, which has a method for each event that
-    can be subscribed to. The appropriate method will be called on the handler when the event is triggered."""
+    can be subscribed to. The appropriate method will be called on the handler when the event is triggered.
+    """
 
     def __init__(self):
         super().__init__()
@@ -46,14 +47,25 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         self._tracer._push(trace)
 
     def _pop(self, output=None, error: Optional[Exception] = None, event_type: Optional[LangChainEventType] = None):
-        """Pop the trace from the stack.
+        """Pop the trace from the trace stack.
 
-        If the event type is not provided, pop the top of the stack.
-        If the event type is less than the top of the stack, pop the top of the stack and call _pop again.
-        If the event type is not the same as the top of the stack, do not pop and return false.
-        This is used to avoid poping wrong events then causing error.
-        One example is that on_agent_finish is called but on_agent_action is not called
-        when we test agent type CHAT_CONVERSATIONAL_REACT_DESCRIPTION."""
+        PromptFlowCallbackHandler assumed that the langchain events are called in paris, with a corresponding
+        start and end event. However, this is not always true. Therefore, this function uses the event stack to
+        keep track of the current event type, in order to avoid popping the wrong event.
+
+        The function performs the following steps:
+            1. If the trace stack is empty, it simply returns without popping anything.
+            2. If the event type is None, it pops the top of the trace stack.
+            3. If the top of the event stack is equal to the given event type, it pops the top of the event stack
+            and trace stack.
+            4. If the top of the event stack is less than the given event type, indicating the previous event
+            without a corresponding end, it first pops the top of the event stack and then recursively calls the
+            _pop function to continue popping until the correct event type is found.
+            5. If the top of the event stack is greater than the given event type, indicating the current event
+            without a corresponding start, it simply returns without popping anything.
+
+        By following this approach, the function ensures that only the correct events are popped from the stacks.
+        """
 
         if not self._tracer:
             return
