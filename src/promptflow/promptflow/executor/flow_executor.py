@@ -295,7 +295,7 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -632,7 +632,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -749,7 +749,7 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         inputs = [
-            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            FlowExecutor._process_input_values(self._flow.inputs, each_line_input)
             for each_line_input in inputs
         ]
         run_id = run_id or str(uuid.uuid4())
