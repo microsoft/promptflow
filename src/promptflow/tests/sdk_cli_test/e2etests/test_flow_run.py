@@ -376,7 +376,7 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         assert run.name == name
-        assert f"{display_name}-default-" in run.display_name
+        assert "test_run_with_tags" == run.display_name
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
