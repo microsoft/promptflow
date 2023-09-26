@@ -3,7 +3,7 @@
 echo "$(date -uIns) - promptflow-serve/finish $@"
 
 sv_stop() {
-    echo "$(date -uIns) - Stopping all runsv services"
+    echo "$(date -uIns) - Stopping all runsvdir services"
     for s in $(ls -d /var/runit/*); do
         sv stop $s
     done
