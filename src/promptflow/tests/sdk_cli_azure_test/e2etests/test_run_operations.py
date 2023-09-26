@@ -618,7 +618,7 @@ class TestFlowRun:
         )
         expected_input_portal_url = (
             f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid={runs_op._common_azure_url_pattern}"
-            f"&activeFilePath={path}#browseTab"
+            f"&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab"
         )
         assert runs_op._get_input_portal_url_from_input_uri(input_datastore_path) == expected_input_portal_url
 
@@ -630,3 +630,14 @@ class TestFlowRun:
             f"https://ml.azure.com/data/hod-qa-sample/1/details?wsid={runs_op._common_azure_url_pattern}"
         )
         assert runs_op._get_input_portal_url_from_input_uri(input_asset_id) == expected_input_portal_url
+
+        # test output with asset id
+        output_asset_id = (
+            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data"
+            "/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/versions/1"
+        )
+        expected_output_portal_url = (
+            "https://ml.azure.com/data/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/1/details"
+            f"?wsid={runs_op._common_azure_url_pattern}"
+        )
+        assert runs_op._get_portal_url_from_asset_id(output_asset_id) == expected_output_portal_url
