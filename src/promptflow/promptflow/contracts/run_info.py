@@ -77,6 +77,7 @@ class RunInfo:
     :param result: Result of the run
     :type result: Optional[object]
     """
+
     node: str
     flow_run_id: str
     run_id: str
@@ -102,7 +103,7 @@ class RunInfo:
 class FlowRunInfo:
     """A dataclass representing the run information.
 
-    :param run_id: The id of the run, which equals ``flow_run_id:child_flow_run_id``
+    :var run_id: The id of the run, which equals ``flow_run_id:child_flow_run_id``
     :type run_id: str
     :param status: Status of the flow run
     :type status: ~promptflow.contracts.run_info.Status
@@ -147,6 +148,7 @@ class FlowRunInfo:
     :param upload_metrics: Flag indicating whether to upload metrics for the flow run
     :type upload_metrics: Optional[bool]
     """
+
     run_id: str
     status: Status
     error: object

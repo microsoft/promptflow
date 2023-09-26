@@ -566,9 +566,9 @@ class RunOperations(_ScopeDependentOperations):
         .. note::
 
             - Display name and description are strings, and tags is a dictionary of key-value pairs, both key and value
-            are also strings.
+              are also strings.
             - Tags is a dictionary of key-value pairs. Updating tags will overwrite the existing key-value pair,
-            but will not delete the existing key-value pairs.
+              but will not delete the existing key-value pairs.
 
         :param run: The run name or run object
         :type run: Union[str, ~promptflow.entities.Run]

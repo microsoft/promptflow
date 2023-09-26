@@ -264,6 +264,7 @@ class TestFlowRun:
         assert run_data[hidden] is False
 
     def test_update_run(self, remote_client):
+        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
         test_mark = str(uuid.uuid4())
 
         new_display_name = f"test_display_name_{test_mark}"
@@ -271,7 +272,7 @@ class TestFlowRun:
         new_tags = {"test_tag": test_mark}
 
         run = remote_client.runs.update(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+            run=run_id,
             display_name=new_display_name,
             description=new_description,
             tags=new_tags,
@@ -282,6 +283,7 @@ class TestFlowRun:
 
         # test wrong type of parameters won't raise error, just log warnings and got ignored
         run = remote_client.runs.update(
+            run=run_id,
             tags={"test_tag": {"a": 1}},
         )
         assert run.display_name == new_display_name
