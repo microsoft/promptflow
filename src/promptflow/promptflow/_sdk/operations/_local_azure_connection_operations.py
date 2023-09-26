@@ -30,7 +30,7 @@ class LocalAzureConnectionOperations:
     @classmethod
     def _extract_workspace(cls, connection_provider):
         match = re.match(AZURE_WORKSPACE_REGEX_FORMAT, connection_provider)
-        if not match:
+        if not match or len(match.groups()) != 5:
             raise ValueError(
                 "Malformed connection provider string, expected azureml:/subscriptions/<subscription_id>/"
                 "resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/"
