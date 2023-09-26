@@ -1,18 +1,11 @@
-from jinja2 import Template
-
 from promptflow import ToolProvider, tool
-from promptflow.connections import AzureOpenAIConnection
-from promptflow.contracts.types import PromptTemplate
 
 
 class ScriptToolWithInit(ToolProvider):
-    def __init__(self, connection: AzureOpenAIConnection):
+    def __init__(self, init_input: str):
         super().__init__()
-        self.connection = connection
+        self.init_input = init_input
 
     @tool
-    def call(self, api: str, prompt: PromptTemplate, **kwargs):
-        prompt = Template(prompt, trim_blocks=True, keep_trailing_newline=True).render(**kwargs)
-        assert isinstance(self.connection, AzureOpenAIConnection)
-        assert api in ["completion", "chat"]
-        return prompt
+    def call(self, input: str):
+        return str.join(" ", [self.init_input, input])

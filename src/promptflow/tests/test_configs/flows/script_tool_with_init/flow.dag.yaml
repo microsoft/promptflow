@@ -1,7 +1,5 @@
 inputs:
-  prompt:
-    type: string
-  text:
+  input:
     type: string
 outputs:
   output:
@@ -14,7 +12,5 @@ nodes:
     type: code
     path: script_tool_with_init.py
   inputs:
-    connection: azure_open_ai_connection
-    api: completion
-    prompt: ${inputs.prompt}
-    text: ${inputs.text}
+    init_input: Hello
+    input: ${inputs.input}

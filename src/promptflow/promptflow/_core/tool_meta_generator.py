@@ -9,6 +9,7 @@ import importlib.util
 import inspect
 import json
 import re
+import sys
 import types
 from dataclasses import asdict
 from pathlib import Path
@@ -157,12 +158,12 @@ def generate_python_tools_in_module_as_dict(module):
 
 
 def load_python_module_from_file(src_file: Path):
-    # Here we hard code the module name as __pf_main__ since it is invoked as a main script in pf.
     src_file = Path(src_file).resolve()  # Make sure the path is absolute to align with python import behavior.
     spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
     if spec is None or spec.loader is None:
         raise PythonLoaderNotFound(f"Failed to load python file '{src_file}', please make sure it is a valid .py file.")
     m = importlib.util.module_from_spec(spec)
+    sys.modules["__pf_main__"] = m
     try:
         spec.loader.exec_module(m)
     except Exception as e:
@@ -194,7 +195,7 @@ def collect_tool_function_in_module(m):
     return tools[0]
 
 
-def collect_tool_function_with_init_inputs_in_module(m):
+def collect_script_tools(m):
     functions = collect_tool_functions_in_module(m)
     methods = collect_tool_methods_with_init_inputs_in_module(m)
     num_tools = len(functions) + len(methods)
@@ -206,7 +207,7 @@ def collect_tool_function_with_init_inputs_in_module(m):
     if functions:
         return functions[0], None
     else:
-        return methods[0][0], methods[0][1]
+        return methods[0]
 
 
 def generate_python_tool(name, content, source=None):
