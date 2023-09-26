@@ -137,7 +137,7 @@ user:
             pass
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
-    def test_open_source_llm_llama_req_chat(self, gpt2_custom_connection):
+    def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
         gpt2_custom_connection.configs['endpoint_url'] += 'completely/real/endpoint'
         os = OpenSourceLLM(gpt2_custom_connection)
         try:
@@ -148,7 +148,7 @@ user:
             pass
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
-    def test_open_source_llm_llama_req_chat(self, gpt2_custom_connection):
+    def test_open_source_llm_llama_deployment_miss(self, gpt2_custom_connection):
         os = OpenSourceLLM(gpt2_custom_connection)
         try:
             os.call(
