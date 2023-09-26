@@ -50,7 +50,7 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
@@ -247,17 +247,14 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    def test_custom_strong_type_connection_basic_flow(self, local_client, pf, is_custom_tool_pkg_installed):
-        if is_custom_tool_pkg_installed:
-            result = pf.run(
-                flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
-                data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
-                connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
-            )
-            run = local_client.runs.get(name=result.name)
-            assert run.status == "Completed"
-        else:
-            pytest.skip("Custom tool package 'my_tools_package_with_cstc' not installed.")
+    def test_custom_strong_type_connection_basic_flow(self, install_custom_tool_pkg, local_client, pf):
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
+            data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+        )
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
 
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection

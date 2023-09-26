@@ -61,14 +61,20 @@ class CustomStrongTypeConnectionConfigs:
     PREFIX = "promptflow.connection."
     TYPE = "custom_type"
     MODULE = "module"
+    PACKAGE = "package"
+    PACKAGE_VERSION = "package_version"
     PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
     PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+    PROMPTFLOW_PACKAGE_KEY = PREFIX + PACKAGE
+    PROMPTFLOW_PACKAGE_VERSION_KEY = PREFIX + PACKAGE_VERSION
 
     @staticmethod
     def is_custom_key(key):
         return key not in [
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
             CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
         ]
 
 

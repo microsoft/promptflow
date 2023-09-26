@@ -136,35 +136,41 @@ class TestToolsManager:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
 
-    @pytest.mark.skip("test package not installed")
-    def test_collect_package_tools_and_connections(self):
+    def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
+        # Need to reload pkg_resources to get the latest installed packages
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(tools) == 1
         assert specs == {
-            "my_tool_package.connections.MySecondConnection": {
+            "my_tool_package.connections.MyFirstConnection": {
                 "connectionCategory": "CustomKeys",
                 "flowValueType": "CustomConnection",
-                "connectionType": "MySecondConnection",
-                "ConnectionTypeDisplayName": "MySecondConnection",
+                "connectionType": "MyFirstConnection",
+                "ConnectionTypeDisplayName": "MyFirstConnection",
                 "configSpecs": [
                     {"name": "api_key", "displayName": "Api Key", "configValueType": "Secret", "isOptional": False},
                     {"name": "api_base", "displayName": "Api Base", "configValueType": "str", "isOptional": True},
                 ],
                 "module": "my_tool_package.connections",
-                "package": "my-tools-package-with-cstc",
-                "package_version": "0.0.6",
+                "package": "test-custom-tools",
+                "package_version": "0.0.1",
             }
         }
         expected_template = {
             "name": "<connection-name>",
             "type": "custom",
-            "custom_type": "MySecondConnection",
+            "custom_type": "MyFirstConnection",
             "module": "my_tool_package.connections",
-            "package": "my-tools-package-with-cstc",
-            "package_version": "0.0.6",
+            "package": "test-custom-tools",
+            "package_version": "0.0.1",
             "configs": {"api_base": "<api-base>"},
             "secrets": {"api_key": "<api-key>"},
         }
-        loaded_yaml = yaml.safe_load(templates["my_tool_package.connections.MySecondConnection"])
+        loaded_yaml = yaml.safe_load(templates["my_tool_package.connections.MyFirstConnection"])
         assert loaded_yaml == expected_template
