@@ -798,10 +798,7 @@ class FlowExecutor:
             os.makedirs(output_dir)
         for key, value in output.items():
             if isinstance(value, Image):
-                relative_path = f"{key}.{value.get_extension()}"
-                path = output_dir / relative_path
-                value.save(path)
-                output[key] = relative_path
+                output[key] = value.save_to(key, output_dir)
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
