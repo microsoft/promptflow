@@ -10,10 +10,10 @@ from promptflow.exceptions import SystemErrorException, UserErrorException
 from promptflow.tools.exception import ChatAPIInvalidRole, WrappedOpenAIError, LLMError, JinjaTemplateError, \
     ExceedMaxRetryTimes, ChatAPIInvalidFunctions, FunctionCallNotSupportedInStreamMode, \
     ChatAPIFunctionRoleInvalidFormat
-from typing import List
+from typing import Set
 
 
-def validate_role(role: str, valid_roles: List[str] = None):
+def validate_role(role: str, valid_roles: Set[str] = None):
     if not valid_roles:
         valid_roles = {"system", "user", "assistant", "function"}
 

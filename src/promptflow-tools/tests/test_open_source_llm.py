@@ -13,7 +13,6 @@ def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
-@pytest.mark.skip_if_no_key("gpt2_custom_connection")
 class TestOpenSourceLLM:
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
     chat_prompt = """user:
@@ -22,18 +21,21 @@ You are a AI which helps Customers answer questions.
 user:
 """ + completion_prompt
 
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_completion(self, gpt2_provider):
         response = gpt2_provider.call(
             self.completion_prompt,
             API.COMPLETION)
         assert len(response) > 25
 
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_chat(self, gpt2_provider):
         response = gpt2_provider.call(
             self.chat_prompt,
             API.CHAT)
         assert len(response) > 25
 
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.configs['endpoint_url']
         try:
@@ -43,6 +45,7 @@ user:
         except OpenSourceLLMKeyValidationError:
             pass
 
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.secrets['endpoint_api_key']
         try:
@@ -52,6 +55,7 @@ user:
         except OpenSourceLLMKeyValidationError:
             pass
 
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.configs['model_family']
         try:
@@ -116,6 +120,7 @@ user:
         except OpenSourceLLMUserError:
             pass
 
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_req_chat(self, gpt2_custom_connection):
         gpt2_custom_connection.configs['endpoint_url'] += 'completely/real/endpoint'
         os = OpenSourceLLM(gpt2_custom_connection)
