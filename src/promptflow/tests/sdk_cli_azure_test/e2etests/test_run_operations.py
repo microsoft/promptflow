@@ -109,6 +109,17 @@ class TestFlowRun:
         run = remote_client.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
+    def test_run_display_name_with_macro(self, pf, runtime):
+        run = load_run(
+            source=f"{RUNS_DIR}/run_with_env.yaml",
+            params_override=[{"runtime": runtime}],
+        )
+        run.display_name = "my_display_name_${variant_id}_${timestamp}"
+        run = pf.runs.create_or_update(run=run)
+        assert run.display_name.startswith("my_display_name_variant_0_")
+        assert "${timestamp}" not in run.display_name
+        assert isinstance(run, Run)
+
     def test_run_with_remote_data(self, remote_client, pf, runtime, remote_web_classification_data):
         # run with arm id
         run = pf.run(

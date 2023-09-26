@@ -410,7 +410,7 @@ class TestFlowRun:
                 run=base_run,
             )
         )
-        assert run.display_name == f"my_run_default_{base_run.name}"
+        assert run.display_name == f"my_run_variant_0_{base_run.name}"
 
         run = pf.runs.create_or_update(
             run=Run(
