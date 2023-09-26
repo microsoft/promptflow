@@ -252,4 +252,17 @@ class SetupGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["tool_name"]
+        return ["package_name", "tool_name"]
+
+
+class ToolPackageUtilsGenerator(BaseGenerator):
+    def __init__(self, package_name):
+        self.package_name = package_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "utils.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["package_name"]

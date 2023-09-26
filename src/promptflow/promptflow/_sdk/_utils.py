@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import collections
+import inspect
 import json
 import logging
 import multiprocessing
@@ -12,10 +13,10 @@ import shutil
 import tempfile
 import zipfile
 from contextlib import contextmanager
-from enum import Enum
+from enum import Enum, EnumMeta
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union
+from typing import IO, Any, AnyStr, Callable, Dict, List, Optional, Tuple, Union, get_args, get_origin
 
 import keyring
 import pydash
@@ -54,7 +55,8 @@ from promptflow._sdk._errors import (
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
-from promptflow.contracts.tool import ToolType
+from promptflow.contracts.tool import ConnectionType, InputDefinition, ValueType, ToolType
+from promptflow.contracts.types import PromptTemplate
 
 
 def snake_to_camel(name):
@@ -750,3 +752,50 @@ def get_local_connections_from_executable(executable):
             # ignore when connection not found since it can be configured with env var.
             raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
     return result
+
+
+def resolve_annotation(anno) -> Union[str, list]:
+    """Resolve the union annotation to type list."""
+    origin = get_origin(anno)
+    if origin != Union:
+        return anno
+    # Optional[Type] is Union[Type, NoneType], filter NoneType out
+    args = [arg for arg in get_args(anno) if arg != type(None)]  # noqa: E721
+    return args[0] if len(args) == 1 else args
+
+
+def param_to_definition(param, value_type) -> (InputDefinition, bool):
+
+    def value_to_str(val):
+        if val is inspect.Parameter.empty:
+            # For empty case, default field will be skipped when dumping to json
+            return None
+        if val is None:
+            # Dump default: "" in json to avoid UI validation error
+            return ""
+        if isinstance(val, Enum):
+            return val.value
+        return str(val)
+
+    default_value = param.default
+    enum = None
+    # Get value type and enum from default if no annotation
+    if default_value is not inspect.Parameter.empty and value_type == inspect.Parameter.empty:
+        value_type = default_value.__class__ if isinstance(default_value, Enum) else type(default_value)
+    # Extract enum for enum class
+    if isinstance(value_type, EnumMeta):
+        enum = [str(option.value) for option in value_type]
+        value_type = str
+    is_connection = False
+    if ConnectionType.is_connection_value(value_type):
+        typ = [value_type.__name__]
+        is_connection = True
+    elif isinstance(value_type, list):
+        if not all(ConnectionType.is_connection_value(t) for t in value_type):
+            typ = [ValueType.OBJECT]
+        else:
+            typ = [t.__name__ for t in value_type]
+            is_connection = True
+    else:
+        typ = [ValueType.from_type(value_type)]
+    return InputDefinition(type=typ, default=value_to_str(default_value), description=None, enum=enum), is_connection

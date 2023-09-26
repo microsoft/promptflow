@@ -1,0 +1,25 @@
+from pathlib import Path
+import importlib.util
+from promptflow import PFClient
+
+
+package_name = "{{ package_name }}"
+
+# TODO add comments
+def list_package_tools():
+    """List package tools"""
+    tools = {}
+    pf_client = PFClient()
+    script_files = Path(__file__).parent.glob("**/*.py")
+    for file in script_files:
+        if not str(file).endswith("__init__.py"):
+            module_name = f'{package_name}.{Path(file).stem}'
+
+            # Load the module from the file path
+            spec = importlib.util.spec_from_file_location(module_name, file)
+            module = importlib.util.module_from_spec(spec)
+
+            # Load the module's code
+            spec.loader.exec_module(module)
+            tools[module.__name__] = pf_client._tools.generate_tool_metas(module)
+    return tools
