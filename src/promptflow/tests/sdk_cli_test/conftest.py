@@ -9,6 +9,7 @@ from promptflow import PFClient
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
@@ -20,15 +21,15 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 @pytest.fixture(scope="session")
 def local_client() -> PFClient:
     # enable telemetry for CI
-    with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
         yield PFClient()
 
 
 @pytest.fixture(scope="session")
 def pf() -> PFClient:
     # enable telemetry for CI
-    with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
-        return PFClient()
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        yield PFClient()
 
 
 @pytest.fixture()

@@ -7,6 +7,7 @@ from azure.ai.ml import MLClient
 from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
 
+from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
@@ -36,7 +37,7 @@ def ml_client(
 @pytest.fixture()
 def remote_client() -> PFClient:
     # enable telemetry for CI
-    with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
         yield PFClient(
             credential=get_cred(),
             subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
@@ -48,7 +49,7 @@ def remote_client() -> PFClient:
 @pytest.fixture()
 def remote_client_int() -> PFClient:
     # enable telemetry for CI
-    with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
         client = MLClient(
             credential=get_cred(),
             subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
