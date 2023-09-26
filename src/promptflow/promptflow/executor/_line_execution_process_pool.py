@@ -102,10 +102,10 @@ class HealthyEnsuredProcess:
     def get(self):
         return self.output_queue.get(timeout=1)
 
-    def format_current_process(self, line_number: int, is_conmpleted=False):
+    def format_current_process(self, line_number: int, is_completed=False):
         process_name = self.process.name if self.process else None
         process_pid = self.process.pid if self.process else None
-        if is_conmpleted:
+        if is_completed:
             logger.info(
                 f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed.")
         else:
