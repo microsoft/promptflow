@@ -302,4 +302,4 @@ RUN_MACRO = "${run}"
 VARIANT_ID_MACRO = "${variant_id}"
 TIMESTAMP_MACRO = "${timestamp}"
 
-DEFAULT_VARIANT = "varaint_0"
+DEFAULT_VARIANT = "variant_0"
