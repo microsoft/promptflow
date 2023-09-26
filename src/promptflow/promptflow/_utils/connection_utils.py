@@ -37,7 +37,7 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
 
 def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
     connection_template_str = """
-    name: <to_replace_with_connection_name>
+    name: "to_replace_with_connection_name"
     type: custom
     custom_type: {{ custom_type }}
     module: {{ module }}
@@ -57,9 +57,9 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
     secrets = {}
     for spec in connection_spec["configSpecs"]:
         if spec["configValueType"] == "Secret":
-            secrets[spec["name"]] = "<to_replace_with_" + spec["name"].replace("-", "_") + ">"
+            secrets[spec["name"]] = "to_replace_with_" + spec["name"].replace("-", "_")
         else:
-            configs[spec["name"]] = "<to_replace_with_" + spec["name"].replace("-", "_") + ">"
+            configs[spec["name"]] = "to_replace_with_" + spec["name"].replace("-", "_")
 
     # Prepare data for template
     data = {

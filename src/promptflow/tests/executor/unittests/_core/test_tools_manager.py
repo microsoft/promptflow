@@ -162,15 +162,16 @@ class TestToolsManager:
                 "package_version": "0.0.1",
             }
         }
+
         expected_template = {
-            "name": "<connection-name>",
+            "name": "to_replace_with_connection_name",
             "type": "custom",
             "custom_type": "MyFirstConnection",
             "module": "my_tool_package.connections",
             "package": "test-custom-tools",
             "package_version": "0.0.1",
-            "configs": {"api_base": "<api-base>"},
-            "secrets": {"api_key": "<api-key>"},
+            "configs": {"api_base": "to_replace_with_api_base"},
+            "secrets": {"api_key": "to_replace_with_api_key"},
         }
         loaded_yaml = yaml.safe_load(templates["my_tool_package.connections.MyFirstConnection"])
         assert loaded_yaml == expected_template
