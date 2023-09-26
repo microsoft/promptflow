@@ -1,0 +1,26 @@
+inputs:
+  prompt:
+    type: string
+    default: Hello World!
+outputs:
+  output1:
+    type: string
+    reference: ${llm.output}
+  output2:
+    type: string
+    reference: ${llm2.output}
+nodes:
+- name: llm
+  type: csharp
+  source:
+    type: code
+    path: Flow1.SimpleInternalLLMTool
+  inputs:
+    prompt: ${inputs.prompt}
+- name: llm2
+  type: csharp
+  source:
+    type: code
+    path: Flow1.SimpleInternalLLMTool
+  inputs:
+    prompt: ${llm.output}
