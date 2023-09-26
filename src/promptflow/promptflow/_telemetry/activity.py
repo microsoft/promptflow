@@ -85,7 +85,8 @@ def log_activity(
             else:
                 logger.info(message, extra={"custom_dimensions": activity_info})
         except Exception:  # pylint: disable=broad-except
-            return  # pylint: disable=lost-exception
+            # skip if logger failed to log
+            pass  # pylint: disable=lost-exception
         # raise the exception to align with the behavior of the with statement
         if exception:
             raise exception
