@@ -126,7 +126,8 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
-    "Pyinstaller"
+    "Pyinstaller",
+    "levelno"
   ],
   "allowCompoundWords": true
 }

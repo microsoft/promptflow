@@ -43,6 +43,8 @@ from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
+from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
@@ -69,7 +71,7 @@ class RunRequestException(Exception):
         super().__init__(message)
 
 
-class RunOperations(_ScopeDependentOperations):
+class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
@@ -124,6 +126,18 @@ class RunOperations(_ScopeDependentOperations):
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._common_azure_url_pattern
 
+    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """Return the telemetry values of run operations.
+
+        :return: The telemetry values
+        :rtype: Dict
+        """
+        return {
+            "subscription_id": self._operation_scope.subscription_id,
+            "resource_group_name": self._operation_scope.resource_group_name,
+            "workspace_name": self._operation_scope.workspace_name,
+        }
+
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
         url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
@@ -176,6 +190,7 @@ class RunOperations(_ScopeDependentOperations):
         }
         return custom_header
 
+    @monitor_operation(activity_name="pfazure.runs.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, run: Run, **kwargs) -> Run:
         """Create or update a run.
 
@@ -201,6 +216,7 @@ class RunOperations(_ScopeDependentOperations):
             self.stream(run=run.name)
         return self.get(run=run.name)
 
+    @monitor_operation(activity_name="pfazure.runs.list", activity_type=ActivityType.PUBLICAPI)
     def list(
         self, max_results: int = MAX_RUN_LIST_RESULTS, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
     ) -> List[Run]:
@@ -270,6 +286,7 @@ class RunOperations(_ScopeDependentOperations):
             refined_runs.append(Run._from_index_service_entity(run))
         return refined_runs
 
+    @monitor_operation(activity_name="pfazure.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
     def get_metrics(self, run: Union[str, Run], **kwargs) -> dict:
         """Get the metrics from the run.
 
@@ -283,6 +300,7 @@ class RunOperations(_ScopeDependentOperations):
         metrics = self._get_metrics_from_metric_service(run)
         return metrics
 
+    @monitor_operation(activity_name="pfazure.runs.get_details", activity_type=ActivityType.PUBLICAPI)
     def get_details(
         self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
     ) -> DataFrame:
@@ -419,6 +437,7 @@ class RunOperations(_ScopeDependentOperations):
             or metric.endswith(".is_completed")
         )
 
+    @monitor_operation(activity_name="pfazure.runs.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, run: str, **kwargs) -> Run:
         """Get a run.
 
@@ -512,6 +531,7 @@ class RunOperations(_ScopeDependentOperations):
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
 
+    @monitor_operation(activity_name="pfazure.runs.archive", activity_type=ActivityType.PUBLICAPI)
     def archive(self, run: str) -> Run:
         """Archive a run.
 
@@ -522,6 +542,7 @@ class RunOperations(_ScopeDependentOperations):
         """
         pass
 
+    @monitor_operation(activity_name="pfazure.runs.restore", activity_type=ActivityType.PUBLICAPI)
     def restore(self, run: str) -> Run:
         """Restore a run.
 
@@ -541,6 +562,7 @@ class RunOperations(_ScopeDependentOperations):
             headers=self._get_headers(),
         )
 
+    @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
     def stream(self, run: Union[str, Run]) -> Run:
         """Stream the logs of a run."""
         run = self.get(run=run)
@@ -676,6 +698,7 @@ class RunOperations(_ScopeDependentOperations):
                 outputs[LINE_NUMBER].append(index)
         return inputs, outputs
 
+    @monitor_operation(activity_name="pfazure.runs.visualize", activity_type=ActivityType.PUBLICAPI)
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
         """Visualize run(s) using Azure AI portal.
 

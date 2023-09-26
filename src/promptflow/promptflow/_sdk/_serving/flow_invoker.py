@@ -43,7 +43,8 @@ class FlowInvoker:
 
     def _init_connections(self, connection_provider):
         if connection_provider == "local":
-            logger.info("Getting connections from local sqlite...")
+            logger.info("Getting connections from local pf client...")
+            # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             self.connections = get_local_connections_from_executable(executable=self.flow_entity._init_executable())
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
