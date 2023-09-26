@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 import contextlib
 import os
-import time
 from unittest.mock import patch
 
 import pytest
@@ -93,5 +92,3 @@ class TestTelemetry:
                     pf.runs.get("not_exist")
                 except Exception:
                     pass
-            # sleep a while in main thread to make sure log's flushed
-            time.sleep(10)
