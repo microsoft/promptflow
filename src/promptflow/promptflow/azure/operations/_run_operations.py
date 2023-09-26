@@ -29,6 +29,7 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from pandas import DataFrame
 
 from promptflow._sdk._constants import (
+    LINE_NUMBER,
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
@@ -330,6 +331,28 @@ class RunOperations(_ScopeDependentOperations):
         self._check_cloud_run_completed(run_name=run)
         child_runs = self._get_flow_runs_pagination(run, max_results=max_results)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
+
+        # if there is any line run failed, the number of inputs and outputs will be different
+        # this will result in pandas raising ValueError, so we need to handle mismatched case
+        # if all line runs are failed, no need to fill the outputs
+        if len(outputs) > 0:
+            # get total number of line runs from inputs
+            num_line_runs = len(list(inputs.values())[0])
+            num_outputs = len(list(outputs.values())[0])
+            if num_line_runs > num_outputs:
+                # build full set with None as placeholder
+                filled_outputs = {}
+                output_keys = list(outputs.keys())
+                for k in output_keys:
+                    filled_outputs[k] = [None] * num_line_runs
+                filled_outputs[LINE_NUMBER] = list(range(num_line_runs))
+                for i in range(num_outputs):
+                    line_number = outputs[LINE_NUMBER][i]
+                    for k in output_keys:
+                        filled_outputs[k][line_number] = outputs[k][i]
+                # replace defective outputs with full set
+                outputs = copy.deepcopy(filled_outputs)
+
         data = {}
         columns = []
         for k in inputs:
@@ -341,6 +364,8 @@ class RunOperations(_ScopeDependentOperations):
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
         df = pd.DataFrame(data).reindex(columns=columns)
+        if f"outputs.{LINE_NUMBER}" in columns:
+            df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df
 
     def _check_cloud_run_completed(self, run_name: str) -> bool:
@@ -653,8 +678,9 @@ class RunOperations(_ScopeDependentOperations):
         """Get the inputs and outputs from the child runs."""
         inputs = {}
         outputs = {}
+        outputs[LINE_NUMBER] = []
         for run in runs:
-            run_inputs, run_outputs = run["inputs"], run["output"]
+            index, run_inputs, run_outputs = run["index"], run["inputs"], run["output"]
             if isinstance(run_inputs, dict):
                 for k, v in run_inputs.items():
                     if k not in inputs:
@@ -665,6 +691,7 @@ class RunOperations(_ScopeDependentOperations):
                     if k not in outputs:
                         outputs[k] = []
                     outputs[k].append(v)
+                outputs[LINE_NUMBER].append(index)
         return inputs, outputs
 
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:

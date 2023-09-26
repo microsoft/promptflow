@@ -5,12 +5,15 @@
 ### Features Added
 
 - **pf flow validate**: support validate flow
+- **pf config set**: support set user-level promptflow config.
+  - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
 - Reserve `.promptflow` folder when dump run snapshot.
 - Read/write log file with encoding specified.
 - Avoid inconsistent error message when executor exits abnormally.
+- Align inputs & outputs row number in case partial completed run will break `pfazure run show-details`.
 
 ### Improvements
 - [Executor][Internal] Improve error message with more details and actionable information.

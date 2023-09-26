@@ -650,3 +650,13 @@ class TestFlowRun:
                 resource_group="fake_resource_group",
                 workspace_name="fake_workspace_name",
             )
+
+    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/partial_fail",
+            data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
+            runtime=runtime,
+        )
+        pf.runs.stream(run=run.name)
+        detail = remote_client.get_details(run=run.name)
+        assert len(detail) == 3

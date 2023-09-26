@@ -4,6 +4,8 @@
 
 import argparse
 
+from azure.ai.ml.constants._common import MAX_LIST_CLI_RESULTS
+
 
 class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-access
     def __call__(self, parser, namespace, values, option_string=None):
@@ -69,6 +71,16 @@ def add_param_set(parser):
         dest="params_override",
         action=AppendToDictAction,
         help="Update an object by specifying a property path and value to set. Example: --set "
+        "property1.property2=<value>.",
+        nargs="+",
+    )
+
+
+def add_param_set_positional(parser):
+    parser.add_argument(
+        "params_override",
+        action=AppendToDictAction,
+        help="Set an object by specifying a property path and value to set. Example: set "
         "property1.property2=<value>.",
         nargs="+",
     )
@@ -187,6 +199,27 @@ def add_param_variants(parser):
     )
 
 
+def add_param_max_results(parser):
+    parser.add_argument(  # noqa: E731
+        "-r",
+        "--max-results",
+        dest="max_results",
+        type=int,
+        default=MAX_LIST_CLI_RESULTS,
+        help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
+    )
+
+
+def add_param_all_results(parser):
+    parser.add_argument(  # noqa: E731
+        "--all-results",
+        action="store_true",
+        dest="all_results",
+        default=False,
+        help="Returns all results. Default to False.",
+    )
+
+
 def add_param_subscription(parser):
     parser.add_argument(
         "-s",
@@ -253,16 +286,6 @@ def add_parser_build(parent_parser, entity_name: str):
     add_param_verbose(parser)
     add_param_debug(parser)
     parser.set_defaults(sub_action="build")
-
-
-def add_param_all_results(parser):
-    parser.add_argument(
-        "--all-results",
-        action="store_true",
-        dest="all_results",
-        default=False,
-        help="Returns all results if specified.",
-    )
 
 
 def add_param_debug(parser):
