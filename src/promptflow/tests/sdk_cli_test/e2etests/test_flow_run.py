@@ -50,7 +50,7 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
