@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Any, Dict, List, Mapping
 
+from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 
 
@@ -77,37 +78,9 @@ class BulkResult:
     def get_openai_metrics(self):
         node_run_infos = chain(self._get_line_run_infos(), self._get_aggr_run_infos())
         total_metrics = {}
+        calculator = OpenAIMetricsCalculator()
         for run_info in node_run_infos:
             for call in run_info.api_calls:
-                metrics = self._get_openai_metrics(call)
-                self._merge_metrics_dict(total_metrics, metrics)
+                metrics = calculator.get_openai_metrics_from_api_call(call)
+                calculator.merge_metrics_dict(total_metrics, metrics)
         return total_metrics
-
-    def _get_openai_metrics(self, api_call: dict):
-        total_metrics = {}
-        if self._need_collect_metrics(api_call):
-            metrics = api_call["output"]["usage"]
-            self._merge_metrics_dict(total_metrics, metrics)
-
-        children = api_call.get("children")
-        if children is not None:
-            for child in children:
-                child_metrics = self._get_openai_metrics(child)
-                self._merge_metrics_dict(total_metrics, child_metrics)
-
-        return total_metrics
-
-    def _need_collect_metrics(self, api_call: dict):
-        if api_call.get("type") != "LLM":
-            return False
-        output = api_call.get("output")
-        if not isinstance(output, dict):
-            return False
-        usage = output.get("usage")
-        if not isinstance(usage, dict):
-            return False
-        return True
-
-    def _merge_metrics_dict(self, metrics: dict, metrics_to_merge: dict):
-        for k, v in metrics_to_merge.items():
-            metrics[k] = metrics.get(k, 0) + v

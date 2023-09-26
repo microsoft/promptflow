@@ -88,3 +88,9 @@ class BulkRunException(PromptflowException):
     def additional_info(self):
         """Set the tool exception details as additional info."""
         return self._additional_info
+
+
+class RunOperationParameterError(PromptflowException):
+    """Exception raised when list run failed."""
+
+    pass

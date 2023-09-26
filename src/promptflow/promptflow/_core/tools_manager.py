@@ -4,6 +4,7 @@
 
 import importlib
 import importlib.util
+import inspect
 import logging
 import traceback
 from functools import partial
@@ -21,9 +22,13 @@ from promptflow._core.tool_meta_generator import (
     generate_python_tool,
     load_python_module_from_file,
 )
+from promptflow._utils.connection_utils import (
+    generate_custom_strong_type_connection_spec,
+    generate_custom_strong_type_connection_template,
+)
 from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
-from promptflow.contracts.tool import Tool, ToolType
+from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
 
 module_logger = logging.getLogger(__name__)
@@ -65,6 +70,54 @@ def collect_package_tools(keys: Optional[List[str]] = None) -> dict:
             )
             module_logger.warning(msg)
     return all_package_tools
+
+
+def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> dict:
+    """Collect all tools and custom strong type connections from all installed packages."""
+    all_package_tools = {}
+    all_package_connection_specs = {}
+    all_package_connection_templates = {}
+    if keys is not None:
+        keys = set(keys)
+    for entry_point in pkg_resources.iter_entry_points(group=PACKAGE_TOOLS_ENTRY):
+        try:
+            list_tool_func = entry_point.resolve()
+            package_tools = list_tool_func()
+            for identifier, tool in package_tools.items():
+                #  Only load required tools to avoid unnecessary loading when keys is provided
+                if isinstance(keys, set) and identifier not in keys:
+                    continue
+                m = tool["module"]
+                module = importlib.import_module(m)  # Import the module to make sure it is valid
+                tool["package"] = entry_point.dist.project_name
+                tool["package_version"] = entry_point.dist.version
+                all_package_tools[identifier] = tool
+
+                # Get custom strong type connection definition
+                custom_strong_type_connections_classes = [
+                    obj
+                    for name, obj in inspect.getmembers(module)
+                    if inspect.isclass(obj) and ConnectionType.is_custom_strong_type(obj)
+                ]
+
+                if custom_strong_type_connections_classes:
+                    for cls in custom_strong_type_connections_classes:
+                        identifier = f"{cls.__module__}.{cls.__name__}"
+                        connection_spec = generate_custom_strong_type_connection_spec(
+                            cls, entry_point.dist.project_name, entry_point.dist.version
+                        )
+                        all_package_connection_specs[identifier] = connection_spec
+                        all_package_connection_templates[identifier] = generate_custom_strong_type_connection_template(
+                            cls, connection_spec, entry_point.dist.project_name, entry_point.dist.version
+                        )
+        except Exception as e:
+            msg = (
+                f"Failed to load tools from package {entry_point.dist.project_name}: {e},"
+                + f" traceback: {traceback.format_exc()}"
+            )
+            module_logger.warning(msg)
+
+    return all_package_tools, all_package_connection_specs, all_package_connection_templates
 
 
 def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_dir: Path) -> Tool:

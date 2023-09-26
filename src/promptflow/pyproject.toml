@@ -16,8 +16,4 @@ markers = [
 omit = [
     # omit anything in a _restclient directory anywhere
     "*/_restclient/*",
-    # omit anything in promptflow.azure temporarily
-    "*/promptflow/azure/*",
-    "*/promptflow/_cli/*",
-    "*/promptflow/sdk/_orm/*",
 ]

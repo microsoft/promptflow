@@ -41,7 +41,7 @@ class TestExecutorTelemetry:
 
             # Set user-defined properties `scenario` in context
             operation_context.scenario = "test"
-            executor = FlowExecutor.create(get_yaml_file("openai_api_flow"), dev_connections)
+            executor = FlowExecutor.create(get_yaml_file("openai_chat_api_flow"), dev_connections)
 
             # exec_line case
             inputs = {"question": "What's your name?", "chat_history": []}
@@ -67,7 +67,7 @@ class TestExecutorTelemetry:
 
             # single_node case
             run_info = FlowExecutor.load_and_exec_node(
-                get_yaml_file("openai_api_flow"),
+                get_yaml_file("openai_chat_api_flow"),
                 "chat",
                 flow_inputs=inputs,
                 connections=dev_connections,

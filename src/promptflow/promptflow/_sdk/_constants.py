@@ -30,6 +30,8 @@ RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 BASE_PATH_CONTEXT_KEY = "base_path"
+SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
+SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
 PARAMS_OVERRIDE_KEY = "params_override"
 FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
@@ -43,6 +45,10 @@ CHAT_HISTORY = "chat_history"
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
 BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
@@ -57,6 +63,22 @@ VIS_PORTAL_URL_TMPL = (
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
     "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
 )
+LOCAL_SERVICE_PORT = 5000
+
+
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "promptflow.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+        ]
 
 
 class RunTypes:
@@ -261,3 +283,8 @@ class RunDataKeys:
 class RunHistoryKeys:
     RunMetaData = "runMetadata"
     HIDDEN = "hidden"
+
+
+class ConnectionProvider(str, Enum):
+    LOCAL = "local"
+    AZURE = "azureml"
