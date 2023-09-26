@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
-import logging
 import os
 import time
 from unittest.mock import patch
@@ -48,16 +47,11 @@ def cli_consent_config_overwrite(val):
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
-        logger = logging.getLogger("test_logging_handler")
         # override environment variable
         with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is True
-            logger.addHandler(handler)
-            logger.info("test_logging_handler")
-            logger.warning("test_logging_handler")
-            time.sleep(10)
 
         with environment_variable_overwrite("TELEMETRY_ENABLED", "false"):
             handler = get_appinsights_log_handler()
@@ -65,12 +59,12 @@ class TestTelemetry:
             assert handler._is_telemetry_enabled is False
 
         # write config
-        with cli_consent_config_overwrite(True):
+        with environment_variable_overwrite("USER_AGENT", ""), cli_consent_config_overwrite(True):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is True
 
-        with cli_consent_config_overwrite(False):
+        with environment_variable_overwrite("USER_AGENT", ""), cli_consent_config_overwrite(False):
             handler = get_appinsights_log_handler()
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is False
