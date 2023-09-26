@@ -4,7 +4,6 @@ from pathlib import Path
 import pydash
 import pytest
 
-from promptflow._core.tools_manager import register_connections
 from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.entities import CustomStrongTypeConnection
@@ -15,8 +14,6 @@ class MyCustomConnection(CustomStrongTypeConnection):
     api_key: Secret
     api_base: str
 
-
-register_connections([MyCustomConnection])
 
 _client = PFClient()
 
@@ -124,14 +121,30 @@ class TestCustomStrongTypeConnection:
             _client.connections.create_or_update(result)
         assert "secrets ['api_key'] value invalid, please fill them" in str(e.value)
 
-    @pytest.mark.skip("test package not installed")
+    def test_connection_get_and_update_with_key(self):
+        # Test api key not updated
+        name = f"Connection_{str(uuid.uuid4())[:4]}"
+        conn = MyCustomConnection(name=name, secrets={"api_key": "test"}, configs={"api_base": "test"})
+        assert conn.api_base == "test"
+        assert conn.configs["api_base"] == "test"
+
+        result = _client.connections.create_or_update(conn)
+        converted_conn = result._convert_to_custom_strong_type()
+
+        assert converted_conn.api_base == "test"
+        converted_conn.api_base = "test2"
+        assert converted_conn.api_base == "test2"
+        assert converted_conn.configs["api_base"] == "test2"
+
     @pytest.mark.parametrize(
         "file_name, expected_updated_item, expected_secret_item",
         [
             ("custom_strong_type_connection.yaml", ("api_base", "new_value"), ("api_key", "<to-be-replaced>")),
         ],
     )
-    def test_upsert_connection_from_file(self, file_name, expected_updated_item, expected_secret_item):
+    def test_upsert_connection_from_file(
+        self, install_custom_tool_pkg, file_name, expected_updated_item, expected_secret_item
+    ):
         from promptflow._cli._pf._connection import _upsert_connection_from_file
 
         name = f"Connection_{str(uuid.uuid4())[:4]}"

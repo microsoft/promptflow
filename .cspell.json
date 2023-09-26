@@ -126,7 +126,8 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
-    "runsvdir"
+    "runsvdir",
+    "levelno"
   ],
   "allowCompoundWords": true
 }
