@@ -102,16 +102,17 @@ class HealthyEnsuredProcess:
     def get(self):
         return self.output_queue.get(timeout=1)
 
-    def format_current_process(self, line_number: int):
+    def format_current_process(self, line_number: int, is_conmpleted=False):
         process_name = self.process.name if self.process else None
         process_pid = self.process.pid if self.process else None
-        logger.info(
-            f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution.")
-        return f"Process name({process_name})-Process id({process_pid})"
+        if is_conmpleted:
+            logger.info(
+                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed.")
+        else:
+            logger.info(
+                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution.")
 
-    @property
-    def completed_process_name(self):
-        return self.process.name
+        return f"Process name({process_name})-Process id({process_pid})"
 
 
 class LineExecutionProcessPool:
@@ -217,7 +218,7 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     continue
 
-            self._completed_idx[line_number] = healthy_ensured_process.completed_process_name
+            self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
             # Handling the timeout of a line execution process.
             if not completed:
                 logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -226,7 +227,7 @@ class LineExecutionProcessPool:
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
-                self._completed_idx[line_number] = healthy_ensured_process.completed_process_name
+                self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
                 healthy_ensured_process.end()
                 healthy_ensured_process.start_new()
 
