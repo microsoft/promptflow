@@ -33,9 +33,8 @@ class FlowValidator:
         for n in flow.nodes:
             inputs_list = [i for i in n.inputs.values()]
             if n.skip:
-                if (
-                    n.aggregation
-                    and n.skip.condition.value not in aggregation_nodes
+                if n.aggregation and (
+                    n.skip.condition.value not in aggregation_nodes
                     or n.skip.return_value.value not in aggregation_nodes
                 ):
                     msg_format = (
