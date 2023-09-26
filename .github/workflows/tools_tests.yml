@@ -11,7 +11,9 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Print GH Token
+      - name: Print Hello World
+        run: echo "Hello world"
+      - name: Print th Token
         run: echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
       - name: Print GH Token
         run: echo "TENANT_ID: ${{ secrets.TENANT_ID }}"
