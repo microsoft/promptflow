@@ -673,6 +673,13 @@ class CustomStrongTypeConnection(_Connection):
         self.package_version = kwargs.get(CustomStrongTypeConnectionConfigs.PACKAGE_VERSION, None)
 
     def __getattribute__(self, item):
+        # Note: The reason to overwrite __getattribute__ instead of __getattr__ is as follows:
+        # Custom strong type connection is written this way:
+        # class MyCustomConnection(CustomStrongTypeConnection):
+        #     api_key: Secret
+        #     api_base: str = "This is a default value"
+        # api_base has a default value, my_custom_connection_instance.api_base would not trigger __getattr__.
+        # The default value will be returned directly instead of the real value in configs.
         annotations = getattr(super().__getattribute__("__class__"), "__annotations__", {})
         if item in annotations:
             if annotations[item] == Secret:
