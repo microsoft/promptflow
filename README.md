@@ -156,7 +156,11 @@ use of the software operates as your consent to these practices.
 
 ### Telemetry Configuration
 
-Telemetry collection is off by default. To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
+Telemetry collection is off by default.
+
+To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
+
+For Europe user, please run `pf config set cli.en_user=true` to make sure telemetry is sent to Europe server.
 
 ## License
 

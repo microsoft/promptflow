@@ -9,8 +9,10 @@ from opencensus.ext.azure.log_exporter import AzureEventHandler
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._configuration import Configuration
 
-# TODO: replace with prod app insights
-INSTRUMENTATION_KEY = "b4ff2b60-2f72-4a5f-b7a6-571318b50ab2"
+# promptflow-sdk in east us
+INSTRUMENTATION_KEY = "e46ea0b2-ab2e-4c5e-aa20-95977d802d01"
+# promptflow-sdk-eu in west europe
+EU_INSTRUMENTATION_KEY = "f2ff886e-8b36-4de3-88da-7ec84fd437e3"
 
 
 # cspell:ignore overriden
@@ -22,9 +24,12 @@ def get_appinsights_log_handler():
     from promptflow._telemetry.telemetry import is_telemetry_enabled
 
     try:
-        # TODO: use different instrumentation key for Europe
-        instrumentation_key = INSTRUMENTATION_KEY
+
         config = Configuration.get_instance()
+        if config.is_eu_user():
+            instrumentation_key = EU_INSTRUMENTATION_KEY
+        else:
+            instrumentation_key = INSTRUMENTATION_KEY
         user_agent = setup_user_agent_to_operation_context(USER_AGENT)
         custom_properties = {
             "python_version": platform.python_version(),
@@ -69,11 +74,16 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
             return
 
     def log_record_to_envelope(self, record):
+        from promptflow._utils.utils import is_in_ci_pipeline
+
         # skip logging if telemetry is disabled
+
         if not self._is_telemetry_enabled:
             return
         custom_dimensions = {
             "level": record.levelname,
+            # add to distinguish if the log is from ci pipeline
+            "from_ci": is_in_ci_pipeline(),
         }
         custom_dimensions.update(self._custom_dimensions)
         if hasattr(record, "custom_dimensions") and isinstance(record.custom_dimensions, dict):

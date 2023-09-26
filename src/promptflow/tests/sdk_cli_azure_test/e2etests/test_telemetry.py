@@ -2,7 +2,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
-import os
 from unittest.mock import patch
 
 import pytest
@@ -10,23 +9,7 @@ import pytest
 from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
-
-
-@contextlib.contextmanager
-def environment_variable_overwrite(key, val):
-    if key in os.environ.keys():
-        backup_value = os.environ[key]
-    else:
-        backup_value = None
-    os.environ[key] = val
-
-    try:
-        yield
-    finally:
-        if backup_value:
-            os.environ[key] = backup_value
-        else:
-            os.environ.pop(key)
+from promptflow._utils.utils import environment_variable_overwrite
 
 
 @contextlib.contextmanager

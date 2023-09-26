@@ -5,6 +5,7 @@
 """This is a common util file.
 !!!Please do not include any project related import.!!!
 """
+import contextlib
 import contextvars
 import functools
 import importlib
@@ -174,3 +175,20 @@ def convert_inputs_mapping_to_param(inputs_mapping: dict):
     # TODO: Finalize the format of inputs_mapping
     """
     return ",".join([f"{k}={v}" for k, v in inputs_mapping.items()])
+
+
+@contextlib.contextmanager
+def environment_variable_overwrite(key, val):
+    if key in os.environ.keys():
+        backup_value = os.environ[key]
+    else:
+        backup_value = None
+    os.environ[key] = val
+
+    try:
+        yield
+    finally:
+        if backup_value:
+            os.environ[key] = backup_value
+        else:
+            os.environ.pop(key)
