@@ -15,6 +15,10 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
         - completion
       type:
         - string
+    deployment_name:
+      default: null
+      type:
+        - string
     model_kwargs:
       default: "{}"
       type:

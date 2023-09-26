@@ -292,10 +292,12 @@ class AzureMLOnlineEndpoint:
         endpoint_url: str,
         endpoint_api_key: str,
         content_formatter: ContentFormatterBase,
+        deployment_name: Optional[str] = None,
         model_kwargs: Optional[Dict] = None,
     ):
         self.endpoint_url = endpoint_url
         self.endpoint_api_key = endpoint_api_key
+        self.deployment_name = deployment_name
         self.content_formatter = content_formatter
         self.model_kwargs = model_kwargs
 
@@ -318,9 +320,8 @@ class AzureMLOnlineEndpoint:
         headers = {"Content-Type": "application/json", "Authorization": ("Bearer " + self.endpoint_api_key)}
 
         # If this is not set it'll use the default deployment on the endpoint.
-        if mir_deployment_name_config in self.model_kwargs:
-            headers[mir_deployment_name_config] = self.model_kwargs[mir_deployment_name_config]
-            del self.model_kwargs[mir_deployment_name_config]
+        if self.deployment_name is not None:
+            headers["azureml-model-deployment"] = self.deployment_name
 
         req = urllib.request.Request(self.endpoint_url, body, headers)
         response = urllib.request.urlopen(req, timeout=50)
@@ -388,6 +389,7 @@ class OpenSourceLLM(ToolProvider):
         self,
         prompt: PromptTemplate,
         api: API,
+        deployment_name: Optional[str] = None,
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
@@ -403,6 +405,7 @@ class OpenSourceLLM(ToolProvider):
             endpoint_url=self.connection.configs['endpoint_url'],
             endpoint_api_key=self.connection.secrets['endpoint_api_key'],
             content_formatter=content_formatter,
+            deployment_name=deployment_name,
             model_kwargs=model_kwargs
         )
 

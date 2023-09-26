@@ -41,6 +41,7 @@ The keys to set are:
 | api | string | this will be Completion or Chat, depending on the scenario selected | Yes |
 | connection | CustomConnection | the name of the connection which points to the Inferencing endpoint | Yes |
 | model_kwargs | dictionary | generic model configuration values, for example temperature | Yes |
+| deployment_name | string | the name of the deployment to target on the MIR endpoint. If no value is passed, the MIR load balancer settings will be used. | No |
 | prompt | string | text prompt that the language model will complete | Yes |
 
 ## Outputs
