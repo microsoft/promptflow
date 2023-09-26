@@ -385,29 +385,6 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
 
     @_request_wrapper()
-    def list_runs(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        **kwargs  # type: Any
-    ):
-        """List runs in the workspace.
-
-        :return: A list of runs in the workspace.
-        :rtype: list[~azure.ml._restclient.machinelearningservices.models.Run]
-        """
-        
-        headers = self._get_headers()
-        return self.caller.flows.list_flow_runs(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                headers=headers,
-                **kwargs
-            )
-
-    @_request_wrapper()
     def submit_bulk_run(
             self,
             subscription_id,  # type: str

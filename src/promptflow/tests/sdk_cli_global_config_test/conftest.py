@@ -17,7 +17,7 @@ def pf() -> PFClient:
 @pytest.fixture(scope="session")
 def global_config():
     config = Configuration.get_instance()
-    if config.config and Configuration.CONNECTION_PROVIDER in config.config:
+    if Configuration.CONNECTION_PROVIDER in config._config:
         return
     config.set_config(
         Configuration.CONNECTION_PROVIDER,
