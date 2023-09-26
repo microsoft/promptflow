@@ -109,6 +109,7 @@ class LineProcessManager:
             f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution.")
         return f"Process name({process_name})-Process id({process_pid})"
 
+    @property
     def completed_process_name(self):
         return self.process.name
 
@@ -216,7 +217,7 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     continue
 
-            self._completed_idx[line_number] = process_manger.completed_process_name()
+            self._completed_idx[line_number] = process_manger.completed_process_name
             # Handling the timeout of a line execution process.
             if not completed:
                 logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -225,7 +226,7 @@ class LineExecutionProcessPool:
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
-                self._completed_idx[line_number] = process_manger.completed_process_name()
+                self._completed_idx[line_number] = process_manger.completed_process_name
                 process_manger.end_process()
                 process_manger.start_new_process()
 
