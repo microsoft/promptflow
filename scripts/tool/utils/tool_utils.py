@@ -30,6 +30,7 @@ def resolve_annotation(anno) -> Union[str, list]:
 def param_to_definition(param, value_type) -> (InputDefinition, bool):
     default_value = param.default
     enum = None
+    custom_type = None
     # Get value type and enum from default if no annotation
     if default_value is not inspect.Parameter.empty and value_type == inspect.Parameter.empty:
         value_type = default_value.__class__ if isinstance(default_value, Enum) else type(default_value)
@@ -39,17 +40,32 @@ def param_to_definition(param, value_type) -> (InputDefinition, bool):
         value_type = str
     is_connection = False
     if ConnectionType.is_connection_value(value_type):
-        typ = [value_type.__name__]
+        if ConnectionType.is_custom_strong_type(value_type):
+            typ = ["CustomConnection"]
+            custom_type = [value_type.__name__]
+        else:
+            typ = [value_type.__name__]
         is_connection = True
     elif isinstance(value_type, list):
         if not all(ConnectionType.is_connection_value(t) for t in value_type):
             typ = [ValueType.OBJECT]
         else:
-            typ = [t.__name__ for t in value_type]
+            custom_connection_added = False
+            typ = []
+            custom_type = []
+            for t in value_type:
+                if ConnectionType.is_custom_strong_type(t):
+                    if not custom_connection_added:
+                        custom_connection_added = True
+                        typ.append("CustomConnection")
+                    custom_type.append(t.__name__)
+                else:
+                    typ.append(t.__name__)
             is_connection = True
     else:
         typ = [ValueType.from_type(value_type)]
-    return InputDefinition(type=typ, default=value_to_str(default_value), description=None, enum=enum), is_connection
+    return InputDefinition(type=typ, default=value_to_str(default_value),
+                           description=None, enum=enum, custom_type=custom_type), is_connection
 
 
 def function_to_interface(f: Callable, tool_type, initialize_inputs=None) -> tuple:
