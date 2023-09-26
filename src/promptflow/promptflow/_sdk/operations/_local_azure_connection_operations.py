@@ -8,6 +8,7 @@ from typing import List
 from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, LOGGER_NAME, MAX_LIST_CLI_RESULTS
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._telemetry.activity import ActivityType, monitor_operation
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
@@ -41,6 +42,7 @@ class LocalAzureConnectionOperations:
         workspace_name = match.group(5)
         return subscription_id, resource_group, workspace_name
 
+    @monitor_operation(activity_name="pf.connections.azure.list", activity_type=ActivityType.PUBLICAPI)
     def list(
         self,
         max_results: int = MAX_LIST_CLI_RESULTS,
@@ -57,6 +59,7 @@ class LocalAzureConnectionOperations:
             )
         return self._pfazure_client._connections.list()
 
+    @monitor_operation(activity_name="pf.connections.azure.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str, **kwargs) -> _Connection:
         """Get a connection entity.
 
@@ -70,6 +73,7 @@ class LocalAzureConnectionOperations:
             return self._pfazure_client._arm_connections.get(name)
         return self._pfazure_client._connections.get(name)
 
+    @monitor_operation(activity_name="pf.connections.azure.delete", activity_type=ActivityType.PUBLICAPI)
     def delete(self, name: str) -> None:
         """Delete a connection entity.
 
@@ -81,6 +85,7 @@ class LocalAzureConnectionOperations:
             "please manage it in workspace portal, az ml cli or AzureML SDK."
         )
 
+    @monitor_operation(activity_name="pf.connections.azure.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, connection: _Connection, **kwargs):
         """Create or update a connection.
 
