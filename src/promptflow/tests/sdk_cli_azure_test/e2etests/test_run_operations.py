@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from promptflow._sdk._constants import RunStatus
-from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
+from promptflow._sdk._errors import InvalidRunError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -641,3 +641,12 @@ class TestFlowRun:
             f"?wsid={runs_op._common_azure_url_pattern}"
         )
         assert runs_op._get_portal_url_from_asset_id(output_asset_id) == expected_output_portal_url
+
+    def test_wrong_client_parameters(self):
+        # test wrong client parameters
+        with pytest.raises(RunOperationParameterError, match="You have passed in the wrong parameter name"):
+            PFClient(
+                subscription_id="fake_subscription_id",
+                resource_group="fake_resource_group",
+                workspace_name="fake_workspace_name",
+            )
