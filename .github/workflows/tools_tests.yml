@@ -12,9 +12,9 @@ jobs:
 
     steps:
       - name: Print GH Token
-        run: echo GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
       - name: Print GH Token
-        run: echo TENANT_ID: ${{ secrets.TENANT_ID }}
+        run: echo "TENANT_ID: ${{ secrets.TENANT_ID }}"
       - name: Check for dockerenv file
         run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
