@@ -108,7 +108,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---------------------------------------------------------
 
-pandas 1.5.3 - BSD-2-Clause AND BSD-3-Clause
+pandas 2.1.1 - BSD-2-Clause AND BSD-3-Clause
 
 
 Copyright (c) 2009', join

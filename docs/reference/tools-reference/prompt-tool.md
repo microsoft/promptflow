@@ -10,7 +10,7 @@ when prompt tuning is required prior to feeding the prompts into the Language Mo
 
 | Name               | Type   | Description                                              | Required |
 |--------------------|--------|----------------------------------------------------------|----------|
-| prompt             | string | The prompte template in Jinja                            | Yes      |
+| prompt             | string | The prompt template in Jinja                            | Yes      |
 | Inputs             | -      | List of variables of prompt template and its assignments | -        |
 
 

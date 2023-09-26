@@ -10,14 +10,16 @@ from azure.ai.ml import MLClient
 from azure.core.credentials import TokenCredential
 from pandas import DataFrame
 
+from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities import Run
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
+from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 from promptflow.azure.operations._connection_operations import ConnectionOperations
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 
 class PFClient:
@@ -76,6 +78,14 @@ class PFClient:
             **kwargs,
         )
         self._connections = ConnectionOperations(
+            operation_scope=self._ml_client._operation_scope,
+            operation_config=self._ml_client._operation_config,
+            all_operations=self._ml_client._operation_container,
+            credential=self._ml_client._credential,
+            service_caller=self._service_caller,
+            **kwargs,
+        )
+        self._arm_connections = ArmConnectionOperations(
             operation_scope=self._ml_client._operation_scope,
             operation_config=self._ml_client._operation_config,
             all_operations=self._ml_client._operation_container,
@@ -144,7 +154,17 @@ class PFClient:
 
         .. note:: at least one of data or run must be provided.
 
-        .. admonition:: column_mapping
+        .. admonition::
+            Data can be local file or remote path.
+            - Example:
+                - `data = "path/to/local/file"`
+                - `data = "azureml:data_name:data_version"`
+                - `data = "azureml://datastores/datastore_name/path/to/file"`
+                - `data = "https://example.com/data.jsonl"`
+
+            Column mapping is a mapping from flow input name to specified values.
+            If specified, the flow will be executed with provided value for specified inputs.
+            The value can be:
 
             - from data:
                 - ``data.col1``
@@ -153,6 +173,7 @@ class PFClient:
                 - ``run.output.col1``: if need reference run's outputs
             - Example:
                 - ``{"ground_truth": "${data.answer}", "prediction": "${run.outputs.answer}"}``
+
 
         :param flow: path to flow directory to run evaluation
         :type flow: Union[str, PathLike]
@@ -219,17 +240,26 @@ class PFClient:
             run = run.name
         return self.runs.stream(run)
 
-    def get_details(self, run: Union[str, Run]) -> DataFrame:
-        """Preview run inputs and outputs.
+    def get_details(
+        self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
+    ) -> DataFrame:
+        """Get the details from the run including inputs and outputs.
 
-        :param run: Run object or name of the run.
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
+
+        :param run: The run name or run object
         :type run: Union[str, ~promptflow.sdk.entities.Run]
-        :return: The run's details
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
+        :return: The details data frame.
         :rtype: pandas.DataFrame
         """
-        if isinstance(run, Run):
-            run = run.name
-        return self.runs.get_details(run=run)
+        return self.runs.get_details(run=run, max_results=max_results, all_results=all_results)
 
     def get_metrics(self, run: Union[str, Run]) -> dict:
         """Print run metrics to the console.

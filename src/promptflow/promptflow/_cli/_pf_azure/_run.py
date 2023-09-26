@@ -10,7 +10,13 @@ from typing import Optional
 
 import pandas as pd
 
-from promptflow._cli._params import add_param_debug, add_param_run_name, add_param_verbose, logging_params
+from promptflow._cli._params import (
+    add_param_all_results,
+    add_param_debug,
+    add_param_run_name,
+    add_param_verbose,
+    logging_params,
+)
 from promptflow._cli._pf._run import add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
@@ -90,7 +96,7 @@ pfazure run list
 pfazure run list --max-results 10
 # List active and archived runs status:
 pfazure run list --include-archived
-# List arhived runs status only:
+# List archived runs status only:
 pfazure run list --archived-only
 # List all runs status as table:
 pfazure run list --output table
@@ -211,6 +217,7 @@ pfazure run show-details --name <name>
         _set_workspace_argument_for_subparsers,
         add_param_max_results,
         add_param_run_name,
+        add_param_all_results,
     ] + logging_params
 
     activate_action(
@@ -378,7 +385,13 @@ def dispatch_run_commands(args: argparse.Namespace):
         show_run(args.subscription, args.resource_group, args.workspace_name, args.name)
     elif args.sub_action == "show-details":
         show_run_details(
-            args.subscription, args.resource_group, args.workspace_name, args.name, args.max_results, args.debug
+            args.subscription,
+            args.resource_group,
+            args.workspace_name,
+            args.name,
+            args.max_results,
+            args.all_results,
+            args.debug,
         )
     elif args.sub_action == "show-metrics":
         show_metrics(args.subscription, args.resource_group, args.workspace_name, args.name)
@@ -446,11 +459,13 @@ def show_run(subscription_id, resource_group, workspace_name, flow_run_id):
 
 
 @exception_handler("Show run details")
-def show_run_details(subscription_id, resource_group, workspace_name, flow_run_id, max_results, debug=False):
+def show_run_details(
+    subscription_id, resource_group, workspace_name, flow_run_id, max_results, all_results, debug=False
+):
     """Show a run details from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
-    details = pf.runs.get_details(run=flow_run_id)
-    pretty_print_dataframe_as_table(details.head(max_results))
+    details = pf.runs.get_details(run=flow_run_id, max_results=max_results, all_results=all_results)
+    pretty_print_dataframe_as_table(details)
 
 
 @exception_handler("Show run metrics")

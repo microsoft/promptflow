@@ -15,6 +15,7 @@ try:
     from ._models_py3 import AKSReplicaStatus
     from ._models_py3 import AMLComputeConfiguration
     from ._models_py3 import APCloudConfiguration
+    from ._models_py3 import Activate
     from ._models_py3 import AdhocTriggerScheduledCommandJobRequest
     from ._models_py3 import AdhocTriggerScheduledSparkJobRequest
     from ._models_py3 import AetherAPCloudConfiguration
@@ -338,6 +339,7 @@ try:
     from ._models_py3 import FlowRunSettings
     from ._models_py3 import FlowRuntimeDto
     from ._models_py3 import FlowSampleDto
+    from ._models_py3 import FlowSessionDto
     from ._models_py3 import FlowSnapshot
     from ._models_py3 import FlowSubmitRunSettings
     from ._models_py3 import FlowToolSettingParameter
@@ -666,6 +668,7 @@ except (SyntaxError, ImportError):
     from ._models import AKSReplicaStatus  # type: ignore
     from ._models import AMLComputeConfiguration  # type: ignore
     from ._models import APCloudConfiguration  # type: ignore
+    from ._models import Activate  # type: ignore
     from ._models import AdhocTriggerScheduledCommandJobRequest  # type: ignore
     from ._models import AdhocTriggerScheduledSparkJobRequest  # type: ignore
     from ._models import AetherAPCloudConfiguration  # type: ignore
@@ -989,6 +992,7 @@ except (SyntaxError, ImportError):
     from ._models import FlowRunSettings  # type: ignore
     from ._models import FlowRuntimeDto  # type: ignore
     from ._models import FlowSampleDto  # type: ignore
+    from ._models import FlowSessionDto  # type: ignore
     from ._models import FlowSnapshot  # type: ignore
     from ._models import FlowSubmitRunSettings  # type: ignore
     from ._models import FlowToolSettingParameter  # type: ignore
@@ -1522,6 +1526,7 @@ __all__ = [
     'AKSReplicaStatus',
     'AMLComputeConfiguration',
     'APCloudConfiguration',
+    'Activate',
     'AdhocTriggerScheduledCommandJobRequest',
     'AdhocTriggerScheduledSparkJobRequest',
     'AetherAPCloudConfiguration',
@@ -1845,6 +1850,7 @@ __all__ = [
     'FlowRunSettings',
     'FlowRuntimeDto',
     'FlowSampleDto',
+    'FlowSessionDto',
     'FlowSnapshot',
     'FlowSubmitRunSettings',
     'FlowToolSettingParameter',

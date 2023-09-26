@@ -158,7 +158,7 @@ class ErrorResponse:
 class ExceptionPresenter:
     """A class that can extract information from the exception instance.
 
-    It is designed to work for both PropmtflowException and other exceptions.
+    It is designed to work for both PromptflowException and other exceptions.
     """
 
     def __init__(self, ex: Exception):
@@ -287,7 +287,7 @@ class PromptflowExceptionPresenter(ExceptionPresenter):
 
 class JsonSerializedPromptflowException(Exception):
     """Json serialized PromptflowException.
-    This exception only has one argument message to voide the
+    This exception only has one argument message to avoid the
     argument missing error when load/dump with pickle in multiprocessing.
     Ref: https://bugs.python.org/issue32696
 
