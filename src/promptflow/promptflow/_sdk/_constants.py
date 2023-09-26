@@ -297,3 +297,7 @@ SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFiel
 LOCAL_SERVICE_PORT = 5000
 
 BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+
+RUN_MACRO = "${run}"
+VARIANT_ID_MACRO = "${variant_id}"
+TIMESTAMP_MACRO = "${timestamp}"

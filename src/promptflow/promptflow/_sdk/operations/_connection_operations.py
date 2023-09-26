@@ -8,11 +8,17 @@ from promptflow._sdk._constants import MAX_LIST_CLI_RESULTS
 from promptflow._sdk._orm import Connection as ORMConnection
 from promptflow._sdk._utils import safe_parse_object_list
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 
 
-class ConnectionOperations:
+class ConnectionOperations(TelemetryMixin):
     """ConnectionOperations."""
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @monitor_operation(activity_name="pf.connections.list", activity_type=ActivityType.PUBLICAPI)
     def list(
         self,
         max_results: int = MAX_LIST_CLI_RESULTS,
@@ -34,6 +40,7 @@ class ConnectionOperations:
             message_generator=lambda x: f"Failed to load connection {x.connectionName}, skipped.",
         )
 
+    @monitor_operation(activity_name="pf.connections.get", activity_type=ActivityType.PUBLICAPI)
     def get(self, name: str, **kwargs) -> _Connection:
         """Get a connection entity.
 
@@ -51,6 +58,7 @@ class ConnectionOperations:
             return _Connection._from_orm_object_with_secrets(orm_connection)
         return _Connection._from_orm_object(orm_connection)
 
+    @monitor_operation(activity_name="pf.connections.delete", activity_type=ActivityType.PUBLICAPI)
     def delete(self, name: str) -> None:
         """Delete a connection entity.
 
@@ -59,6 +67,7 @@ class ConnectionOperations:
         """
         ORMConnection.delete(name)
 
+    @monitor_operation(activity_name="pf.connections.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, connection: _Connection, **kwargs):
         """Create or update a connection.
 
