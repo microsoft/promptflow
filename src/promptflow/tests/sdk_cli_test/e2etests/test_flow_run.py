@@ -78,7 +78,7 @@ class TestFlowRun:
         tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used default variant config
         assert tuning_node["inputs"]["temperature"] == 0.3
-        assert "default" in result.name
+        assert "variant_0" in result.name
 
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
