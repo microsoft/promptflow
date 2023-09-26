@@ -125,7 +125,8 @@
     "aggr",
     "tcsetattr",
     "pysqlite",
-    "AADSTS700082"
+    "AADSTS700082",
+    "levelno"
   ],
   "allowCompoundWords": true
 }
