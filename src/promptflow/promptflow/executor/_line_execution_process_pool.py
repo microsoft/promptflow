@@ -42,7 +42,7 @@ class QueueRunStorage(AbstractRunStorage):
         self.queue.put(run_info)
 
 
-class LineProcessManager:
+class HealthyEnsuredProcess:
     def __init__(self, executor_creation_func):
         self.process = None
         self.input_queue = None
@@ -50,7 +50,7 @@ class LineProcessManager:
         self.is_ready = False
         self._executor_creation_func = executor_creation_func
 
-    def start_new_process(self):
+    def start_new(self):
         input_queue = Queue()
         output_queue = Queue()
         self.input_queue = input_queue
@@ -85,10 +85,10 @@ class LineProcessManager:
             self.is_ready = True
         except queue.Empty:
             logger.info(f"Process {process.pid} did not send ready message, exit.")
-            self.end_process()
-            self.start_new_process()
+            self.end()
+            self.start_new()
 
-    def end_process(self):
+    def end(self):
         # When process failed to start and the task_queue is empty.
         # The process will no longer re-created, and the process is None.
         if self.process is None:
@@ -181,22 +181,22 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
-        process_manger = LineProcessManager(self._executor_creation_func)
-        process_manger.start_new_process()
+        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
+        healthy_ensured_process.start_new()
 
         while True:
             try:
-                while not process_manger.is_ready and not task_queue.empty():
+                while not healthy_ensured_process.is_ready and not task_queue.empty():
                     time.sleep(1)
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 logger.info(f"Process {idx} queue empty, exit.")
-                process_manger.end_process()
+                healthy_ensured_process.end()
                 return
 
-            process_manger.put(args)
+            healthy_ensured_process.put(args)
             inputs, line_number, run_id = args[:3]
-            self._processing_idx[line_number] = process_manger.format_current_process(line_number)
+            self._processing_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
 
             start_time = datetime.now()
             completed = False
@@ -205,7 +205,7 @@ class LineExecutionProcessPool:
                 try:
                     # Responsible for checking the output queue messages and
                     # processing them within a specified timeout period.
-                    message = process_manger.get()
+                    message = healthy_ensured_process.get()
                     if isinstance(message, LineResult):
                         completed = True
                         result_list.append(message)
@@ -217,7 +217,7 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     continue
 
-            self._completed_idx[line_number] = process_manger.completed_process_name
+            self._completed_idx[line_number] = healthy_ensured_process.completed_process_name
             # Handling the timeout of a line execution process.
             if not completed:
                 logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -226,9 +226,9 @@ class LineExecutionProcessPool:
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
-                self._completed_idx[line_number] = process_manger.completed_process_name
-                process_manger.end_process()
-                process_manger.start_new_process()
+                self._completed_idx[line_number] = healthy_ensured_process.completed_process_name
+                healthy_ensured_process.end()
+                healthy_ensured_process.start_new()
 
             self._processing_idx.pop(line_number)
             log_progress(
