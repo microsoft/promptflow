@@ -29,6 +29,7 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
+from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -698,14 +699,33 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def setup_user_agent_to_operation_context(user_agent):
+def update_user_agent_from_env_var():
+    """Update user agent from env var to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
     if "USER_AGENT" in os.environ:
         # Append vscode or other user agent from env
         OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+
+
+def setup_user_agent_to_operation_context(user_agent):
+    """Setup user agent to OperationContext"""
+    from promptflow._core.operation_context import OperationContext
+
+    update_user_agent_from_env_var()
     # Append user agent
-    OperationContext.get_instance().append_user_agent(user_agent)
+    context = OperationContext.get_instance()
+    context.append_user_agent(user_agent)
+    return context.get_user_agent()
+
+
+def call_from_extension() -> bool:
+    """Return true if current request is from extension."""
+    from promptflow._core.operation_context import OperationContext
+
+    update_user_agent_from_env_var()
+    context = OperationContext().get_instance()
+    return EXTENSION_UA in context.get_user_agent()
 
 
 def generate_random_string(length: int = 6) -> str:
