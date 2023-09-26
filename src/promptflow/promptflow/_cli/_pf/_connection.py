@@ -64,7 +64,6 @@ def add_connection_parser(subparsers):
 def add_connection_create(subparsers):
     epilog = """
     Examples:
-    
     # Creating a connection with yaml file:
     pf connection create -f connection.yaml
     # Creating a connection with yaml file and overrides:
@@ -86,7 +85,6 @@ def add_connection_create(subparsers):
 def add_connection_update(subparsers):
     epilog = """
     Examples:
-    
     # Updating a connection:
     pf connection update -n my_connection --set api_key="my_api_key"
     """
@@ -104,7 +102,6 @@ def add_connection_update(subparsers):
 def add_connection_show(subparsers):
     epilog = """
     Examples:
-    
     # Get and show a connection:
     pf connection show -n my_connection_name
     """
@@ -122,7 +119,6 @@ def add_connection_show(subparsers):
 def add_connection_delete(subparsers):
     epilog = """
     Examples:
-    
     # Delete a connection:
     pf connection delete -n my_connection_name
     """
@@ -140,7 +136,6 @@ def add_connection_delete(subparsers):
 def add_connection_list(subparsers):
     epilog = """
     Examples:
-    
     # List all connections:
     pf connection list
     """
@@ -158,7 +153,6 @@ def add_connection_list(subparsers):
 def add_gen_connection_template(subparsers):
     epilog = """
     Examples:
-    
     # Generate connection template:
     pf connection gen-template -n my_connection_name -m my_module_name --package my_package_name --output ./output
     """
