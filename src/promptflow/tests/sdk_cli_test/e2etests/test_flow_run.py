@@ -377,10 +377,11 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         assert run.name == name
-        assert f"{display_name}-default-" in run.display_name
+        assert "test_run_with_tags" == run.display_name
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
+        # use folder name if not specify display_name
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
@@ -388,7 +389,9 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert "print_env_var-default-" in run.display_name
+        assert run.display_name == "print_env_var"
+
+        # will respect if specified in run
         base_run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
@@ -397,18 +400,29 @@ class TestFlowRun:
                 display_name="my_run",
             )
         )
-        assert "my_run-default-" in base_run.display_name
+        assert base_run.display_name == "my_run"
 
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
-                display_name="my_run",
+                display_name="my_run_${variant_id}_${run}",
                 run=base_run,
             )
         )
-        assert f"{base_run.display_name}-my_run-" in run.display_name
+        assert run.display_name == f"my_run_default_{base_run.name}"
+
+        run = pf.runs.create_or_update(
+            run=Run(
+                flow=Path(f"{FLOWS_DIR}/print_env_var"),
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
+                display_name="my_run_${timestamp}",
+                run=base_run,
+            )
+        )
+        assert "${timestamp}" not in run.display_name
 
     def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
