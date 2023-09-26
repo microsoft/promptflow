@@ -18,15 +18,11 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 
 @pytest.fixture(scope="session")
 def local_client() -> PFClient:
-    # enable telemetry for test
-    os.environ["TELEMETRY_ENABLED"] = "true"
     return PFClient()
 
 
 @pytest.fixture(scope="session")
 def pf() -> PFClient:
-    # enable telemetry for test
-    os.environ["TELEMETRY_ENABLED"] = "true"
     return PFClient()
 
 
