@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
-from .types import PromptTemplate, Secret
+from .types import FilePath, PromptTemplate, Secret
 
 T = TypeVar("T", bound="Enum")
 
@@ -34,6 +34,7 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    FILE_PATH = "file_path"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -59,6 +60,8 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
@@ -85,6 +88,8 @@ class ValueType(str, Enum):
             return ValueType.SECRET
         if t == PromptTemplate:
             return ValueType.PROMPT_TEMPLATE
+        if t == FilePath:
+            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
