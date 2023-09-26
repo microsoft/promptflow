@@ -45,7 +45,7 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:
@@ -1016,6 +1016,8 @@ class TestCli:
             #             "api_base": "This is my first connection.",
             #             "promptflow.connection.custom_type": "MyFirstConnection",
             #             "promptflow.connection.module": "my_tool_package.connections",
+            #             "promptflow.connection.package": "test-custom-tools",
+            #             "promptflow.connection.package_version": "0.0.1",
             #         },
             #         "secrets": {"api_key": SCRUBBED_VALUE},
             #     },
@@ -1023,7 +1025,9 @@ class TestCli:
             # ),
         ],
     )
-    def test_connection_create_update(self, file_name, expected, update_item, capfd, local_client):
+    def test_connection_create_update(
+        self, install_custom_tool_pkg, file_name, expected, update_item, capfd, local_client
+    ):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
         run_pf_command("connection", "create", "--file", f"{CONNECTIONS_DIR}/{file_name}", "--name", f"{name}")
         out, err = capfd.readouterr()
