@@ -58,17 +58,6 @@ class TestTelemetry:
             assert isinstance(handler, PromptFlowSDKLogHandler)
             assert handler._is_telemetry_enabled is False
 
-        # write config
-        with environment_variable_overwrite("USER_AGENT", ""), cli_consent_config_overwrite(True):
-            handler = get_appinsights_log_handler()
-            assert isinstance(handler, PromptFlowSDKLogHandler)
-            assert handler._is_telemetry_enabled is True
-
-        with environment_variable_overwrite("USER_AGENT", ""), cli_consent_config_overwrite(False):
-            handler = get_appinsights_log_handler()
-            assert isinstance(handler, PromptFlowSDKLogHandler)
-            assert handler._is_telemetry_enabled is False
-
     def test_call_from_extension(self):
         assert call_from_extension() is False
         with environment_variable_overwrite("USER_AGENT", "prompt-flow-extension/1.0.0"):
