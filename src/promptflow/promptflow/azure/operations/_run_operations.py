@@ -149,18 +149,17 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         if not input_uri:
             return None
         if input_uri.startswith("azureml://"):
-            # input uri is a datastore path
-            match = self._DATASTORE_PATH_PATTERN.match(input_uri)
-            if not match or len(match.groups()) != 2:
+            res = self._get_portal_url_from_asset_id(input_uri)
+            if res is None:
+                res = self._get_portal_url_from_datastore_path(input_uri)
+            if res is None:
+                error_msg = (
+                    f"Failed to get portal url: {input_uri!r} is not a valid azureml asset id or datastore path."
+                )
                 logger.warning(error_msg)
-                return None
-            datastore, path = match.groups()
-            return (
-                f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
-                f"&activeFilePath={path}#browseTab"
-            )
+            return res
         elif input_uri.startswith("azureml:/"):
-            # when input uri is an asset id, leverage the asset id pattern to get the portal url
+            # some asset id could start with "azureml:/"
             return self._get_portal_url_from_asset_id(input_uri)
         elif input_uri.startswith("azureml:"):
             # named asset id
@@ -170,14 +169,33 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             logger.warning(error_msg)
             return None
 
-    def _get_portal_url_from_asset_id(self, output_uri):
-        """Get the portal url for the data output."""
-        error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
-        if not output_uri:
+    def _get_portal_url_from_datastore_path(self, datastore_path, log_warning=False):
+        """Get the portal url from the datastore path."""
+        error_msg = (
+            f"Failed to get portal url: Datastore path {datastore_path!r} is not a valid azureml datastore path."
+        )
+        if not datastore_path:
             return None
-        match = self._ASSET_ID_PATTERN.match(output_uri)
+        match = self._DATASTORE_PATH_PATTERN.match(datastore_path)
         if not match or len(match.groups()) != 2:
-            logger.warning(error_msg)
+            if log_warning:
+                logger.warning(error_msg)
+            return None
+        datastore, path = match.groups()
+        return (
+            f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
+            f"&activeFilePath={path}#browseTab"
+        )
+
+    def _get_portal_url_from_asset_id(self, asset_id, log_warning=False):
+        """Get the portal url from asset id."""
+        error_msg = f"Failed to get portal url: {asset_id!r} is not a valid azureml asset id."
+        if not asset_id:
+            return None
+        match = self._ASSET_ID_PATTERN.match(asset_id)
+        if not match or len(match.groups()) != 2:
+            if log_warning:
+                logger.warning(error_msg)
             return None
         name, version = match.groups()
         return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
@@ -498,7 +516,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         # get portal urls
         run_data[RunDataKeys.DATA_PORTAL_URL] = self._get_input_portal_url_from_input_uri(input_data)
         run_data[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._get_run_portal_url(run_id=input_run_id)
-        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data)
+        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data, log_warning=True)
         return run_data
 
     def _get_run_from_index_service(self, flow_run_id, **kwargs):
