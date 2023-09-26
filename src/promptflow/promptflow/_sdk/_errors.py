@@ -65,12 +65,6 @@ class GenerateFlowToolsJsonError(PromptflowException):
     pass
 
 
-class UpdateRunError(PromptflowException):
-    """Exception raised if run update failed."""
-
-    pass
-
-
 class BulkRunException(PromptflowException):
     """Exception raised when bulk run failed."""
 

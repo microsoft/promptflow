@@ -280,6 +280,14 @@ class TestFlowRun:
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
 
+        # test wrong type of parameters won't raise error, just log warnings and got ignored
+        run = remote_client.runs.update(
+            tags={"test_tag": {"a": 1}},
+        )
+        assert run.display_name == new_display_name
+        assert run.description == new_description
+        assert run.tags["test_tag"] == test_mark
+
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification_with_additional_include",

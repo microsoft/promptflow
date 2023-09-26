@@ -40,7 +40,7 @@ from promptflow._sdk._constants import (
     RunHistoryKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError, UpdateRunError
+from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
@@ -560,14 +560,13 @@ class RunOperations(_ScopeDependentOperations):
         display_name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-    ) -> Run:
+    ) -> Optional[Run]:
         """Update a run. May update the display name, description or tags.
 
         .. note::
 
             - Display name and description are strings, and tags is a dictionary of key-value pairs, both key and value
             are also strings.
-
             - Tags is a dictionary of key-value pairs. Updating tags will overwrite the existing key-value pair,
             but will not delete the existing key-value pairs.
 
@@ -581,28 +580,32 @@ class RunOperations(_ScopeDependentOperations):
         :type tags: Optional[Dict[str, str]]
         :raises UpdateRunError: If nothing or wrong type values provided to update the run.
         :return: The run object
-        :rtype: ~promptflow.entities.Run
+        :rtype: Optional[~promptflow.entities.Run]
         """
         run = Run._validate_and_return_run_name(run)
         if display_name is None and description is None and tags is None:
-            raise UpdateRunError("Nothing provided to update the run.")
+            logger.warning("Nothing provided to update the run.")
+            return None
 
         payload = {}
 
-        if not isinstance(display_name, str):
-            raise UpdateRunError(f"Display name must be a string, got {type(display_name)!r}.")
-        payload["displayName"] = display_name
+        if isinstance(display_name, str):
+            payload["displayName"] = display_name
+        elif display_name is not None:
+            logger.warning(f"Display name must be a string, got {type(display_name)!r}: {display_name!r}.")
 
-        if not isinstance(description, str):
-            raise UpdateRunError(f"Description must be a string, got {type(description)!r}.")
-        payload["description"] = description
+        if isinstance(description, str):
+            payload["description"] = description
+        elif description is not None:
+            logger.warning(f"Description must be a string, got {type(description)!r}: {description!r}.")
 
         # check if the tags type is Dict[str, str]
-        if not isinstance(tags, dict) or any(
-            not isinstance(key, str) or not isinstance(value, str) for key, value in tags.items()
+        if isinstance(tags, dict) and all(
+            isinstance(key, str) and isinstance(value, str) for key, value in tags.items()
         ):
-            raise UpdateRunError("Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags.")
-        payload["tags"] = tags
+            payload["tags"] = tags
+        elif tags is not None:
+            logger.warning(f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}.")
 
         return self._modify_run_in_run_history(run_id=run, payload=payload)
 
