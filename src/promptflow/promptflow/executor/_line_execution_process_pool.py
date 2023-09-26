@@ -218,7 +218,7 @@ class LineExecutionProcessPool:
                 except queue.Empty:
                     continue
 
-            self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
+            self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
             # Handling the timeout of a line execution process.
             if not completed:
                 logger.warning(f"Line {line_number} timeout after {timeout_time} seconds.")
@@ -227,7 +227,7 @@ class LineExecutionProcessPool:
                     inputs, run_id, line_number, self._flow_id, start_time, ex
                 )
                 result_list.append(result)
-                self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number)
+                self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
                 healthy_ensured_process.end()
                 healthy_ensured_process.start_new()
 
