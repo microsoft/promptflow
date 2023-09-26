@@ -219,7 +219,7 @@ class BuiltinsManager:
             error_type_and_message = f"({ex.__class__.__name__}) {ex}"
             raise ToolLoadError(
                 module=module_name,
-                message_format=("Failed to load package tool '{tool_name}': {error_type_and_message}"),
+                message_format="Failed to load package tool '{tool_name}': {error_type_and_message}",
                 tool_name=tool_name,
                 error_type_and_message=error_type_and_message,
             ) from ex

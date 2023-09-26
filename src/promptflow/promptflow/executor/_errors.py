@@ -192,9 +192,9 @@ class LineExecutionTimeoutError(UserErrorException):
 class ResolveToolError(PromptflowException):
     """Exception raised when tool load failed.
 
-    It is used to append the name of the node in question to the error message to improve the user experience.
-    ResolveToolError has no classification of its own.
-    So we need to rely on inner_error to redefine its additional_info and error_codes.
+    It is used to append the name of the failed node to the error message to improve the user experience.
+    It simply wraps the error thrown by the Resolve Tool phase.
+    It has the same additional_info and error_codes as inner error.
     """
 
     def __init__(self, *, node_name: str, target: ErrorTarget = ErrorTarget.EXECUTOR, module: str = None):

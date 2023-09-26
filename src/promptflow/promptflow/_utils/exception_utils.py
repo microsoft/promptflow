@@ -206,11 +206,10 @@ class ExceptionPresenter:
         See the below link for details:
         https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
 
-        For general exceptions, the hierarchy should be:
-        ["SystemError", {exception type name}]
+        This method returns the error codes in a list. It will be converted into a nested json format by
+        error_code_recursed.
         """
-        error_codes = [infer_error_code_from_class(SystemErrorException), self._ex.__class__.__name__]
-        return error_codes
+        return [infer_error_code_from_class(SystemErrorException), self._ex.__class__.__name__]
 
     @property
     def error_code_recursed(self):
@@ -254,7 +253,7 @@ class ExceptionPresenter:
         This dict specification corresponds to the specification of the Microsoft API Guidelines:
         https://github.com/microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses
 
-        Note that this dict representation the "error" field in the response body of the API.
+        Note that this dict represents the "error" field in the response body of the API.
         The whole error response is then populated in another place outside of this class.
         """
         if isinstance(self._ex, JsonSerializedPromptflowException):
