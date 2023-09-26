@@ -14,6 +14,9 @@ from dateutil import parser as date_parser
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
     PARAMS_OVERRIDE_KEY,
+    RUN_MACRO,
+    TIMESTAMP_MACRO,
+    VARIANT_ID_MACRO,
     AzureRunTypes,
     FlowRunProperties,
     RestRunTypes,
@@ -396,21 +399,23 @@ class Run(YAMLTranslatableMixin):
 
     def _format_display_name(self) -> str:
         """
-        Format display name.
-            For run without upstream run (variant run)
-                the pattern is {client_run_display_name}-{variant_id}-{timestamp}
-            For run with upstream run (variant run)
-                the pattern is {upstream_run_display_name}-{client_run_display_name}-{timestamp}
+        Format display name. Replace macros in display name with actual values.
+        The following macros are supported: ${variant_id}, ${run}, ${timestamp}
+
+        For example,
+            if the display name is "run-${variant_id}-${timestamp}"
+            it will be formatted to "run-variant_1-20210901123456"
         """
 
         display_name = self._get_default_display_name()
         time_stamp = datetime.datetime.now().strftime("%Y%m%d%H%M")
         if self.run:
-            display_name = f"{self.run.display_name}-{display_name}-{time_stamp}"
-        else:
-            variant = self.variant
-            variant = parse_variant(variant)[1] if variant else "default"
-            display_name = f"{display_name}-{variant}-{time_stamp}"
+            display_name = display_name.replace(RUN_MACRO, self._validate_and_return_run_name(self.run))
+        display_name = display_name.replace(TIMESTAMP_MACRO, time_stamp)
+        variant = self.variant
+        variant = parse_variant(variant)[1] if variant else "default"
+        display_name = display_name.replace(VARIANT_ID_MACRO, variant)
+
         return display_name
 
     def _get_flow_dir(self) -> Path:

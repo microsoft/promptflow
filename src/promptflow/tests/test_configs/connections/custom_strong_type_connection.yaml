@@ -2,6 +2,8 @@ name: my_custom_strong_type_connection
 type: custom
 custom_type: MyFirstConnection
 module: my_tool_package.connections
+package: test-custom-tools
+package_version: 0.0.1
 configs:
   api_base: "This is my first connection."
 secrets:  # must-have
