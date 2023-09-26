@@ -63,15 +63,15 @@ def add_connection_parser(subparsers):
 
 def add_connection_create(subparsers):
     epilog = """
-Examples:
-
-# Creating a connection with yaml file:
-pf connection create -f connection.yaml
-# Creating a connection with yaml file and overrides:
-pf connection create -f connection.yaml --set api_key="my_api_key"
-# Creating a custom connection with .env file, note that overrides specified by --set will be ignored:
-pf connection create -f .env --name custom
-"""
+    Examples:
+    
+    # Creating a connection with yaml file:
+    pf connection create -f connection.yaml
+    # Creating a connection with yaml file and overrides:
+    pf connection create -f connection.yaml --set api_key="my_api_key"
+    # Creating a custom connection with .env file, note that overrides specified by --set will be ignored:
+    pf connection create -f .env --name custom
+    """
     activate_action(
         name="create",
         description="Create a connection.",
@@ -85,11 +85,11 @@ pf connection create -f .env --name custom
 
 def add_connection_update(subparsers):
     epilog = """
-Examples:
-
-# Updating a connection:
-pf connection update -n my_connection --set api_key="my_api_key"
-"""
+    Examples:
+    
+    # Updating a connection:
+    pf connection update -n my_connection --set api_key="my_api_key"
+    """
     activate_action(
         name="update",
         description="Update a connection.",
@@ -103,11 +103,11 @@ pf connection update -n my_connection --set api_key="my_api_key"
 
 def add_connection_show(subparsers):
     epilog = """
-Examples:
-
-# Get and show a connection:
-pf connection show -n my_connection_name
-"""
+    Examples:
+    
+    # Get and show a connection:
+    pf connection show -n my_connection_name
+    """
     activate_action(
         name="show",
         description="Show a connection for promptflow.",
@@ -121,11 +121,11 @@ pf connection show -n my_connection_name
 
 def add_connection_delete(subparsers):
     epilog = """
-Examples:
-
-# Delete a connection:
-pf connection delete -n my_connection_name
-"""
+    Examples:
+    
+    # Delete a connection:
+    pf connection delete -n my_connection_name
+    """
     activate_action(
         name="delete",
         description="Delete a connection with specific name.",
@@ -139,11 +139,11 @@ pf connection delete -n my_connection_name
 
 def add_connection_list(subparsers):
     epilog = """
-Examples:
-
-# List all connections:
-pf connection list
-"""
+    Examples:
+    
+    # List all connections:
+    pf connection list
+    """
     activate_action(
         name="list",
         description="List all connections.",
@@ -157,11 +157,11 @@ pf connection list
 
 def add_gen_connection_template(subparsers):
     epilog = """
-Examples:
-
-# Generate connection template:
-pf connection gen-template -n my_connection_name -m my_module_name --package my_package_name --output ./output
-"""
+    Examples:
+    
+    # Generate connection template:
+    pf connection gen-template -n my_connection_name -m my_module_name --package my_package_name --output ./output
+    """
     activate_action(
         name="gen-template",
         description="Generate connection template.",
