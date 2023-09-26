@@ -40,34 +40,37 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
 
         return True
 
-    def _try_pop_event_type(self, event_type: LangChainEventType):
-        """Try to pop the event type from the stack.
-
-        If the event type is not the same as the top of the stack, do not pop and return false.
-        This is used to avoid poping wrong events then causing error.
-        One example is that on_agent_finish is called but on_agent_action is not called
-        when we test agent type CHAT_CONVERSATIONAL_REACT_DESCRIPTION."""
-        if not self._events_stack:
-            return False
-        if self._events_stack[-1] == event_type:
-            self._events_stack.pop()
-            return True
-        elif self._events_stack[-1] < event_type:
-            self._events_stack.pop()
-            self._pop()
-            return self._try_pop_event_type(event_type)
-        else:
-            return False
-
     def _push(self, trace: Trace):
         if not self._tracer:
             return
         self._tracer._push(trace)
 
-    def _pop(self, output=None, error: Optional[Exception] = None):
+    def _pop(self, output=None, error: Optional[Exception] = None, event_type: Optional[LangChainEventType] = None):
+        """Pop the trace from the stack.
+
+        If the event type is not provided, pop the top of the stack.
+        If the event type is less than the top of the stack, pop the top of the stack and call _pop again.
+        If the event type is not the same as the top of the stack, do not pop and return false.
+        This is used to avoid poping wrong events then causing error.
+        One example is that on_agent_finish is called but on_agent_action is not called
+        when we test agent type CHAT_CONVERSATIONAL_REACT_DESCRIPTION."""
+
         if not self._tracer:
             return
-        self._tracer._pop(output, error)
+        if not event_type:
+            self._tracer._pop(output, error)
+        else:
+            if not self._events_stack:
+                return
+            if self._events_stack[-1] == event_type:
+                self._events_stack.pop()
+                self._tracer._pop(output, error)
+            elif self._events_stack[-1] < event_type:
+                self._events_stack.pop()
+                self._tracer._pop()
+                self._pop(output, error, event_type)
+            else:
+                return
 
     def on_llm_start(self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any) -> None:
         """Run when LLM starts running.
@@ -100,8 +103,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         """
 
         output = response
-        if self._try_pop_event_type(LangChainEventType.LLM):
-            self._pop(output)
+        self._pop(output, event_type=LangChainEventType.LLM)
 
     def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Run when LLM errors.
@@ -110,8 +112,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         :type error: Union[Exception, KeyboardInterrupt]
         """
 
-        if self._try_pop_event_type(LangChainEventType.LLM):
-            self._pop(error=error)
+        self._pop(error=error, event_type=LangChainEventType.LLM)
 
     def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any) -> None:
         """Run when chain starts running.
@@ -134,8 +135,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         :type outputs: Dict[str, Any]
         """
 
-        if self._try_pop_event_type(LangChainEventType.CHAIN):
-            self._pop(outputs)
+        self._pop(outputs, event_type=LangChainEventType.CHAIN)
 
     def on_chain_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Run when chain errors.
@@ -144,8 +144,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         :type error: Union[Exception, KeyboardInterrupt]
         """
 
-        if self._try_pop_event_type(LangChainEventType.CHAIN):
-            self._pop(error=error)
+        self._pop(error=error, event_type=LangChainEventType.CHAIN)
 
     def on_tool_start(self, serialized: Dict[str, Any], input_str: str, **kwargs: Any) -> None:
         """Run when tool starts running.
@@ -168,8 +167,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         :type output: str
         """
 
-        if self._try_pop_event_type(LangChainEventType.TOOL):
-            self._pop(output)
+        self._pop(output, event_type=LangChainEventType.TOOL)
 
     def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> None:
         """Run when tool errors.
@@ -178,8 +176,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         :type error: Union[Exception, KeyboardInterrupt]
         """
 
-        if self._try_pop_event_type(LangChainEventType.TOOL):
-            self._pop(error=error)
+        self._pop(error=error, event_type=LangChainEventType.TOOL)
 
     def on_text(self, text: str, **kwargs: Any) -> None:
         """Run on arbitrary text.
@@ -210,8 +207,7 @@ class PromptFlowCallbackHandler(BaseCallbackHandler):
         """
 
         output = finish.return_values
-        if self._try_pop_event_type(LangChainEventType.AGENT):
-            self._pop(output)
+        self._pop(output, event_type=LangChainEventType.AGENT)
 
     def _get_name(self, serialized: Dict[str, Any]):
         # For version 0.0.197 and earlier, the name is stored in the "name" field,
