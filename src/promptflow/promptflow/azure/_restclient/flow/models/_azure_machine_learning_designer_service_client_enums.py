@@ -403,6 +403,7 @@ class ApplicationEndpointType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     THEIA = "Theia"
     GRAFANA = "Grafana"
     CUSTOM = "Custom"
+    RAY_DASHBOARD = "RayDashboard"
 
 class ArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -857,25 +858,6 @@ class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BULK_TEST = "BulkTest"
     EVAL = "Eval"
     PAIRWISE_EVAL = "PairwiseEval"
-
-class FlowRunStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
-    STARTED = "Started"
-    COMPLETED = "Completed"
-    FAILED = "Failed"
-    CANCELLED = "Cancelled"
-    NOT_STARTED = "NotStarted"
-    RUNNING = "Running"
-    QUEUED = "Queued"
-    PAUSED = "Paused"
-    UNAPPROVED = "Unapproved"
-    STARTING = "Starting"
-    PREPARING = "Preparing"
-    CANCEL_REQUESTED = "CancelRequested"
-    PAUSING = "Pausing"
-    FINALIZING = "Finalizing"
-    CANCELED = "Canceled"
-    BYPASSED = "Bypassed"
 
 class FlowRuntimeSubmissionApiVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1387,6 +1369,11 @@ class RecurrenceFrequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEEK = "Week"
     MONTH = "Month"
 
+class RunDisplayNameGenerationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    AUTO_APPEND = "AutoAppend"
+    USER_PROVIDED_MACRO = "UserProvidedMacro"
+
 class RunSettingParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNDEFINED = "Undefined"
@@ -1720,6 +1707,7 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FUNCTION_LIST = "function_list"
     FUNCTION_STR = "function_str"
     FORM_RECOGNIZER_CONNECTION = "FormRecognizerConnection"
+    FILE_PATH = "file_path"
 
 class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
