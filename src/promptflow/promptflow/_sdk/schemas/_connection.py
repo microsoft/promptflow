@@ -122,6 +122,8 @@ class CustomStrongTypeConnectionSchema(CustomConnectionSchema):
     name = fields.Str(attribute="name")
     module = fields.Str(required=True)
     custom_type = fields.Str(required=True)
+    package = fields.Str(required=True)
+    package_version = fields.Str(required=True)
 
     # TODO: validate configs and secrets
     @validates("configs")
