@@ -11,6 +11,8 @@ from promptflow._sdk._utils import call_from_extension
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 from promptflow._utils.utils import environment_variable_overwrite
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @contextlib.contextmanager
 def cli_consent_config_overwrite(val):
@@ -26,6 +28,7 @@ def cli_consent_config_overwrite(val):
             config.set_telemetry_consent(False)
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestTelemetry:
     def test_logging_handler(self):
