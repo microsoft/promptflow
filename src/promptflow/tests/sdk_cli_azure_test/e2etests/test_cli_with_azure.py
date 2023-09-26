@@ -56,6 +56,24 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
 
+    @pytest.mark.skip("Custom tool pkg and promptprompt pkg with CustomStrongTypeConnection not installed on runtime.")
+    def test_basic_flow_run_with_custom_strong_type_connection(self, pf, runtime) -> None:
+        name = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
+            "--data",
+            f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            "--name",
+            name,
+            pf=pf,
+            runtime=runtime,
+        )
+        run = pf.runs.get(run=name)
+        assert isinstance(run, Run)
+
     def test_run_with_remote_data(self, pf, runtime, remote_web_classification_data, temp_output_dir: str):
         # run with arm id
         name = str(uuid.uuid4())

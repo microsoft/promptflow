@@ -19,7 +19,7 @@ FLOW_RESULT_KEYS = ["category", "evidence"]
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
@@ -33,15 +33,18 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    def test_pf_test_flow_with_custom_strong_type_connection(self, is_custom_tool_pkg_installed):
-        if is_custom_tool_pkg_installed:
-            inputs = {"text": "Hello World!"}
-            flow_path = Path(f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow").absolute()
+    @pytest.mark.skip("TODO: need to fix random pacakge not found error")
+    def test_pf_test_flow_with_custom_strong_type_connection(self, install_custom_tool_pkg):
+        inputs = {"text": "Hello World!"}
+        flow_path = Path(f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow").absolute()
 
-            result = _client.test(flow=flow_path, inputs=inputs)
-            assert result == {"out": "connection_value is MyFirstConnection: True"}
-        else:
-            pytest.skip("Custom tool package 'my_tools_package_with_cstc' not installed.")
+        # Test that connection would be custom strong type in flow
+        result = _client.test(flow=flow_path, inputs=inputs)
+        assert result == {"out": "connection_value is MyFirstConnection: True"}
+
+        # Test that connection
+        result = _client.test(flow=flow_path, inputs=inputs, node="My_Second_Tool_usi3")
+        assert result == "Hello World!This is my first custom connection."
 
     def test_pf_test_with_streaming_output(self):
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
