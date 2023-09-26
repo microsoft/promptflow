@@ -1,0 +1,18 @@
+#!/bin/bash
+
+exit_code="$1" # The exit code from nginx
+signal="$2"    # The signal which caused nginx to exit (or 0)
+
+echo "$(date -uIns) - promptflow-serve/finish $@"
+
+# stop all gunicorn processes
+echo "$(date -uIns) - Stopping all Gunicorn processes"
+pkill gunicorn
+while pgrep gunicorn >/dev/null; do
+  echo "$(date -uIns) - Gunicorn process is still running, waiting for 1s"
+  sleep 1
+done
+
+echo "$(date -uIns) - Stopped all Gunicorn processes"
+
+killall runsvdir
