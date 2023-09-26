@@ -52,4 +52,5 @@ COPY ./runit /var/runit
 # grant permission
 RUN chmod -R +x /var/runit
 
-CMD ["runsvdir", "/var/runit"]
+COPY ./start.sh /
+CMD ["bash", "./start.sh"]
