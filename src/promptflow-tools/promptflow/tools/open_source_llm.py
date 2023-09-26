@@ -86,6 +86,7 @@ class ModelFamily(str, Enum):
 class API(str, Enum):
     CHAT = "chat"
     COMPLETION = "completion"
+    EMBEDDING = "embedding"
 
 
 class ContentFormatterBase:
