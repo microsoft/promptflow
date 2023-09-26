@@ -8,6 +8,7 @@ from pytest_mock import MockerFixture  # noqa: E402
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
 from promptflow._internal import ConnectionManager
+from promptflow.connections import CustomConnection
 from promptflow.tools.aoai import AzureOpenAI
 
 PROMOTFLOW_ROOT = Path(__file__).absolute().parents[1]
@@ -46,7 +47,7 @@ def serp_connection():
 
 @pytest.fixture
 def gpt2_custom_connection():
-    return ConnectionManager().get("gpt2_custom_connection")
+    return ConnectionManager().get("custom_connection")
 
 
 @pytest.fixture(autouse=True)
@@ -56,9 +57,14 @@ def skip_if_no_key(request, mocker):
         conn_name = request.node.get_closest_marker('skip_if_no_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
-        if "-api-key" in connection.api_key:
-            pytest.skip('skipped because no key')
-
+        try:
+            if "-api-key" in connection.api_key:
+                pytest.skip('skipped because no key')
+        except AttributeError:
+            if "api_key" in connection.secrets and "-api-key" in connection.secrets["api_key"]:
+                pytest.skip('skipped because no key')
+            elif "endpoint_api_key" in connection.secrets and "-api-key" in connection.secrets["endpoint_api_key"]:
+                pytest.skip('skipped because no key')
 
 # example prompts
 @pytest.fixture
