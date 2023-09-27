@@ -275,6 +275,7 @@ class ConnectionType(str, Enum):
 class ConnectionFields(str, Enum):
     CONNECTION = "connection"
     DEPLOYMENT_NAME = "deployment_name"
+    MODEL = "model"
 
 
 class RunDataKeys:
@@ -292,7 +293,11 @@ class ConnectionProvider(str, Enum):
     AZURE = "azureml"
 
 
-SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
+SUPPORTED_CONNECTION_FIELDS = {
+    ConnectionFields.CONNECTION.value,
+    ConnectionFields.DEPLOYMENT_NAME.value,
+    ConnectionFields.MODEL.value,
+}
 
 LOCAL_SERVICE_PORT = 5000
 
@@ -301,3 +306,5 @@ BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
 RUN_MACRO = "${run}"
 VARIANT_ID_MACRO = "${variant_id}"
 TIMESTAMP_MACRO = "${timestamp}"
+
+DEFAULT_VARIANT = "variant_0"
