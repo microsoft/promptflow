@@ -786,6 +786,15 @@ class FlowExecutor:
         :return: A list of dictionaries containing the resolved inputs for each line in the flow.
         :rtype: List[Dict[str, Any]]
         """
+        if not inputs_mapping:
+            logger.warning(
+                msg=(
+                    "Starting run without column mapping may lead to unexpected results. "
+                    "Please consult the following documentation for more information: "
+                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                )
+            )
+
         inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
         resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         return resolved_inputs
@@ -1028,13 +1037,12 @@ class FlowExecutor:
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
             invalid_relations = ", ".join(notfound_mapping_relations)
-            # TODO: Replace detail message about default mapping by doc link.
             raise InputMappingError(
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "If a mapping reads input from 'data', it might be generated from the YAML input section, "
-                    "and you may need to manually assign input mapping based on your input data."
+                    "For more information, refer to the following documentation: "
+                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
                 ),
                 invalid_relations=invalid_relations,
             )
