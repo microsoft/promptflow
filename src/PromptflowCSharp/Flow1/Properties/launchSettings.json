@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Flow1": {
+      "commandName": "Project",
+      "commandLineArgs": "--input ../../../data.jsonl"
+    }
+  }
+}

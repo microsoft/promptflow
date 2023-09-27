@@ -1,19 +1,42 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using Mono.Options;
+using Newtonsoft.Json;
 using PromptFlow;
 
-Console.WriteLine("Entry script started.");
+// these variables will be set when the command line is parsed
+string flow = "../../../flow.dag.yaml";
+string input = "../../../data.jsonl";
 
-Executor executor = new();
+// these are the available options, note that they set the variables
+var options = new OptionSet {
+    { "input=", "input data.", (string r) => input = r },
+};
 
-var outputs = executor.Execute("../../../flow.dag.yaml", new Dictionary<string, string>()
+try
 {
-    {"prompt", "test input prompt" }
-});
-
-Console.WriteLine("\nFlow executed with output: ");
-foreach (var output in outputs)
+    options.Parse(args);
+}
+catch (OptionException e)
 {
-    Console.WriteLine($"{output.Key}: {output.Value}");
+    Console.WriteLine("Met error in parsing arguments, use default argument to run:");
+    Console.WriteLine(e.ToString());
+}
+
+Console.WriteLine($"Entry script started with arguments: input=\"{input}\".");
+
+Executor executor = new(flow);
+
+foreach (var inputLine in System.IO.File.ReadAllLines(input))
+{
+    var temp = JsonConvert.DeserializeObject<Dictionary<string, string>>(inputLine)
+        ?? throw new ArgumentException($"Can't deserialize as Dict[str, str] {inputLine} correctly");
+    var outputs = executor.Execute(temp);
+
+    Console.WriteLine("\nFlow executed with output: ");
+    foreach (var output in outputs)
+    {
+        Console.WriteLine($"{output.Key}: {output.Value}");
+    }
 }
 
 Console.WriteLine("\nEntry script finished.");

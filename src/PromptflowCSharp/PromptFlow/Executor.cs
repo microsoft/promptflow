@@ -7,12 +7,58 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace PromptFlow
 {
+    internal class ExecutableNode
+    {
+        public string Name { get; set; } = String.Empty;
+
+        public MethodInfo Method { get; set; }
+
+        public object? Object { get; set; }
+
+        public Dictionary<string, string> Inputs { get; set; } = new Dictionary<string, string>();
+
+        public ExecutableNode(MethodInfo method)
+        {
+            Method = method;
+        }
+    }
+
     public class Executor
     {
         internal IEnumerable<Assembly> assemblies;
+        Flow flowInstance;
+        List<ExecutableNode> executableNodes;
 
-        public Executor() {
+
+        public Executor(string flow)
+        {
             assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var deserializer = new DeserializerBuilder()
+                .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                .Build();
+
+            using var reader = new StreamReader(flow);
+            flowInstance = deserializer.Deserialize<Flow>(reader.ReadToEnd());
+            executableNodes = new List<ExecutableNode>();
+            foreach (var node in flowInstance.Nodes)
+            {
+                if (node.Type != "csharp")
+                {
+                    throw new Exception($"Support csharp node only for now but got {node.Type}");
+                }
+                if (node.Source.Type != "code")
+                {
+                    throw new Exception($"Support type code for csharp node only for now but got{node.Source.Type}");
+                }
+                var targetTuple = GetToolFunction(node.Source.Path);
+                var executableNode = new ExecutableNode(targetTuple.Item2)
+                {
+                    Name = node.Name,
+                    Object = targetTuple.Item1,
+                    Inputs = node.Inputs,
+                };
+                executableNodes.Add(executableNode);
+            }
         }
 
         private Tuple<object?, MethodInfo> GetToolFunction(string path)
@@ -48,50 +94,28 @@ namespace PromptFlow
             }
         }
 
-        public Dictionary<string, object?> Execute(string flow, Dictionary<string, string> inputs)
+        public Dictionary<string, object?> Execute(Dictionary<string, string> inputs)
         {
-            Flow flowInstance;
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                .Build();
-
-            using (var reader = new StreamReader(flow))
-            {
-                flowInstance = deserializer.Deserialize<Flow>(reader.ReadToEnd());
-            }
-
             Dictionary<string, object?> crossNodeIO = new();
             foreach (var key in flowInstance.Inputs.Keys)
             {
                 crossNodeIO["${inputs." + key + "}"] = inputs.GetValueOrDefault(key) ?? flowInstance.Inputs[key].Default;
             }
 
-            foreach (var node in flowInstance.Nodes)
+            foreach (var node in executableNodes)
             {
-                if (node.Type != "csharp")
-                {
-                    throw new Exception($"Support csharp node only for now but got {node.Type}");
-                }
-                if (node.Source.Type != "code")
-                {
-                    throw new Exception($"Support type code for csharp node only for now but got{node.Source.Type}");
-                }
-
                 Console.WriteLine($"Executing node {node.Name}");
                 var parameters = new List<object?>();
-                var targetTuple = GetToolFunction(node.Source.Path);
-                var targetObject = targetTuple.Item1;
-                var targetFunction = targetTuple.Item2;
-                foreach (var param in targetFunction.GetParameters())
+                foreach (var param in node.Method.GetParameters())
                 {
                     if (param == null)
                     {
                         // not sure why this happen
                         break;
                     }
-                    if (!node.Inputs.ContainsKey(param.Name ?? throw new ArgumentException($"Parameters of tool function {targetFunction.Name} must have a name.")))
+                    if (!node.Inputs.ContainsKey(param.Name ?? throw new ArgumentException($"Parameters of tool function {node.Method.Name} must have a name.")))
                     {
-                        throw new ArgumentException($"Parameter {param.Name} of tool function {targetFunction.Name} can't be found in inputs of node {node.Name}.");
+                        throw new ArgumentException($"Parameter {param.Name} of tool function {node.Method.Name} can't be found in inputs of node {node.Name}.");
                     }
                     var inputExpression = node.Inputs[param.Name];
                     if (!crossNodeIO.ContainsKey(inputExpression))
@@ -101,7 +125,7 @@ namespace PromptFlow
                     }
                     parameters.Add(crossNodeIO[inputExpression]);
                 }
-                var output = targetFunction.Invoke(targetObject, parameters.ToArray());
+                var output = node.Method.Invoke(node.Object, parameters.ToArray());
                 Console.WriteLine($"Executed node {node.Name} and got output: {output}");
                 crossNodeIO["${" + node.Name + ".output}"] = output;
             }
