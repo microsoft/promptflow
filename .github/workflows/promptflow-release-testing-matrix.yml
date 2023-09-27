@@ -30,7 +30,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         testType: [sdk-cli, executor]
-        pythonVersion: ['3.8', '3.9', '3.10', '3.11', '3.12.0-rc.3']
+        pythonVersion: ['3.8', '3.9', '3.10', '3.11']
     runs-on: ${{ matrix.os }}
     steps:
     - name: checkout
@@ -66,7 +66,6 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        conda activate release-env
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
@@ -81,7 +80,6 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        conda activate release-env
         pip install langchain
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
