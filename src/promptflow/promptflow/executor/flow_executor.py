@@ -32,7 +32,6 @@ from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
-    InvalidAggregationInput,
     NodeOutputNotFound,
     OutputReferenceBypassed,
     OutputReferenceNotExist,
@@ -554,42 +553,13 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         aggregated_flow_inputs = dict(inputs or {})
         aggregation_inputs = dict(aggregation_inputs or {})
-        self._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
+        FlowValidator._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
         aggregated_flow_inputs = self._apply_default_value_for_aggregation_input(
             self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
         )
 
         with self._run_tracker.node_log_manager:
             return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
-
-    @staticmethod
-    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
-        """Validate the aggregation inputs according to the flow inputs."""
-        for key, value in aggregated_flow_inputs.items():
-            if key in aggregation_inputs:
-                raise InvalidAggregationInput(
-                    message_format="Input '{input_key}' appear in both flow aggregation input and aggregation input.",
-                    input_key=key,
-                )
-            if not isinstance(value, list):
-                raise InvalidAggregationInput(
-                    message_format="Flow aggregation input {input_key} should be one list.", input_key=key
-                )
-
-        for key, value in aggregation_inputs.items():
-            if not isinstance(value, list):
-                raise InvalidAggregationInput(
-                    message_format="Aggregation input {input_key} should be one list.", input_key=key
-                )
-
-        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
-        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
-        if len(set(inputs_len.values())) > 1:
-            raise InvalidAggregationInput(
-                message_format="Whole aggregation inputs should have the same length. "
-                "Current key length mapping are: {key_len}",
-                key_len=inputs_len,
-            )
 
     @staticmethod
     def _apply_default_value_for_aggregation_input(
@@ -887,6 +857,8 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+                # Make sure the run_info with converted inputs results rather than original inputs
+                run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output

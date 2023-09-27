@@ -9,7 +9,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
-from promptflow.executor._errors import ConnectionNotFound, InputTypeError
+from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 from promptflow.executor.flow_executor import BulkResult, LineResult
 from promptflow.storage import AbstractRunStorage
 
@@ -265,13 +265,14 @@ class TestExecutor:
         assert type(e.value).__name__ == "WrappedOpenAIError"
         assert "The API deployment for this resource does not exist." in str(e.value)
 
-        with pytest.raises(ConnectionNotFound) as e:
+        with pytest.raises(ResolveToolError) as e:
             executor = FlowExecutor.create(
                 get_yaml_file(SAMPLE_FLOW),
                 dev_connections,
                 node_override={"classify_with_llm.connection": "dummy_connection"},
                 raise_ex=True,
             )
+        assert isinstance(e.value.inner_exception, ConnectionNotFound)
         assert "Connection 'dummy_connection' not found" in str(e.value)
 
     @pytest.mark.parametrize(
@@ -372,6 +373,23 @@ class TestExecutor:
         # Assert for exec
         exec_result = executor.exec({})
         assert exec_result["output"] == default_input_value
+
+    @pytest.mark.parametrize(
+        "flow_folder, batch_input, expected_type, validate_inputs",
+        [
+            ("simple_aggregation", [{"text": 4}], str, True),
+            ("simple_aggregation", [{"text": 4.5}], str, True),
+            ("simple_aggregation", [{"text": "3.0"}], str, True),
+            ("simple_aggregation", [{"text": 4}], int, False),
+        ],
+    )
+    def test_bulk_run_line_result(self, flow_folder, batch_input, expected_type, validate_inputs, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        bulk_result = executor.exec_bulk(
+            batch_input,
+            validate_inputs=validate_inputs,
+        )
+        assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
 
     def test_executor_for_script_tool_with_init(self, dev_connections):
         executor = FlowExecutor.create(get_yaml_file("script_tool_with_init"), dev_connections)

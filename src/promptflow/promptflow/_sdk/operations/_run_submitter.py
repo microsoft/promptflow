@@ -27,10 +27,12 @@ from promptflow._sdk._constants import (
     ConnectionFields,
 )
 from promptflow._sdk._errors import InvalidFlowError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     parse_variant,
     update_dict_value_with_connections,
@@ -176,7 +178,7 @@ def variant_overwrite_context(
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
             remove_additional_includes(Path(temp_dir))
-            flow = Flow.load(temp_dir)
+            flow = load_flow(temp_dir)
             yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
@@ -205,7 +207,7 @@ class SubmitterHelper:
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return Flow._get_local_connections(executable=executable)
+        return get_local_connections_from_executable(executable=executable)
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict):
@@ -314,7 +316,7 @@ class RunSubmitter:
             # exceptions
             local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
             # system metrics: token related
-            system_metrics = bulk_result.get_openai_metrics()
+            system_metrics = {} if bulk_result is None else bulk_result.get_openai_metrics()
 
             self.run_operations.update(
                 name=run.name,

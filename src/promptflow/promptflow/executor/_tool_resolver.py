@@ -10,22 +10,20 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.tools_manager import (
-    BuiltinsManager,
-    ToolLoader,
-    connection_type_to_api_mapping,
-)
+from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     InvalidSource,
     NodeInputValidationError,
+    ResolveToolError,
     ValueTypeUnresolved,
 )
 
@@ -55,6 +53,10 @@ class ToolResolver:
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+
+        if isinstance(connection_value, CustomConnection) and connection_value._is_custom_strong_type():
+            return connection_value._convert_to_custom_strong_type()
+
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
@@ -97,26 +99,33 @@ class ToolResolver:
         return updated_node
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
-        if node.source is None:
-            raise UserErrorException(f"Node {node.name} does not have source defined.")
+        try:
+            if node.source is None:
+                raise UserErrorException(f"Node {node.name} does not have source defined.")
 
-        if node.type is ToolType.PYTHON:
-            if node.source.type == ToolSourceType.Package:
-                return self._resolve_package_node(node, convert_input_types=convert_input_types)
-            elif node.source.type == ToolSourceType.Code:
-                return self._resolve_script_node(node, convert_input_types=convert_input_types)
-            raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
-        elif node.type is ToolType.PROMPT:
-            return self._resolve_prompt_node(node)
-        elif node.type is ToolType.LLM:
-            return self._resolve_llm_node(node, convert_input_types=convert_input_types)
-        elif node.type is ToolType.CUSTOM_LLM:
-            if node.source.type == ToolSourceType.PackageWithPrompt:
-                resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
-                return self._integrate_prompt_in_package_node(node, resolved_tool)
-            raise NotImplementedError(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
-        else:
-            raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+            if node.type is ToolType.PYTHON:
+                if node.source.type == ToolSourceType.Package:
+                    return self._resolve_package_node(node, convert_input_types=convert_input_types)
+                elif node.source.type == ToolSourceType.Code:
+                    return self._resolve_script_node(node, convert_input_types=convert_input_types)
+                raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
+            elif node.type is ToolType.PROMPT:
+                return self._resolve_prompt_node(node)
+            elif node.type is ToolType.LLM:
+                return self._resolve_llm_node(node, convert_input_types=convert_input_types)
+            elif node.type is ToolType.CUSTOM_LLM:
+                if node.source.type == ToolSourceType.PackageWithPrompt:
+                    resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
+                    return self._integrate_prompt_in_package_node(node, resolved_tool)
+                raise NotImplementedError(
+                    f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
+                )
+            else:
+                raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+        except Exception as e:
+            if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
+                raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
+            raise ResolveToolError(node_name=node.name) from e
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
