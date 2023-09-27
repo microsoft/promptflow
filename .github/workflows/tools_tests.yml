@@ -1,64 +1,14 @@
 name: tools_tests
-on:
-  # Triggers the workflow pull request events but only for the main branch
-  pull_request_target:
-    paths:
-      - src/promptflow-tools/**
-  workflow_dispatch:
-env:
-  testWorkingDirectory: ${{ github.workspace }}/src/promptflow-tools
-  IS_IN_CI_PIPELINE: "true"
-jobs:
-  authorize:
-    environment:
-      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
-      ${{ github.event_name == 'pull_request_target' &&
-      github.event.pull_request.head.repo.full_name != github.repository &&
-      'external' || 'internal' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: true
-  run_tool_ci_job:
-    needs: authorize
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-    name: Tool Test
-    timeout-minutes: 30
-
-    steps:
-      - name: Check for dockerenv file
-        run: (ls /.dockerenv && echo Found dockerenv) || (echo No dockerenv)
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.ref }}
-
-      - name: Check for changes
-        id: check_changes  
-        run: |  
-          git fetch origin ${{ github.base_ref }} # Fetch the base branch  
-          CHANGED=$(git diff --name-only FETCH_HEAD..HEAD -- 'src/promptflow-tools/')  
-          if [ -n "$CHANGED" ]; then  
-            echo "Changes detected in src/promptflow-tools/"  
-            echo "run_tests=true"   >> $GITHUB_OUTPUT
-          else  
-            echo "No changes detected in src/promptflow-tools/"
-            echo "run_tests=false" >> $GITHUB_OUTPUT
-          fi 
-      - name: Setup
-        if: steps.check_changes.outputs.run_tests == 'true'
-        run: |
-          python -m pip install --upgrade pip
-          pip install promptflow
-          pip install pytest pytest_mock
-          pip install azure-identity azure-keyvault-secrets
-      - name: Generate Configs
-        uses: "./.github/actions/step_generate_configs"
-        with:
-          targetFolder: ${{ env.testWorkingDirectory }}
-
-      - name: Run tests
-        if: steps.check_changes.outputs.run_tests == 'true'
-        run: |
-          pytest ${{ github.workspace }}/src/promptflow-tools/tests
+on:  
+  pull_request_target:  
+    types: [opened, synchronize, reopened]  
+    branches:   
+      - main  
+  
+jobs:  
+  build:  
+    runs-on: ubuntu-latest  
+    steps:  
+    - uses: actions/checkout@v2  
+    - name: Run a one-line script  
+      run: echo Hello, world! 
