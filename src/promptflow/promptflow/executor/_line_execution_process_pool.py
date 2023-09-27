@@ -1,6 +1,5 @@
 import contextvars
 import math
-import time
 import multiprocessing
 import os
 import queue
@@ -50,7 +49,7 @@ class HealthyEnsuredProcess:
         self.is_ready = False
         self._executor_creation_func = executor_creation_func
 
-    def start_new(self):
+    def start_new(self, task_queue: Queue):
         input_queue = Queue()
         output_queue = Queue()
         self.input_queue = input_queue
@@ -86,7 +85,9 @@ class HealthyEnsuredProcess:
         except queue.Empty:
             logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end()
-            self.start_new()
+            # If there are no more tasks, the process is not re-created
+            if not task_queue.empty():
+                self.start_new()
 
     def end(self):
         # When process failed to start and the task_queue is empty.
@@ -112,7 +113,7 @@ class HealthyEnsuredProcess:
             logger.info(
                 f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution.")
 
-        return f"Process name({process_name})-Process id({process_pid})"
+        return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
 
 
 class LineExecutionProcessPool:
@@ -183,12 +184,14 @@ class LineExecutionProcessPool:
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
-        healthy_ensured_process.start_new()
+        # Loop until the process is ready or the task queue is empty
+        healthy_ensured_process.start_new(task_queue)
+
+        if not healthy_ensured_process.proces.is_alive():
+            return
 
         while True:
             try:
-                while not healthy_ensured_process.is_ready and not task_queue.empty():
-                    time.sleep(1)
                 args = task_queue.get(timeout=1)
             except queue.Empty:
                 logger.info(f"Process {idx} queue empty, exit.")
