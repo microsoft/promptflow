@@ -87,7 +87,7 @@ class HealthyEnsuredProcess:
             self.end()
             # If there are no more tasks, the process is not re-created
             if not task_queue.empty():
-                self.start_new()
+                self.start_new(task_queue)
 
     def end(self):
         # When process failed to start and the task_queue is empty.
@@ -233,7 +233,7 @@ class LineExecutionProcessPool:
                 self._completed_idx[line_number] = healthy_ensured_process.format_current_process(line_number, True)
                 healthy_ensured_process.end()
                 if not task_queue.empty():
-                    healthy_ensured_process.start_new()
+                    healthy_ensured_process.start_new(task_queue)
 
             self._processing_idx.pop(line_number)
             log_progress(
