@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import inspect
+
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
