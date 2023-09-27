@@ -96,7 +96,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            connections={"classify_with_llm": {"connection": "azure_open_ai"}},
+            connections={"classify_with_llm": {"connection": "azure_open_ai", "model": "gpt-3.5-turbo"}},
             runtime=runtime,
         )
         assert isinstance(run, Run)

@@ -322,6 +322,13 @@ class TestFlowRun:
         run = local_client.runs.get(name=run.name)
         assert run.status == "Completed"
 
+    def test_connection_overwrite_model(self, local_client, local_aoai_connection):
+        run = create_yaml_run(
+            source=f"{RUNS_DIR}/run_with_connections_model.yaml",
+        )
+        run = local_client.runs.get(name=run.name)
+        assert run.status == "Completed"
+
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow)
