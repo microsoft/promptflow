@@ -105,3 +105,17 @@ def prepare_symbolic_flow() -> str:
             if not Path(file_name).exists():
                 os.symlink(source_folder / file_name, file_name)
     return target_folder
+
+
+@pytest.fixture(scope="session")
+def install_custom_tool_pkg():
+    # Leave the pkg installed since multiple tests rely on it and the tests may run concurrently
+    try:
+        import my_tool_package  # noqa: F401
+
+    except ImportError:
+        import subprocess
+        import sys
+
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
+    yield

@@ -30,6 +30,8 @@ RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 BASE_PATH_CONTEXT_KEY = "base_path"
+SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
+SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
 PARAMS_OVERRIDE_KEY = "params_override"
 FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
@@ -46,9 +48,34 @@ WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
 LINE_NUMBER = "line_number"
 
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
 
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
+
+
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "promptflow.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    PACKAGE = "package"
+    PACKAGE_VERSION = "package_version"
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+    PROMPTFLOW_PACKAGE_KEY = PREFIX + PACKAGE
+    PROMPTFLOW_PACKAGE_VERSION_KEY = PREFIX + PACKAGE_VERSION
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
+        ]
 
 
 class RunTypes:
@@ -248,6 +275,7 @@ class ConnectionType(str, Enum):
 class ConnectionFields(str, Enum):
     CONNECTION = "connection"
     DEPLOYMENT_NAME = "deployment_name"
+    MODEL = "model"
 
 
 class RunDataKeys:
@@ -260,7 +288,23 @@ class RunDataKeys:
     OUTPUT_PORTAL_URL = "output_portal_url"
 
 
-SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
+class ConnectionProvider(str, Enum):
+    LOCAL = "local"
+    AZURE = "azureml"
 
+
+SUPPORTED_CONNECTION_FIELDS = {
+    ConnectionFields.CONNECTION.value,
+    ConnectionFields.DEPLOYMENT_NAME.value,
+    ConnectionFields.MODEL.value,
+}
+
+LOCAL_SERVICE_PORT = 5000
 
 BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+
+RUN_MACRO = "${run}"
+VARIANT_ID_MACRO = "${variant_id}"
+TIMESTAMP_MACRO = "${timestamp}"
+
+DEFAULT_VARIANT = "variant_0"

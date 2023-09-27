@@ -74,6 +74,7 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
+        pip install langchain
         python scripts/building/run_coverage_tests.py `
           -p ${{ env.testWorkingDirectory }}/promptflow `
           -t ${{ env.testWorkingDirectory }}/tests/executor/unittests `

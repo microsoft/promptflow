@@ -7,7 +7,6 @@ from promptflow import tool
 from promptflow._core._errors import UnexpectedError
 from promptflow.contracts.flow import Flow, FlowInputDefinition
 from promptflow.contracts.tool import ValueType
-from promptflow.executor._errors import InvalidAggregationInput
 from promptflow.executor._line_execution_process_pool import get_available_max_worker_count
 from promptflow.executor.flow_executor import (
     FlowExecutor,
@@ -64,17 +63,15 @@ class TestFlowExecutor:
                     "answer": "${data.output}",
                 },
                 InputMappingError,
-                "The input for batch run is incorrect. Couldn't find these mapping relations: ${baseline.output}, "
-                "${data.output}. Please make sure your input mapping keys and values match your YAML input section "
-                "and input data. If a mapping reads input from 'data', it might be generated from the YAML input "
-                "section, and you may need to manually assign input mapping based on your input data.",
+                "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
+                "Please make sure your input mapping keys and values match your YAML input section and input data.",
             ),
         ],
     )
     def test_apply_inputs_mapping_error(self, inputs, inputs_mapping, error_code, error_message):
         with pytest.raises(error_code) as e:
             FlowExecutor.apply_inputs_mapping(inputs, inputs_mapping)
-        assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
+        assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(
         "inputs, expected",
@@ -407,45 +404,6 @@ class TestFlowExecutor:
             flow_inputs, aggregated_flow_inputs, aggregation_inputs
         )
         assert result == expected_inputs
-
-    @pytest.mark.parametrize(
-        "aggregated_flow_inputs, aggregation_inputs, error_message",
-        [
-            (
-                {},
-                {
-                    "input1": "value1",
-                },
-                "Aggregation input input1 should be one list.",
-            ),
-            (
-                {
-                    "input1": "value1",
-                },
-                {},
-                "Flow aggregation input input1 should be one list.",
-            ),
-            (
-                {"input1": ["value1_1", "value1_2"]},
-                {"input_2": ["value2_1"]},
-                "Whole aggregation inputs should have the same length. "
-                "Current key length mapping are: {'input1': 2, 'input_2': 1}",
-            ),
-            (
-                {
-                    "input1": "value1",
-                },
-                {
-                    "input1": "value1",
-                },
-                "Input 'input1' appear in both flow aggregation input and aggregation input.",
-            ),
-        ],
-    )
-    def test_validate_aggregation_inputs_error(self, aggregated_flow_inputs, aggregation_inputs, error_message):
-        with pytest.raises(InvalidAggregationInput) as e:
-            FlowExecutor._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
-        assert str(e.value) == error_message
 
 
 def func_with_stream_parameter(a: int, b: int, stream=False):

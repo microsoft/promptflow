@@ -316,7 +316,7 @@ class RunSubmitter:
             # exceptions
             local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
             # system metrics: token related
-            system_metrics = bulk_result.get_openai_metrics()
+            system_metrics = {} if bulk_result is None else bulk_result.get_openai_metrics()
 
             self.run_operations.update(
                 name=run.name,

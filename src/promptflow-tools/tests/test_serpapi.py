@@ -25,21 +25,21 @@ class TestSerpAPI:
         assert int(result_dict["search_parameters"]["count"]) == num
         assert result_dict["search_parameters"]["safe_search"].lower() == "strict"
 
-    def test_invalid_api_key(self, serpapi_connection):
-        serpapi_connection.api_key = "hello"
+    def test_invalid_api_key(self, serp_connection):
+        serp_connection.api_key = "hello"
         query = "cute cats"
         num = 2
         engine = Engine.GOOGLE.value
         error_msg = "Invalid API key. Your API key should be here: https://serpapi.com/manage-api-key"
         with pytest.raises(UserErrorException) as exc_info:
-            search(connection=serpapi_connection, query=query, num=num, engine=engine)
+            search(connection=serp_connection, query=query, num=num, engine=engine)
         assert error_msg == exc_info.value.args[0]
 
     @pytest.mark.parametrize("engine", [Engine.GOOGLE.value, Engine.BING.value])
-    def test_invalid_query(self, serpapi_connection, engine):
+    def test_invalid_query(self, serp_connection, engine):
         query = ""
         num = 2
         error_msg = "Missing query `q` parameter."
         with pytest.raises(UserErrorException) as exc_info:
-            search(connection=serpapi_connection, query=query, num=num, engine=engine)
+            search(connection=serp_connection, query=query, num=num, engine=engine)
         assert error_msg == exc_info.value.args[0]
