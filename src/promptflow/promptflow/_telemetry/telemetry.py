@@ -2,9 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-import os
 
-from promptflow._sdk._configuration import Configuration
 from promptflow._telemetry.logging_handler import get_appinsights_log_handler
 
 TELEMETRY_ENABLED = "TELEMETRY_ENABLED"
@@ -31,14 +29,16 @@ def is_telemetry_enabled():
     2. running `pf config set cli.collect_telemetry=true` command.
     If None of the above is set, telemetry is disabled by default.
     """
-    telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
-    if telemetry_enabled is not None:
-        return str(telemetry_enabled).lower() == "true"
-    config = Configuration.get_instance()
-    telemetry_consent = config.get_telemetry_consent()
-    if telemetry_consent is not None:
-        return telemetry_consent
+    # TODO(2709576): enable when CI stuck issue is fixed
     return False
+    # telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
+    # if telemetry_enabled is not None:
+    #     return str(telemetry_enabled).lower() == "true"
+    # config = Configuration.get_instance()
+    # telemetry_consent = config.get_telemetry_consent()
+    # if telemetry_consent is not None:
+    #     return telemetry_consent
+    # return False
 
 
 def get_telemetry_logger():
