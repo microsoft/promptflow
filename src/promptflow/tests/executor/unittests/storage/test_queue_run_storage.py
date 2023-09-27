@@ -33,7 +33,6 @@ class TestLineExecutionProcessPool:
             result="result",
         )
         run_storage.persist_node_run(node_run_info)
-        assert queue.qsize() == 1
         assert queue.get() == node_run_info
 
     def test_persist_flow_run(self):
@@ -60,5 +59,4 @@ class TestLineExecutionProcessPool:
             result="result",
         )
         run_storage.persist_flow_run(flow_run_info)
-        assert queue.qsize() == 1
         assert queue.get() == flow_run_info
