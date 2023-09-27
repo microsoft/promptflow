@@ -1,5 +1,8 @@
-# Basic Eval
-This example shows how to create a basic evaluation flow. 
+# Eval chat math
+
+This example shows how to evaluate the answer of math questions, which can compare the output results with the standard answers numerically.
+
+Learn more on corresponding [tutorials](../../../tutorials/flow-fine-tuning-evaluation/promptflow-quality-improvement.md)
 
 Tools used in this flow：
 - `python` tool
@@ -10,13 +13,6 @@ Install promptflow sdk and other dependencies in this folder:
 ```bash
 pip install -r requirements.txt
 ```
-
-## What you will learn
-
-In this flow, you will learn
-- how to compose a point based evaluation flow, where you can calculate point-wise metrics.
-- the way to log metrics. use `from promptflow import log_metric`
-    - see file [aggregate](aggregate.py).
 
 ### 1. Test flow with single line data
 
