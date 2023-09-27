@@ -4,8 +4,10 @@ We will use [web-classification](../../../flows/standard/web-classification/READ
 
 Please ensure that you have installed all the required dependencies. You can refer to the "Prerequisites" section in the README of the [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification/) for a comprehensive list of prerequisites and installation instructions. And we recommend you to add a `requirements.txt` to indicate all the required dependencies for each flow. 
 
-We use [Pyinstaller](https://pyinstaller.org/en/stable/installation.html) to package the flow and [streamlit](https://docs.streamlit.io/library/get-started) to create custom web apps. So, Please install them first before distributing the flow.
-In this example, we use PyInstaller 5.13.2 and streamlit 1.26.0 in Python 3.10.8 environment.
+[Pyinstaller](https://pyinstaller.org/en/stable/installation.html) is a popular tool used for converting Python applications into standalone executables. It allows you to package your Python scripts into a single executable file, which can be run on a target machine without requiring the Python interpreter to be installed.
+[Streamlit](https://docs.streamlit.io/library/get-started) is an open-source Python library used for creating web applications quickly and easily. It's designed for data scientists and engineers who want to turn data scripts into shareable web apps with minimal effort.
+We use Pyinstaller to package the flow and Streamlit to create custom web apps. Prior to distributing the workflow, kindly ensure that you have installed them.
+In this example, we use PyInstaller version 5.13.2 and Streamlit version 1.26.0 within a Python 3.10.8 environment.
 
 ## Build a flow as executable format
 Note that all dependent connections must be created before building as executable.
@@ -24,7 +26,7 @@ Exported files & its dependencies are located in the same folder. The structure 
 - connections: the folder contains yaml files to create all related connections.
 - app.py: the entry file is included as the entry point for the bundled application.
 - app.spec: the spec file tells PyInstaller how to process your script.
-- main.py: it will start streamlit service and be called by the entry file.
+- main.py: it will start Streamlit service and be called by the entry file.
 - settings.json: a json file to store the settings of the executable application.
 - build: a folder contains various log and working files.
 - dist: a folder contains the executable application.
@@ -73,7 +75,7 @@ if __name__ == "__main__":
 
 :::{tab-item} main.py
 :sync: main.py
-The `main.py` file will start streamlit service and be called by the entry file.
+The `main.py` file will start Streamlit service and be called by the entry file.
 
 ```python
 import json
@@ -229,7 +231,7 @@ api_key: ${env:OPEN_AI_CONNECTION_API_KEY} # env reference
 ## Test the endpoint
 Finally, You can distribute the bundled application `app` to other people. They can execute your program by double clicking the executable file, e.g. `app.exe` in Windows system or running the binary file, e.g. `app` in Linux system. 
 
-The development server has a built-in web page they can use to test the flow by opening 'http://localhost:8501' in the browser. The expected result is as follows if the flow served successfully, the process will keep alive until it be killed manually.
+The development server has a built-in web page they can use to test the flow by opening 'http://localhost:8501' in the browser. The expected result is as follows: if the flow served successfully, the process will keep alive until it is killed manually.
 
 To your users, the app is self-contained. They do not need to install any particular version of Python or any modules. They do not need to have Python installed at all.
 
