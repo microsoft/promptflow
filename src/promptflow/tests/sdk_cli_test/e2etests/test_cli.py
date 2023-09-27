@@ -201,6 +201,20 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.model=new_model",
+            )
+        assert "Completed" in f.getvalue()
+
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
         display_name = "test_run"
