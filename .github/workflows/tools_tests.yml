@@ -6,6 +6,16 @@ on:
       - '**tools_tests.yml'
   workflow_dispatch:
 jobs:
+  authorize:
+    environment:
+      # forked prs from pull_request_target will be run in external environment, domain prs will be run in internal environment
+      # ask pf-approvers for approval to run the CI.
+      ${{ github.event_name == 'pull_request_target' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: true
   run_tool_ci_job:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
