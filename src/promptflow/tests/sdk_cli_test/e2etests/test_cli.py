@@ -1186,10 +1186,11 @@ class TestCli:
             run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
             package_folder = Path(temp_dir) / package_name
             assert (package_folder / package_name / f"{func_name}.py").exists()
-            assert (package_folder / package_name / f"utils.py").exists()
+            assert (package_folder / package_name / "utils.py").exists()
             assert (package_folder / "setup.py").exists()
 
-            spec = importlib.util.spec_from_file_location(f"{package_name}.utils", package_folder / package_name / f"utils.py")
+            spec = importlib.util.spec_from_file_location(
+                f"{package_name}.utils", package_folder / package_name / "utils.py")
             utils = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(utils)
 
