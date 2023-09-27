@@ -857,6 +857,8 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+                # Make sure the run_info with converted inputs results rather than original inputs
+                run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output
