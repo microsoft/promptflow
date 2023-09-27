@@ -34,7 +34,10 @@ Set connection provider to local with `connection.provider=local`.
 
 Connections will be saved locally. `PFClient`(or `pf connection` commands) will [manage local connections](manage-connections.md). Consequently, the flow will be executed using these local connections.
 #### full azure machine learning workspace resource id
-Set connection provider to a specific workspace with `connection.provider=azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>`.
+Set connection provider to a specific workspace with:
+```
+connection.provider=azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>
+```
 
 When `get` or `list` connections, `PFClient`(or `pf connection` commands) will return workspace connections, and flow will be executed using these workspace connections.
 _Secrets for workspace connection will not be shown by those commands, which means you may see empty dict `{}` for custom conenctions._
