@@ -12,10 +12,7 @@ WORKDIR /
 
 COPY ./flow /flow
 
-# create conda environment, and use as default python environment
-ENV CONDA_ENVIRONMENT_PATH=/opt/conda/envs/{{env.conda_env_name}}
-ENV CONDA_DEFAULT_ENVIRONMENT=$CONDA_ENVIRONMENT_PATH
-ENV PATH $CONDA_DEFAULT_ENVIRONMENT/bin:$PATH
+# create conda environment
 {% if env.conda_file %}
 RUN conda create -f flow/{{env.conda_file}} -q && \
 {% else %}
