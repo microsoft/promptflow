@@ -4,6 +4,7 @@ on:
     paths:
       - src/promptflow-tools/**
       - '**tools_tests.yml'
+  workflow_dispatch:
 jobs:
   run_tool_ci_job:
     # The type of runner that the job will run on
