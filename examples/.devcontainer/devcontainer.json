@@ -1,0 +1,27 @@
+{
+	"name": "Promptflow-Python39",
+	// "context" is the path that the Codespaces docker build command should be run from, relative to devcontainer.json
+	"context": ".",
+	"dockerFile": "Dockerfile",
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"ms-python.python",
+		//"wyi273jdeg.covjhmaizg",
+		"ms-toolsai.vscode-ai",
+		"ms-toolsai.jupyter",
+		"redhat.vscode-yaml",
+		"prompt-flow.prompt-flow"
+	],
+
+	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+	// "remoteUser": "vsonline",
+
+	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"]
+  	// "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"],
+}
