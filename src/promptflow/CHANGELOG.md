@@ -7,7 +7,7 @@
 - **pf flow validate**: support validate flow
 - **pf config set**: support set user-level promptflow config.
   - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
-- **Telemetry**: enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
+- Support override openai connection's model when submitting a flow. For example: `pf run create --flow ./ --data ./data.jsonl --connection llm.model=xxx`
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
