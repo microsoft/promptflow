@@ -184,9 +184,8 @@ class ConnectionType:
         # TODO: move the hotfix change "try-except"
         try:
             return issubclass(val, CustomStrongTypeConnection)
-        except:
+        except Exception:
             return False
-
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
