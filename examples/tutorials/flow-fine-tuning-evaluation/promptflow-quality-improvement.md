@@ -39,7 +39,6 @@ Clone the promptflow repository to your local machine:
 git clone https://github.com/microsoft/promptflow.git
 ```
 
-
 Next, let's get started with customizing the flow for a specific task.
 
 ### Customize the flow for a specific task
@@ -98,6 +97,7 @@ Go back to the `promptflow/examples/flows/chat` path, run the following command 
 cd ..
 pf flow test --flow ./basic-chat --inputs question="1+1=?"
 ```
+
 This will yield the following output:
 ```json
 {
@@ -110,6 +110,7 @@ Sometime, the question may be challenging. Now, let's test it with a complex mat
 ```bash
 pf flow test --flow ./basic-chat --inputs question="We are allowed to remove exactly one integer from the list $$-1,0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,$$and then we choose two distinct integers at random from the remaining list. What number should we remove if we wish to maximize the probability that the sum of the two chosen numbers is 10?"
 ```
+
 The output is:
 ```json
 {
@@ -140,12 +141,14 @@ Firsr, set the environment variable `base_run_name` to specify the run name.
 ```bash
 base_run_name="base_run"
 ```
+
 <details>
 <summary>For Windows CMD users, run commnad in toggle </summary>
 
 ```bash
 set base_run_name=base_run
 ```
+
 </details>
 
 
@@ -154,6 +157,7 @@ set base_run_name=base_run
 ```bash
 pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream --name $base_run_name
 ```
+
 > ⚠ For Azure Open AI, run the following command instead:
 > ```bash
 > pf run create --flow ./chat_math_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream --name $base_run_name
@@ -163,8 +167,9 @@ pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
 ```bash
-pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.deployment_name=gpt-4 --stream --name %base_run_name%
+pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream --name %base_run_name%
 ```
+
 </details>
 
 > ℹ️ The run name must be unique. Please specify a new name in `--name`. 
@@ -177,12 +182,14 @@ When it completes, you can run the following command to see the details of resul
 ```bash
 pf run show-details --name $base_run_name
 ```
+
 <details>
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
 ```bash
 pf run show-details --name %base_run_name%
 ```
+
 </details>
 
 This can show the line by line input and output of the run:
@@ -219,6 +226,7 @@ Run the following command to create an evaluation run:
 eval_run_name="eval_run"
 pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run $base_run_name --name $eval_run_name
 ```
+
 <details>
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
@@ -226,11 +234,13 @@ pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.json
 set eval_run_name=eval_run
 pf run create --flow ./eval-chat-math --data ../chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --run %base_run_name% --name %eval_run_name% --stream
 ```
+
 </details>
 
 > If needed, specify the run name which you want to evaluate in `--run` argument, and specify this evaluation run name in `--name` argument.
 
 Then get metrics of the `eval_run`:
+
 ```bash
 pf run show-metrics --name $eval_run_name
 ```
@@ -241,6 +251,7 @@ pf run show-metrics --name $eval_run_name
 ```bash
 pf run show-details --name %eval_run_name%
 ```
+
 </details>
 
 You can visualize and compare the output line by line of `base_run` and `eval_run` in a web browser:
@@ -248,12 +259,14 @@ You can visualize and compare the output line by line of `base_run` and `eval_ru
 ```bash
 pf run visualize --name "$base_run_name,$eval_run_name"
 ```
+
 <details>
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
 ```bash
 pf run visualize --name "%base_run_name%,%eval_run_name%"
 ```
+
 </details>
 
 Because of the randomness of the LLM, the accuracy may vary. For example, in my run, the metrics are as follows:
@@ -280,7 +293,7 @@ We leverage the Chain of Thought (CoT) prompt engineering method to adjust the p
 <details>
 <summary>Variant_1: 2 CoT examples</summary>
 
-```sh
+```
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
@@ -301,7 +314,7 @@ assistant:
 <details>
 <summary>Variant_2 : 6 CoT examples.</summary>
 
-```sh
+```
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
@@ -356,6 +369,7 @@ Set the environment variable `base_run_name` and `eval_run_name` to specify the 
 base_run_name="base_run_variant_"
 eval_run_name="eval_run_variant_"
 ```
+
 <details>
 <summary>For Windows CMD users, run commnad in toggle</summary>
 
@@ -363,6 +377,7 @@ eval_run_name="eval_run_variant_"
 set base_run_name=base_run_variant_
 set eval_run_name=eval_run_variant_
 ```
+
 </details>
 
 Run the following command to test and evaluate the variants:
@@ -386,6 +401,7 @@ pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/da
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run "${base_run_name}2" --name "${eval_run_name}2"
 ```
+
 <!-- > If encounter the 'execution timeout' error, just try again. It might be caused by the LLM service congestion. -->
 
 <details>
@@ -410,9 +426,11 @@ pf run create --flow ./chat/chat-math-variant --data ./chat/chat-math-variant/da
 # Evaluate-run
 pf run create --flow ./evaluation/eval-chat-math --data ./chat/chat-math-variant/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.answer}' --stream --run %base_run_name%2 --name %eval_run_name%2
 ```
+
 </details>
 
 Get metrics of the all evaluations:
+
 ```bash
 pf run show-metrics --name "${eval_run_name}0"
 pf run show-metrics --name "${eval_run_name}1"
@@ -439,6 +457,7 @@ You may get the familiar output like this:
 ```
 
 Visualize the results:
+
 ```bash
 pf run visualize --name "${base_run_name}0,${eval_run_name}0,${base_run_name}1,${eval_run_name}1,${base_run_name}2,${eval_run_name}2"
 ```
@@ -449,6 +468,7 @@ pf run visualize --name "${base_run_name}0,${eval_run_name}0,${base_run_name}1,$
 ```bash
 pf run visualize --name "%base_run_name%0,%eval_run_name%0,base_run_name%1,%eval_run_name%1,base_run_name%2,%eval_run_name%2"
 ```
+
 </details>
 
 Click the HTML link, to get the experiment results. Click on column in the **Output** table will allow you to view the snapshot of each line.
