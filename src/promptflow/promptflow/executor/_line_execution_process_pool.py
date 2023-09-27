@@ -187,7 +187,7 @@ class LineExecutionProcessPool:
         # Loop until the process is ready or the task queue is empty
         healthy_ensured_process.start_new(task_queue)
 
-        if not healthy_ensured_process.proces.is_alive():
+        if not healthy_ensured_process.process.is_alive():
             return
 
         while True:
