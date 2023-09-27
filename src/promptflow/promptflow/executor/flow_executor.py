@@ -789,7 +789,7 @@ class FlowExecutor:
         if not inputs_mapping:
             logger.warning(
                 msg=(
-                    "Starting a batch run without column mapping may lead to unexpected results. "
+                    "Starting run without column mapping may lead to unexpected results. "
                     "Please consult the following documentation for more information: "
                     "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
                 )
