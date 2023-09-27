@@ -11,4 +11,4 @@ class TestExceptions:
             param="test_param",
         )
 
-        assert ex.message == "Test exception message with parameters: test_param, N/A."
+        assert ex.message == "Test exception message with parameters: test_param, <param1>."

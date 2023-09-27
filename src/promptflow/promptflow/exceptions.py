@@ -79,9 +79,9 @@ class PromptflowException(Exception):
         parameters = {}
         for argument in required_arguments:
             if argument not in self._kwargs:
-                # Set one default value for the missing argument to avoid KeyError.
+                # Set a default value for the missing argument to avoid KeyError.
                 # For long term solution, use CI to guarantee the message_format and message_parameters are in sync.
-                parameters[argument] = "N/A"
+                parameters[argument] = f"<{argument}>"
             else:
                 parameters[argument] = self._kwargs[argument]
         return parameters
