@@ -181,7 +181,7 @@ class ConnectionType:
         """Check if the given value is a custom strong type connection."""
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
-        # TODO: move the hotfix change "try-except"
+        # TODO: replace the hotfix "try-except" with a more graceful solution."
         try:
             return issubclass(val, CustomStrongTypeConnection)
         except Exception:
