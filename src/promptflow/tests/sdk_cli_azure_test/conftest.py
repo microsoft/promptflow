@@ -32,14 +32,16 @@ def ml_client(
     )
 
 
-@pytest.fixture()
-def remote_client() -> PFClient:
-    return PFClient(
+@pytest.fixture(scope="class")
+def remote_client(request: pytest.FixtureRequest) -> PFClient:
+    remote_client = PFClient(
         credential=get_cred(),
         subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
         resource_group_name="promptflow",
         workspace_name="promptflow-eastus",
     )
+    request.cls.remote_client = remote_client
+    return request.cls.remote_client
 
 
 @pytest.fixture()
@@ -53,9 +55,10 @@ def remote_client_int() -> PFClient:
     return PFClient(ml_client=client)
 
 
-@pytest.fixture()
-def pf(remote_client) -> PFClient:
-    return remote_client
+@pytest.fixture(scope="class")
+def pf(request: pytest.FixtureRequest, remote_client: PFClient) -> PFClient:
+    request.cls.pf = remote_client
+    return request.cls.pf
 
 
 @pytest.fixture
@@ -69,9 +72,9 @@ def remote_web_classification_data(remote_client):
         )
 
 
-@pytest.fixture
-def runtime():
-    return "demo-mir"
+@pytest.fixture(scope="class")
+def runtime(request: pytest.FixtureRequest) -> None:
+    request.cls.runtime = "demo-mir"
 
 
 @pytest.fixture

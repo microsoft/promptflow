@@ -19,7 +19,7 @@ from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
 
-from .._recording_utils import PFAzureIntegrationTestCase
+from .._recording_utils import PFAzureIntegrationTestCase, fixture_provider
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -32,9 +32,11 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 # TODO(2528577): we should run these test with recording mode.
+@pytest.mark.usefixtures("pf", "runtime")
 @pytest.mark.e2etest
 class TestFlowRun(PFAzureIntegrationTestCase):
-    def test_run_bulk(self, remote_client, pf, runtime):
+    @fixture_provider
+    def test_run_bulk(self, pf: PFClient, runtime: str):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
