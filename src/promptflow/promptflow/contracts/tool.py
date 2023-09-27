@@ -1,7 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-
+import inspect
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
@@ -179,10 +179,14 @@ class ConnectionType:
     @staticmethod
     def is_custom_strong_type(val):
         """Check if the given value is a custom strong type connection."""
-
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
-        return issubclass(val, CustomStrongTypeConnection)
+        # TODO: move the hotfix change "try-except"
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except:
+            return False
+
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
