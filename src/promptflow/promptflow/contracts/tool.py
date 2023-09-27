@@ -182,7 +182,11 @@ class ConnectionType:
 
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
-        return issubclass(val, CustomStrongTypeConnection)
+        # TODO: replace the hotfix "try-except" with a more graceful solution."
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except Exception:
+            return False
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
