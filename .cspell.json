@@ -126,6 +126,7 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
+    "levelno",
     "ruamel"
   ],
   "allowCompoundWords": true

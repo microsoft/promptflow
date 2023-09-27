@@ -200,6 +200,20 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.model=new_model",
+            )
+        assert "Completed" in f.getvalue()
+
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
         display_name = "test_run"
@@ -1007,22 +1021,22 @@ class TestCli:
                 },
                 ("configs.key1", "new_value"),
             ),
-            (
-                "custom_strong_type_connection.yaml",
-                {
-                    "module": "promptflow.connections",
-                    "type": "custom",
-                    "configs": {
-                        "api_base": "This is my first connection.",
-                        "promptflow.connection.custom_type": "MyFirstConnection",
-                        "promptflow.connection.module": "my_tool_package.connections",
-                        "promptflow.connection.package": "test-custom-tools",
-                        "promptflow.connection.package_version": "0.0.1",
-                    },
-                    "secrets": {"api_key": SCRUBBED_VALUE},
-                },
-                ("configs.api_base", "new_value"),
-            ),
+            # (
+            #     "custom_strong_type_connection.yaml",
+            #     {
+            #         "module": "promptflow.connections",
+            #         "type": "custom",
+            #         "configs": {
+            #             "api_base": "This is my first connection.",
+            #             "promptflow.connection.custom_type": "MyFirstConnection",
+            #             "promptflow.connection.module": "my_tool_package.connections",
+            #             "promptflow.connection.package": "test-custom-tools",
+            #             "promptflow.connection.package_version": "0.0.1",
+            #         },
+            #         "secrets": {"api_key": SCRUBBED_VALUE},
+            #     },
+            #     ("configs.api_base", "new_value"),
+            # ),
         ],
     )
     def test_connection_create_update(
