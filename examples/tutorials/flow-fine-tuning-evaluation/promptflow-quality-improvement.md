@@ -158,7 +158,7 @@ set base_run_name=base_run
 pf run create --flow ./basic-chat --data ./chat-math-variant/data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=open_ai_connection chat.model=gpt-4 --stream --name $base_run_name
 ```
 
-> ⚠ For Azure Open AI, run the following command instead:
+>ℹ️ For Azure Open AI, run the following command instead:
 > ```shell
 > pf run create --flow ./chat_math_variant --data test_data.jsonl --column-mapping question='${data.question}' chat_history=[] --connections chat.connection=azure_open_ai_connection chat.deployment_name=gpt-4 --stream --name $base_run_name
 > ```
