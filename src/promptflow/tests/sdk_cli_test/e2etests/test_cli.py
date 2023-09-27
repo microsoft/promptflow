@@ -1,5 +1,6 @@
 import contextlib
 import io
+import importlib.util
 import json
 import logging
 import os
@@ -1163,3 +1164,27 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert not outerr.err
+
+    def test_tool_init(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_name = "package_name"
+            func_name = "func_name"
+            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
+            package_folder = Path(temp_dir) / package_name
+            assert (package_folder / package_name / f"{func_name}.py").exists()
+            assert (package_folder / package_name / f"utils.py").exists()
+            assert (package_folder / "setup.py").exists()
+
+            spec = importlib.util.spec_from_file_location(f"{package_name}.utils", package_folder / package_name / f"utils.py")
+            utils = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(utils)
+
+            assert hasattr(utils, "list_package_tools")
+            tools_meta = utils.list_package_tools()
+            assert f"{package_name}.{func_name}.{func_name}" in tools_meta
+            meta = tools_meta[f"{package_name}.{func_name}.{func_name}"]
+            assert meta["function"] == func_name
+            assert meta["module"] == f"{package_name}.{func_name}"
+            assert meta["name"] == func_name
+            assert meta["description"] == f"This is {func_name} tool"
+            assert meta["type"] == "python"

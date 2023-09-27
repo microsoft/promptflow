@@ -34,8 +34,6 @@ def add_tool_parser(subparsers):
 
 def add_parser_init_tool(subparsers):
     """Add tool init parser to the pf tool subparsers."""
-    # TODO create python tool by exist code
-    # TODO create package tool by exist code
     epilog = """
 Examples:
 
@@ -68,29 +66,22 @@ pf tool init --tool tool_name
 def dispatch_tool_commands(args: argparse.Namespace):
     if args.sub_action == "init":
         init_tool(args)
-    elif args.sub_action == "list":
-        list_tool(args)
 
 
 @exception_handler("Tool init")
 def init_tool(args):
-    # TODO create from existing code
     print("Creating tool from scratch...")
-    _init_tool_by_template(args.package, args.tool)
-
-
-def _init_tool_by_template(package, tool):
-    if package:
-        package_path = Path(package)
+    if args.package:
+        package_path = Path(args.package)
         package_name = package_path.stem
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
-        SetupGenerator(package_name=package_name, tool_name=tool).generate_to_file(package_path / "setup.py")
+        # Generate package setup.py
+        SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
+        # Generate utils.py to list meta data of tools.
         ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(script_code_path / "utils.py")
     else:
         script_code_path = Path(".")
-    ToolPackageGenerator(tool_name=tool).generate_to_file(script_code_path / f"{tool}.py")
-
-
-def list_tool(args):
-    pass
+    # Generate tool script
+    ToolPackageGenerator(tool_name=args.tool).generate_to_file(script_code_path / f"{args.tool}.py")
+    print(f"Done. Created the tool \"{args.tool}\" in {script_code_path.resolve()}.")
