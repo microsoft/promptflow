@@ -67,7 +67,7 @@ Required keys are: endpoint_url,model_family."""
             os = OpenSourceLLM(gpt2_custom_connection)
             os.call(self.chat_prompt, API.CHAT)
         assert exc_info.value.message == ("Required secret key `endpoint_api_key` "
-        + """not found in given custom connection.
+            + """not found in given custom connection.
 Required keys are: endpoint_api_key.""")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
@@ -110,11 +110,11 @@ user:
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
         assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition,"
-        + " and the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'."
-        + " Current parsed role 'system' does not meet the requirement. If you intend to use the Completion "
-        + "API, please select the appropriate API type and deployment name. If you do intend to use the Chat "
-        + "API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
-        + "gallery that contain 'Chat' in the name.")
+            + " and the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'."
+            + " Current parsed role 'system' does not meet the requirement. If you intend to use the Completion "
+            + "API, please select the appropriate API type and deployment name. If you do intend to use the Chat "
+            + "API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
+            + "gallery that contain 'Chat' in the name.")
 
     def test_open_source_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
@@ -127,22 +127,21 @@ user:
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
         assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition, and "
-        + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
-        + "role 'system' does not meet the requirement. If you intend to use the Completion API, please select the "
-        + "appropriate API type and deployment name. If you do intend to use the Chat API, please refer to the "
-        + "guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' "
-        + "in the name.")
+            + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
+            + "role 'system' does not meet the requirement. If you intend to use the Completion API, please select the "
+            + "appropriate API type and deployment name. If you do intend to use the Chat API, please refer to the "
+            + "guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' "
+            + "in the name.")
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
         assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition, and "
-        + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
-        + "role 'in the context of azure ml, what does the ml stand for?' does not meet the requirement. If you "
-        + "intend to use the Completion API, please select the appropriate API type and deployment name. If you do "
-        + "intend to use the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the "
-        + "samples in our gallery that contain 'Chat' in the name.")
-
+            + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
+            + "role 'in the context of azure ml, what does the ml stand for?' does not meet the requirement. If you "
+            + "intend to use the Completion API, please select the appropriate API type and deployment name. If you do "
+            + "intend to use the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the "
+            + "samples in our gallery that contain 'Chat' in the name.")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
@@ -153,7 +152,7 @@ user:
                 self.completion_prompt,
                 API.COMPLETION)
         assert exc_info.value.message == ("Exception hit calling Oneline Endpoint: "
-        + "HTTPError: HTTP Error 424: Failed Dependency")
+            + "HTTPError: HTTP Error 424: Failed Dependency")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_deployment_miss(self, gpt2_custom_connection):
@@ -164,4 +163,4 @@ user:
                 API.COMPLETION,
                 deployment_name="completely/real/deployment-007")
         assert exc_info.value.message == ("Exception hit calling Oneline Endpoint: "
-        + "HTTPError: HTTP Error 404: Not Found")
+            + "HTTPError: HTTP Error 404: Not Found")
