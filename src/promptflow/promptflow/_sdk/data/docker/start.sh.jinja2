@@ -1,7 +1,4 @@
-#!/bin/bash
-
-CONDA_ENV_PATH="$(conda info --base)/envs/{{env.conda_env_name}}"
-export PATH="$CONDA_ENV_PATH/bin:$PATH"
+#! /bin/bash
 
 # start services in background and wait all child jobs
 runsvdir /var/runit &
