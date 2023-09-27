@@ -5,21 +5,25 @@
 import argparse
 import os
 import shutil
+import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 import mock
 import pandas as pd
 import pytest
 
+from promptflow._cli._params import AppendToDictAction
 from promptflow._cli._utils import (
     _build_sorted_column_widths_tuple_list,
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._cli._params import AppendToDictAction
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._utils import (
+    _generate_connections_dir,
     decrypt_secret_value,
     encrypt_secret_value,
     generate_flow_tools_json,
@@ -114,6 +118,19 @@ class TestUtils:
         flow_tools_json = generate_flow_tools_json(flow_path, dump=False, raise_error=False)
         assert len(flow_tools_json["code"]) == 0
 
+    @pytest.mark.parametrize(
+        "python_path, env_hash",
+        [
+            ("D:\\Tools\\Anaconda3\\envs\\pf\\python.exe", ("a9620c3cdb7ccf3ec9f4005e5b19c12d1e1fef80")),
+            ("/Users/fake_user/anaconda3/envs/pf/bin/python3.10", ("e3f33eadd9be376014eb75a688930930ca83c056")),
+        ],
+    )
+    def test_generate_connections_dir(self, python_path, env_hash):
+        expected_result = (HOME_PROMPT_FLOW_DIR / "envs" / env_hash / "connections").resolve()
+        with patch.object(sys, "executable", python_path):
+            result = _generate_connections_dir()
+            assert result == expected_result
+
 
 @pytest.mark.unittest
 class TestCLIUtils:
@@ -128,7 +145,7 @@ class TestCLIUtils:
     def test_append_to_dict_action(self):
         parser = argparse.ArgumentParser(prog="test_dict_action")
         parser.add_argument("--dict", action=AppendToDictAction, nargs="+")
-        args = ["--dict", "key1=val1", "\'key2=val2\'", "\"key3=val3\"", "key4=\'val4\'", "key5=\"val5'"]
+        args = ["--dict", "key1=val1", "'key2=val2'", '"key3=val3"', "key4='val4'", "key5=\"val5'"]
         args = parser.parse_args(args)
         expect_dict = {
             "key1": "val1",

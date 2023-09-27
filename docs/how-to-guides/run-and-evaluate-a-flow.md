@@ -108,9 +108,7 @@ In this guide, we use [eval-classification-accuracy](https://github.com/microsof
 
 After the run is finished, you can evaluate the run with below command, compared with the normal run create command, note there are two extra arguments:
 
-- `column-mapping`: A string value represents sources of the input data that are needed for the evaluation method. The sources can be from the flow run output or from your test dataset.
-  - If the data column is in your test dataset, then it is specified as `${data.<column_name>}`.
-  - If the data column is from your flow output, then it is specified as `${run.outputs.<output_name>}`.
+- `column-mapping`: A mapping from flow input name to specified data values. Reference [here](./column-mapping.md) for detailed information.
 - `run`: The run name of the flow run to be evaluated.
 
 ```sh

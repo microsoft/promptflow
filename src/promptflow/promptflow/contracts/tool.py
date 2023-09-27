@@ -221,6 +221,7 @@ class InputDefinition:
     default: str = None
     description: str = None
     enum: List[str] = None
+    custom_type: List[str] = None
 
     def serialize(self) -> dict:
         """Serialize input definition to dict.
@@ -239,6 +240,8 @@ class InputDefinition:
             data["description"] = self.description
         if self.enum:
             data["enum"] = self.enum
+        if self.custom_type:
+            data["custom_type"] = self.custom_type
         return data
 
     @staticmethod
