@@ -7,10 +7,8 @@
   "repository": "https://github.com/microsoft/promptflow",
   "license": "MIT",
   "dependencies": {
-    "fernet": "^0.4.0",
     "keytar": "^7.9.0",
-    "sqlite": "^5.0.1",
-    "sqlite3": "^5.1.6"
+    "knex": "^2.5.1"
   },
   "scripts": {
     "build": "tsc ./src/index --outDir ./dist --declaration",
