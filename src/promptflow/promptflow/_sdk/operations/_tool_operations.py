@@ -14,7 +14,7 @@ from promptflow._utils.tool_utils import function_to_interface
 class ToolOperations:
     """ToolOperations."""
 
-    def generate_tool_metas(self, tool_module):
+    def generate_tool_meta(self, tool_module):
         tool_functions = self._collect_tool_functions_in_module(tool_module)
         tool_methods = self._collect_tool_class_methods_in_module(tool_module)
         tools = [self._parse_tool_from_function(f) for f in tool_functions] + \

@@ -21,5 +21,5 @@ def list_package_tools():
 
             # Load the module's code
             spec.loader.exec_module(module)
-            tools[module.__name__] = pf_client._tools.generate_tool_metas(module)
+            tools[module.__name__] = pf_client._tools.generate_tool_meta(module)
     return tools

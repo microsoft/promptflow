@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from enum import Enum, EnumMeta
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Callable, Dict, List, Optional, Tuple, Union, get_args, get_origin
+from typing import IO, Any, AnyStr, Dict, List, Optional, Tuple, Union, get_args, get_origin
 
 import keyring
 import pydash
