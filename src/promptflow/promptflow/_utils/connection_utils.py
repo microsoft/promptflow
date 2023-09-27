@@ -1,11 +1,21 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import inspect
 import re
 import io
 
 from jinja2 import Template
 from ruamel.yaml import YAML
+
+
+def get_default_values(cls):
+    signature = inspect.signature(cls.__init__)
+    return {
+        k: v.default
+        for k, v in signature.parameters.items()
+        if v.default is not inspect.Parameter.empty
+    }
 
 
 def generate_custom_strong_type_connection_spec(cls, package, package_version):
@@ -55,11 +65,13 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
     # Extract configs and secrets
     configs = {}
     secrets = {}
+    default_values = get_default_values(cls)
     for spec in connection_spec["configSpecs"]:
         if spec["configValueType"] == "Secret":
             secrets[spec["name"]] = "to_replace_with_" + spec["name"].replace("-", "_")
         else:
-            configs[spec["name"]] = "to_replace_with_" + spec["name"].replace("-", "_")
+            configs[spec["name"]] = default_values[spec["name"]] \
+                if spec["name"] in default_values.keys() else "to_replace_with_" + spec["name"].replace("-", "_")
 
     # Prepare data for template
     data = {

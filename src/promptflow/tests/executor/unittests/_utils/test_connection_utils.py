@@ -13,6 +13,14 @@ class MyCustomConnectionWithNoComments(CustomStrongTypeConnection):
     api_base: str
 
 
+class MyCustomConnectionWithDefaultValue(CustomStrongTypeConnection):
+    api_key: Secret
+    api_base: str
+
+    def __init__(self, api_base: str = "api-base"):
+        self.api_base = api_base
+
+
 class MyCustomConnectionWithInvalidComments(CustomStrongTypeConnection):
     """Custom connection.
 
@@ -65,3 +73,12 @@ class TestConnectionUtils:
         template = generate_custom_strong_type_connection_template(cls, spec, package, package_version)
         for comment in expected_str_in_template:
             assert comment in template
+
+    def test_generate_custom_strong_type_connection_template_with_default_value(self):
+        package = "test-package"
+        package_version = "0.0.1"
+        spec = generate_custom_strong_type_connection_spec(MyCustomConnectionWithDefaultValue, package, package_version)
+        template = generate_custom_strong_type_connection_template(MyCustomConnectionWithDefaultValue, spec, package, package_version)
+        print(template)
+        assert 'api_base: "api-base"' in template
+
