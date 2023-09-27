@@ -3,9 +3,6 @@ on:
   # Triggers the workflow pull request events but only for the main branch
   # Use target to consume settings by target repository for forked repo pull requests
   pull_request_target:
-    path:
-      - src/promptflow-tools/**
-      - '**tools_tests.yml'
 jobs:
   run_tool_ci_job:
     # The type of runner that the job will run on
