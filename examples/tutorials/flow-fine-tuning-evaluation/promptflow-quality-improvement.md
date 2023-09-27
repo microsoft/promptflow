@@ -51,7 +51,7 @@ cd ../../flows/chat/basic-chat/
 
 To enable your chatbot flow to solve math problems, you need to instruct the LLM about the task and target in the prompt. Open `chat.jinja2`, update the prompt as below:
 
-```jinja2
+```jinja
 system:
 You are an assistant to calculate the answer to the provided math problems. 
 Please return the final numerical answer only, without any accompanying reasoning or explanation.
@@ -293,7 +293,7 @@ We leverage the Chain of Thought (CoT) prompt engineering method to adjust the p
 <details>
 <summary>Variant_1: 2 CoT examples</summary>
 
-```jinja2
+```jinja
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
@@ -312,7 +312,7 @@ assistant:
 <details>
 <summary>Variant_2 : 6 CoT examples.</summary>
 
-```jinja2
+```jinja
 system:
 You are an assistant to calculate the answer to the provided math problems.
 Please think step by step.
