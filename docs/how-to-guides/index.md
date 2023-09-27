@@ -13,7 +13,8 @@ deploy-a-flow/index
 enable-streaming-mode
 manage-connections
 manage-runs
-column-mapping
+use-column-mapping
+set-global-configs
 how-to-create-and-use-your-own-tool-package
 faq
 
