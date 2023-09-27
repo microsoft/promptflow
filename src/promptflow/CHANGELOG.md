@@ -1,6 +1,6 @@
 # Release History
 
-## 0.1.0b7 (Upcoming)
+## 0.1.0b7 (2023.09.27)
 
 ### Features Added
 
