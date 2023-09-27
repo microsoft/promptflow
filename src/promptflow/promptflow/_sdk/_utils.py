@@ -3,12 +3,14 @@
 # ---------------------------------------------------------
 
 import collections
+import hashlib
 import json
 import logging
 import multiprocessing
 import os
 import re
 import shutil
+import sys
 import tempfile
 import zipfile
 from contextlib import contextmanager
@@ -27,12 +29,14 @@ from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
 
 import promptflow
+from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
     FLOW_TOOLS_JSON,
     FLOW_TOOLS_JSON_GEN_TIMEOUT,
+    HOME_PROMPT_FLOW_DIR,
     KEYRING_ENCRYPTION_KEY_NAME,
     KEYRING_ENCRYPTION_LOCK_PATH,
     KEYRING_SYSTEM,
@@ -46,6 +50,7 @@ from promptflow._sdk._constants import (
     CommonYamlFields,
 )
 from promptflow._sdk._errors import (
+    ConnectionNotFoundError,
     DecryptConnectionError,
     GenerateFlowToolsJsonError,
     StoreConnectionEncryptionKeyError,
@@ -616,6 +621,7 @@ def generate_flow_tools_json(
     include_errors_in_output: bool = False,
     target_source: str = None,
     used_packages_only: bool = False,
+    source_path_mapping: Dict[str, List[str]] = None,
 ) -> dict:
     """Generate flow.tools.json for a flow directory.
 
@@ -626,6 +632,7 @@ def generate_flow_tools_json(
     :param include_errors_in_output: whether to include error messages in output, default value is False.
     :param target_source: the source name to filter result, default value is None.
     :param used_packages_only: whether to only include used packages, default value is False.
+    :param source_path_mapping: if specified, record yaml paths for each source.
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
@@ -634,7 +641,7 @@ def generate_flow_tools_json(
     tools = []  # List[Tuple[source_file, tool_type]]
     used_packages = set()
 
-    def process_node(_node):
+    def process_node(_node, _node_path):
         source, tool_type = pydash.get(_node, "source.path", None), _node.get("type", None)
         if target_source and source != target_source:
             return
@@ -649,9 +656,14 @@ def generate_flow_tools_json(
         if pydash.get(_node, "source.type") not in ["code", "package_with_prompt"]:
             return
         tools.append((source, tool_type.lower()))
+        if source_path_mapping is not None:
+            if source not in source_path_mapping:
+                source_path_mapping[source] = []
 
-    for node in data[NODES]:
-        process_node(node)
+            source_path_mapping[source].append(f"{_node_path}.source.path")
+
+    for node_i, node in enumerate(data[NODES]):
+        process_node(node, f"{NODES}.{node_i}")
 
         # understand DAG to parse variants
         # TODO: should we allow source to appear both in node and node variants?
@@ -659,7 +671,7 @@ def generate_flow_tools_json(
             node_variants = data[NODE_VARIANTS][node["name"]]
             for variant_id in node_variants[VARIANTS]:
                 current_node = node_variants[VARIANTS][variant_id][NODE]
-                process_node(current_node)
+                process_node(current_node, f"{NODE_VARIANTS}.{node['name']}.{VARIANTS}.{variant_id}.{NODE}")
 
     if None in used_packages:
         used_packages.remove(None)
@@ -687,14 +699,33 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def setup_user_agent_to_operation_context(user_agent):
+def update_user_agent_from_env_var():
+    """Update user agent from env var to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
     if "USER_AGENT" in os.environ:
         # Append vscode or other user agent from env
         OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+
+
+def setup_user_agent_to_operation_context(user_agent):
+    """Setup user agent to OperationContext"""
+    from promptflow._core.operation_context import OperationContext
+
+    update_user_agent_from_env_var()
     # Append user agent
-    OperationContext.get_instance().append_user_agent(user_agent)
+    context = OperationContext.get_instance()
+    context.append_user_agent(user_agent)
+    return context.get_user_agent()
+
+
+def call_from_extension() -> bool:
+    """Return true if current request is from extension."""
+    from promptflow._core.operation_context import OperationContext
+
+    update_user_agent_from_env_var()
+    context = OperationContext().get_instance()
+    return EXTENSION_UA in context.get_user_agent()
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -722,3 +753,56 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
                 .encode("utf-8")
                 .replace(b"\r\n", b"\n"),
             )
+
+
+def get_local_connections_from_executable(executable):
+    """Get local connections from executable.
+
+    Please avoid using this function anymore, and we should remove this function once all references are removed.
+    """
+    from promptflow._sdk._pf_client import PFClient
+
+    connection_names = executable.get_connection_names()
+    local_client = PFClient()
+    result = {}
+    for n in connection_names:
+        try:
+            conn = local_client.connections.get(name=n, with_secrets=True)
+            result[n] = conn._to_execution_connection_dict()
+        except ConnectionNotFoundError:
+            # ignore when connection not found since it can be configured with env var.
+            raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
+    return result
+
+
+def _generate_connections_dir():
+    # Get Python executable path
+    python_path = sys.executable
+
+    # Hash the Python executable path
+    hash_object = hashlib.sha1(python_path.encode())
+    hex_dig = hash_object.hexdigest()
+
+    # Generate the connections system path using the hash
+    connections_dir = (HOME_PROMPT_FLOW_DIR / "envs" / hex_dig / "connections").resolve()
+    return connections_dir
+
+
+# This function is used by extension to generate the connection files every time collect tools.
+def refresh_connections_dir(connection_spec_files, connection_template_yamls):
+    connections_dir = _generate_connections_dir()
+    if os.path.isdir(connections_dir):
+        shutil.rmtree(connections_dir)
+    os.makedirs(connections_dir)
+
+    if connection_spec_files and connection_template_yamls:
+        for connection_name, content in connection_spec_files.items():
+            file_name = connection_name + ".spec.json"
+            with open(connections_dir / file_name, "w") as f:
+                json.dump(content, f, indent=2)
+
+        for connection_name, content in connection_template_yamls.items():
+            yaml_data = yaml.safe_load(content)
+            file_name = connection_name + ".template.yaml"
+            with open(connections_dir / file_name, "w") as f:
+                yaml.dump(yaml_data, f, sort_keys=False)

@@ -5,14 +5,15 @@ import logging
 from typing import Callable, Union
 
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
+    get_local_connections_from_executable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
 )
 from promptflow._sdk.entities._connection import _Connection
-from promptflow._sdk.entities._flow import Flow
 from promptflow.executor import FlowExecutor
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -34,7 +35,7 @@ class FlowInvoker:
         self, flow: str, connection_provider: [str, Callable] = None, streaming: Union[Callable[[], bool], bool] = False
     ):
         self.flow_dir = flow
-        self.flow_entity = Flow.load(self.flow_dir)
+        self.flow_entity = load_flow(self.flow_dir)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         self._init_connections(connection_provider)
         self._init_executor()
@@ -42,8 +43,9 @@ class FlowInvoker:
 
     def _init_connections(self, connection_provider):
         if connection_provider == "local":
-            logger.info("Getting connections from local sqlite...")
-            self.connections = Flow._get_local_connections(executable=self.flow_entity._init_executable())
+            logger.info("Getting connections from local pf client...")
+            # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
+            self.connections = get_local_connections_from_executable(executable=self.flow_entity._init_executable())
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()

@@ -4,13 +4,26 @@
 
 ### Features Added
 
+- **pf flow validate**: support validate flow
+- **pf config set**: support set user-level promptflow config.
+  - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
+- Support override openai connection's model when submitting a flow. For example: `pf run create --flow ./ --data ./data.jsonl --connection llm.model=xxx`
+
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
 - Reserve `.promptflow` folder when dump run snapshot.
 - Read/write log file with encoding specified.
+- Avoid inconsistent error message when executor exits abnormally.
+- Align inputs & outputs row number in case partial completed run will break `pfazure run show-details`.
+- Fix bug that failed to parse portal url for run data when the form is an asset id.
+- Fix the issue of process hanging for a long time when running the batch run.
 
-### Other Changes
+### Improvements
 - [Executor][Internal] Improve error message with more details and actionable information.
+- [SDK/CLI] `pf/pfazure run show-details`:
+  - Add `--max-results` option to control the number of results to display.
+  - Add `--all-results` option to display all results.
+- Add validation for azure `PFClient` constructor in case wrong parameter is passed.
 
 ## 0.1.0b6 (2023.09.15)
 
@@ -26,7 +39,6 @@
 - [SDK/CLI] Update portal link to remove flight.
 - [Executor][Internal] Improve inputs mapping's error message.
 - [API] Resolve warnings/errors of sphinx build
-- [SDK/CLI] Fix no-index error for `pfazure get-details`.
 
 ## 0.1.0b5 (2023.09.08)
 

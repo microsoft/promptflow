@@ -28,7 +28,6 @@
     "**/flow.dag.yaml"
   ],
   "words": [
-    "propmtflow",
     "aoai",
     "amlignore",
     "mldesigner",
@@ -127,6 +126,7 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
+    "levelno",
     "vcrpy"
   ],
   "allowCompoundWords": true

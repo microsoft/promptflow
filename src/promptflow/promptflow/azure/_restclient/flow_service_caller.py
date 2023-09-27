@@ -13,6 +13,7 @@ from functools import wraps
 from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
+from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
@@ -25,16 +26,6 @@ class FlowRequestException(PromptflowException):
 
     def __init__(self, message, **kwargs):
         super().__init__(message, **kwargs)
-
-
-class TelemetryMixin(object):
-
-    def __init__(self):
-        # Need to call init for potential parent, otherwise it won't be initialized.
-        super().__init__()
-
-    def _get_telemetry_values(self, *args, **kwargs):
-        return {}
 
 
 class RequestTelemetryMixin(TelemetryMixin):
@@ -392,29 +383,6 @@ class FlowServiceCaller(RequestTelemetryMixin):
                 **kwargs
             )
 
-
-    @_request_wrapper()
-    def list_runs(
-        self,
-        subscription_id,  # type: str
-        resource_group_name,  # type: str
-        workspace_name,  # type: str
-        **kwargs  # type: Any
-    ):
-        """List runs in the workspace.
-
-        :return: A list of runs in the workspace.
-        :rtype: list[~azure.ml._restclient.machinelearningservices.models.Run]
-        """
-        
-        headers = self._get_headers()
-        return self.caller.flows.list_flow_runs(
-                subscription_id=subscription_id,
-                resource_group_name=resource_group_name,
-                workspace_name=workspace_name,
-                headers=headers,
-                **kwargs
-            )
 
     @_request_wrapper()
     def submit_bulk_run(

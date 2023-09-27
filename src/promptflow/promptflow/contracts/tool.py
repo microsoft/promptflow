@@ -34,6 +34,7 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    IMAGE = "image"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -173,7 +174,15 @@ class ConnectionType:
         from promptflow._core.tools_manager import connections
 
         val = type(val) if not isinstance(val, type) else val
-        return val in connections.values()
+        return val in connections.values() or ConnectionType.is_custom_strong_type(val)
+
+    @staticmethod
+    def is_custom_strong_type(val):
+        """Check if the given value is a custom strong type connection."""
+
+        from promptflow._sdk.entities import CustomStrongTypeConnection
+
+        return issubclass(val, CustomStrongTypeConnection)
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
@@ -208,6 +217,7 @@ class InputDefinition:
     default: str = None
     description: str = None
     enum: List[str] = None
+    custom_type: List[str] = None
 
     def serialize(self) -> dict:
         """Serialize input definition to dict.
@@ -226,6 +236,8 @@ class InputDefinition:
             data["description"] = self.description
         if self.enum:
             data["enum"] = self.enum
+        if self.custom_type:
+            data["custom_type"] = self.custom_type
         return data
 
     @staticmethod

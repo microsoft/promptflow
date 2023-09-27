@@ -26,13 +26,14 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
-    InvalidAggregationInput,
     NodeOutputNotFound,
     OutputReferenceBypassed,
     OutputReferenceNotExist,
@@ -294,7 +295,7 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -554,42 +555,13 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         aggregated_flow_inputs = dict(inputs or {})
         aggregation_inputs = dict(aggregation_inputs or {})
-        self._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
+        FlowValidator._validate_aggregation_inputs(aggregated_flow_inputs, aggregation_inputs)
         aggregated_flow_inputs = self._apply_default_value_for_aggregation_input(
             self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
         )
 
         with self._run_tracker.node_log_manager:
             return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
-
-    @staticmethod
-    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
-        """Validate the aggregation inputs according to the flow inputs."""
-        for key, value in aggregated_flow_inputs.items():
-            if key in aggregation_inputs:
-                raise InvalidAggregationInput(
-                    message_format="Input '{input_key}' appear in both flow aggregation input and aggregation input.",
-                    input_key=key,
-                )
-            if not isinstance(value, list):
-                raise InvalidAggregationInput(
-                    message_format="Flow aggregation input {input_key} should be one list.", input_key=key
-                )
-
-        for key, value in aggregation_inputs.items():
-            if not isinstance(value, list):
-                raise InvalidAggregationInput(
-                    message_format="Aggregation input {input_key} should be one list.", input_key=key
-                )
-
-        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
-        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
-        if len(set(inputs_len.values())) > 1:
-            raise InvalidAggregationInput(
-                message_format="Whole aggregation inputs should have the same length. "
-                "Current key length mapping are: {key_len}",
-                key_len=inputs_len,
-            )
 
     @staticmethod
     def _apply_default_value_for_aggregation_input(
@@ -660,7 +632,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -718,7 +690,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -733,6 +705,7 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
+        self._save_image_from_output(line_result.output, self._working_dir)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -776,7 +749,7 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         inputs = [
-            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            FlowExecutor._process_input_values(self._flow.inputs, each_line_input)
             for each_line_input in inputs
         ]
         run_id = run_id or str(uuid.uuid4())
@@ -799,12 +772,31 @@ class FlowExecutor:
         )
 
     @staticmethod
+    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
+        return FlowExecutor._convert_image_to_bytes(inputs, inputs_with_default_value)
+
+    @staticmethod
     def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if key not in updated_inputs and (value and value.default):
                 updated_inputs[key] = value.default
         return updated_inputs
+
+    @staticmethod
+    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+        updated_inputs = dict(line_inputs or {})
+        for key, value in inputs.items():
+            if value.type == ValueType.IMAGE:
+                updated_inputs[key] = Image.from_file(updated_inputs[key])
+        return updated_inputs
+
+    def _save_image_from_output(self, output: dict, output_dir: str):
+        # TODO: The output directory should be configurable.
+        for key, value in output.items():
+            if isinstance(value, Image):
+                output[key] = value.save_to(key, output_dir)
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
@@ -816,6 +808,15 @@ class FlowExecutor:
         :return: A list of dictionaries containing the resolved inputs for each line in the flow.
         :rtype: List[Dict[str, Any]]
         """
+        if not inputs_mapping:
+            logger.warning(
+                msg=(
+                    "Starting run without column mapping may lead to unexpected results. "
+                    "Please consult the following documentation for more information: "
+                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                )
+            )
+
         inputs_mapping = self._complete_inputs_mapping_by_default_value(inputs_mapping)
         resolved_inputs = self._apply_inputs_mapping_for_all_lines(inputs, inputs_mapping)
         return resolved_inputs
@@ -887,6 +888,8 @@ class FlowExecutor:
         try:
             if validate_inputs:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
+                # Make sure the run_info with converted inputs results rather than original inputs
+                run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output
@@ -1056,13 +1059,12 @@ class FlowExecutor:
         # Return all not found mapping relations in one exception to provide better debug experience.
         if notfound_mapping_relations:
             invalid_relations = ", ".join(notfound_mapping_relations)
-            # TODO: Replace detail message about default mapping by doc link.
             raise InputMappingError(
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "If a mapping reads input from 'data', it might be generated from the YAML input section, "
-                    "and you may need to manually assign input mapping based on your input data."
+                    "For more information, refer to the following documentation: "
+                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
                 ),
                 invalid_relations=invalid_relations,
             )
