@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.CodeDom" Version="7.0.0" />
     <PackageReference Include="YamlDotNet" Version="13.4.0" />
   </ItemGroup>
 
