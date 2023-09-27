@@ -54,32 +54,30 @@ user:
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.configs['endpoint_url']
-        try:
+        with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             os = OpenSourceLLM(gpt2_custom_connection)
             os.call(self.chat_prompt, API.CHAT)
-            assert False
-        except OpenSourceLLMKeyValidationError:
-            pass
+        assert exc_info.value.message == """Required key `endpoint_url` not found in given custom connection.
+Required keys are: endpoint_url,model_family."""
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.secrets['endpoint_api_key']
-        try:
+        with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             os = OpenSourceLLM(gpt2_custom_connection)
             os.call(self.chat_prompt, API.CHAT)
-            assert False
-        except OpenSourceLLMKeyValidationError:
-            pass
+        assert exc_info.value.message == ("Required secret key `endpoint_api_key` "
+        + """not found in given custom connection.
+Required keys are: endpoint_api_key.""")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
         del gpt2_custom_connection.configs['model_family']
-        try:
+        with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             os = OpenSourceLLM(gpt2_custom_connection)
             os.call(self.completion_prompt, API.COMPLETION)
-            assert False
-        except OpenSourceLLMKeyValidationError:
-            pass
+        assert exc_info.value.message == """Required key `model_family` not found in given custom connection.
+Required keys are: endpoint_url,model_family."""
 
     def test_open_source_llm_escape_chat(self):
         danger = r"The quick \brown fox\tjumped\\over \the \\boy\r\n"
@@ -109,11 +107,14 @@ You are a AI which helps Customers answer questions.
 
 user:
 """ + self.completion_prompt
-        try:
+        with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
-            assert False
-        except OpenSourceLLMUserError:
-            pass
+        assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition,"
+        + " and the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'."
+        + " Current parsed role 'system' does not meet the requirement. If you intend to use the Completion "
+        + "API, please select the appropriate API type and deployment name. If you do intend to use the Chat "
+        + "API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
+        + "gallery that contain 'Chat' in the name.")
 
     def test_open_source_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
@@ -123,37 +124,44 @@ user:
 
 user:
 {self.completion_prompt}"""
-        try:
+        with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
-            assert False
-        except OpenSourceLLMUserError:
-            pass
+        assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition, and "
+        + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
+        + "role 'system' does not meet the requirement. If you intend to use the Completion API, please select the "
+        + "appropriate API type and deployment name. If you do intend to use the Chat API, please refer to the "
+        + "guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' "
+        + "in the name.")
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
-        try:
+        with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
-            assert False
-        except OpenSourceLLMUserError:
-            pass
+        assert exc_info.value.message == ("The Chat API requires a specific format for prompt definition, and "
+        + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
+        + "role 'in the context of azure ml, what does the ml stand for?' does not meet the requirement. If you "
+        + "intend to use the Completion API, please select the appropriate API type and deployment name. If you do "
+        + "intend to use the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the "
+        + "samples in our gallery that contain 'Chat' in the name.")
+
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
         gpt2_custom_connection.configs['endpoint_url'] += 'completely/real/endpoint'
         os = OpenSourceLLM(gpt2_custom_connection)
-        try:
+        with pytest.raises(OpenSourceLLMOnlineEndpointError) as exc_info:
             os.call(
                 self.completion_prompt,
                 API.COMPLETION)
-        except OpenSourceLLMOnlineEndpointError:
-            pass
+        assert exc_info.value.message == ("Exception hit calling Oneline Endpoint: "
+        + "HTTPError: HTTP Error 424: Failed Dependency")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_deployment_miss(self, gpt2_custom_connection):
         os = OpenSourceLLM(gpt2_custom_connection)
-        try:
+        with pytest.raises(OpenSourceLLMOnlineEndpointError) as exc_info:
             os.call(
                 self.completion_prompt,
                 API.COMPLETION,
                 deployment_name="completely/real/deployment-007")
-        except OpenSourceLLMOnlineEndpointError:
-            pass
+        assert exc_info.value.message == ("Exception hit calling Oneline Endpoint: "
+        + "HTTPError: HTTP Error 404: Not Found")

@@ -18,7 +18,7 @@ def validate_role(role: str, valid_roles: Set[str] = None):
         valid_roles = {"system", "user", "assistant", "function"}
 
     if role not in valid_roles:
-        valid_roles_str = ','.join([f'\'{role}:\\n\''for role in valid_roles])
+        valid_roles_str = ','.join(sorted([f'\'{role}:\\n\''for role in valid_roles]))
         error_message = (
             f"The Chat API requires a specific format for prompt definition, and the prompt should include separate "
             f"lines as role delimiters: {valid_roles_str}. Current parsed role '{role}'"
