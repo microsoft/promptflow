@@ -40,7 +40,7 @@ connection.provider=azureml:/subscriptions/<your-subscription>/resourceGroups/<y
 ```
 
 When `get` or `list` connections, `PFClient`(or `pf connection` commands) will return workspace connections, and flow will be executed using these workspace connections.
-_Secrets for workspace connection will not be shown by those commands, which means you may see empty dict `{}` for custom conenctions._
+_Secrets for workspace connection will not be shown by those commands, which means you may see empty dict `{}` for custom connections._
 
 Note that `create`, `update` and `delete` commands are not supported for workspace connections, please manage it in workspace portal, az ml cli or AzureML SDK. 
 
