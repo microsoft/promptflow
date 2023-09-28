@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -30,12 +30,8 @@ namespace Flow
         {
             var output = new Output();
             // execution code: start
-            // sample node to call Tool in the same project
             var node1 = InternalTool.CallSimpleLLM(inputs.Prompt);
-
-            // sample node to call Tool in standalone tool project
             var node2 = SampleTool.SimpleLLM.CallSimpleLLM(node1);
-
             output.Out1 = node1;
             output.Out2 = node2;
             // execution code: end

@@ -1,0 +1,25 @@
+inputs:
+  prompt:
+    type: string
+outputs:
+  out1:
+    type: string
+    reference: ${node1.output}
+  out2:
+    type: string
+    reference: ${node2.output}
+nodes:
+- name: node1
+  type: csharp
+  source:
+    type: func
+    path: InternalTool.CallSimpleLLM
+  inputs:
+    prompt: ${inputs.prompt}
+- name: node2
+  type: csharp
+  source:
+    type: func
+    path: SampleTool.SimpleLLM.CallSimpleLLM
+  inputs:
+    prompt: ${node1.output}
