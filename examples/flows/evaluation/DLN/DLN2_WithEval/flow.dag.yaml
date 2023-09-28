@@ -1,0 +1,105 @@
+id: QnA_Relevance_llm_based_dev_test
+name: QnA Relevance Evaluation
+inputs:
+  input_x:
+    type: string
+    default: 'The deadline is Jun 1, 2021, which is 2 days away from now. What is the
+      date one year ago from today in MM/DD/YYYY? \n Options\n(A) 05/30/2020 \n
+      (B) 06/02/2020...'
+    is_chat_input: false
+  trainable_prompt:
+    type: string
+    default: 'Decompose the problem by breaking it down into steps. First, find the current date from the given context. Then, calculate the number of days or months to add or subtract from the current date to get the desired result.'
+    is_chat_input: false
+  groundtruth:
+    type: string
+    default: (A)
+    is_chat_input: false
+  trainable_prompt_pi_num:
+    type: int
+    default: 0
+    is_chat_input: false
+  trainable_prompt_pi_1:
+    type: string
+    default: "Additionally, consider the fact that in some contexts the day may come before the month (e.g. in the UK). For example, if the given context is It is 4/19/1969 today. What is the date a month ago in MM/DD/YYYY?, you can infer that…"
+    is_chat_input: false
+outputs:
+  output_y:
+    type: object
+    reference: ${classification_template.output}
+  output_layer2:
+    type: string
+    reference: ${classification_template_layer2.output}
+nodes:
+- name: classification_template
+  type: llm
+  source:
+    type: code
+    path: classification_template.jinja2
+  inputs:
+    model: text-davinci-003
+    suffix: ""
+    max_tokens: 1000
+    temperature: 1
+    top_p: 1
+    logprobs: 0
+    echo: false
+    stop: ""
+    presence_penalty: 0
+    frequency_penalty: 0
+    best_of: 1
+    logit_bias: ""
+    input_x: ${inputs.input_x}
+    trainable_prompt: ${inputs.trainable_prompt}
+  provider: OpenAI
+  connection: #some aoai connection
+  api: completion
+  module: promptflow.tools.openai
+  use_variants: false
+- name: concat_scores
+  type: python
+  source:
+    type: code
+    path: concat_scores.py
+  inputs:
+    return_result: ${classification_template_layer2.output}
+    trainable_prompt_pi_num: ${inputs.trainable_prompt_pi_num}
+  use_variants: false
+- name: aggregate_variants_results
+  type: python
+  source:
+    type: code
+    path: aggregate_variants_results.py
+  inputs:
+    results: ${concat_scores.output}
+  aggregation: true
+  use_variants: false
+- name: classification_template_layer2
+  type: llm
+  source:
+    type: code
+    path: classification_template_layer2.jinja2
+  inputs:
+    model: text-davinci-003
+    suffix: ""
+    max_tokens: 1000
+    temperature: 1
+    top_p: 1
+    logprobs: 0
+    echo: false
+    stop: ""
+    presence_penalty: 0
+    frequency_penalty: 0
+    best_of: 1
+    logit_bias: ""
+    hidden: ${classification_template.output}
+    input_x: ${inputs.input_x}
+    trainable_prompt_pi_1: ${inputs.trainable_prompt_pi_1}
+  provider: OpenAI
+  connection: #some aoai connection
+  api: completion
+  module: promptflow.tools.openai
+  use_variants: false
+node_variants: {}
+environment:
+  python_requirements_txt: requirements.txt
