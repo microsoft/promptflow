@@ -36,7 +36,11 @@ def test_resolve_tool_error():
     assert exception.message == "Tool load failed in 'MyTool': (PythonLoadError) Test PythonLoadError."
     assert exception.additional_info == inner_exception.additional_info
     assert exception.error_codes == ["UserError", "ToolValidationError", "PythonParsingError", "PythonLoadError"]
-    assert exception.reference_code == "Tool/__pf_main__"
+    if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
+        # Python >= 3.11 has a different error message
+        exception.reference_code == "ErrorTarget.TOOL/__pf_main__"
+    else:
+        assert exception.reference_code == "Tool/__pf_main__"
 
 
 def test_resolve_tool_error_with_none_inner():

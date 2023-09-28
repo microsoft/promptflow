@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import pytest
@@ -134,7 +135,12 @@ class TestToolsManager:
         working_dir = Path(__file__).parent
         with pytest.raises(error_code) as ex:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
-        assert str(ex.value) == error_message
+        if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
+            # Python >= 3.11 has a different error message
+            error_message_compare = error_message.replace("custom_llm", "ToolType.CUSTOM_LLM")
+            assert str(ex.value) == error_message_compare
+        else:
+            assert str(ex.value) == error_message
 
     @pytest.mark.skip("TODO: need to fix random pacakge not found error")
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):

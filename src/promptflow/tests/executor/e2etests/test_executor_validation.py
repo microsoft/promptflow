@@ -336,7 +336,12 @@ class TestValidation:
                 raise_ex=True,
             )
 
-        assert error_msg == exe_info.value.message
+        if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
+            # Python >= 3.11 has a different error message
+            error_msg_compare = error_msg.replace("int", "ValueType.INT")
+            assert error_msg_compare in exe_info.value.message
+        else:
+            assert error_msg == exe_info.value.message
 
     @pytest.mark.parametrize(
         "flow_folder, msg",

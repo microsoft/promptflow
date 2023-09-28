@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 import yaml
 
@@ -194,4 +196,10 @@ class TestFlowValidator:
 
         with pytest.raises(error_type) as exe_info:
             FlowValidator.resolve_flow_inputs_type(flow, inputs, idx=index)
-        assert error_message == exe_info.value.message
+
+        if (sys.version_info.major == 3) and (sys.version_info.minor >= 11):
+            # Python >= 3.11 has a different error message
+            error_msg_compare = error_message.replace("list", "ValueType.LIST")
+            assert error_msg_compare in exe_info.value.message
+        else:
+            assert error_message == exe_info.value.message
