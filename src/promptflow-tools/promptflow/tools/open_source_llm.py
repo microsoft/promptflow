@@ -59,20 +59,20 @@ def format_generic_response_payload(output: bytes, response_key: str) -> str:
     except KeyError as e:
         if response_key is None:
             message = f"""Expected the response to fit the following schema:
-                `[
-                    <text>
-                ]`
-                Instead, received {response_json} and access failed at key `{e}`.
-                """
+`[
+    <text>
+]`
+Instead, received {response_json} and access failed at key `{e}`.
+"""
         else:
             message = f"""Expected the response to fit the following schema:
-                `[
-                    {{
-                        "{response_key}": <text>
-                    }}
-                ]`
-                Instead, received {response_json} and access failed at key `{e}`.
-                """
+`[
+    {{
+        "{response_key}": <text>
+    }}
+]`
+Instead, received {response_json} and access failed at key `{e}`.
+"""
         raise OpenSourceLLMUserError(message=message)
 
 
@@ -364,14 +364,14 @@ class OpenSourceLLM(ToolProvider):
                 accepted_keys = ",".join([key for key in self.REQUIRED_CONFIG_KEYS])
                 raise OpenSourceLLMKeyValidationError(
                     message=f"""Required key `{key}` not found in given custom connection.
-                      Required keys are: {accepted_keys}."""
+Required keys are: {accepted_keys}."""
                 )
         for key in self.REQUIRED_SECRET_KEYS:
             if key not in conn_dict:
                 accepted_keys = ",".join([key for key in self.REQUIRED_SECRET_KEYS])
                 raise OpenSourceLLMKeyValidationError(
                     message=f"""Required secret key `{key}` not found in given custom connection.
-                      Required keys are: {accepted_keys}."""
+Required keys are: {accepted_keys}."""
                 )
         try:
             self.model_family = ModelFamily[connection.configs['model_family']]
@@ -379,7 +379,7 @@ class OpenSourceLLM(ToolProvider):
             accepted_models = ",".join([model.name for model in ModelFamily])
             raise OpenSourceLLMKeyValidationError(
                 message=f"""Given model_family '{connection.configs['model_family']}' not recognized.
-                  Supported models are: {accepted_models}."""
+Supported models are: {accepted_models}."""
             )
         self.connection = connection
 

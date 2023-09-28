@@ -59,6 +59,7 @@ user:
             os.call(self.chat_prompt, API.CHAT)
         assert exc_info.value.message == """Required key `endpoint_url` not found in given custom connection.
 Required keys are: endpoint_url,model_family."""
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
@@ -70,6 +71,7 @@ Required keys are: endpoint_url,model_family."""
             "Required secret key `endpoint_api_key` "
             + """not found in given custom connection.
 Required keys are: endpoint_api_key.""")
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
@@ -79,6 +81,7 @@ Required keys are: endpoint_api_key.""")
             os.call(self.completion_prompt, API.COMPLETION)
         assert exc_info.value.message == """Required key `model_family` not found in given custom connection.
 Required keys are: endpoint_url,model_family."""
+        assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
 
     def test_open_source_llm_escape_chat(self):
         danger = r"The quick \brown fox\tjumped\\over \the \\boy\r\n"
@@ -117,6 +120,7 @@ user:
             + "API, please select the appropriate API type and deployment name. If you do intend to use the Chat "
             + "API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
             + "gallery that contain 'Chat' in the name.")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     def test_open_source_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
@@ -135,6 +139,7 @@ user:
             + "appropriate API type and deployment name. If you do intend to use the Chat API, please refer to the "
             + "guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' "
             + "in the name.")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
@@ -146,6 +151,7 @@ user:
             + "intend to use the Completion API, please select the appropriate API type and deployment name. If you do "
             + "intend to use the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view "
             + "the samples in our gallery that contain 'Chat' in the name.")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
@@ -158,6 +164,7 @@ user:
         assert exc_info.value.message == (
             "Exception hit calling Oneline Endpoint: "
             + "HTTPError: HTTP Error 424: Failed Dependency")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_deployment_miss(self, gpt2_custom_connection):
@@ -170,3 +177,4 @@ user:
         assert exc_info.value.message == (
             "Exception hit calling Oneline Endpoint: "
             + "HTTPError: HTTP Error 404: Not Found")
+        assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")

@@ -24,13 +24,18 @@ Setup connections to provisioned resources in prompt flow.
 |-------------|----------|----------|----------|-------------|
 | CustomConnection | Required | Required | -        | -           |
 
-Instructions to create a Custom Connection [can be found here.](https://learn.microsoft.com/en-us/azure/machine-learning/prompt-flow/how-to-integrate-with-langchain?view=azureml-api-2#create-a-connection)
+Instructions to create a Custom Connection [can be found here.](https://microsoft.github.io/promptflow/how-to-guides/manage-connections.html#create-a-connection)
 
 The keys to set are:
 
-1. endpoint_url
-2. endpoint_api_key
-3. model_family
+1. **endpoint_url**
+   - This value can be found at the previously created Inferencing endpoint.
+2. **endpoint_api_key**
+   - Ensure to set this as a secret value.
+   - This value can be found at the previously created Inferencing endpoint.
+3. **model_family**
+   - Supported values: LLAMA, DOLLY, GPT2, or FALCON
+   - This value is dependent on the type of deployment you are targetting.
 
 *These values can be found at the previously created Inferencing endpoint.*
 
@@ -56,4 +61,4 @@ The keys to set are:
 1. Choose a Model from the catalog and deploy.
 2. Setup and select the connections to model deployment.
 3. Configure the model api and its parameters
-4. Prepare the Prompt with [guidance](./prompt-tool.md#how-to-write-prompt).
+4. Prepare the Prompt with [guidance](prompt-tool.md#how-to-write-prompt).
