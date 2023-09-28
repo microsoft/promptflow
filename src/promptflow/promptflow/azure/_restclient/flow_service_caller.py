@@ -99,7 +99,8 @@ class FlowServiceCaller(RequestTelemetryMixin):
 
         # self._service_context = workspace.service_context
         if base_url is None:
-            base_url = workspace.discovery_url.replace("discovery", "")
+            # handle vnet scenario, it's discovery url will have workspace id after discovery
+            base_url = workspace.discovery_url.split("discovery")[0]
             # for dev test, change base url with environment variable
             base_url = os.environ.get(self.FLOW_CLUSTER_ADDRESS, default=base_url)
 
