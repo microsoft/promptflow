@@ -373,3 +373,20 @@ class TestExecutor:
         # Assert for exec
         exec_result = executor.exec({})
         assert exec_result["output"] == default_input_value
+
+    @pytest.mark.parametrize(
+        "flow_folder, batch_input, expected_type, validate_inputs",
+        [
+            ("simple_aggregation", [{"text": 4}], str, True),
+            ("simple_aggregation", [{"text": 4.5}], str, True),
+            ("simple_aggregation", [{"text": "3.0"}], str, True),
+            ("simple_aggregation", [{"text": 4}], int, False),
+        ],
+    )
+    def test_bulk_run_line_result(self, flow_folder, batch_input, expected_type, validate_inputs, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        bulk_result = executor.exec_bulk(
+            batch_input,
+            validate_inputs=validate_inputs,
+        )
+        assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type

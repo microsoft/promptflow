@@ -96,7 +96,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            connections={"classify_with_llm": {"connection": "azure_open_ai"}},
+            connections={"classify_with_llm": {"connection": "azure_open_ai", "model": "gpt-3.5-turbo"}},
             runtime=runtime,
         )
         assert isinstance(run, Run)
@@ -107,6 +107,17 @@ class TestFlowRun:
             params_override=[{"runtime": runtime}],
         )
         run = remote_client.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+    def test_run_display_name_with_macro(self, pf, runtime):
+        run = load_run(
+            source=f"{RUNS_DIR}/run_with_env.yaml",
+            params_override=[{"runtime": runtime}],
+        )
+        run.display_name = "my_display_name_${variant_id}_${timestamp}"
+        run = pf.runs.create_or_update(run=run)
+        assert run.display_name.startswith("my_display_name_variant_0_")
+        assert "${timestamp}" not in run.display_name
         assert isinstance(run, Run)
 
     def test_run_with_remote_data(self, remote_client, pf, runtime, remote_web_classification_data):
@@ -660,3 +671,11 @@ class TestFlowRun:
         pf.runs.stream(run=run.name)
         detail = remote_client.get_details(run=run.name)
         assert len(detail) == 3
+
+    def test_vnext_workspace_base_url(self, pf):
+        from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
+
+        mock_workspace = MagicMock()
+        mock_workspace.discovery_url = "https://promptflow.azure-api.net/discovery/workspaces/fake_workspace_id"
+        service_caller = _FlowServiceCallerFactory.get_instance(workspace=mock_workspace, credential=MagicMock())
+        assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"

@@ -1,4 +1,8 @@
 # Startup script for the flow container
+
+CONDA_ENV_PATH="$(conda info --base)/envs/{{env.conda_env_name}}"
+export PATH="$CONDA_ENV_PATH/bin:$PATH"
+
 {% if connection_yaml_paths %}
 {% if show_comment %}
 # hack: for some unknown reason, without this ls, the connection creation will be failed
