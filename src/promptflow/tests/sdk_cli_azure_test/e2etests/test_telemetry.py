@@ -31,6 +31,7 @@ def cli_consent_config_overwrite(val):
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestTelemetry:
+    @pytest.mark.skip(reason="telemetry is disabled for now")
     def test_logging_handler(self):
         # override environment variable
         with environment_variable_overwrite("TELEMETRY_ENABLED", "true"):
