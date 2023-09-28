@@ -20,7 +20,8 @@ Since FilePath is still in test currently, you need to install private version S
 2. Edit python tool code with:
    1. Import FilePath
    2. Use FilePath as Input
-   3. Consume Input 
+   3. Consume Input
+
    ![update python tool](../../media/how-to-guides/develop-a-tool/update_python_tool_with_file_path.png)
 3. Save python code, go back to visual editor, click pencil after file_path, select `existing file`: 
    ![python tool existing file](../../media/how-to-guides/develop-a-tool/python_tool_existing_file.png)
@@ -38,7 +39,8 @@ For how to create and use custom tool ,please refer to [Custom tool package crea
 2. Before generate metadata of the tool, modify your tool code with:
    1. Import FilePath
    2. Use FilePath as Input
-   3. Consume Input 
+   3. Consume Input
+
    ![update custom tool](../../media/how-to-guides/develop-a-tool/update_custom_tool_with_file_path.png)
 3. Generate tool metadata, build and install tool package in VSCode Extension
 4. Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+ More` button and select your tool `Hello World Tool` 
