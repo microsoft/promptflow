@@ -51,27 +51,29 @@ class TestToolMetaUtils:
         assert meta_dict == expected_dict
 
     @pytest.mark.parametrize(
-        "flow_dir, tool_path, tool_type, msg",
+        "flow_dir, tool_path, tool_type, msg_pattern",
         [
             (
                 "prompt_tools",
                 "summarize_text_content_prompt.jinja2",
                 "python",
-                "summarize_text_content_prompt.jinja2', please make sure it is a valid .py file.",
+                r"Failed to load python file '.*summarize_text_content_prompt.jinja2'. "
+                r"Please make sure it is a valid .py file.",
             ),
             (
                 "script_with_import",
                 "fail.py",
                 "python",
-                "Failed to load python module from file",
+                r"Failed to load python module from file '.*fail.py'. "
+                r"Error details: \(ModuleNotFoundError\) No module named 'aaa'",
             ),
         ],
     )
-    def test_generate_tool_meta_dict_by_file_exception(self, flow_dir, tool_path, tool_type, msg):
+    def test_generate_tool_meta_dict_by_file_exception(self, flow_dir, tool_path, tool_type, msg_pattern):
         wd = str((FLOW_ROOT / flow_dir).resolve())
         ret = generate_tool_meta_dict_by_file_with_cd(wd, tool_path, tool_type)
         assert isinstance(ret, str), "Call cd_and_run should fail but succeeded:\n" + str(ret)
-        assert msg in ret
+        assert re.match(msg_pattern, ret)
 
 
 @pytest.mark.unittest
@@ -104,6 +106,6 @@ class TestPythonLoadError:
         )
 
     def test_additional_info_for_empty_inner_error(self):
-        ex = PythonLoadError("Test empty error")
+        ex = PythonLoadError(message_format="Test empty error")
         additional_info = ExceptionPresenter.create(ex).to_dict().get("additionalInfo")
         assert additional_info is None
