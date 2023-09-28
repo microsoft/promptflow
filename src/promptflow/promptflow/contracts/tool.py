@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
 from .types import PromptTemplate, Secret
+from .multimedia import Image
 
 T = TypeVar("T", bound="Enum")
 
@@ -86,6 +87,8 @@ class ValueType(str, Enum):
             return ValueType.SECRET
         if t == PromptTemplate:
             return ValueType.PROMPT_TEMPLATE
+        if t == Image:
+            return ValueType.IMAGE
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
@@ -179,7 +182,6 @@ class ConnectionType:
     @staticmethod
     def is_custom_strong_type(val):
         """Check if the given value is a custom strong type connection."""
-
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
         # TODO: replace the hotfix "try-except" with a more graceful solution."
