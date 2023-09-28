@@ -533,7 +533,8 @@ class FlowOperations:
                     if not Path(include).absolute():
                         include = flow.code / include
                     files = glob.glob(os.path.join(include, "**/*"))
-                    additional_files.update({os.path.relpath(path, include): os.path.relpath(path, flow.code) for path in files})
+                    additional_files.update(
+                        {os.path.relpath(path, include): os.path.relpath(path, flow.code) for path in files})
             for tool in flow_tools_meta.values():
                 source = tool.get("source", None)
                 if source in additional_files:
