@@ -44,6 +44,7 @@ REQUIRES = [
     "tiktoken>=0.4.0",
     "strictyaml>=1.5.0,<2.0.0",  # used to identify exact location of validation error
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
+    "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
 ]
 
 setup(
