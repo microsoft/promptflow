@@ -3,6 +3,7 @@ ipython_genutils
 ipykernel
 papermill
 keyrings.alt
+black==23.7.0
 black-nb
 pypandoc # for markdown reader
 pypandoc_binary # pypandoc pandoc backend
