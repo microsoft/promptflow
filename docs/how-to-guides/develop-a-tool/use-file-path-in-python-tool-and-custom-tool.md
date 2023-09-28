@@ -6,9 +6,9 @@ In this document, we will guide you through the detailed process of how to use F
 
 Since FilePath is still in test currently, you need to install private version SDK and Extension.
 
-1. Download promptflow SDK from [promptflow-0.0.106101544-py3-none-any.whl](https://msdata.visualstudio.com/_apis/resources/Containers/212274629/promptflow?itemPath=promptflow%2Fpromptflow-0.0.106101544-py3-none-any.whl), install locally:
+1. Download private version promptflow SDK
     ```
-    pip install <path-to-promptflow-0.0.106101544-py3-none-any.whl>
+    pip install "promptflow==0.0.106113823" --extra-index-url https://azuremlsdktestpypi.azureedge.net/test-promptflow/
     ```
 
 2. Download this [VSCode Extension](https://aka.ms/pfvsctest), install from VSIX: 
