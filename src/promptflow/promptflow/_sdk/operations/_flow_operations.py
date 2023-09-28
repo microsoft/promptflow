@@ -530,15 +530,19 @@ class FlowOperations:
                 if include_path.is_file():
                     additional_files[Path(include).name] = os.path.relpath(include_path, flow.code)
                 else:
-                    if not Path(include).absolute():
+                    if not Path(include).is_absolute():
                         include = flow.code / include
-                    files = glob.glob(os.path.join(include, "**/*"))
+                    files = glob.glob(os.path.join(include, "**"), recursive=True)
                     additional_files.update(
-                        {os.path.relpath(path, include): os.path.relpath(path, flow.code) for path in files})
+                        {
+                            Path(os.path.relpath(path, include.parent)):
+                                os.path.relpath(path, flow.code) for path in files
+                        }
+                    )
             for tool in flow_tools_meta.values():
                 source = tool.get("source", None)
-                if source in additional_files:
-                    tool["source"] = additional_files[source]
+                if source and Path(source) in additional_files:
+                    tool["source"] = additional_files[Path(source)]
 
         flow_tools["code"] = flow_tools_meta
 
