@@ -8,7 +8,7 @@ Prompt fine-tuning involves optimizing the input prompts given to an LLM. This s
 
 When we talk about "high quality", it's not just about accuracy. It's equally important to strike a balance between the accuracy and the token cost of the LLM. Spend just 15 minutes with us to discover how prompt flow expedites the process of prompt tuning, testing, and evaluation, guiding you towards finding the ideal prompt **(accuracy ↑,token ↓)**
 
-<img src="./media/realcase.png" alt="comparison resutl" width=60%>
+<img src="./media/realcase.png" alt="comparison result" width=60%>
 
 ## Video tutorial
 
@@ -136,7 +136,7 @@ There is a `data.jsonl` file in the `promptflow/examples/flows/chat/chat-math-va
 
 Run the following command to test your prompt with this dataset:
 
-Firsr, set the environment variable `base_run_name` to specify the run name. 
+First, set the environment variable `base_run_name` to specify the run name. 
 
 ```bash
 base_run_name="base_run"
@@ -195,8 +195,8 @@ pf run show-details --name %base_run_name%
 This can show the line by line input and output of the run:
 ```
 +----+---------------+-----------------+---------------+---------------+
-|    | inputs.chat   | inputs.questi   |   inputs.line | outputs.ans   |
-|    | _history      | on              |       _number | wer           |
+|    | inputs.chat   | inputs.question |   inputs.line | outputs.ans   |
+|    | _history      |                 |       _number | wer           |
 +====+===============+=================+===============+===============+
 |  0 | []            | Compute $\dbi   |             0 | 4368          |
 |    |               | nom{16}{5}$.    |               |               |
@@ -305,7 +305,7 @@ assistant:
 user:
 Find the greatest common divisor of $7!$ and $(5!)^2.$
 assistant:
-{"Chain of thought": "$$ \\begin{array}{rcrcr} 7! &=& 7 \\cdot 6 \\cdot 5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1 &=& 2^4 \\cdot 3^2 \\cdot 5^1 \\cdot 7^1 \\\\ (5!)^2 &=& (5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1)^2 &=& 2^6 \\cdot 3^2 \\cdot 5^2 \\\\ \\text{gcd}(7!, (5!)^2) &=& 2^4 \\cdot 3^2 \\cdot 5^1 &=& \\boxed{720} \\end{array} $$.", "answer": "720"}
+{"Chain of thought": "$$ \\begin{array} 7! &=& 7 \\cdot 6 \\cdot 5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1 &=& 2^4 \\cdot 3^2 \\cdot 5^1 \\cdot 7^1 \\\\ (5!)^2 &=& (5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1)^2 &=& 2^6 \\cdot 3^2 \\cdot 5^2 \\\\ \\text{gcd}(7!, (5!)^2) &=& 2^4 \\cdot 3^2 \\cdot 5^1 &=& \\boxed{720} \\end{array} $$.", "answer": "720"}
 ```
 </details>
 
@@ -325,19 +325,19 @@ assistant:
 user:
 Find the greatest common divisor of $7!$ and $(5!)^2.$
 assistant:
-{"Chain of thought": "$$ \\begin{array}{rcrcr} 7! &=& 7 \\cdot 6 \\cdot 5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1 &=& 2^4 \\cdot 3^2 \\cdot 5^1 \\cdot 7^1 \\\\ (5!)^2 &=& (5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1)^2 &=& 2^6 \\cdot 3^2 \\cdot 5^2 \\\\ \\text{gcd}(7!, (5!)^2) &=& 2^4 \\cdot 3^2 \\cdot 5^1 &=& \\boxed{720} \\end{array} $$.", "answer": "720"}
+{"Chain of thought": "$$ \\begin{array} 7! &=& 7 \\cdot 6 \\cdot 5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1 &=& 2^4 \\cdot 3^2 \\cdot 5^1 \\cdot 7^1 \\\\ (5!)^2 &=& (5 \\cdot 4 \\cdot 3 \\cdot 2 \\cdot 1)^2 &=& 2^6 \\cdot 3^2 \\cdot 5^2 \\\\ \\text{gcd}(7!, (5!)^2) &=& 2^4 \\cdot 3^2 \\cdot 5^1 &=& \\boxed{720} \\end{array} $$.", "answer": "720"}
 user:
 A club has 10 members, 5 boys and 5 girls.  Two of the members are chosen at random.  What is the probability that they are both girls?
 assistant:
-{"Chain of thought": "There are $\\binom{10}{2} = 45$ ways to choose two members of the group, and there are $\\binom{5}{2} = 10$ ways to choose two girls.  Therefore, the probability that two members chosen at random are girls is $\\dfrac{10}{45} = \\boxed{\\dfrac{2}{9}}$.", "answer": "2/9"}
+{"Chain of thought": "There are $\\binomial{10}{2} = 45$ ways to choose two members of the group, and there are $\\binomial{5}{2} = 10$ ways to choose two girls.  Therefore, the probability that two members chosen at random are girls is $\\dfrac{10}{45} = \\boxed{\\dfrac{2}{9}}$.", "answer": "2/9"}
 user:
 Allison, Brian and Noah each have a 6-sided cube. All of the faces on Allison's cube have a 5. The faces on Brian's cube are numbered 1, 2, 3, 4, 5 and 6. Three of the faces on Noah's cube have a 2 and three of the faces have a 6. All three cubes are rolled. What is the probability that Allison's roll is greater than each of Brian's and Noah's? Express your answer as a common fraction.
 assistant:
 {"Chain of thought": "Since Allison will always roll a 5, we must calculate the probability that both Brian and Noah roll a 4 or lower. The probability of Brian rolling a 4 or lower is $\\frac{4}{6} = \\frac{2}{3}$ since Brian has a standard die. Noah, however, has a $\\frac{3}{6} = \\frac{1}{2}$ probability of rolling a 4 or lower, since the only way he can do so is by rolling one of his 3 sides that have a 2. So, the probability of both of these independent events occurring is $\\frac{2}{3} \\cdot \\frac{1}{2} = \\boxed{\\frac{1}{3}}$.", "answer": "1/3"}
 user:
-Compute $\\dbinom{50}{2}$.
+Compute $\\density binomial{50}{2}$.
 assistant:
-{"Chain of thought": "$\\dbinom{50}{2} = \\dfrac{50!}{2!48!}=\\dfrac{50\\times 49}{2\\times 1}=\\boxed{1225}.$", "answer": "1225"}
+{"Chain of thought": "$\\density binomial{50}{2} = \\dfrac{50!}{2!48!}=\\dfrac{50\\times 49}{2\\times 1}=\\boxed{1225}.$", "answer": "1225"}
 user:
 The set $S = \\{1, 2, 3, \\ldots , 49, 50\\}$ contains the first $50$ positive integers.  After the multiples of 2 and the multiples of 3 are removed, how many integers remain in the set $S$?
 assistant:
@@ -483,7 +483,7 @@ Excellent! Now you can compare their performances and token costs, and choose th
 
 Great! Now you can compare their performances and token costs to choose the prompt that best suits your needs. Upon comparison, we can observe that variant_1 and variant_2 have the similar accuracy. However, variant_1 stands out as the better choice due to its lower token cost (2 few-shots vs. 6 few-shots).
 
-<img src="media/realcase.png" alt="comparison resutl" width=65%/>
+<img src="media/realcase.png" alt="comparison result" width=65%/>
 
 It is evident that adding more CoT examples in the prompt does not necessarily improve the accuracy further. Instead, we should identify the optimal point where the number of shots maximizes accuracy while minimizing cost.
 
