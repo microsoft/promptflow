@@ -26,22 +26,16 @@ namespace Flow
 
         }
 
-        [PromptFlow.Tool]
-        public static String CallSimpleLLM(String prompt)
-        {
-            Console.WriteLine("Call simple inline LLM with prompt " + prompt);
-            return prompt;
-        }
-
         public Output Execute(Input inputs)
         {
-            var out1 = CallSimpleLLM(inputs.Prompt);
-            var out2 = SampleTool.SimpleLLM.CallSimpleLLM(out1 as string);
-            return new Output()
-            {
-                Out1 = out1,
-                Out2 = out2,
-            };
+            var output = new Output();
+            // execution code: start
+            var node1 = InternalTool.CallSimpleLLM(inputs.Prompt);
+            var node2 = SampleTool.SimpleLLM.CallSimpleLLM(node1);
+            output.Out1 = node1;
+            output.Out2 = node2;
+            // execution code: end
+            return output;
         }
     }
 }

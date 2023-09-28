@@ -7,7 +7,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace CodeDOMSample
+namespace Flow
 {
     using System;
 

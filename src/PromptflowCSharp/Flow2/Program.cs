@@ -10,23 +10,9 @@ using PromptFlow;
 
 var flow = new Flow2();
 
-flow.Execute(new Flow2.Input() { Prompt = "test input prompt" });
+var output = flow.Execute(new Flow2.Input() { Prompt = "test input prompt" });
 
-var function = flow.Execute;
-var body = function.GetMethodInfo().GetMethodBody();
+Console.WriteLine($"Executed flow with output:\nOut1: {output.Out1}\nOut2: {output.Out2}");
 
-SyntaxTree tree = CSharpSyntaxTree.ParseText("../../../Flow2.cs");
-CompilationUnitSyntax root = tree.GetCompilationUnitRoot();
-var nodes = root.DescendantNodes().ToList();
-var property = root.DescendantNodes()
-                       .OfType<MethodDeclarationSyntax>()
-                       .Where(md => md.Identifier.ValueText.Equals("Execute"))
-                       .FirstOrDefault();
-var compilation = CSharpCompilation.Create("HelloWorld")
-    .AddReferences(MetadataReference.CreateFromFile(
-        typeof(string).Assembly.Location))
-    .AddSyntaxTrees(tree);
-Parser parser = new Parser();
-parser.Generate("../../../Temp.cs");
 
 Console.WriteLine();

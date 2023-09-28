@@ -6,7 +6,7 @@
         public static String CallSimpleLLM(String prompt)
         {
             Console.WriteLine("Call standalone simple LLM with prompt " + prompt);
-            return prompt;
+            return "External Processed " + prompt;
         }
     }
 }
