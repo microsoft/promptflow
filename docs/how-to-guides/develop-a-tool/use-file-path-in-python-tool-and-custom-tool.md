@@ -47,7 +47,8 @@ For how to create and use custom tool ,please refer to [Custom tool package crea
    ![use custom tool](../../media/how-to-guides/develop-a-tool/use_custom_tool.png)
 5. Click pencil after file_path, select `existing file` or `new file` as input, here select new file 
    ![file path use new file](../../media/how-to-guides/develop-a-tool/file_path_new_file.png)
-   input_file.txt as input: 
+   input_file.txt as input:
+
    ![input file txt](../../media/how-to-guides/develop-a-tool/input_file.png)
 6. Run your flow: 
    ![flow output](../../media/how-to-guides/develop-a-tool/custom_tool_output.png)
