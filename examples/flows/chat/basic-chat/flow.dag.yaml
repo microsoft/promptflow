@@ -29,6 +29,8 @@ nodes:
     path: chat.jinja2
   api: chat
   connection: open_ai_connection
+  provider: AzureOpenAI
+  module: promptflow.tools.aoai
 node_variants: {}
 environment:
     python_requirements_txt: requirements.txt
