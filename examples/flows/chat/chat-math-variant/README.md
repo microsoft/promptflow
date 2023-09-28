@@ -1,4 +1,4 @@
-# Math chat flow with prompt variants
+# Test your prompt variants for chat with math
 This is a prompt tuning case with 3 prompt variants for math question answering.
 
 Tools used in this flow：
