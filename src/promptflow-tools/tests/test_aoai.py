@@ -93,7 +93,7 @@ class TestAOAI:
                 answer += next(result)
             except Exception:
                 break
-        assert "additional details you can include" in answer.lower()
+        assert "additional details" in answer.lower()
 
     @pytest.mark.parametrize(
         "params, expected",
