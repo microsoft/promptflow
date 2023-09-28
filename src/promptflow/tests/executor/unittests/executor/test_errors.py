@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from promptflow._core.tool_meta_generator import PythonLoadError
