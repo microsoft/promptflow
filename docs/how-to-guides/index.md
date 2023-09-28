@@ -14,7 +14,7 @@ enable-streaming-mode
 manage-connections
 manage-runs
 column-mapping
-develop-tool/index
+develop-a-tool/index
 faq
 
 ```
