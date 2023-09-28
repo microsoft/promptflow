@@ -126,7 +126,8 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
-    "levelno"
+    "levelno",
+    "LANCZOS"
   ],
   "allowCompoundWords": true
 }
