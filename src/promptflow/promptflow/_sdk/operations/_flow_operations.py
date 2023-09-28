@@ -2,7 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
+import os
 import json
+import glob
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -519,6 +521,23 @@ class FlowOperations:
         nodes_with_error = [node_name for node_name, message in flow_tools_meta.items() if isinstance(message, str)]
         for node_name in nodes_with_error:
             tools_errors[node_name] = flow_tools_meta.pop(node_name)
+
+        additional_includes = _get_additional_includes(flow.flow_dag_path)
+        if additional_includes:
+            additional_files = {}
+            for include in additional_includes:
+                include_path = Path(include) if Path(include).is_absolute() else flow.code / include
+                if include_path.is_file():
+                    additional_files[Path(include).name] = os.path.relpath(include_path, flow.code)
+                else:
+                    if not Path(include).absolute():
+                        include = flow.code / include
+                    files = glob.glob(os.path.join(include, "**/*"))
+                    additional_files.update({os.path.relpath(path, include): os.path.relpath(path, flow.code) for path in files})
+            for tool in flow_tools_meta.values():
+                source = tool.get("source", None)
+                if source in additional_files:
+                    tool["source"] = additional_files[source]
 
         flow_tools["code"] = flow_tools_meta
 
