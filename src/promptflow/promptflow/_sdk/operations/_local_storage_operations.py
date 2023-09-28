@@ -6,7 +6,8 @@ import datetime
 import json
 import logging
 import shutil
-from dataclasses import asdict, dataclass
+import uuid
+from dataclasses import asdict, dataclass, fields, is_dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
@@ -32,6 +33,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -193,6 +195,7 @@ class LocalStorageOperations(AbstractRunStorage):
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
         outputs_folder = self._prepare_folder(self.path / "flow_outputs")
+        self._image_output_folder = outputs_folder
         self._outputs_path = outputs_folder / "output.jsonl"
         self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
         self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")
@@ -356,11 +359,12 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
+        node_folder = self._prepare_folder(self._node_infos_folder / run_info.node)
+        line_number = 0 if run_info.index is None else run_info.index
+        self._persist_image(run_info.output, node_folder, f"{run_info.node}_{str(line_number)}")
         node_run_record = NodeRunRecord.from_run_info(run_info)
-        node_folder = self._prepare_folder(self._node_infos_folder / node_run_record.NodeName)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
-        line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
@@ -369,6 +373,7 @@ class LocalStorageOperations(AbstractRunStorage):
         if not Status.is_terminated(run_info.status):
             logger.info("Line run is not terminated, skip persisting line run record.")
             return
+        self._persist_image(run_info.output, self._run_infos_folder)
         line_run_record = LineRunRecord.from_flow_run_info(run_info)
         # calculate filename according to the batch size
         # note that if batch_size > 1, need to well handle concurrent write scenario
@@ -386,6 +391,20 @@ class LocalStorageOperations(AbstractRunStorage):
             return
         self.dump_outputs(result.outputs)
         self.dump_metrics(result.metrics)
+
+    def _persist_image(self, output: Any, folder: Path, file_name_perfix: str = None):
+        if isinstance(output, Image):
+            name = f"{file_name_perfix}_{uuid.uuid4()}" if file_name_perfix else str(uuid.uuid4())
+            output.save_to(name, folder)
+        elif isinstance(output, dict):
+            for _, value in output.items():
+                self._persist_image(value, folder, file_name_perfix)
+        elif isinstance(output, list):
+            for item in output:
+                self._persist_image(item, folder, file_name_perfix)
+        elif is_dataclass(output):
+            for field in fields(output):
+                self._persist_image(getattr(output, field.name), folder, file_name_perfix)
 
     @staticmethod
     def _prepare_folder(path: Union[str, Path]) -> Path:

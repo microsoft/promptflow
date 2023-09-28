@@ -162,11 +162,6 @@ class RunTracker(ThreadLocalSingleton):
         return run_info
 
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
-        if output:
-            try:
-                self._assert_flow_output_serializable(output)
-            except Exception as e:
-                output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
     def _update_flow_run_info_with_node_runs(self, run_info):
@@ -185,9 +180,6 @@ class RunTracker(ThreadLocalSingleton):
 
         if run_info.inputs:
             run_info.inputs = self._ensure_inputs_is_json_serializable(run_info.inputs, run_info.node)
-        if output is not None:
-            msg = f"Output of {run_info.node} is not json serializable, use str to store it."
-            output = self._ensure_serializable_value(output, msg)
         self._common_postprocess(run_info, output, ex)
 
     def _common_postprocess(self, run_info, output, ex):

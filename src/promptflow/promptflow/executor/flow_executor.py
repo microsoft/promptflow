@@ -22,6 +22,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
+from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
@@ -49,7 +50,7 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -95,6 +96,7 @@ class FlowExecutor:
         working_dir=None,
         line_timeout_sec=LINE_TIMEOUT_SEC,
         flow_file=None,
+        input_image_dir=None,
     ):
         """Initialize a FlowExecutor object.
 
@@ -118,6 +120,8 @@ class FlowExecutor:
         :type line_timeout_sec: int
         :param flow_file: The path to the file containing the Flow definition.
         :type flow_file: str or None
+        :param input_image_dir: The input image directory to be used for the flow. Default is None.
+        :type input_image_dir: Path or None
         """
         # Inject OpenAI API to make sure traces and headers injection works and
         # update OpenAI API configs from environment variables.
@@ -144,6 +148,7 @@ class FlowExecutor:
         self._working_dir = working_dir
         self._line_timeout_sec = line_timeout_sec
         self._flow_file = flow_file
+        self._input_image_dir = input_image_dir
         try:
             self._tools_manager = ToolsManager(loaded_tools)
             tool_to_meta = {tool.name: tool for tool in flow.tools}
@@ -179,6 +184,8 @@ class FlowExecutor:
         raise_ex: bool = True,
         node_override: Optional[Dict[str, Dict[str, Any]]] = None,
         line_timeout_sec: int = LINE_TIMEOUT_SEC,
+        input_image_dir: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
     ) -> "FlowExecutor":
         """Create a new instance of FlowExecutor.
 
@@ -218,7 +225,9 @@ class FlowExecutor:
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
         if storage is None:
-            storage = DummyRunStorage()
+            if not output_dir:
+                output_dir = Path(".promptflow/output")
+            storage = DefaultRunStorage(working_dir, output_dir=output_dir)
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -235,6 +244,7 @@ class FlowExecutor:
             working_dir=working_dir,
             line_timeout_sec=line_timeout_sec,
             flow_file=flow_file,
+            input_image_dir=input_image_dir,
         )
 
     @classmethod
@@ -295,7 +305,7 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs)
+        flow_inputs = FlowExecutor._convert_image_to_bytes(flow.inputs, flow_inputs, working_dir)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -632,7 +642,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs, self._working_dir)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -690,7 +700,13 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
+        if self._input_image_dir:
+            input_dir = self._input_image_dir
+            record_absolute_path = True
+        else:
+            input_dir = self._working_dir
+            record_absolute_path = False
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs, input_dir, record_absolute_path)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -705,7 +721,7 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
-        self._save_image_from_output(line_result.output, self._working_dir)
+        line_result.output = serialize(line_result.output)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -749,7 +765,7 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
         inputs = [
-            FlowExecutor._process_input_values(self._flow.inputs, each_line_input)
+            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
             for each_line_input in inputs
         ]
         run_id = run_id or str(uuid.uuid4())
@@ -772,9 +788,10 @@ class FlowExecutor:
         )
 
     @staticmethod
-    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
-        return FlowExecutor._convert_image_to_bytes(inputs, inputs_with_default_value)
+    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path, record_absolute_path: bool = False):
+        line_inputs = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
+        line_inputs = FlowExecutor._convert_image_to_bytes(inputs, line_inputs, input_dir, record_absolute_path)
+        return line_inputs
 
     @staticmethod
     def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
@@ -785,18 +802,12 @@ class FlowExecutor:
         return updated_inputs
 
     @staticmethod
-    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path, record_absolute_path: bool) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(updated_inputs[key])
+                updated_inputs[key] = Image.from_file(input_dir / updated_inputs[key], record_absolute_path=record_absolute_path)
         return updated_inputs
-
-    def _save_image_from_output(self, output: dict, output_dir: str):
-        # TODO: The output directory should be configurable.
-        for key, value in output.items():
-            if isinstance(value, Image):
-                output[key] = value.save_to(key, output_dir)
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
