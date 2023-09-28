@@ -1,5 +1,4 @@
 from promptflow import tool
-from fractions import Fraction
 import json
 import re
 
@@ -12,7 +11,7 @@ def my_python_tool(input1: str) -> str:
     try:
         json_answer = json.loads(input1)
         answer = json_answer['answer']
-    except:
+    except Exception:
         answer = input1
 
     return answer

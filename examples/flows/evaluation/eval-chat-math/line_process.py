@@ -8,14 +8,14 @@ def line_process(groundtruth: str, prediction: str) -> int:
     # process prediction
     try:
         pred_float = float(prediction)
-    except:
+    except Exception:
         if '/' in prediction:
             split_list = prediction.split('/')
             if len(split_list) == 2:
                 numerator, denominator = split_list
                 try:
                     pred_float = float(numerator) / float(denominator)
-                except:
+                except Exception:
                     processed_result = -1
             else:
                 processed_result = -1
@@ -29,10 +29,10 @@ def line_process(groundtruth: str, prediction: str) -> int:
             numerator, denominator = groundtruth.split('/')
             try:
                 gt_float = float(numerator) / float(denominator)
-            except:
+            except Exception:
                 processed_result = -1
         else:
-            processed_result = -1       
+            processed_result = -1
 
     if processed_result == 0:
         if round(pred_float, 10) == round(gt_float, 10):
