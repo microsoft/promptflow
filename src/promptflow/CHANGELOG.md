@@ -2,7 +2,7 @@
 
 ## 0.1.0b7.post1 (2023.09.28)
 
-### Bug Fixed:
+### Bug Fixed
 - Fix extra dependency bug when importing `promptflow` without `azure-ai-ml` installed.
 
 ## 0.1.0b7 (2023.09.27)
