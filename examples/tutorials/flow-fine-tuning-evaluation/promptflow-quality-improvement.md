@@ -39,6 +39,12 @@ Clone the promptflow repository to your local machine:
 git clone https://github.com/microsoft/promptflow.git
 ```
 
+Setup sample `open_ai_connection` connection
+```bash
+# Override keys with --set to avoid yaml file changes
+pf connection create --file ../../connections/azure_openai.yml --set api_key=<your_api_key> api_base=<your_api_base> --name open_ai_connection
+```
+
 Next, let's get started with customizing the flow for a specific task.
 
 ### Customize the flow for a specific task
