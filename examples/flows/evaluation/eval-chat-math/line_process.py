@@ -24,7 +24,7 @@ def line_process(groundtruth: str, prediction: str) -> int:
     # process groundtruth
     try:
         gt_float = float(groundtruth)
-    except:
+    except Exception:
         if '/' in groundtruth:
             numerator, denominator = groundtruth.split('/')
             try:
