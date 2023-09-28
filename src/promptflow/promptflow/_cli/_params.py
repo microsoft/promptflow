@@ -4,7 +4,8 @@
 
 import argparse
 
-from azure.ai.ml.constants._common import MAX_LIST_CLI_RESULTS
+# TODO: avoid azure dependency here 
+MAX_LIST_CLI_RESULTS = 50
 
 
 class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-access
