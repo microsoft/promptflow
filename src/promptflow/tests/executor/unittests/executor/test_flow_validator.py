@@ -61,6 +61,30 @@ class TestFlowValidator:
                     "name is accurately specified."
                 ),
             ),
+            (
+                "non_aggregation_reference_aggregation",
+                (
+                    "Invalid node definitions found in the flow graph. Non-aggregate node 'test_node' "
+                    "cannot reference aggregate nodes {'calculate_accuracy'}. Please review and rectify "
+                    "the node reference."
+                ),
+            ),
+            (
+                "aggregation_skip_reference_non_aggregation",
+                (
+                    "Invalid node definitions found in the flow graph. Non-aggregation nodes cannot be "
+                    "referenced in the skip config of the aggregation node 'calculate_accuracy'. Please "
+                    "review and rectify the node reference."
+                ),
+            ),
+            (
+                "aggregation_activate_reference_non_aggregation",
+                (
+                    "Invalid node definitions found in the flow graph. Non-aggregation node 'grade' cannot be "
+                    "referenced in the activate config of the aggregation node 'calculate_accuracy'. Please "
+                    "review and rectify the node reference."
+                ),
+            ),
         ],
     )
     def test_ensure_nodes_order_with_exception(self, flow_folder, error_message):

@@ -10,11 +10,10 @@ from pathlib import Path
 from typing import Optional, Union
 
 import pydash
-from azure.ai.ml._utils.utils import load_yaml
 
 from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import dump_yaml
+from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -27,7 +26,8 @@ class ConfigFileNotFound(ValidationException):
 class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
-    COLLECT_TELEMETRY = "cli.collect_telemetry"
+    COLLECT_TELEMETRY = "cli.telemetry_enabled"
+    EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
@@ -38,7 +38,13 @@ class Configuration(object):
         if not os.path.exists(self.CONFIG_PATH):
             with open(self.CONFIG_PATH, "w") as f:
                 f.write(dump_yaml({}))
-        self.config = load_yaml(self.CONFIG_PATH)
+        self._config = load_yaml(self.CONFIG_PATH)
+        if not self._config:
+            self._config = {}
+
+    @property
+    def config(self):
+        return self._config
 
     @classmethod
     def get_instance(cls):
@@ -49,18 +55,18 @@ class Configuration(object):
 
     def set_config(self, key, value):
         """Store config in file to avoid concurrent write."""
-        pydash.set_(self.config, key, value)
+        pydash.set_(self._config, key, value)
         with open(self.CONFIG_PATH, "w") as f:
-            f.write(dump_yaml(self.config))
+            f.write(dump_yaml(self._config))
 
     def get_config(self, key):
         try:
-            return pydash.get(self.config, key, None)
+            return pydash.get(self._config, key, None)
         except Exception:  # pylint: disable=broad-except
             return None
 
     def get_all(self):
-        return self.config
+        return self._config
 
     @classmethod
     def _get_workspace_from_config(
@@ -141,6 +147,8 @@ class Configuration(object):
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
+        if call_from_extension():
+            return self.get_config(key=self.EXTENSION_COLLECT_TELEMETRY)
         return self.get_config(key=self.COLLECT_TELEMETRY)
 
     def set_telemetry_consent(self, value):
@@ -158,4 +166,4 @@ class Configuration(object):
             return user_id
 
     def _to_dict(self):
-        return self.config
+        return self._config

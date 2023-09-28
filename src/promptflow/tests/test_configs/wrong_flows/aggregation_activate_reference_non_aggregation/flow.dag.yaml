@@ -1,0 +1,29 @@
+inputs:
+  groundtruth:
+    type: string
+  prediction:
+    type: string
+outputs:
+  grade:
+    type: string
+    reference: ${grade.output}
+nodes:
+- name: grade
+  type: python
+  source:
+    type: code
+    path: grade.py
+  inputs:
+    groundtruth: ${inputs.groundtruth}
+    prediction: ${inputs.prediction}
+- name: calculate_accuracy
+  type: python
+  source:
+    type: code
+    path: calculate_accuracy.py
+  inputs:
+    grades: ${grade.output}
+  activate:
+    when: ${grade.output}
+    is: 1
+  aggregation: true
