@@ -1,6 +1,12 @@
 # Release History
 
-## 0.1.0b7 (Upcoming)
+## 0.1.0b8 (Upcoming)
+
+### Features Added
+
+- **Telemetry**: enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
+
+## 0.1.0b7 (2023.09.27)
 
 ### Features Added
 
