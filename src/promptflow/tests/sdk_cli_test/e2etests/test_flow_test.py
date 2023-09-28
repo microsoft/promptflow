@@ -53,6 +53,11 @@ class TestFlowTest:
         assert isinstance(chat_output, GeneratorType)
         assert "".join(chat_output)
 
+        flow_path = Path(f"{FLOWS_DIR}/basic_with_builtin_llm_node")
+        result = _client.test(flow=flow_path)
+        chat_output = result["output"]
+        assert isinstance(chat_output, str)
+
     def test_pf_test_node(self):
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
