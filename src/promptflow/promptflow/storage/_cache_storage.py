@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 
 from promptflow.contracts.run_info import RunInfo
+from promptflow.storage._atomic_file_operation import AtomicOpen
 from promptflow.storage._sqlite_client import INDEX, PRIMARY_KEY, SqliteClient
 
 
@@ -32,10 +33,10 @@ class LocalCacheRecord:
 
 
 class AbstractCacheStorage:
-    def get_cache_record_list(hash_id: str) -> CacheRecord:
+    def get_cache_record_list(self, hash_id: str) -> CacheRecord:
         pass
 
-    def persist_cache_result(run_info: RunInfo):
+    def persist_cache_result(self, run_info: RunInfo):
         pass
 
 
@@ -73,3 +74,20 @@ class LocalCacheStorage(AbstractCacheStorage):
             end_time=run_info.end_time,
         )
         self._sqlite_client.insert(cache_record)
+
+
+class LocalRecordingFileStorage(AbstractCacheStorage):
+    def __init__(self, file_name: str):
+        """Create Recording File Storage for local recording mode."""
+        self._file_name = file_name
+
+    def get_cache_record_list(self, hash_id: str) -> CacheRecord:
+        with AtomicOpen(self._file_name, "r") as f:
+            cache_records = f.readlines()
+            cache_records = [CacheRecord(**eval(cache_record)) for cache_record in cache_records]
+            return cache_records[hash_id]
+
+    def persist_cache_result(self, run_info: RunInfo):
+        with AtomicOpen(self, "a") as f:
+            cache_records = f.readlines()
+            cache_records = [CacheRecord(**eval(cache_record)) for cache_record in cache_records]
