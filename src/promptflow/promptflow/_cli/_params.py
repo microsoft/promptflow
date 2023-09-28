@@ -4,7 +4,7 @@
 
 import argparse
 
-# TODO: avoid azure dependency here 
+# TODO: avoid azure dependency here
 MAX_LIST_CLI_RESULTS = 50
 
 
