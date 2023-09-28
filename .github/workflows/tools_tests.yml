@@ -27,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
-          pip install promptflow==0.1.0b6 google-search-results==2.4.1
+          pip install -r ./src/promptflow-tools/requirements.txt
       - name: Generate configs
         run: |
           python ./scripts/tool/generate_connection_config.py --tenant_id ${{ secrets.TENANT_ID }} --client_id ${{ secrets.CLIENT_ID }} --client_secret ${{ secrets.CLIENT_SECRET }}
