@@ -127,7 +127,8 @@
     "pysqlite",
     "AADSTS700082",
     "levelno",
-    "LANCZOS"
+    "LANCZOS",
+    "Mobius"
   ],
   "allowCompoundWords": true
 }

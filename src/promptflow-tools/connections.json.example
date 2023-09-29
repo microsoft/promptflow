@@ -27,6 +27,18 @@
       "key1"
     ]
   },
+  "gpt2_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "endpoint_url": "custom-endpoint-url",
+      "model_family": "GPT2",
+      "endpoint_api_key": "custom-endpoint-api-key"
+    },
+    "module": "promptflow.connections",
+    "secret_keys": [
+      "endpoint_api_key"
+    ]
+  },
   "open_ai_connection": {
     "type": "OpenAIConnection",
     "value": {
