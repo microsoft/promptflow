@@ -46,12 +46,20 @@ activate:
 
 ::::
 
-### Notice
-1. There are two scenarios where nodes might be bypassed even without an activate config or when conditions aren't met:
-- If a node has activate config and the node pointed to by `activate.when` is bypassed, it will also be bypassed.
-  ![activate_when_bypassed](../../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
-- If a node does not have activate config but depends on other nodes that have been bypassed, it will also be bypassed.
-  ![dependencies_bypassed](../../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
+### Further details and important notes
+1. In a conditional flow, if a node is bypassed, it status will be marked as `Bypassed`, as shown in the figure below. There are three situations in which the node will be bypassed.
+  ![bypassed_nodes](../../media/how-to-guides/conditional-flow-with-activate/bypassed_nodes.png)
+
+
+    (1) If a node has activate config and the value of `activate.when` is equals to `activate.is`.
+
+    (2) If a node has activate config and the node pointed to by `activate.when` is bypassed, it will also be bypassed.
+
+    ![activate_when_bypassed](../../media/how-to-guides/conditional-flow-with-activate/activate_when_bypassed.png)
+
+    (3) If a node does not have activate config but depends on other nodes that have been bypassed, it will also be bypassed.
+
+    ![dependencies_bypassed](../../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
 
 2. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
 
