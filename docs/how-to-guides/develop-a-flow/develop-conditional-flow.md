@@ -1,4 +1,4 @@
-# Develop conditional flow
+# Add conditional control to your flow
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
@@ -6,13 +6,13 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 
 In Prompt flow, we support control logic by activate config, like if-else, switch. Activate config enables conditional execution of nodes within your flow, ensuring that specific actions are taken only when the specified conditions are met.
 
-This guide will help you learn how to develop a conditional flow using activate config.
+This guide will help you learn how to use activate config to add conditional control to your flow.
 
 ## Prerequisites
 
 Please ensure that your promptflow version is greater than `0.1.0b5`.
 
-## Usage Description
+## Usage
 
 Each node in your flow can have an associated activate config, specifying when it should execute and when it should bypass. If a node has activate config, it will only be executed when the activate condition is met. The configuration consists of two essential components:
 - `activate.when`: The condition that triggers the execution of the node. It can be based on the outputs of a previous node, or the inputs of the flow.
