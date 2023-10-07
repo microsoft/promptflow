@@ -6,6 +6,5 @@ We provide guides on how to develop a flow by writing a flow yaml from scratch i
 :hidden:
 
 develop-standard-flow
-develop-conditional-flow
 develop-chat-flow
 ```
