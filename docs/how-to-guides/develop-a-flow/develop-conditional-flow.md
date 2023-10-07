@@ -47,7 +47,15 @@ activate:
 ::::
 
 ### Further details and important notes
-1. In a conditional flow, if a node is bypassed, it status will be marked as `Bypassed`, as shown in the figure below. There are three situations in which the node will be bypassed.
+1. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
+
+    ![provide_default_value](../../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
+
+2. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This can lead to flow failures due to a lack of valid values on the flow output.
+
+    ![output_bypassed](../../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
+
+3. In a conditional flow, if a node is bypassed, it status will be marked as `Bypassed`, as shown in the figure below. There are three situations in which the node will be bypassed.
   ![bypassed_nodes](../../media/how-to-guides/conditional-flow-with-activate/bypassed_nodes.png)
 
 
@@ -61,13 +69,7 @@ activate:
 
     ![dependencies_bypassed](../../media/how-to-guides/conditional-flow-with-activate/dependencies_bypassed.png)
 
-2. If the node using the python tool has an input that references a node that may be bypassed, please provide a default value for this input. This helps prevent errors in the current node due to missing parameters.
 
-    ![provide_default_value](../../media/how-to-guides/conditional-flow-with-activate/provide_default_value.png)
-
-3. Please avoid directly connecting nodes that might be bypassed to the flow's outputs. This can lead to flow failures due to a lack of valid values on the flow output.
-
-    ![output_bypassed](../../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
 
 ## Example flow
 
