@@ -98,9 +98,8 @@ class FlowOperations:
         flow = load_flow(flow)
         with TestSubmitter(flow=flow, variant=variant).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
-            flow_inputs, dependency_nodes_outputs = submitter._resolve_data(node_name=node, inputs=inputs)
-            if is_chat_flow and not inputs.get(chat_history_input_name, None):
-                inputs[chat_history_input_name] = []
+            flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
+                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name)
 
             if node:
                 return submitter.node_test(
