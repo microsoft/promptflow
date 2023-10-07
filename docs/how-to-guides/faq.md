@@ -36,7 +36,7 @@ If you are still facing this issue with WSL 22.04 or later, or you are not even 
 
 ### The tool installed by package is not visible in the tool list in VSCode Extension
 
-In VSCode Extension, if you find that you have installed the tool package via `pip install [tool-package-name]` but you can't see the tool in the tool list as below:
+In VSCode Extension, sometimes you have installed the tool package via `pip install [tool-package-name]` but you didn't see the tool in the tool list as below:
 
 ![The tool list in VScode extension](../media/how-to-guides/vscode-tool-list.png)
 
