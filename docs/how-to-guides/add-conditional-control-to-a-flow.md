@@ -77,3 +77,8 @@ Let's illustrate how to use activate config with practical examples.
 
 - If-Else scenario: Learn how to develop a conditional flow for if-else scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-if-else)
 - Switch scenario: Explore conditional flow for switch scenarios. [View Example](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/conditional-flow-for-switch)
+
+
+## Next steps
+
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
