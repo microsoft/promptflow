@@ -34,11 +34,25 @@ If you are using WSL, this is a known issue for `webbrowser` under WSL; see [thi
 
 If you are still facing this issue with WSL 22.04 or later, or you are not even using WSL, please open an issue to us.
 
-### The tool installed by package is not visible in the tool list in VSCode Extension
+## Troubleshooting 
 
-In VSCode Extension, sometimes you have installed the tool package via `pip install [tool-package-name]` but you didn't see the tool in the tool list as below:
+### Installed tool not appearing in VSCode Extension tool list
 
-![The tool list in VScode extension](../media/how-to-guides/vscode-tool-list.png)
+After installing a tool package via `pip install [tool-package-name]`, the new tool may not immediately appear in the tool list within the VSCode Extension, as shown below:
 
-You may need to reload the window of VSCode Extension to clean previous cache. Bring up the command palette by pressing `Ctrl+Ship+P`, type and choose the `Developer: Reload Webviews` command to reload. Waiting for a moment, then you can see that the tool list has been refreshed and the installed tools are visible.
+![VSCode Extension tool list](../media/how-to-guides/vscode-tool-list.png)
+
+This is often due to outdated cache. To refresh the tool list and make newly installed tools visible:
+
+1. Open the VSCode Extension window.
+
+2. Bring up the command palette by pressing "Ctrl+Shift+P".
+
+3. Type and select the "Developer: Reload Webviews" command. 
+
+4. Wait a moment for the tool list refreshing.
+
+Reloading clears the previous cache and populates the tool list with any newly installed tools. So that the missing tools are now visible.
+
+
 
