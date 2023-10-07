@@ -1,8 +1,10 @@
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+environment:
+  python_requirements_txt: requirements.txt
 inputs:
   text:
     type: string
-    default: Python Hello World!
+    default: Python print 日本語
 outputs:
   output:
     type: string
@@ -10,25 +12,20 @@ outputs:
 nodes:
 - name: hello_prompt
   type: prompt
+  source:
+    type: code
+    path: hello.jinja2
   inputs:
     text: ${inputs.text}
-  source:
-    type: code
-    path: hello.jinja2
 - name: llm
   type: llm
-  inputs:
-    prompt: ${hello_prompt.output}
-    # This is to easily switch between openai and azure openai.
-    # deployment_name is required by azure openai, model is required by openai.
-    deployment_name: gpt-35-turbo
-    model: gpt-3.5-turbo
-    max_tokens: '120'
   source:
     type: code
     path: hello.jinja2
+  inputs:
+    prompt: ${hello_prompt.output}
+    deployment_name: gpt-35-turbo
+    model: gpt-3.5-turbo
+    max_tokens: "120"
   connection: open_ai_connection
   api: chat
-node_variants: {}
-environment:
-    python_requirements_txt: requirements.txt
