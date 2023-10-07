@@ -229,6 +229,22 @@ class TestExceptionPresenter:
             },
         }
 
+    @pytest.mark.parametrize(
+        "raise_exception_func, error_class, expected_error_codes",
+        [
+            (raise_general_exception, CustomizedException, ["SystemError", "CustomizedException"]),
+            (raise_tool_execution_error, ToolExecutionError, ["UserError", "ToolExecutionError"]),
+            (raise_promptflow_exception, PromptflowException, ["SystemError", "ZeroDivisionError"]),
+            (raise_promptflow_exception_without_inner_exception, PromptflowException, ["SystemError"]),
+        ],
+    )
+    def test_error_codes(self, raise_exception_func, error_class, expected_error_codes):
+        with pytest.raises(error_class) as e:
+            raise_exception_func()
+
+        presenter = ExceptionPresenter.create(e.value)
+        assert presenter.error_codes == expected_error_codes
+
 
 @pytest.mark.unittest
 class TestErrorResponse:
