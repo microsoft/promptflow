@@ -180,6 +180,7 @@ class PromptflowException(Exception):
                 return
 
             for _, field_name, _, _ in string.Formatter().parse(message_format):
+                # Last one field_name is always None, filter it out to avoid exception.
                 if field_name is not None:
                     yield field_name
 
