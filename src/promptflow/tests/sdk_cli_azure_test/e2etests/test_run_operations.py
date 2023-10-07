@@ -671,3 +671,11 @@ class TestFlowRun:
         pf.runs.stream(run=run.name)
         detail = remote_client.get_details(run=run.name)
         assert len(detail) == 3
+
+    def test_vnext_workspace_base_url(self, pf):
+        from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
+
+        mock_workspace = MagicMock()
+        mock_workspace.discovery_url = "https://promptflow.azure-api.net/discovery/workspaces/fake_workspace_id"
+        service_caller = _FlowServiceCallerFactory.get_instance(workspace=mock_workspace, credential=MagicMock())
+        assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"

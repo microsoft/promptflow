@@ -14,7 +14,7 @@ enable-streaming-mode
 manage-connections
 manage-runs
 column-mapping
-how-to-create-and-use-your-own-tool-package
+develop-a-tool/index
 faq
 
 ```

@@ -127,7 +127,9 @@
     "pysqlite",
     "AADSTS700082",
     "Pyinstaller",
-    "levelno"
+    "levelno",
+    "LANCZOS",
+    "Mobius"
   ],
   "allowCompoundWords": true
 }
