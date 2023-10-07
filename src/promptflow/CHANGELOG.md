@@ -1,5 +1,10 @@
 # Release History
 
+## 0.1.0b8 (To be released)
+
+### Bug Fixed
+- Fixed encoding issues when input is non-English with `pf flow test`.
+
 ## 0.1.0b7.post1 (2023.09.28)
 
 ### Bug Fixed
