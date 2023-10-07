@@ -1,4 +1,4 @@
-# Add conditional control to your flow
+# Add conditional control to a flow
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
