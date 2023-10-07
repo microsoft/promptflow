@@ -45,6 +45,8 @@ column_mapping:
 run: <existing-flow-run-name>
 ```
 
+Reference [here](./column-mapping.md) for detailed information for column mapping.
+
 After preparing the yaml file, use the CLI command below to create them:
 
 ```bash

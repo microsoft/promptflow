@@ -1,0 +1,12 @@
+{
+    "tool_with_init_error": {
+        "class_name": "TestLoadErrorTool",
+        "function": "tool",
+        "inputs": {
+            "name": {"type": ["string"]}
+        },
+        "module": "tool_with_init_error",
+        "name": "Tool with init error",
+        "type": "python"
+    }
+}

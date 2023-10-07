@@ -303,12 +303,16 @@ class _StrongTypeConnection(_Connection):
     @classmethod
     def _from_mt_rest_object(cls, mt_rest_obj):
         type_cls, _ = cls._resolve_cls_and_type(data={"type": mt_rest_obj.connection_type})
+        configs = mt_rest_obj.configs or {}
+        # For not ARM strong type connection, e.g. OpenAI, api_key will not be returned, but is required argument.
+        # For ARM strong type connection, api_key will be None and missing when conn._to_dict(), so set a scrubbed one.
+        configs.update({"api_key": SCRUBBED_VALUE})
         obj = type_cls(
             name=mt_rest_obj.connection_name,
             expiry_time=mt_rest_obj.expiry_time,
             created_date=mt_rest_obj.created_date,
             last_modified_date=mt_rest_obj.last_modified_date,
-            **mt_rest_obj.configs,
+            **configs,
         )
         return obj
 
@@ -665,6 +669,33 @@ class CustomStrongTypeConnection(_Connection):
         super().__init__(configs=configs, secrets=secrets, **kwargs)
         self.module = kwargs.get("module", self.__class__.__module__)
         self.custom_type = custom_type or self.__class__.__name__
+        self.package = kwargs.get(CustomStrongTypeConnectionConfigs.PACKAGE, None)
+        self.package_version = kwargs.get(CustomStrongTypeConnectionConfigs.PACKAGE_VERSION, None)
+
+    def __getattribute__(self, item):
+        # Note: The reason to overwrite __getattribute__ instead of __getattr__ is as follows:
+        # Custom strong type connection is written this way:
+        # class MyCustomConnection(CustomStrongTypeConnection):
+        #     api_key: Secret
+        #     api_base: str = "This is a default value"
+        # api_base has a default value, my_custom_connection_instance.api_base would not trigger __getattr__.
+        # The default value will be returned directly instead of the real value in configs.
+        annotations = getattr(super().__getattribute__("__class__"), "__annotations__", {})
+        if item in annotations:
+            if annotations[item] == Secret:
+                return self.secrets[item]
+            else:
+                return self.configs[item]
+        return super().__getattribute__(item)
+
+    def __setattr__(self, key, value):
+        annotations = getattr(super().__getattribute__("__class__"), "__annotations__", {})
+        if key in annotations:
+            if annotations[key] == Secret:
+                self.secrets[key] = value
+            else:
+                self.configs[key] = value
+        return super().__setattr__(key, value)
 
     def _to_orm_object(self) -> ORMConnection:
         custom_connection = self._convert_to_custom()
@@ -674,6 +705,11 @@ class CustomStrongTypeConnection(_Connection):
         # update configs
         self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: self.custom_type})
         self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: self.module})
+        if self.package and self.package_version:
+            self.configs.update({CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY: self.package})
+            self.configs.update(
+                {CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY: self.package_version}
+            )
 
         custom_connection = CustomConnection(configs=self.configs, secrets=self.secrets, **self.kwargs)
         return custom_connection

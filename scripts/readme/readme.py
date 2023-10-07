@@ -46,7 +46,7 @@ def get_readme_description_first_sentence(readme) -> str:
                     if sentence == "":
                         sentence += line.strip()
                     elif line.strip() != "":
-                        sentence += line.strip()
+                        sentence += ' ' + line.strip()
             return sentence
     except Exception:
         print(f"Error during reading {readme}")

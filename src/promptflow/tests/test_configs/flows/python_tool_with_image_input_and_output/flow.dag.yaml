@@ -1,0 +1,16 @@
+inputs:
+  image:
+    type: image
+    default: logo.jpg
+outputs:
+  output:
+    type: image
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: python_with_image.py
+  inputs:
+    image: ${inputs.image}
