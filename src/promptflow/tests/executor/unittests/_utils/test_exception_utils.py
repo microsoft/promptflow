@@ -339,6 +339,7 @@ class TestErrorResponse:
         }
         response = ErrorResponse.from_error_dict(error_dict)
         assert response.response_code == "400"
+        assert response.error_codes == ["UserError"]
         assert response.message == "Flow run failed."
         response_dct = response.to_dict()
         assert response_dct["time"] is not None
