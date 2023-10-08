@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, Callable, NewType, Optional, Tuple, TypeVar, Union
 
 import pytest
 
@@ -11,6 +11,10 @@ class MyConnection(CustomStrongTypeConnection):
 
 
 my_connection = MyConnection(name="my_connection", secrets={"key": "value"})
+
+
+def some_function():
+    pass
 
 
 @pytest.mark.unittest
@@ -28,10 +32,12 @@ class TestToolContract:
             (int, False),
             (5, False),
             (str, False),
+            (some_function, False),
             (Union[str, int], False),
             ((int | str), False),
             (tuple, False),
             (tuple[str, int], False),
+            (Tuple[int, ...], False),
             (dict[str, Any], False),
             ({"test1": [1, 2, 3], "test2": [4, 5, 6], "test3": [7, 8, 9]}, False),
             (Any, False),
@@ -41,9 +47,8 @@ class TestToolContract:
             (TypeVar, False),
             (Callable, False),
             (Callable[..., Any], False),
+            (NewType("MyType", int), False),
         ],
     )
     def test_is_custom_strong_type(self, val, expected_res):
-
-        print(f"{val}, isinstance type: {isinstance(val, type)}, type: {type(val)}, ")
         assert ConnectionType.is_custom_strong_type(val) == expected_res

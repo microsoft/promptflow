@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 
 import json
+import logging
 import types
 from dataclasses import asdict, dataclass
 from enum import Enum
@@ -13,6 +14,7 @@ from promptflow._constants import CONNECTION_NAME_PROPERTY
 from .multimedia import Image
 from .types import FilePath, PromptTemplate, Secret
 
+logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
 
 
@@ -202,7 +204,13 @@ class ConnectionType:
         if isinstance(val, types.GenericAlias):
             return False
 
-        return issubclass(val, CustomStrongTypeConnection)
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except TypeError as e:
+            # TypeError is not expected to happen, but if it does, we will log it for debugging and return False.
+            # The try-except block cannot be confidently removed due to the uncertainty of TypeError that may occur.
+            logger.warning(f"Failed to check if {val} is a custom strong type: {e}")
+            return False
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
