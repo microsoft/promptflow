@@ -560,7 +560,7 @@ class FlowExecutor:
             self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
         )
 
-        # Resolve the type of aggregated_flow_inputs
+        # Resolve aggregated_flow_inputs from list of strings to list of objects, whose type is specified in yaml file.
         # TODO: For now, we resolve type for batch run's aggregation input in _exec_aggregation_with_bulk_results.
         # If we decide to merge the resolve logic into one place, remember to take care of index for batch run.
         resolved_aggregated_flow_inputs = FlowValidator.resolve_aggregated_flow_inputs_type(

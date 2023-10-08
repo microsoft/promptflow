@@ -198,12 +198,10 @@ class TestFlowValidator:
         assert error_message == exe_info.value.message
 
     @pytest.mark.parametrize(
-        "inputs",
-        [
-            {"test_input": ["1", "2"]},
-        ],
+        "inputs, expected_result",
+        [({"test_input": ["1", "2"]}, {"test_input": [1, 2]})],
     )
-    def test_resolve_aggregated_flow_inputs_type(self, inputs):
+    def test_resolve_aggregated_flow_inputs_type(self, inputs, expected_result):
         flow = Flow(
             id="fakeId",
             name=None,
@@ -213,15 +211,22 @@ class TestFlowValidator:
             tools=[],
         )
         result = FlowValidator.resolve_aggregated_flow_inputs_type(flow, inputs)
-        assert result == {"test_input": [1, 2]}
+        assert result == expected_result
 
     @pytest.mark.parametrize(
-        "inputs",
+        "inputs, expected_message",
         [
-            {"test_input": ["1", "str"]},
+            (
+                {"test_input": ["1", "str"]},
+                (
+                    "The input for flow is incorrect. The value for flow input 'test_input' in line 1 of input data "
+                    "does not match the expected type 'int'. "
+                    "Please change flow input type or adjust the input value in your input data."
+                ),
+            )
         ],
     )
-    def test_resolve_aggregated_flow_inputs_type_error(self, inputs):
+    def test_resolve_aggregated_flow_inputs_type_error(self, inputs, expected_message):
         flow = Flow(
             id="fakeId",
             name=None,
@@ -232,11 +237,6 @@ class TestFlowValidator:
         )
         with pytest.raises(InputTypeError) as ex:
             FlowValidator.resolve_aggregated_flow_inputs_type(flow, inputs)
-        expected_message = (
-            "The input for flow is incorrect. The value for flow input 'test_input' in line 1 of input data does "
-            "not match the expected type 'int'. "
-            "Please change flow input type or adjust the input value in your input data."
-        )
 
         assert expected_message == str(ex.value)
 
@@ -247,9 +247,9 @@ class TestFlowValidator:
             ('["1", "2"]', ValueType.LIST, ["1", "2"]),
         ],
     )
-    def test_convert_input_by_type(self, input, type, expected_result):
+    def test_parse_input_value(self, input, type, expected_result):
         input_key = "test_input"
-        result = FlowValidator._convert_input_by_type(input_key, input, type)
+        result = FlowValidator._parse_input_value(input_key, input, type)
         assert result == expected_result
 
     @pytest.mark.parametrize(
@@ -260,42 +260,50 @@ class TestFlowValidator:
                 ValueType.INT,
                 None,
                 InputTypeError,
-                "The input for flow is incorrect. The value for flow input 'my_input' does not match the expected "
-                "type 'int'. Please change flow input type or adjust the input value in your input data.",
+                (
+                    "The input for flow is incorrect. The value for flow input 'my_input' does not match the expected "
+                    "type 'int'. Please change flow input type or adjust the input value in your input data."
+                ),
             ),
             (
                 "['1', '2']",
                 ValueType.LIST,
                 None,
                 InputParseError,
-                "Failed to parse the flow input. The value for flow input 'my_input' was interpreted as JSON "
-                "string since its type is 'list'. However, the value '['1', '2']' is invalid for JSON parsing. "
-                "Error details: (JSONDecodeError) Expecting value: line 1 column 2 (char 1). "
-                "Please make sure your inputs are properly formatted.",
+                (
+                    "Failed to parse the flow input. The value for flow input 'my_input' was interpreted as JSON "
+                    "string since its type is 'list'. However, the value '['1', '2']' is invalid for JSON parsing. "
+                    "Error details: (JSONDecodeError) Expecting value: line 1 column 2 (char 1). "
+                    "Please make sure your inputs are properly formatted."
+                ),
             ),
             (
                 "str",
                 ValueType.INT,
                 10,
                 InputTypeError,
-                "The input for flow is incorrect. The value for flow input 'my_input' in line 10 of input data does "
-                "not match the expected type 'int'. "
-                "Please change flow input type or adjust the input value in your input data.",
+                (
+                    "The input for flow is incorrect. The value for flow input 'my_input' in line 10 of "
+                    "input data does not match the expected type 'int'. "
+                    "Please change flow input type or adjust the input value in your input data."
+                ),
             ),
             (
                 "['1', '2']",
                 ValueType.LIST,
                 10,
                 InputParseError,
-                "Failed to parse the flow input. The value for flow input 'my_input' in line 10 of input data "
-                "was interpreted as JSON string since its type is 'list'. However, the value '['1', '2']' is "
-                "invalid for JSON parsing. Error details: (JSONDecodeError) Expecting value: line 1 column 2 (char 1). "
-                "Please make sure your inputs are properly formatted.",
+                (
+                    "Failed to parse the flow input. The value for flow input 'my_input' in line 10 of input data "
+                    "was interpreted as JSON string since its type is 'list'. However, the value '['1', '2']' is "
+                    "invalid for JSON parsing. Error details: (JSONDecodeError) Expecting value: "
+                    "line 1 column 2 (char 1). Please make sure your inputs are properly formatted."
+                ),
             ),
         ],
     )
-    def test_convert_input_by_type_error(self, input, type, index, error_type, expected_message):
+    def test_parse_input_value_error(self, input, type, index, error_type, expected_message):
         input_key = "my_input"
         with pytest.raises(error_type) as ex:
-            FlowValidator._convert_input_by_type(input_key, input, type, index)
+            FlowValidator._parse_input_value(input_key, input, type, index)
         assert expected_message == str(ex.value)

@@ -153,7 +153,7 @@ class FlowValidator:
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
-    def _convert_input_by_type(input_key: str, input_value: Any, expected_type: ValueType, idx=None):
+    def _parse_input_value(input_key: str, input_value: Any, expected_type: ValueType, idx=None):
         try:
             return expected_type.parse(input_value)
         except JSONDecodeError as e:
@@ -193,7 +193,7 @@ class FlowValidator:
             if input_key in inputs:
                 input_value_list = inputs[input_key]
                 updated_inputs[input_key] = [
-                    FlowValidator._convert_input_by_type(input_key, each_line_item, input_def.type, idx)
+                    FlowValidator._parse_input_value(input_key, each_line_item, input_def.type, idx)
                     for idx, each_line_item in enumerate(input_value_list)
                 ]
         return updated_inputs
@@ -217,7 +217,7 @@ class FlowValidator:
         updated_inputs = {k: v for k, v in inputs.items()}
         for k, v in flow.inputs.items():
             if k in inputs:
-                updated_inputs[k] = FlowValidator._convert_input_by_type(k, inputs[k], v.type, idx)
+                updated_inputs[k] = FlowValidator._parse_input_value(k, inputs[k], v.type, idx)
         return updated_inputs
 
     @staticmethod
