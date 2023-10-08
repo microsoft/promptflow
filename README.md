@@ -106,7 +106,7 @@ You can install it from the <a href="https://marketplace.visualstudio.com/items?
 
 If you're interested in contributing, please start with our dev setup guide: [dev_setup.md](./docs/dev/dev_setup.md).
 
-Next Step! Continue with the **Contributing**  👇 section to to contribute to Prompt flow.
+Next Step! Continue with the **Contributing**  👇 section to contribute to Prompt flow.
 
 ## Contributing
 
