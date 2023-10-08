@@ -46,7 +46,6 @@ class HealthyEnsuredProcess:
         self.process = None
         self.input_queue = None
         self.output_queue = None
-        self.is_ready = False
         self._executor_creation_func = executor_creation_func
 
     def start_new(self, task_queue: Queue):
@@ -81,7 +80,6 @@ class HealthyEnsuredProcess:
             # Wait for subprocess send a ready message.
             ready_msg = output_queue.get(timeout=30)
             logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
-            self.is_ready = True
         except queue.Empty:
             logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end()
