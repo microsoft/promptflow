@@ -236,7 +236,8 @@ class TestExceptionPresenter:
             raise_tool_execution_error()
 
         presenter = ExceptionPresenter.create(e.value)
-        # assert re.match(TOOL_EXCEPTION_TRACEBACK, presenter.formatted_traceback)
+        assert re.search(TOOL_EXCEPTION_INNER_TRACEBACK, presenter.formatted_traceback)
+        assert re.search(TOOL_EXCEPTION_TRACEBACK, presenter.formatted_traceback)
         dct = presenter.to_dict(include_debug_info=False)
         assert dct.pop("additionalInfo") is not None
         assert dct == {
