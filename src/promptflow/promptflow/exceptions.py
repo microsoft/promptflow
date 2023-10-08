@@ -75,8 +75,16 @@ class PromptflowException(Exception):
         if not self._kwargs:
             return {}
 
-        arguments = self.get_arguments_from_message_format(self.message_format)
-        return {k: v for k, v in self._kwargs.items() if k in arguments}
+        required_arguments = self.get_arguments_from_message_format(self.message_format)
+        parameters = {}
+        for argument in required_arguments:
+            if argument not in self._kwargs:
+                # Set a default value for the missing argument to avoid KeyError.
+                # For long term solution, use CI to guarantee the message_format and message_parameters are in sync.
+                parameters[argument] = f"<{argument}>"
+            else:
+                parameters[argument] = self._kwargs[argument]
+        return parameters
 
     @cached_property
     def serializable_message_parameters(self):
@@ -172,7 +180,9 @@ class PromptflowException(Exception):
                 return
 
             for _, field_name, _, _ in string.Formatter().parse(message_format):
-                yield field_name
+                # Last one field_name is always None, filter it out to avoid exception.
+                if field_name is not None:
+                    yield field_name
 
         # Use set to remove duplicates
         return set(iter_field_name())
