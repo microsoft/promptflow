@@ -53,6 +53,23 @@ def raise_user_error():
         raise UserErrorException("run failed", target=ErrorTarget.TOOL) from e
 
 
+def raise_context_exception():
+    try:
+        code_with_bug()
+    except Exception as e:
+        raise CustomizedContextException(e)
+
+
+class CustomizedContextException(Exception):
+    def __init__(self, inner_exception):
+        self.inner_exception = inner_exception
+
+    @property
+    def message(self):
+        code_with_bug()
+        return "context exception"
+
+
 class CustomizedException(Exception):
     pass
 
@@ -87,6 +104,12 @@ def raise_promptflow_exception_without_inner_exception():
         raise PromptflowException("Promptflow exception")
 
 
+TOOL_EXECUTION_ERROR_TRACEBACK = r"""Traceback \(most recent call last\):
+  File ".*test_exception_utils.py", line .*, in code_with_bug
+    1 / 0
+ZeroDivisionError: division by zero
+"""
+
 TOOL_EXCEPTION_TRACEBACK = r"""
 The above exception was the direct cause of the following exception:
 
@@ -104,12 +127,6 @@ TOOL_EXCEPTION_INNER_TRACEBACK = r"""Traceback \(most recent call last\):
     1 / 0
 """
 
-TOOL_EXECUTION_ERROR_TRACEBACK = r"""Traceback \(most recent call last\):
-  File ".*test_exception_utils.py", line .*, in code_with_bug
-    1 / 0
-ZeroDivisionError: division by zero
-"""
-
 GENERAL_EXCEPTION_TRACEBACK = r"""
 The above exception was the direct cause of the following exception:
 
@@ -122,6 +139,23 @@ Traceback \(most recent call last\):
 
 GENERAL_EXCEPTION_INNER_TRACEBACK = r"""Traceback \(most recent call last\):
   File ".*test_exception_utils.py", line .*, in raise_general_exception
+    code_with_bug\(\)
+  File ".*test_exception_utils.py", line .*, in code_with_bug
+    1 / 0
+"""
+
+CONTEXT_EXCEPTION_TRACEBACK = r"""
+During handling of the above exception, another exception occurred:
+
+Traceback \(most recent call last\):
+  File ".*test_exception_utils.py", line .*, in test_debug_info_for_context_exception
+    raise_context_exception\(\)
+  File ".*test_exception_utils.py", line .*, in raise_context_exception
+    raise CustomizedContextException\(e\)
+"""
+
+CONTEXT_EXCEPTION_INNER_TRACEBACK = r"""Traceback \(most recent call last\):
+  File ".*test_exception_utils.py", line .*, in raise_context_exception
     code_with_bug\(\)
   File ".*test_exception_utils.py", line .*, in code_with_bug
     1 / 0
@@ -176,6 +210,18 @@ class TestExceptionPresenter:
         inner_exception = debug_info["innerException"]
         assert inner_exception["type"] == "ZeroDivisionError"
         assert re.match(TOOL_EXCEPTION_INNER_TRACEBACK, inner_exception["stackTrace"])
+
+    def test_debug_info_for_context_exception(self):
+        with pytest.raises(CustomizedContextException) as e:
+            raise_context_exception()
+        presenter = ExceptionPresenter.create(e.value)
+        debug_info = presenter.debug_info
+        assert debug_info["type"] == "CustomizedContextException"
+        assert re.match(CONTEXT_EXCEPTION_TRACEBACK, debug_info["stackTrace"])
+
+        inner_exception = debug_info["innerException"]
+        assert inner_exception["type"] == "ZeroDivisionError"
+        assert re.match(CONTEXT_EXCEPTION_INNER_TRACEBACK, inner_exception["stackTrace"])
 
     def test_debug_info_for_general_exception(self):
         # Test General Exception
