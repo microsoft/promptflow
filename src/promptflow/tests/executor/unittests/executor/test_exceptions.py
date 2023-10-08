@@ -12,3 +12,4 @@ class TestExceptions:
         )
 
         assert ex.message == "Test exception message with parameters: test_param, <param1>."
+        assert None not in ex.message_parameters
