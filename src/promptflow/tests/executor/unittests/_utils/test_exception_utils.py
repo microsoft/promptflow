@@ -718,6 +718,7 @@ class TestExceptions:
         exception_dict = ExceptionPresenter.create(e.value).to_dict(include_debug_info=True)
         message = json.dumps(exception_dict)
         exception = JsonSerializedPromptflowException(message=message)
+        assert str(exception) == message
         error_dict = exception.to_dict(include_debug_info=include_debug_info)
 
         if include_debug_info:
