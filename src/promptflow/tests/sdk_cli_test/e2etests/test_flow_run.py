@@ -248,6 +248,13 @@ class TestFlowRun:
         assert "Connection with name new_connection not found" in str(e.value)
 
     def test_custom_strong_type_connection_basic_flow(self, install_custom_tool_pkg, local_client, pf):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
         result = pf.run(
             flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
             data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",

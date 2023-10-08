@@ -121,9 +121,3 @@ def install_custom_tool_pkg():
             import sys
 
             subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
-            # Need to reload pkg_resources to collect the newly installed tools
-            import importlib
-
-            import pkg_resources
-
-            importlib.reload(pkg_resources)
