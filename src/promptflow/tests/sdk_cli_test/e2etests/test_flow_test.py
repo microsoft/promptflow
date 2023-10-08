@@ -42,7 +42,7 @@ class TestFlowTest:
         assert result == {"out": "connection_value is MyFirstConnection: True"}
 
         # Test that connection
-        result = _client.test(flow=flow_path, inputs=inputs, node="My_Second_Tool_usi3")
+        result = _client.test(flow=flow_path, inputs={"input_text": "Hello World!"}, node="My_Second_Tool_usi3")
         assert result == "Hello World!This is my first custom connection."
 
     def test_pf_test_with_streaming_output(self):

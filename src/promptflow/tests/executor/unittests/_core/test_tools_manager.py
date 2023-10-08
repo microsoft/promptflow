@@ -137,13 +137,6 @@ class TestToolsManager:
         assert str(ex.value) == error_message
 
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
-        # Need to reload pkg_resources to get the latest installed packages
-        import importlib
-
-        import pkg_resources
-
-        importlib.reload(pkg_resources)
-
         keys = ["my_tool_package.tools.my_tool_2.MyTool.my_tool"]
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(tools) == 1
