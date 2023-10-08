@@ -184,7 +184,6 @@ class LineExecutionProcessPool:
 
     def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
         healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
-        # Loop until the process is ready or the task queue is empty
         healthy_ensured_process.start_new(task_queue)
 
         if not healthy_ensured_process.process.is_alive():
