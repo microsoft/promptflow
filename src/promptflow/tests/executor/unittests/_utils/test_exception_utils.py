@@ -1,15 +1,16 @@
 import json
 import re
+from traceback import TracebackException
 
 import pytest
 
 from promptflow._core._errors import ToolExecutionError
 from promptflow._core.operation_context import OperationContext
 from promptflow._utils.exception_utils import (
-    ADDITIONAL_INFO_USER_EXECUTION_ERROR,
     ErrorResponse,
     ExceptionPresenter,
     JsonSerializedPromptflowException,
+    get_tb_next,
     infer_error_code_from_class,
 )
 from promptflow.exceptions import (
@@ -89,7 +90,7 @@ TOOL_EXCEPTION_TRACEBACK = r"""
 The above exception was the direct cause of the following exception:
 
 Traceback \(most recent call last\):
-  File ".*test_exception_utils.py", line .*, in test_debug_info
+  File ".*test_exception_utils.py", line .*, in test_.*
     raise_tool_execution_error\(\)
   File ".*test_exception_utils.py", line .*, in raise_tool_execution_error
     raise ToolExecutionError\(node_name="MyTool"\) from e
@@ -100,6 +101,12 @@ TOOL_EXCEPTION_INNER_TRACEBACK = r"""Traceback \(most recent call last\):
     code_with_bug\(\)
   File ".*test_exception_utils.py", line .*, in code_with_bug
     1 / 0
+"""
+
+TOOL_EXECUTION_ERROR_TRACEBACK = r"""Traceback \(most recent call last\):
+  File ".*test_exception_utils.py", line .*, in code_with_bug
+    1 / 0
+ZeroDivisionError: division by zero
 """
 
 GENERAL_EXCEPTION_TRACEBACK = r"""
@@ -121,18 +128,27 @@ GENERAL_EXCEPTION_INNER_TRACEBACK = r"""Traceback \(most recent call last\):
 
 
 @pytest.mark.unittest
-@pytest.mark.parametrize(
-    "clz, expected",
-    [
-        (UserErrorException, "UserError"),
-        (SystemErrorException, "SystemError"),
-        (ToolExecutionError, "ToolExecutionError"),
-        (ValueError, "ValueError"),
-        (ValidationException, "ValidationError"),
-    ],
-)
-def test_infer_error_code_from_class(clz, expected):
-    assert infer_error_code_from_class(clz) == expected
+class TestExceptionUtilsCommonMethod:
+    def test_get_tb_next(self):
+        with pytest.raises(ToolExecutionError) as e:
+            raise_tool_execution_error()
+        tb_next = get_tb_next(e.value.__traceback__, 3)
+        te = TracebackException(type(e.value), e.value, tb_next)
+        formatted_tb = "".join(te.format())
+        assert re.match(TOOL_EXCEPTION_INNER_TRACEBACK, formatted_tb)
+
+    @pytest.mark.parametrize(
+        "error_class, expected_error_code",
+        [
+            (UserErrorException, "UserError"),
+            (SystemErrorException, "SystemError"),
+            (ValidationException, "ValidationError"),
+            (ToolExecutionError, "ToolExecutionError"),
+            (ValueError, "ValueError"),
+        ],
+    )
+    def test_infer_error_code_from_class(self, error_class, expected_error_code):
+        assert infer_error_code_from_class(error_class) == expected_error_code
 
 
 @pytest.mark.unittest
@@ -220,6 +236,7 @@ class TestExceptionPresenter:
             raise_tool_execution_error()
 
         presenter = ExceptionPresenter.create(e.value)
+        # assert re.match(TOOL_EXCEPTION_TRACEBACK, presenter.formatted_traceback)
         dct = presenter.to_dict(include_debug_info=False)
         assert dct.pop("additionalInfo") is not None
         assert dct == {
@@ -263,6 +280,7 @@ class TestErrorResponse:
         }
         response = ErrorResponse.from_error_dict(error_dict)
         assert response.response_code == "400"
+        assert response.message == "Flow run failed."
         response_dct = response.to_dict()
         assert response_dct["time"] is not None
         response_dct.pop("time")
@@ -386,14 +404,31 @@ class TestErrorResponse:
         assert error_response.additional_info == expected_additional_info
         assert all(error_response.get_additional_info(key) == value for key, value in expected_additional_info.items())
 
-    def test_get_user_execution_error_info(self):
-        with pytest.raises(ToolExecutionError) as e:
-            raise_tool_execution_error()
+    @pytest.mark.parametrize(
+        "raise_exception_func, error_class",
+        [
+            (raise_general_exception, CustomizedException),
+            (raise_tool_execution_error, ToolExecutionError),
+        ],
+    )
+    def test_get_user_execution_error_info(self, raise_exception_func, error_class):
+        with pytest.raises(error_class) as e:
+            raise_exception_func()
 
-        expected_error_info = e.value.additional_info.get(ADDITIONAL_INFO_USER_EXECUTION_ERROR)
         error_repsonse = ErrorResponse.from_exception(e.value)
         actual_error_info = error_repsonse.get_user_execution_error_info()
-        assert actual_error_info == expected_error_info
+        self.assert_user_execution_error_info(e.value, actual_error_info)
+
+    def assert_user_execution_error_info(self, exception, error_info):
+        if isinstance(exception, ToolExecutionError):
+            assert error_info["type"] == "ZeroDivisionError"
+            assert error_info["message"] == "division by zero"
+            assert error_info["filename"].endswith("test_exception_utils.py")
+            assert error_info["lineno"] > 0
+            assert error_info["name"] == "code_with_bug"
+            assert re.match(TOOL_EXECUTION_ERROR_TRACEBACK, error_info["traceback"])
+        else:
+            assert error_info == {}
 
 
 @pytest.mark.unittest
@@ -556,14 +591,7 @@ class TestExceptions:
         assert last_frame_info.get("lineno") > 0
         assert last_frame_info.get("name") == "code_with_bug"
 
-        assert re.match(
-            r"Traceback \(most recent call last\):\n"
-            r'  File ".*test_exception_utils.py", line .*, in code_with_bug\n'
-            r"    1 / 0\n"
-            r"(.*\n)?"  # Python >= 3.11 add extra line here like a pointer.
-            r"ZeroDivisionError: division by zero\n",
-            e.value.tool_traceback,
-        )
+        assert re.match(TOOL_EXECUTION_ERROR_TRACEBACK, e.value.tool_traceback)
 
     def test_code_hierarchy(self):
         with pytest.raises(ToolExecutionError) as e:
@@ -608,13 +636,7 @@ class TestExceptions:
         assert re.match(r".*test_exception_utils.py", info_0_value["filename"])
         assert info_0_value.get("lineno") > 0
         assert info_0_value.get("name") == "code_with_bug"
-        assert re.match(
-            r"Traceback \(most recent call last\):\n"
-            r'  File ".*test_exception_utils.py", line .*, in code_with_bug\n'
-            r"    1 / 0\n"
-            r"ZeroDivisionError: division by zero\n",
-            info_0_value.get("traceback"),
-        )
+        assert re.match(TOOL_EXECUTION_ERROR_TRACEBACK, info_0_value.get("traceback"))
 
     def test_additional_info_for_empty_inner_error(self):
         ex = ToolExecutionError(node_name="Node1")
