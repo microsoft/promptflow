@@ -34,7 +34,7 @@ See the full parameters by `bash deploy.sh -h`.
 :::{tab-item} PowerShell
 Example command to use powershell script:
 ```powershell
-.\deploy.ps1 -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
+.\deploy.ps1 <path> -i <image_tag> --Name my_app_23d8m -r <docker registry> -g <resource_group>
 ```
 See the full parameters by `.\deploy.ps1 -h`.
 :::
