@@ -725,10 +725,14 @@ class TestExceptions:
         with pytest.raises(ToolExecutionError) as e:
             raise_tool_execution_error()
 
-        exception_dict = ExceptionPresenter.create(e.value).to_dict(include_debug_info=True)
+        exception_dict = ExceptionPresenter.create(e.value).to_dict(include_debug_info=include_debug_info)
         message = json.dumps(exception_dict)
         exception = JsonSerializedPromptflowException(message=message)
         assert str(exception) == message
+        json_serialized_exception_dict = ExceptionPresenter.create(exception).to_dict(
+            include_debug_info=include_debug_info
+        )
+        assert exception_dict == json_serialized_exception_dict
         error_dict = exception.to_dict(include_debug_info=include_debug_info)
 
         if include_debug_info:
