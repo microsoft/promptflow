@@ -12,7 +12,13 @@ from promptflow._utils.exception_utils import (
     JsonSerializedPromptflowException,
     infer_error_code_from_class,
 )
-from promptflow.exceptions import ErrorTarget, PromptflowException, SystemErrorException, UserErrorException
+from promptflow.exceptions import (
+    ErrorTarget,
+    PromptflowException,
+    SystemErrorException,
+    UserErrorException,
+    ValidationException,
+)
 
 
 def set_inner_exception_by_parameter():
@@ -122,6 +128,7 @@ GENERAL_EXCEPTION_INNER_TRACEBACK = r"""Traceback \(most recent call last\):
         (SystemErrorException, "SystemError"),
         (ToolExecutionError, "ToolExecutionError"),
         (ValueError, "ValueError"),
+        (ValidationException, "ValidationError"),
     ],
 )
 def test_infer_error_code_from_class(clz, expected):
