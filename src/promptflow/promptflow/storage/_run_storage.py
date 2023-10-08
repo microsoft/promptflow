@@ -36,14 +36,18 @@ class DefaultRunStorage(AbstractRunStorage):
         self._input_dir = Path(".promptflow/input")
 
     def persist_node_run(self, run_info: NodeRunInfo):
-        run_info.output = self._ensure_serialize(run_info.output, self._working_dir, self._intermediate_dir)
-        run_info.inputs = self._ensure_serialize(run_info.inputs, self._working_dir, self._input_dir)
+        if run_info.output:
+            run_info.output = self._ensure_serializable(run_info.output, self._working_dir, self._intermediate_dir)
+        if run_info.inputs:
+            run_info.inputs = self._ensure_serializable(run_info.inputs, self._working_dir, self._input_dir)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
-        run_info.output = self._ensure_serialize(run_info.output, self._working_dir, self._output_dir)
-        run_info.inputs = self._ensure_serialize(run_info.inputs, self._working_dir, self._input_dir)
+        if run_info.output:
+            run_info.output = self._ensure_serializable(run_info.output, self._working_dir, self._output_dir)
+        if run_info.inputs:
+            run_info.inputs = self._ensure_serializable(run_info.inputs, self._working_dir, self._input_dir)
 
-    def _ensure_serialize(self, value, folder_path, relative_path=None):
+    def _ensure_serializable(self, value: dict, folder_path: Path, relative_path : Path = None):
         pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
             folder_path=folder_path,
             relative_path=relative_path)

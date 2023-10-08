@@ -5,7 +5,8 @@
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Type, TypeVar
+from types import GeneratorType
+from typing import Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow.contracts.multimedia import Image
@@ -58,7 +59,7 @@ def deserialize_value(obj, field_type):
     return obj
 
 
-def serialize(value: object, remove_null=False, pfbytes_file_reference_encoder=None) -> dict:
+def serialize(value: object, remove_null: bool = False, pfbytes_file_reference_encoder: Callable = None) -> dict:
     if isinstance(value, datetime):
         return value.isoformat() + "Z"
     if isinstance(value, Enum):
@@ -67,6 +68,8 @@ def serialize(value: object, remove_null=False, pfbytes_file_reference_encoder=N
         return [serialize(v, remove_null, pfbytes_file_reference_encoder) for v in value]
     if isinstance(value, GeneratorProxy):
         return [serialize(v, remove_null, pfbytes_file_reference_encoder) for v in value.items]
+    if isinstance(value, GeneratorType):
+        return str(value)
     #  Note that custom connection check should before dict check
     if ConnectionType.is_connection_value(value):
         return ConnectionType.serialize_conn(value)

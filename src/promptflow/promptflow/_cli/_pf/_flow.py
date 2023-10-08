@@ -367,7 +367,7 @@ def test_flow(args):
         # Print flow/node test result
         if isinstance(result.output, dict):
             pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
-                folder_path=Path.cwd(),
+                folder_path=Path(args.flow).parent,
                 relative_path=Path(".promptflow/flow_outputs")
             )
             result.output = serialize(result.output, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder)

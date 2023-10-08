@@ -9,7 +9,7 @@ import shutil
 from dataclasses import asdict, dataclass
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, NewType, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union
 
 import pandas as pd
 import yaml
@@ -110,7 +110,7 @@ class NodeRunRecord:
     status: str
 
     @staticmethod
-    def from_run_info(node_run_info: NodeRunInfo, pfbytes_file_reference_encoder=None) -> "NodeRunRecord":
+    def from_run_info(node_run_info: NodeRunInfo, pfbytes_file_reference_encoder: Callable = None) -> "NodeRunRecord":
         return NodeRunRecord(
             NodeName=node_run_info.node,
             line_number=node_run_info.index,
@@ -151,7 +151,10 @@ class LineRunRecord:
     tags: str
 
     @staticmethod
-    def from_flow_run_info(flow_run_info: FlowRunInfo, pfbytes_file_reference_encoder=None) -> "LineRunRecord":
+    def from_flow_run_info(
+        flow_run_info: FlowRunInfo,
+        pfbytes_file_reference_encoder: Callable = None
+    ) -> "LineRunRecord":
         return LineRunRecord(
             line_number=flow_run_info.index,
             run_info=serialize(flow_run_info, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder),
@@ -193,9 +196,8 @@ class LocalStorageOperations(AbstractRunStorage):
         # for line run records, store per line
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
-        outputs_folder = self._prepare_folder(self.path / "flow_outputs")
-        self._image_output_folder = outputs_folder
-        self._outputs_path = outputs_folder / "output.jsonl"
+        self._outputs_folder = self._prepare_folder(self.path / "flow_outputs")
+        self._outputs_path = self._outputs_folder / "output.jsonl"
         self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
         self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")
         self._data_path = Path(run.data) if run.data is not None else None
@@ -250,7 +252,7 @@ class LocalStorageOperations(AbstractRunStorage):
             return df.to_dict("list")
 
     def dump_outputs(self, outputs: RunOutputs) -> None:
-        pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(folder_path=self._image_output_folder)
+        pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(folder_path=self._outputs_folder)
         outputs = serialize(outputs, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder)
         df = pd.DataFrame(outputs)
         with open(self._outputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:

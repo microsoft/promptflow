@@ -42,7 +42,7 @@ class PFBytes(bytes):
             file.write(self)
 
     @classmethod
-    def get_file_reference_encoder(cls, folder_path: PathLike, relative_path: PathLike=None) -> Callable:
+    def get_file_reference_encoder(cls, folder_path: PathLike, relative_path: PathLike = None) -> Callable:
         def pfbytes_file_reference_encoder(obj):
             """Dumps PFBytes to a file and returns its reference."""
             if isinstance(obj, PFBytes):
@@ -51,7 +51,10 @@ class PFBytes(bytes):
                 file_name = f"{uuid.uuid4()}.{ext}" if ext else f"{uuid.uuid4()}"
                 os.makedirs(path, exist_ok=True)
                 obj.save_to_file(os.path.join(path, file_name))
-                return {"pf_mime_type": obj._mime_type, "path": str(relative_path / file_name) if relative_path else file_name}
+                return {
+                    "pf_mime_type": obj._mime_type,
+                    "path": str(relative_path / file_name) if relative_path else file_name
+                }
             raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
         return pfbytes_file_reference_encoder
 
@@ -75,5 +78,5 @@ class Image(PFBytes):
 
     def serialize(self, encoder: Callable):
         if encoder is None:
-            return {"pf_mime_type": self._mime_type, "hash": self._hash}
+            return {"pf_mime_type": self._mime_type, "hash": str(self)}
         return encoder(self)

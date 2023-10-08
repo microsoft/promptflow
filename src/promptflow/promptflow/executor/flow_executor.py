@@ -22,7 +22,6 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
@@ -305,7 +304,7 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._convert_image_to_bytes(flow.inputs, flow_inputs, working_dir)
+        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs, working_dir)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -799,7 +798,11 @@ class FlowExecutor:
         return updated_inputs
 
     @staticmethod
-    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path) -> Dict[str, Any]:
+    def _convert_image_to_bytes(
+        inputs: Dict[str, FlowInputDefinition],
+        line_inputs: Mapping,
+        input_dir: Path
+    ) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:

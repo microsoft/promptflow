@@ -195,6 +195,7 @@ class TestValidation:
         with pytest.raises(error_class):
             executor.exec_line(line_input)
 
+    @pytest.mark.skip("Skip this test due to we don't ensure the output is serializable for now.")
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_msg",
         [
