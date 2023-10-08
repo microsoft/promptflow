@@ -116,6 +116,7 @@ class TestSubmitter:
                     merged_inputs[name] = flow_inputs[name]
                 else:
                     if value.default is None:
+                        # When the flow is a chat flow and chat_history has no default value, set an empty list for it
                         if chat_history_name and name == chat_history_name:
                             flow_inputs[name] = []
                         else:
