@@ -196,7 +196,9 @@ class TestExceptionPresenter:
             raise_general_exception()
 
         presenter = ExceptionPresenter.create(e.value)
-        dct = presenter.to_dict(include_debug_info=False)
+        dct = presenter.to_dict(include_debug_info=True)
+        assert "debugInfo" in dct
+        dct.pop("debugInfo")
         assert dct == {
             "code": "SystemError",
             "message": "General exception",
