@@ -1205,9 +1205,12 @@ class FlowExecutor:
 
         If the stream_required callback returns True, the LLM node will return a generator of strings.
         Otherwise, the LLM node will return a string.
-        :param stream_required: A callback that takes no arguments and returns a boolean value indicating whether
+
+        :param stream_required: A callback that takes no arguments and returns a boolean value indicating whether \
         streaming results should be enabled for the LLM node.
         :type stream_required: Callable[[], bool]
+
+        :return: None
         """
         for node in self._flow.nodes:
             if (
