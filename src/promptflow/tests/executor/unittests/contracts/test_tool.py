@@ -34,7 +34,7 @@ class TestToolContract:
             (str, False),
             (some_function, False),
             (Union[str, int], False),
-            ((int | str), False),
+            # ((int | str), False), # Python 3.10
             (tuple, False),
             (tuple[str, int], False),
             (Tuple[int, ...], False),
