@@ -242,10 +242,17 @@ class TestSubmitter:
         def get_result_output(output):
             if isinstance(output, GeneratorType):
                 if output in generator_record:
-                    output = iter(generator_record[output].items)
+                    if hasattr(generator_record[output], "items"):
+                        output = iter(generator_record[output].items)
+                    else:
+                        output = iter(generator_record[output])
                 else:
-                    proxy = output.gi_frame.f_locals["proxy"]
-                    generator_record[output] = proxy
+                    if hasattr(output.gi_frame.f_locals, "proxy"):
+                        proxy = output.gi_frame.f_locals["proxy"]
+                        generator_record[output] = proxy
+                    else:
+                        generator_record[output] = list(output)
+                        output = generator_record[output]
             return output
 
         def resolve_generator(flow_result):
