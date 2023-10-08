@@ -702,11 +702,9 @@ class FlowExecutor:
         self._node_concurrency = node_concurrency
         if self._input_image_dir:
             input_dir = self._input_image_dir
-            record_absolute_path = True
         else:
             input_dir = self._working_dir
-            record_absolute_path = False
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs, input_dir, record_absolute_path)
+        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs, input_dir)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -721,7 +719,6 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
-        line_result.output = serialize(line_result.output)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -788,9 +785,9 @@ class FlowExecutor:
         )
 
     @staticmethod
-    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path, record_absolute_path: bool = False):
+    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path):
         line_inputs = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
-        line_inputs = FlowExecutor._convert_image_to_bytes(inputs, line_inputs, input_dir, record_absolute_path)
+        line_inputs = FlowExecutor._convert_image_to_bytes(inputs, line_inputs, input_dir)
         return line_inputs
 
     @staticmethod
@@ -802,11 +799,11 @@ class FlowExecutor:
         return updated_inputs
 
     @staticmethod
-    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path, record_absolute_path: bool) -> Dict[str, Any]:
+    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(input_dir / updated_inputs[key], record_absolute_path=record_absolute_path)
+                updated_inputs[key] = Image.from_file(input_dir / updated_inputs[key])
         return updated_inputs
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:

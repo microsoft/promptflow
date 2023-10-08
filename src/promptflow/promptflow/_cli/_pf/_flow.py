@@ -33,6 +33,8 @@ from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._utils.dataclass_serializer import serialize
+from promptflow.contracts.multimedia import PFBytes
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -364,6 +366,11 @@ def test_flow(args):
         TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
         # Print flow/node test result
         if isinstance(result.output, dict):
+            pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
+                folder_path=Path.cwd(),
+                relative_path=Path(".promptflow/flow_outputs")
+            )
+            result.output = serialize(result.output, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder)
             print(json.dumps(result.output, indent=4))
         else:
             print(result.output)

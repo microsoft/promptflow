@@ -6,8 +6,7 @@ import datetime
 import json
 import logging
 import shutil
-import uuid
-from dataclasses import asdict, dataclass, fields, is_dataclass
+from dataclasses import asdict, dataclass
 from functools import partial
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
@@ -33,7 +32,7 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
-from promptflow.contracts.multimedia import Image
+from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -111,11 +110,11 @@ class NodeRunRecord:
     status: str
 
     @staticmethod
-    def from_run_info(node_run_info: NodeRunInfo) -> "NodeRunRecord":
+    def from_run_info(node_run_info: NodeRunInfo, pfbytes_file_reference_encoder=None) -> "NodeRunRecord":
         return NodeRunRecord(
             NodeName=node_run_info.node,
             line_number=node_run_info.index,
-            run_info=serialize(node_run_info),
+            run_info=serialize(node_run_info, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder),
             start_time=node_run_info.start_time.isoformat(),
             end_time=node_run_info.end_time.isoformat(),
             status=node_run_info.status.value,
@@ -152,10 +151,10 @@ class LineRunRecord:
     tags: str
 
     @staticmethod
-    def from_flow_run_info(flow_run_info: FlowRunInfo) -> "LineRunRecord":
+    def from_flow_run_info(flow_run_info: FlowRunInfo, pfbytes_file_reference_encoder=None) -> "LineRunRecord":
         return LineRunRecord(
             line_number=flow_run_info.index,
-            run_info=serialize(flow_run_info),
+            run_info=serialize(flow_run_info, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder),
             start_time=flow_run_info.start_time.isoformat(),
             end_time=flow_run_info.end_time.isoformat(),
             name=flow_run_info.name,
@@ -251,6 +250,8 @@ class LocalStorageOperations(AbstractRunStorage):
             return df.to_dict("list")
 
     def dump_outputs(self, outputs: RunOutputs) -> None:
+        pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(folder_path=self._image_output_folder)
+        outputs = serialize(outputs, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder)
         df = pd.DataFrame(outputs)
         with open(self._outputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             df.to_json(f, "records", lines=True)
@@ -361,8 +362,8 @@ class LocalStorageOperations(AbstractRunStorage):
         """Persist node run record to local storage."""
         node_folder = self._prepare_folder(self._node_infos_folder / run_info.node)
         line_number = 0 if run_info.index is None else run_info.index
-        self._persist_image(run_info.output, node_folder, f"{run_info.node}_{str(line_number)}")
-        node_run_record = NodeRunRecord.from_run_info(run_info)
+        pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(folder_path=node_folder)
+        node_run_record = NodeRunRecord.from_run_info(run_info, pfbytes_file_reference_encoder)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
@@ -373,8 +374,8 @@ class LocalStorageOperations(AbstractRunStorage):
         if not Status.is_terminated(run_info.status):
             logger.info("Line run is not terminated, skip persisting line run record.")
             return
-        self._persist_image(run_info.output, self._run_infos_folder)
-        line_run_record = LineRunRecord.from_flow_run_info(run_info)
+        pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(folder_path=self._run_infos_folder)
+        line_run_record = LineRunRecord.from_flow_run_info(run_info, pfbytes_file_reference_encoder)
         # calculate filename according to the batch size
         # note that if batch_size > 1, need to well handle concurrent write scenario
         lower_bound = line_run_record.line_number // LOCAL_STORAGE_BATCH_SIZE * LOCAL_STORAGE_BATCH_SIZE
@@ -391,20 +392,6 @@ class LocalStorageOperations(AbstractRunStorage):
             return
         self.dump_outputs(result.outputs)
         self.dump_metrics(result.metrics)
-
-    def _persist_image(self, output: Any, folder: Path, file_name_perfix: str = None):
-        if isinstance(output, Image):
-            name = f"{file_name_perfix}_{uuid.uuid4()}" if file_name_perfix else str(uuid.uuid4())
-            output.save_to(name, folder)
-        elif isinstance(output, dict):
-            for _, value in output.items():
-                self._persist_image(value, folder, file_name_perfix)
-        elif isinstance(output, list):
-            for item in output:
-                self._persist_image(item, folder, file_name_perfix)
-        elif is_dataclass(output):
-            for field in fields(output):
-                self._persist_image(getattr(output, field.name), folder, file_name_perfix)
 
     @staticmethod
     def _prepare_folder(path: Union[str, Path]) -> Path:
