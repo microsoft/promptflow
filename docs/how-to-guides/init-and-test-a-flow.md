@@ -299,3 +299,5 @@ Break points and debugging functionalities for the Python steps in your flow. Ju
 ## Next steps
 
 - [Add conditional control to a flow](./add-conditional-control-to-a-flow.md)
+- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+- [Use Flow in Pipeline Job](./use-flow-in-pipeline.md)
