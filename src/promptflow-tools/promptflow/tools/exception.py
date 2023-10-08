@@ -134,3 +134,24 @@ class SerpAPIUserError(UserErrorException):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class OpenSourceLLMOnlineEndpointError(UserErrorException):
+    """Base exception raised when the call to an online endpoint failed."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class OpenSourceLLMUserError(UserErrorException):
+    """Base exception raised when the call to Open Source LLM failed with a user error."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs, target=ErrorTarget.TOOL)
+
+
+class OpenSourceLLMKeyValidationError(ToolValidationError):
+    """Base exception raised when failed to validate functions when call chat api."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
