@@ -273,7 +273,7 @@ class TestToolResolver:
         mocker.patch.object(tool_loader, "load_tool_for_llm_node", return_value=tool)
 
         mocker.patch(
-            "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
+            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
             return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection}),
         )
 
@@ -298,15 +298,19 @@ class TestToolResolver:
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
     def test_resolve_script_node(self, mocker):
-        def mock_python_func(conn: AzureOpenAIConnection, prompt: PromptTemplate, **kwargs):
+        def mock_python_func(prompt: PromptTemplate, **kwargs):
             from promptflow.tools.template_rendering import render_template_jinja2
 
-            assert isinstance(conn, AzureOpenAIConnection)
             return render_template_jinja2(prompt, **kwargs)
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
-        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(mock_python_func, tool))
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=tool)
+
+        mocker.patch(
+            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
+            return_value=(mock_python_func, {"conn": AzureOpenAIConnection}),
+        )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
@@ -338,7 +342,7 @@ class TestToolResolver:
         mocker.patch.object(tool_loader, "load_tool_for_package_node", return_value=tool)
 
         mocker.patch(
-            "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
+            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
             return_value=(mock_package_func, {"conn": AzureOpenAIConnection}),
         )
 

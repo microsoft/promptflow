@@ -368,7 +368,7 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node) -> Tuple[Callable, Tool]:
+    def load_tool_for_script_node(self, node: Node) -> Tool:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
         path = node.source.path
