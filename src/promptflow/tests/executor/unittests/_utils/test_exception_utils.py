@@ -12,6 +12,7 @@ from promptflow._utils.exception_utils import (
     JsonSerializedPromptflowException,
     get_tb_next,
     infer_error_code_from_class,
+    last_frame_info,
 )
 from promptflow.exceptions import (
     ErrorTarget,
@@ -136,6 +137,15 @@ class TestExceptionUtilsCommonMethod:
         te = TracebackException(type(e.value), e.value, tb_next)
         formatted_tb = "".join(te.format())
         assert re.match(TOOL_EXCEPTION_INNER_TRACEBACK, formatted_tb)
+
+    def test_last_frame_info(self):
+        with pytest.raises(ToolExecutionError) as e:
+            raise_tool_execution_error()
+        frame_info = last_frame_info(e.value)
+        assert "test_exception_utils.py" in frame_info.get("filename")
+        assert frame_info.get("lineno") > 0
+        assert frame_info.get("name") == "raise_tool_execution_error"
+        assert last_frame_info(None) == {}
 
     @pytest.mark.parametrize(
         "error_class, expected_error_code",
