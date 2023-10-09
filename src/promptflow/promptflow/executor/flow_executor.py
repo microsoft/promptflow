@@ -560,8 +560,14 @@ class FlowExecutor:
             self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
         )
 
+        # Resolve aggregated_flow_inputs from list of strings to list of objects, whose type is specified in yaml file.
+        # TODO: For now, we resolve type for batch run's aggregation input in _exec_aggregation_with_bulk_results.
+        # If we decide to merge the resolve logic into one place, remember to take care of index for batch run.
+        resolved_aggregated_flow_inputs = FlowValidator.resolve_aggregated_flow_inputs_type(
+            self._flow, aggregated_flow_inputs
+        )
         with self._run_tracker.node_log_manager:
-            return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
+            return self._exec_aggregation(resolved_aggregated_flow_inputs, aggregation_inputs, run_id)
 
     @staticmethod
     def _apply_default_value_for_aggregation_input(
