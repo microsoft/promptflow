@@ -88,23 +88,12 @@ class TestFlowContract:
         assert serialized_flow["inputs"] == {name: i.serialize() for name, i in flow.inputs.items()}
         assert serialized_flow["tools"] == [t.serialize() for t in flow.tools]
 
-        # Question 1: There is no serialization for node_variants, therefore there is
-        # no node_variants in deserialized result. This makes deserialized
-        # result different from origin flow. Is this test result right?
-
-        # assert Flow.deserialize(serialized_flow) == flow
-
         deserialize_flow = Flow.deserialize(serialized_flow)
         assert deserialize_flow.name == flow.name
         assert len(deserialize_flow.nodes) == len(flow.nodes)
         assert deserialize_flow.inputs == flow.inputs
         assert deserialize_flow.outputs == flow.outputs
         assert deserialize_flow.tools == flow.tools
-
-        # Question 2: The prefix of FlowInputAssignment in the inputs of node 'fetch_text_content_from_url'
-        # is 'inputs.', after serializing and deserializing, the prefix becomes 'flow.'.
-
-        # assert deserialize_flow.nodes == flow.nodes
 
     def test_import_requisites(self):
         tool1 = Tool(name="tool1", type=ToolType.PYTHON, inputs={"name": InputDefinition(type=["int"])}, module="yaml")
@@ -201,8 +190,6 @@ class TestFlowContract:
 
     def test_is_llm_node(self):
         flow = Flow.from_yaml(get_yaml_file("web_classification"))
-        with pytest.raises(TypeError):
-            flow.is_llm_node("test")
         assert flow.is_llm_node(flow.nodes[3])
         assert not flow.is_llm_node(flow.nodes[0])
 

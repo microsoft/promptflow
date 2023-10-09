@@ -15,12 +15,18 @@ class TestStatus(Enum):
 
 
 @pytest.mark.unittest
-def test_deserialize_enum():
-    assert _deserialize_enum(Status, "Running") == Status.Running
-    assert _deserialize_enum(Status, "running") == Status.Running
-    assert _deserialize_enum(Status, "FAILED") == Status.Failed
-    assert _deserialize_enum(Status, "UNKNOWN") == "UNKNOWN"
-    assert _deserialize_enum(TestStatus, "Running") == "Running"
+@pytest.mark.parametrize(
+    "enum, value, expected",
+    [
+        (Status, "Running", Status.Running),
+        (Status, "running", Status.Running),
+        (Status, "FAILED", Status.Failed),
+        (Status, "UNKNOWN", "UNKNOWN"),
+        (TestStatus, "Running", "Running"),
+    ]
+)
+def test_deserialize_enum(enum, value, expected):
+    assert _deserialize_enum(enum, value) == expected
 
 
 @pytest.mark.unittest

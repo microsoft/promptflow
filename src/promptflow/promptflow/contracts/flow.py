@@ -583,10 +583,7 @@ class Flow:
 
     def is_llm_node(self, node):
         """Given a node, return whether it uses LLM tool."""
-        if isinstance(node, Node):
-            return node.type == ToolType.LLM
-        else:
-            raise TypeError(f"Unexpected node type {type(node)}")
+        return node.type == ToolType.LLM
 
     def is_referenced_by_flow_output(self, node):
         """Given a node, return whether it is referenced by output."""

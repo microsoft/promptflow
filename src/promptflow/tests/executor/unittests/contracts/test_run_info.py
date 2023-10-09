@@ -4,16 +4,22 @@ from promptflow.contracts.run_info import Status, RunInfo, FlowRunInfo
 
 
 @pytest.mark.unittest
-def test_status_is_terminated():
-    assert Status.is_terminated(Status.Completed)
-    assert Status.is_terminated(Status.Failed)
-    assert Status.is_terminated(Status.Bypassed)
-    assert Status.is_terminated(Status.Canceled)
-    assert not Status.is_terminated(Status.Running)
-    assert not Status.is_terminated(Status.Preparing)
-    assert not Status.is_terminated(Status.NotStarted)
-    assert not Status.is_terminated(Status.CancelRequested)
-    assert not Status.is_terminated(123)
+@pytest.mark.parametrize(
+    'status,expected',
+    [
+        (Status.Completed, True),
+        (Status.Failed, True),
+        (Status.Bypassed, True),
+        (Status.Canceled, True),
+        (Status.Running, False),
+        (Status.Preparing, False),
+        (Status.NotStarted, False),
+        (Status.CancelRequested, False),
+        (123, False)
+    ]
+)
+def test_status_is_terminated(status, expected):
+    assert Status.is_terminated(status) == expected
 
 
 @pytest.mark.unittest
