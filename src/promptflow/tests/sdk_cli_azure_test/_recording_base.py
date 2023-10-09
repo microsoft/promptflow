@@ -109,6 +109,8 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         if is_live_and_not_recording():
             return response
 
+        response["body"]["string"] = bytes(response["body"]["string"]).decode("utf-8")
+
         if self.is_live:
             # lower and filter some headers
             headers = {}
@@ -116,11 +118,6 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
                 if k.lower() not in self.FILTER_HEADERS:
                     headers[k.lower()] = response["headers"][k]
             response["headers"] = headers
-
-            try:
-                response["body"]["string"] = bytes(response["body"]["string"]).decode("utf-8")
-            except UnicodeDecodeError:
-                pass
 
             for processor in self.recording_processors:
                 response = processor.process_response(response)
@@ -132,6 +129,8 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
                 if not response:
                     break
 
+        response["body"]["string"] = str(response["body"]["string"]).encode("utf-8")
+
         return response
 
     def _get_recording_processors(self) -> List[Type[RecordingProcessor]]:
@@ -141,9 +140,14 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         ]
 
     def _get_playback_processors(self) -> List[Type[RecordingProcessor]]:
-        return []
+        return [
+            AzureWorkspaceTriadProcessor(),
+        ]
 
     def _custom_request_query_matcher(self, r1: Request, r2: Request) -> bool:
+        if r1.method != r2.method:
+            return False
+
         url1 = urlparse(r1.uri)
         url2 = urlparse(r2.uri)
         q1 = parse_qs(url1.query)
