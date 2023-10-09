@@ -126,7 +126,7 @@ def log_progress(
 ):
     log_interval = max(int(total_count / 10), 1)
     if count % log_interval == 0 or count == total_count:
-        average_execution_time = datetime.now().timestamp() - start_time.timestamp() / count
+        average_execution_time = round((datetime.now().timestamp() - start_time.timestamp()) / count, 2)
         logger.info(formatter.format(count=count, total_count=total_count))
         logger.info(
             f"Average execution time for completed lines: {average_execution_time} seconds.\n"
