@@ -12,15 +12,14 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
 		"ms-python.python",
-		//"wyi273jdeg.covjhmaizg",
 		"ms-toolsai.vscode-ai",
 		"ms-toolsai.jupyter",
 		"redhat.vscode-yaml",
 		"prompt-flow.prompt-flow"
 	],
 
-	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vsonline",
+	// Container user VS Code should use when connecting
+  	"remoteUser": "vscode",
 
 	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"]
   	// "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"],
