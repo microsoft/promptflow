@@ -5,7 +5,7 @@ import io
 from PIL import Image
 
 
-SUPPORT_IMAGE_TYPES = ["png", "jpg", "jpeg", "gif", "bmp"]
+SUPPORT_IMAGE_TYPES = ["png", "jpg", "jpeg", "bmp"]
 
 
 def get_image_size(image_path):
@@ -49,7 +49,7 @@ def create_html_file(data_uri, output_path):
 def check_image_type(image_path):
     file_extension = image_path.lower().split('.')[-1]
     if file_extension not in SUPPORT_IMAGE_TYPES:
-        raise ValueError("Only png, jpg, gif, or bmp image types are supported.")
+        raise ValueError("Only png, jpg or bmp image types are supported.")
 
 
 if __name__ == "__main__":

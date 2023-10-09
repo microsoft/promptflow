@@ -6,11 +6,13 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
 ## Prerequisites
 
 - Create a tool package as described in [Create and Use Tool Package](create-and-use-tool-package.md).
-- Prepare a custom tool icon image. The image should meet following requirements:
-  - The image should be in `PNG`, `JPG`, `GIF` or `BMP` format.
-  - 16x16 pixel image to avoid distortion from resizing.
-  - Avoid complex images with much detail or contrast as they may not resize well.   
-  You could see for [example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/icons/custom-tool-icon.png).
+- Prepare custom icon image that meets these requirements:
+
+  - Use PNG, JPG or BMP format
+  - 16x16 pixels to prevent distortion when resizing
+  - Avoid complex images with lots of detail or contrast, as they may not resize well. 
+
+  See [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/icons/custom-tool-icon.png) for a simple custom icon.
 - Install dependencies of generating icon data URI:
 
   ```
