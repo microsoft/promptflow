@@ -19,7 +19,8 @@ from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
 
-from .._recording_utils import PFAzureIntegrationTestCase, fixture_provider
+from .._recording_base import PFAzureIntegrationTestCase
+from .._recording_utils import fixture_provider
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
