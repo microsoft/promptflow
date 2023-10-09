@@ -1,11 +1,22 @@
-import pytest
-from promptflow.contracts.tool import _deserialize_enum, ValueType, ConnectionType, \
-    InputDefinition, OutputDefinition, Tool, ToolType
-from promptflow.contracts.types import Secret, PromptTemplate
-from promptflow.contracts.run_info import Status
-from promptflow._core.tools_manager import connections
-from promptflow._sdk.entities._connection import AzureContentSafetyConnection
 from enum import Enum
+
+import pytest
+
+from promptflow._core.tools_manager import connections
+from promptflow._sdk.entities import CustomStrongTypeConnection
+from promptflow._sdk.entities._connection import AzureContentSafetyConnection
+from promptflow.contracts.multimedia import Image
+from promptflow.contracts.run_info import Status
+from promptflow.contracts.tool import (
+    ConnectionType,
+    InputDefinition,
+    OutputDefinition,
+    Tool,
+    ToolType,
+    ValueType,
+    _deserialize_enum,
+)
+from promptflow.contracts.types import FilePath, PromptTemplate, Secret
 
 
 class TestStatus(Enum):
@@ -23,7 +34,7 @@ class TestStatus(Enum):
         (Status, "FAILED", Status.Failed),
         (Status, "UNKNOWN", "UNKNOWN"),
         (TestStatus, "Running", "Running"),
-    ]
+    ],
 )
 def test_deserialize_enum(enum, value, expected):
     assert _deserialize_enum(enum, value) == expected
@@ -42,7 +53,8 @@ class TestValueType:
             ({}, ValueType.OBJECT),
             (Secret("secret"), ValueType.SECRET),
             (PromptTemplate("prompt"), ValueType.PROMPT_TEMPLATE),
-        ]
+            (FilePath("file_path"), ValueType.FILE_PATH),
+        ],
     )
     def test_from_value(self, value, expected):
         assert ValueType.from_value(value) == expected
@@ -58,7 +70,9 @@ class TestValueType:
             (dict, ValueType.OBJECT),
             (Secret, ValueType.SECRET),
             (PromptTemplate, ValueType.PROMPT_TEMPLATE),
-        ]
+            (FilePath, ValueType.FILE_PATH),
+            (Image, ValueType.IMAGE),
+        ],
     )
     def test_from_type(self, value, expected):
         assert ValueType.from_type(value) == expected
@@ -72,12 +86,12 @@ class TestValueType:
             ("false", ValueType.BOOL, False),
             (True, ValueType.BOOL, True),
             (123, ValueType.STRING, "123"),
-            ('["a", "b", "c"]', ValueType.LIST, ['a', 'b', 'c']),
-            ('{"key": "value"}', ValueType.OBJECT, {'key': 'value'}),
-            ('[1, 2, 3]', ValueType.OBJECT, [1, 2, 3]),
-            ('{', ValueType.OBJECT, '{'),
+            ('["a", "b", "c"]', ValueType.LIST, ["a", "b", "c"]),
+            ('{"key": "value"}', ValueType.OBJECT, {"key": "value"}),
+            ("[1, 2, 3]", ValueType.OBJECT, [1, 2, 3]),
+            ("{", ValueType.OBJECT, "{"),
             ([1, 2, 3], ValueType.OBJECT, [1, 2, 3]),
-        ]
+        ],
     )
     def test_parse(self, value, value_type, expected):
         assert value_type.parse(value) == expected
@@ -87,7 +101,7 @@ class TestValueType:
         [
             ("1", ValueType.BOOL),
             ({}, ValueType.LIST),
-        ]
+        ],
     )
     def test_parse_error(self, value, value_type):
         with pytest.raises(ValueError):
@@ -103,8 +117,8 @@ class TestConnectionType:
             ("AzureOpenAIConnection", connections.get("AzureOpenAIConnection")),
             ("_Connection", connections.get("_Connection")),
             ("unknown", None),
-            (123, None)
-        ]
+            (123, None),
+        ],
     )
     def test_get_connection_class(self, type_name, expected):
         assert ConnectionType.get_connection_class(type_name) == expected
@@ -116,8 +130,8 @@ class TestConnectionType:
             ("AzureOpenAIConnection", True),
             ("_Connection", True),
             ("unknown", False),
-            (123, False)
-        ]
+            (123, False),
+        ],
     )
     def test_is_connection_class_name(self, type_name, expected):
         assert ConnectionType.is_connection_class_name(type_name) == expected
@@ -137,6 +151,20 @@ class TestConnectionType:
         # Test with a non-connection instance
         assert not ConnectionType.is_connection_value("non_connection_instance")
 
+    def test_is_custom_strong_type(self):
+        class MyCustomConnection(CustomStrongTypeConnection):
+            api_key: Secret
+            api_base: str
+
+        assert ConnectionType.is_custom_strong_type(MyCustomConnection) is True
+
+        class NotCustomConnection:
+            pass
+
+        assert ConnectionType.is_custom_strong_type(NotCustomConnection) is False
+
+        assert ConnectionType.is_custom_strong_type(123) is False
+
     def test_serialize_conn(self):
         assert ConnectionType.serialize_conn(AzureContentSafetyConnection) == "ABCMeta"
 
@@ -153,45 +181,38 @@ class TestInputDefinition:
         # test when len(type) == 1
         input_def = InputDefinition(
             [ValueType.STRING],
-            default='Default',
-            description='Description',
-            enum=['A', 'B', 'C']
+            default="Default",
+            description="Description",
+            enum=["A", "B", "C"],
+            custom_type=["customtype"],
         )
         serialized = input_def.serialize()
         assert serialized == {
-            'type': 'string',
-            'default': 'Default',
-            'description': 'Description',
-            'enum': ['A', 'B', 'C']
+            "type": "string",
+            "default": "Default",
+            "description": "Description",
+            "enum": ["A", "B", "C"],
+            "custom_type": ["customtype"],
         }
 
         # test when len(type) > 1
         input_def = InputDefinition([ValueType.STRING, ValueType.INT])
         serialized = input_def.serialize()
-        assert serialized == {
-            'type': ['string', 'int']
-        }
+        assert serialized == {"type": ["string", "int"]}
 
     def test_deserialize(self):
-        serialized = {
-            'type': 'string',
-            'default': 'Default',
-            'description': 'Description',
-            'enum': ['A', 'B', 'C']
-        }
+        serialized = {"type": "string", "default": "Default", "description": "Description", "enum": ["A", "B", "C"]}
         deserialized = InputDefinition.deserialize(serialized)
         assert deserialized.type == [ValueType.STRING]
-        assert deserialized.default == 'Default'
-        assert deserialized.description == 'Description'
-        assert deserialized.enum == ['A', 'B', 'C']
+        assert deserialized.default == "Default"
+        assert deserialized.description == "Description"
+        assert deserialized.enum == ["A", "B", "C"]
 
-        serialized = {
-            'type': ['string', 'int']
-        }
+        serialized = {"type": ["string", "int"]}
         deserialized = InputDefinition.deserialize(serialized)
         assert deserialized.type == [ValueType.STRING, ValueType.INT]
-        assert deserialized.default == ''
-        assert deserialized.description == ''
+        assert deserialized.default == ""
+        assert deserialized.description == ""
         assert deserialized.enum == []
 
 
@@ -199,39 +220,28 @@ class TestInputDefinition:
 class TestOutDefinition:
     def test_serialize(self):
         # test when len(type) == 1
-        output_def = OutputDefinition([ValueType.STRING], description='Description', is_property=True)
+        output_def = OutputDefinition([ValueType.STRING], description="Description", is_property=True)
         serialized = output_def.serialize()
-        assert serialized == {
-            'type': 'string',
-            'description': 'Description',
-            'is_property': True
-        }
+        assert serialized == {"type": "string", "description": "Description", "is_property": True}
 
         # test when len(type) > 1
         output_def = OutputDefinition([ValueType.STRING, ValueType.INT])
         serialized = output_def.serialize()
-        assert serialized == {
-            'type': ['string', 'int'],
-            'is_property': False
-        }
+        assert serialized == {"type": ["string", "int"], "is_property": False}
 
     def test_deserialize(self):
-        serialized = {
-            'type': 'string',
-            'description': 'Description',
-            'is_property': True
-        }
+        serialized = {"type": "string", "description": "Description", "is_property": True}
         deserialized = OutputDefinition.deserialize(serialized)
         assert deserialized.type == [ValueType.STRING]
-        assert deserialized.description == 'Description'
+        assert deserialized.description == "Description"
         assert deserialized.is_property
 
         serialized = {
-            'type': ['string', 'int'],
+            "type": ["string", "int"],
         }
         deserialized = OutputDefinition.deserialize(serialized)
         assert deserialized.type == [ValueType.STRING, ValueType.INT]
-        assert deserialized.description == ''
+        assert deserialized.description == ""
         assert not deserialized.is_property
 
 
@@ -249,11 +259,11 @@ class TestTool:
 
         # Test serialize method
         serialized_tool = tool.serialize()
-        assert serialized_tool['name'] == "Test Tool"
-        assert serialized_tool['connection_type'] == ["AzureContentSafetyConnection"]
-        assert serialized_tool['is_builtin']
+        assert serialized_tool["name"] == "Test Tool"
+        assert serialized_tool["connection_type"] == ["AzureContentSafetyConnection"]
+        assert serialized_tool["is_builtin"]
         with pytest.raises(KeyError):
-            serialized_tool['type']
+            serialized_tool["type"]
 
         # Test when type is not _ACTION
         tool = Tool(
@@ -265,10 +275,10 @@ class TestTool:
         )
 
         serialized_tool = tool.serialize()
-        assert serialized_tool['name'] == "Test Tool"
-        assert serialized_tool['connection_type'] == ["AzureContentSafetyConnection"]
-        assert serialized_tool['is_builtin']
-        assert serialized_tool['type'] == "llm"
+        assert serialized_tool["name"] == "Test Tool"
+        assert serialized_tool["connection_type"] == ["AzureContentSafetyConnection"]
+        assert serialized_tool["is_builtin"]
+        assert serialized_tool["type"] == "llm"
 
         # Test deserialize method
         deserialized_tool = Tool.deserialize(serialized_tool)
