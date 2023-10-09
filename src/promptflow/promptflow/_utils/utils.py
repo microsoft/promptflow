@@ -117,10 +117,21 @@ def count_and_log_progress(
         yield item
 
 
-def log_progress(logger: logging.Logger, count: int, total_count: int, formatter="{count} / {total_count} finished."):
+def log_progress(
+    start_time: datetime,
+    logger: logging.Logger,
+    count: int,
+    total_count: int,
+    formatter="{count} / {total_count} finished.",
+):
     log_interval = max(int(total_count / 10), 1)
     if count % log_interval == 0 or count == total_count:
+        average_execution_time = datetime.now().timestamp() - start_time.timestamp() / count
         logger.info(formatter.format(count=count, total_count=total_count))
+        logger.info(
+            f"Average execution time for completed lines: {average_execution_time} seconds.\n"
+            f"Estimated time for incompleted lines: {average_execution_time * (total_count - count)} seconds."
+        )
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
