@@ -19,17 +19,32 @@ class RecordingProcessor:
         return response
 
 
-class DatastoreKeyProcessor(RecordingProcessor):
-    """Sanitize datastore key in listSecrets response."""
+class DatastoreProcessor(RecordingProcessor):
+    """Sanitize datastore sensitive data."""
 
     FAKE_KEY = "this is fake key"
+    FAKE_ACCOUNT_NAME = "fake_account_name"
+    FAKE_CONTAINER_NAME = "fake-container-name"
+
+    def _sanitize_get_response(self, body: dict) -> dict:
+        if "id" in body and "datastores" in body["id"]:
+            body["properties"]["subscriptionId"] = AzureWorkspaceTriadProcessor.SANITIZED_SUBSCRIPTION_ID
+            body["properties"]["resourceGroup"] = AzureWorkspaceTriadProcessor.SANITIZED_RESOURCE_GROUP_NAME
+            body["properties"]["accountName"] = self.FAKE_ACCOUNT_NAME
+            body["properties"]["containerName"] = self.FAKE_CONTAINER_NAME
+        return body
+
+    def _sanitize_list_secrets_response(self, body: dict) -> dict:
+        if "key" in body:
+            b64_key = base64.b64encode(self.FAKE_KEY.encode("ascii"))
+            body["key"] = str(b64_key, "ascii")
+        return body
 
     def process_response(self, response: dict) -> dict:
         if is_json_payload_response(response):
             body = json.loads(response["body"]["string"])
-            if "key" in body:
-                b64_key = base64.b64encode(self.FAKE_KEY.encode("ascii"))
-                body["key"] = str(b64_key, "ascii")
+            self._sanitize_get_response(body)
+            self._sanitize_list_secrets_response(body)
             response["body"]["string"] = json.dumps(body)
         return response
 

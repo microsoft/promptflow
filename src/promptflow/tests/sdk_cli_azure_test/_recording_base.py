@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, urlparse
 import vcr
 from vcr.request import Request
 
-from ._recording_processors import AzureWorkspaceTriadProcessor, DatastoreKeyProcessor, RecordingProcessor
+from ._recording_processors import AzureWorkspaceTriadProcessor, DatastoreProcessor, RecordingProcessor
 
 TEST_RUN_LIVE = "PROMPT_FLOW_TEST_RUN_LIVE"
 SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
@@ -136,7 +136,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
     def _get_recording_processors(self) -> List[Type[RecordingProcessor]]:
         return [
             AzureWorkspaceTriadProcessor(),
-            DatastoreKeyProcessor(),
+            DatastoreProcessor(),
         ]
 
     def _get_playback_processors(self) -> List[Type[RecordingProcessor]]:
