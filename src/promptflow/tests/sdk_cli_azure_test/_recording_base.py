@@ -145,9 +145,8 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         ]
 
     def _custom_request_query_matcher(self, r1: Request, r2: Request) -> bool:
-        if r1.method != r2.method:
-            return False
-
+        # VCR.py will guarantee method, scheme, host and port match
+        # in prompt flow scenario, we also want to ensure query parameters match
         url1 = urlparse(r1.uri)
         url2 = urlparse(r2.uri)
         q1 = parse_qs(url1.query)
