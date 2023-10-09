@@ -31,3 +31,13 @@ def fixture_provider(testcase_func):
         testcase_func(**injected_params)
 
     return wrapper
+
+
+def is_json_payload_response(response: dict) -> bool:
+    headers = response.get("headers")
+    if headers:
+        # PFAzureIntegrationTestCase will lower keys in response headers
+        content_type = headers.get("content-type")
+        if content_type:
+            return "application/json" in content_type
+    return False

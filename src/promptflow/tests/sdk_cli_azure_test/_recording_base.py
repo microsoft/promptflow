@@ -11,7 +11,7 @@ from typing import List, Type
 import vcr
 from vcr.request import Request
 
-from ._recording_processors import RecordingProcessor
+from ._recording_processors import DatastoreKeyProcessor, RecordingProcessor
 
 TEST_RUN_LIVE = "PROMPT_FLOW_TEST_RUN_LIVE"
 SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
@@ -47,6 +47,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         "x-request-time",
         "x-aml-cluster",
         "aml-user-token",
+        "request-context",
     ]
 
     def __init__(self, method_name: str) -> None:
@@ -114,6 +115,11 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
                     headers[k.lower()] = response["headers"][k]
             response["headers"] = headers
 
+            try:
+                response["body"]["string"] = bytes(response["body"]["string"]).decode("utf-8")
+            except UnicodeDecodeError:
+                pass
+
             for processor in self.recording_processors:
                 response = processor.process_response(response)
                 if not response:
@@ -127,7 +133,9 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         return response
 
     def _get_recording_processors(self) -> List[Type[RecordingProcessor]]:
-        return []
+        return [
+            DatastoreKeyProcessor(),
+        ]
 
     def _get_playback_processors(self) -> List[Type[RecordingProcessor]]:
         return []
