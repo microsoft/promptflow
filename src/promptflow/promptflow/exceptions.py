@@ -30,7 +30,7 @@ class PromptflowException(Exception):
     :param message: A message describing the error. This is the error message the user will see.
     :type message: str
     :param target: The name of the element that caused the exception to be thrown.
-    :type target: ErrorTarget
+    :type target: ~promptflow.exceptions.ErrorTarget
     :param error: The original exception if any.
     :type error: Exception
     """
@@ -96,7 +96,7 @@ class PromptflowException(Exception):
         """The error target.
 
         :return: The error target.
-        :rtype: ErrorTarget
+        :rtype: ~promptflow.exceptions.ErrorTarget
         """
         return self._target
 
