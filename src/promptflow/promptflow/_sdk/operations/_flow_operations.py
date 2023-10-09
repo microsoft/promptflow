@@ -528,7 +528,8 @@ class FlowOperations:
             for include in additional_includes:
                 include_path = Path(include) if Path(include).is_absolute() else flow.code / include
                 if include_path.is_file():
-                    additional_files[Path(include).name] = os.path.relpath(include_path, flow.code)
+                    file_name = Path(include).name
+                    additional_files[Path(file_name)] = os.path.relpath(include_path, flow.code)
                 else:
                     if not Path(include).is_absolute():
                         include = flow.code / include
