@@ -4,10 +4,11 @@
 
 import copy
 from json import JSONDecodeError
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import Flow, InputValueType, Node
+from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputReference,
@@ -152,6 +153,52 @@ class FlowValidator:
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
+    def _parse_input_value(input_key: str, input_value: Any, expected_type: ValueType, idx=None):
+        try:
+            return expected_type.parse(input_value)
+        except JSONDecodeError as e:
+            line_info = "" if idx is None else f" in line {idx} of input data"
+            flow_input_info = f"'{input_key}'{line_info}"
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
+
+            msg_format = (
+                "Failed to parse the flow input. The value for flow input {flow_input_info} "
+                "was interpreted as JSON string since its type is '{value_type}'. However, the value "
+                "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
+                "Please make sure your inputs are properly formatted."
+            )
+            raise InputParseError(
+                message_format=msg_format,
+                flow_input_info=flow_input_info,
+                input_value=input_value,
+                value_type=expected_type,
+                error_type_and_message=error_type_and_message,
+            ) from e
+        except Exception as e:
+            line_info = "" if idx is None else f" in line {idx} of input data"
+            flow_input_info = f"'{input_key}'{line_info}"
+            msg_format = (
+                "The input for flow is incorrect. The value for flow input {flow_input_info} "
+                "does not match the expected type '{expected_type}'. Please change flow input type "
+                "or adjust the input value in your input data."
+            )
+            raise InputTypeError(
+                message_format=msg_format, flow_input_info=flow_input_info, expected_type=expected_type
+            ) from e
+
+    @staticmethod
+    def resolve_aggregated_flow_inputs_type(flow: Flow, inputs: Mapping[str, List[Any]]) -> Mapping[str, Any]:
+        updated_inputs = {}
+        for input_key, input_def in flow.inputs.items():
+            if input_key in inputs:
+                input_value_list = inputs[input_key]
+                updated_inputs[input_key] = [
+                    FlowValidator._parse_input_value(input_key, each_line_item, input_def.type, idx)
+                    for idx, each_line_item in enumerate(input_value_list)
+                ]
+        return updated_inputs
+
+    @staticmethod
     def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
         """Resolve inputs by type if existing. Ignore missing inputs.
 
@@ -169,38 +216,8 @@ class FlowValidator:
         """
         updated_inputs = {k: v for k, v in inputs.items()}
         for k, v in flow.inputs.items():
-            try:
-                if k in inputs:
-                    updated_inputs[k] = v.type.parse(inputs[k])
-            except JSONDecodeError as e:
-                line_info = "" if idx is None else f" in line {idx} of input data"
-                flow_input_info = f"'{k}'{line_info}"
-                error_type_and_message = f"({e.__class__.__name__}) {e}"
-
-                msg_format = (
-                    "Failed to parse the flow input. The value for flow input {flow_input_info} "
-                    "was interpreted as JSON string since its type is '{value_type}'. However, the value "
-                    "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
-                    "Please make sure your inputs are properly formatted."
-                )
-                raise InputParseError(
-                    message_format=msg_format,
-                    flow_input_info=flow_input_info,
-                    input_value=inputs[k],
-                    value_type=v.type,
-                    error_type_and_message=error_type_and_message,
-                ) from e
-            except Exception as e:
-                line_info = "" if idx is None else f" in line {idx} of input data"
-                flow_input_info = f"'{k}'{line_info}"
-                msg_format = (
-                    "The input for flow is incorrect. The value for flow input {flow_input_info} "
-                    "does not match the expected type '{expected_type}'. Please change flow input type "
-                    "or adjust the input value in your input data."
-                )
-                raise InputTypeError(
-                    message_format=msg_format, flow_input_info=flow_input_info, expected_type=v.type
-                ) from e
+            if k in inputs:
+                updated_inputs[k] = FlowValidator._parse_input_value(k, inputs[k], v.type, idx)
         return updated_inputs
 
     @staticmethod
