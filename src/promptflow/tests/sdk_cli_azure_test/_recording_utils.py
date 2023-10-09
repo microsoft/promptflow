@@ -39,5 +39,8 @@ def is_json_payload_response(response: dict) -> bool:
         # PFAzureIntegrationTestCase will lower keys in response headers
         content_type = headers.get("content-type")
         if content_type:
+            # content-type can be an array, e.g. ["application/json; charset=utf-8"]
+            content_type = content_type[0] if isinstance(content_type, list) else content_type
+            content_type = content_type.split(";")[0].lower()
             return "application/json" in content_type
     return False
