@@ -130,7 +130,7 @@ def log_progress(
         logger.info(formatter.format(count=count, total_count=total_count))
         logger.info(
             f"Average execution time for completed lines: {average_execution_time} seconds.\n"
-            f"Estimated time for incompleted lines: {average_execution_time * (total_count - count)} seconds."
+            f"Estimated time for incomplete lines: {average_execution_time * (total_count - count)} seconds."
         )
 
 
