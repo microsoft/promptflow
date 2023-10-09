@@ -60,8 +60,8 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         recording_dir = os.path.join(os.path.dirname(test_file_path), "recordings")
         self.vcr = vcr.VCR(
             cassette_library_dir=recording_dir,
-            record_mode="all",
-            # filter_headers=self.FILTER_HEADERS,
+            record_mode="none",
+            filter_headers=self.FILTER_HEADERS,
         )
         self.recording_file = os.path.join(recording_dir, f"{method_name}.yaml")
 
@@ -69,6 +69,6 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         super(PFAzureIntegrationTestCase, self).setUp()
 
         # set up cassette
-        cm = self.vcr.use_cassette(self.recording_file)
+        cm = self.vcr.use_cassette(self.recording_file, allow_playback_repeats=True)
         self.cassette = cm.__enter__()
         self.addCleanup(cm.__exit__)
