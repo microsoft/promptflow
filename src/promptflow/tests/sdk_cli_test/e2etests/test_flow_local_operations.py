@@ -249,13 +249,13 @@ class TestFlowLocalOperations:
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
                 "inputs": {"input_str": {"type": ["string"]}},
-                "source": "..\\external_files\\convert_to_dict.py",
+                "source": os.path.join("..", "external_files", "convert_to_dict.py"),
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
                 "function": "fetch_text_content_from_url",
                 "inputs": {"url": {"type": ["string"]}},
-                "source": "..\\external_files\\fetch_text_content_from_url.py",
+                "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                 "type": "python",
             },
             "prepare_examples.py": {
@@ -265,7 +265,7 @@ class TestFlowLocalOperations:
             },
             "summarize_text_content.jinja2": {
                 "inputs": {"text": {"type": ["string"]}},
-                "source": "..\\external_files\\summarize_text_content.jinja2",
+                "source": os.path.join("..", "external_files", "summarize_text_content.jinja2"),
                 "type": "llm",
             },
             "summarize_text_content__variant_1.jinja2": {
@@ -322,13 +322,13 @@ class TestFlowLocalOperations:
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
                 "inputs": {"input_str": {"type": ["string"]}},
-                "source": "..\\external_files\\convert_to_dict.py",
+                "source": os.path.join("..", "external_files", "convert_to_dict.py"),
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
                 "function": "fetch_text_content_from_url",
                 "inputs": {"url": {"type": ["string"]}},
-                "source": "..\\external_files\\fetch_text_content_from_url.py",
+                "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                 "type": "python",
             },
             "summarize_text_content__variant_1.jinja2": {
@@ -364,13 +364,13 @@ class TestFlowLocalOperations:
             "convert_to_dict.py": {
                 "function": "convert_to_dict",
                 "inputs": {"input_str": {"type": ["string"]}},
-                "source": "..\\external_files\\convert_to_dict.py",
+                "source": os.path.join("..", "external_files", "convert_to_dict.py"),
                 "type": "python",
             },
             "fetch_text_content_from_url.py": {
                 "function": "fetch_text_content_from_url",
                 "inputs": {"url": {"type": ["string"]}},
-                "source": "..\\external_files\\fetch_text_content_from_url.py",
+                "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                 "type": "python",
             },
             "summarize_text_content__variant_1.jinja2": {
@@ -397,7 +397,7 @@ class TestFlowLocalOperations:
                 "fetch_text_content_from_url.py": {
                     "function": "fetch_text_content_from_url",
                     "inputs": {"url": {"type": ["string"]}},
-                    "source": "..\\external_files\\fetch_text_content_from_url.py",
+                    "source": os.path.join("..", "external_files", "fetch_text_content_from_url.py"),
                     "type": "python",
                 },
             },
