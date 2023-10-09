@@ -17,10 +17,6 @@ RUN ipython kernel install --user --name aml
 # FROM base AS promptflow
 COPY default_requirements.txt .
 RUN pip install -r default_requirements.txt
-COPY ../src/promptflow/dev_requirements.txt .
-RUN pip install -r dev_requirements.txt
-COPY ../src/promptflow-tools/requirements.txt .
-RUN pip install -r requirements.txt
 
 RUN set +x
 
