@@ -7,6 +7,7 @@ import os
 import unittest
 from pathlib import Path
 from typing import List, Type
+from urllib.parse import parse_qs, urlparse
 
 import vcr
 from vcr.request import Request
@@ -69,6 +70,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
             record_mode="none" if not self.is_live else "all",
             filter_headers=self.FILTER_HEADERS,
         )
+        self.vcr.register_matcher("query", self._custom_request_query_matcher)
 
         test_file_name = test_file_path.stem
         test_class_name = self.__class__.__name__
@@ -139,3 +141,18 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
 
     def _get_playback_processors(self) -> List[Type[RecordingProcessor]]:
         return []
+
+    def _custom_request_query_matcher(self, r1: Request, r2: Request) -> bool:
+        url1 = urlparse(r1.uri)
+        url2 = urlparse(r2.uri)
+        q1 = parse_qs(url1.query)
+        q2 = parse_qs(url2.query)
+        shared_keys = set(q1.keys()).intersection(set(q2.keys()))
+
+        if len(shared_keys) != len(q1) or len(shared_keys) != len(q2):
+            return False
+        for k in shared_keys:
+            if q1[k][0].lower() != q2[k][0].lower():
+                return False
+
+        return True
