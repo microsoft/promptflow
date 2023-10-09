@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
-from .types import PromptTemplate, Secret
+from .types import FilePath, PromptTemplate, Secret
+from .multimedia import Image
 
 T = TypeVar("T", bound="Enum")
 
@@ -34,6 +35,8 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    FILE_PATH = "file_path"
+    IMAGE = "image"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -59,6 +62,8 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
@@ -85,6 +90,10 @@ class ValueType(str, Enum):
             return ValueType.SECRET
         if t == PromptTemplate:
             return ValueType.PROMPT_TEMPLATE
+        if t == FilePath:
+            return ValueType.FILE_PATH
+        if t == Image:
+            return ValueType.IMAGE
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
@@ -178,10 +187,13 @@ class ConnectionType:
     @staticmethod
     def is_custom_strong_type(val):
         """Check if the given value is a custom strong type connection."""
-
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
-        return issubclass(val, CustomStrongTypeConnection)
+        # TODO: replace the hotfix "try-except" with a more graceful solution."
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except Exception:
+            return False
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:

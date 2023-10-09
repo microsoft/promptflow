@@ -200,6 +200,20 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.model=new_model",
+            )
+        assert "Completed" in f.getvalue()
+
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
         display_name = "test_run"
@@ -777,6 +791,19 @@ class TestCli:
             "test",
             "--flow",
             f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output",
             "--interactive",
         )
         output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"

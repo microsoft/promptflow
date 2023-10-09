@@ -1,0 +1,14 @@
+flow: ../flows/web_classification
+data: ../datas/webClassification1.jsonl
+column_mapping:
+   url: "${data.url}"
+variant: ${summarize_text_content.variant_0}
+
+# run config: env related
+environment_variables: env_file
+
+connections:
+   classify_with_llm:
+      connection: new_ai_connection
+      # model is also supported for openai connection
+      model: test_model

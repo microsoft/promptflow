@@ -1,13 +1,18 @@
 # Release History
 
-## 0.1.0b7 (Upcoming)
+## 0.1.0b7.post1 (2023.09.28)
+
+### Bug Fixed
+- Fix extra dependency bug when importing `promptflow` without `azure-ai-ml` installed.
+
+## 0.1.0b7 (2023.09.27)
 
 ### Features Added
 
 - **pf flow validate**: support validate flow
 - **pf config set**: support set user-level promptflow config.
   - Support workspace connection provider, usage: `pf config set connection.provider=azureml:/subscriptions/<subscription_id>/resourceGroups/<resource_group>/providers/Microsoft.MachineLearningServices/workspaces/<workspace_name>`
-- **Telemetry**: enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
+- Support override openai connection's model when submitting a flow. For example: `pf run create --flow ./ --data ./data.jsonl --connection llm.model=xxx`
 
 ### Bugs Fixed
 - [Flow build] Fix flow build file name and environment variable name when connection name contains space.
@@ -16,6 +21,7 @@
 - Avoid inconsistent error message when executor exits abnormally.
 - Align inputs & outputs row number in case partial completed run will break `pfazure run show-details`.
 - Fix bug that failed to parse portal url for run data when the form is an asset id.
+- Fix the issue of process hanging for a long time when running the batch run.
 
 ### Improvements
 - [Executor][Internal] Improve error message with more details and actionable information.
