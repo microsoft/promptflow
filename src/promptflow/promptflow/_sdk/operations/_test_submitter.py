@@ -57,7 +57,7 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def _resolve_data(self, node_name: str = None, inputs: dict = None):
+    def _resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -66,6 +66,8 @@ class TestSubmitter:
         :type node_name: str
         :param inputs: Inputs of flow/node test.
         :type inputs: dict
+        :param chat_history_name: Chat history name.
+        :type chat_history_name: str
         :return: Dict of flow inputs, Dict of reference node output.
         :rtype: dict, dict
         """
@@ -114,7 +116,11 @@ class TestSubmitter:
                     merged_inputs[name] = flow_inputs[name]
                 else:
                     if value.default is None:
-                        missing_inputs.append(name)
+                        # When the flow is a chat flow and chat_history has no default value, set an empty list for it
+                        if chat_history_name and name == chat_history_name:
+                            flow_inputs[name] = []
+                        else:
+                            missing_inputs.append(name)
                     else:
                         flow_inputs[name] = value.default
                         merged_inputs[name] = flow_inputs[name]
