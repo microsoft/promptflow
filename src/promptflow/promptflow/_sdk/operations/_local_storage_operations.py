@@ -35,6 +35,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_mode import RunMode
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
@@ -48,6 +49,7 @@ RunMetrics = NewType("RunMetrics", Dict[str, Any])
 @dataclass
 class LoggerOperations(LogContext):
     stream: bool = False
+    run_mode: Optional[RunMode] = RunMode.Test
 
     @property
     def log_path(self) -> str:
@@ -172,11 +174,13 @@ class LocalStorageOperations(AbstractRunStorage):
 
     LINE_NUMBER_WIDTH = 9
 
-    def __init__(self, run: Run, stream=False):
+    def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
         self.path = self._prepare_folder(get_run_output_path(self._run))
 
-        self.logger = LoggerOperations(file_path=self.path / LocalStorageFilenames.LOG, stream=stream)
+        self.logger = LoggerOperations(
+            file_path=self.path / LocalStorageFilenames.LOG, stream=stream, run_mode=run_mode
+        )
         # snapshot
         self._snapshot_folder_path = self._prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
         self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG
