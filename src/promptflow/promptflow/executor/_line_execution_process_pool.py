@@ -80,10 +80,8 @@ class HealthyEnsuredProcess:
         try:
             # Wait for subprocess send a ready message.
             output_queue.get(timeout=30)
-            # logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
             self.is_ready = True
         except queue.Empty:
-            # logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end()
             # If there are no more tasks, the process is not re-created
             if not task_queue.empty():
@@ -193,7 +191,6 @@ class LineExecutionProcessPool:
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
-                # logger.info(f"Process {idx} queue empty, exit.")
                 healthy_ensured_process.end()
                 return
 
@@ -368,7 +365,7 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    # logger.info(f"Process {os.getpid()} started.")
+    logger.info(f"Process {os.getpid()} started.")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():
@@ -397,11 +394,9 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
 
     # Wait for the start signal message
     input_queue.get()
-    # logger.info(f"Process {os.getpid()} received start signal message: {start_msg}")
 
     # Send a ready signal message
     output_queue.put("ready")
-    # logger.info(f"Process {os.getpid()} sent ready signal message.")
 
     while True:
         try:
