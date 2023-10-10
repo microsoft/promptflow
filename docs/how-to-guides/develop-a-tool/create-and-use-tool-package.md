@@ -32,7 +32,8 @@ For example:
 ```
 python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message
 ```
-This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_ and _function-name_ are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_.
+This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_, _function-name_ and tool-hierarchy are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_.  
+The parameter `tool-hierarchy` is used to specify tool's hierarchy, please refer [Add tool hierarchy](add-tool-hierarchy.md) for more details.
 
 The command will generate the tool project as follows with one tool `hello_world_tool.py` in it:
 

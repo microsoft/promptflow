@@ -28,7 +28,7 @@ def create_folder(path):
 
 
 def create_tool_project_structure(destination: str, package_name: str, tool_name: str,
-                                  function_name: str, is_class_way=False):
+                                  function_name: str, tool_hierarchy: str, is_class_way=False):
     if is_class_way:
         class_name = convert_tool_name_to_class_name(tool_name)
 
@@ -91,10 +91,11 @@ def create_tool_project_structure(destination: str, package_name: str, tool_name
     if is_class_way:
         template = env.get_template('tool2.yaml.j2')
         output = template.render(package_name=package_name, tool_name=tool_name, class_name=class_name,
-                                 function_name=function_name)
+                                 tool_hierarchy=tool_hierarchy, function_name=function_name)
     else:
         template = env.get_template('tool.yaml.j2')
-        output = template.render(package_name=package_name, tool_name=tool_name, function_name=function_name)
+        output = template.render(package_name=package_name, tool_name=tool_name, tool_hierarchy=tool_hierarchy,
+                                 function_name=function_name)
     with open(os.path.join(yamls_dir, f'{tool_name}.yaml'), 'w') as f:
         f.write(output)
 
@@ -127,6 +128,8 @@ if __name__ == "__main__":
                         help="your tool's name, by default is hello_world_tool", required=False)
     parser.add_argument("--function-name", "-f", type=str,
                         help="your tool's function name, by default is your tool's name", required=False)
+    parser.add_argument("--tool-hierarchy", type=str, default="",
+                        help="your tool's hierarchy, by default is under root", required=False)
     parser.add_argument("--use-class", action='store_true', help="Specify whether to use a class implementation way.")
 
     args = parser.parse_args()
@@ -148,4 +151,4 @@ if __name__ == "__main__":
         function_name = tool_name
     function_name = function_name.lower()
 
-    create_tool_project_structure(destination, package_name, tool_name, function_name, args.use_class)
+    create_tool_project_structure(destination, package_name, tool_name, function_name, args.tool_hierarchy, args.use_class)
