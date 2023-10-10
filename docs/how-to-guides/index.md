@@ -14,7 +14,8 @@ deploy-a-flow/index
 enable-streaming-mode
 manage-connections
 manage-runs
-column-mapping
+use-column-mapping
+set-global-configs
 develop-a-tool/index
 faq
 
