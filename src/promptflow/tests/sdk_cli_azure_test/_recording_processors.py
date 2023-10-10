@@ -19,6 +19,14 @@ class RecordingProcessor:
         return response
 
 
+class RequestUrlProcessor(RecordingProcessor):
+    """Normalize request URL, '//' to '/'."""
+
+    def process_request(self, request: Request) -> Request:
+        request.uri = re.sub("(?<!:)//", "/", request.uri)
+        return request
+
+
 class DatastoreProcessor(RecordingProcessor):
     """Sanitize datastore sensitive data."""
 
@@ -115,13 +123,13 @@ class UploadHashProcessor(RecordingProcessor):
     def _sanitize(self, val: str) -> str:
         val = re.sub(
             r"(az-ml-artifacts)/([0-9a-f]{32})",
-            r"/\1/{}".format(self.FAKE_UPLOAD_HASH),
+            r"\1/{}".format(self.FAKE_UPLOAD_HASH),
             val,
             flags=re.IGNORECASE,
         )
         val = re.sub(
             r"(LocalUpload)/([0-9a-f]{32})",
-            r"/\1/{}".format(self.FAKE_UPLOAD_HASH),
+            r"\1/{}".format(self.FAKE_UPLOAD_HASH),
             val,
             flags=re.IGNORECASE,
         )

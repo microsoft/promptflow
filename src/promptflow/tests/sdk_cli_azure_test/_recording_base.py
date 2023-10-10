@@ -16,6 +16,7 @@ from ._recording_processors import (
     AzureWorkspaceTriadProcessor,
     DatastoreProcessor,
     RecordingProcessor,
+    RequestUrlProcessor,
     UploadHashProcessor,
 )
 
@@ -75,6 +76,8 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
             record_mode="none" if not self.is_live else "all",
             filter_headers=self.FILTER_HEADERS,
         )
+        self.vcr.register_matcher("host", self._custom_request_host_matcher)
+        self.vcr.register_matcher("path", self._custom_request_path_matcher)
         self.vcr.register_matcher("query", self._custom_request_query_matcher)
 
         test_file_name = test_file_path.stem
@@ -89,7 +92,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         super(PFAzureIntegrationTestCase, self).setUp()
 
         # set up cassette
-        cm = self.vcr.use_cassette(self.recording_file.as_posix())
+        cm = self.vcr.use_cassette(self.recording_file.as_posix(), allow_playback_repeats=True)
         self.cassette = cm.__enter__()
         self.addCleanup(cm.__exit__)
 
@@ -142,13 +145,27 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         return [
             AzureWorkspaceTriadProcessor(),
             DatastoreProcessor(),
+            RequestUrlProcessor(),
             UploadHashProcessor(),
         ]
 
     def _get_playback_processors(self) -> List[Type[RecordingProcessor]]:
         return [
             AzureWorkspaceTriadProcessor(),
+            DatastoreProcessor(),
+            RequestUrlProcessor(),
+            UploadHashProcessor(),
         ]
+
+    def _custom_request_host_matcher(self, r1: Request, r2: Request) -> bool:
+        if "blob.core.windows.net" in r1.host and "blob.core.windows.net" in r2.host:
+            return True
+        return r1.host == r2.host
+
+    def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
+        if "blob.core.windows.net" in r1.host and "blob.core.windows.net" in r2.host:
+            return True
+        return r1.path == r2.path
 
     def _custom_request_query_matcher(self, r1: Request, r2: Request) -> bool:
         # VCR.py will guarantee method, scheme, host and port match
