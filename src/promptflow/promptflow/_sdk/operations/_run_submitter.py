@@ -307,7 +307,8 @@ class RunSubmitter:
             # when run failed in executor, store the exception in result and dump to file
             error_log = f"Run {run.name} failed when executing in executor."
             if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                error_log = error_log + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                error_log = error_log + \
+                            f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
             logger.warning(error_log)
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
