@@ -3,14 +3,18 @@
 # ---------------------------------------------------------
 
 import json
+import logging
+import types
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
-from .types import PromptTemplate, Secret
+from .multimedia import Image
+from .types import FilePath, PromptTemplate, Secret
 
+logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
 
 
@@ -34,6 +38,7 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    FILE_PATH = "file_path"
     IMAGE = "image"
 
     @staticmethod
@@ -60,6 +65,8 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
@@ -86,6 +93,10 @@ class ValueType(str, Enum):
             return ValueType.SECRET
         if t == PromptTemplate:
             return ValueType.PROMPT_TEMPLATE
+        if t == FilePath:
+            return ValueType.FILE_PATH
+        if t == Image:
+            return ValueType.IMAGE
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
@@ -177,12 +188,29 @@ class ConnectionType:
         return val in connections.values() or ConnectionType.is_custom_strong_type(val)
 
     @staticmethod
-    def is_custom_strong_type(val):
-        """Check if the given value is a custom strong type connection."""
+    def is_custom_strong_type(val: Any) -> bool:
+        """Check if the given value is a custom strong type connection.
+
+        :param val: The value to check
+        :type val: Any
+        :return: Whether the given value is a custom strong type
+        :rtype: bool
+        """
 
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
-        return issubclass(val, CustomStrongTypeConnection)
+        val = type(val) if not isinstance(val, type) else val
+        # Check for instances of GenericAlias (for parameterized generic types like list[str])
+        if isinstance(val, types.GenericAlias):
+            return False
+
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except TypeError as e:
+            # TypeError is not expected to happen, but if it does, we will log it for debugging and return False.
+            # The try-except block cannot be confidently removed due to the uncertainty of TypeError that may occur.
+            logger.warning(f"Failed to check if {val} is a custom strong type: {e}")
+            return False
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
