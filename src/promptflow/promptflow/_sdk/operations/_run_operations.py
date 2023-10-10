@@ -15,6 +15,7 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    FlowRunProperties,
     ListViewType,
     RunStatus,
 )
@@ -268,6 +269,8 @@ class RunOperations(TelemetryMixin):
                 name=run.name,
                 display_name=run.display_name,
                 create_time=run.created_on,
+                flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+                output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
                 metrics=self.get_metrics(name=run.name),

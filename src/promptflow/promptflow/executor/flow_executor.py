@@ -560,8 +560,14 @@ class FlowExecutor:
             self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
         )
 
+        # Resolve aggregated_flow_inputs from list of strings to list of objects, whose type is specified in yaml file.
+        # TODO: For now, we resolve type for batch run's aggregation input in _exec_aggregation_with_bulk_results.
+        # If we decide to merge the resolve logic into one place, remember to take care of index for batch run.
+        resolved_aggregated_flow_inputs = FlowValidator.resolve_aggregated_flow_inputs_type(
+            self._flow, aggregated_flow_inputs
+        )
         with self._run_tracker.node_log_manager:
-            return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
+            return self._exec_aggregation(resolved_aggregated_flow_inputs, aggregation_inputs, run_id)
 
     @staticmethod
     def _apply_default_value_for_aggregation_input(
@@ -748,10 +754,7 @@ class FlowExecutor:
 
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
-        inputs = [
-            FlowExecutor._process_input_values(self._flow.inputs, each_line_input)
-            for each_line_input in inputs
-        ]
+        inputs = [FlowExecutor._process_input_values(self._flow.inputs, each_line_input) for each_line_input in inputs]
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
@@ -1197,9 +1200,12 @@ class FlowExecutor:
 
         If the stream_required callback returns True, the LLM node will return a generator of strings.
         Otherwise, the LLM node will return a string.
-        :param stream_required: A callback that takes no arguments and returns a boolean value indicating whether
+
+        :param stream_required: A callback that takes no arguments and returns a boolean value indicating whether \
         streaming results should be enabled for the LLM node.
         :type stream_required: Callable[[], bool]
+
+        :return: None
         """
         for node in self._flow.nodes:
             if (
