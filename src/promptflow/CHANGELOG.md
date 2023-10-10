@@ -5,6 +5,8 @@
 ### Features Added
 
 ### Bugs Fixed
+- **pf config set**:
+  - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
 
 ### Improvements
 

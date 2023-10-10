@@ -291,7 +291,7 @@ class RunDataKeys:
 
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
-    AZURE = "azureml"
+    AZUREML = "azureml"
 
 
 SUPPORTED_CONNECTION_FIELDS = {

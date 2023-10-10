@@ -138,7 +138,7 @@ class Configuration(object):
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
         if provider is None:
             return ConnectionProvider.LOCAL
-        if provider is ConnectionProvider.AZURE:
+        if provider == ConnectionProvider.AZUREML.value:
             # Note: The below function has azure-ai-ml dependency.
             return "azureml:" + self._get_workspace_from_config()
         # If provider not None and not Azure, return it directly.
