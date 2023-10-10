@@ -9,4 +9,3 @@ pytest-sugar
 pytest-timeout
 azure-keyvault
 azure-identity
-ruamel.yaml
