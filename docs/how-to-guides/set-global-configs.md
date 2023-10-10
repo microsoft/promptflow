@@ -1,5 +1,9 @@
 # Set global configs
-Promptflow supports setting global configs to avoid passing the same parameters to each command. The global configs are stored in a yaml file, which is located at ~/.promptflow/pf.yaml by default.
+:::{admonition} Experimental feature
+This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+:::
+
+Promptflow supports setting global configs to avoid passing the same parameters to each command. The global configs are stored in a yaml file, which is located at `~/.promptflow/pf.yaml` by default.
 
 The config file is shared between promptflow extension and sdk/cli. Promptflow extension controls each config through UI, so the following sections will show how to set global configs using promptflow cli.
 
@@ -42,7 +46,10 @@ connection.provider=azureml:/subscriptions/<your-subscription>/resourceGroups/<y
 When `get` or `list` connections, `PFClient`(or `pf connection` commands) will return workspace connections, and flow will be executed using these workspace connections.
 _Secrets for workspace connection will not be shown by those commands, which means you may see empty dict `{}` for custom connections._
 
-Note that `create`, `update` and `delete` commands are not supported for workspace connections, please manage it in workspace portal, az ml cli or AzureML SDK. 
+:::{note}
+Command `create`, `update` and `delete` are not supported for workspace connections, please manage it in workspace portal, az ml cli or AzureML SDK.
+:::
+ 
 
 #### azureml
 In addition to the full resource id, you can designate the connection provider as "azureml" with `connection.provider=azureml`. In this case,
