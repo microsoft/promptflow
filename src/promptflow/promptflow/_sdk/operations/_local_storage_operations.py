@@ -49,7 +49,7 @@ RunMetrics = NewType("RunMetrics", Dict[str, Any])
 @dataclass
 class LoggerOperations(LogContext):
     stream: bool = False
-    run_mode: Optional[RunMode] = RunMode.Batch
+    run_mode: Optional[RunMode] = RunMode.Test
 
     @property
     def log_path(self) -> str:
@@ -174,7 +174,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     LINE_NUMBER_WIDTH = 9
 
-    def __init__(self, run: Run, stream=False, run_mode=RunMode.Batch):
+    def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
         self.path = self._prepare_folder(get_run_output_path(self._run))
 
