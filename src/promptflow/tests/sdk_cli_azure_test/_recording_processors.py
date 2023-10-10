@@ -8,7 +8,7 @@ import re
 
 from vcr.request import Request
 
-from ._recording_utils import is_json_payload_response
+from ._recording_utils import is_json_payload_request, is_json_payload_response
 
 
 class RecordingProcessor:
@@ -26,10 +26,29 @@ class DatastoreProcessor(RecordingProcessor):
     FAKE_ACCOUNT_NAME = "fake_account_name"
     FAKE_CONTAINER_NAME = "fake-container-name"
 
+    def __init__(self):
+        self.account_names = set()
+        self.container_names = set()
+
+    def _sanitize_head_request_uri(self, uri: str) -> str:
+        if "blob.core.windows.net" in uri:
+            # sanitize account name and container name
+            for account_name in self.account_names:
+                uri = uri.replace(account_name, self.FAKE_ACCOUNT_NAME)
+            for container_name in self.container_names:
+                uri = uri.replace(container_name, self.FAKE_CONTAINER_NAME)
+        return uri
+
+    def process_request(self, request: Request) -> Request:
+        request.uri = self._sanitize_head_request_uri(request.uri)
+        return request
+
     def _sanitize_get_response(self, body: dict) -> dict:
         if "id" in body and "datastores" in body["id"]:
             body["properties"]["subscriptionId"] = AzureWorkspaceTriadProcessor.SANITIZED_SUBSCRIPTION_ID
             body["properties"]["resourceGroup"] = AzureWorkspaceTriadProcessor.SANITIZED_RESOURCE_GROUP_NAME
+            self.account_names.add(body["properties"]["accountName"])
+            self.container_names.add(body["properties"]["containerName"])
             body["properties"]["accountName"] = self.FAKE_ACCOUNT_NAME
             body["properties"]["containerName"] = self.FAKE_CONTAINER_NAME
         return body
@@ -81,6 +100,43 @@ class AzureWorkspaceTriadProcessor(RecordingProcessor):
 
     def process_request(self, request: Request) -> Request:
         request.uri = self._sanitize(request.uri)
+        return request
+
+    def process_response(self, response: dict) -> dict:
+        response["body"]["string"] = self._sanitize(response["body"]["string"])
+        return response
+
+
+class UploadHashProcessor(RecordingProcessor):
+    """Sanitize upload hash."""
+
+    FAKE_UPLOAD_HASH = "000000000000000000000000000000000000"
+
+    def _sanitize(self, val: str) -> str:
+        val = re.sub(
+            r"(az-ml-artifacts)/([0-9a-f]{32})",
+            r"/\1/{}".format(self.FAKE_UPLOAD_HASH),
+            val,
+            flags=re.IGNORECASE,
+        )
+        val = re.sub(
+            r"(LocalUpload)/([0-9a-f]{32})",
+            r"/\1/{}".format(self.FAKE_UPLOAD_HASH),
+            val,
+            flags=re.IGNORECASE,
+        )
+        return val
+
+    def _sanitize_request_body(self, body: bytes) -> bytes:
+        body = body.decode("utf-8")
+        body = self._sanitize(body)
+        body = body.encode("utf-8")
+        return body
+
+    def process_request(self, request: Request) -> Request:
+        request.uri = self._sanitize(request.uri)
+        if is_json_payload_request(request):
+            request.body = self._sanitize_request_body(request.body)
         return request
 
     def process_response(self, response: dict) -> dict:

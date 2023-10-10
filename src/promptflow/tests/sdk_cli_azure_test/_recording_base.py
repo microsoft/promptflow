@@ -12,7 +12,12 @@ from urllib.parse import parse_qs, urlparse
 import vcr
 from vcr.request import Request
 
-from ._recording_processors import AzureWorkspaceTriadProcessor, DatastoreProcessor, RecordingProcessor
+from ._recording_processors import (
+    AzureWorkspaceTriadProcessor,
+    DatastoreProcessor,
+    RecordingProcessor,
+    UploadHashProcessor,
+)
 
 TEST_RUN_LIVE = "PROMPT_FLOW_TEST_RUN_LIVE"
 SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
@@ -109,7 +114,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         if is_live_and_not_recording():
             return response
 
-        response["body"]["string"] = bytes(response["body"]["string"]).decode("utf-8")
+        response["body"]["string"] = response["body"]["string"].decode("utf-8")
 
         if self.is_live:
             # lower and filter some headers
@@ -129,7 +134,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
                 if not response:
                     break
 
-        response["body"]["string"] = str(response["body"]["string"]).encode("utf-8")
+        response["body"]["string"] = response["body"]["string"].encode("utf-8")
 
         return response
 
@@ -137,6 +142,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         return [
             AzureWorkspaceTriadProcessor(),
             DatastoreProcessor(),
+            UploadHashProcessor(),
         ]
 
     def _get_playback_processors(self) -> List[Type[RecordingProcessor]]:
