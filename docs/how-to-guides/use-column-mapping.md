@@ -1,4 +1,4 @@
-# Column mapping
+# Use column mapping
 
 In this document, we will introduce how to map inputs with column mapping when running a flow.
 
