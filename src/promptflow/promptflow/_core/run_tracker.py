@@ -2,23 +2,18 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
-import json
 from contextvars import ContextVar
 from datetime import datetime
-from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
 
-from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
+from promptflow._core._errors import RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.tool import ConnectionType
 from promptflow.exceptions import ErrorTarget
 from promptflow.storage import AbstractRunStorage
 from promptflow.storage._run_storage import DummyRunStorage
@@ -162,11 +157,6 @@ class RunTracker(ThreadLocalSingleton):
         return run_info
 
     def _flow_run_postprocess(self, run_info: FlowRunInfo, output, ex: Optional[Exception]):
-        if output:
-            try:
-                self._assert_flow_output_serializable(output)
-            except Exception as e:
-                output, ex = None, e
         self._common_postprocess(run_info, output, ex)
 
     def _update_flow_run_info_with_node_runs(self, run_info):
@@ -182,12 +172,6 @@ class RunTracker(ThreadLocalSingleton):
         logs = self.node_log_manager.get_logs(run_id)
         run_info.logs = logs
         self.node_log_manager.clear_node_context(run_id)
-
-        if run_info.inputs:
-            run_info.inputs = self._ensure_inputs_is_json_serializable(run_info.inputs, run_info.node)
-        if output is not None:
-            msg = f"Output of {run_info.node} is not json serializable, use str to store it."
-            output = self._ensure_serializable_value(output, msg)
         self._common_postprocess(run_info, output, ex)
 
     def _common_postprocess(self, run_info, output, ex):
@@ -235,64 +219,10 @@ class RunTracker(ThreadLocalSingleton):
             self._node_run_postprocess(run_info, result, ex)
         return run_info
 
-    def _ensure_serializable_value(self, val, warning_msg: Optional[str] = None):
-        if ConnectionType.is_connection_value(val):
-            return ConnectionType.serialize_conn(val)
-        if self.allow_generator_types and isinstance(val, GeneratorType):
-            return str(val)
-        if isinstance(val, Image):
-            return val.serialize()
-        try:
-            json.dumps(val)
-            return val
-        except Exception:
-            if not warning_msg:
-                raise
-            flow_logger.warning(warning_msg)
-            return repr(val)
-
-    def _ensure_inputs_is_json_serializable(self, inputs: dict, node_name: str) -> dict:
-        return {
-            k: self._ensure_serializable_value(
-                v, f"Input '{k}' of {node_name} is not json serializable, use str to store it."
-            )
-            for k, v in inputs.items()
-        }
-
-    def _assert_flow_output_serializable(self, output: Any) -> Any:
-        serializable_output = {}
-        for k, v in output.items():
-            try:
-                serializable_output[k] = self._ensure_serializable_value(v)
-            except Exception as e:
-                # If a specific key-value pair is not serializable, raise an exception with the key.
-                error_type_and_message = f"({e.__class__.__name__}) {e}"
-                message_format = (
-                    "The output '{output_name}' for flow is incorrect. The output value is not JSON serializable. "
-                    "JSON dump failed: {error_type_and_message}. Please verify your flow output and "
-                    "make sure the value serializable."
-                )
-                raise FlowOutputUnserializable(
-                    message_format=message_format,
-                    target=ErrorTarget.FLOW_EXECUTOR,
-                    output_name=k,
-                    error_type_and_message=error_type_and_message,
-                ) from e
-
-        return serializable_output
-
     def _enrich_run_info_with_exception(self, run_info: Union[RunInfo, FlowRunInfo], ex: Exception):
         """Update exception details into run info."""
         run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
         run_info.status = Status.Failed
-
-    def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
-        flow_runs = self.flow_run_list
-        node_runs = self.node_run_list
-        return {
-            "flow_runs": [serialize(run) for run in flow_runs],
-            "node_runs": [serialize(run) for run in node_runs],
-        }
 
     def collect_node_runs(self, flow_run_id: Optional[str] = None) -> List[RunInfo]:
         """If flow_run_id is None, return all node runs."""
