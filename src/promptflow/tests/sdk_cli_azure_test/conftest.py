@@ -2,10 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import logging
+
 import pytest
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
+from pytest_mock import MockFixture
 
 from promptflow.azure import PFClient
 
@@ -129,3 +132,9 @@ def ml_client_canary(
         workspace_name="promptflow-canary-dev",
         cloud="AzureCloud",
     )
+
+
+@pytest.fixture(autouse=True)
+def mock_appinsights_log_handler(mocker: MockFixture) -> None:
+    dummy_logger = logging.getLogger("dummy")
+    mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
