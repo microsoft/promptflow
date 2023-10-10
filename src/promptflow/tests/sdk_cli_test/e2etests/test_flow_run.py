@@ -279,11 +279,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        # "update" run status to failed since currently all run will be completed unless there's bug
-        pf.runs.update(
-            name=failed_run.name,
-            status="Failed",
-        )
+        assert failed_run.status == "Failed"
 
         run_name = str(uuid.uuid4())
         with pytest.raises(ValueError) as e:
@@ -533,11 +529,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        # "update" run status to failed since currently all run will be completed unless there's bug
-        pf.runs.update(
-            name=failed_run.name,
-            status="Failed",
-        )
+        assert failed_run.status == "Failed"
 
         # patch logger.error to print, so that we can capture the error message using capfd
         from promptflow.azure.operations import _run_operations

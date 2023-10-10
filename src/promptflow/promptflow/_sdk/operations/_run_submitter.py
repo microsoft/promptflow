@@ -25,6 +25,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     ConnectionFields,
+    FlowRunProperties,
 )
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow
@@ -295,16 +296,26 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            # Filter the failed line result
+            failed_line_result = next(
+                filter(lambda result: result.run_info.status == Status.Failed, bulk_result.line_results), None)
+            if failed_line_result:
+                raise UserErrorException(**failed_line_result.run_info.error)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
-            logger.warning(f"Run {run.name} failed when executing in executor.")
+            error_log = f""
+            if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                error_log = error_log + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+            logger.warning(error_log)
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
             if not isinstance(e, UserErrorException):
                 # for other errors, raise it to user to help debug root cause.
                 raise e
+            else:
+                logger.warning(e.message)
             # won't raise the exception since it's already included in run object.
         finally:
             # persist snapshot and result
