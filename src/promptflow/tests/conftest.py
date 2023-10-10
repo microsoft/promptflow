@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
+from filelock import FileLock
 from pytest_mock import MockerFixture
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
@@ -109,13 +110,14 @@ def prepare_symbolic_flow() -> str:
 
 @pytest.fixture(scope="session")
 def install_custom_tool_pkg():
-    # Leave the pkg installed since multiple tests rely on it and the tests may run concurrently
-    try:
-        import my_tool_package  # noqa: F401
+    # The tests could be running in parallel. Use a lock to prevent race conditions.
+    lock = FileLock("custom_tool_pkg_installation.lock")
+    with lock:
+        try:
+            import my_tool_package  # noqa: F401
 
-    except ImportError:
-        import subprocess
-        import sys
+        except ImportError:
+            import subprocess
+            import sys
 
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
-    yield
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
