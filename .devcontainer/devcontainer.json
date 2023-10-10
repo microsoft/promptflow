@@ -18,6 +18,8 @@
 		"prompt-flow.prompt-flow"
 	],
 
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "pip install -r ${containerWorkspaceFolder}/src/promptflow/dev_requirements.txt --force-reinstall;pip install -r ${containerWorkspaceFolder}/src/promptflow-tools/requirements.txt --force-reinstall;pip install -e ${containerWorkspaceFolder}/src/promptflow;pip install -e ${containerWorkspaceFolder}/src/promptflow-tools",
+
 	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"]
-  	// "mounts": ["source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"],
 }
