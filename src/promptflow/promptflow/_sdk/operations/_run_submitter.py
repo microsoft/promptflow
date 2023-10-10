@@ -305,7 +305,7 @@ class RunSubmitter:
             status = Status.Completed.value
         except Exception as e:
             # when run failed in executor, store the exception in result and dump to file
-            error_log = f""
+            error_log = f"Run {run.name} failed when executing in executor."
             if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
                 error_log = error_log + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
             logger.warning(error_log)
