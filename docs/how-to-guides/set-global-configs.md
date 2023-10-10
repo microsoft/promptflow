@@ -53,7 +53,7 @@ Command `create`, `update` and `delete` are not supported for workspace connecti
 
 #### azureml
 In addition to the full resource id, you can designate the connection provider as "azureml" with `connection.provider=azureml`. In this case,
-promptflow will attempt to retrieve the workspace configuration by searching `.azureml/config.json` from the current directory,  then progressively from its parent folders. So it's possible to set the workspace configuration for different flow by placing the config file in the project folder.
+promptflow will attempt to retrieve the workspace configuration by searching `.azureml/config.json` from the current directory, then progressively from its parent folders. So it's possible to set the workspace configuration for different flow by placing the config file in the project folder.
 
 The expected format of the config file is as follows:
 ```json
