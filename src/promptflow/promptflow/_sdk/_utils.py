@@ -45,6 +45,7 @@ from promptflow._sdk._constants import (
     NODE_VARIANTS,
     NODES,
     PROMPT_FLOW_DIR_NAME,
+    REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
@@ -788,21 +789,27 @@ def _generate_connections_dir():
     return connections_dir
 
 
+_refresh_connection_dir_lock = FileLock(REFRESH_CONNECTIONS_DIR_LOCK_PATH)
+
+
 # This function is used by extension to generate the connection files every time collect tools.
 def refresh_connections_dir(connection_spec_files, connection_template_yamls):
     connections_dir = _generate_connections_dir()
-    if os.path.isdir(connections_dir):
-        shutil.rmtree(connections_dir)
-    os.makedirs(connections_dir)
 
-    if connection_spec_files and connection_template_yamls:
-        for connection_name, content in connection_spec_files.items():
-            file_name = connection_name + ".spec.json"
-            with open(connections_dir / file_name, "w") as f:
-                json.dump(content, f, indent=2)
+    # Use lock to prevent concurrent access
+    with _refresh_connection_dir_lock:
+        if os.path.isdir(connections_dir):
+            shutil.rmtree(connections_dir)
+        os.makedirs(connections_dir)
 
-        for connection_name, content in connection_template_yamls.items():
-            yaml_data = yaml.safe_load(content)
-            file_name = connection_name + ".template.yaml"
-            with open(connections_dir / file_name, "w") as f:
-                yaml.dump(yaml_data, f, sort_keys=False)
+        if connection_spec_files and connection_template_yamls:
+            for connection_name, content in connection_spec_files.items():
+                file_name = connection_name + ".spec.json"
+                with open(connections_dir / file_name, "w") as f:
+                    json.dump(content, f, indent=2)
+
+            for connection_name, content in connection_template_yamls.items():
+                yaml_data = yaml.safe_load(content)
+                file_name = connection_name + ".template.yaml"
+                with open(connections_dir / file_name, "w") as f:
+                    yaml.dump(yaml_data, f, sort_keys=False)
