@@ -182,7 +182,8 @@ class ArmConnectionOperations(_ScopeDependentOperations):
                 category=properties.category,
                 name=name,
             )
-        return {**meta, "value": value}
+        # Note: Filter empty values out to ensure default values can be picked when init class object.
+        return {**meta, "value": {k: v for k, v in value.items() if v}}
 
     def build_connection_dict(self, name) -> dict:
         """

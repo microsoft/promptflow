@@ -55,8 +55,9 @@ def test_build_default_azure_openai_connection_missing_metadata():
             "category": "AzureOpenAI",
             "target": "<api-base>",
             "metadata": {
-                "ApiType": "azure",
-                "ApiVersion": "2023-07-01-preview",
+                # Missing ApiType and ApiVersion
+                # "ApiType": "azure",
+                # "ApiVersion": "2023-07-01-preview",
             },
         },
     }
@@ -66,8 +67,9 @@ def test_build_default_azure_openai_connection_missing_metadata():
         "value": {
             "api_base": "<api-base>",
             "api_key": "***",
-            "api_type": "azure",
-            "api_version": "2023-07-01-preview",
+            # Assert below keys are filtered out
+            # "api_type": None,
+            # "api_version": None,
         },
     }
     build_from_data_and_assert(data, expected)
