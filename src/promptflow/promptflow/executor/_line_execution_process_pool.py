@@ -79,7 +79,8 @@ class HealthyEnsuredProcess:
 
         try:
             # Wait for subprocess send a ready message.
-            output_queue.get(timeout=30)
+            ready_msg = output_queue.get(timeout=30)
+            assert ready_msg == "ready"
             # logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
             self.is_ready = True
         except queue.Empty:
@@ -396,7 +397,8 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     # Wait for the start signal message
-    input_queue.get()
+    start_msg = input_queue.get()
+    assert start_msg == "start"
     # logger.info(f"Process {os.getpid()} received start signal message: {start_msg}")
 
     # Send a ready signal message
