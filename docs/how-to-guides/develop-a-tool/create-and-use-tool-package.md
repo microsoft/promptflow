@@ -10,9 +10,10 @@ After successful installation of the package, your custom "tool" will show up in
 Your tool package should be a python package. To try it quickly, just use [my-tools-package 0.0.1](https://pypi.org/project/my-tools-package/) and skip this section.
 
 ### Prerequisites
-Create a new conda environment using python 3.9 or 3.10. Run below command to install PromptFlow dependencies:
+Create a new conda environment using python 3.9 or 3.10. Run below command to install dependencies:
 ```
 pip install promptflow
+pip install pillow
 ```
 Install Pytest packages for running tests:
 ```
@@ -26,13 +27,13 @@ git clone https://github.com/microsoft/promptflow.git
 ### Create custom tool package
 Run below command under the root folder to create your tool project quickly:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
+python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name> --icon-path <your-tool-icon-path>
 ```
 For example:
 ```
-python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message
+python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message --icon-path D:\proj\github\promptflow\examples\tools\tool-package-quickstart\my_tool_package\icons\custom-tool-icon.png
 ```
-This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_ and _function-name_ are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_.
+This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_, _function-name_ and _icon-path_ are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_. The parameter _icon-path_ is used to customize the tool's icon image, please refer [Add a tool icon](add-a-tool-icon.md) for more details.
 
 The command will generate the tool project as follows with one tool `hello_world_tool.py` in it:
 

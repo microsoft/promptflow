@@ -52,6 +52,11 @@ def check_image_type(image_path):
         raise ValueError("Only png, jpg or bmp image types are supported.")
 
 
+def check_image_type_and_generate_data_url(image_path):
+    check_image_type(image_path)
+    return image_to_data_url(image_path)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -68,7 +73,6 @@ if __name__ == "__main__":
         help="Your image output path",
     )
     args = parser.parse_args()
-    check_image_type(args.image_path)
-    data_url = image_to_data_url(args.image_path)
+    data_url = check_image_type_and_generate_data_url(args.image_path)
     print("Your image data uri: \n{}".format(data_url))
     create_html_file(data_url, args.output)
