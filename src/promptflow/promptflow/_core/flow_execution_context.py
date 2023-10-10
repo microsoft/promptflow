@@ -6,9 +6,9 @@ import logging
 import threading
 import time
 import uuid
+from collections.abc import Iterator
 from contextvars import ContextVar
 from logging import WARNING
-from types import GeneratorType
 from typing import Callable, List
 
 from promptflow._core._errors import ToolExecutionError
@@ -219,7 +219,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         return f"{self._run_id}_{node.name}_{self._line_number}"
 
     def _handle_generator_result(self, result):
-        if not self._allow_generator_output and isinstance(result, GeneratorType):
+        if not self._allow_generator_output and isinstance(result, Iterator):
             return "".join(str(chuck) for chuck in result)
         else:
             return result
