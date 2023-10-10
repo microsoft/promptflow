@@ -71,7 +71,7 @@ class HealthyEnsuredProcess:
             ),
             # Set the process as a daemon process to automatically terminated and release system resources
             # when the main process exits.
-            daemon=True
+            daemon=True,
         )
 
         self.process = process
@@ -108,10 +108,12 @@ class HealthyEnsuredProcess:
         process_pid = self.process.pid if self.process else None
         if is_completed:
             logger.info(
-                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed.")
+                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
+            )
         else:
             logger.info(
-                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution.")
+                f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} start execution."
+            )
 
         return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
 
@@ -236,6 +238,7 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
             log_progress(
+                start_time=start_time,
                 logger=bulk_logger,
                 count=len(result_list),
                 total_count=self._nlines,
