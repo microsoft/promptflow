@@ -1,6 +1,23 @@
 # Release History
 
-## 0.1.0b7 (Upcoming)
+## 0.1.0b8 (Upcoming)
+
+### Features Added
+
+### Bugs Fixed
+- **pf config set**:
+  - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
+
+### Improvements
+
+- [SDK/CLI] Include flow path & output path in `pf run visualize` page.
+
+## 0.1.0b7.post1 (2023.09.28)
+
+### Bug Fixed
+- Fix extra dependency bug when importing `promptflow` without `azure-ai-ml` installed.
+
+## 0.1.0b7 (2023.09.27)
 
 ### Features Added
 

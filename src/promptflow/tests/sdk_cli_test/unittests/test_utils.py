@@ -7,6 +7,7 @@ import os
 import shutil
 import sys
 import tempfile
+import threading
 from pathlib import Path
 from unittest.mock import patch
 
@@ -27,6 +28,7 @@ from promptflow._sdk._utils import (
     decrypt_secret_value,
     encrypt_secret_value,
     generate_flow_tools_json,
+    refresh_connections_dir,
     resolve_connections_environment_variable_reference,
     snake_to_camel,
 )
@@ -130,6 +132,19 @@ class TestUtils:
         with patch.object(sys, "executable", python_path):
             result = _generate_connections_dir()
             assert result == expected_result
+
+    @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
+    def test_concurrent_execution_of_refresh_connections_dir(self, concurrent_count):
+        threads = []
+
+        # Create and start threads
+        for _ in range(concurrent_count):
+            thread = threading.Thread(target=refresh_connections_dir, args={None, None})
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
 
 
 @pytest.mark.unittest

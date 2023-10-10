@@ -465,6 +465,7 @@ def show_run_details(
     """Show a run details from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
     details = pf.runs.get_details(run=flow_run_id, max_results=max_results, all_results=all_results)
+    details.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
     pretty_print_dataframe_as_table(details)
 
 
