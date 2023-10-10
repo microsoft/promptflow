@@ -1,35 +1,17 @@
-# Promptflow base images
+# Devcontainer for promptflow
+To facilitate your promptflow project development and empower you to work on LLM projects using promptflow more effectively, 
+we've configured the necessary environment for developing promptflow projects and utilizing flows through the dev container feature. 
+You can seamlessly initiate your promptflow project development and start leveraging flows by simply using the dev container feature via VS Code or Codespaces.
 
-This folder contains Dockerfile for promptflow images.
+# Use devcontainer
+1. Use vscode to open promptflow repo, and install vscode extension: Dev Containers and then open promptflow with dev containers.
+   ![devcontainer](./devcontainers.png)
+   **About dev containers please refer to: [devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)**
+2. Use codespaces to open promptflow repo, it will automatically build the dev containers environment and open promptflow with dev containers.
+   ![codespaces](./codespaces.png)
 
-## Dev-container config
-
-File devcontainer.json points to a local image defined in DOCKERFILE.
-
-Inside the image:
-
-- default python with latest promptflow, promptflow-tools.
-
-### How to build image
-
-Command to build the Dockerfile inside this folder:
-
-```cmd
-docker build -t promptflow_container .
-```
-
-### How to list image
-
-Command to list the images:
-
-```cmd
-docker image ls
-```
-
-### How to run the image
-
-Local run using this command:
-
-```cmd
-docker run -it promptflow_container
-``
+### Notes
+1. If you only want to try out promptflow without developing promptflow, you can simply install Docker and use promptflow within Docker without the need for using DevContainers functionality.
+   1. `docker build -t promptflow_container`
+   2. `docker run -it promptflow_container`
+2. When using the dev containers function, the promptflow and promptflow-tools installed in the container are the code of the current repo.
