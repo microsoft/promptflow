@@ -18,15 +18,15 @@ Since FilePath is still in test currently, you need to install private version S
 
 ## Use FilePath as tool input in 'hello-world' tool
 
-For details of how to create and use custom tool ,please refer to [Custom tool package creation and usage](../how-to-create-and-use-your-own-tool-package.md).
+For details of how to create and use custom tool, please refer to [Custom tool package creation and usage](../how-to-create-and-use-your-own-tool-package.md).
 
-1. Create a tool project 'hello-world-proj' with `--case file_input` to generate demo case of file_path as tool input.
+1. Create a tool project hello-world-proj with `--case file_input` to generate demo case of file_path as tool input.
 
     ```bash
     python <path-to-scripts>\tool\generate_tool_package_template.py --case file_path --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_sqrt    
     ```
 
-2. Go to 'hello-world-proj' folder, check your tool code.
+2. Go to hello-world-proj folder, check your tool code.
 
    The demo use a sematic_kernel case, refer to [run native code with Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/ai-orchestration/plugins/native-functions/using-the-skfunction-decorator?tabs=python).
 
@@ -49,9 +49,9 @@ For details of how to create and use custom tool ,please refer to [Custom tool p
 4. Go to the extension and create new flow. Click 'empty flow' and preview the flow. Next, click `+ More` button and select your tool `Hello World Tool`
 
    ![create empty flow](../../media/how-to-guides/develop-a-tool/create_empty_flow.png)
-   ![use hello world tool](../../media/how-to-guides/develop-a-tool/select_hello_wolrd_tool.png)
+   ![use hello world tool](../../media/how-to-guides/develop-a-tool/select_hello_world_tool.png)
 
-5. Prepare your own python script, `demo_input.py`` as file_input.
+5. Prepare your own python script, `demo_input.py` as file_input.
 
    Here the input demos a custom sqrt func, for more details, refer to [Use the SKFunction decorator to define a native function](https://learn.microsoft.com/en-us/semantic-kernel/ai-orchestration/plugins/native-functions/using-the-skfunction-decorator?tabs=python#use-the-skfunction-decorator-to-define-a-native-function)
 
@@ -68,7 +68,7 @@ For details of how to create and use custom tool ,please refer to [Custom tool p
             kernel.import_skill(MathSkill(), skill_name="math")
 
         Examples:
-            {{math.Add}}         => Returns the sum of initial_value_text and Amount (provided in the SKContext)
+            {{math.Add}} => Returns the sum of initial_value_text and Amount (provided in the SKContext)
         """
         @sk_function(
             description="Takes the square root of a number",
@@ -94,5 +94,5 @@ Any `.py, .txt, etc` scripts are supported, you need customize the logic of cons
 
 ### Practical use cases via this feature?
 
-1. Load module from specific file as the proceeding demo.
+1. Load module from specific python script as the proceeding demo.
 2. Load data from .css, .txt files.
