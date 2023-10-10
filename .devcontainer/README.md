@@ -6,7 +6,6 @@ You can seamlessly initiate your promptflow project development and start levera
 # Use devcontainer
 1. Use vscode to open promptflow repo, and install vscode extension: Dev Containers and then open promptflow with dev containers.
    ![devcontainer](./devcontainers.png)  
-   
    **About dev containers please refer to: [devcontainers](https://code.visualstudio.com/docs/devcontainers/containers)**
 2. Use codespaces to open promptflow repo, it will automatically build the dev containers environment and open promptflow with dev containers.
    ![codespaces](./codespaces.png)
