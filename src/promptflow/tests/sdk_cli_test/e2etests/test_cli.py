@@ -861,22 +861,8 @@ class TestCli:
         with open(detail_path, "r") as f:
             details = json.load(f)
         expect_chat_history = [
-          {
-            "inputs": {
-              "question": "hi"
-            },
-            "outputs": {
-              "answer": "hi"
-            }
-          },
-          {
-            "inputs": {
-              "question": "who are you"
-            },
-            "outputs": {
-              "answer": "who are you"
-            }
-          }
+            {"inputs": {"question": "hi"}, "outputs": {"answer": "hi"}},
+            {"inputs": {"question": "who are you"}, "outputs": {"answer": "who are you"}},
         ]
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
@@ -1077,7 +1063,7 @@ class TestCli:
                         "promptflow.connection.custom_type": "MyFirstConnection",
                         "promptflow.connection.module": "my_tool_package.connections",
                         "promptflow.connection.package": "test-custom-tools",
-                        "promptflow.connection.package_version": "0.0.1",
+                        "promptflow.connection.package_version": "0.0.2",
                     },
                     "secrets": {"api_key": SCRUBBED_VALUE},
                 },

@@ -1,21 +1,11 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import inspect
-import re
 import io
+import re
 
 from jinja2 import Template
 from ruamel.yaml import YAML
-
-
-def get_default_values(cls):
-    signature = inspect.signature(cls.__init__)
-    return {
-        k: v.default
-        for k, v in signature.parameters.items()
-        if v.default is not inspect.Parameter.empty
-    }
 
 
 def generate_custom_strong_type_connection_spec(cls, package, package_version):
@@ -53,8 +43,7 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
     module: {{ module }}
     package: {{ package }}
     package_version: {{ package_version }}
-    configs:
-      {% for key, value in configs.items() %}
+    configs:{% for key, value in configs.items() %}
       {{ key }}: "{{ value -}}"{% endfor %}
     secrets:  # must-have{% for key, value in secrets.items() %}
       {{ key }}: "{{ value -}}"{% endfor %}
@@ -65,13 +54,13 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
     # Extract configs and secrets
     configs = {}
     secrets = {}
-    default_values = get_default_values(cls)
     for spec in connection_spec["configSpecs"]:
         if spec["configValueType"] == "Secret":
             secrets[spec["name"]] = "to_replace_with_" + spec["name"].replace("-", "_")
         else:
-            configs[spec["name"]] = default_values[spec["name"]] \
-                if spec["name"] in default_values.keys() else "to_replace_with_" + spec["name"].replace("-", "_")
+            configs[spec["name"]] = getattr(cls, spec["name"], None) or "to_replace_with_" + spec["name"].replace(
+                "-", "_"
+            )
 
     # Prepare data for template
     data = {
@@ -80,15 +69,13 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
         "package": package,
         "package_version": package_version,
         "configs": configs,
-        "secrets": secrets
+        "secrets": secrets,
     }
 
     connection_template_with_data = connection_template.render(data)
     connection_template_with_comments = render_comments(
-        connection_template_with_data,
-        cls,
-        secrets.keys(),
-        configs.keys())
+        connection_template_with_data, cls, secrets.keys(), configs.keys()
+    )
 
     return connection_template_with_comments
 
@@ -96,17 +83,18 @@ def generate_custom_strong_type_connection_template(cls, connection_spec, packag
 def render_comments(connection_template, cls, secrets, configs):
     if cls.__doc__ is not None:
         yaml = YAML()
+        yaml.preserve_quotes = True
         data = yaml.load(connection_template)
         comments_map = extract_comments_mapping(list(secrets) + list(configs), cls.__doc__)
         # Add comments for secret keys
         for key in secrets:
             if key in comments_map.keys():
-                data['secrets'].yaml_add_eol_comment(comments_map[key] + '\n', key)
+                data["secrets"].yaml_add_eol_comment(comments_map[key] + "\n", key)
 
         # Add comments for config keys
         for key in configs:
             if key in comments_map.keys():
-                data['configs'].yaml_add_eol_comment(comments_map[key] + '\n', key)
+                data["configs"].yaml_add_eol_comment(comments_map[key] + "\n", key)
 
         # Dump data object back to string
         buf = io.StringIO()
@@ -123,11 +111,11 @@ def extract_comments_mapping(keys, doc):
     for key in keys:
         try:
             param_pattern = rf":param {key}: (.*)"
-            key_description = ' '.join(re.findall(param_pattern, doc))
+            key_description = " ".join(re.findall(param_pattern, doc))
             type_pattern = rf":type {key}: (.*)"
-            key_type = ' '.join(re.findall(type_pattern, doc)).rstrip('.')
+            key_type = " ".join(re.findall(type_pattern, doc)).rstrip(".")
             if key_type and key_description:
-                comments_map[key] = ', '.join([key_type, key_description])
+                comments_map[key] = ", ".join([key_type, key_description])
             elif key_type:
                 comments_map[key] = key_type
             elif key_description:
