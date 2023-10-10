@@ -847,6 +847,39 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
 
+    def test_flow_test_with_default_chat_history(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_default_history",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_default_history" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_default_history" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r") as f:
+            details = json.load(f)
+        expect_chat_history = [
+          {
+            "inputs": {
+              "question": "hi"
+            },
+            "outputs": {
+              "answer": "hi"
+            }
+          },
+          {
+            "inputs": {
+              "question": "who are you"
+            },
+            "outputs": {
+              "answer": "who are you"
+            }
+          }
+        ]
+        assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
+
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1034,22 +1067,22 @@ class TestCli:
                 },
                 ("configs.key1", "new_value"),
             ),
-            # (
-            #     "custom_strong_type_connection.yaml",
-            #     {
-            #         "module": "promptflow.connections",
-            #         "type": "custom",
-            #         "configs": {
-            #             "api_base": "This is my first connection.",
-            #             "promptflow.connection.custom_type": "MyFirstConnection",
-            #             "promptflow.connection.module": "my_tool_package.connections",
-            #             "promptflow.connection.package": "test-custom-tools",
-            #             "promptflow.connection.package_version": "0.0.1",
-            #         },
-            #         "secrets": {"api_key": SCRUBBED_VALUE},
-            #     },
-            #     ("configs.api_base", "new_value"),
-            # ),
+            (
+                "custom_strong_type_connection.yaml",
+                {
+                    "module": "promptflow.connections",
+                    "type": "custom",
+                    "configs": {
+                        "api_base": "This is my first connection.",
+                        "promptflow.connection.custom_type": "MyFirstConnection",
+                        "promptflow.connection.module": "my_tool_package.connections",
+                        "promptflow.connection.package": "test-custom-tools",
+                        "promptflow.connection.package_version": "0.0.1",
+                    },
+                    "secrets": {"api_key": SCRUBBED_VALUE},
+                },
+                ("configs.api_base", "new_value"),
+            ),
         ],
     )
     def test_connection_create_update(

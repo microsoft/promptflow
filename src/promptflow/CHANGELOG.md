@@ -1,5 +1,15 @@
 # Release History
 
+## 0.1.0b8 (Upcoming)
+
+### Features Added
+
+### Bugs Fixed
+
+### Improvements
+
+- [SDK/CLI] Include flow path & output path in `pf run visualize` page.
+
 ## 0.1.0b7.post1 (2023.09.28)
 
 ### Bug Fixed
