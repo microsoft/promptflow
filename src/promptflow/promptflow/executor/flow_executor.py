@@ -885,6 +885,7 @@ class FlowExecutor:
             flow_id=self._flow_id,
             line_number=line_number,
             variant_id=variant_id,
+            allow_generator_output=allow_generator_output,
         )
         output = {}
         aggregation_inputs = {}
@@ -894,7 +895,6 @@ class FlowExecutor:
                 # Make sure the run_info with converted inputs results rather than original inputs
                 run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
-            output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -973,13 +973,6 @@ class FlowExecutor:
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
-
-    def _stringify_generator_output(self, outputs: dict):
-        for k, v in outputs.items():
-            if isinstance(v, GeneratorType):
-                outputs[k] = "".join(str(chuck) for chuck in v)
-
-        return outputs
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):

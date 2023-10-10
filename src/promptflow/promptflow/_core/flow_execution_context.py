@@ -8,6 +8,7 @@ import time
 import uuid
 from contextvars import ContextVar
 from logging import WARNING
+from types import GeneratorType
 from typing import Callable, List
 
 from promptflow._core._errors import ToolExecutionError
@@ -41,6 +42,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         flow_id=None,
         line_number=None,
         variant_id=None,
+        allow_generator_output=False,
     ):
         self._name = name
         self._current_tool = None
@@ -52,6 +54,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._variant_id = variant_id
         #  TODO: use context var qu save the current node to enable multi-threading
         self._current_node: Node = None
+        self._allow_generator_output = allow_generator_output
 
     def copy(self):
         return FlowExecutionContext(
@@ -62,6 +65,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
             flow_id=self._flow_id,
             line_number=self._line_number,
             variant_id=self._variant_id,
+            allow_generator_output=self._allow_generator_output,
         )
 
     def update_operation_context(self):
@@ -125,6 +129,7 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 trace.node_name = run_info.node
                 result = self.invoke_tool(f, args, kwargs)
                 result = Tracer.pop(result)
+                result = self._handle_generator_result(result)
                 traces = Tracer.end_tracing()
 
             self._current_tool = None
@@ -212,3 +217,9 @@ class FlowExecutionContext(ThreadLocalSingleton):
         if self._line_number is None:
             return f"{self._run_id}_{node.name}_{uuid.uuid4()}"
         return f"{self._run_id}_{node.name}_{self._line_number}"
+
+    def _handle_generator_result(self, result):
+        if not self._allow_generator_output and isinstance(result, GeneratorType):
+            return "".join(str(chuck) for chuck in result)
+        else:
+            return result
