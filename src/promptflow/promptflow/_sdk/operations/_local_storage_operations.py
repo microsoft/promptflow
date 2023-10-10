@@ -49,7 +49,6 @@ RunMetrics = NewType("RunMetrics", Dict[str, Any])
 @dataclass
 class LoggerOperations(LogContext):
     stream: bool = False
-    run_mode: Optional[RunMode] = RunMode.Test
 
     @property
     def log_path(self) -> str:
