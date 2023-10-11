@@ -1,4 +1,4 @@
-# Use Flow in Pipeline Job
+# Use flow in pipeline job
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
@@ -27,15 +27,12 @@ Customer can register a flow as a component with either CLI or SDK.
 :sync: CLI
 
 ```bash
-# Validate flow as a component
-az ml component validate --file standard/web_classification/flow.dag.yaml
-
 # Register flow as a component
-# Default component name will be the name of flow folder, which is web_classification here; default version will be "1"
-az ml component create --file standard/web_classification/flow.dag.yaml
+# Default component name will be the name of flow folder, which is not a valid component name, so we override it here; default version will be "1"
+az ml component create --file standard/web-classification/flow.dag.yaml --set name=web_classification
 
 # Register flow as a component with parameters override
-az ml component create --file standard/web_classification/flow.dag.yaml --version 2 --set name=web_classification_updated
+az ml component create --file standard/web-classification/flow.dag.yaml --version 2 --set name=web_classification_updated
 ```
 
 :::
@@ -48,20 +45,17 @@ from azure.ai.ml import MLClient, load_component
 
 ml_client = MLClient()
 
-# Validate flow as a component
-ml_client.components.validate("standard/web_classification/flow.dag.yaml")
-
 # Register flow as a component
-# Default component name will be the name of flow folder, which is web_classification here; default version will be "1"
-flow_component = load_component("standard/web_classification/flow.dag.yaml")
+# Default component name will be the name of flow folder, which is web-classification here; default version will be "1"
+flow_component = load_component("standard/web-classification/flow.dag.yaml")
 ml_client.components.create_or_update(flow_component)
 
 # Register flow as a component with parameters override
 ml_client.components.create_or_update(
-    "standard/web_classification/flow.dag.yaml",
+    "standard/web-classification/flow.dag.yaml",
     version="2",
     params_override=[
-        {"name": "web_classification_updated"}
+        {"name": "web-classification_updated"}
     ]
 )
 ```
