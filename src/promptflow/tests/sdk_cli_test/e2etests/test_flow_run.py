@@ -296,9 +296,8 @@ class TestFlowRun:
             pf.runs.get(name=run_name)
 
     def test_referenced_output_not_exist(self, pf):
-        # failed run won't generate output
         failed_run = pf.run(
-            flow=f"{FLOWS_DIR}/failed_flow",
+            flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
@@ -699,8 +698,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"text": "${data.url}"},
         )
-        # even if all lines failed, the bulk run's status is completed.
-        assert failed_run.status == "Completed"
+        assert failed_run.status == "Failed"
         # error messages will store in local
         local_storage = LocalStorageOperations(failed_run)
 
