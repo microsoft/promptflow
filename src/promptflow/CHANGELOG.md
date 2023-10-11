@@ -3,10 +3,12 @@
 ## 0.1.0b8 (Upcoming)
 
 ### Features Added
+- [Executor] Add average execution time and estimated execution time to batch run logs
 
 ### Bugs Fixed
 - **pf config set**:
   - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
+- [SDK/CLI] Fix the bug that using sdk/cli to submit batch run did not display the log correctly.
 
 ### Improvements
 
