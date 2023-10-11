@@ -196,7 +196,7 @@ class ConnectionType:
         :rtype: bool
         """
 
-        from promptflow._sdk.entities import CustomStrongTypeConnection
+        from promptflow.connections import CustomStrongTypeConnection
 
         val = type(val) if not isinstance(val, type) else val
 
