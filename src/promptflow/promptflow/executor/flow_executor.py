@@ -885,7 +885,6 @@ class FlowExecutor:
             flow_id=self._flow_id,
             line_number=line_number,
             variant_id=variant_id,
-            allow_generator_output=allow_generator_output,
         )
         output = {}
         aggregation_inputs = {}

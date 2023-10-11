@@ -41,7 +41,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         flow_id=None,
         line_number=None,
         variant_id=None,
-        allow_generator_output=False,
     ):
         self._name = name
         self._current_tool = None
@@ -53,7 +52,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
         self._variant_id = variant_id
         #  TODO: use context var qu save the current node to enable multi-threading
         self._current_node: Node = None
-        self._allow_generator_output = allow_generator_output
 
     def copy(self):
         return FlowExecutionContext(
@@ -64,7 +62,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
             flow_id=self._flow_id,
             line_number=self._line_number,
             variant_id=self._variant_id,
-            allow_generator_output=self._allow_generator_output,
         )
 
     def update_operation_context(self):
