@@ -39,8 +39,10 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise JinjaParsingError(
-            message_format="Generate tool meta failed for PROMPT tool. "
-            "Jinja parsing failed: {error_type_and_message}",
+            message_format=(
+                "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: {error_type_and_message}"
+            ),
+            tool_type=tool_type,
             error_type_and_message=error_type_and_message,
         ) from e
 
@@ -58,9 +60,10 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
     for input in inputs:
         if input in reserved_keys_to_raise:
             raise ReservedVariableCannotBeUsed(
-                message_format="Generate tool meta failed for PROMPT tool. "
-                "Jinja parsing failed due to reserved variable conflict. "
-                "Variable name {key} is reserved by {tool_type} tool, please change another name.",
+                message_format=(
+                    "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: "
+                    "Variable name '{key}' is reserved name by {tool_type} tools, please change to another name."
+                ),
                 key=input,
                 tool_type=tool_type.value,
             )
@@ -127,7 +130,7 @@ def _parse_tool_from_function(f):
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise BadFunctionInterface(
-            message_format="Parse interface for tool {tool_name} failed: {error_type_and_message}",
+            message_format="Parse interface for tool '{tool_name}' failed: {error_type_and_message}",
             tool_name=f.__name__,
             error_type_and_message=error_type_and_message,
         ) from e
@@ -173,8 +176,7 @@ def load_python_module_from_file(src_file: Path):
         # TODO: add stacktrace to additional info
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise PythonLoadError(
-            message_format="Failed to load python module from file '{src_file}'. "
-            "Error details: {error_type_and_message}",
+            message_format="Failed to load python module from file '{src_file}': {error_type_and_message}",
             src_file=src_file,
             error_type_and_message=error_type_and_message,
         ) from e
@@ -201,16 +203,20 @@ def collect_tool_function_in_module(m):
     tools = collect_tool_functions_in_module(m)
     if len(tools) == 0:
         raise NoToolDefined(
-            message_format="The number of tools defined is illegal. "
-            "No tool found in the python script. "
-            "Please make sure you have one and only one tool definition in your script."
+            message_format=(
+                "The number of tools defined is illegal. "
+                "No tool found in the python script. "
+                "Please make sure you have one and only one tool definition in your script."
+            )
         )
     elif len(tools) > 1:
         tool_names = ", ".join(t.__name__ for t in tools)
         raise MultipleToolsDefined(
-            message_format="The number of tools defined is illegal. "
-            "Expected 1 but collected {tool_count} tools: {tool_names}. "
-            "Please make sure you have one and only one tool definition in your script.",
+            message_format=(
+                "The number of tools defined is illegal. "
+                "Expected 1 but collected {tool_count} tools: {tool_names}. "
+                "Please make sure you have one and only one tool definition in your script."
+            ),
             tool_count=len(tools),
             tool_names=tool_names,
         )
@@ -251,8 +257,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
     file = Path(path).resolve()
     if not file.is_file():
         raise MetaFileNotFound(
-            message_format="Generate tool meta failed for {tool_type} tool. "
-            "Meta file '{file_path}' can not be found.",
+            message_format="Generate tool meta failed for {tool_type} tool. Meta file '{file_path}' can not be found.",
             tool_type=tool_type,
             file_path=str(file),
         )
@@ -263,7 +268,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
         raise MetaFileReadError(
             message_format=(
                 "Generate tool meta failed for {tool_type} tool. "
-                "Read meta file '{file_path}' failed. Error details: {error_type_and_message}"
+                "Read meta file '{file_path}' failed: {error_type_and_message}"
             ),
             tool_type=tool_type,
             file_path=str(file),
@@ -279,9 +284,11 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
         return generate_prompt_meta_dict(name, content, prompt_only=True, source=path)
     else:
         raise NotSupported(
-            message_format="Generate tool meta failed. "
-            "The type '{tool_type}' is currently unsupported. "
-            "Please choose from available types: {supported_tool_type} and try again.",
+            message_format=(
+                "Generate tool meta failed. "
+                "The type '{tool_type}' is currently unsupported. "
+                "Please choose from available types: {supported_tool_type} and try again."
+            ),
             tool_type=tool_type,
             supported_tool_type=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
         )
