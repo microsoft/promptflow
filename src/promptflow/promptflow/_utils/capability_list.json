@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Activate",
+        "description": "Bypass node execution when the node does not meet activate condition.",
+        "components": [
+            "runtime",
+            "executor",
+            "pfs"
+        ],
+        "state": "Ready"
+    }
+]
