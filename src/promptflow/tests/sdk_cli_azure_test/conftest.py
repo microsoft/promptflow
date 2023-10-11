@@ -64,7 +64,7 @@ def remote_client(request: pytest.FixtureRequest) -> PFClient:
         ml_client.workspaces.get = lambda *args, **kwargs: Workspace(
             name=SanitizedValues.WORKSPACE_NAME,
             resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
-            discovery_url="https://eastus2euap.api.azureml.ms/discovery",
+            discovery_url="https://eastus.api.azureml.ms/discovery",
         )
         ml_client.datastores.get_default = lambda *args, **kwargs: MockDatastore(name="workspaceblobstore")
         remote_client = PFClient(ml_client=ml_client)
