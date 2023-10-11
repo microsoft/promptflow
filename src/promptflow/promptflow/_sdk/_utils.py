@@ -325,17 +325,18 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
     'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
     original value as a fallback.
     """
-
+    logger = logging.getLogger(LOGGER_NAME)
     for connection_name, connection in connections.items():
         values = connection.get("value", {})
         for key, val in values.items():
-            if key in connection.get("secret_keys", []):
-                continue
             connection_name = connection_name.replace(" ", "_")
             env_name = f"{connection_name}_{key}".upper()
             if env_name not in os.environ:
                 continue
             values[key] = os.environ[env_name]
+            logger.info(
+                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
+            )
     return connections
 
 
