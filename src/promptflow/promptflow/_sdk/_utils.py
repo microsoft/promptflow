@@ -317,6 +317,25 @@ def _match_env_reference(val: str):
     return name
 
 
+def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
+    """The function will resolve connection configs env var reference. For example, if we have a custom
+    connection named 'custom_connection' which has a config key named 'chat_deployment_name', we will try load
+    chat_deployment_name with CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME by default, otherwise if no env var is set, use the
+    original value."""
+
+    for connection_name, connection in connections.items():
+        values = connection.get("value", {})
+        for key, val in values.items():
+            if key in connection.get("secret_keys", []):
+                continue
+            connection_name = connection_name.replace(" ", "_")
+            env_name = f"{connection_name}_{key}".upper()
+            if env_name not in os.environ:
+                continue
+            values[key] = os.environ[env_name]
+    return connections
+
+
 def resolve_connections_environment_variable_reference(connections: Dict[str, dict]):
     """The function will resolve connection secrets env var reference like api_key: ${env:KEY}"""
     for connection in connections.values():
