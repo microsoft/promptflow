@@ -24,7 +24,7 @@ def test_build_azure_openai_connection_from_rest_object():
             "metadata": {
                 "azureml.flow.connection_type": "AzureOpenAI",
                 "azureml.flow.module": "promptflow.connections",
-                "ApiType": "azure",
+                "apiType": "azure",
                 "ApiVersion": "2023-07-01-preview",
             },
         },
