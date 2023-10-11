@@ -129,10 +129,8 @@ class LineExecutionProcessPool:
 
         try:
             # Wait for the process to be ready.
-            ready_msg = output_queue.get(timeout=30)
-            assert ready_msg == "ready"
+            output_queue.get(timeout=30)
         except queue.Empty:
-            logger.info(f"Sub process {process.pid} not ready.")
             self.end_process(process)
             return None, None, None
 
@@ -146,13 +144,11 @@ class LineExecutionProcessPool:
         process, input_queue, output_queue = self._new_process()
         if process is None:
             return
-        logger.info(f"TW Process {os.getpid()} created new process {process.pid}")
 
         while True:
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
-                logger.info(f"Process {idx} queue empty, exit.")
                 self.end_process(process)
                 return
 
@@ -348,12 +344,10 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     # Wait for the start signal
-    start_msg = input_queue.get()
-    logger.info(f"Sub process {os.getpid()} received start signal: {start_msg}")
+    input_queue.get()
 
     # Send ready signal
     output_queue.put("ready")
-    logger.info(f"Sub process {os.getpid()} sent ready signal")
 
     while True:
         try:
