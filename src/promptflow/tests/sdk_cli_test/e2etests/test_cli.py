@@ -1137,12 +1137,12 @@ class TestCli:
                 "extra=${data.url}",
                 "--stream",
             )
-        assert "user log" in f.getvalue()
-        assert "error log" in f.getvalue()
-        # flow logs will stream
-        assert "Executing node print_val. node run id:" in f.getvalue()
-        # executor logs will stream
-        assert "Node print_val completes." in f.getvalue()
+        logs = f.getvalue()
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_pf_run_no_stream_log(self):
         f = io.StringIO()

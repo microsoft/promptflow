@@ -667,13 +667,11 @@ class TestFlowRun:
         )
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
-        assert "user log" in logs
-        # error logs can be stored
-        assert "error log" in logs
-        # flow logs can be stored
-        assert "Executing node print_val. node run id:" in logs
-        # executor logs can be stored
-        assert "Node print_val completes." in logs
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
         run = pf.run(
