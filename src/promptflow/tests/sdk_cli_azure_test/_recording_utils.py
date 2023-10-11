@@ -4,8 +4,13 @@
 
 import functools
 import inspect
+import os
+import re
 
 from vcr.request import Request
+
+TEST_RUN_LIVE = "PROMPT_FLOW_TEST_RUN_LIVE"
+SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
 
 REGISTERED_FIXTURES = [
     "ml_client",
@@ -14,7 +19,23 @@ REGISTERED_FIXTURES = [
     "remote_web_classification_data",
     "runtime",
     "ml_client_with_acr_access",
+    # test_arm_connection_operations.py
+    "connection_ops",
 ]
+
+
+def is_live() -> bool:
+    return os.environ.get(TEST_RUN_LIVE, None) == "true"
+
+
+def is_live_and_not_recording() -> bool:
+    return is_live() and os.environ.get(SKIP_LIVE_RECORDING, None) == "true"
+
+
+class SanitizedValues:
+    SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
+    RESOURCE_GROUP_NAME = "00000"
+    WORKSPACE_NAME = "00000"
 
 
 def fixture_provider(testcase_func):
@@ -33,6 +54,30 @@ def fixture_provider(testcase_func):
         testcase_func(**injected_params)
 
     return wrapper
+
+
+def sanitize_azure_workspace_triad(val: str) -> str:
+    sanitized_sub = re.sub(
+        "/(subscriptions)/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+        r"/\1/{}".format("00000000-0000-0000-0000-000000000000"),
+        val,
+        flags=re.IGNORECASE,
+    )
+    # for regex pattern for resource group name and workspace name, refer from:
+    # https://learn.microsoft.com/en-us/rest/api/resources/resource-groups/create-or-update?tabs=HTTP
+    sanitized_rg = re.sub(
+        r"/(resourceGroups)/[-\w\._\(\)]+",
+        r"/\1/{}".format("00000"),
+        sanitized_sub,
+        flags=re.IGNORECASE,
+    )
+    sanitized_ws = re.sub(
+        r"/(workspaces)/[-\w\._\(\)]+/",
+        r"/\1/{}/".format("00000"),
+        sanitized_rg,
+        flags=re.IGNORECASE,
+    )
+    return sanitized_ws
 
 
 def _is_json_payload(headers: dict, key: str) -> bool:

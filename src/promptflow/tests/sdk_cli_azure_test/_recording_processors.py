@@ -11,6 +11,12 @@ from vcr.request import Request
 from ._recording_utils import is_json_payload_request, is_json_payload_response
 
 
+def _generate_fake_key() -> str:
+    fake_key = "this is fake key"
+    b64_key = base64.b64encode(fake_key.encode("ascii"))
+    return str(b64_key, "ascii")
+
+
 class RecordingProcessor:
     def process_request(self, request: Request) -> Request:  # pylint: disable=no-self-use
         return request
@@ -25,6 +31,28 @@ class RequestUrlProcessor(RecordingProcessor):
     def process_request(self, request: Request) -> Request:
         request.uri = re.sub("(?<!:)//", "/", request.uri)
         return request
+
+
+class ConnectionProcessor(RecordingProcessor):
+    def _sanitize_get_response(self, body: dict) -> dict:
+        if not isinstance(body, dict):
+            return body
+        if "id" in body and "connections" in body["id"]:
+            if body["properties"]["authType"] == "CustomKeys":
+                # custom connection, sanitize "properties.credentials.keys.[k]"
+                for k in body["properties"]["credentials"]["keys"]:
+                    body["properties"]["credentials"]["keys"][k] = _generate_fake_key()
+            else:
+                # others, sanitize "properties.credentials.key"
+                body["properties"]["credentials"]["key"] = _generate_fake_key()
+            body["properties"]["target"] = "_"
+        return body
+
+    def process_response(self, response: dict) -> dict:
+        body = json.loads(response["body"]["string"])
+        self._sanitize_get_response(body)
+        response["body"]["string"] = json.dumps(body)
+        return response
 
 
 class DatastoreProcessor(RecordingProcessor):
@@ -52,6 +80,9 @@ class DatastoreProcessor(RecordingProcessor):
         return request
 
     def _sanitize_get_response(self, body: dict) -> dict:
+        if not isinstance(body, dict):
+            return body
+
         if "id" in body and "datastores" in body["id"]:
             body["properties"]["subscriptionId"] = AzureWorkspaceTriadProcessor.SANITIZED_SUBSCRIPTION_ID
             body["properties"]["resourceGroup"] = AzureWorkspaceTriadProcessor.SANITIZED_RESOURCE_GROUP_NAME
@@ -62,6 +93,9 @@ class DatastoreProcessor(RecordingProcessor):
         return body
 
     def _sanitize_list_secrets_response(self, body: dict) -> dict:
+        if not isinstance(body, dict):
+            return body
+
         if "key" in body:
             b64_key = base64.b64encode(self.FAKE_KEY.encode("ascii"))
             body["key"] = str(b64_key, "ascii")
@@ -136,6 +170,9 @@ class UploadHashProcessor(RecordingProcessor):
         return val
 
     def _sanitize_request_body(self, body: bytes) -> bytes:
+        if body is None:
+            return body
+
         body = body.decode("utf-8")
         body = self._sanitize(body)
         body = body.encode("utf-8")

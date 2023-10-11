@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 
 import inspect
-import os
 import unittest
 from pathlib import Path
 from typing import List, Type
@@ -14,22 +13,13 @@ from vcr.request import Request
 
 from ._recording_processors import (
     AzureWorkspaceTriadProcessor,
+    ConnectionProcessor,
     DatastoreProcessor,
     RecordingProcessor,
     RequestUrlProcessor,
     UploadHashProcessor,
 )
-
-TEST_RUN_LIVE = "PROMPT_FLOW_TEST_RUN_LIVE"
-SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
-
-
-def is_live() -> bool:
-    return os.environ.get(TEST_RUN_LIVE, None) == "true"
-
-
-def is_live_and_not_recording() -> bool:
-    return is_live() and os.environ.get(SKIP_LIVE_RECORDING, None) == "true"
+from ._recording_utils import is_live, is_live_and_not_recording, sanitize_azure_workspace_triad
 
 
 class PFAzureIntegrationTestCase(unittest.TestCase):
@@ -76,8 +66,6 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
             record_mode="none" if not self.is_live else "all",
             filter_headers=self.FILTER_HEADERS,
         )
-        self.vcr.register_matcher("host", self._custom_request_host_matcher)
-        self.vcr.register_matcher("path", self._custom_request_path_matcher)
         self.vcr.register_matcher("query", self._custom_request_query_matcher)
 
         test_file_name = test_file_path.stem
@@ -92,7 +80,7 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         super(PFAzureIntegrationTestCase, self).setUp()
 
         # set up cassette
-        cm = self.vcr.use_cassette(self.recording_file.as_posix(), allow_playback_repeats=True)
+        cm = self.vcr.use_cassette(self.recording_file.as_posix())
         self.cassette = cm.__enter__()
         self.addCleanup(cm.__exit__)
 
@@ -157,16 +145,6 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
             UploadHashProcessor(),
         ]
 
-    def _custom_request_host_matcher(self, r1: Request, r2: Request) -> bool:
-        if "blob.core.windows.net" in r1.host and "blob.core.windows.net" in r2.host:
-            return True
-        return r1.host == r2.host
-
-    def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
-        if "blob.core.windows.net" in r1.host and "blob.core.windows.net" in r2.host:
-            return True
-        return r1.path == r2.path
-
     def _custom_request_query_matcher(self, r1: Request, r2: Request) -> bool:
         # VCR.py will guarantee method, scheme, host and port match
         # in prompt flow scenario, we also want to ensure query parameters match
@@ -183,3 +161,22 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
                 return False
 
         return True
+
+
+class ARMConnectionOperationsIntegrationTestCase(PFAzureIntegrationTestCase):
+    def __init__(self, method_name: str) -> None:
+        super().__init__(method_name)
+        self.vcr.register_matcher("path", self._custom_request_path_matcher)
+
+    def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
+        sanitized_path1 = sanitize_azure_workspace_triad(r1.path)
+        return sanitized_path1 == r2.path
+
+    def _get_recording_processors(self) -> List[type[RecordingProcessor]]:
+        return [
+            AzureWorkspaceTriadProcessor(),
+            ConnectionProcessor(),
+        ]
+
+    def _get_playback_processors(self) -> List[type[RecordingProcessor]]:
+        return []
