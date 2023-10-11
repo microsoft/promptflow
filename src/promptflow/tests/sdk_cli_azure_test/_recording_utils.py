@@ -19,7 +19,7 @@ REGISTERED_FIXTURES = [
     "remote_web_classification_data",
     "runtime",
     "ml_client_with_acr_access",
-    # test_arm_connection_operations.py
+    # test_arm_connection_operations.py & test_connection_operations.py
     "connection_ops",
 ]
 
