@@ -128,7 +128,8 @@
     "AADSTS700082",
     "levelno",
     "LANCZOS",
-    "Mobius"
+    "Mobius",
+    "ruamel"
   ],
   "allowCompoundWords": true
 }
