@@ -6,7 +6,6 @@ import logging
 import threading
 import time
 import uuid
-from collections.abc import Iterator
 from contextvars import ContextVar
 from logging import WARNING
 from typing import Callable, List
@@ -129,7 +128,6 @@ class FlowExecutionContext(ThreadLocalSingleton):
                 trace.node_name = run_info.node
                 result = self.invoke_tool(f, args, kwargs)
                 result = Tracer.pop(result)
-                result = self._handle_generator_result(result)
                 traces = Tracer.end_tracing()
 
             self._current_tool = None
@@ -217,9 +215,3 @@ class FlowExecutionContext(ThreadLocalSingleton):
         if self._line_number is None:
             return f"{self._run_id}_{node.name}_{uuid.uuid4()}"
         return f"{self._run_id}_{node.name}_{self._line_number}"
-
-    def _handle_generator_result(self, result):
-        if not self._allow_generator_output and isinstance(result, Iterator):
-            return "".join(str(chuck) for chuck in result)
-        else:
-            return result

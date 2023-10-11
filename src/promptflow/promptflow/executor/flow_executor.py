@@ -896,6 +896,7 @@ class FlowExecutor:
                 run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             run_tracker.allow_generator_types = allow_generator_output
+            output = self._stringify_generator_output(output) if not allow_generator_output else output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
         except Exception as e:
@@ -904,7 +905,9 @@ class FlowExecutor:
                 raise
         finally:
             run_tracker._update_flow_run_info_with_node_runs(run_info)
+            run_tracker.persist_flow_node_run(run_info)
             run_tracker.persist_flow_run(run_info)
+            run_tracker._evaluate_run_info(run_info)
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)
@@ -973,6 +976,13 @@ class FlowExecutor:
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
         return outputs, nodes_outputs
+
+    def _stringify_generator_output(self, outputs: dict):
+        for k, v in outputs.items():
+            if isinstance(v, GeneratorType):
+                outputs[k] = "".join(str(chuck) for chuck in v)
+
+        return outputs
 
     def _submit_to_scheduler(self, context: FlowExecutionContext, inputs, nodes: List[Node]) -> Tuple[dict, dict]:
         if not isinstance(self._node_concurrency, int):

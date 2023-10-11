@@ -42,7 +42,7 @@ class Tracer(ThreadLocalSingleton):
             logging.warning(msg)
             return []
         tracer._deactivate_in_context()
-        return tracer.to_json()
+        return tracer.get_traces()
 
     @classmethod
     def push_tool(cls, f, args, kwargs):
@@ -122,6 +122,9 @@ class Tracer(ThreadLocalSingleton):
 
     def to_json(self) -> list:
         return serialize(self._traces)
+
+    def get_traces(self) -> list:
+        return self._traces
 
     @staticmethod
     def _format_error(error: Exception) -> dict:

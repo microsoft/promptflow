@@ -4,6 +4,7 @@
 
 import json
 from contextvars import ContextVar
+from dataclasses import replace
 from datetime import datetime
 from types import GeneratorType
 from typing import Any, Dict, List, Mapping, Optional, Union
@@ -324,7 +325,7 @@ class RunTracker(ThreadLocalSingleton):
     def set_openai_metrics(self, run_id: str):
         # TODO: Provide a common implementation for different internal metrics
         run_info = self.ensure_run_info(run_id)
-        calls = run_info.api_calls or []
+        calls = serialize(run_info.api_calls) or []
         total_metrics = {}
         calculator = OpenAIMetricsCalculator(flow_logger)
         for call in calls:
@@ -339,6 +340,12 @@ class RunTracker(ThreadLocalSingleton):
         for node_run_info in child_run_infos:
             traces.extend(node_run_info.api_calls or [])
         return traces
+
+    def persist_flow_node_run(self, run_info):
+        run_id = run_info.run_id
+        child_run_infos = self.collect_child_node_runs(run_id)
+        for node_run_info in child_run_infos:
+            self.persist_node_run(node_run_info)
 
     OPENAI_AGGREGATE_METRICS = ["total_tokens"]
 
@@ -356,11 +363,16 @@ class RunTracker(ThreadLocalSingleton):
     def get_run(self, run_id):
         return self._node_runs.get(run_id) or self._flow_runs.get(run_id)
 
+    def _evaluate_run_info(self, run_info):
+        run_info.api_calls = serialize(run_info.api_calls)
+
     def persist_node_run(self, run_info: RunInfo):
-        self._storage.persist_node_run(run_info)
+        eval_run_info = replace(run_info, api_calls=serialize(run_info.api_calls))
+        self._storage.persist_node_run(eval_run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
-        self._storage.persist_flow_run(run_info)
+        eval_run_info = replace(run_info, api_calls=serialize(run_info.api_calls))
+        self._storage.persist_flow_run(eval_run_info)
 
     def get_status_summary(self, run_id: str):
         node_run_infos = self.collect_node_runs(run_id)

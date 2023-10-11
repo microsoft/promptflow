@@ -105,3 +105,4 @@ class TestExecutorTraces:
                 assert False, "Generator did not generate any text"
         else:
             assert output
+            assert all(isinstance(item, str) for item in output)
