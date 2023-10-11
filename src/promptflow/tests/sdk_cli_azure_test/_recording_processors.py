@@ -11,12 +11,6 @@ from vcr.request import Request
 from ._recording_utils import is_json_payload_request, is_json_payload_response
 
 
-def _generate_fake_key() -> str:
-    fake_key = "this is fake key"
-    b64_key = base64.b64encode(fake_key.encode("ascii"))
-    return str(b64_key, "ascii")
-
-
 class RecordingProcessor:
     def process_request(self, request: Request) -> Request:  # pylint: disable=no-self-use
         return request
@@ -39,12 +33,11 @@ class ConnectionProcessor(RecordingProcessor):
             return body
         if "id" in body and "connections" in body["id"]:
             if body["properties"]["authType"] == "CustomKeys":
-                # custom connection, sanitize "properties.credentials.keys.[k]"
-                for k in body["properties"]["credentials"]["keys"]:
-                    body["properties"]["credentials"]["keys"][k] = _generate_fake_key()
+                # custom connection, sanitize "properties.credentials.keys"
+                body["properties"]["credentials"]["keys"] = {}
             else:
                 # others, sanitize "properties.credentials.key"
-                body["properties"]["credentials"]["key"] = _generate_fake_key()
+                body["properties"]["credentials"]["key"] = ""
             body["properties"]["target"] = "_"
         return body
 
