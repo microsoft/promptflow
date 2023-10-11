@@ -21,8 +21,8 @@ class TestChatWithPDFAzure(BaseTest):
             credential = InteractiveBrowserCredential()
 
         self.pf = azure.PFClient.from_config(credential=credential)
-        self.runtime = "chat_with_pdf_runtime"
-        # self.runtime = None  # automatic runtime
+        # self.runtime = "chat_with_pdf_runtime"
+        self.runtime = None  # automatic runtime
 
     def tearDown(self) -> None:
         return super().tearDown()
