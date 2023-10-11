@@ -69,9 +69,11 @@ class PFAzureIntegrationTestCase(unittest.TestCase):
         self.vcr.register_matcher("query", self._custom_request_query_matcher)
 
         test_file_name = test_file_path.stem
+        test_file_recording_dir = (recording_dir / test_file_name).resolve()
+        test_file_recording_dir.mkdir(parents=True, exist_ok=True)
         test_class_name = self.__class__.__name__
-        recording_filename = f"{test_file_name}_{test_class_name}_{method_name}.yaml"
-        self.recording_file = (recording_dir / recording_filename).resolve()
+        recording_filename = f"{test_class_name}_{method_name}.yaml"
+        self.recording_file = (test_file_recording_dir / recording_filename).resolve()
 
         if self.is_live and not is_live_and_not_recording() and self.recording_file.is_file():
             self.recording_file.unlink()
