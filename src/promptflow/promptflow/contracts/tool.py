@@ -4,7 +4,6 @@
 
 import json
 import logging
-import types
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
@@ -200,9 +199,6 @@ class ConnectionType:
         from promptflow._sdk.entities import CustomStrongTypeConnection
 
         val = type(val) if not isinstance(val, type) else val
-        # Check for instances of GenericAlias (for parameterized generic types like list[str])
-        if isinstance(val, types.GenericAlias):
-            return False
 
         try:
             return issubclass(val, CustomStrongTypeConnection)
