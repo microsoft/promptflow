@@ -3,16 +3,19 @@
 # ---------------------------------------------------------
 
 import logging
+from dataclasses import dataclass
 
 import pytest
 from azure.ai.ml import MLClient
-from azure.ai.ml.entities import Data
+from azure.ai.ml.entities import Data, Workspace
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockFixture
 
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
+from ._fake_credentials import FakeTokenCredential
+from ._recording_utils import SanitizedValues, is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -35,14 +38,37 @@ def ml_client(
     )
 
 
+@dataclass
+class MockDatastore:
+    """Mock Datastore class for `DatastoreOperations.get_default().name`."""
+
+    name: str
+
+
 @pytest.fixture(scope="class")
 def remote_client(request: pytest.FixtureRequest) -> PFClient:
-    remote_client = PFClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-eastus",
-    )
+    if is_live():
+        remote_client = PFClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-eastus",
+        )
+    else:
+        ml_client = MLClient(
+            credential=FakeTokenCredential(),
+            subscription_id=SanitizedValues.SUBSCRIPTION_ID,
+            resource_group_name=SanitizedValues.RESOURCE_GROUP_NAME,
+            workspace_name=SanitizedValues.WORKSPACE_NAME,
+        )
+        ml_client.workspaces.get = lambda *args, **kwargs: Workspace(
+            name=SanitizedValues.WORKSPACE_NAME,
+            resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
+            discovery_url="https://eastus2euap.api.azureml.ms/discovery",
+        )
+        ml_client.datastores.get_default = lambda *args, **kwargs: MockDatastore(name="workspaceblobstore")
+        remote_client = PFClient(ml_client=ml_client)
+
     request.cls.remote_client = remote_client
     return request.cls.remote_client
 
