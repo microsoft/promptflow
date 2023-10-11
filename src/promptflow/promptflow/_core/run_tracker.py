@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Mapping, Optional, Union
 from promptflow._core._errors import FlowOutputUnserializable, RunRecordNotFound
 from promptflow._core.log_manager import NodeLogManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
+from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
@@ -285,6 +286,14 @@ class RunTracker(ThreadLocalSingleton):
         """Update exception details into run info."""
         run_info.error = ExceptionPresenter.create(ex).to_dict(include_debug_info=self._debug)
         run_info.status = Status.Failed
+
+    def collect_all_run_infos_as_dicts(self) -> Mapping[str, List[Mapping[str, Any]]]:
+        flow_runs = self.flow_run_list
+        node_runs = self.node_run_list
+        return {
+            "flow_runs": [serialize(run) for run in flow_runs],
+            "node_runs": [serialize(run) for run in node_runs],
+        }
 
     def collect_node_runs(self, flow_run_id: Optional[str] = None) -> List[RunInfo]:
         """If flow_run_id is None, return all node runs."""

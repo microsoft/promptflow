@@ -25,18 +25,18 @@ class PFBytes(bytes):
         self._mime_type = mime_type
 
     @staticmethod
-    def get_extension_from_path(path: Path):
+    def _get_extension_from_path(path: Path):
         return path.suffix[1:]
 
     @staticmethod
-    def get_extension_from_type(mime_type: str):
+    def _get_extension_from_type(mime_type: str):
         ext = mime_type.split("/")[-1]
         if ext == "*":
             return None
         return ext
 
     def save_to_file(self, file_name: str, folder_path: Path, relative_path: Path = None):
-        ext = PFBytes.get_extension_from_type(self._mime_type)
+        ext = PFBytes._get_extension_from_type(self._mime_type)
         file_name = f"{file_name}.{ext}" if ext else file_name
         image_info = {
             "pf_mime_type": self._mime_type,
@@ -65,7 +65,7 @@ class Image(PFBytes):
 
     @staticmethod
     def from_file(f: Path):
-        ext = PFBytes.get_extension_from_path(f)
+        ext = PFBytes._get_extension_from_path(f)
         mime_type = f"image/{ext}" if ext else "image/*"
         with open(f, "rb") as fin:
             return Image(fin.read(), mime_type=mime_type)

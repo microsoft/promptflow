@@ -28,23 +28,21 @@ class DummyRunStorage(AbstractRunStorage):
 
 
 class DefaultRunStorage(AbstractRunStorage):
-    def __init__(self, working_dir: Path, output_dir: Path = None, intermediate_dir: Path = None):
+    def __init__(self, working_dir: Path, intermediate_dir: Path = None):
         self._working_dir = working_dir
-        self._output_dir = output_dir or Path(".promptflow/flow_outputs")
         self._intermediate_dir = intermediate_dir or Path(".promptflow/intermediate")
-        self._input_dir = Path(".promptflow/inputs")
 
     def persist_node_run(self, run_info: NodeRunInfo):
         if run_info.inputs:
-            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._input_dir)
+            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._intermediate_dir)
         if run_info.output:
             run_info.output = self._serialize(run_info.output, relative_path=self._intermediate_dir)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         if run_info.inputs:
-            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._input_dir)
+            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._intermediate_dir)
         if run_info.output:
-            run_info.output = self._serialize(run_info.output, relative_path=self._output_dir)
+            run_info.output = self._serialize(run_info.output, relative_path=self._intermediate_dir)
 
     def _serialize(self, value, relative_path: Path):
         pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
