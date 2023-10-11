@@ -1,0 +1,107 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/connections/azure_open_ai_connection/listsecrets?api-version=2023-04-01-preview
+  response:
+    body:
+      string: '{"tags": null, "location": null, "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/connections/azure_open_ai_connection",
+        "name": "azure_open_ai_connection", "type": "Microsoft.MachineLearningServices/workspaces/00000",
+        "properties": {"authType": "ApiKey", "credentials": {"key": ""}, "category":
+        "AzureOpenAI", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
+        null, "isSharedToAll": false, "sharedUserList": [], "metadata": {"azureml.flow.connection_type":
+        "AzureOpenAI", "azureml.flow.module": "promptflow.connections", "ApiType":
+        "azure", "ApiVersion": "2023-07-01-preview", "ResourceId": null}}, "systemData":
+        {"createdAt": "2023-08-22T10:15:34.5762053Z", "createdBy": "yigao@microsoft.com",
+        "createdByType": "User", "lastModifiedAt": "2023-08-22T10:15:34.5762053Z",
+        "lastModifiedBy": "yigao@microsoft.com", "lastModifiedByType": "User"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1170'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Wed, 11 Oct 2023 07:16:57 GMT
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-msedge-ref:
+      - 'Ref A: D7DDA08823B84A7384B85B8D5D196DD7 Ref B: TYO201100115029 Ref C: 2023-10-11T07:16:56Z'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/connections/custom_connection/listsecrets?api-version=2023-04-01-preview
+  response:
+    body:
+      string: '{"tags": null, "location": null, "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/connections/custom_connection",
+        "name": "custom_connection", "type": "Microsoft.MachineLearningServices/workspaces/00000",
+        "properties": {"authType": "CustomKeys", "credentials": {"keys": {}}, "category":
+        "CustomKeys", "expiryTime": null, "target": "_", "createdByWorkspaceArmId":
+        null, "isSharedToAll": false, "sharedUserList": [], "metadata": {"azureml.flow.connection_type":
+        "Custom", "azureml.flow.module": "promptflow.connections"}}, "systemData":
+        {"createdAt": "2023-06-19T20:56:12.0353964Z", "createdBy": "sejuare@microsoft.com",
+        "createdByType": "User", "lastModifiedAt": "2023-06-19T20:56:12.0353964Z",
+        "lastModifiedBy": "sejuare@microsoft.com", "lastModifiedByType": "User"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1251'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Wed, 11 Oct 2023 07:17:00 GMT
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-msedge-ref:
+      - 'Ref A: 05AC97F1CA144030B3F12DDB0832C96F Ref B: TYO201100116039 Ref C: 2023-10-11T07:16:59Z'
+    status:
+      code: 200
+      message: OK
+version: 1
