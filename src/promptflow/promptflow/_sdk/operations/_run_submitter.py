@@ -179,7 +179,8 @@ def variant_overwrite_context(
             overwrite_connections(Path(temp_dir), connections)
             remove_additional_includes(Path(temp_dir))
             flow = load_flow(temp_dir)
-            yield flow
+            with _change_working_dir(temp_dir):
+                yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
