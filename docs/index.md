@@ -51,7 +51,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
 - header: "📑 Concepts"
   content: "
     Introduction of key concepts of prompt flow.<br/><br/>
-    - Overview: [Why build prompt flow when there is LangChain?](concepts/promptflow-vs-langchain.md)
+    - Overview: [Why build prompt flow when there is LangChain?](concepts/promptflow-vs-langchain.md)<br/>
     - [Flows](concepts/concept-flows.md)<br/>
     - [Tools](concepts/concept-tools.md)<br/>
     - [Connections](concepts/concept-connections.md)<br/>
