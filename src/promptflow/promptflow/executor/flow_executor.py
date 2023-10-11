@@ -675,8 +675,6 @@ class FlowExecutor:
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
-        input_dir: Optional[Path] = None,
-        output_dir: Optional[Path] = None,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -698,8 +696,7 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value, input_dir)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -714,11 +711,29 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
-        if output_dir:
-            self._persist_images_from_output(line_result.output, output_dir)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
+        return line_result
+
+    def _exec_line_with_dir(
+        self,
+        inputs: Mapping[str, Any],
+        index: Optional[int] = None,
+        run_id: Optional[str] = None,
+        variant_id: str = "",
+        validate_inputs: bool = True,
+        node_concurrency=DEFAULT_CONCURRENCY_FLOW,
+        allow_generator_output: bool = False,
+        input_dir: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
+    ):
+        inputs = self._process_images_from_inputs(self._flow.inputs, inputs, input_dir)
+        line_result = self.exec_line(
+            inputs, index, run_id, variant_id, validate_inputs, node_concurrency, allow_generator_output
+        )
+        if output_dir:
+            self._persist_images_from_output(line_result.output, output_dir)
         return line_result
 
     def _add_line_results(self, line_results: List[LineResult]):

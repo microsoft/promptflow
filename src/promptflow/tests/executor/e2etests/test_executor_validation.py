@@ -195,7 +195,6 @@ class TestValidation:
         with pytest.raises(error_class):
             executor.exec_line(line_input)
 
-    @pytest.mark.skip("Skip this test due to we have removed the serializable check in run tracker.")
     @pytest.mark.parametrize(
         "flow_folder, line_input, error_class, error_msg",
         [

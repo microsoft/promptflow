@@ -18,12 +18,11 @@ class PFBytes(bytes):
         # See https://docs.python.org/3/reference/datamodel.html#object.__new__
         return super().__new__(cls, value)
 
-    def __init__(self, data: bytes, mime_type: str, path : str = None):
+    def __init__(self, data: bytes, mime_type: str):
         super().__init__()
         # Use this hash to identify this bytes.
         self._hash = hashlib.sha1(data).hexdigest()[:8]
         self._mime_type = mime_type
-        self._path = path
 
     @staticmethod
     def get_extension_from_path(path: Path):
@@ -61,15 +60,15 @@ class PFBytes(bytes):
 
 
 class Image(PFBytes):
-    def __init__(self, data: bytes, mime_type: str = "image/*", path: str = None):
-        return super().__init__(data, mime_type, path)
+    def __init__(self, data: bytes, mime_type: str = "image/*"):
+        return super().__init__(data, mime_type)
 
     @staticmethod
     def from_file(f: Path):
         ext = PFBytes.get_extension_from_path(f)
         mime_type = f"image/{ext}" if ext else "image/*"
         with open(f, "rb") as fin:
-            return Image(fin.read(), mime_type=mime_type, path=f.name)
+            return Image(fin.read(), mime_type=mime_type)
 
     def __str__(self):
         return f"Image({self._hash})"

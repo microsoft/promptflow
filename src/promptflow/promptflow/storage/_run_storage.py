@@ -6,8 +6,7 @@ from pathlib import Path
 
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.multimedia import PFBytes
-from promptflow.contracts.run_info import FlowRunInfo
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
+from promptflow.contracts.run_info import FlowRunInfo, RunInfo as NodeRunInfo
 
 
 class AbstractRunStorage:
@@ -36,19 +35,20 @@ class DefaultRunStorage(AbstractRunStorage):
         self._input_dir = Path(".promptflow/inputs")
 
     def persist_node_run(self, run_info: NodeRunInfo):
-        if run_info.output:
-            run_info.output = self._ensure_serializable(run_info.output, self._working_dir, self._intermediate_dir)
         if run_info.inputs:
-            run_info.inputs = self._ensure_serializable(run_info.inputs, self._working_dir, self._input_dir)
+            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._input_dir)
+        if run_info.output:
+            run_info.output = self._serialize(run_info.output, relative_path=self._intermediate_dir)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
-        if run_info.output:
-            run_info.output = self._ensure_serializable(run_info.output, self._working_dir, self._output_dir)
         if run_info.inputs:
-            run_info.inputs = self._ensure_serializable(run_info.inputs, self._working_dir, self._input_dir)
+            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._input_dir)
+        if run_info.output:
+            run_info.output = self._serialize(run_info.output, relative_path=self._output_dir)
 
-    def _ensure_serializable(self, value: dict, folder_path: Path, relative_path : Path = None):
+    def _serialize(self, value, relative_path: Path):
         pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
-            folder_path=folder_path,
-            relative_path=relative_path)
+            folder_path=self._working_dir,
+            relative_path=relative_path
+        )
         return serialize(value, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder)

@@ -152,7 +152,7 @@ class TestSubmitter:
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
             flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
             flow_executor.enable_streaming_for_llm_flow(lambda: True)
-            line_result = flow_executor.exec_line(
+            line_result = flow_executor._exec_line_with_dir(
                 inputs, index=0, allow_generator_output=allow_generator_output,
                 output_dir=Path(".promptflow/results")
             )
