@@ -1,4 +1,4 @@
-# Design principles of prompt flow
+# Design principles
 
 When we started this project, [LangChain](https://www.langchain.com/) already became popular esp. after the ChatGPT launch. One of the questions we’ve been asked is what’s the difference between prompt flow and LangChain. This article is to elucidate the reasons for building Prompt Flow and the deliberate design choices we have made. To put it succinctly, prompt flow is a suite of development tools for you to build LLM apps with a strong emphasis of quality through experimentations, not a framework - which LangChain is.
 

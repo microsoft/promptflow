@@ -9,5 +9,5 @@ concept-flows
 concept-tools
 concept-connections
 concept-variants
-why-promptflow
+design-principles
 ```
