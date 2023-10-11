@@ -48,4 +48,4 @@ This approach offers several key benefits, primarily centered around **enhanced 
 
 The emphasis on visibility in Prompt flow's design helps developers to gain a comprehensive understanding of the intricate details of their applications. This, in turn, empowers developers to engage in effective troubleshooting and optimization.
 
-Despite there're some control flow features like "activate-when" to serve the needs of branches/switch-case, we do not intend to make Flow itself Turning complete. If you want to develop an agent which is fully dynamic and guided by LLM, leveraging Semantic Kernel together with Prompt Flow would be a favorable option.
+Despite there're some control flow features like "activate-when" to serve the needs of branches/switch-case, we do not intend to make Flow itself Turning complete. If you want to develop an agent which is fully dynamic and guided by LLM, leveraging [Semantic Kernel](https://github.com/microsoft/semantic-kernel) together with Prompt Flow would be a favorable option.
