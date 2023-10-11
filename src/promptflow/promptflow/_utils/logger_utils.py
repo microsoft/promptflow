@@ -267,11 +267,15 @@ def update_log_path(log_path: str, input_logger: logging.Logger = None):
     if input_logger:
         logger_list.append(input_logger)
     for logger_ in logger_list:
-        for wrapper in logger_.handlers:
-            if isinstance(wrapper, FileHandlerConcurrentWrapper):
-                handler: FileHandler = wrapper.handler
-                if handler:
-                    wrapper.handler = type(handler)(log_path, handler._formatter)
+        update_single_log_path(log_path, logger_)
+
+
+def update_single_log_path(log_path: str, logger_: logging.Logger):
+    for wrapper in logger_.handlers:
+        if isinstance(wrapper, FileHandlerConcurrentWrapper):
+            handler: FileHandler = wrapper.handler
+            if handler:
+                wrapper.handler = type(handler)(log_path, handler._formatter)
 
 
 def scrub_credentials(s: str):
