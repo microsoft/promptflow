@@ -146,24 +146,31 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         # Handle old connections here, see details: https://github.com/Azure/promptflow/tree/main/connections
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
         meta = {"type": type_name, "module": module}
+
+        def get_case_insensitive_key(d, key):
+            for k, v in d.items():
+                if k.lower() == key.lower():
+                    return v
+            return None
+
         if properties.category == ConnectionCategory.AzureOpenAI:
             value = {
                 "api_key": properties.credentials.key,
                 "api_base": properties.target,
-                "api_type": properties.metadata.get("ApiType"),
-                "api_version": properties.metadata.get("ApiVersion"),
+                "api_type": get_case_insensitive_key(properties.metadata, "ApiType"),
+                "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
         elif properties.category == ConnectionCategory.CognitiveSearch:
             value = {
                 "api_key": properties.credentials.key,
                 "api_base": properties.target,
-                "api_version": properties.metadata.get("ApiVersion"),
+                "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
         elif properties.category == ConnectionCategory.CognitiveService:
             value = {
                 "api_key": properties.credentials.key,
                 "endpoint": properties.target,
-                "api_version": properties.metadata.get("ApiVersion"),
+                "api_version": get_case_insensitive_key(properties.metadata, "ApiVersion"),
             }
         elif properties.category == ConnectionCategory.CustomKeys:
             # Merge secrets from credentials.keys and other string fields from metadata
