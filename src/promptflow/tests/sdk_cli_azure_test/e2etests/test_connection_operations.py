@@ -1,25 +1,30 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import pydash
 import pytest
 
 from promptflow._sdk.entities._connection import _Connection
+from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.types import Secret
 
-
-@pytest.fixture
-def connection_ops(ml_client):
-    from promptflow.azure import PFClient
-
-    pf = PFClient(ml_client=ml_client)
-    yield pf._connections
+from .._recording_base import PFAzureIntegrationTestCase
+from .._recording_utils import fixture_provider
 
 
+@pytest.fixture(scope="class")
+def connection_ops(request: pytest.FixtureRequest, pf: PFClient) -> ConnectionOperations:
+    request.cls.connection_ops = pf._connections
+    return request.cls.connection_ops
+
+
+@pytest.mark.usefixtures("connection_ops")
 @pytest.mark.e2etest
-class TestConnectionOperations:
+class TestConnectionOperations(PFAzureIntegrationTestCase):
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
     def test_connection_get_create_delete(self, connection_ops):
 
@@ -65,7 +70,8 @@ class TestConnectionOperations:
         # soft delete
         connection_ops.delete(name=connection.name)
 
-    def test_list_connection_spec(self, connection_ops):
+    @fixture_provider
+    def test_list_connection_spec(self, connection_ops: ConnectionOperations):
         result = {v.connection_type: v._to_dict() for v in connection_ops.list_connection_specs()}
         # Assert custom keys type
         assert "Custom" in result
@@ -102,7 +108,8 @@ class TestConnectionOperations:
         for spec in expected_config_specs:
             assert spec in result["AzureOpenAI"]["config_specs"]
 
-    def test_get_connection(self, connection_ops):
+    @fixture_provider
+    def test_get_connection(self, connection_ops: ConnectionOperations):
         # Note: No secrets will be returned by MT api
         result = connection_ops.get(name="azure_open_ai_connection")
         assert (
