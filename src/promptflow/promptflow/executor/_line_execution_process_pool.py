@@ -321,7 +321,6 @@ def _process_wrapper(
     log_context_initialization_func,
     operation_contexts_dict: dict,
 ):
-    logger.info(f"Sub process {os.getpid()} started")
     OperationContext.get_instance().update(operation_contexts_dict)  # Update the operation context for the new process.
     if log_context_initialization_func:
         with log_context_initialization_func():
