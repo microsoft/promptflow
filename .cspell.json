@@ -129,7 +129,8 @@
     "Pyinstaller",
     "levelno",
     "LANCZOS",
-    "Mobius"
+    "Mobius",
+    "ruamel"
   ],
   "allowCompoundWords": true
 }
