@@ -13,6 +13,7 @@
 ### Improvements
 
 - [SDK/CLI] Include flow path & output path in `pf run visualize` page.
+- Added support for Python 3.12.
 
 ## 0.1.0b7.post1 (2023.09.28)
 
