@@ -79,11 +79,9 @@ class HealthyEnsuredProcess:
 
         try:
             # Wait for subprocess send a ready message.
-            ready_msg = output_queue.get(timeout=30)
-            logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
+            output_queue.get(timeout=30)
             self.is_ready = True
         except queue.Empty:
-            logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end()
             # If there are no more tasks, the process is not re-created
             if not task_queue.empty():
@@ -195,7 +193,6 @@ class LineExecutionProcessPool:
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
-                logger.info(f"Process {idx} queue empty, exit.")
                 healthy_ensured_process.end()
                 return
 
@@ -399,12 +396,10 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     # Wait for the start signal message
-    start_msg = input_queue.get()
-    logger.info(f"Process {os.getpid()} received start signal message: {start_msg}")
+    input_queue.get()
 
     # Send a ready signal message
     output_queue.put("ready")
-    logger.info(f"Process {os.getpid()} sent ready signal message.")
 
     while True:
         try:
