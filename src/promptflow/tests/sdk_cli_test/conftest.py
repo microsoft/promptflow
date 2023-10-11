@@ -75,6 +75,15 @@ def setup_local_connection(local_client):
 
 
 @pytest.fixture
+def remove_local_connection(local_client):
+    local_client.connections.delete("azure_open_ai_connection")
+    local_client.connections.delete("serp_connection")
+    local_client.connections.delete("custom_connection")
+    local_client.connections.delete("gpt2_connection")
+    local_client.connections.delete("open_ai_connection")
+
+
+@pytest.fixture
 def flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})

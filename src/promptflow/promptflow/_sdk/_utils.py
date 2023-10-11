@@ -770,6 +770,8 @@ def get_local_connections_from_executable(executable):
             conn = local_client.connections.get(name=n, with_secrets=True)
             result[n] = conn._to_execution_connection_dict()
         except ConnectionNotFoundError:
+            if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+                return result
             # ignore when connection not found since it can be configured with env var.
             raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
     return result

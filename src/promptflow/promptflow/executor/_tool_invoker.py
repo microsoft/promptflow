@@ -36,9 +36,14 @@ class ToolInvokerWithRecordExtension(DefaultToolInvoker):
         super().__init__(*args, **kwargs)
 
     def invoke_tool(self, f, *args, **kwargs):
-        super().invoke_tool(f, *args, **kwargs)
-        method_and_input_hash = self._get_method_and_input_hash(f, *args, **kwargs)
-        self._record.method_and_input_hash = method_and_input_hash
+        if RecordingEnv.PF_RECORDING_MODE is None or RecordingEnv.PF_RECORDING_MODE == "record":
+            return super().invoke_tool(f, *args, **kwargs)
+        if RecordingEnv.PF_RECORDING_MODE == "replay":
+            # get args and kwargs
+            args = self._record["args"]
+            kwargs = self._record["kwargs"]
+            # no invoke use prepared args and kwargs, return prepared values
+            return ""
 
     def _record_call(self, *args, **kwargs):
         self._record.append((args, kwargs))

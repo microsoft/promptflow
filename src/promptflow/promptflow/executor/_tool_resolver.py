@@ -4,12 +4,14 @@
 
 import copy
 import inspect
+import os
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._core.tool_record import just_return
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
@@ -112,6 +114,8 @@ class ToolResolver:
             elif node.type is ToolType.PROMPT:
                 return self._resolve_prompt_node(node)
             elif node.type is ToolType.LLM:
+                if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+                    return self._resolve_replay_node(node, convert_input_types=convert_input_types)
                 return self._resolve_llm_node(node, convert_input_types=convert_input_types)
             elif node.type is ToolType.CUSTOM_LLM:
                 if node.source.type == ToolSourceType.PackageWithPrompt:
@@ -204,6 +208,16 @@ class ToolResolver:
         prompt_tpl_param_name = get_prompt_param_name_from_func(api_func)
         api_func = partial(api_func, **{prompt_tpl_param_name: prompt_tpl}) if prompt_tpl_param_name else api_func
         return ResolvedTool(updated_node, tool, api_func, init_args)
+
+    def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
+        # Provider must be prepared.
+        if node.api == "completion" and node.connection == "azure_open_ai_connection":
+            prompt_tpl = self._load_source_content(node)
+            prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs)
+            return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
+        else:
+            return None
 
     def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool) -> Node:
         connection = self._get_node_connection(node)
