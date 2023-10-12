@@ -9,12 +9,14 @@
 - **pf config set**:
   - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
 - [SDK/CLI] Fix the bug that using sdk/cli to submit batch run did not display the log correctly.
+- [SDK/CLI] Fix encoding issues when input is non-English with `pf flow test`.
 
 ### Improvements
 
 - [SDK/CLI] Experience improvements in `pf run visualize` page:
   - Add column status.
   - Support opening flow file by clicking run id.
+
 
 ## 0.1.0b7.post1 (2023.09.28)
 
