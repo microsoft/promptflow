@@ -29,20 +29,20 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFram
         return pd.DataFrame()
     # load different file formats
     if local_path.endswith(".csv"):
-        df = pd.read_csv(local_path, keep_default_na=False)
+        df = pd.read_csv(local_path, dtype=False, keep_default_na=False)
     elif local_path.endswith(".json"):
-        df = pd.read_json(local_path)
+        df = pd.read_json(local_path, dtype=False)
     elif local_path.endswith(".jsonl"):
-        df = pd.read_json(local_path, lines=True)
+        df = pd.read_json(local_path, dtype=False, lines=True)
     elif local_path.endswith(".tsv"):
-        df = pd.read_table(local_path, keep_default_na=False)
+        df = pd.read_table(local_path, dtype=False, keep_default_na=False)
     elif local_path.endswith(".parquet"):
-        df = pd.read_parquet(local_path)
+        df = pd.read_parquet(local_path, dtype=False)
     else:
         # parse file as jsonl when extension is not known (including unavailable)
         # ignore and logging if failed to load file content.
         try:
-            df = pd.read_json(local_path, lines=True)
+            df = pd.read_json(local_path, dtype=False, lines=True)
         except:  # noqa: E722
             if logger is None:
                 logger = module_logger
