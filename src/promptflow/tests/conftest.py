@@ -120,4 +120,4 @@ def install_custom_tool_pkg():
             import subprocess
             import sys
 
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.2"])

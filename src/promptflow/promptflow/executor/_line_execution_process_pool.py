@@ -79,11 +79,9 @@ class HealthyEnsuredProcess:
 
         try:
             # Wait for subprocess send a ready message.
-            ready_msg = output_queue.get(timeout=30)
-            logger.info(f"Process {process.pid} get ready_msg: {ready_msg}")
+            output_queue.get(timeout=30)
             self.is_ready = True
         except queue.Empty:
-            logger.info(f"Process {process.pid} did not send ready message, exit.")
             self.end()
             # If there are no more tasks, the process is not re-created
             if not task_queue.empty():
@@ -184,7 +182,7 @@ class LineExecutionProcessPool:
             self._pool.close()
             self._pool.join()
 
-    def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
+    def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
         healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
         healthy_ensured_process.start_new(task_queue)
 
@@ -195,7 +193,6 @@ class LineExecutionProcessPool:
             try:
                 args = task_queue.get(timeout=1)
             except queue.Empty:
-                logger.info(f"Process {idx} queue empty, exit.")
                 healthy_ensured_process.end()
                 return
 
@@ -238,7 +235,7 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
             log_progress(
-                start_time=start_time,
+                run_start_time=run_start_time,
                 logger=bulk_logger,
                 count=len(result_list),
                 total_count=self._nlines,
@@ -285,6 +282,7 @@ class LineExecutionProcessPool:
             )
 
         result_list = []
+        run_start_time = datetime.now()
 
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
@@ -298,7 +296,10 @@ class LineExecutionProcessPool:
         ):
             self._pool.starmap(
                 self._timeout_process_wrapper,
-                [(self._inputs_queue, idx, self._line_timeout_sec, result_list) for idx in range(self._n_process)],
+                [
+                    (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
+                    for _ in range(self._n_process)
+                ],
             )
         return result_list
 
@@ -399,12 +400,10 @@ def exec_line_for_queue(executor_creation_func, input_queue: Queue, output_queue
     executor: FlowExecutor = executor_creation_func(storage=run_storage)
 
     # Wait for the start signal message
-    start_msg = input_queue.get()
-    logger.info(f"Process {os.getpid()} received start signal message: {start_msg}")
+    input_queue.get()
 
     # Send a ready signal message
     output_queue.put("ready")
-    logger.info(f"Process {os.getpid()} sent ready signal message.")
 
     while True:
         try:

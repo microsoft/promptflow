@@ -141,7 +141,7 @@ class OpenAIMetricsCalculator:
         if isinstance(output, list):
             metrics["completion_tokens"] = len(output)
         else:
-            metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output)
+            metrics["completion_tokens"] = self._get_completion_tokens_for_completion_api(output, enc)
         metrics["total_tokens"] = metrics["prompt_tokens"] + metrics["completion_tokens"]
         return metrics
 
