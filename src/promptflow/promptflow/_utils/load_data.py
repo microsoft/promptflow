@@ -28,21 +28,28 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFram
     ):  # CodeQL [SM01305] Safe use per local_path is set by PRT service not by end user
         return pd.DataFrame()
     # load different file formats
+
+    # set dtype to object to avoid auto type conversion
+    # executor will apply type conversion based on flow definition, so no conversion should be acceptable
+    # note that for csv and tsv format, this will make integer and float columns to be string;
+    # for rest, integer will be int and float will be float
+    dtype = object
+
     if local_path.endswith(".csv"):
-        df = pd.read_csv(local_path, dtype=False, keep_default_na=False)
+        df = pd.read_csv(local_path, dtype=dtype, keep_default_na=False)
     elif local_path.endswith(".json"):
-        df = pd.read_json(local_path, dtype=False)
+        df = pd.read_json(local_path, dtype=dtype)
     elif local_path.endswith(".jsonl"):
-        df = pd.read_json(local_path, dtype=False, lines=True)
+        df = pd.read_json(local_path, dtype=dtype, lines=True)
     elif local_path.endswith(".tsv"):
-        df = pd.read_table(local_path, dtype=False, keep_default_na=False)
+        df = pd.read_table(local_path, dtype=dtype, keep_default_na=False)
     elif local_path.endswith(".parquet"):
-        df = pd.read_parquet(local_path, dtype=False)
+        df = pd.read_parquet(local_path)  # read_parquet has no parameter dtype
     else:
         # parse file as jsonl when extension is not known (including unavailable)
         # ignore and logging if failed to load file content.
         try:
-            df = pd.read_json(local_path, dtype=False, lines=True)
+            df = pd.read_json(local_path, dtype=dtype, lines=True)
         except:  # noqa: E722
             if logger is None:
                 logger = module_logger
