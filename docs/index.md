@@ -7,11 +7,11 @@ html_theme.sidebar_secondary.remove: true
 
 # Prompt flow
 
-[**Prompt flow**](https://github.com/microsoft/promptflow) is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality. 
+[**Prompt flow**](https://github.com/microsoft/promptflow) is a suite of development tools designed to streamline the end-to-end development cycle of LLM-based AI applications, from ideation, prototyping, testing, evaluation to production deployment and monitoring. It makes prompt engineering much easier and enables you to build LLM apps with production quality.
 
-With prompt flow, you will be able to: 
+With prompt flow, you will be able to:
 
-- **Create [flows](./concepts/concept-flows.md)** that link [LLMs](./reference/tools-reference/llm-tool.md), [prompts](./reference/tools-reference/prompt-tool.md), [Python](./reference/tools-reference/python-tool.md) code and other [tools](./concepts/concept-tools.md) together in a executable workflow. 
+- **Create [flows](./concepts/concept-flows.md)** that link [LLMs](./reference/tools-reference/llm-tool.md), [prompts](./reference/tools-reference/prompt-tool.md), [Python](./reference/tools-reference/python-tool.md) code and other [tools](./concepts/concept-tools.md) together in a executable workflow.
 - **Debug and iterate your flows**, especially the interaction with LLMs with ease.
 - **Evaluate your flows**, calculate quality and performance metrics with larger datasets.
 - **Integrate the testing and evaluation into your CI/CD system** to ensure quality of your flow.
@@ -40,6 +40,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     Articles guide user to complete a specific task in prompt flow.<br/><br/>
     - [Develop a flow](how-to-guides/develop-a-flow/index.md)<br/>
     - [Initialize and test a flow](how-to-guides/init-and-test-a-flow.md)<br/>
+    - [Add conditional control to a flow](how-to-guides/add-conditional-control-to-a-flow.md)<br/>
     - [Run and evaluate a flow](how-to-guides/run-and-evaluate-a-flow.md)<br/>
     - [Tune prompts using variants](how-to-guides/tune-prompts-with-variants.md)<br/>
     - [Deploy a flow](how-to-guides/deploy-a-flow/index.md)<br/>
@@ -54,6 +55,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     - [Flows](concepts/concept-flows.md)<br/>
     - [Tools](concepts/concept-tools.md)<br/>
     - [Connections](concepts/concept-connections.md)<br/>
+    - [Design principles](concepts/design-principles.md)<br/>
   "
 
 
