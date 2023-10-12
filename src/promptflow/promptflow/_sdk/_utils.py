@@ -27,6 +27,7 @@ from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
+from ruamel.yaml import YAML
 
 import promptflow
 from promptflow._constants import EXTENSION_UA
@@ -808,8 +809,11 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                 with open(connections_dir / file_name, "w") as f:
                     json.dump(content, f, indent=2)
 
+            # use YAML to dump template file in order to keep the comments
+            yaml = YAML()
+            yaml.preserve_quotes = True
             for connection_name, content in connection_template_yamls.items():
-                yaml_data = yaml.safe_load(content)
+                yaml_data = yaml.load(content)
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w") as f:
-                    yaml.dump(yaml_data, f, sort_keys=False)
+                    yaml.dump(yaml_data, f)
