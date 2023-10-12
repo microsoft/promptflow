@@ -97,7 +97,9 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 custom_strong_type_connections_classes = [
                     obj
                     for name, obj in inspect.getmembers(module)
-                    if inspect.isclass(obj) and ConnectionType.is_custom_strong_type(obj)
+                    if inspect.isclass(obj)
+                    and ConnectionType.is_custom_strong_type(obj)
+                    and (not ConnectionType.is_connection_class_name(name))
                 ]
 
                 if custom_strong_type_connections_classes:
