@@ -46,6 +46,7 @@ from promptflow._utils.load_data import load_data
 from promptflow._utils.utils import reverse_transpose
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 
@@ -266,7 +267,7 @@ class RunSubmitter:
 
         # running specified variant
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream)
+            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
             with local_storage.logger:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 

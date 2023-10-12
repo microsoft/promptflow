@@ -3,12 +3,18 @@
 ## 0.1.0b8 (Upcoming)
 
 ### Features Added
+- [Executor] Add average execution time and estimated execution time to batch run logs
 
 ### Bugs Fixed
+- **pf config set**:
+  - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
+- [SDK/CLI] Fix the bug that using sdk/cli to submit batch run did not display the log correctly.
 
 ### Improvements
 
-- [SDK/CLI] Include flow path & output path in `pf run visualize` page.
+- [SDK/CLI] Experience improvements in `pf run visualize` page:
+  - Add column status.
+  - Support opening flow file by clicking run id.
 
 ## 0.1.0b7.post1 (2023.09.28)
 
