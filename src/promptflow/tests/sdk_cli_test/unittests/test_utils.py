@@ -30,6 +30,7 @@ from promptflow._sdk._utils import (
     generate_flow_tools_json,
     refresh_connections_dir,
     resolve_connections_environment_variable_reference,
+    override_connection_config_with_environment_variable,
     snake_to_camel,
 )
 
@@ -86,6 +87,29 @@ class TestUtils:
         assert connections["test_connection"]["value"]["api_key"] == "KEY"
         assert connections["test_connection"]["value"]["api_base"] == "BASE"
         assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
+
+    def test_override_connection_config_with_environment_variable(self):
+        connections = {
+            "test_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {
+                    "api_key": "KEY",
+                    "api_base": "https://gpt-test-eus.openai.azure.com/",
+                },
+            },
+            "test_custom_connection": {
+                "type": "CustomConnection",
+                "value": {"key": "value1", "key2": "value2"},
+            },
+        }
+        with mock.patch.dict(
+            os.environ, {"TEST_CONNECTION_API_BASE": "BASE", "TEST_CUSTOM_CONNECTION_KEY": "CUSTOM_VALUE"}
+        ):
+            override_connection_config_with_environment_variable(connections)
+        assert connections["test_connection"]["value"]["api_key"] == "KEY"
+        assert connections["test_connection"]["value"]["api_base"] == "BASE"
+        assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
+        assert connections["test_custom_connection"]["value"]["key2"] == "value2"
 
     def test_generate_flow_tools_json(self) -> None:
         # call twice to ensure system path won't be affected during generation
