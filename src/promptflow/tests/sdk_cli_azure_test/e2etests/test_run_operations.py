@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from promptflow._sdk._constants import RunStatus
-from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
+from promptflow._sdk._errors import InvalidRunError, RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
@@ -96,7 +96,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            connections={"classify_with_llm": {"connection": "azure_open_ai"}},
+            connections={"classify_with_llm": {"connection": "azure_open_ai", "model": "gpt-3.5-turbo"}},
             runtime=runtime,
         )
         assert isinstance(run, Run)
@@ -107,6 +107,17 @@ class TestFlowRun:
             params_override=[{"runtime": runtime}],
         )
         run = remote_client.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+    def test_run_display_name_with_macro(self, pf, runtime):
+        run = load_run(
+            source=f"{RUNS_DIR}/run_with_env.yaml",
+            params_override=[{"runtime": runtime}],
+        )
+        run.display_name = "my_display_name_${variant_id}_${timestamp}"
+        run = pf.runs.create_or_update(run=run)
+        assert run.display_name.startswith("my_display_name_variant_0_")
+        assert "${timestamp}" not in run.display_name
         assert isinstance(run, Run)
 
     def test_run_with_remote_data(self, remote_client, pf, runtime, remote_web_classification_data):
@@ -190,8 +201,29 @@ class TestFlowRun:
         }
 
     def test_show_run_details(self, remote_client):
-        details = remote_client.runs.get_details(
-            run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+        run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # get first 20 results
+        details = remote_client.get_details(run=run, max_results=20)
+
+        assert details.shape[0] == 20
+
+        # get first 1000 results while it only has 40
+        details = remote_client.get_details(run=run, max_results=1000)
+        assert details.shape[0] == 40
+
+        # get all results
+        details = remote_client.get_details(
+            run=run,
+            all_results=True,
+        )
+        assert details.shape[0] == 40
+
+        # get all results even if max_results is set to 10
+        details = remote_client.get_details(
+            run=run,
+            max_results=10,
+            all_results=True,
         )
         assert details.shape[0] == 40
 
@@ -587,3 +619,63 @@ class TestFlowRun:
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
             assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
+
+    def test_input_output_portal_url_parser(self, remote_client):
+        runs_op = remote_client.runs
+
+        # test input with datastore path
+        input_datastore_path = (
+            "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl"
+        )
+        expected_input_portal_url = (
+            f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid={runs_op._common_azure_url_pattern}"
+            f"&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab"
+        )
+        assert runs_op._get_input_portal_url_from_input_uri(input_datastore_path) == expected_input_portal_url
+
+        # test input with asset id
+        input_asset_id = (
+            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data/hod-qa-sample/versions/1"
+        )
+        expected_input_portal_url = (
+            f"https://ml.azure.com/data/hod-qa-sample/1/details?wsid={runs_op._common_azure_url_pattern}"
+        )
+        assert runs_op._get_input_portal_url_from_input_uri(input_asset_id) == expected_input_portal_url
+
+        # test output with asset id
+        output_asset_id = (
+            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data"
+            "/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/versions/1"
+        )
+        expected_output_portal_url = (
+            "https://ml.azure.com/data/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/1/details"
+            f"?wsid={runs_op._common_azure_url_pattern}"
+        )
+        assert runs_op._get_portal_url_from_asset_id(output_asset_id) == expected_output_portal_url
+
+    def test_wrong_client_parameters(self):
+        # test wrong client parameters
+        with pytest.raises(RunOperationParameterError, match="You have passed in the wrong parameter name"):
+            PFClient(
+                subscription_id="fake_subscription_id",
+                resource_group="fake_resource_group",
+                workspace_name="fake_workspace_name",
+            )
+
+    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/partial_fail",
+            data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
+            runtime=runtime,
+        )
+        pf.runs.stream(run=run.name)
+        detail = remote_client.get_details(run=run.name)
+        assert len(detail) == 3
+
+    def test_vnext_workspace_base_url(self, pf):
+        from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
+
+        mock_workspace = MagicMock()
+        mock_workspace.discovery_url = "https://promptflow.azure-api.net/discovery/workspaces/fake_workspace_id"
+        service_caller = _FlowServiceCallerFactory.get_instance(workspace=mock_workspace, credential=MagicMock())
+        assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"

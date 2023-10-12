@@ -12,6 +12,7 @@ from promptflow._sdk._utils import (
     get_local_connections_from_executable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
+    override_connection_config_with_environment_variable,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.executor import FlowExecutor
@@ -43,7 +44,8 @@ class FlowInvoker:
 
     def _init_connections(self, connection_provider):
         if connection_provider == "local":
-            logger.info("Getting connections from local sqlite...")
+            logger.info("Getting connections from local pf client...")
+            # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
             self.connections = get_local_connections_from_executable(executable=self.flow_entity._init_executable())
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
@@ -60,6 +62,7 @@ class FlowInvoker:
         else:
             raise UnsupportedConnectionProvider(connection_provider)
 
+        override_connection_config_with_environment_variable(self.connections)
         resolve_connections_environment_variable_reference(self.connections)
         update_environment_variables_with_connections(self.connections)
         logger.info(f"Promptflow get connections successfully. keys: {self.connections.keys()}")

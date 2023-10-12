@@ -22,6 +22,7 @@ from promptflow._utils.exception_utils import ErrorResponse
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -57,7 +58,7 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def _resolve_data(self, node_name: str = None, inputs: dict = None):
+    def _resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -66,6 +67,8 @@ class TestSubmitter:
         :type node_name: str
         :param inputs: Inputs of flow/node test.
         :type inputs: dict
+        :param chat_history_name: Chat history name.
+        :type chat_history_name: str
         :return: Dict of flow inputs, Dict of reference node output.
         :rtype: dict, dict
         """
@@ -114,7 +117,11 @@ class TestSubmitter:
                     merged_inputs[name] = flow_inputs[name]
                 else:
                     if value.default is None:
-                        missing_inputs.append(name)
+                        # When the flow is a chat flow and chat_history has no default value, set an empty list for it
+                        if chat_history_name and name == chat_history_name:
+                            flow_inputs[name] = []
+                        else:
+                            missing_inputs.append(name)
                     else:
                         flow_inputs[name] = value.default
                         merged_inputs[name] = flow_inputs[name]
@@ -144,9 +151,15 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
-            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = FlowExecutor.create(
+                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
+            )
             flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+            line_result.output = flow_executor._persist_images_from_output(
+                line_result.output, output_dir=Path(".promptflow/output")
+            )
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
@@ -236,10 +249,17 @@ class TestSubmitter:
         def get_result_output(output):
             if isinstance(output, GeneratorType):
                 if output in generator_record:
-                    output = iter(generator_record[output].items)
+                    if hasattr(generator_record[output], "items"):
+                        output = iter(generator_record[output].items)
+                    else:
+                        output = iter(generator_record[output])
                 else:
-                    proxy = output.gi_frame.f_locals["proxy"]
-                    generator_record[output] = proxy
+                    if hasattr(output.gi_frame.f_locals, "proxy"):
+                        proxy = output.gi_frame.f_locals["proxy"]
+                        generator_record[output] = proxy
+                    else:
+                        generator_record[output] = list(output)
+                        output = generator_record[output]
             return output
 
         def resolve_generator(flow_result):

@@ -1,0 +1,9 @@
+#! /bin/bash
+
+CONDA_ENV_PATH="$(conda info --base)/envs/promptflow-serve"
+export PATH="$CONDA_ENV_PATH/bin:$PATH"
+
+ls
+ls /connections
+pf connection create --file /connections/custom_connection.yaml
+pf flow serve --source /flow --host 0.0.0.0

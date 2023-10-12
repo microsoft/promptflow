@@ -1,12 +1,16 @@
-# Startup script for the flow container
-{% if connection_yaml_paths %}
-{% if show_comment %}
-# hack: for some unknown reason, without this ls, the connection creation will be failed
-{% endif %}
-ls
-ls connections
-{% endif %}
-{% for connection_yaml_path in connection_yaml_paths %}
-pf connection create --file /{{ connection_yaml_path }}
-{% endfor %}
-pf flow serve --source flow --host 0.0.0.0
+#!/bin/bash
+
+# stop services created by runsv and propagate SIGINT, SIGTERM to child jobs
+sv_stop() {
+    echo "$(date -uIns) - Stopping all runsv services"
+    for s in $(ls -d /var/runit/*); do
+        sv stop $s
+    done
+}
+
+# register SIGINT, SIGTERM handler
+trap sv_stop SIGINT SIGTERM
+
+# start services in background and wait all child jobs
+runsvdir /var/runit &
+wait
