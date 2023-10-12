@@ -139,3 +139,7 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs=inputs)
         assert "calculate_accuracy" in result.node_run_infos
         assert result.run_info.metrics == {"accuracy": 1.0}
+
+    def test_pf_test_with_non_english_input(self):
+        result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
+        assert result["output"] == "Hello 日本語"
