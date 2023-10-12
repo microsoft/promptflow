@@ -37,6 +37,7 @@ FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
 KEYRING_ENCRYPTION_KEY_NAME = "encryption_key"
 KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").resolve()
+REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = "******"
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
@@ -290,7 +291,7 @@ class RunDataKeys:
 
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
-    AZURE = "azureml"
+    AZUREML = "azureml"
 
 
 SUPPORTED_CONNECTION_FIELDS = {

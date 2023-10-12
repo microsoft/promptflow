@@ -1,9 +1,20 @@
 # Release History
 
-## 0.1.0b8 (To be released)
+## 0.1.0b8 (Upcoming)
 
-### Bug Fixed
-- Fixed encoding issues when input is non-English with `pf flow test`.
+### Features Added
+- [Executor] Add average execution time and estimated execution time to batch run logs
+
+### Bugs Fixed
+- **pf config set**:
+  - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
+- [SDK/CLI] Fix the bug that using sdk/cli to submit batch run did not display the log correctly.
+- [SDK/CLI] Fix encoding issues when input is non-English with `pf flow test`.
+
+### Improvements
+
+- [SDK/CLI] Include flow path & output path in `pf run visualize` page.
+
 
 ## 0.1.0b7.post1 (2023.09.28)
 

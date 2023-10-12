@@ -33,8 +33,14 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    @pytest.mark.skip("TODO: need to fix random pacakge not found error")
     def test_pf_test_flow_with_custom_strong_type_connection(self, install_custom_tool_pkg):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
         inputs = {"text": "Hello World!"}
         flow_path = Path(f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow").absolute()
 
@@ -43,7 +49,7 @@ class TestFlowTest:
         assert result == {"out": "connection_value is MyFirstConnection: True"}
 
         # Test that connection
-        result = _client.test(flow=flow_path, inputs=inputs, node="My_Second_Tool_usi3")
+        result = _client.test(flow=flow_path, inputs={"input_text": "Hello World!"}, node="My_Second_Tool_usi3")
         assert result == "Hello World!This is my first custom connection."
 
     def test_pf_test_with_streaming_output(self):
