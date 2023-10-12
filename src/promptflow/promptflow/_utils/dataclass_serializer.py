@@ -59,6 +59,10 @@ def deserialize_value(obj, field_type):
 
 
 def serialize(value: object, remove_null : bool = False, serialization_funcs: dict[type: Callable] = None) -> dict:
+    if serialization_funcs:
+        for cls, f in serialization_funcs.items():
+            if isinstance(value, cls):
+                return f(value)
     if isinstance(value, datetime):
         return value.isoformat() + "Z"
     if isinstance(value, Enum):
@@ -73,8 +77,6 @@ def serialize(value: object, remove_null : bool = False, serialization_funcs: di
     if isinstance(value, dict):
         return {k: serialize(v, remove_null, serialization_funcs) for k, v in value.items()}
     if isinstance(value, Image):
-        if serialization_funcs and Image in serialization_funcs:
-            return serialization_funcs[Image](value)
         return value.serialize()
     if is_dataclass(value):
         if hasattr(value, "serialize"):

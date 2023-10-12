@@ -39,8 +39,7 @@ class PFBytes(bytes):
         ext = PFBytes._get_extension_from_type(self._mime_type)
         file_name = f"{file_name}.{ext}" if ext else file_name
         image_info = {
-            "pf_mime_type": self._mime_type,
-            "path": str(relative_path / file_name) if relative_path else file_name
+            f"data:{self._mime_type}:path": str(relative_path / file_name) if relative_path else file_name
         }
         path = folder_path / relative_path if relative_path else folder_path
         os.makedirs(path, exist_ok=True)
@@ -78,5 +77,5 @@ class Image(PFBytes):
 
     def serialize(self, encoder: Callable = None):
         if encoder is None:
-            return {"pf_mime_type": self._mime_type, "hash": str(self)}
+            return self.__str__()
         return encoder(self)

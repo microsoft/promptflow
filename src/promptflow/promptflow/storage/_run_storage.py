@@ -29,26 +29,29 @@ class DummyRunStorage(AbstractRunStorage):
 
 
 class DefaultRunStorage(AbstractRunStorage):
-    def __init__(self, working_dir: Path, intermediate_dir: Path = None):
-        self._working_dir = working_dir
-        self._intermediate_dir = intermediate_dir or Path(".promptflow/intermediate")
+    def __init__(self, base_dir: Path = None, sub_dir: Path = None):
+        self._base_dir = base_dir
+        self._sub_dir = sub_dir
 
     def persist_node_run(self, run_info: NodeRunInfo):
         if run_info.inputs:
-            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._intermediate_dir)
+            run_info.inputs = self._serialize(run_info.inputs)
         if run_info.output:
-            run_info.output = self._serialize(run_info.output, relative_path=self._intermediate_dir)
+            run_info.output = self._serialize(run_info.output)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         if run_info.inputs:
-            run_info.inputs = self._serialize(run_info.inputs, relative_path=self._intermediate_dir)
+            run_info.inputs = self._serialize(run_info.inputs)
         if run_info.output:
-            run_info.output = self._serialize(run_info.output, relative_path=self._intermediate_dir)
+            run_info.output = self._serialize(run_info.output)
 
-    def _serialize(self, value, relative_path: Path):
-        pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
-            folder_path=self._working_dir,
-            relative_path=relative_path
-        )
+    def _serialize(self, value):
+        if self._base_dir:
+            pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
+                folder_path=self._base_dir,
+                relative_path=self._sub_dir
+            )
+        else:
+            pfbytes_file_reference_encoder = None
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return serialize(value, serialization_funcs=serialization_funcs)

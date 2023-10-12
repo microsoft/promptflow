@@ -218,7 +218,7 @@ class FlowExecutor:
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
         if storage is None:
-            storage = DefaultRunStorage(working_dir)
+            storage = DefaultRunStorage()
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -716,25 +716,6 @@ class FlowExecutor:
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
-        return line_result
-
-    def _exec_line_with_output_dir(
-        self,
-        inputs: Mapping[str, Any],
-        index: Optional[int] = None,
-        run_id: Optional[str] = None,
-        variant_id: str = "",
-        validate_inputs: bool = True,
-        node_concurrency=DEFAULT_CONCURRENCY_FLOW,
-        allow_generator_output: bool = False,
-        input_dir: Optional[Path] = None,
-        output_dir: Optional[Path] = None,
-    ):
-        line_result = self.exec_line(
-            inputs, index, run_id, variant_id, validate_inputs, node_concurrency, allow_generator_output, input_dir
-        )
-        if output_dir:
-            line_result.output = self._persist_images_from_output(line_result.output, output_dir)
         return line_result
 
     def _add_line_results(self, line_results: List[LineResult]):
