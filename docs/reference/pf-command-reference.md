@@ -41,13 +41,13 @@ pf flow init [--flow]
 Create a flow folder with code, prompts and YAML specification of the flow.
 
 ```bash
-pf flow init --flow <path-to-flow-direcotry>
+pf flow init --flow <path-to-flow-directory>
 ```
 
 Create an evaluation prompt flow
 
 ```bash
-pf flow init --flow <path-to-flow-direcotry> --type evaluation
+pf flow init --flow <path-to-flow-directory> --type evaluation
 ```
 
 Create a flow in existing folder
@@ -411,7 +411,7 @@ Manage prompt flow runs.
 | [pf run stream](#pf-run-stream) | Stream run logs to the console. |
 | [pf run list](#pf-run-list) | List runs. |
 | [pf run show](#pf-run-show) | Show details for a run. |
-| [pf run show-details](#pf-run-show-details) | Preview a run's intput(s) and output(s). |
+| [pf run show-details](#pf-run-show-details) | Preview a run's input(s) and output(s). |
 | [pf run show-metrics](#pf-run-show-metrics) | Print run metrics to the console. |
 | [pf run visualize](#pf-run-visualize) | Visualize a run. |
 | [pf run archive](#pf-run-archive) | Archive a run. |
