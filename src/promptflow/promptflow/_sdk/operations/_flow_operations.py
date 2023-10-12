@@ -288,7 +288,8 @@ class FlowOperations:
     ):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
-        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute())
+        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name),
+                                              working_dir=flow_dag_path.parent.absolute())
 
         with _change_working_dir(flow_dag_path.parent):
             return self._migrate_connections(
