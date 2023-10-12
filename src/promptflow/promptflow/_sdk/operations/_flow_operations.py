@@ -288,12 +288,13 @@ class FlowOperations:
     ):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
-        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
+        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute())
 
-        return self._migrate_connections(
-            connection_names=executable.get_connection_names(),
-            output_dir=output_dir,
-        )
+        with _change_working_dir(flow_dag_path.parent):
+            return self._migrate_connections(
+                connection_names=executable.get_connection_names(),
+                output_dir=output_dir,
+            )
 
     def _build_flow(
         self,
@@ -403,12 +404,11 @@ class FlowOperations:
         if flow_only:
             return
 
-        with _change_working_dir(new_flow_dag_path.parent):
-            # use new flow dag path below as origin one may miss additional includes
-            connection_paths, env_var_names = self._export_flow_connections(
-                flow_dag_path=new_flow_dag_path,
-                output_dir=output_dir / "connections",
-            )
+        # use new flow dag path below as origin one may miss additional includes
+        connection_paths, env_var_names = self._export_flow_connections(
+            flow_dag_path=new_flow_dag_path,
+            output_dir=output_dir / "connections",
+        )
 
         if format == "docker":
             self._export_to_docker(
