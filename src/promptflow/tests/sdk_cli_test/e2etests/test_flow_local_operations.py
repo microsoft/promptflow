@@ -1,5 +1,6 @@
 import copy
 import os.path
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -288,7 +289,7 @@ class TestFlowLocalOperations:
             "node_variants.summarize_text_content.variants.variant_0.node.source.path",
             "nodes.1.source.path",
         ]:
-            assert "Meta file not found" in error_messages.pop(yaml_path, "")
+            assert re.search(r"Meta file '.*' can not be found.", error_messages.pop(yaml_path, ""))
 
         assert error_messages == {
             "inputs.url.type": "Missing data for required field.",
@@ -383,12 +384,12 @@ class TestFlowLocalOperations:
         # assert list(tools_meta["package"]) == ["promptflow.tools.azure_translator.get_translation"]
 
         assert "Failed to load python module from file" in tools_error.pop("prepare_examples.py", "")
-        assert "Meta file not found" in tools_error.pop("summarize_text_content.jinja2", "")
+        assert re.search(r"Meta file '.*' can not be found.", tools_error.pop("summarize_text_content.jinja2", ""))
         assert tools_error == {}
 
         tools_meta, tools_error = pf.flows._generate_tools_meta(source, source_name="summarize_text_content.jinja2")
         assert tools_meta == {"code": {}, "package": {}}
-        assert "Meta file not found" in tools_error.pop("summarize_text_content.jinja2", "")
+        assert re.search(r"Meta file '.*' can not be found.", tools_error.pop("summarize_text_content.jinja2", ""))
         assert tools_error == {}
 
         tools_meta, tools_error = pf.flows._generate_tools_meta(source, source_name="fetch_text_content_from_url.py")
