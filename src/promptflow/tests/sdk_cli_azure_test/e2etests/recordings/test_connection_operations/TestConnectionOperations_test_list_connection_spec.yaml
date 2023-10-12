@@ -1,0 +1,87 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Connections/specs
+  response:
+    body:
+      string: '[{"connectionCategory": 15, "flowValueType": "AzureContentSafetyConnection",
+        "connectionType": "AzureContentSafety", "connectionTypeDisplayName": "Azure
+        content safety", "configSpecs": [{"name": "api_key", "displayName": "API key",
+        "configValueType": "Secret", "isOptional": false}, {"name": "endpoint", "displayName":
+        "Endpoint", "configValueType": "String", "isOptional": false}, {"name": "api_version",
+        "displayName": "API version", "configValueType": "String", "defaultValue":
+        "2023-04-30-preview", "isOptional": false}, {"name": "api_type", "displayName":
+        "API type", "configValueType": "String", "defaultValue": "Content Safety",
+        "isOptional": false}], "module": "promptflow.connections"}, {"connectionCategory":
+        13, "flowValueType": "AzureOpenAIConnection", "connectionType": "AzureOpenAI",
+        "connectionTypeDisplayName": "Azure OpenAI", "configSpecs": [{"name": "api_key",
+        "displayName": "API key", "configValueType": "Secret", "isOptional": false},
+        {"name": "api_base", "displayName": "API base", "configValueType": "String",
+        "isOptional": false}, {"name": "api_type", "displayName": "API type", "configValueType":
+        "String", "defaultValue": "azure", "isOptional": false}, {"name": "api_version",
+        "displayName": "API version", "configValueType": "String", "defaultValue":
+        "2023-07-01-preview", "isOptional": false}, {"name": "resource_id", "displayName":
+        "Resource id", "configValueType": "String", "isOptional": false}], "module":
+        "promptflow.connections"}, {"connectionCategory": 14, "flowValueType": "CognitiveSearchConnection",
+        "connectionType": "CognitiveSearch", "connectionTypeDisplayName": "Cognitive
+        search", "configSpecs": [{"name": "api_key", "displayName": "API key", "configValueType":
+        "Secret", "isOptional": false}, {"name": "api_base", "displayName": "API base",
+        "configValueType": "String", "isOptional": false}, {"name": "api_version",
+        "displayName": "API version", "configValueType": "String", "defaultValue":
+        "2023-07-01-Preview", "isOptional": false}], "module": "promptflow.connections"},
+        {"connectionCategory": 16, "flowValueType": "CustomConnection", "connectionType":
+        "Custom", "connectionTypeDisplayName": "Custom", "module": "promptflow.connections"},
+        {"connectionCategory": 16, "flowValueType": "OpenAIConnection", "connectionType":
+        "OpenAI", "connectionTypeDisplayName": "OpenAI", "configSpecs": [{"name":
+        "api_key", "displayName": "API key", "configValueType": "Secret", "isOptional":
+        false}, {"name": "organization", "displayName": "Organization", "configValueType":
+        "String", "isOptional": true}], "module": "promptflow.connections"}, {"connectionCategory":
+        16, "flowValueType": "QdrantConnection", "connectionType": "Qdrant", "connectionTypeDisplayName":
+        "Qdrant", "configSpecs": [{"name": "api_key", "displayName": "API key", "configValueType":
+        "Secret", "isOptional": false}, {"name": "api_base", "displayName": "API base",
+        "configValueType": "String", "isOptional": false}], "module": "promptflow_vectordb.connections.qdrant"},
+        {"connectionCategory": 16, "flowValueType": "SerpConnection", "connectionType":
+        "Serp", "connectionTypeDisplayName": "Serp", "configSpecs": [{"name": "api_key",
+        "displayName": "API key", "configValueType": "Secret", "isOptional": false}],
+        "module": "promptflow.connections"}, {"connectionCategory": 16, "flowValueType":
+        "WeaviateConnection", "connectionType": "Weaviate", "connectionTypeDisplayName":
+        "Weaviate", "configSpecs": [{"name": "api_key", "displayName": "API key",
+        "configValueType": "Secret", "isOptional": false}, {"name": "api_base", "displayName":
+        "API base", "configValueType": "String", "isOptional": false}], "module":
+        "promptflow_vectordb.connections.weaviate"}]'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '3402'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Wed, 11 Oct 2023 12:58:21 GMT
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-ms-client-session-id:
+      - ''
+      x-ms-client-user-type:
+      - ApiUser
+    status:
+      code: 200
+      message: OK
+version: 1

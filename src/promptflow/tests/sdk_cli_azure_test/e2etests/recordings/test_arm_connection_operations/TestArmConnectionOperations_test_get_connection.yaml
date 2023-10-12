@@ -34,7 +34,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Wed, 11 Oct 2023 07:16:57 GMT
+      - Wed, 11 Oct 2023 12:57:45 GMT
       expires:
       - '-1'
       pragma:
@@ -48,7 +48,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-msedge-ref:
-      - 'Ref A: D7DDA08823B84A7384B85B8D5D196DD7 Ref B: TYO201100115029 Ref C: 2023-10-11T07:16:56Z'
+      - 'Ref A: 00BAA653BA984ACEA05AD38D2B43EC29 Ref B: TYO201100117011 Ref C: 2023-10-11T12:57:45Z'
     status:
       code: 200
       message: OK
@@ -86,7 +86,7 @@ interactions:
       content-type:
       - application/json; charset=utf-8
       date:
-      - Wed, 11 Oct 2023 07:17:00 GMT
+      - Wed, 11 Oct 2023 12:57:47 GMT
       expires:
       - '-1'
       pragma:
@@ -100,7 +100,7 @@ interactions:
       x-content-type-options:
       - nosniff
       x-msedge-ref:
-      - 'Ref A: 05AC97F1CA144030B3F12DDB0832C96F Ref B: TYO201100116039 Ref C: 2023-10-11T07:16:59Z'
+      - 'Ref A: CF1992335D754154B93F25FDAE7E17EC Ref B: TYO201100116053 Ref C: 2023-10-11T12:57:47Z'
     status:
       code: 200
       message: OK

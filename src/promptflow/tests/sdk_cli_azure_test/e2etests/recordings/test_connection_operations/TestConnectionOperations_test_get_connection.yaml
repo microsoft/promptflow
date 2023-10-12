@@ -1,0 +1,86 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Connections/azure_open_ai_connection
+  response:
+    body:
+      string: '{"connectionName": "azure_open_ai_connection", "connectionType": "AzureOpenAI",
+        "configs": {"api_base": "https://gpt-test-eus.openai.azure.com/", "api_key":
+        null, "api_type": "azure", "api_version": "2023-07-01-preview", "resource_id":
+        null}, "owner": {"userName": "yigao@microsoft.com"}, "createdDate": "2023-08-22T10:15:34.5762053Z",
+        "lastModifiedDate": "2023-08-22T10:15:34.5762053Z"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '366'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Wed, 11 Oct 2023 12:58:15 GMT
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-ms-client-session-id:
+      - ''
+      x-ms-client-user-type:
+      - ApiUser
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/Connections/custom_connection
+  response:
+    body:
+      string: '{"connectionName": "custom_connection", "connectionType": "Custom",
+        "owner": {"userName": "sejuare@microsoft.com"}, "createdDate": "2023-06-19T20:56:12.0353964Z",
+        "lastModifiedDate": "2023-06-19T20:56:12.0353964Z"}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '204'
+      content-type:
+      - application/json; charset=utf-8
+      date:
+      - Wed, 11 Oct 2023 12:58:18 GMT
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-ms-client-session-id:
+      - ''
+      x-ms-client-user-type:
+      - ApiUser
+    status:
+      code: 200
+      message: OK
+version: 1
