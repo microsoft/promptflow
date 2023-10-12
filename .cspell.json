@@ -126,6 +126,7 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
+    "Pyinstaller",
     "runsvdir",
     "runsv",
     "levelno",
