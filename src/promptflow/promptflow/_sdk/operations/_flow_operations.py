@@ -116,7 +116,7 @@ class FlowOperations:
                     inputs=flow_inputs,
                     environment_variables=environment_variables,
                     stream_log=stream_log,
-                    allow_generator_output=allow_generator_output,
+                    allow_generator_output=allow_generator_output and is_chat_flow,
                 )
 
     @staticmethod
