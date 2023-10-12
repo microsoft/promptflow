@@ -59,7 +59,7 @@ Promptflow CLI can generate the yaml definitions needed for prompt flow from the
 
 ```bash
 # Create a flow in existing folder
-pf flow init --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-tempate>
+pf flow init --flow <flow-name> --entry <entry-file-name> --function <tool-function-name> --prompt-template <prompt-template>
 ```
 
 Take [customer-intent-extraction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/customer-intent-extraction) for example, which demonstrating how to convert a langchain code into a prompt flow.

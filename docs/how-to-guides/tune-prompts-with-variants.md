@@ -105,7 +105,7 @@ pf.stream(variant_run)
 
 ::::
 
-After the variant run is created, you can evaluate the variant run with a evaluation flow, just like you evalute a standard flow run.
+After the variant run is created, you can evaluate the variant run with a evaluation flow, just like you evaluate a standard flow run.
 
 ## Next steps
 
