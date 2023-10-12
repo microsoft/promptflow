@@ -1063,7 +1063,7 @@ class TestCli:
                         "promptflow.connection.custom_type": "MyFirstConnection",
                         "promptflow.connection.module": "my_tool_package.connections",
                         "promptflow.connection.package": "test-custom-tools",
-                        "promptflow.connection.package_version": "0.0.1",
+                        "promptflow.connection.package_version": "0.0.2",
                     },
                     "secrets": {"api_key": SCRUBBED_VALUE},
                 },

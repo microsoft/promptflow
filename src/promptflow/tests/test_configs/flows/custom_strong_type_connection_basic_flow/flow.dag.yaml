@@ -1,7 +1,3 @@
-id: template_standard_flow
-name: Template Standard Flow
-environment:
-  python_requirements_txt: requirements.txt
 inputs:
   text:
     type: string
