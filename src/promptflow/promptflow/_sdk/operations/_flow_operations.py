@@ -2,13 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
-import os
-import json
 import glob
+import json
+import os
+import subprocess
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-import subprocess
 from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
@@ -103,7 +103,8 @@ class FlowOperations:
         with TestSubmitter(flow=flow, variant=variant).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name)
+                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+            )
 
             if node:
                 return submitter.node_test(
@@ -291,8 +292,9 @@ class FlowOperations:
     ):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
-        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name),
-                                              working_dir=flow_dag_path.parent.absolute())
+        executable = ExecutableFlow.from_yaml(
+            flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute()
+        )
 
         with _change_working_dir(flow_dag_path.parent):
             return self._migrate_connections(
@@ -364,8 +366,8 @@ class FlowOperations:
         env_var_names: List[str],
     ):
         try:
-            import streamlit
             import PyInstaller  # noqa: F401
+            import streamlit
         except ImportError as ex:
             raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
 
@@ -378,9 +380,11 @@ class FlowOperations:
 
         environment_config = self._build_environment_config(flow_dag_path)
         hidden_imports = []
-        if (environment_config.get("python_requirements_txt", None) and
-                (flow_dag_path.parent / "requirements.txt").is_file()):
-            with open(flow_dag_path.parent / "requirements.txt", 'r', encoding='utf-8') as file:
+        if (
+            environment_config.get("python_requirements_txt", None)
+            and (flow_dag_path.parent / "requirements.txt").is_file()
+        ):
+            with open(flow_dag_path.parent / "requirements.txt", "r", encoding="utf-8") as file:
                 file_content = file.read()
             hidden_imports = file_content.splitlines()
 
@@ -399,7 +403,7 @@ class FlowOperations:
                 "flow_name": flow_name,
                 "runtime_interpreter_path": runtime_interpreter_path,
                 "flow_inputs": flow_inputs,
-                "flow_inputs_params": flow_inputs_params
+                "flow_inputs_params": flow_inputs_params,
             },
         )
         try:
@@ -603,8 +607,8 @@ class FlowOperations:
                     files = glob.glob(os.path.join(include, "**"), recursive=True)
                     additional_files.update(
                         {
-                            Path(os.path.relpath(path, include.parent)):
-                                os.path.relpath(path, flow.code) for path in files
+                            Path(os.path.relpath(path, include.parent)): os.path.relpath(path, flow.code)
+                            for path in files
                         }
                     )
             for tool in flow_tools_meta.values():
