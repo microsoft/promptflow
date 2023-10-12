@@ -76,7 +76,7 @@ class Image(PFBytes):
     def to_base64(self):
         return base64.b64encode(self).decode("utf-8")
 
-    def serialize(self, encoder: Callable):
+    def serialize(self, encoder: Callable = None):
         if encoder is None:
             return {"pf_mime_type": self._mime_type, "hash": str(self)}
         return encoder(self)

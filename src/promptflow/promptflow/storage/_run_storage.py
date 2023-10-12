@@ -2,10 +2,11 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+from functools import partial
 from pathlib import Path
 
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.multimedia import PFBytes
+from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo as NodeRunInfo
 
 
@@ -49,4 +50,5 @@ class DefaultRunStorage(AbstractRunStorage):
             folder_path=self._working_dir,
             relative_path=relative_path
         )
-        return serialize(value, pfbytes_file_reference_encoder=pfbytes_file_reference_encoder)
+        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
+        return serialize(value, serialization_funcs=serialization_funcs)

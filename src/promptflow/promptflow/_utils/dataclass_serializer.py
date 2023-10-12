@@ -58,28 +58,30 @@ def deserialize_value(obj, field_type):
     return obj
 
 
-def serialize(value: object, remove_null : bool = False, pfbytes_file_reference_encoder: Callable = None) -> dict:
+def serialize(value: object, remove_null : bool = False, serialization_funcs: dict[type: Callable] = None) -> dict:
     if isinstance(value, datetime):
         return value.isoformat() + "Z"
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, list):
-        return [serialize(v, remove_null, pfbytes_file_reference_encoder) for v in value]
+        return [serialize(v, remove_null, serialization_funcs) for v in value]
     if isinstance(value, GeneratorProxy):
-        return [serialize(v, remove_null, pfbytes_file_reference_encoder) for v in value.items]
+        return [serialize(v, remove_null, serialization_funcs) for v in value.items]
     #  Note that custom connection check should before dict check
     if ConnectionType.is_connection_value(value):
         return ConnectionType.serialize_conn(value)
     if isinstance(value, dict):
-        return {k: serialize(v, remove_null, pfbytes_file_reference_encoder) for k, v in value.items()}
+        return {k: serialize(v, remove_null, serialization_funcs) for k, v in value.items()}
     if isinstance(value, Image):
-        return value.serialize(pfbytes_file_reference_encoder)
+        if serialization_funcs and Image in serialization_funcs:
+            return serialization_funcs[Image](value)
+        return value.serialize()
     if is_dataclass(value):
         if hasattr(value, "serialize"):
             result = value.serialize()
         else:
             result = {
-                f.name: serialize(getattr(value, f.name), remove_null, pfbytes_file_reference_encoder)
+                f.name: serialize(getattr(value, f.name), remove_null, serialization_funcs)
                 for f in fields(value)
             }
         if not remove_null:
