@@ -119,6 +119,8 @@ After the run is finished, you can evaluate the run with below command, compared
 - `column-mapping`: A mapping from flow input name to specified data values. Reference [here](./use-column-mapping.md) for detailed information.
 - `run`: The run name of the flow run to be evaluated.
 
+More details can be found in [Use column mapping](./use-column-mapping.md).
+
 ```sh
 pf run create --flow evaluation/eval-classification-accuracy --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
 ```
@@ -156,7 +158,9 @@ After the run is finished, you can evaluate the run with below command, compared
   - If the data column is in your test dataset, then it is specified as `${data.<column_name>}`.
   - If the data column is from your flow output, then it is specified as `${run.outputs.<output_name>}`.
 - `run`: The run name or run instance of the flow run to be evaluated.
-  
+
+More details can be found in [Use column mapping](./use-column-mapping.md).
+
 ```python
 # set eval flow path
 eval_flow = "evaluation/eval-classification-accuracy"
