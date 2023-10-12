@@ -69,7 +69,8 @@
     "westus",
     "msrest",
     "cref",
-    "msal"
+    "msal",
+    "pfbytes"
   ],
   "ignoreWords": [
     "openmpi",
@@ -126,6 +127,7 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
+    "Pyinstaller",
     "runsvdir",
     "runsv",
     "levelno",
