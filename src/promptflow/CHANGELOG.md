@@ -13,7 +13,9 @@
 
 ### Improvements
 
-- [SDK/CLI] Include flow path & output path in `pf run visualize` page.
+- [SDK/CLI] Experience improvements in `pf run visualize` page:
+  - Add column status.
+  - Support opening flow file by clicking run id.
 
 
 ## 0.1.0b7.post1 (2023.09.28)
