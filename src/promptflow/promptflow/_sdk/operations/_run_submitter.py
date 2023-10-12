@@ -179,8 +179,7 @@ def variant_overwrite_context(
             overwrite_connections(Path(temp_dir), connections)
             remove_additional_includes(Path(temp_dir))
             flow = load_flow(temp_dir)
-            with _change_working_dir(temp_dir):
-                yield flow
+            yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
         # the dag path points to the temp dag file after overwriting variant.
@@ -273,7 +272,8 @@ class RunSubmitter:
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        connections = SubmitterHelper.resolve_connections(flow=flow)
+        with _change_working_dir(flow.code):
+            connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)

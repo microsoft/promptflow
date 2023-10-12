@@ -24,6 +24,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
 
@@ -402,11 +403,12 @@ class FlowOperations:
         if flow_only:
             return
 
-        # use new flow dag path below as origin one may miss additional includes
-        connection_paths, env_var_names = self._export_flow_connections(
-            flow_dag_path=new_flow_dag_path,
-            output_dir=output_dir / "connections",
-        )
+        with _change_working_dir(new_flow_dag_path.parent):
+            # use new flow dag path below as origin one may miss additional includes
+            connection_paths, env_var_names = self._export_flow_connections(
+                flow_dag_path=new_flow_dag_path,
+                output_dir=output_dir / "connections",
+            )
 
         if format == "docker":
             self._export_to_docker(
