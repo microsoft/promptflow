@@ -26,6 +26,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     ConnectionFields,
+    FlowRunProperties,
 )
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow
@@ -297,6 +298,17 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            # Filter the failed line result
+            failed_line_result = \
+                [result for result in bulk_result.line_results if result.run_info.status == Status.Failed]
+            if failed_line_result:
+                # Log warning message when there are failed line run in bulk run.
+                error_log = \
+                    f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                    error_log = error_log + \
+                                f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                logger.warning(error_log)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
         except Exception as e:
