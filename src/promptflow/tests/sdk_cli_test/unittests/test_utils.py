@@ -178,7 +178,8 @@ class TestUtils:
             "./tests/test_configs/datas/load_data_cases/colors.json",
             "./tests/test_configs/datas/load_data_cases/colors.jsonl",
             "./tests/test_configs/datas/load_data_cases/colors.tsv",
-            "./tests/test_configs/datas/load_data_cases/colors.parquet",
+            # skip parquet test which requires pyarrow or fastparquet
+            # "./tests/test_configs/datas/load_data_cases/colors.parquet",
         ],
     )
     def test_load_data(self, data_path: str) -> None:
