@@ -302,7 +302,8 @@ class RunSubmitter:
                 [result for result in bulk_result.line_results if result.run_info.status == Status.Failed]
             if failed_line_result:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = f"{len(failed_line_result)} run(s) failed in bulk run."
+                error_log = \
+                    f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
                 if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
                     error_log = error_log + \
                                 f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
