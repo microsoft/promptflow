@@ -117,8 +117,6 @@ hello-world-proj/
 * Step3: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
 ![auto-list-tool-in-extension](../../media/contributing/auto-list-tool-in-extension.png)
 
-## Advanced tool features
-[Customize your tool icon](add-a-tool-icon.md)
 
 ## FAQ
 ### Why is my custom tool not showing up in the UI?
@@ -162,3 +160,6 @@ Alternatively, you can test your tool package using the script below to ensure t
 ### Why am I unable to upload package to PyPI?
 * Make sure that the entered username and password of your PyPI account are accurate.
 * If you encounter a `403 Forbidden Error`, it's likely due to a naming conflict with an existing package. You will need to choose a different name. Package names must be unique on PyPI to avoid confusion and conflicts among users. Before creating a new package, it's recommended to search PyPI (https://pypi.org/) to verify that your chosen name is not already taken. If the name you want is unavailable, consider selecting an alternative name or a variation that clearly differentiates your package from the existing one.
+
+## Advanced features
+[Customize your tool icon](add-a-tool-icon.md)

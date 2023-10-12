@@ -12,21 +12,21 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
   - 16x16 pixels to prevent distortion when resizing.
   - Avoid complex images with lots of detail or contrast, as they may not resize well. 
 
-  See [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/icons/custom-tool-icon.png) for a simple custom icon.
+  See [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/icons/custom-tool-icon.png) as a reference.
 - Install dependencies to generate icon data URI:
 
   ```
   pip install pillow
   ```
 
-## Add tool icon with _icon-path_ parameter 
-Use the `icon-path` parameter when generating your tool package to add a custom tool icon:
+## Add tool icon with _icon_ parameter 
+Use the `icon` parameter when generating your tool package to add a custom tool icon:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name> --icon-path <your-tool-icon-path>
+python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name> --icon <your-tool-icon-path>
 ```
 For example:
 ```
-python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message --icon-path D:\proj\github\promptflow\examples\tools\tool-package-quickstart\my_tool_package\icons\custom-tool-icon.png
+python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message --icon D:\proj\github\promptflow\examples\tools\tool-package-quickstart\my_tool_package\icons\custom-tool-icon.png
 ```
 
 In the auto-generated tool YAML file, the custom tool icon data URI is added in the `icon` field:

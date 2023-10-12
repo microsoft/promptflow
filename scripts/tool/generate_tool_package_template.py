@@ -129,7 +129,7 @@ if __name__ == "__main__":
                         help="your tool's name, by default is hello_world_tool", required=False)
     parser.add_argument("--function-name", "-f", type=str,
                         help="your tool's function name, by default is your tool's name", required=False)
-    parser.add_argument("--icon-path", "-i", type=str,
+    parser.add_argument("--icon", "-i", type=str,
                         help="your tool's icon image path, if not provided, the system will use the default icon",
                         required=False)
     parser.add_argument("--use-class", action='store_true', help="Specify whether to use a class implementation way.")
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     function_name = function_name.lower()
 
     icon_data_url = ""
-    if args.icon_path:
-        icon_data_url = check_image_type_and_generate_data_url(args.icon_path)
+    if args.icon:
+        icon_data_url = check_image_type_and_generate_data_url(args.icon)
 
     create_tool_project_structure(destination, package_name, tool_name, function_name, icon_data_url, args.use_class)
