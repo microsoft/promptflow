@@ -422,8 +422,6 @@ def build_flow(args):
         format=args.format,
         variant=args.variant,
         flow_only=args.flow_only,
-        worker_num=args.worker_num,
-        worker_threads=args.worker_threads,
     )
     print(
         f"Exported flow to {Path(args.output).absolute().as_posix()}.\n"
