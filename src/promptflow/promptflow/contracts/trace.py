@@ -4,7 +4,27 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from types import GeneratorType
 from typing import Any, Dict, List, Optional
+
+
+def replace_generators(obj):
+    if isinstance(obj, dict):
+        return {k: replace_generators(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [replace_generators(v) for v in obj]
+    elif isinstance(obj, tuple):
+        return tuple(replace_generators(v) for v in obj)
+    elif isinstance(obj, Enum):
+        return obj
+    elif hasattr(obj, "__dict__"):
+        for k, v in obj.__dict__.items():
+            setattr(obj, k, replace_generators(v))
+        return obj
+    elif isinstance(obj, GeneratorType):
+        return None
+    else:
+        return obj
 
 
 class TraceType(str, Enum):
@@ -48,3 +68,7 @@ class Trace:
     error: Optional[str] = None
     children: Optional[List["Trace"]] = None
     node_name: Optional[str] = None  # The node name of the trace, used for flow level trace
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        return replace_generators(state)

@@ -4,6 +4,7 @@ import pytest
 
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.run_info import Status
+from promptflow.contracts.trace import Trace, TraceType
 from promptflow.executor import FlowExecutor
 
 from ..utils import get_flow_sample_inputs, get_yaml_file
@@ -106,3 +107,23 @@ class TestExecutorTraces:
         else:
             assert output
             assert all(isinstance(item, str) for item in output)
+
+    def test_trace_pickle_with_generator_output(self):
+        # Create a Trace object with a generator output
+        inputs = {"x": 1, "y": 2}
+        output = (x**2 for x in range(5))
+        trace = Trace(
+            name="test",
+            type=TraceType.LLM,
+            inputs=inputs,
+            output=output,
+            start_time=0.0,
+            end_time=1.0,
+        )
+
+        # Serialize and deserialize the Trace object
+        state = trace.__getstate__()
+        new_trace = Trace(**state)
+
+        # Check that the output attribute is None in the deserialized Trace object
+        assert new_trace.output is None
