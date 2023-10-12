@@ -37,11 +37,12 @@ def resolve_annotation(anno) -> Union[str, list]:
     return args[0] if len(args) == 1 else args
 
 
-def param_to_definition(param) -> (InputDefinition, bool):
+def param_to_definition(param, should_gen_custom_type=False) -> (InputDefinition, bool):
     default_value = param.default
     # Get value type and enum from annotation
     value_type = resolve_annotation(param.annotation)
     enum = None
+    custom_type = None
     # Get value type and enum from default if no annotation
     if default_value is not inspect.Parameter.empty and value_type == inspect.Parameter.empty:
         value_type = default_value.__class__ if isinstance(default_value, Enum) else type(default_value)
@@ -51,20 +52,42 @@ def param_to_definition(param) -> (InputDefinition, bool):
         value_type = str
     is_connection = False
     if ConnectionType.is_connection_value(value_type):
-        typ = [value_type.__name__]
+        if ConnectionType.is_custom_strong_type(value_type):
+            typ = ["CustomConnection"]
+            custom_type = [value_type.__name__]
+        else:
+            typ = [value_type.__name__]
         is_connection = True
     elif isinstance(value_type, list):
         if not all(ConnectionType.is_connection_value(t) for t in value_type):
             typ = [ValueType.OBJECT]
         else:
-            typ = [t.__name__ for t in value_type]
+            custom_connection_added = False
+            typ = []
+            custom_type = []
+            for t in value_type:
+                if ConnectionType.is_custom_strong_type(t):
+                    if not custom_connection_added:
+                        custom_connection_added = True
+                        typ.append("CustomConnection")
+                    custom_type.append(t.__name__)
+                else:
+                    typ.append(t.__name__)
             is_connection = True
     else:
         typ = [ValueType.from_type(value_type)]
-    return InputDefinition(type=typ, default=value_to_str(default_value), description=None, enum=enum), is_connection
+    # Do not generate custom type when generating flow.tools.json for script tool.
+    if not should_gen_custom_type:
+        custom_type = None
+    return (
+        InputDefinition(
+            type=typ, default=value_to_str(default_value), description=None, enum=enum, custom_type=custom_type
+        ),
+        is_connection,
+    )
 
 
-def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
+def function_to_interface(f: Callable, initialize_inputs=None, should_gen_custom_type=False) -> tuple:
     sign = inspect.signature(f)
     all_inputs = {}
     input_defs = {}
@@ -83,7 +106,7 @@ def function_to_interface(f: Callable, initialize_inputs=None) -> tuple:
     )
     # Resolve inputs to definitions.
     for k, v in all_inputs.items():
-        input_def, is_connection = param_to_definition(v)
+        input_def, is_connection = param_to_definition(v, should_gen_custom_type=should_gen_custom_type)
         input_defs[k] = input_def
         if is_connection:
             connection_types.append(input_def.type)
