@@ -43,7 +43,7 @@ class MyClass:
 
         Here are some admonitions to show.
 
-    :param client: Descrition of the client.
+    :param client: Description of the client.
     :type client: ~promptflow.PFClient
     :param param_int: Description of the parameter.
     :type param_int: Optional[int]
@@ -74,10 +74,10 @@ class MyClass:
     - A pair of `:param [ParamName]:` and `:type [ParamName]:` is required.
     - If the type is a promptflow public class, use the `full path to the class` and prepend it with a "~". This will create a link when the documentation is rendered on the doc site that will take the user to the class reference documentation for more information.
         ```text
-        :param client: Descrition of the client.
+        :param client: Description of the client.
         :type client: ~promptflow.PFClient
         ```
-    - Use `Union/Optional` when appropriate in function declaration. And use the same annotaion after `:type [ParamName]:`
+    - Use `Union/Optional` when appropriate in function declaration. And use the same annotation after `:type [ParamName]:`
         ```text
         :type param_int: Optional[int]
         ```

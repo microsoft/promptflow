@@ -1,6 +1,6 @@
 # Cloud
 
-You can develope your flow locally and seamlessly move the experience to azure cloud.
+You can develop your flow locally and seamlessly move the experience to azure cloud.
 
 ```{toctree}
 :caption: AzureAI
