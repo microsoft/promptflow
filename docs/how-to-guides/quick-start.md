@@ -1,6 +1,6 @@
 # Quick Start
 
-This guide will walk you through the fist step using of prompt flow code-first experience. 
+This guide will walk you through the fist step using of prompt flow code-first experience.
 
 **Prerequisite** - To make the most of this tutorial, you'll need:
 
@@ -87,12 +87,10 @@ _Note: Prompt flow VS Code Extension is highly recommended for flow development 
 3. Select python interpreter
 
     ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_0.png)
-   
     ![vscode](../media/how-to-guides/quick-start/vs_code_interpreter_1.png)
 
 
 2. Open dag in vscode. You can open the `flow.dag.yaml` as yaml file, or you can also open it in `visual editor`.
-   
     ![vscode](../media/how-to-guides/quick-start/vs_code_dag_0.png)
 
 ## Develop and test your flow
@@ -116,7 +114,7 @@ See more details of this topic in [Develop a flow](./develop-a-flow/index.md).
 
 The [`connection`](../concepts/concept-connections.md) helps securely store and manage secret keys or other sensitive credentials required for interacting with LLM and other external tools for example Azure Content Safety.
 
-The sample flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) uses connection `open_ai_connection` inside, e.g. `classify_with_llm` node needs to talk to `llm` using the connection. 
+The sample flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification) uses connection `open_ai_connection` inside, e.g. `classify_with_llm` node needs to talk to `llm` using the connection.
 
 We need to set up the connection if we haven't added it before. Once created, the connection will be stored in local db and can be used in any flow.
 
@@ -286,6 +284,7 @@ See more details of this topic in [Initialize and test a flow](./init-and-test-a
 Learn more on how to:
 - [Develop a flow](./develop-a-flow/index.md): details on how to develop a flow by writing a flow yaml from scratch.
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
+- [Add conditional control to a flow](./add-conditional-control-to-a-flow.md): how to use activate config to add conditional control to a flow.
 - [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
 - [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
 - [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.

@@ -33,7 +33,7 @@ class PFClient:
 
     def __init__(self):
         self._runs = RunOperations()
-        self._connection_provider = Configuration.get_instance().get_connection_provider()
+        self._connection_provider = None
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations()
@@ -182,10 +182,12 @@ class PFClient:
     def connections(self) -> ConnectionOperations:
         """Connection operations that can manage connections."""
         if not self._connections:
+            if not self._connection_provider:
+                self._connection_provider = Configuration.get_instance().get_connection_provider()
             if self._connection_provider == ConnectionProvider.LOCAL.value:
                 logger.debug("Using local connection operations.")
                 self._connections = ConnectionOperations()
-            elif self._connection_provider.startswith(ConnectionProvider.AZURE.value):
+            elif self._connection_provider.startswith(ConnectionProvider.AZUREML.value):
                 logger.debug("Using local azure connection operations.")
                 self._connections = LocalAzureConnectionOperations(self._connection_provider)
             else:

@@ -27,6 +27,7 @@ from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
+from ruamel.yaml import YAML
 
 import promptflow
 from promptflow._constants import EXTENSION_UA
@@ -45,6 +46,7 @@ from promptflow._sdk._constants import (
     NODE_VARIANTS,
     NODES,
     PROMPT_FLOW_DIR_NAME,
+    REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
@@ -313,6 +315,29 @@ def _match_env_reference(val: str):
         return None
     name = m.groups()[0]
     return name
+
+
+def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
+    """
+    The function will use relevant environment variable to override connection configurations. For instance, if there
+    is a custom connection named 'custom_connection' with a configuration key called 'chat_deployment_name,' the
+    function will attempt to retrieve 'chat_deployment_name' from the environment variable
+    'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
+    original value as a fallback.
+    """
+    logger = logging.getLogger(LOGGER_NAME)
+    for connection_name, connection in connections.items():
+        values = connection.get("value", {})
+        for key, val in values.items():
+            connection_name = connection_name.replace(" ", "_")
+            env_name = f"{connection_name}_{key}".upper()
+            if env_name not in os.environ:
+                continue
+            values[key] = os.environ[env_name]
+            logger.info(
+                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
+            )
+    return connections
 
 
 def resolve_connections_environment_variable_reference(connections: Dict[str, dict]):
@@ -788,21 +813,30 @@ def _generate_connections_dir():
     return connections_dir
 
 
+_refresh_connection_dir_lock = FileLock(REFRESH_CONNECTIONS_DIR_LOCK_PATH)
+
+
 # This function is used by extension to generate the connection files every time collect tools.
 def refresh_connections_dir(connection_spec_files, connection_template_yamls):
     connections_dir = _generate_connections_dir()
-    if os.path.isdir(connections_dir):
-        shutil.rmtree(connections_dir)
-    os.makedirs(connections_dir)
 
-    if connection_spec_files and connection_template_yamls:
-        for connection_name, content in connection_spec_files.items():
-            file_name = connection_name + ".spec.json"
-            with open(connections_dir / file_name, "w") as f:
-                json.dump(content, f, indent=2)
+    # Use lock to prevent concurrent access
+    with _refresh_connection_dir_lock:
+        if os.path.isdir(connections_dir):
+            shutil.rmtree(connections_dir)
+        os.makedirs(connections_dir)
 
-        for connection_name, content in connection_template_yamls.items():
-            yaml_data = yaml.safe_load(content)
-            file_name = connection_name + ".template.yaml"
-            with open(connections_dir / file_name, "w") as f:
-                yaml.dump(yaml_data, f, sort_keys=False)
+        if connection_spec_files and connection_template_yamls:
+            for connection_name, content in connection_spec_files.items():
+                file_name = connection_name + ".spec.json"
+                with open(connections_dir / file_name, "w") as f:
+                    json.dump(content, f, indent=2)
+
+            # use YAML to dump template file in order to keep the comments
+            yaml = YAML()
+            yaml.preserve_quotes = True
+            for connection_name, content in connection_template_yamls.items():
+                yaml_data = yaml.load(content)
+                file_name = connection_name + ".template.yaml"
+                with open(connections_dir / file_name, "w") as f:
+                    yaml.dump(yaml_data, f)
