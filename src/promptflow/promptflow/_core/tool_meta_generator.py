@@ -9,6 +9,7 @@ import importlib.util
 import inspect
 import json
 import re
+import sys
 import types
 from dataclasses import asdict
 from pathlib import Path
@@ -111,13 +112,13 @@ def collect_tool_methods_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f):
+def _parse_tool_from_function(f, should_gen_custom_type=False):
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f)
+        inputs, _, _ = function_to_interface(f, should_gen_custom_type=should_gen_custom_type)
     except Exception as e:
         raise BadFunctionInterface(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
     class_name = None
@@ -149,7 +150,19 @@ def generate_python_tools_in_module_as_dict(module):
 def load_python_module_from_file(src_file: Path):
     # Here we hard code the module name as __pf_main__ since it is invoked as a main script in pf.
     src_file = Path(src_file).resolve()  # Make sure the path is absolute to align with python import behavior.
-    spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
+    module_name = "__pf_main__"
+
+    # Reloading the same module changes the ID of the class, which can cause issues with isinstance() checks.
+    # This is important when working with connection class checks. For instance, in user tool script it writes:
+    #       isinstance(conn, MyCustomConnection)
+    # Custom defined script tool and custom defined strong type connection are in the same module.
+    # The first time to load the module is when converting the custom connection to custom strong type.
+    # The second time to load the module is when _resolve_script_node. The isinstance() check will fail.
+    # To avoid this, return the already loaded module if it exists in sys.modules instead of reloading it.
+    if module_name in sys.modules and sys.modules[module_name].__file__ == str(src_file):
+        return sys.modules[module_name]
+
+    spec = importlib.util.spec_from_file_location(module_name, location=src_file)
     if spec is None or spec.loader is None:
         raise PythonLoaderNotFound(f"Failed to load python file '{src_file}', please make sure it is a valid .py file.")
     m = importlib.util.module_from_spec(spec)
@@ -158,6 +171,7 @@ def load_python_module_from_file(src_file: Path):
     except Exception as e:
         # TODO: add stacktrace to additional info
         raise PythonLoadError(f"Failed to load python module from file '{src_file}', reason: {e}.") from e
+    sys.modules[module_name] = m
     return m
 
 

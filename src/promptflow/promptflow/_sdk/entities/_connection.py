@@ -715,7 +715,7 @@ class CustomStrongTypeConnection(_Connection):
         return custom_connection
 
     @classmethod
-    def _get_custom_keys(cls, data):
+    def _get_custom_keys(cls, data: Dict):
         # The data could be either from yaml or from DB.
         # If from yaml, 'custom_type' and 'module' are outside the configs of data.
         # If from DB, 'custom_type' and 'module' are within the configs of data.
@@ -933,13 +933,21 @@ class CustomConnection(_Connection):
             and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         )
 
-    def _convert_to_custom_strong_type(self):
-        module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
-        custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
-        import importlib
+    def _convert_to_custom_strong_type(self, custom_cls) -> CustomStrongTypeConnection:
+        # There are two scenarios to convert a custom connection to custom strong type connection:
+        # 1. The connection is created from a custom strong type connection template file.
+        #    Custom type and module name are present in the configs.
+        # 2. The connection is created through SDK PFClient or a custom connection template file.
+        #    Custom type and module name are not present in the configs. Module and class must be passed for conversion.
+        if not custom_cls:
+            module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
+            import importlib
 
-        module = importlib.import_module(module_name)
-        custom_defined_connection_class = getattr(module, custom_type_class_name)
+            module = importlib.import_module(module_name)
+            custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
+            custom_defined_connection_class = getattr(module, custom_type_class_name)
+
+        custom_defined_connection_class = custom_cls or custom_defined_connection_class
         connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance

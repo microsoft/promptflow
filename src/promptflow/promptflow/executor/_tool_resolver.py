@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
+from promptflow._core.tool_meta_generator import load_python_module_from_file
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
-from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
@@ -53,10 +53,6 @@ class ToolResolver:
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
-
-        if isinstance(connection_value, CustomConnection) and connection_value._is_custom_strong_type():
-            return connection_value._convert_to_custom_strong_type()
-
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
@@ -65,6 +61,20 @@ class ToolResolver:
             )
             raise NodeInputValidationError(message=msg)
         return connection_value
+
+    def _convert_to_custom_strong_type_connection_value(
+        self, k: str, v: InputAssignment, node: Node, conn_types: List[ValueType], module_path=Optional[str]
+    ):
+        connection_value = self._connection_manager.get(v.value)
+        if not connection_value:
+            raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+
+        custom_defined_connection_class = None
+        if node.source.type == ToolSourceType.Code:
+            custom_m = load_python_module_from_file(module_path)
+            custom_type_class_name = conn_types[0]
+            custom_defined_connection_class = getattr(custom_m, custom_type_class_name)
+        return connection_value._convert_to_custom_strong_type(custom_defined_connection_class)
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool):
         updated_inputs = {
@@ -81,7 +91,12 @@ class ToolResolver:
             value_type = tool_input.type[0]
             updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
-                updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                if tool_input.custom_type:
+                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
+                        k, v, node, tool_input.custom_type, module_path=node.source.path
+                    )
+                else:
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)

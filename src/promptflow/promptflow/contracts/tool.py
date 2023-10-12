@@ -285,6 +285,7 @@ class InputDefinition:
             data.get("default", ""),
             data.get("description", ""),
             data.get("enum", []),
+            data.get("custom_type", []),
         )
 
 
