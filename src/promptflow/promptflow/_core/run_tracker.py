@@ -241,7 +241,8 @@ class RunTracker(ThreadLocalSingleton):
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
         if isinstance(val, Image):
-            return val.serialize()
+            # Images will be persisted when persisting flow run or node run, so no need to persist it here.
+            return val
         try:
             json.dumps(val)
             return val

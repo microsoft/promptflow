@@ -3,9 +3,11 @@
 # ---------------------------------------------------------
 import contextlib
 import json
+import os
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
+import subprocess
 from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
@@ -114,7 +116,7 @@ class FlowOperations:
                     inputs=flow_inputs,
                     environment_variables=environment_variables,
                     stream_log=stream_log,
-                    allow_generator_output=allow_generator_output,
+                    allow_generator_output=allow_generator_output and is_chat_flow,
                 )
 
     @staticmethod
@@ -349,6 +351,63 @@ class FlowOperations:
             },
         )
 
+    def _build_as_executable(
+        self,
+        flow_dag_path: Path,
+        output_dir: Path,
+        *,
+        flow_name: str,
+        env_var_names: List[str],
+    ):
+        try:
+            import streamlit
+            import PyInstaller  # noqa: F401
+        except ImportError as ex:
+            raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
+
+        from promptflow.contracts.flow import Flow as ExecutableFlow
+
+        (output_dir / "settings.json").write_text(
+            data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
+            encoding="utf-8",
+        )
+
+        environment_config = self._build_environment_config(flow_dag_path)
+        hidden_imports = []
+        if (environment_config.get("python_requirements_txt", None) and
+                (flow_dag_path.parent / "requirements.txt").is_file()):
+            with open(flow_dag_path.parent / "requirements.txt", 'r', encoding='utf-8') as file:
+                file_content = file.read()
+            hidden_imports = file_content.splitlines()
+
+        runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
+
+        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
+        flow_inputs = {flow_input: value.default for flow_input, value in executable.inputs.items()}
+        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
+        flow_inputs_params = ",".join(flow_inputs_params)
+
+        copy_tree_respect_template_and_ignore_file(
+            source=Path(__file__).parent.parent / "data" / "executable",
+            target=output_dir,
+            render_context={
+                "hidden_imports": hidden_imports,
+                "flow_name": flow_name,
+                "runtime_interpreter_path": runtime_interpreter_path,
+                "flow_inputs": flow_inputs,
+                "flow_inputs_params": flow_inputs_params
+            },
+        )
+        try:
+            current_directory = os.getcwd()
+            os.chdir(output_dir.as_posix())
+            subprocess.run(["pyinstaller", "app.spec"], check=True)
+            print("PyInstaller command executed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running PyInstaller: {e}")
+        finally:
+            os.chdir(current_directory)
+
     def build(
         self,
         flow: Union[str, PathLike],
@@ -363,7 +422,7 @@ class FlowOperations:
 
         :param flow: path to the flow directory or flow dag to export
         :type flow: Union[str, PathLike]
-        :param format: export format, support "docker" only for now
+        :param format: export format, support "docker" and "executable" only for now
         :type format: str
         :param output: output directory
         :type output: Union[str, PathLike]
@@ -378,7 +437,7 @@ class FlowOperations:
 
         flow = load_flow(flow)
 
-        if format not in ["docker"]:
+        if format not in ["docker", "executable"]:
             raise ValueError(f"Unsupported export format: {format}")
 
         if variant:
@@ -413,6 +472,13 @@ class FlowOperations:
                 flow_dag_path=new_flow_dag_path,
                 output_dir=output_dir,
                 connection_paths=connection_paths,
+                flow_name=flow.name,
+                env_var_names=env_var_names,
+            )
+        elif format == "executable":
+            self._build_as_executable(
+                flow_dag_path=new_flow_dag_path,
+                output_dir=output_dir,
                 flow_name=flow.name,
                 env_var_names=env_var_names,
             )
