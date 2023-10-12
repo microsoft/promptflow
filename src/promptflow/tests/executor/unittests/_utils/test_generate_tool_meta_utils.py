@@ -164,14 +164,14 @@ class TestToolMetaUtils:
             pytest.param(
                 "# Nothing",
                 NoToolDefined,
-                "The number of tools defined is illegal. No tool found in the python script. "
+                "No tool found in the python script. "
                 "Please make sure you have one and only one tool definition in your script.",
                 id="NoToolDefined",
             ),
             pytest.param(
                 "multiple_tools.py",
                 MultipleToolsDefined,
-                "The number of tools defined is illegal. Expected 1 but collected 2 tools: tool1, tool2. "
+                "Expected 1 but collected 2 tools: tool1, tool2. "
                 "Please make sure you have one and only one tool definition in your script.",
                 id="MultipleToolsDefined",
             ),
@@ -218,7 +218,7 @@ class TestToolMetaUtils:
                 "{{max_tokens}}",
                 ReservedVariableCannotBeUsed,
                 "Generate tool meta failed for llm tool. Jinja parsing failed: "
-                "Variable name 'max_tokens' is reserved name by llm tools, please change to another name.",
+                "Variable name 'max_tokens' is a reserved name by llm tools, please change to another name.",
                 id="ReservedVariableCannotBeUsed",
             ),
         ],
@@ -255,7 +255,7 @@ class TestToolMetaUtils:
                 "{{template}}",  # Note that only template is reserved, while llm tool has more reserved variables.
                 ReservedVariableCannotBeUsed,
                 "Generate tool meta failed for prompt tool. Jinja parsing failed: "
-                "Variable name 'template' is reserved name by prompt tools, please change to another name.",
+                "Variable name 'template' is a reserved name by prompt tools, please change to another name.",
                 id="ReservedVariableCannotBeUsed",
             ),
         ],

@@ -62,7 +62,7 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
             raise ReservedVariableCannotBeUsed(
                 message_format=(
                     "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: "
-                    "Variable name '{key}' is reserved name by {tool_type} tools, please change to another name."
+                    "Variable name '{key}' is a reserved name by {tool_type} tools, please change to another name."
                 ),
                 key=input,
                 tool_type=tool_type.value,
@@ -204,7 +204,6 @@ def collect_tool_function_in_module(m):
     if len(tools) == 0:
         raise NoToolDefined(
             message_format=(
-                "The number of tools defined is illegal. "
                 "No tool found in the python script. "
                 "Please make sure you have one and only one tool definition in your script."
             )
@@ -213,7 +212,6 @@ def collect_tool_function_in_module(m):
         tool_names = ", ".join(t.__name__ for t in tools)
         raise MultipleToolsDefined(
             message_format=(
-                "The number of tools defined is illegal. "
                 "Expected 1 but collected {tool_count} tools: {tool_names}. "
                 "Please make sure you have one and only one tool definition in your script."
             ),
@@ -287,10 +285,10 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
             message_format=(
                 "Generate tool meta failed. "
                 "The type '{tool_type}' is currently unsupported. "
-                "Please choose from available types: {supported_tool_type} and try again."
+                "Please choose from available types: {supported_tool_types} and try again."
             ),
             tool_type=tool_type,
-            supported_tool_type=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
+            supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
         )
 
 
