@@ -13,4 +13,6 @@ ls /connections
 {% for connection_yaml_path in connection_yaml_paths %}
 pf connection create --file /{{ connection_yaml_path }}
 {% endfor %}
-pf flow serve --source /flow --host 0.0.0.0
+echo "start promptflow serving with worker_num: {{worker_num}}, worker_threads: {{worker_threads}}"
+cd /flow
+gunicorn -w {{worker_num}} --threads {{worker_threads}} -b "0.0.0.0:8080" --timeout 300 "promptflow._sdk._serving.app:create_app()"

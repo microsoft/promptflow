@@ -331,6 +331,8 @@ class FlowOperations:
         env_var_names: List[str],
         connection_paths: List[Path],
         flow_name: str,
+        worker_num: int,
+        worker_threads: int,
     ):
         (output_dir / "settings.json").write_text(
             data=json.dumps({env_var_name: "" for env_var_name in env_var_names}, indent=2),
@@ -348,6 +350,8 @@ class FlowOperations:
                 "flow_name": f"{flow_name}-{generate_random_string(6)}",
                 "local_db_rel_path": LOCAL_MGMT_DB_PATH.relative_to(Path.home()).as_posix(),
                 "connection_yaml_paths": list(map(lambda x: x.relative_to(output_dir).as_posix(), connection_paths)),
+                "worker_num": worker_num,
+                "worker_threads": worker_threads,
             },
         )
 
@@ -467,6 +471,9 @@ class FlowOperations:
             output_dir=output_dir / "connections",
         )
 
+        worker_num = kwargs.pop("worker_num", 8)
+        worker_threads = kwargs.pop("worker_threads", 1)
+
         if format == "docker":
             self._export_to_docker(
                 flow_dag_path=new_flow_dag_path,
@@ -474,6 +481,8 @@ class FlowOperations:
                 connection_paths=connection_paths,
                 flow_name=flow.name,
                 env_var_names=env_var_names,
+                worker_num=worker_num,
+                worker_threads=worker_threads,
             )
         elif format == "executable":
             self._build_as_executable(

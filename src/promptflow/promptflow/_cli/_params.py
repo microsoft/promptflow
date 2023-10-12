@@ -283,6 +283,16 @@ def add_parser_build(parent_parser, entity_name: str):
         action="store_true",
         help=argparse.SUPPRESS,
     )
+    parser.add_argument(
+        "--worker_num",
+        default=8,
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--worker_threads",
+        default=1,
+        help=argparse.SUPPRESS,
+    )
     add_param_variant(parser)
     add_param_verbose(parser)
     add_param_debug(parser)
