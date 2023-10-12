@@ -38,12 +38,12 @@ class TestChatWithPDFAzure(BaseTest):
     def test_eval(self):
         run_2k, eval_groundedness_2k, eval_pi_2k = self.run_eval_with_config(
             self.config_2k_context,
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
             display_name="chat_with_pdf_2k_context",
         )
         run_3k, eval_groundedness_3k, eval_pi_3k = self.run_eval_with_config(
             self.config_3k_context,
-            runtime="chat_with_pdf_runtime",
+            runtime=self.runtime,
             display_name="chat_with_pdf_3k_context",
         )
 
