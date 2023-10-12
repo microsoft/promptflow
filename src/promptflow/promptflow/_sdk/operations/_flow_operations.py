@@ -467,7 +467,6 @@ class FlowOperations:
             output_dir=output_dir / "connections",
         )
 
-
         if format == "docker":
             self._export_to_docker(
                 flow_dag_path=new_flow_dag_path,
