@@ -218,6 +218,12 @@ print(conn)
 Learn more on more actions like delete connection in: [Manage connections](./manage-connections.md).
 
 ### Test the flow
+
+:::{admonition} Note
+Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+:::
+
+
 Assuming you are in working directory `promptflow/examples/flows/standard/`
 
 ::::{tab-set}
