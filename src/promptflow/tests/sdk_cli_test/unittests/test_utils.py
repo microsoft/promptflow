@@ -28,11 +28,12 @@ from promptflow._sdk._utils import (
     decrypt_secret_value,
     encrypt_secret_value,
     generate_flow_tools_json,
+    override_connection_config_with_environment_variable,
     refresh_connections_dir,
     resolve_connections_environment_variable_reference,
-    override_connection_config_with_environment_variable,
     snake_to_camel,
 )
+from promptflow._utils.load_data import load_data
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -169,6 +170,36 @@ class TestUtils:
 
         for thread in threads:
             thread.join()
+
+    @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/colors.csv",
+            "./tests/test_configs/datas/load_data_cases/colors.json",
+            "./tests/test_configs/datas/load_data_cases/colors.jsonl",
+            "./tests/test_configs/datas/load_data_cases/colors.tsv",
+            "./tests/test_configs/datas/load_data_cases/colors.parquet",
+        ],
+    )
+    def test_load_data(self, data_path: str) -> None:
+        # for csv and tsv format, all columns will be string;
+        # for rest, integer will be int and float will be float
+        is_string = "csv" in data_path or "tsv" in data_path
+        df = load_data(data_path)
+        assert len(df) == 3
+        assert df[0]["name"] == "Red"
+        assert isinstance(df[0]["id_text"], str)
+        assert df[0]["id_text"] == "1.0"
+        if is_string:
+            assert isinstance(df[0]["id_int"], str)
+            assert df[0]["id_int"] == "1"
+            assert isinstance(df[0]["id_float"], str)
+            assert df[0]["id_float"] == "1.0"
+        else:
+            assert isinstance(df[0]["id_int"], int)
+            assert df[0]["id_int"] == 1
+            assert isinstance(df[0]["id_float"], float)
+            assert df[0]["id_float"] == 1.0
 
 
 @pytest.mark.unittest
