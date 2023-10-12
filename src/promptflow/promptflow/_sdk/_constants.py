@@ -37,6 +37,7 @@ FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
 KEYRING_ENCRYPTION_KEY_NAME = "encryption_key"
 KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").resolve()
+REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = "******"
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
@@ -235,7 +236,7 @@ VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
 VIS_LIB_CDN_LINK_TMPL = (
     "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
 )
-VIS_LIB_VERSION = "0.0.28"
+VIS_LIB_VERSION = "0.0.29"
 VIS_PORTAL_URL_TMPL = (
     "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
     "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
@@ -290,7 +291,7 @@ class RunDataKeys:
 
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
-    AZURE = "azureml"
+    AZUREML = "azureml"
 
 
 SUPPORTED_CONNECTION_FIELDS = {
