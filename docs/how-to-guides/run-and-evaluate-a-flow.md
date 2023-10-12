@@ -12,7 +12,7 @@ After you have developed and tested the flow in [init and test a flow](./init-an
 
 Since you have run your flow successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
 
-A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (E.g. `pf run list`)
+A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (e.g. `pf run list`)
 
 Let's create a run with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification). It is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
@@ -38,10 +38,13 @@ With a run name, you can easily view or visualize the run details using below co
 
 ```sh
 pf run show-details -n my_first_run
-pf run visualize -n my_first_run
 ```
 
 ![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-cli.png)
+
+```sh
+pf run visualize -n my_first_run
+```
 
 ![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
@@ -62,18 +65,23 @@ base_run = pf.run(
     data=data,
     stream=True,
 )
-
-# get the inputs/outputs details of a finished run.
-details = pf.get_details(base_run)
-details.head(10)
-
-# visualize the run in a web browser
-pf.visualize(base_run)
 ```
 
 ![q_0](../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
 
+```python
+# get the inputs/outputs details of a finished run.
+details = pf.get_details(base_run)
+details.head(10)
+```
+
 ![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-sdk.png)
+
+```python
+# visualize the run in a web browser
+pf.visualize(base_run)
+```
+
 ![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
 :::
@@ -197,6 +205,22 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 :::
 
 ::::
+
+## How to log metrics
+
+Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
+
+```python
+from promptflow import log_metric, tool
+
+@tool
+def example_log_metrics():
+  metric_key = "accuracy"
+  metric_value = 0.1
+  log_metric(metric_key, metric_value)
+```
+
+After the run is completed, you can run `pf run show-metrics -n my_run_name` to see the metrics.
 
 ## Next steps
 
