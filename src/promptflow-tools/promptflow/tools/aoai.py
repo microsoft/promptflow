@@ -21,8 +21,9 @@ class AzureOpenAI(ToolProvider):
         self,
         **kwargs,
     ) -> str:
+        # Exclude sensitive information such as API keys from cache calculation
         d = dict(self.connection)
-        d.pop("api_key")
+        d.pop("api_key", None)  # Ensure that the API key is not included in the cache
         d.update({**kwargs})
         return json.dumps(d)
 
