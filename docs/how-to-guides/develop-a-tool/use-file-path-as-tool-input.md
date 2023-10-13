@@ -34,7 +34,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
         return new_module.hello(input_text)   
     ```
 
-2. `FilePath` input format in a tool YAML, like in [this example](../../../examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml)
+2. `FilePath` input format in a tool YAML, like in [this example](../../../examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml).
 
    ```yaml
     my_tool_package.tools.tool_with_file_path_input.my_tool:
