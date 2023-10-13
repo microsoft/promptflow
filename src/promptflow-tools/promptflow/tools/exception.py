@@ -122,6 +122,11 @@ class InvalidConnectionType(ToolValidationError):
     pass
 
 
+class InvalidWhisperEndpoint(ToolValidationError):
+    """Base exception raised when pass invalid whisper endpoint."""
+    pass
+
+
 class SerpAPISystemError(SystemErrorException):
     """Base exception raised when failed to call serp api with system error."""
 
