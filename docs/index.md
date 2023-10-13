@@ -55,6 +55,7 @@ This documentation site contains guides for prompt flow [sdk, cli](https://pypi.
     - [Flows](concepts/concept-flows.md)<br/>
     - [Tools](concepts/concept-tools.md)<br/>
     - [Connections](concepts/concept-connections.md)<br/>
+    - [Design principles](concepts/design-principles.md)<br/>
   "
 
 
