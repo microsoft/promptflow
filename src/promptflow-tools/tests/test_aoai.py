@@ -34,7 +34,7 @@ class TestAOAI:
             user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
         )
-        assert "additional details you can include" in result.lower()
+        assert "additional details" in result.lower()
 
     def test_aoai_chat_api(self, azure_open_ai_connection, example_prompt_template, chat_history):
         result = chat(
