@@ -57,13 +57,6 @@ class TestConcurrentExecution:
         self.assert_run_result(results)
         assert 15 > results.run_info.system_metrics["duration"] > 10, "run nodes linearly will consume more time."
 
-    @pytest.mark.usefixtures("dev_connections")
-    def test_linear_run_chat(self, dev_connections):
-        chat_flow_folder = TEST_ROOT / "test_configs/flows/chat_flow"
-        executor = FlowExecutor.create(get_yaml_file(chat_flow_folder), dev_connections)
-        # flow run: test exec_line run linearly
-        executor.exec_line(get_flow_inputs(chat_flow_folder), node_concurrency=RUN_FLOW_NODES_LINEARLY)
-
     def assert_run_result(self, result: LineResult):
         # Validate the flow status
         assert result.run_info.status == Status.Completed

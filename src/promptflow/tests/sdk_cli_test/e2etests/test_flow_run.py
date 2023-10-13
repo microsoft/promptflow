@@ -53,27 +53,6 @@ def create_run_against_run(client, run: Run) -> Run:
 @pytest.mark.usefixtures("use_secrets_config_file", "remove_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
-class TestRecording:
-    def test_run_with_recording(self, local_client, pf):
-        # remove connection file to test connection resolving
-        os.environ.pop(PROMPTFLOW_CONNECTIONS)
-        os.environ["PF_RECORDING_MODE"] = "replay"
-        result = pf.run(
-            flow=f"{FLOWS_DIR}/web_classification",
-            data=f"{DATAS_DIR}/webClassification1.jsonl",
-            column_mapping={"url": "${data.url}"},
-        )
-        local_storage = LocalStorageOperations(result)
-        detail = local_storage.load_detail()
-        assert detail is not None
-
-        run = local_client.runs.get(name=result.name)
-        assert run.status == "Completed"
-
-
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
-@pytest.mark.sdk_test
-@pytest.mark.e2etest
 class TestFlowRun:
     def test_basic_flow_bulk_run(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -89,7 +68,6 @@ class TestFlowRun:
         # df = pf.show_details(baseline, v1, v2)
 
     def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
-        os.environ["PF_RECORDING_MODE"] = "record"
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",

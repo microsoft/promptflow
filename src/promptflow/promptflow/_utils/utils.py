@@ -5,8 +5,10 @@
 """This is a common util file.
 !!!Please do not include any project related import.!!!
 """
+import base64
 import contextvars
 import functools
+import hashlib
 import importlib
 import json
 import logging
@@ -16,7 +18,7 @@ import time
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, OrderedDict, TypeVar, Union
 
 T = TypeVar("T")
 
@@ -29,6 +31,40 @@ class AttrDict(dict):
         if item in self:
             return self.__getitem__(item)
         return super().__getattribute__(item)
+
+
+class MyStorageRecord:
+    # static class for recording
+    sync: bool = False
+    runItems: Dict[str, str] = {}
+
+    @staticmethod
+    def WriteFile() -> None:
+        if not MyStorageRecord.sync:
+            with open("MyStorageRecord.json", "w+") as fp:
+                json.dump(MyStorageRecord.runItems, fp)
+                MyStorageRecord.sync = True
+
+    @staticmethod
+    def LoadFile() -> None:
+        if not MyStorageRecord.sync:
+            with open("MyStorageRecord.json", "r") as fp:
+                MyStorageRecord.runItems = json.load(fp)
+                MyStorageRecord.sync = True
+
+    @staticmethod
+    def getRecord(hashDict: OrderedDict) -> str:
+        MyStorageRecord.LoadFile()
+        item: str = MyStorageRecord.runItems.get(hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest(), None)
+        real_item = base64.b64decode(bytes(item, "utf-8")).decode()
+        return real_item
+
+    @staticmethod
+    def setRecord(hashDict: OrderedDict, output: object) -> None:
+        hashValue = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
+        MyStorageRecord.runItems[hashValue] = base64.b64encode(bytes(output, "utf-8")).decode()
+        MyStorageRecord.sync = False
+        MyStorageRecord.WriteFile()
 
 
 def camel_to_snake(text: str) -> Optional[str]:

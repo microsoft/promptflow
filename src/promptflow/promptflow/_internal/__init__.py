@@ -83,6 +83,7 @@ from promptflow._utils.logger_utils import (
 )
 from promptflow._utils.utils import (
     AttrDict,
+    MyStorageRecord,
     camel_to_snake,
     count_and_log_progress,
     load_json,
@@ -93,7 +94,6 @@ from promptflow._utils.utils import (
 from promptflow._version import VERSION
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
-
 from promptflow.storage._cache_storage import LocalCacheStorage
 from promptflow.storage._sqlite_client import (
     INDEX,

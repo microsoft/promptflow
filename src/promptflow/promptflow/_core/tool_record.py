@@ -3,27 +3,24 @@
 # ---------------------------------------------------------
 
 import collections
-import hashlib
 
-from promptflow._internal import ToolProvider, tool
+from promptflow._internal import MyStorageRecord, ToolProvider, tool
 
 
 class ToolRecord(ToolProvider):
-    def __init__(self):
-        pass
-
     @tool
     def completion(toolType: str, *args, **kwargs) -> str:
         # From aoai.py, check
-        keywords = args[1]
+        keywords = args[2]
         hashDict = {}
         for keyword in keywords:
             if keyword in kwargs:
                 hashDict[keyword] = kwargs[keyword]
-        hashDict["prompt"] = args[0]
+        hashDict["prompt"] = args[1]
         hashDict = collections.OrderedDict(sorted(hashDict.items()))
-        hashValue = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
-        return hashValue
+
+        real_item = MyStorageRecord.getRecord(hashDict)
+        return real_item
 
 
 @tool

@@ -39,7 +39,6 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.entities._run import Run
-from promptflow._sdk.operations._local_record_operations import MyStorageOperation
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -267,7 +266,7 @@ class RunSubmitter:
 
         # running specified variant
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = MyStorageOperation(run, stream=stream)
+            local_storage = LocalStorageOperations(run, stream=stream)
             with local_storage.logger:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
