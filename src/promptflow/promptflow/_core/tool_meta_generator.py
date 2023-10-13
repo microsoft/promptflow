@@ -260,7 +260,7 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
             file_path=str(file),
         )
     try:
-        content = file.read_text()
+        content = file.read_text(encoding="utf-8")
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise MetaFileReadError(

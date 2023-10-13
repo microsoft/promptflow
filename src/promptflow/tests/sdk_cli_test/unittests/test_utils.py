@@ -201,6 +201,20 @@ class TestUtils:
             assert isinstance(df[0]["id_float"], float)
             assert df[0]["id_float"] == 1.0
 
+    @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
+            "./tests/test_configs/datas/load_data_cases/10k",
+        ],
+    )
+    def test_load_10k_data(self, data_path: str) -> None:
+        df = load_data(data_path)
+        assert len(df) == 10000
+        # specify max_rows_count
+        df = load_data(data_path, max_rows_count=5000)
+        assert len(df) == 5000
+
 
 @pytest.mark.unittest
 class TestCLIUtils:
