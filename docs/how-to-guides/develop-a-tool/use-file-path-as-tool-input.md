@@ -64,7 +64,7 @@ Here we use an existing flow to demonstrate the experience, open [this flow](htt
 - There is a node named "Tool_with_FilePath_Input" with a `file_path` type input called `input_file`.
 - Click the picker icon to open the UI for selecting an existing file or creating a new file to use as input.
 
-   ![](../../media/how-to-guides/develop-a-tool/use_file_path_in_flow.png)
+   ![use file path in flow](../../media/how-to-guides/develop-a-tool/use_file_path_in_flow.png)
 
 ## FAQ
 
