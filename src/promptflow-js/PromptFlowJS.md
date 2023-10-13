@@ -16,10 +16,10 @@ We will make a Javascript library PromptFlow.js. User can use it to play with Pr
   <body>
     <script src="https://some.cdn.com/promptflow.js"></script>
     <script type="module"> 
-    	export const helloJinja = ```
+    	export const helloJinja = `
     		{# Please replace the template with your own prompt. #}
 				Write a simple {{text}} program that displays the greeting message when executed.
-    	```
+`
     </script>
     <script src="https://some.cdn.com/openai"></script>
     <script nomodule>
@@ -47,7 +47,7 @@ We will make a Javascript library PromptFlow.js. User can use it to play with Pr
       - name: hello_prompt
         type: prompt
         source:
-          type: module
+          type: jinja
           root: helloJinja
         inputs:
           text: \$\{inputs.text\}
@@ -64,15 +64,11 @@ We will make a Javascript library PromptFlow.js. User can use it to play with Pr
         dependencies:
           openAI  	
     	```;
-      var flow = PF.fromYaml(flowYamlstring);
+      var flow = PF.Flow.fromYaml(flowYamlstring);
       var inputs = {"<flow_input_name>": "<flow_input_value>"};    
       
-      PF
-      	.pfclient()
-        .test({
-        	flow: flow,
-        	inputs: inputs
-      	})
+      flow
+        .test(inputs: optitions: {})
       	.then(function(res) {
           console.log(res); // { detail: "detail json", output: "output json", log: "log text" }
       	})
@@ -82,58 +78,29 @@ We will make a Javascript library PromptFlow.js. User can use it to play with Pr
     </script>
   </body>
 </html>
+
 ```
 
 - ***It does not require any service behind it.***
 - I do feel that using YAML is not a good idea with this pure browser inline scripts approach. Let's checkout the web ui experience.
 
-## With AML/AI Studio web ui
-
-- Similar with current web ui experience.
-- All the runtime related controls could be removed.
-
-### How to construct it？
+## Web UI experience
 
 1. PromptFlow SDK
+
+Web UI developer needs to introduce PromptFlow JS SDK.
 
 ```html
  <script src="https://some.cdn.com/promptflow.js"></script>
 ```
 
-It will be always there if user click "test" button on the ui.
+```bash
+yarn add @promptflow/core @promptflow/react
+```
 
 
 
 2. User script tools:
-
-Web UI sends out api calls to FileShare service to retrieve those tool code with json response. Then it makes these "script" tags with the response and append to the html content.
-
-```html
-<script type="module"> 
-    	export const helloJinja = ```
-    		{# Please replace the template with your own prompt. #}
-				Write a simple {{text}} program that displays the greeting message when executed.
-    	```
- </script>
-```
-
-
-
-```html
-<script nomodule>
-  define("hello", ["OpenAI"], function(OpenAI) {
-    return function myJavaScriptAMDTool (inputs) {
-      var openAIClient = new OpenAI({
-        apiKey: inputs.apiKey
-      });
-
-      //...
-    }
-  });
-</script>
-```
-
-In this simple sample, those js code are in ancient es version which most browsers are able to recognize. However people always wants more module es standard or TypeScript support. We will need some more techniques to tranpile the code content.
 
 User's template jinja file content.
 
@@ -179,11 +146,7 @@ export const HelloTool: IJsTool<IHelloToolInputs, string> = async ({ deploymentN
 }
 ```
 
-
-
-
-
-Reference: [divriots/browser-vite: Vite in the browser. (github.com)](https://github.com/divriots/browser-vite)
+Use vite in node js server or browser-vite in browser: [divriots/browser-vite: Vite in the browser. (github.com)](https://github.com/divriots/browser-vite) to bundle user script tools.
 
 3. Other 3rd party reference.
 
@@ -278,3 +241,73 @@ const result = await pfclient.test({
 8. Visualize flow test result on the WebUI page
 
 WebUI page listens to the "onFlowDidRun" event and use the "res" object to perform the result visualization. 
+
+
+
+## Code experience
+
+### load flow
+
+Get a flow instance from json/yaml strings. In the future, we may support more template engines or even DSLs.
+
+```typescript
+import { FlowDAG } from "@promptflow/core";
+import flowJSONString from "path/to/flow.dag.json";
+import flowYAMLString from "path/to/flow.dag.yaml";
+
+const flowFromJSON: FlowDAG = FlowDAG.fromJSON(flowJSONString);
+const flowFromYaml: FlowDAG = FlowDAG.fromYaml(flowYAMLString);
+
+```
+
+### DAG Visualization
+
+#### React component to visualize flow dag.
+
+```tsx
+import { FlowDAG } from "@promptflow/core";
+import { FlowGraph } from "@promptflow/react";
+import * as React from "react";
+
+export const MyComponent: React.FC = () => {
+    const [flowDag, setFlowDag] = React.useState<Flow | undefined>();
+    const onDagDidChange = (newValue: string) => {
+        setFlow(FlowDAG.fromYaml(newValue));
+    };
+    
+    return (
+    	<div>
+            <MyYamlEditor onChange={onDagDidChange} />
+        	<FlowGraph flowDag={flowDag} />
+        </div>
+    );
+}
+```
+
+
+
+#### Get raw html
+
+```typescript
+import { FlowDAG } from "@promptflow/core";
+import PromptFlowDOM from "@promptflow/web";
+import flowYAMLString from "path/to/flow.dag.yaml";
+
+const flowDAG: FlowDAG = FlowDAG.fromYAML(flowYAMLString);
+const htmlContent: string = PromptFlowDOM.render(flowDAG);
+```
+
+### Whole playground experience
+
+#### React component
+
+```tsx
+import { Flow } from "@promptflow/core";
+import { PlayGround } from "@promptflow/react";
+import * as React from "react";
+
+export const MyWebPage: React.FC = () => {
+    
+}
+```
+
