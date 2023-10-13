@@ -56,9 +56,9 @@ class FlowNodesScheduler:
                         del self.future_to_node[each_future]
                     self._execute_nodes(executor)
                 except Exception as e:
+                    node_names = ",".join(node.name for node in self.future_to_node.values())
+                    logger.error(f"Execution of one node has failed. Cancelling all running nodes: {node_names}.")
                     for unfinished_future in self.future_to_node.keys():
-                        node_name = self.future_to_node[unfinished_future].name
-                        logger.error(f"One node execution failed, cancel all running tasks. {node_name}.")
                         # We can't cancel running tasks here, only pending tasks could be cancelled.
                         unfinished_future.cancel()
                     # Even we raise exception here, still need to wait all running jobs finish to exit.
