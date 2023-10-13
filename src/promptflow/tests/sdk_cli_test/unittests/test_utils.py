@@ -5,27 +5,35 @@
 import argparse
 import os
 import shutil
+import sys
 import tempfile
+import threading
 from pathlib import Path
+from unittest.mock import patch
 
 import mock
 import pandas as pd
 import pytest
 
+from promptflow._cli._params import AppendToDictAction
 from promptflow._cli._utils import (
     _build_sorted_column_widths_tuple_list,
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._cli._params import AppendToDictAction
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._utils import (
+    _generate_connections_dir,
     decrypt_secret_value,
     encrypt_secret_value,
     generate_flow_tools_json,
+    override_connection_config_with_environment_variable,
+    refresh_connections_dir,
     resolve_connections_environment_variable_reference,
     snake_to_camel,
 )
+from promptflow._utils.load_data import load_data
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
@@ -81,6 +89,29 @@ class TestUtils:
         assert connections["test_connection"]["value"]["api_base"] == "BASE"
         assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
 
+    def test_override_connection_config_with_environment_variable(self):
+        connections = {
+            "test_connection": {
+                "type": "AzureOpenAIConnection",
+                "value": {
+                    "api_key": "KEY",
+                    "api_base": "https://gpt-test-eus.openai.azure.com/",
+                },
+            },
+            "test_custom_connection": {
+                "type": "CustomConnection",
+                "value": {"key": "value1", "key2": "value2"},
+            },
+        }
+        with mock.patch.dict(
+            os.environ, {"TEST_CONNECTION_API_BASE": "BASE", "TEST_CUSTOM_CONNECTION_KEY": "CUSTOM_VALUE"}
+        ):
+            override_connection_config_with_environment_variable(connections)
+        assert connections["test_connection"]["value"]["api_key"] == "KEY"
+        assert connections["test_connection"]["value"]["api_base"] == "BASE"
+        assert connections["test_custom_connection"]["value"]["key"] == "CUSTOM_VALUE"
+        assert connections["test_custom_connection"]["value"]["key2"] == "value2"
+
     def test_generate_flow_tools_json(self) -> None:
         # call twice to ensure system path won't be affected during generation
         for _ in range(2):
@@ -114,6 +145,62 @@ class TestUtils:
         flow_tools_json = generate_flow_tools_json(flow_path, dump=False, raise_error=False)
         assert len(flow_tools_json["code"]) == 0
 
+    @pytest.mark.parametrize(
+        "python_path, env_hash",
+        [
+            ("D:\\Tools\\Anaconda3\\envs\\pf\\python.exe", ("a9620c3cdb7ccf3ec9f4005e5b19c12d1e1fef80")),
+            ("/Users/fake_user/anaconda3/envs/pf/bin/python3.10", ("e3f33eadd9be376014eb75a688930930ca83c056")),
+        ],
+    )
+    def test_generate_connections_dir(self, python_path, env_hash):
+        expected_result = (HOME_PROMPT_FLOW_DIR / "envs" / env_hash / "connections").resolve()
+        with patch.object(sys, "executable", python_path):
+            result = _generate_connections_dir()
+            assert result == expected_result
+
+    @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
+    def test_concurrent_execution_of_refresh_connections_dir(self, concurrent_count):
+        threads = []
+
+        # Create and start threads
+        for _ in range(concurrent_count):
+            thread = threading.Thread(target=refresh_connections_dir, args={None, None})
+            thread.start()
+            threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+
+    @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/colors.csv",
+            "./tests/test_configs/datas/load_data_cases/colors.json",
+            "./tests/test_configs/datas/load_data_cases/colors.jsonl",
+            "./tests/test_configs/datas/load_data_cases/colors.tsv",
+            "./tests/test_configs/datas/load_data_cases/colors.parquet",
+        ],
+    )
+    def test_load_data(self, data_path: str) -> None:
+        # for csv and tsv format, all columns will be string;
+        # for rest, integer will be int and float will be float
+        is_string = "csv" in data_path or "tsv" in data_path
+        df = load_data(data_path)
+        assert len(df) == 3
+        assert df[0]["name"] == "Red"
+        assert isinstance(df[0]["id_text"], str)
+        assert df[0]["id_text"] == "1.0"
+        if is_string:
+            assert isinstance(df[0]["id_int"], str)
+            assert df[0]["id_int"] == "1"
+            assert isinstance(df[0]["id_float"], str)
+            assert df[0]["id_float"] == "1.0"
+        else:
+            assert isinstance(df[0]["id_int"], int)
+            assert df[0]["id_int"] == 1
+            assert isinstance(df[0]["id_float"], float)
+            assert df[0]["id_float"] == 1.0
+
 
 @pytest.mark.unittest
 class TestCLIUtils:
@@ -128,7 +215,7 @@ class TestCLIUtils:
     def test_append_to_dict_action(self):
         parser = argparse.ArgumentParser(prog="test_dict_action")
         parser.add_argument("--dict", action=AppendToDictAction, nargs="+")
-        args = ["--dict", "key1=val1", "\'key2=val2\'", "\"key3=val3\"", "key4=\'val4\'", "key5=\"val5'"]
+        args = ["--dict", "key1=val1", "'key2=val2'", '"key3=val3"', "key4='val4'", "key5=\"val5'"]
         args = parser.parse_args(args)
         expect_dict = {
             "key1": "val1",

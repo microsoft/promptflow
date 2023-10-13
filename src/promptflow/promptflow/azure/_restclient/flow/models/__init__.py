@@ -334,7 +334,6 @@ try:
     from ._models_py3 import FlowOutputDefinition
     from ._models_py3 import FlowProperties
     from ._models_py3 import FlowRunInfo
-    from ._models_py3 import FlowRunRecordBaseInfo
     from ._models_py3 import FlowRunResult
     from ._models_py3 import FlowRunSettings
     from ._models_py3 import FlowRuntimeDto
@@ -987,7 +986,6 @@ except (SyntaxError, ImportError):
     from ._models import FlowOutputDefinition  # type: ignore
     from ._models import FlowProperties  # type: ignore
     from ._models import FlowRunInfo  # type: ignore
-    from ._models import FlowRunRecordBaseInfo  # type: ignore
     from ._models import FlowRunResult  # type: ignore
     from ._models import FlowRunSettings  # type: ignore
     from ._models import FlowRuntimeDto  # type: ignore
@@ -1412,7 +1410,6 @@ from ._azure_machine_learning_designer_service_client_enums import (
     FeaturizationMode,
     FlowPatchOperationType,
     FlowRunMode,
-    FlowRunStatusEnum,
     FlowRunTypeEnum,
     FlowRuntimeSubmissionApiVersion,
     FlowType,
@@ -1468,6 +1465,7 @@ from ._azure_machine_learning_designer_service_client_enums import (
     RealTimeEndpointOpCode,
     RealTimeEndpointOpStatusCode,
     RecurrenceFrequency,
+    RunDisplayNameGenerationType,
     RunSettingParameterType,
     RunSettingUIWidgetTypeEnum,
     RunStatus,
@@ -1845,7 +1843,6 @@ __all__ = [
     'FlowOutputDefinition',
     'FlowProperties',
     'FlowRunInfo',
-    'FlowRunRecordBaseInfo',
     'FlowRunResult',
     'FlowRunSettings',
     'FlowRuntimeDto',
@@ -2268,7 +2265,6 @@ __all__ = [
     'FeaturizationMode',
     'FlowPatchOperationType',
     'FlowRunMode',
-    'FlowRunStatusEnum',
     'FlowRunTypeEnum',
     'FlowRuntimeSubmissionApiVersion',
     'FlowType',
@@ -2324,6 +2320,7 @@ __all__ = [
     'RealTimeEndpointOpCode',
     'RealTimeEndpointOpStatusCode',
     'RecurrenceFrequency',
+    'RunDisplayNameGenerationType',
     'RunSettingParameterType',
     'RunSettingUIWidgetTypeEnum',
     'RunStatus',

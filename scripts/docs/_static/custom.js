@@ -1,3 +1,19 @@
+// Get the head element
+let head = document.getElementsByTagName("head")[0];
+
+// Create the script element
+let script = document.createElement("script");
+script.async = true;
+script.src = "https://www.googletagmanager.com/gtag/js?id=G-KZXK5PFBZY";
+
+// Create another script element for the gtag code
+let script2 = document.createElement("script");
+script2.innerHTML = ` window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());gtag('config', 'G-KZXK5PFBZY'); `;
+
+// Insert the script elements after the head element
+head.insertAdjacentElement("afterend", script2);
+head.insertAdjacentElement("afterend", script);
+
 // This is used to zoom in images when clicked on
 window.onload = () => {
     if (document.getElementById("lightbox") === null){

@@ -11,6 +11,7 @@ from azure.core.credentials import TokenCredential
 from pandas import DataFrame
 
 from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
+from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities import Run
 from promptflow.azure._load_functions import load_flow
@@ -48,6 +49,7 @@ class PFClient:
         workspace_name: Optional[str] = None,
         **kwargs,
     ):
+        self._validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs)
         self._add_user_agent(kwargs)
         self._ml_client = kwargs.pop("ml_client", None) or MLClient(
             credential=credential,
@@ -93,6 +95,23 @@ class PFClient:
             service_caller=self._service_caller,
             **kwargs,
         )
+
+    @staticmethod
+    def _validate_config_information(subscription_id, resource_group_name, workspace_name, kwargs):
+        """Validate the config information in case wrong parameter name is passed into the constructor."""
+        sub_name, wrong_sub_name = "subscription_id", "subscription"
+        rg_name, wrong_rg_name = "resource_group_name", "resource_group"
+        ws_name, wrong_ws_name = "workspace_name", "workspace"
+
+        error_message = (
+            "You have passed in the wrong parameter name to initialize the PFClient, please use {0!r} instead of {1!r}."
+        )
+        if not subscription_id and kwargs.get(wrong_sub_name, None) is not None:
+            raise RunOperationParameterError(error_message.format(sub_name, wrong_sub_name))
+        if not resource_group_name and kwargs.get(wrong_rg_name, None) is not None:
+            raise RunOperationParameterError(error_message.format(rg_name, wrong_rg_name))
+        if not workspace_name and kwargs.get(wrong_ws_name, None) is not None:
+            raise RunOperationParameterError(error_message.format(ws_name, wrong_ws_name))
 
     @property
     def ml_client(self):

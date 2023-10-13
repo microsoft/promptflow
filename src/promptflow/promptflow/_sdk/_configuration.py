@@ -13,7 +13,7 @@ import pydash
 
 from promptflow._sdk._constants import LOGGER_NAME, ConnectionProvider
 from promptflow._sdk._logger_factory import LoggerFactory
-from promptflow._sdk._utils import dump_yaml, load_yaml
+from promptflow._sdk._utils import call_from_extension, dump_yaml, load_yaml
 from promptflow.exceptions import ErrorTarget, ValidationException
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
@@ -26,7 +26,8 @@ class ConfigFileNotFound(ValidationException):
 class Configuration(object):
 
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
-    COLLECT_TELEMETRY = "cli.collect_telemetry"
+    COLLECT_TELEMETRY = "cli.telemetry_enabled"
+    EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
@@ -40,6 +41,10 @@ class Configuration(object):
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
             self._config = {}
+
+    @property
+    def config(self):
+        return self._config
 
     @classmethod
     def get_instance(cls):
@@ -133,7 +138,7 @@ class Configuration(object):
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
         if provider is None:
             return ConnectionProvider.LOCAL
-        if provider is ConnectionProvider.AZURE:
+        if provider == ConnectionProvider.AZUREML.value:
             # Note: The below function has azure-ai-ml dependency.
             return "azureml:" + self._get_workspace_from_config()
         # If provider not None and not Azure, return it directly.
@@ -142,6 +147,8 @@ class Configuration(object):
 
     def get_telemetry_consent(self) -> Optional[bool]:
         """Get the current telemetry consent value. Return None if not configured."""
+        if call_from_extension():
+            return self.get_config(key=self.EXTENSION_COLLECT_TELEMETRY)
         return self.get_config(key=self.COLLECT_TELEMETRY)
 
     def set_telemetry_consent(self, value):
