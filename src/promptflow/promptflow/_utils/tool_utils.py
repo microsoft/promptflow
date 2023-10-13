@@ -72,6 +72,8 @@ def param_to_definition(param, should_gen_custom_type=False) -> (InputDefinition
                         typ.append("CustomConnection")
                     custom_type.append(t.__name__)
                 else:
+                    if t.__name__ == "CustomConnection":
+                        custom_connection_added = True
                     typ.append(t.__name__)
             is_connection = True
     else:

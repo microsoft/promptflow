@@ -7,6 +7,7 @@ import importlib.util
 import inspect
 import logging
 import traceback
+import types
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Tuple, Union
@@ -347,7 +348,7 @@ class ToolLoader:
             if node.source.type == ToolSourceType.Package:
                 return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
-                _, tool = self.load_tool_for_script_node(node)
+                _, _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type == ToolType.CUSTOM_LLM:
@@ -366,7 +367,7 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node) -> Tuple[Callable, Tool]:
+    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Callable, Tool]:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
         path = node.source.path
@@ -374,7 +375,7 @@ class ToolLoader:
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f = collect_tool_function_in_module(m)
-        return f, _parse_tool_from_function(f, should_gen_custom_type=True)
+        return m, f, _parse_tool_from_function(f, should_gen_custom_type=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"

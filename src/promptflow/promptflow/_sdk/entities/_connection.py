@@ -933,13 +933,13 @@ class CustomConnection(_Connection):
             and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         )
 
-    def _convert_to_custom_strong_type(self, custom_cls) -> CustomStrongTypeConnection:
+    def _convert_to_custom_strong_type(self, to_class) -> CustomStrongTypeConnection:
         # There are two scenarios to convert a custom connection to custom strong type connection:
         # 1. The connection is created from a custom strong type connection template file.
         #    Custom type and module name are present in the configs.
         # 2. The connection is created through SDK PFClient or a custom connection template file.
         #    Custom type and module name are not present in the configs. Module and class must be passed for conversion.
-        if not custom_cls:
+        if not to_class:
             module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
             import importlib
 
@@ -947,7 +947,11 @@ class CustomConnection(_Connection):
             custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
             custom_defined_connection_class = getattr(module, custom_type_class_name)
 
-        custom_defined_connection_class = custom_cls or custom_defined_connection_class
+        if to_class and issubclass(to_class, CustomConnection):
+            # No need to convert.
+            return self
+
+        custom_defined_connection_class = to_class or custom_defined_connection_class
         connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance
