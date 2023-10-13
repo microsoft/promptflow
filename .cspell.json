@@ -133,7 +133,10 @@
     "levelno",
     "LANCZOS",
     "Mobius",
-    "ruamel"
+    "ruamel",
+    "gunicorn",
+    "pkill",
+    "pgrep"
   ],
   "allowCompoundWords": true
 }
