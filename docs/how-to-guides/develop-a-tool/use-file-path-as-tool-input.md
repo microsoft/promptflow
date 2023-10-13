@@ -16,7 +16,7 @@ As file path is currently in its preview phase, it is necessary for you to insta
 
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your owner tool, please refer to [create and use tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#create-custom-tool-package).
 
-1. Add a `FilePath` input for your tool, like in [this example](../../../examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
+1. Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
 
     ```python
     import importlib
@@ -34,7 +34,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
         return new_module.hello(input_text)   
     ```
 
-2. `FilePath` input format in a tool YAML, like in [this example](../../../examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml).
+2. `FilePath` input format in a tool YAML, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml).
 
    ```yaml
     my_tool_package.tools.tool_with_file_path_input.my_tool:
@@ -60,7 +60,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
 
 Follow steps to [build and install your tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
-Here we use an existing flow to demonstrate the experience, open [this flow](../../../examples/flows/standard/filepath-input-tool-showcase/flow.dag.yaml) in VS Code extension:
+Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/filepath-input-tool-showcase/flow.dag.yaml) in VS Code extension:
 - There is a node named "Tool_with_FilePath_Input" with a `file_path` type input called `input_file`.
 - Click the picker icon to open the UI for selecting an existing file or creating a new file to use as input.
 
