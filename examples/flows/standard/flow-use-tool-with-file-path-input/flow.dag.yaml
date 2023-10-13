@@ -1,0 +1,17 @@
+inputs:
+  input:
+    type: string
+    default: Microsoft
+outputs:
+  output:
+    type: string
+    reference: ${Tool_with_FilePath_Input.output}
+nodes:
+- name: Tool_with_FilePath_Input
+  type: python
+  source:
+    type: package
+    tool: my_tool_package.tools.my_tool_1.tool_with_file_path_input
+  inputs:
+    input_text: ${inputs.input}
+    input_file: ..\..\..\..\scripts\tool\convert_image_to_data_url.py

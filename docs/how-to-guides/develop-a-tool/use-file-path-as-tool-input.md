@@ -1,96 +1,70 @@
 # Use FilePath as tool input
 
-In this document, we will guide you through the detailed process of how to use FilePath as tool input with 'hello-world' tool example.
+User sometimes need to reference their local files within a tool to implement specific logic. To simplify this, we've introduced the FilePath input type. This input type enables users to either select an existing file or create a new one, then pass this file path to a tool, enabling the tool to access the file's content.
+In this guide, we will provide a detailed walkthrough on how to use FilePath as a tool input. We will also discuss the user experience when utilizing this type of tool within a flow.
 
 ## Prerequisites
 
-Since FilePath is still in test currently, you need to install private version SDK and Extension.
-
-1. Download private version promptflow SDK
+As FilePath is currently in its preview phase, it is necessary for you to install the test version of the PromptFlow package:
 
     ```bash
-    pip install "promptflow==0.0.106113823" --extra-index-url https://azuremlsdktestpypi.azureedge.net/test-promptflow/
+    pip install "promptflow==0.1.0b8.dev2" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
     ```
 
-2. Download this [VSCode Extension](https://aka.ms/pfvsctest), install from VSIX:
+## Use FilePath as tool input
 
-    ![install from vsix](../../media/how-to-guides/develop-a-tool/install_from_vsix.png)
+Here we use [an existing tool package](../../../examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your owner tool, please refer to [create and use tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#create-custom-tool-package).
 
-## Use FilePath as tool input in 'hello-world' tool
+1. Add FilPath input for your tool, reference [this tool](../../../examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
 
-For details of how to create and use custom tool, please refer to [Custom tool package creation and usage](../how-to-create-and-use-your-own-tool-package.md).
+    ```python
+    import importlib
+    from pathlib import Path
+    from promptflow import tool
+    # 1. import the FilePath type
+    from promptflow.contracts.types import FilePath
 
-1. Create a tool project hello-world-proj with `--case file_input` to generate demo case of file_path as tool input.
-
-    ```bash
-    python <path-to-scripts>\tool\generate_tool_package_template.py --case file_path --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_sqrt    
-    ```
-
-2. Go to hello-world-proj folder, check your tool code.
-
-   The demo use a sematic_kernel case, refer to [run native code with Semantic Kernel](https://learn.microsoft.com/en-us/semantic-kernel/ai-orchestration/plugins/native-functions/using-the-skfunction-decorator?tabs=python).
-
-   ![update custom tool](../../media/how-to-guides/develop-a-tool/generate_custom_tool_with_file_path.png)
-
-3. Build and install tool package in VSCode Extension, according to [Custom tool package creation and usage](../how-to-create-and-use-your-own-tool-package.md).
-
-   Build tool:
-
-   ```bash
-   python setup.py sdist bdist_wheel
-   ```
-
-   Install tool in vscode:
-
-   ```bash
-   pip install dist\hello_world-0.0.1-py3-none-any.whl
-   ```
-
-4. Go to the extension and create new flow. Click 'empty flow' and preview the flow. Next, click `+ More` button and select your tool `Hello World Tool`
-
-   ![create empty flow](../../media/how-to-guides/develop-a-tool/create_empty_flow.png)
-   ![use hello world tool](../../media/how-to-guides/develop-a-tool/select_hello_world_tool.png)
-
-5. Prepare your own python script, `demo_input.py` as file_input.
-
-   Here the input demos a custom sqrt func, for more details, refer to [Use the SKFunction decorator to define a native function](https://learn.microsoft.com/en-us/semantic-kernel/ai-orchestration/plugins/native-functions/using-the-skfunction-decorator?tabs=python#use-the-skfunction-decorator-to-define-a-native-function)
-
-   ```python
-    import math
+    # 2. add a FilePath input for your tool method
+    @tool
+    def my_tool(input_file: FilePath, input_text: str) -> str:
+        # 3. customise your own code to handle and use the input_file here
+        new_module = importlib.import_module(Path(input_file).stem)
     
-    from semantic_kernel.skill_definition import sk_function, sk_function_context_parameter
+        return new_module.hello(input_text)   
+    ```
 
-    class MyMathSkill:
-        """
-        Description: MathSkill provides a set of functions to make Math calculations.
+2. FilePath input format in a tool yaml, reference [this tool yaml](../../../examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml)
 
-        Usage:
-            kernel.import_skill(MathSkill(), skill_name="math")
+   ```yaml
+    my_tool_package.tools.my_tool_1.tool_with_file_path_input:
+      function: my_tool
+        inputs:
+          # yaml format for FilePath input
+          input_file:
+            type:
+            - file_path
+          input_text:
+            type:
+            - string
+      module: my_tool_package.tools.tool_with_file_path_input
+      name: Tool with FilePath Input
+      description: This is a tool to demonstrate the usage of FilePath input
+      type: python   
+    ```
 
-        Examples:
-            {{math.Add}} => Returns the sum of initial_value_text and Amount (provided in the SKContext)
-        """
-        @sk_function(
-            description="Takes the square root of a number",
-            name="Sqrt",
-            input_description="The value to take the square root of",
-        )
-        def square_root(self, number:str) -> str:
-            return str(math.sqrt(float(number)))
-   ```
+    > [!Note] tool yaml file can be generated by a python script, please reference [create custom tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#create-custom-tool-package).
 
-6. Click pencil after file_path, select `existing file` or `new file` as input, here select exsiting file demo_input.py from step 4 as input:
 
-   ![file path use existing file](../../media/how-to-guides/develop-a-tool/select_input_file.png)
+## Use tool with a FilePath input in VS Code extension
+Follow steps to [build and install your tool package](https://github.com/jiazengcindy/mpromptflow/blob/jiazeng/modify_icon_doc/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](https://github.com/jiazengcindy/mpromptflow/blob/jiazeng/modify_icon_doc/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
-7. Run your flow, the demo calculate sqrt of input_str using skill in step 4.
-   ![flow output](../../media/how-to-guides/develop-a-tool/custom_tool_output.png)
+Here we use [an existing flow](../../../examples/flows/standard/flow-use-tool-with-file-path-input/flow.dag.yaml) to demonstrate the experience, open the flow in VS Code extension:
+- There is a node named "Tool_with_FilePath_Input" has a file_path type input named input_file;
+- Click the picker icon to trigger the UI to select an existing file or create a new file and use it as input;
+
+   ![](../../media/how-to-guides/develop-a-tool/use_file_path_in_flow.png)
 
 ## FAQ
-
-### What kind of file is supported?
-
-Any `.py, .txt, etc` scripts are supported, you need customize the logic of consuming these files.
 
 ### Practical use cases via this feature?
 

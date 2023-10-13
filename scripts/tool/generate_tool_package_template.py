@@ -28,7 +28,7 @@ def create_folder(path):
 
 
 def create_tool_project_structure(destination: str, package_name: str, tool_name: str,
-                                  function_name: str, is_class_way=False, demo_case="hello_world"):
+                                  function_name: str, is_class_way=False):
     if is_class_way:
         class_name = convert_tool_name_to_class_name(tool_name)
 
@@ -68,10 +68,7 @@ def create_tool_project_structure(destination: str, package_name: str, tool_name
         template = env.get_template('tool2.py.j2')
         output = template.render(class_name=class_name, function_name=function_name)
     else:
-        if demo_case == "file_path":
-            template = env.get_template('file_path_tool.py.j2')
-        else:
-            template = env.get_template('tool.py.j2')
+        template = env.get_template('tool.py.j2')
         output = template.render(function_name=function_name)
     with open(os.path.join(tools_dir, f'{tool_name}.py'), 'w') as f:
         f.write(output)
@@ -96,10 +93,7 @@ def create_tool_project_structure(destination: str, package_name: str, tool_name
         output = template.render(package_name=package_name, tool_name=tool_name, class_name=class_name,
                                  function_name=function_name)
     else:
-        if demo_case == "file_path":
-            template = env.get_template('file_path_tool.yaml.j2')
-        else:
-            template = env.get_template('tool.yaml.j2')
+        template = env.get_template('tool.yaml.j2')
         output = template.render(package_name=package_name, tool_name=tool_name, function_name=function_name)
     with open(os.path.join(yamls_dir, f'{tool_name}.yaml'), 'w') as f:
         f.write(output)
@@ -134,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--function-name", "-f", type=str,
                         help="your tool's function name, by default is your tool's name", required=False)
     parser.add_argument("--use-class", action='store_true', help="Specify whether to use a class implementation way.")
-    parser.add_argument("--case", "-c", type=str, required=False, default="hello_world", choices=["hello_world", "file_path"])
+
     args = parser.parse_args()
 
     destination = args.destination
@@ -154,4 +148,4 @@ if __name__ == "__main__":
         function_name = tool_name
     function_name = function_name.lower()
 
-    create_tool_project_structure(destination, package_name, tool_name, function_name, args.use_class, args.case)
+    create_tool_project_structure(destination, package_name, tool_name, function_name, args.use_class)
