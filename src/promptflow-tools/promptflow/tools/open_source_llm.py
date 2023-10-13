@@ -101,7 +101,7 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
             endpoint_key = ml_client.online_endpoints.get_keys(ep.name).primary_key
             found = True
             break
-    
+
     if not found:
         raise ValueError(f"Endpoint {endpoint_name} not found.")
 
@@ -115,10 +115,10 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
             model = get_model_type(d.model)
             found = True
             break
-    
+
     if not found:
         raise ValueError(f"Deployment {deployment_name} not found.")
-    
+
     return (endpoint_uri, endpoint_key, model)
 
 
@@ -397,8 +397,8 @@ class OpenSourceLLM(ToolProvider):
         self.deployment_name = deployment_name
         if endpoint_name is not None and endpoint_name != self.DEFAULT_ENDPOINT_NAME:
             (self.endpoint_uri,
-            self.endpoint_key,
-            self.model_family) = get_deployment_from_endpoint(endpoint_name, deployment_name)
+             self.endpoint_key,
+             self.model_family) = get_deployment_from_endpoint(endpoint_name, deployment_name)
         else:
             conn_dict = dict(connection)
             for key in self.REQUIRED_CONFIG_KEYS:

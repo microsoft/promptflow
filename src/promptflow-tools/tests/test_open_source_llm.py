@@ -60,7 +60,7 @@ user:
         response = gpt2_provider.call(
             self.chat_prompt,
             API.CHAT,
-            max_new_tokens = 2)
+            max_new_tokens=2)
         # GPT-2 doesn't take this parameter
         assert len(response) > 25
 
