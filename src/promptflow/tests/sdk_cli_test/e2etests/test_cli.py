@@ -1235,3 +1235,26 @@ class TestCli:
             assert meta["name"] == func_name
             assert meta["description"] == f"This is {func_name} tool"
             assert meta["type"] == "python"
+
+    def test_chat_flow_with_conditional(self, monkeypatch, capsys):
+        chat_list = ["1", "2"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/conditional_chat_flow_with_skip",
+            "--interactive",
+            "--verbose"
+        )
+        output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
