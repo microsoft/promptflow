@@ -847,6 +847,25 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
 
+    def test_flow_test_with_default_chat_history(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_default_history",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_default_history" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_default_history" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r") as f:
+            details = json.load(f)
+        expect_chat_history = [
+            {"inputs": {"question": "hi"}, "outputs": {"answer": "hi"}},
+            {"inputs": {"question": "who are you"}, "outputs": {"answer": "who are you"}},
+        ]
+        assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
+
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -1034,22 +1053,22 @@ class TestCli:
                 },
                 ("configs.key1", "new_value"),
             ),
-            # (
-            #     "custom_strong_type_connection.yaml",
-            #     {
-            #         "module": "promptflow.connections",
-            #         "type": "custom",
-            #         "configs": {
-            #             "api_base": "This is my first connection.",
-            #             "promptflow.connection.custom_type": "MyFirstConnection",
-            #             "promptflow.connection.module": "my_tool_package.connections",
-            #             "promptflow.connection.package": "test-custom-tools",
-            #             "promptflow.connection.package_version": "0.0.1",
-            #         },
-            #         "secrets": {"api_key": SCRUBBED_VALUE},
-            #     },
-            #     ("configs.api_base", "new_value"),
-            # ),
+            (
+                "custom_strong_type_connection.yaml",
+                {
+                    "module": "promptflow.connections",
+                    "type": "custom",
+                    "configs": {
+                        "api_base": "This is my first connection.",
+                        "promptflow.connection.custom_type": "MyFirstConnection",
+                        "promptflow.connection.module": "my_tool_package.connections",
+                        "promptflow.connection.package": "test-custom-tools",
+                        "promptflow.connection.package_version": "0.0.2",
+                    },
+                    "secrets": {"api_key": SCRUBBED_VALUE},
+                },
+                ("configs.api_base", "new_value"),
+            ),
         ],
     )
     def test_connection_create_update(
@@ -1118,12 +1137,12 @@ class TestCli:
                 "extra=${data.url}",
                 "--stream",
             )
-        assert "user log" in f.getvalue()
-        assert "error log" in f.getvalue()
-        # flow logs will stream
-        assert "Executing node print_val. node run id:" in f.getvalue()
-        # executor logs will stream
-        assert "Node print_val completes." in f.getvalue()
+        logs = f.getvalue()
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_pf_run_no_stream_log(self):
         f = io.StringIO()
@@ -1190,3 +1209,26 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert not outerr.err
+
+    def test_chat_flow_with_conditional(self, monkeypatch, capsys):
+        chat_list = ["1", "2"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/conditional_chat_flow_with_skip",
+            "--interactive",
+            "--verbose"
+        )
+        output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
