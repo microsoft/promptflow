@@ -149,3 +149,4 @@ if __name__ == "__main__":
     function_name = function_name.lower()
 
     create_tool_project_structure(destination, package_name, tool_name, function_name, args.use_class)
+    
