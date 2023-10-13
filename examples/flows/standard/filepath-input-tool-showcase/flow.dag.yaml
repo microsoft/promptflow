@@ -14,4 +14,4 @@ nodes:
     tool: my_tool_package.tools.my_tool_1.tool_with_file_path_input
   inputs:
     input_text: ${inputs.input}
-    input_file: ..\..\..\..\scripts\tool\convert_image_to_data_url.py
+    input_file: hello_method.py

@@ -1,4 +1,4 @@
-my_tool_package.tools.my_tool_1.tool_with_file_path_input:
+my_tool_package.tools.tool_with_file_path_input.my_tool:
   function: my_tool
   inputs:
     input_file:
