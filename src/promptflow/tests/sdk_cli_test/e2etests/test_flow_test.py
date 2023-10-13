@@ -145,6 +145,12 @@ class TestFlowTest:
         assert "calculate_accuracy" in result.node_run_infos
         assert result.run_info.metrics == {"accuracy": 1.0}
 
+    def test_generate_tool_meta_in_additional_folder(self):
+        flow_path = Path(f"{FLOWS_DIR}/web_classification_with_additional_include").absolute()
+        flow_tools, _ = _client._flows._generate_tools_meta(flow=flow_path)
+        for tool in flow_tools["code"].values():
+            assert (Path(flow_path) / tool["source"]).exists()
+
     def test_pf_test_with_non_english_input(self):
         result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
         assert result["output"] == "Hello 日本語"
