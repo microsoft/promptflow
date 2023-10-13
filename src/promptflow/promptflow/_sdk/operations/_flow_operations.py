@@ -26,6 +26,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
 
@@ -289,12 +290,14 @@ class FlowOperations:
     ):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
-        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
+        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name),
+                                              working_dir=flow_dag_path.parent.absolute())
 
-        return self._migrate_connections(
-            connection_names=executable.get_connection_names(),
-            output_dir=output_dir,
-        )
+        with _change_working_dir(flow_dag_path.parent):
+            return self._migrate_connections(
+                connection_names=executable.get_connection_names(),
+                output_dir=output_dir,
+            )
 
     def _build_flow(
         self,
