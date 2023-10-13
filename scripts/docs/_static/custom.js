@@ -45,9 +45,14 @@ window.onload = () => {
     };
 };
 
-// This is used to control homepage background
 if (window.location.pathname === "/promptflow/" || window.location.pathname === "/promptflow/index.html") {
-  var observer = new MutationObserver(function(mutations) {
+  // Insert meta for site verification
+  let meta = document.createElement("meta");
+  meta.name = "google-site-verification";
+  meta.content = "rEZN-2h5TVqEco07aaMpqNcDx4bjr2czx1Hwfoxydrg";
+  head.insertAdjacentElement("beforeend", meta);
+  // This is used to control homepage background
+  let observer = new MutationObserver(function(mutations) {
     const dark = document.documentElement.dataset.theme == 'dark';
     document.body.style.backgroundSize = "100%";
     document.body.style.backgroundPositionY = "bottom";
