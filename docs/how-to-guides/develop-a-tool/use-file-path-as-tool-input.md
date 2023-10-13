@@ -1,4 +1,4 @@
-# Using File Path as tool input
+# Using File Path as Tool Input
 
 Users sometimes need to reference local files within a tool to implement specific logic. To simplify this, we've introduced the `FilePath` input type. This input type enables users to either select an existing file or create a new one, then pass it to a tool, allowing the tool to access the file's content.
 
