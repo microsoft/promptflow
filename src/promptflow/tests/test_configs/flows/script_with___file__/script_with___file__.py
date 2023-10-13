@@ -2,6 +2,8 @@ from pathlib import Path
 
 from promptflow import tool
 
+# Add special character to test if file read is working.
+print("https://www.bing.com/")
 
 print(f"The script is {__file__}")
 assert Path(__file__).is_absolute(), f"__file__ should be absolute path, got {__file__}"
