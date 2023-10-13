@@ -75,6 +75,7 @@ class TestToolMetaUtils:
             ("prompt_tools", "summarize_text_content_prompt.jinja2", "llm"),
             ("script_with_import", "dummy_utils/main.py", "python"),
             ("script_with___file__", "script_with___file__.py", "python"),
+            ("script_with_special_character", "script_with_special_character.py", "python"),
         ],
     )
     def test_generate_tool_meta_dict_by_file(self, flow_dir, tool_path, tool_type):
