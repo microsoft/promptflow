@@ -19,7 +19,7 @@ FLOW_RESULT_KEYS = ["category", "evidence"]
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
@@ -33,15 +33,24 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    def test_pf_test_flow_with_custom_strong_type_connection(self, is_custom_tool_pkg_installed):
-        if is_custom_tool_pkg_installed:
-            inputs = {"text": "Hello World!"}
-            flow_path = Path(f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow").absolute()
+    def test_pf_test_flow_with_custom_strong_type_connection(self, install_custom_tool_pkg):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
 
-            result = _client.test(flow=flow_path, inputs=inputs)
-            assert result == {"out": "connection_value is MyFirstConnection: True"}
-        else:
-            pytest.skip("Custom tool package 'my_tools_package_with_cstc' not installed.")
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
+        inputs = {"text": "Hello World!"}
+        flow_path = Path(f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow").absolute()
+
+        # Test that connection would be custom strong type in flow
+        result = _client.test(flow=flow_path, inputs=inputs)
+        assert result == {"out": "connection_value is MyFirstConnection: True"}
+
+        # Test that connection
+        result = _client.test(flow=flow_path, inputs={"input_text": "Hello World!"}, node="My_Second_Tool_usi3")
+        assert result == "Hello World!This is my first custom connection."
 
     def test_pf_test_with_streaming_output(self):
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
@@ -49,6 +58,11 @@ class TestFlowTest:
         chat_output = result["answer"]
         assert isinstance(chat_output, GeneratorType)
         assert "".join(chat_output)
+
+        flow_path = Path(f"{FLOWS_DIR}/basic_with_builtin_llm_node")
+        result = _client.test(flow=flow_path)
+        chat_output = result["output"]
+        assert isinstance(chat_output, str)
 
     def test_pf_test_node(self):
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}
@@ -130,3 +144,13 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs=inputs)
         assert "calculate_accuracy" in result.node_run_infos
         assert result.run_info.metrics == {"accuracy": 1.0}
+
+    def test_generate_tool_meta_in_additional_folder(self):
+        flow_path = Path(f"{FLOWS_DIR}/web_classification_with_additional_include").absolute()
+        flow_tools, _ = _client._flows._generate_tools_meta(flow=flow_path)
+        for tool in flow_tools["code"].values():
+            assert (Path(flow_path) / tool["source"]).exists()
+
+    def test_pf_test_with_non_english_input(self):
+        result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
+        assert result["output"] == "Hello 日本語"

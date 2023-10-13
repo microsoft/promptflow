@@ -50,7 +50,7 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
@@ -78,7 +78,7 @@ class TestFlowRun:
         tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used default variant config
         assert tuning_node["inputs"]["temperature"] == 0.3
-        assert "default" in result.name
+        assert "variant_0" in result.name
 
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
@@ -247,17 +247,21 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    def test_custom_strong_type_connection_basic_flow(self, local_client, pf, is_custom_tool_pkg_installed):
-        if is_custom_tool_pkg_installed:
-            result = pf.run(
-                flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
-                data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
-                connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
-            )
-            run = local_client.runs.get(name=result.name)
-            assert run.status == "Completed"
-        else:
-            pytest.skip("Custom tool package 'my_tools_package_with_cstc' not installed.")
+    def test_custom_strong_type_connection_basic_flow(self, install_custom_tool_pkg, local_client, pf):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
+            data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+        )
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
 
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
@@ -324,6 +328,13 @@ class TestFlowRun:
         run = local_client.runs.get(name=run.name)
         assert run.status == "Completed"
 
+    def test_connection_overwrite_model(self, local_client, local_aoai_connection):
+        run = create_yaml_run(
+            source=f"{RUNS_DIR}/run_with_connections_model.yaml",
+        )
+        run = local_client.runs.get(name=run.name)
+        assert run.status == "Completed"
+
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow)
@@ -379,10 +390,11 @@ class TestFlowRun:
             environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
         )
         assert run.name == name
-        assert f"{display_name}-default-" in run.display_name
+        assert "test_run_with_tags" == run.display_name
         assert run.tags == tags
 
     def test_run_display_name(self, pf):
+        # use folder name if not specify display_name
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
@@ -390,7 +402,9 @@ class TestFlowRun:
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
             )
         )
-        assert "print_env_var-default-" in run.display_name
+        assert run.display_name == "print_env_var"
+
+        # will respect if specified in run
         base_run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
@@ -399,18 +413,29 @@ class TestFlowRun:
                 display_name="my_run",
             )
         )
-        assert "my_run-default-" in base_run.display_name
+        assert base_run.display_name == "my_run"
 
         run = pf.runs.create_or_update(
             run=Run(
                 flow=Path(f"{FLOWS_DIR}/print_env_var"),
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
-                display_name="my_run",
+                display_name="my_run_${variant_id}_${run}",
                 run=base_run,
             )
         )
-        assert f"{base_run.display_name}-my_run-" in run.display_name
+        assert run.display_name == f"my_run_variant_0_{base_run.name}"
+
+        run = pf.runs.create_or_update(
+            run=Run(
+                flow=Path(f"{FLOWS_DIR}/print_env_var"),
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                environment_variables={"API_BASE": "${azure_open_ai_connection.api_base}"},
+                display_name="my_run_${timestamp}",
+                run=base_run,
+            )
+        )
+        assert "${timestamp}" not in run.display_name
 
     def test_run_dump(self, azure_open_ai_connection: AzureOpenAIConnection, pf: PFClient) -> None:
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -642,13 +667,11 @@ class TestFlowRun:
         )
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
-        assert "user log" in logs
-        # error logs can be stored
-        assert "error log" in logs
-        # flow logs can be stored
-        assert "Executing node print_val. node run id:" in logs
-        # executor logs can be stored
-        assert "Node print_val completes." in logs
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
         run = pf.run(

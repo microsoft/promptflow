@@ -12,6 +12,7 @@ from promptflow._sdk._utils import (
     get_local_connections_from_executable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
+    override_connection_config_with_environment_variable,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.executor import FlowExecutor
@@ -61,6 +62,7 @@ class FlowInvoker:
         else:
             raise UnsupportedConnectionProvider(connection_provider)
 
+        override_connection_config_with_environment_variable(self.connections)
         resolve_connections_environment_variable_reference(self.connections)
         update_environment_variables_with_connections(self.connections)
         logger.info(f"Promptflow get connections successfully. keys: {self.connections.keys()}")

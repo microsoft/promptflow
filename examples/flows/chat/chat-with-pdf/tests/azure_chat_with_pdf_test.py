@@ -82,9 +82,9 @@ class TestChatWithPDFAzure(BaseTest):
         )
         self.pf.stream(run)  # wait for completion
 
-        self.assertEqual(run.status, "Failed")
-        with self.assertRaises(Exception):
-            _ = self.pf.get_details(run)
+        # run won't be failed, only line runs inside it will be failed.
+        self.assertEqual(run.status, "Completed")
+        # TODO: get line run results when supported.
 
     def test_bulk_run_invalid_mapping(self):
         run = self.create_chat_run(

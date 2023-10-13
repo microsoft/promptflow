@@ -19,3 +19,9 @@ class PromptTemplate(str):
     """This class is used to hint a parameter is a prompt template."""
 
     pass
+
+
+class FilePath(str):
+    """This class is used to hint a parameter is a file path."""
+
+    pass
