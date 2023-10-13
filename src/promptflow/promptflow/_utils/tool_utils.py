@@ -66,21 +66,30 @@ def param_to_definition(param, should_gen_custom_type=False) -> (InputDefinition
             typ = []
             custom_type = []
             for t in value_type:
+                # Add 'CustomConnection' to typ list when custom strong type connection exists. Collect all custom types
                 if ConnectionType.is_custom_strong_type(t):
                     if not custom_connection_added:
                         custom_connection_added = True
                         typ.append("CustomConnection")
                     custom_type.append(t.__name__)
                 else:
-                    if t.__name__ == "CustomConnection":
+                    if t.__name__ != "CustomConnection":
+                        typ.append(t.__name__)
+                    elif not custom_connection_added:
                         custom_connection_added = True
-                    typ.append(t.__name__)
+                        typ.append(t.__name__)
             is_connection = True
     else:
         typ = [ValueType.from_type(value_type)]
-    # Do not generate custom type when generating flow.tools.json for script tool.
+
+    # 1. Do not generate custom type when generating flow.tools.json for script tool.
+    #    Extension would show custom type if it exists. While for script tool with custom strong type connection,
+    #    we still want to show 'CustomConnection' type.
+    # 2. Generate custom type when resolving tool in _tool_resolver, since we rely on the custom_type to convert the
+    #    custom connection to custom strong type connection.
     if not should_gen_custom_type:
         custom_type = None
+
     return (
         InputDefinition(
             type=typ, default=value_to_str(default_value), description=None, enum=enum, custom_type=custom_type

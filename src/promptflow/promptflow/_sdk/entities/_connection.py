@@ -939,6 +939,9 @@ class CustomConnection(_Connection):
         #    Custom type and module name are present in the configs.
         # 2. The connection is created through SDK PFClient or a custom connection template file.
         #    Custom type and module name are not present in the configs. Module and class must be passed for conversion.
+        if to_class and not isinstance(to_class, type):
+            raise TypeError(f"The converted type {to_class} must be a class type.")
+
         if not to_class:
             module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
             import importlib
