@@ -915,7 +915,7 @@ class FlowExecutor:
                 raise
         finally:
             run_tracker._update_flow_run_info_with_node_runs(run_info)
-            run_tracker.persist_flow_node_run(run_info)
+            run_tracker.update_node_run_info(run_info)
             run_tracker.persist_flow_run(run_info)
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}

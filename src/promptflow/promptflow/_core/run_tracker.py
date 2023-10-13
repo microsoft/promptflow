@@ -341,7 +341,20 @@ class RunTracker(ThreadLocalSingleton):
             traces.extend(node_run_info.api_calls or [])
         return traces
 
-    def persist_flow_node_run(self, run_info):
+    def update_node_run_info(self, run_info: FlowRunInfo):
+        """Updates the run information of all nodes in a flow run.
+
+        This method collects all the node runs in a flow run and persists their run information to the storage.
+        This method should be called before the flow run ends to override the previous run information, as some nodes
+        may have empty or incomplete outputs at the end of their execution, especially if they produce generators.
+        This method ensures that the outputs of all nodes are consumed and updated before the flow run ends.
+
+        Args:
+            run_info (FlowRunInfo): The run info of the flow.
+
+        Returns:
+            None
+        """
         run_id = run_info.run_id
         child_run_infos = self.collect_child_node_runs(run_id)
         for node_run_info in child_run_infos:
@@ -367,7 +380,7 @@ class RunTracker(ThreadLocalSingleton):
         self._storage.persist_node_run(run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
-        self._storage.persist_node_run(run_info)
+        self._storage.persist_flow_run(run_info)
 
     def get_status_summary(self, run_id: str):
         node_run_infos = self.collect_node_runs(run_id)
