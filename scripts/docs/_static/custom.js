@@ -11,8 +11,8 @@ let script2 = document.createElement("script");
 script2.innerHTML = ` window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date());gtag('config', 'G-KZXK5PFBZY'); `;
 
 // Insert the script elements after the head element
-head.insertAdjacentElement("afterend", script2);
-head.insertAdjacentElement("afterend", script);
+head.insertAdjacentElement("afterbegin", script2);
+head.insertAdjacentElement("afterbegin", script);
 
 // This is used to zoom in images when clicked on
 window.onload = () => {
