@@ -25,7 +25,7 @@ To begin with the guide, git clone the sample repository(above flow link) and se
 
 Create the run with flow and data, can add `--stream` to stream the run.
 ```sh
-pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --stream 
+pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream 
 ```
 
 You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
