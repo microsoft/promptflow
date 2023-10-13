@@ -199,3 +199,15 @@ class TestToolsManager:
         expected_template_str = textwrap.dedent(expected_template)
 
         assert content in expected_template_str
+
+    # TODO: enable this test after new my_tool_package is released
+    @pytest.skip("Will enable this test after new my_tool_package is released")
+    def test_gen_dynamic_list(self):
+        from promptflow._sdk._utils import _gen_dynamic_list
+        func_path="my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
+        func_kwargs={"prefix": "My"}
+        result = _gen_dynamic_list({
+            "func_path": func_path, "func_kwargs": func_kwargs})
+        assert len(result) == 10
+
+    # TODO: add test for gen_dynamic_list with ws_triple.

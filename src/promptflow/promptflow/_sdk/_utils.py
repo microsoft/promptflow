@@ -32,6 +32,7 @@ from ruamel.yaml import YAML
 import promptflow
 from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._core.tools_manager import gen_dynamic_list
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
@@ -623,6 +624,30 @@ def _generate_tool_meta(
         error_message = "Generate meta failed, detail error(s):\n" + json.dumps(errors, indent=4)
         raise GenerateFlowToolsJsonError(error_message)
     return res
+
+
+def _gen_dynamic_list(function_config) -> List:
+    """Generate dynamic list for a tool input.
+
+    :param function_config: function config in tool meta. It should contain
+    'func_path' and 'func_kwargs'.
+    :type function_config: dict
+    :return: a list of tool input dynamic enums.
+    """
+    func_path = function_config.get("func_path", "")
+    func_kwargs = function_config.get("func_kwargs", {})
+    # May call azure control plane api in the custom function to list Azure resources.
+    # which may need Azure workspace triple.
+    # TODO: move this method to a common place.
+    from promptflow._cli._utils import get_workspace_triad_from_local
+
+    workspace_triad = get_workspace_triad_from_local()
+    if (workspace_triad.subscription_id and workspace_triad.resource_group_name
+        and workspace_triad.workspace_name):
+        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
+    # if no workspace triple available, just skip.
+    else:
+        return gen_dynamic_list(func_path, func_kwargs)
 
 
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
