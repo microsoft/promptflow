@@ -386,6 +386,7 @@ class AzureMLOnlineEndpoint:
 class OpenSourceLLM(ToolProvider):
     REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
     REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
+    DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
 
     def __init__(self,
                  connection: CustomConnection = None,
@@ -394,7 +395,11 @@ class OpenSourceLLM(ToolProvider):
         super().__init__()
 
         self.deployment_name = deployment_name
-        if connection is not None:
+        if endpoint_name is not None and endpoint_name != self.DEFAULT_ENDPOINT_NAME:
+            (self.endpoint_uri,
+            self.endpoint_key,
+            self.model_family) = get_deployment_from_endpoint(endpoint_name, deployment_name)
+        else:
             conn_dict = dict(connection)
             for key in self.REQUIRED_CONFIG_KEYS:
                 if key not in conn_dict:
@@ -420,11 +425,6 @@ Supported models are: {accepted_models}."""
                 )
             self.endpoint_uri = connection.configs['endpoint_url']
             self.endpoint_key = connection.secrets['endpoint_api_key']
-
-        else:
-            (self.endpoint_uri,
-            self.endpoint_key,
-            self.model_family) = get_deployment_from_endpoint(endpoint_name, deployment_name)
 
     @tool
     @handle_oneline_endpoint_error()
