@@ -29,11 +29,13 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
-    def test_open_source_llm_completion_with_deploy(self, gpt2_provider):
-        response = gpt2_provider.call(
-            self.completion_prompt,
-            API.COMPLETION,
+    def test_open_source_llm_completion_with_deploy(self, gpt2_custom_connection):
+        os_tool = OpenSourceLLM(
+            gpt2_custom_connection,
             deployment_name="gpt2-8")
+        response = os_tool.call(
+            self.completion_prompt,
+            API.COMPLETION)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
@@ -44,11 +46,22 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
-    def test_open_source_llm_chat_with_deploy(self, gpt2_provider):
+    def test_open_source_llm_chat_with_deploy(self, gpt2_custom_connection):
+        os_tool = OpenSourceLLM(
+            gpt2_custom_connection,
+            deployment_name="gpt2-8")
+        response = os_tool.call(
+            self.chat_prompt,
+            API.CHAT)
+        assert len(response) > 25
+
+    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    def test_open_source_llm_chat_with_max_length(self, gpt2_provider):
         response = gpt2_provider.call(
             self.chat_prompt,
             API.CHAT,
-            deployment_name="gpt2-8")
+            max_new_tokens = 2)
+        # GPT-2 doesn't take this parameter
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
@@ -168,12 +181,11 @@ user:
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_deployment_miss(self, gpt2_custom_connection):
-        os = OpenSourceLLM(gpt2_custom_connection)
+        os = OpenSourceLLM(
+            gpt2_custom_connection,
+            deployment_name="completely/real/deployment-007")
         with pytest.raises(OpenSourceLLMOnlineEndpointError) as exc_info:
-            os.call(
-                self.completion_prompt,
-                API.COMPLETION,
-                deployment_name="completely/real/deployment-007")
+            os.call(self.completion_prompt, API.COMPLETION)
         assert exc_info.value.message == (
             "Exception hit calling Oneline Endpoint: "
             + "HTTPError: HTTP Error 404: Not Found")
