@@ -49,7 +49,7 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -218,7 +218,7 @@ class FlowExecutor:
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
         if storage is None:
-            storage = DummyRunStorage()
+            storage = DefaultRunStorage()
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -295,7 +295,7 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs)
+        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -560,8 +560,14 @@ class FlowExecutor:
             self._flow.inputs, aggregated_flow_inputs, aggregation_inputs
         )
 
+        # Resolve aggregated_flow_inputs from list of strings to list of objects, whose type is specified in yaml file.
+        # TODO: For now, we resolve type for batch run's aggregation input in _exec_aggregation_with_bulk_results.
+        # If we decide to merge the resolve logic into one place, remember to take care of index for batch run.
+        resolved_aggregated_flow_inputs = FlowValidator.resolve_aggregated_flow_inputs_type(
+            self._flow, aggregated_flow_inputs
+        )
         with self._run_tracker.node_log_manager:
-            return self._exec_aggregation(aggregated_flow_inputs, aggregation_inputs, run_id)
+            return self._exec_aggregation(resolved_aggregated_flow_inputs, aggregation_inputs, run_id)
 
     @staticmethod
     def _apply_default_value_for_aggregation_input(
@@ -632,7 +638,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -669,6 +675,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
+        input_dir: Optional[Path] = None,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -690,7 +697,8 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value, input_dir)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -705,7 +713,6 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
-        self._save_image_from_output(line_result.output, self._working_dir)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -748,7 +755,10 @@ class FlowExecutor:
 
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
-        inputs = [FlowExecutor._process_input_values(self._flow.inputs, each_line_input) for each_line_input in inputs]
+        inputs = [
+            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            for each_line_input in inputs
+        ]
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
@@ -769,11 +779,6 @@ class FlowExecutor:
         )
 
     @staticmethod
-    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
-        return FlowExecutor._convert_image_to_bytes(inputs, inputs_with_default_value)
-
-    @staticmethod
     def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
@@ -781,19 +786,34 @@ class FlowExecutor:
                 updated_inputs[key] = value.default
         return updated_inputs
 
-    @staticmethod
-    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
+    def _process_images_from_inputs(
+        self,
+        inputs: Dict[str, FlowInputDefinition],
+        line_inputs: Mapping,
+        input_dir: Path = None
+    ) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
+        if not input_dir:
+            input_dir = self._working_dir
+        elif not input_dir.is_absolute():
+            input_dir = self._working_dir / input_dir
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(updated_inputs[key])
+                updated_inputs[key] = Image.from_file(Path.joinpath(input_dir, updated_inputs[key]))
         return updated_inputs
 
-    def _save_image_from_output(self, output: dict, output_dir: str):
-        # TODO: The output directory should be configurable.
+    def _persist_images_from_output(self, output: dict, output_dir: Path = None):
+        if output_dir.is_absolute():
+            folder_path = output_dir
+            relative_path = None
+        else:
+            folder_path = self._working_dir
+            relative_path = output_dir
         for key, value in output.items():
             if isinstance(value, Image):
-                output[key] = value.save_to(key, output_dir)
+                file_name = f"{key}_{uuid.uuid4()}"
+                output[key] = value.save_to_file(file_name, folder_path, relative_path)
+        return output
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.

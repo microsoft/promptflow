@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
+    DEFAULT_ENCODING,
     DEFAULT_VAR_ID,
     INPUTS,
     NODE,
@@ -25,6 +26,7 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     ConnectionFields,
+    FlowRunProperties,
 )
 from promptflow._sdk._errors import InvalidFlowError
 from promptflow._sdk._load_functions import load_flow
@@ -46,6 +48,7 @@ from promptflow._utils.load_data import load_data
 from promptflow._utils.utils import reverse_transpose
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 
@@ -58,7 +61,7 @@ def _load_flow_dag(flow_path: Path):
     if not flow_path.exists():
         raise FileNotFoundError(f"Flow file {flow_path} not found")
 
-    with open(flow_path, "r") as f:
+    with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
         flow_dag = yaml.safe_load(f)
     return flow_path, flow_dag
 
@@ -101,7 +104,7 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
     except KeyError as e:
         raise KeyError("Failed to overwrite tuning node with variant") from e
 
-    with open(flow_path, "w") as f:
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         yaml.safe_dump(flow_dag, f)
 
 
@@ -147,14 +150,14 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
                     raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
                 node[INPUTS][c] = v
 
-    with open(flow_path, "w") as f:
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         yaml.safe_dump(flow_dag, f)
 
 
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
-    with open(flow_path, "w") as f:
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         yaml.safe_dump(flow_dag, f)
 
 
@@ -266,13 +269,14 @@ class RunSubmitter:
 
         # running specified variant
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream)
+            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
             with local_storage.logger:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        connections = SubmitterHelper.resolve_connections(flow=flow)
+        with _change_working_dir(flow.code):
+            connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
@@ -295,6 +299,17 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            # Filter the failed line result
+            failed_line_result = \
+                [result for result in bulk_result.line_results if result.run_info.status == Status.Failed]
+            if failed_line_result:
+                # Log warning message when there are failed line run in bulk run.
+                error_log = \
+                    f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                    error_log = error_log + \
+                                f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                logger.warning(error_log)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
         except Exception as e:
