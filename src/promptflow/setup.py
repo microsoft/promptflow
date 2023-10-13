@@ -46,7 +46,6 @@ REQUIRES = [
     "waitress>=2.1.2,<3.0.0",  # used to serve local service
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
     "ruamel.yaml>=0.17.35,<0.18.0",  # used to generate connection templates with preserved comments
-    "vcrpy>=5.1.0,<6.0.0",  # used to record and replay http requests for pfazure tests
 ]
 
 setup(

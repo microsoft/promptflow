@@ -18,3 +18,5 @@ keyrings.alt
 promptflow-tools
 
 beautifulsoup4==4.12.2
+# record and replay http requests for pfazure tests
+vcrpy==5.1.0
