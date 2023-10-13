@@ -79,6 +79,10 @@ setup(
             "azure-ai-ml>=1.9.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
+        "executable": [
+            "pyinstaller",
+            "streamlit",
+        ]
     },
     packages=find_packages(),
     entry_points={

@@ -59,6 +59,11 @@ class TestFlowTest:
         assert isinstance(chat_output, GeneratorType)
         assert "".join(chat_output)
 
+        flow_path = Path(f"{FLOWS_DIR}/basic_with_builtin_llm_node")
+        result = _client.test(flow=flow_path)
+        chat_output = result["output"]
+        assert isinstance(chat_output, str)
+
     def test_pf_test_node(self):
         inputs = {"classify_with_llm.output": '{"category": "App", "evidence": "URL"}'}
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
@@ -139,6 +144,12 @@ class TestFlowTest:
         result = _client._flows._test(flow=flow_path, inputs=inputs)
         assert "calculate_accuracy" in result.node_run_infos
         assert result.run_info.metrics == {"accuracy": 1.0}
+
+    def test_generate_tool_meta_in_additional_folder(self):
+        flow_path = Path(f"{FLOWS_DIR}/web_classification_with_additional_include").absolute()
+        flow_tools, _ = _client._flows._generate_tools_meta(flow=flow_path)
+        for tool in flow_tools["code"].values():
+            assert (Path(flow_path) / tool["source"]).exists()
 
     def test_pf_test_with_non_english_input(self):
         result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
