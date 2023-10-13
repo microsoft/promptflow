@@ -59,7 +59,7 @@ Here we use [an existing tool package](../../../examples/tools/tool-package-quic
 ## Use tool with a file path input in VS Code extension
 Follow steps to [build and install your tool package](https://github.com/jiazengcindy/mpromptflow/blob/jiazeng/modify_icon_doc/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](https://github.com/jiazengcindy/mpromptflow/blob/jiazeng/modify_icon_doc/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
-Here we use [an existing flow](../../../examples/flows/standard/flow-use-tool-with-file-path-input/flow.dag.yaml) to demonstrate the experience, open the flow in VS Code extension:
+Here we use an existing flow to demonstrate the experience, open [this flow]((../../../examples/flows/standard/flow-use-tool-with-file-path-input/flow.dag.yaml)) in VS Code extension:
 - There is a node named "Tool_with_FilePath_Input" has a file_path type input: input_file;
 - Click the picker icon to trigger the UI to select an existing file or create a new file and use it as input;
 
