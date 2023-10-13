@@ -39,7 +39,7 @@ class PFBytes(bytes):
         ext = PFBytes._get_extension_from_type(self._mime_type)
         file_name = f"{file_name}.{ext}" if ext else file_name
         image_info = {
-            f"data:{self._mime_type}:path": str(relative_path / file_name) if relative_path else file_name
+            f"data:{self._mime_type};path": str(relative_path / file_name) if relative_path else file_name
         }
         path = folder_path / relative_path if relative_path else folder_path
         os.makedirs(path, exist_ok=True)
