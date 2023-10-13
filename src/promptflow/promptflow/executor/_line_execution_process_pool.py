@@ -182,7 +182,7 @@ class LineExecutionProcessPool:
             self._pool.close()
             self._pool.join()
 
-    def _timeout_process_wrapper(self, task_queue: Queue, idx: int, timeout_time, result_list):
+    def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
         healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
         healthy_ensured_process.start_new(task_queue)
 
@@ -235,7 +235,7 @@ class LineExecutionProcessPool:
 
             self._processing_idx.pop(line_number)
             log_progress(
-                start_time=start_time,
+                run_start_time=run_start_time,
                 logger=bulk_logger,
                 count=len(result_list),
                 total_count=self._nlines,
@@ -282,6 +282,7 @@ class LineExecutionProcessPool:
             )
 
         result_list = []
+        run_start_time = datetime.now()
 
         with RepeatLogTimer(
             interval_seconds=self._log_interval,
@@ -295,7 +296,10 @@ class LineExecutionProcessPool:
         ):
             self._pool.starmap(
                 self._timeout_process_wrapper,
-                [(self._inputs_queue, idx, self._line_timeout_sec, result_list) for idx in range(self._n_process)],
+                [
+                    (run_start_time, self._inputs_queue, self._line_timeout_sec, result_list)
+                    for _ in range(self._n_process)
+                ],
             )
         return result_list
 

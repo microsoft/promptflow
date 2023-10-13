@@ -71,6 +71,10 @@ In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/tools.json`
 ![init_files](../media/how-to-guides/init-and-test-a-flow/flow_init_files.png)
 ## Test a flow
 
+:::{admonition} Note
+Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+:::
+
 Promptflow also provides ways to test the initialized flow or flow node. It will help you quickly test your flow.
 
 ### Visual editor on the VS Code for Prompt flow.
