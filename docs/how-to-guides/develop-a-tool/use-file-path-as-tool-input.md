@@ -57,6 +57,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
 
 
 ## Use tool with a file path input in VS Code extension
+
 Follow steps to [build and install your tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
 Here we use an existing flow to demonstrate the experience, open [this flow](../../../examples/flows/standard/filepath-input-tool-showcase/flow.dag.yaml) in VS Code extension:
