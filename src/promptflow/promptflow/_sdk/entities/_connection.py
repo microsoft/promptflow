@@ -933,7 +933,7 @@ class CustomConnection(_Connection):
             and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         )
 
-    def _convert_to_custom_strong_type(self, to_class) -> CustomStrongTypeConnection:
+    def _convert_to_custom_strong_type(self, to_class: type) -> CustomStrongTypeConnection:
         # There are two scenarios to convert a custom connection to custom strong type connection:
         # 1. The connection is created from a custom strong type connection template file.
         #    Custom type and module name are present in the configs.
