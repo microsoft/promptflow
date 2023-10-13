@@ -115,7 +115,10 @@ class ToolResolver:
                 return self._resolve_prompt_node(node)
             elif node.type is ToolType.LLM:
                 if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
-                    return self._resolve_replay_node(node, convert_input_types=convert_input_types)
+                    resolved_tool = self._resolve_replay_node(node, convert_input_types=convert_input_types)
+                    if resolved_tool is None:
+                        resolved_tool = self._resolve_llm_node(node, convert_input_types=convert_input_types)
+                    return resolved_tool
                 return self._resolve_llm_node(node, convert_input_types=convert_input_types)
             elif node.type is ToolType.CUSTOM_LLM:
                 if node.source.type == ToolSourceType.PackageWithPrompt:
@@ -214,7 +217,7 @@ class ToolResolver:
         if node.api == "completion" and node.connection == "azure_open_ai_connection":
             prompt_tpl = self._load_source_content(node)
             prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs)
+            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, self._working_dir)
             return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
         else:
             return None

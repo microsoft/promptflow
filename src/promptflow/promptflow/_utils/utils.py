@@ -33,38 +33,60 @@ class AttrDict(dict):
         return super().__getattribute__(item)
 
 
-class MyStorageRecord:
+class RecordStorage:
     # static class for recording
-    sync: bool = False
-    runItems: Dict[str, str] = {}
+    runItems: Dict[str, Dict[str, str]] = {}
 
     @staticmethod
-    def WriteFile() -> None:
-        if not MyStorageRecord.sync:
-            with open("MyStorageRecord.json", "w+") as fp:
-                json.dump(MyStorageRecord.runItems, fp)
-                MyStorageRecord.sync = True
+    def write_file(flow_directory: Path) -> None:
+        path_hash = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
+        file_content = RecordStorage.runItems.get(path_hash, None)
+        if file_content is not None:
+            with open(flow_directory / "storage_record.json", "w+") as fp:
+                json.dump(RecordStorage.runItems[path_hash], fp, indent=4)
 
     @staticmethod
-    def LoadFile() -> None:
-        if not MyStorageRecord.sync:
-            with open("MyStorageRecord.json", "r") as fp:
-                MyStorageRecord.runItems = json.load(fp)
-                MyStorageRecord.sync = True
+    def load_file(flow_directory: Path) -> None:
+        path_hash = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
+        local_content = RecordStorage.runItems.get(path_hash, None)
+        if not local_content:
+            with open(flow_directory / "storage_record.json", "r") as fp:
+                RecordStorage.runItems[path_hash] = json.load(fp)
 
     @staticmethod
-    def getRecord(hashDict: OrderedDict) -> str:
-        MyStorageRecord.LoadFile()
-        item: str = MyStorageRecord.runItems.get(hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest(), None)
-        real_item = base64.b64decode(bytes(item, "utf-8")).decode()
-        return real_item
+    def get_record(flow_directory: Path, hashDict: OrderedDict) -> str:
+        hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
+        path_hash: str = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
+        file_item: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
+        if file_item is None:
+            RecordStorage.load_file(flow_directory)
+            file_item = RecordStorage.runItems.get(path_hash, None)
+        if file_item is not None:
+            item = file_item.get(hash_value, None)
+            if item is not None:
+                real_item = base64.b64decode(bytes(item, "utf-8")).decode()
+                return real_item
+            else:
+                raise f"Record item not found in folder {flow_directory}."
+        else:
+            raise f"Record file not found in folder {flow_directory}."
 
     @staticmethod
-    def setRecord(hashDict: OrderedDict, output: object) -> None:
-        hashValue = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
-        MyStorageRecord.runItems[hashValue] = base64.b64encode(bytes(output, "utf-8")).decode()
-        MyStorageRecord.sync = False
-        MyStorageRecord.WriteFile()
+    def set_record(flow_directory: Path, hashDict: OrderedDict, output: object) -> None:
+        hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
+        path_hash: str = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
+        output_base64: str = base64.b64encode(bytes(output, "utf-8")).decode()
+        current_saved_record: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
+        if current_saved_record is None:
+            RecordStorage.runItems[path_hash] = {hash_value: output_base64}
+            RecordStorage.write_file(flow_directory)
+        else:
+            saved_output = current_saved_record.get(hash_value, None)
+            if saved_output is not None and saved_output == output_base64:
+                return
+            else:
+                current_saved_record[hash_value] = output_base64
+                RecordStorage.write_file(flow_directory)
 
 
 def camel_to_snake(text: str) -> Optional[str]:

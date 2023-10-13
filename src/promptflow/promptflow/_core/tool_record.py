@@ -4,22 +4,25 @@
 
 import collections
 
-from promptflow._internal import MyStorageRecord, ToolProvider, tool
+from promptflow._internal import RecordStorage, ToolProvider, tool
 
 
 class ToolRecord(ToolProvider):
     @tool
     def completion(toolType: str, *args, **kwargs) -> str:
-        # From aoai.py, check
-        keywords = args[2]
+        # "AzureOpenAI" =  args[0], this is type indicator, there may be more than one indicators
+        prompt_tmpl = args[1]
+        prompt_tpl_inputs = args[2]
+        working_folder = args[3]
+
         hashDict = {}
-        for keyword in keywords:
+        for keyword in prompt_tpl_inputs:
             if keyword in kwargs:
                 hashDict[keyword] = kwargs[keyword]
-        hashDict["prompt"] = args[1]
+        hashDict["prompt"] = prompt_tmpl
         hashDict = collections.OrderedDict(sorted(hashDict.items()))
 
-        real_item = MyStorageRecord.getRecord(hashDict)
+        real_item = RecordStorage.get_record(working_folder, hashDict)
         return real_item
 
 

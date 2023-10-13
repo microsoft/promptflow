@@ -83,7 +83,7 @@ from promptflow._utils.logger_utils import (
 )
 from promptflow._utils.utils import (
     AttrDict,
-    MyStorageRecord,
+    RecordStorage,
     camel_to_snake,
     count_and_log_progress,
     load_json,

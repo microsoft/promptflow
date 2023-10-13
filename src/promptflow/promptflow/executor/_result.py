@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 
+import os
 from dataclasses import dataclass
 from itertools import chain
 from typing import Any, Dict, List, Mapping
@@ -76,6 +77,9 @@ class BulkResult:
         return status_summary
 
     def get_openai_metrics(self):
+        if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+            total_metrics = {"total_tokens": 0, "duration": 0}
+            return total_metrics
         node_run_infos = chain(self._get_line_run_infos(), self._get_aggr_run_infos())
         total_metrics = {}
         calculator = OpenAIMetricsCalculator()

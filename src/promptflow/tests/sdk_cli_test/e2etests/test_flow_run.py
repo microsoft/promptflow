@@ -77,7 +77,7 @@ class TestFlowRun:
         detail = local_storage.load_detail()
         tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used default variant config
-        assert tuning_node["inputs"]["temperature"] == 0.3
+        assert str(tuning_node["inputs"]["temperature"]) == "0.3"
         assert "variant_0" in result.name
 
         run = local_client.runs.get(name=result.name)
@@ -98,7 +98,7 @@ class TestFlowRun:
         assert "variant_0" in result.name
 
         # used variant_0 config
-        assert tuning_node["inputs"]["temperature"] == 0.2
+        assert str(tuning_node["inputs"]["temperature"]) == "0.2"
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
@@ -110,7 +110,7 @@ class TestFlowRun:
         tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         assert "variant_1" in result.name
         # used variant_1 config
-        assert tuning_node["inputs"]["temperature"] == 0.3
+        assert str(tuning_node["inputs"]["temperature"]) == "0.3"
 
     def test_run_bulk_error(self, pf):
         # path not exist
@@ -215,7 +215,7 @@ class TestFlowRun:
         detail = local_storage.load_detail()
         tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used default variant config
-        assert tuning_node["inputs"]["temperature"] == 0.3
+        assert str(tuning_node["inputs"]["temperature"]) == "0.3"
 
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
@@ -259,6 +259,8 @@ class TestFlowRun:
 
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
+        if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+            pytest.skip("Skip this test in replay mode")
         with pytest.raises(Exception) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",

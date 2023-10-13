@@ -35,7 +35,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
-from promptflow._utils.utils import MyStorageRecord
+from promptflow._utils.utils import RecordStorage
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -205,6 +205,8 @@ class LocalStorageOperations(AbstractRunStorage):
         self._meta_path = self.path / LocalStorageFilenames.META
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
+        self._flow_path: Path = run.flow
+
         self._dump_meta_file()
 
     def _dump_meta_file(self) -> None:
@@ -216,6 +218,8 @@ class LocalStorageOperations(AbstractRunStorage):
         hashDict = {}
         if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
             if "name" in run_info.api_calls[0] and run_info.api_calls[0]["name"].startswith("AzureOpenAI"):
+                flow_folder = self._flow_path
+
                 prompt_tpl = run_info.inputs["prompt"]
                 prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
 
@@ -224,7 +228,7 @@ class LocalStorageOperations(AbstractRunStorage):
                         hashDict[keyword] = run_info.inputs[keyword]
                 hashDict["prompt"] = prompt_tpl
                 hashDict = collections.OrderedDict(sorted(hashDict.items()))
-                MyStorageRecord.setRecord(hashDict, run_info.output)
+                RecordStorage.set_record(flow_folder, hashDict, run_info.output)
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
@@ -382,7 +386,7 @@ class LocalStorageOperations(AbstractRunStorage):
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
-        self._record_node_run(node_run_record)
+        self._record_node_run(run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
