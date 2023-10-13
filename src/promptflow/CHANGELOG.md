@@ -11,6 +11,7 @@
 - [SDK/CLI] Fix the bug that using sdk/cli to submit batch run did not display the log correctly.
 - [SDK/CLI] Fix encoding issues when input is non-English with `pf flow test`.
 - [SDK/CLI] Fix string type data will be converted to integer/float.
+- [SDK/CLI] Remove the max rows limitation of loading data.
 
 ### Improvements
 
