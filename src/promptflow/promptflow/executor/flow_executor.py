@@ -787,10 +787,7 @@ class FlowExecutor:
         return updated_inputs
 
     def _process_images_from_inputs(
-        self,
-        inputs: Dict[str, FlowInputDefinition],
-        line_inputs: Mapping,
-        input_dir: Path = None
+        self, inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path = None
     ) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         if not input_dir:
@@ -908,8 +905,8 @@ class FlowExecutor:
                 # Make sure the run_info with converted inputs results rather than original inputs
                 run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
-            run_tracker.allow_generator_types = allow_generator_output
             output = self._stringify_generator_output(output) if not allow_generator_output else output
+            run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
         except Exception as e:
@@ -920,7 +917,6 @@ class FlowExecutor:
             run_tracker._update_flow_run_info_with_node_runs(run_info)
             run_tracker.persist_flow_node_run(run_info)
             run_tracker.persist_flow_run(run_info)
-            run_tracker._evaluate_run_info(run_info)
         node_run_infos = run_tracker.collect_child_node_runs(line_run_id)
         node_runs = {node_run.node: node_run for node_run in node_run_infos}
         return LineResult(output, aggregation_inputs, run_info, node_runs)

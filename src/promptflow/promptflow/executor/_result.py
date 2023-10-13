@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from itertools import chain
 from typing import Any, Dict, List, Mapping
 
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 
@@ -81,7 +80,7 @@ class BulkResult:
         total_metrics = {}
         calculator = OpenAIMetricsCalculator()
         for run_info in node_run_infos:
-            for call in serialize(run_info.api_calls):
+            for call in run_info.api_calls:
                 metrics = calculator.get_openai_metrics_from_api_call(call)
                 calculator.merge_metrics_dict(total_metrics, metrics)
         return total_metrics

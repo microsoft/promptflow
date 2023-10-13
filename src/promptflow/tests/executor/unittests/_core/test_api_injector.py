@@ -5,7 +5,6 @@ from unittest.mock import patch
 import openai
 import pytest
 
-from promptflow._core.generator_proxy import GeneratorProxy
 from promptflow._core.openai_injector import (
     PROMPTFLOW_PREFIX,
     USER_AGENT_HEADER,
@@ -18,7 +17,6 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.tracer import Tracer
 from promptflow._version import VERSION
 from promptflow.connections import AzureOpenAIConnection
-from promptflow.contracts.trace import TraceType
 from promptflow.exceptions import UserErrorException
 from promptflow.tools.aoai import AzureOpenAI
 from promptflow.tools.embedding import embedding
@@ -73,12 +71,11 @@ def test_aoai_generator_proxy():
         traces = Tracer.end_tracing()
         assert len(traces) == 2
         for trace in traces:
-            assert trace.type == TraceType.LLM
-            if trace.inputs["stream"]:
-                assert isinstance(trace.output, GeneratorProxy)
-                assert trace.output.items == ["This is a yielded string"]
+            assert trace["type"] == "LLM"
+            if trace["inputs"]["stream"]:
+                assert trace["output"] == ["This is a yielded string"]
             else:
-                assert trace.output == "This is a returned string"
+                assert trace["output"] == "This is a returned string"
 
 
 @pytest.mark.unittest
