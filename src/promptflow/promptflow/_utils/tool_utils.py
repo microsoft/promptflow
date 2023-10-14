@@ -4,10 +4,11 @@
 
 import inspect
 import logging
+import re
 from enum import Enum, EnumMeta
 from typing import Callable, Union, get_args, get_origin
 
-from jinja2 import Environment, meta
+from jinja2 import Environment, meta, nodes
 
 from ..contracts.tool import ConnectionType, InputDefinition, Tool, ValueType
 from ..contracts.types import PromptTemplate
@@ -129,3 +130,29 @@ def get_inputs_for_prompt_template(template_str):
 def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
     return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
+
+def get_input_type_mapping_for_prompt_template(template_str):
+    """Get all tagged input type mapping from a template string"""
+
+    # currently we only support image type
+    pattern = r'\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)'
+    matches = re.finditer(pattern, template_str)
+
+    result_dict = {}
+
+    for match in matches:
+        input_name = match.group(2).strip()
+        if input_name != "" and input_name not in result_dict:
+            result_dict[input_name] = match.group(1).strip()
+
+    # try best to identify object types
+    try:
+        env = Environment()
+        template = env.parse(template_str)
+        for node in template.find_all(node_type=nodes.For):
+            if node.iter.name not in result_dict:
+                result_dict[node.iter.name] = "object"
+    except:
+        pass
+
+    return result_dict
