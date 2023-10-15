@@ -1,0 +1,38 @@
+name: conditional_flow_with_skip
+inputs:
+  number:
+    type: int
+    is_chat_input: true
+  chat_history:
+    type: list
+outputs:
+  string:
+    type: string
+    reference: ${print_result.output}
+    is_chat_output: true
+nodes:
+- name: is_even
+  type: python
+  inputs:
+    number: ${inputs.number}
+  source:
+    type: code
+    path: is_even.py
+- name: conditional_node
+  type: python
+  inputs:
+    message: ${is_even.output.message}
+  skip:
+    when: ${is_even.output.is_even}
+    is: true
+    return: ${is_even.output.message}
+  source:
+    type: code
+    path: conditional_node.py
+- name: print_result
+  type: python
+  inputs:
+    message: ${conditional_node.output}
+  source:
+    type: code
+    path: print_result.py
