@@ -131,6 +131,7 @@ def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
     return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
 
+
 def get_input_type_mapping_for_prompt_template(template_str):
     """Get all tagged input type mapping from a template string"""
 
@@ -152,7 +153,7 @@ def get_input_type_mapping_for_prompt_template(template_str):
         for node in template.find_all(node_type=nodes.For):
             if node.iter.name not in result_dict:
                 result_dict[node.iter.name] = "object"
-    except:
+    except Exception:
         pass
 
     return result_dict

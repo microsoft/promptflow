@@ -19,7 +19,8 @@ from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
 from promptflow._core.tool import ToolProvider
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
-from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template, get_input_type_mapping_for_prompt_template
+from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template, \
+    get_input_type_mapping_for_prompt_template
 from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -28,6 +29,7 @@ PF_MAIN_MODULE_NAME = "__pf_main__"
 
 def asdict_without_none(obj):
     return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
+
 
 def get_input_type(input, input_type_mapping) -> ValueType:
     if input not in input_type_mapping:
@@ -38,7 +40,8 @@ def get_input_type(input, input_type_mapping) -> ValueType:
     elif input_type_mapping[input] == "object":
         return ValueType.OBJECT
     else:
-        raise(ToolValidationError(f"Unsupported input type {input_type_mapping[input]}."))
+        raise ToolValidationError(f"Unsupported input type {input_type_mapping[input]}.")
+
 
 def generate_prompt_tool(name, content, prompt_only=False, source=None):
     """Generate meta for a single jinja template file."""
