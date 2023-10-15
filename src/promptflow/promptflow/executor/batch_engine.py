@@ -1,5 +1,6 @@
 from typing import Dict
 
+from promptflow._utils.load_data import load_data
 from promptflow.executor.flow_executor import FlowExecutor
 
 
@@ -15,15 +16,24 @@ class BatchEngine:
         run_id: str = None,
     ):
         # 1. load data
-        self._load_data()
+        input_dicts = self._resolve_data(input_dirs)
         # 2. apply inputs mapping
-        self._apply_inputs_mapping()
+        mapped_inputs = self._apply_inputs_mapping(input_dirs, input_dicts, inputs_mapping)
         # 3. execute batch run
-        batch_result = self.flow_executor.exec_bulk()
+        batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id)
         return batch_result
 
-    def _load_data(self, input_dirs: Dict[str, str]):
-        pass
+    def _resolve_data(self, input_dirs: Dict[str, str]):
+        result = {}
+        for input_key, local_file in input_dirs.items():
+            result[input_key] = load_data(local_file)
+        return result
 
-    def _apply_inputs_mapping(self, inputs_mapping: Dict[str, str]):
-        pass
+    def _apply_inputs_mapping(
+        self,
+        input_dirs: Dict[str, str],
+        input_dicts: Dict[str, list],
+        inputs_mapping: Dict[str, str],
+    ):
+        inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        return inputs
