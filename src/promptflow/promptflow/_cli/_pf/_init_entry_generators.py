@@ -14,8 +14,8 @@ from jinja2 import Environment, Template, meta
 from promptflow._sdk._constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
-TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
-TOOL_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "package_tool"
+TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
+TOOL_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "package_tool"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
 
 
@@ -269,7 +269,6 @@ class ToolPackageUtilsGenerator(BaseGenerator):
 
 
 class InitGenerator(BaseGenerator):
-
     @property
     def tpl_file(self):
         return TOOL_TEMPLATE_PATH / "init.py"

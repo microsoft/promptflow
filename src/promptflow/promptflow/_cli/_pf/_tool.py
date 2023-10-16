@@ -4,19 +4,19 @@
 
 import argparse
 import logging
+import re
 from pathlib import Path
-from promptflow._sdk._constants import LOGGER_NAME
-
 
 from promptflow._cli._params import logging_params
 from promptflow._cli._pf._init_entry_generators import (
-    ToolPackageGenerator,
-    SetupGenerator,
-    ToolPackageUtilsGenerator,
     InitGenerator,
+    SetupGenerator,
+    ToolPackageGenerator,
+    ToolPackageUtilsGenerator,
 )
 from promptflow._cli._utils import activate_action, exception_handler
-
+from promptflow._sdk._constants import LOGGER_NAME
+from promptflow.exceptions import UserErrorException
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -71,6 +71,12 @@ def dispatch_tool_commands(args: argparse.Namespace):
 
 @exception_handler("Tool init")
 def init_tool(args):
+    # Validate package/tool name
+    pattern = r"^[a-zA-Z_][a-zA-Z0-9_]*$"
+    if args.package and not re.match(pattern, args.package):
+        raise UserErrorException(f"The package name {args.package} is a invalid identifier.")
+    if not re.match(pattern, args.tool):
+        raise UserErrorException(f"The tool name {args.tool} is a invalid identifier.")
     print("Creating tool from scratch...")
     if args.package:
         package_path = Path(args.package)
@@ -86,4 +92,4 @@ def init_tool(args):
     # Generate tool script
     ToolPackageGenerator(tool_name=args.tool).generate_to_file(script_code_path / f"{args.tool}.py")
     InitGenerator().generate_to_file(script_code_path / "__init__.py")
-    print(f"Done. Created the tool \"{args.tool}\" in {script_code_path.resolve()}.")
+    print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
