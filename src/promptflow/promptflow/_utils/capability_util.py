@@ -40,7 +40,7 @@ class Capability:
 
 CAPABILITY_LIST = [
     Capability(
-        name="Activate",
+        name="ActivateConfig",
         description="Bypass node execution when the node does not meet activate condition.",
         components=[CapabilityComponent.EXECUTOR],
         state=CapabilityState.READY,
