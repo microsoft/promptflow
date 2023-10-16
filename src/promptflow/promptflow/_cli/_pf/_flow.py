@@ -9,6 +9,8 @@ import logging
 import os
 import shutil
 import webbrowser
+import sys
+import tempfile
 from pathlib import Path
 
 from promptflow._cli._params import (
@@ -27,6 +29,7 @@ from promptflow._cli._pf._init_entry_generators import (
     FlowDAGGenerator,
     ToolMetaGenerator,
     ToolPyGenerator,
+    StreamlitFileGenerator,
     copy_extra_files,
 )
 from promptflow._cli._pf._run import exception_handler
@@ -196,6 +199,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_interactive = lambda parser: parser.add_argument(  # noqa: E731
         "--interactive", action="store_true", help="start a interactive chat session for chat flow."
     )
+    add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
+        "--multi_modal", action="store_true", help=argparse.SUPPRESS
+    )
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
     add_params = [
@@ -206,6 +212,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_input,
         add_param_inputs,
         add_param_environment_variables,
+        add_param_multi_modal,
     ] + logging_params
     activate_action(
         name="test",
@@ -333,13 +340,26 @@ def test_flow(args):
         inputs.update(list_of_dict_to_dict(args.inputs))
 
     if args.interactive:
-        pf_client.flows._chat(
-            flow=args.flow,
-            inputs=inputs,
-            environment_variables=environment_variables,
-            variant=args.variant,
-            show_step_output=args.verbose,
-        )
+        if args.multi_modal:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                from streamlit.web import cli as st_cli
+                from promptflow._sdk._load_functions import load_flow
+
+                flow = load_flow(args.flow)
+                script_path = os.path.join(temp_dir, "main.py")
+                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
+                shutil.copytree(args.flow, os.path.join(temp_dir, "flow"))
+
+                sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
+                st_cli.main()
+        else:
+            pf_client.flows._chat(
+                flow=args.flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                variant=args.variant,
+                show_step_output=args.verbose,
+            )
     else:
         result = pf_client.flows._test(
             flow=args.flow,

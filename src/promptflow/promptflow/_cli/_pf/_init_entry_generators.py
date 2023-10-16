@@ -16,7 +16,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
-SERVE_TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "sdk" / "data" / "executable"
+SERVE_TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "_sdk" / "data" / "executable"
 
 
 class BaseGenerator(ABC):
@@ -237,7 +237,7 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def tpl_file(self):
-        return TEMPLATE_PATH / "main.py.jinja2"
+        return SERVE_TEMPLATE_PATH / "main.py.jinja2"
 
     @property
     def entry_template_keys(self):

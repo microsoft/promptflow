@@ -778,6 +778,7 @@ class TestCli:
             "--flow",
             f"{FLOWS_DIR}/chat_flow",
             "--interactive",
+            "--multi_modal"
         )
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.output.json"
         assert output_path.exists()
