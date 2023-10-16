@@ -137,7 +137,8 @@
     "ruamel",
     "gunicorn",
     "pkill",
-    "pgrep"
+    "pgrep",
+    "Hwfoxydrg"
   ],
   "allowCompoundWords": true
 }

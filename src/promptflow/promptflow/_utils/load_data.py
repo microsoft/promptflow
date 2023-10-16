@@ -13,12 +13,6 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 
 module_logger = logging.getLogger(__name__)
 
-MAX_ROWS_COUNT = 1000
-DATA_EXCEED_LIMITATION = (
-    "The supplied data contains %s lines that exceed the limit. Currently, only the first %s lines will be processed."
-    " We are actively working on supporting larger datasets in the near future. Please stay tuned for updates."
-)
-
 
 def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFrame:
     local_path = str(local_path)
@@ -88,9 +82,6 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
         length = len(df)
         if max_rows_count and length > 0:
             if length > max_rows_count:
-                if logger is None:
-                    logger = module_logger
-                logger.warning(DATA_EXCEED_LIMITATION, length, max_rows_count)
                 df = df.head(max_rows_count)
             break
         # no readable data in current level, dive into next level
@@ -100,11 +91,10 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
 
 def load_data(local_path: str, *, logger: logging.Logger = None, max_rows_count: int = None) -> List[Dict[str, Any]]:
     """load data from local file"""
-    df = load_df(local_path, logger, max_rows_count=max_rows_count or MAX_ROWS_COUNT)
+    df = load_df(local_path, logger, max_rows_count=max_rows_count)
 
     # convert dataframe to list of dict
     result = []
-    # df = df.reset_index() # add index column
     for _, row in df.iterrows():
         result.append(row.to_dict())
     return result
@@ -118,9 +108,6 @@ def load_df(local_path: str, logger: logging.Logger = None, max_rows_count: int 
             df = _pd_read_file(local_path, logger=logger)
             # honor max_rows_count if it is specified
             if max_rows_count and len(df) > max_rows_count:
-                if logger is None:
-                    logger = module_logger
-                logger.warning(DATA_EXCEED_LIMITATION, len(df), max_rows_count)
                 df = df.head(max_rows_count)
         else:
             df = _handle_dir(local_path, max_rows_count=max_rows_count, logger=logger)
