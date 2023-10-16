@@ -1,3 +1,4 @@
+import os
 import pytest
 from promptflow.tools.exception import (
     OpenSourceLLMOnlineEndpointError,
@@ -190,3 +191,15 @@ user:
             "Exception hit calling Oneline Endpoint: "
             + "HTTPError: HTTP Error 404: Not Found")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
+
+    def test_open_source_llm_endpoint_name(self):
+        os.environ["AZUREML_ARM_SUBSCRIPTION"] = "ba7979f7-d040-49c9-af1a-7414402bf622"
+        os.environ["AZUREML_ARM_RESOURCEGROUP"] = "test_resource_groups"
+        os.environ["AZUREML_ARM_WORKSPACE_NAME"] = "test_workspace"
+
+        from azure.core.exceptions import ClientAuthenticationError
+        with pytest.raises(ClientAuthenticationError) as exc_info:
+            OpenSourceLLM(endpoint_name="Not_Real")
+
+        expected_message = "DefaultAzureCredential failed to retrieve a token from the included credentials."
+        assert exc_info.value.message .startswith(expected_message)

@@ -25,11 +25,11 @@ promptflow.tools.open_source_llm.OpenSourceLLM.call:
       type:
       - string
     temperature:
-      default: 1
+      default: 1.0
       type:
       - double
     max_new_tokens:
-      default: null
+      default: 500
       type:
       - int
     top_p:

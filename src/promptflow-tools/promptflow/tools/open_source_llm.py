@@ -1,5 +1,6 @@
 import functools
 import json
+import os
 import re
 import sys
 import time
@@ -7,7 +8,7 @@ import urllib.request
 
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Mapping, Optional
 from urllib.request import HTTPError
 
 from promptflow import ToolProvider, tool
@@ -21,7 +22,10 @@ from promptflow.tools.exception import (
     ChatAPIInvalidRole
 )
 
-valid_llama_roles = {"user", "assistant"}
+VALID_LLAMA_ROLES = {"user", "assistant"}
+REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
+REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
+DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
 
 
 def handle_oneline_endpoint_error(max_retries: int = 3,
@@ -91,8 +95,19 @@ def get_model_type(deployment_model: str) -> str:
 
 
 def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
-    from promptflow._cli._utils import get_client_for_cli
-    ml_client = get_client_for_cli()
+    from azure.identity import DefaultAzureCredential
+    credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+
+    try:
+        from azure.ai.ml import MLClient
+        ml_client = MLClient(
+            credential=credential,
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
+    except:
+        from promptflow.runtime import PromptFlowRuntime
+        ml_client = PromptFlowRuntime.get_instance().config.get_ml_client(credential=credential)
 
     found = False
     for ep in ml_client.online_endpoints.list():
@@ -120,6 +135,35 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
         raise ValueError(f"Deployment {deployment_name} not found.")
 
     return (endpoint_uri, endpoint_key, model)
+
+
+def get_deployment_from_connection(connection: CustomConnection, deployment_name: str = None) -> Tuple[str, str, str]:
+    conn_dict = dict(connection)
+    for key in REQUIRED_CONFIG_KEYS:
+        if key not in conn_dict:
+            accepted_keys = ",".join([key for key in REQUIRED_CONFIG_KEYS])
+            raise OpenSourceLLMKeyValidationError(
+                message=f"""Required key `{key}` not found in given custom connection.
+Required keys are: {accepted_keys}."""
+            )
+    for key in REQUIRED_SECRET_KEYS:
+        if key not in conn_dict:
+            accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
+            raise OpenSourceLLMKeyValidationError(
+                message=f"""Required secret key `{key}` not found in given custom connection.
+Required keys are: {accepted_keys}."""
+            )
+    try:
+        model_family = ModelFamily[connection.configs['model_family']]
+    except KeyError:
+        accepted_models = ",".join([model.name for model in ModelFamily])
+        raise OpenSourceLLMKeyValidationError(
+            message=f"""Given model_family '{connection.configs['model_family']}' not recognized.
+Supported models are: {accepted_models}."""
+        )
+    return (connection.configs['endpoint_url'],
+            connection.secrets['endpoint_api_key'],
+            model_family)
 
 
 class ModelFamily(str, Enum):
@@ -239,7 +283,7 @@ class LlamaContentFormatter(ContentFormatterBase):
 
             # Check if prompt follows chat api message format and has valid role.
             try:
-                validate_role(role, valid_llama_roles)
+                validate_role(role, VALID_LLAMA_ROLES)
             except ChatAPIInvalidRole as e:
                 raise OpenSourceLLMUserError(message=e.message)
 
@@ -347,6 +391,19 @@ class AzureMLOnlineEndpoint:
         self.content_formatter = content_formatter
         self.model_kwargs = model_kwargs
 
+    @property
+    def _identifying_params(self) -> Mapping[str, Any]:
+        """Get the identifying parameters."""
+        _model_kwargs = self.model_kwargs or {}
+        return {
+            **{"model_kwargs": _model_kwargs},
+        }
+
+    @property
+    def _llm_type(self) -> str:
+        """Return type of llm."""
+        return "azureml_endpoint"
+
     def _call_endpoint(self, body: bytes) -> bytes:
         """call."""
 
@@ -380,13 +437,29 @@ class AzureMLOnlineEndpoint:
         endpoint_request = str.encode(body)
         endpoint_response = self._call_endpoint(endpoint_request)
         response = self.content_formatter.format_response_payload(endpoint_response)
+
+        try:
+            import tiktoken
+            GPT_TOKENIZER = tiktoken.get_encoding("cl100k_base")
+
+            def estimate_tokens(input_str: str) -> int:
+                return len(GPT_TOKENIZER.encode(input_str, allowed_special="all"))
+
+            prompt_tokens = estimate_tokens(body)
+            response_tokens = estimate_tokens(response)
+
+            from promptflow._core.metric_logger import MetricLoggerManager
+            logger_index = MetricLoggerManager.get_instance()
+            logger_index.log_metric("completion_tokens", prompt_tokens + response_tokens)
+            logger_index.log_metric("prompt_tokens", prompt_tokens)
+            logger_index.log_metric("total_tokens", response_tokens)
+        except:
+            pass
+
         return response
 
 
 class OpenSourceLLM(ToolProvider):
-    REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
-    REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
-    DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
 
     def __init__(self,
                  connection: CustomConnection = None,
@@ -395,36 +468,14 @@ class OpenSourceLLM(ToolProvider):
         super().__init__()
 
         self.deployment_name = deployment_name
-        if endpoint_name is not None and endpoint_name != self.DEFAULT_ENDPOINT_NAME:
+        if endpoint_name is not None and endpoint_name != DEFAULT_ENDPOINT_NAME:
             (self.endpoint_uri,
              self.endpoint_key,
              self.model_family) = get_deployment_from_endpoint(endpoint_name, deployment_name)
         else:
-            conn_dict = dict(connection)
-            for key in self.REQUIRED_CONFIG_KEYS:
-                if key not in conn_dict:
-                    accepted_keys = ",".join([key for key in self.REQUIRED_CONFIG_KEYS])
-                    raise OpenSourceLLMKeyValidationError(
-                        message=f"""Required key `{key}` not found in given custom connection.
-Required keys are: {accepted_keys}."""
-                    )
-            for key in self.REQUIRED_SECRET_KEYS:
-                if key not in conn_dict:
-                    accepted_keys = ",".join([key for key in self.REQUIRED_SECRET_KEYS])
-                    raise OpenSourceLLMKeyValidationError(
-                        message=f"""Required secret key `{key}` not found in given custom connection.
-Required keys are: {accepted_keys}."""
-                    )
-            try:
-                self.model_family = ModelFamily[connection.configs['model_family']]
-            except KeyError:
-                accepted_models = ",".join([model.name for model in ModelFamily])
-                raise OpenSourceLLMKeyValidationError(
-                    message=f"""Given model_family '{connection.configs['model_family']}' not recognized.
-Supported models are: {accepted_models}."""
-                )
-            self.endpoint_uri = connection.configs['endpoint_url']
-            self.endpoint_key = connection.secrets['endpoint_api_key']
+            (self.endpoint_uri,
+             self.endpoint_key,
+             self.model_family) = get_deployment_from_connection(connection, deployment_name)
 
     @tool
     @handle_oneline_endpoint_error()
@@ -433,7 +484,7 @@ Supported models are: {accepted_models}."""
         prompt: PromptTemplate,
         api: API,
         temperature: float = 1.0,
-        max_new_tokens: int = 200,
+        max_new_tokens: int = 500,
         top_p: float = 1.0,
         model_kwargs: Optional[Dict] = {},
         **kwargs
@@ -458,7 +509,4 @@ Supported models are: {accepted_models}."""
             model_kwargs=model_kwargs
         )
 
-        def _do_llm(llm: AzureMLOnlineEndpoint, prompt: str) -> str:
-            return llm(prompt)
-
-        return _do_llm(llm, prompt)
+        return llm(prompt)
