@@ -18,8 +18,8 @@ from .entities import Run
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._flow_operations import FlowOperations
-from .operations._tool_operations import ToolOperations
 from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from .operations._tool_operations import ToolOperations
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 

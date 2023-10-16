@@ -13,6 +13,7 @@ from promptflow._cli._pf._init_entry_generators import (
     ToolPackageGenerator,
     SetupGenerator,
     ToolPackageUtilsGenerator,
+    InitGenerator,
 )
 from promptflow._cli._utils import activate_action, exception_handler
 
@@ -84,4 +85,5 @@ def init_tool(args):
         script_code_path = Path(".")
     # Generate tool script
     ToolPackageGenerator(tool_name=args.tool).generate_to_file(script_code_path / f"{args.tool}.py")
+    InitGenerator().generate_to_file(script_code_path / "__init__.py")
     print(f"Done. Created the tool \"{args.tool}\" in {script_code_path.resolve()}.")

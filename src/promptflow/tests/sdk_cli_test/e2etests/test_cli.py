@@ -1219,6 +1219,7 @@ class TestCli:
             package_folder = Path(temp_dir) / package_name
             assert (package_folder / package_name / f"{func_name}.py").exists()
             assert (package_folder / package_name / "utils.py").exists()
+            assert (package_folder / package_name / "__init__.py").exists()
             assert (package_folder / "setup.py").exists()
 
             spec = importlib.util.spec_from_file_location(

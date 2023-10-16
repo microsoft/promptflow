@@ -266,3 +266,19 @@ class ToolPackageUtilsGenerator(BaseGenerator):
     @property
     def entry_template_keys(self):
         return ["package_name"]
+
+
+class InitGenerator(BaseGenerator):
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "init.py"
+
+    @property
+    def entry_template_keys(self):
+        pass
+
+    def generate(self) -> str:
+        with open(self.tpl_file) as f:
+            init_content = f.read()
+        return init_content

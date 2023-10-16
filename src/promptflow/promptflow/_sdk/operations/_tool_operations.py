@@ -5,10 +5,10 @@ import inspect
 import json
 from dataclasses import asdict
 
-from promptflow.contracts.tool import Tool, ToolType
-from promptflow.exceptions import UserErrorException
 from promptflow._core.tool_meta_generator import is_tool
 from promptflow._utils.tool_utils import function_to_interface
+from promptflow.contracts.tool import Tool, ToolType
+from promptflow.exceptions import UserErrorException
 
 
 class ToolOperations:
@@ -17,8 +17,9 @@ class ToolOperations:
     def generate_tool_meta(self, tool_module):
         tool_functions = self._collect_tool_functions_in_module(tool_module)
         tool_methods = self._collect_tool_class_methods_in_module(tool_module)
-        tools = [self._parse_tool_from_function(f) for f in tool_functions] + \
-                [self._parse_tool_from_function(f, initialize_inputs) for (f, initialize_inputs) in tool_methods]
+        tools = [self._parse_tool_from_function(f) for f in tool_functions] + [
+            self._parse_tool_from_function(f, initialize_inputs) for (f, initialize_inputs) in tool_methods
+        ]
         construct_tools = {
             f"{t.module}.{t.class_name}.{t.function}"
             if t.class_name is not None

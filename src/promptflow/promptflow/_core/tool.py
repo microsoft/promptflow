@@ -40,11 +40,11 @@ class ToolInvoker(ABC):
 
 
 def tool(
-        func=None,
-        *,
-        name: str = None,
-        description: str = None,
-        type: str = None,
+    func=None,
+    *,
+    name: str = None,
+    description: str = None,
+    type: str = None,
 ) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
 
@@ -74,6 +74,7 @@ def tool(
         new_f.__description = description
         new_f.__type = type
         return new_f
+
     # enable use decorator without "()" if all arguments are default values
     if func is not None:
         return tool_decorator(func)
