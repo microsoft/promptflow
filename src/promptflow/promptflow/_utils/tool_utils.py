@@ -196,6 +196,7 @@ def get_inputs_for_prompt_template(template_str):
 
     return result_dict
 
+
 def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
     return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
