@@ -30,7 +30,7 @@ class BatchEngine:
         # 4. save output
         for output in batch_result.outputs:
             output = self.flow_executor._persist_images_from_output(output, output_dir)
-        return batch_result
+        return input_dicts, batch_result
 
     def _resolve_data(self, input_dirs: Dict[str, str]):
         result = {}
