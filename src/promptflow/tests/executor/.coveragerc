@@ -2,6 +2,7 @@
 omit =
     */promptflow/_cli/*
     */promptflow/_sdk/*
+    */promptflow/_telemetry/*
     */promptflow/azure/*
     */promptflow/entities/*
     */promptflow/operations/*

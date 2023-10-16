@@ -10,6 +10,7 @@ RUN conda create -n promptflow-serve python=3.9.16 pip=23.0.1 -q -y && \
     conda run -n promptflow-serve \
     pip install -r /flow/requirements_txt && \
     conda run -n promptflow-serve pip install keyrings.alt && \
+    conda run -n promptflow-serve pip install gunicorn==20.1.0 && \
     conda run -n promptflow-serve pip cache purge && \
     conda clean -a -y
 
