@@ -65,6 +65,11 @@ def env_with_secrets_config_file():
 
 @pytest.fixture
 def azure_open_ai_connection() -> AzureOpenAIConnection:
+    if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+        return AzureOpenAIConnection(
+            api_key="dummy_key",
+            api_base="dummy_base",
+        )
     return ConnectionManager().get("azure_open_ai_connection")
 
 
