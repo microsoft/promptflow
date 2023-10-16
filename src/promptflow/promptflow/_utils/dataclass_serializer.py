@@ -70,6 +70,7 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: dic
     if isinstance(value, list):
         return [serialize(v, remove_null, serialization_funcs) for v in value]
     if isinstance(value, GeneratorProxy):
+        # TODO: Consier renaming the function to to_serializable to better reflect its purpose in the next PR
         return value.items
     #  Note that custom connection check should before dict check
     if ConnectionType.is_connection_value(value):

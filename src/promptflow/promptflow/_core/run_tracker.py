@@ -341,25 +341,6 @@ class RunTracker(ThreadLocalSingleton):
             traces.extend(node_run_info.api_calls or [])
         return traces
 
-    def update_node_run_info(self, run_info: FlowRunInfo):
-        """Updates the run information of all nodes in a flow run.
-
-        This method collects all the node runs in a flow run and persists their run information to the storage.
-        This method should be called before the flow run ends to override the previous run information, as some nodes
-        may have empty or incomplete outputs at the end of their execution, especially if they produce generators.
-        This method ensures that the outputs of all nodes are consumed and updated before the flow run ends.
-
-        Args:
-            run_info (FlowRunInfo): The run info of the flow.
-
-        Returns:
-            None
-        """
-        run_id = run_info.run_id
-        child_run_infos = self.collect_child_node_runs(run_id)
-        for node_run_info in child_run_infos:
-            self.persist_node_run(node_run_info)
-
     OPENAI_AGGREGATE_METRICS = ["total_tokens"]
 
     def collect_metrics(self, run_infos: List[RunInfo], aggregate_metrics: List[str] = []):
@@ -378,6 +359,25 @@ class RunTracker(ThreadLocalSingleton):
 
     def persist_node_run(self, run_info: RunInfo):
         self._storage.persist_node_run(run_info)
+
+    def persist_selected_node_runs(self, run_info: FlowRunInfo, node_names: List[str]):
+        """Persists the node runs for the specified node names.
+
+        Args:
+            run_info (FlowRunInfo): The flow run information.
+            node_names (List[str]): The names of the nodes to persist.
+
+        Returns:
+            None
+        """
+        run_id = run_info.run_id
+        selected_node_run_info = [
+            run_info
+            for run_info in self.node_run_list
+            if run_info.parent_run_id == run_id and run_info.node in node_names
+        ]
+        for node_run_info in selected_node_run_info:
+            self.persist_node_run(node_run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         self._storage.persist_flow_run(run_info)
