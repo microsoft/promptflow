@@ -292,6 +292,7 @@ class RunSubmitter:
         # prepare data
         input_dirs = self._resolve_data_file(run)
         self._validate_column_mapping(column_mapping)
+        input_dicts = None
         bulk_result = None
         status = Status.Failed.value
         exception = None
