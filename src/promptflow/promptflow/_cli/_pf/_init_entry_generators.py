@@ -18,6 +18,7 @@ TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
 SERVE_TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "sdk" / "data" / "executable"
 
+
 class BaseGenerator(ABC):
     @property
     @abstractmethod
@@ -226,14 +227,14 @@ class StreamlitFileGenerator(BaseGenerator):
         from promptflow.contracts.flow import Flow as ExecutableFlow
         executable = ExecutableFlow.from_yaml(flow_file=Path(self.flow_dag_path.name),
                                               working_dir=self.flow_dag_path.parent)
-        return {flow_input: (value.default, True if isinstance(value, list) else False) for flow_input, value
-                       in executable.inputs.items()}
-
+        return {flow_input: (value.default, True if isinstance(value, list) else False)
+                for flow_input, value in executable.inputs.items()}
 
     @property
     def flow_inputs_params(self):
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items()]
         return ",".join(flow_inputs_params)
+
     @property
     def tpl_file(self):
         return TEMPLATE_PATH / "main.py.jinja2"
