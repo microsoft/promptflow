@@ -15,6 +15,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
+CHAT_FLOW_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "chat_flow" / "template"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
 
 
@@ -214,6 +215,46 @@ class FlowMetaYamlGenerator(BaseGenerator):
     @property
     def entry_template_keys(self):
         return ["flow_name"]
+
+
+class ChatFlowDAGGenerator(BaseGenerator):
+    def __init__(self, connection, deployment):
+        self.connection = connection
+        self.deployment = deployment
+
+    @property
+    def tpl_file(self):
+        return CHAT_FLOW_TEMPLATE_PATH / "flow.dag.yaml.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["connection", "deployment"]
+
+
+class AzureOpenAIConnectionGenerator(BaseGenerator):
+    def __init__(self, connection):
+        self.connection = connection
+
+    @property
+    def tpl_file(self):
+        return CHAT_FLOW_TEMPLATE_PATH / "azure_openai.yaml.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["connection"]
+
+
+class OpenAIConnectionGenerator(BaseGenerator):
+    def __init__(self, connection):
+        self.connection = connection
+
+    @property
+    def tpl_file(self):
+        return CHAT_FLOW_TEMPLATE_PATH / "openai.yaml.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["connection"]
 
 
 def copy_extra_files(flow_path, extra_files):
