@@ -12,9 +12,9 @@ As file path is currently in its preview phase, it is necessary for you to insta
     pip install "promptflow==0.1.0b8.dev2" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
     ```
 
-## Using File Path as Custom Tool Input
+## Using File Path as Package Tool Input
 
-### How to create a custom tool with file path input
+### How to create a package tool with file path input
 
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your owner tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
@@ -69,9 +69,9 @@ Here we use an existing flow to demonstrate the experience, open [this flow](htt
 
    ![use file path in flow](../../media/how-to-guides/develop-a-tool/use_file_path_in_flow.png)
 
-## Using File Path as Python Tool Input
+## Using File Path as Script Tool Input
 
-We can also utilize the `FilePath` input type directly in a Python tool, eliminating the need to create a custom tool.
+We can also utilize the `FilePath` input type directly in a script tool, eliminating the need to create a package tool.
 
 1. Initiate an empty flow in the VS Code extension and add a python node titled 'python_node_with_filepath' into it in the Visual Editor page.
 2. Select the link `python_node_with_filepath.py` in the node to modify the python method to include a `FilePath` input as shown below, and save the code change.
@@ -93,7 +93,7 @@ We can also utilize the `FilePath` input type directly in a Python tool, elimina
 
 3. Return to the flow Visual Editor page, click the picker icon to launch the UI for selecting an existing file or creating a new file to use as input, here we select [this file](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/filepath-input-tool-showcase/hello_method.py) as an example.
    
-    ![use file path in python tool](../../media/how-to-guides/develop-a-tool/use_file_path_in_python_tool.png)
+    ![use file path in script tool](../../media/how-to-guides/develop-a-tool/use_file_path_in_script_tool.png)
 
 
 ## FAQ
