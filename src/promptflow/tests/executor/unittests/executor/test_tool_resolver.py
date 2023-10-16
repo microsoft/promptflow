@@ -1,11 +1,13 @@
+import sys
 from pathlib import Path
 
 import pytest
 
 from promptflow._core.tools_manager import ToolLoader
+from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
-from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
+from promptflow.contracts.tool import InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
@@ -21,6 +23,11 @@ from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
 WRONG_REQUESTS_PATH = TEST_ROOT / "test_configs/executor_wrong_requests"
+
+
+class MyFirstCSTConnection(CustomStrongTypeConnection):
+    api_key: Secret
+    api_base: str
 
 
 @pytest.mark.unittest
@@ -306,7 +313,7 @@ class TestToolResolver:
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
-        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(mock_python_func, tool))
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, mock_python_func, tool))
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
@@ -387,3 +394,25 @@ class TestToolResolver:
         resolved_tool = tool_resolver._integrate_prompt_in_package_node(node, resolved_tool)
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
+
+    @pytest.mark.parametrize(
+        "conn_types, expected_type",
+        [
+            (["MyFirstCSTConnection"], MyFirstCSTConnection),
+            (["CustomConnection", "MyFirstCSTConnection"], CustomConnection),
+            (["CustomConnection", "MyFirstCSTConnection", "MySecondCSTConnection"], CustomConnection),
+            (["MyFirstCSTConnection", "MySecondCSTConnection"], MyFirstCSTConnection),
+        ],
+    )
+    def test_convert_to_custom_strong_type_connection_value(self, conn_types: list[str], expected_type, mocker):
+        connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+
+        node = mocker.Mock(name="node", tool=None, inputs={})
+        node.type = ToolType.PYTHON
+        node.source = mocker.Mock(type=ToolSourceType.Code)
+        m = sys.modules[__name__]
+        v = InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)
+        actual = tool_resolver._convert_to_custom_strong_type_connection_value("conn_name", v, node, conn_types, m)
+        assert isinstance(actual, expected_type)
+        assert actual.api_base == "mock"
