@@ -368,7 +368,7 @@ class FlowOperations:
         try:
             import PyInstaller  # noqa: F401
             import streamlit
-            import streamlit_quill # noqa: F401
+            import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(f"Please install PyInstaller, streamlit and streamlit_quill for building "
                                      f"executable, {ex.msg}.")
