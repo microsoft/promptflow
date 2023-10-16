@@ -22,6 +22,8 @@ class CapabilityComponent(Enum):
 
 @dataclass
 class Capability:
+    """The dataclass of capability."""
+
     name: str
     description: str
     components: List[CapabilityComponent]
