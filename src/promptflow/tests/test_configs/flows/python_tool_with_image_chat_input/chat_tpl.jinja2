@@ -1,0 +1,13 @@
+system:
+You are a helpful assistant.
+
+{% for msg in chat_history %}
+user:
+{{msg.inputs.question}}
+assistant:
+{{msg.outputs.answer}}
+{% endfor %}
+
+user:
+{{question}}
+![image]({{image}})

@@ -12,8 +12,9 @@ from typing import Callable, List, Optional
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._sdk.entities import CustomConnection
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_input_type_mapping_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -82,6 +83,8 @@ class ToolResolver:
             updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
                 updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+            elif value_type == ValueType.IMAGE:
+                updated_inputs[k].value = Image.create(v.value, self._working_dir)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
@@ -139,6 +142,12 @@ class ToolResolver:
         with open(self._working_dir / source.path) as fin:
             return fin.read()
 
+    def _load_images_for_prompt_tpl(self, prompt_tpl_inputs_type_mapping: dict, node_inputs: dict):
+        for input_name, type in prompt_tpl_inputs_type_mapping.items():
+            if type == "image" and input_name in node_inputs.keys():
+                node_inputs[input_name].value = Image.create(node_inputs[input_name].value, self._working_dir)
+        return node_inputs
+
     def _validate_duplicated_inputs(self, prompt_tpl_inputs: list, tool_params: list, msg: str):
         duplicated_inputs = set(prompt_tpl_inputs) & set(tool_params)
         if duplicated_inputs:
@@ -159,6 +168,8 @@ class ToolResolver:
             f"These inputs are duplicated with the reserved parameters of prompt tool."
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs, param_names, msg)
+        prompt_tpl_inputs_type_mapping = get_input_type_mapping_for_prompt_template(prompt_tpl)
+        node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_type_mapping, node.inputs)
         callable = partial(render_template_jinja2, template=prompt_tpl)
         return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
 
@@ -197,6 +208,8 @@ class ToolResolver:
             f"These inputs are duplicated with the parameters of {node.provider}.{node.api}."
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs, tool.inputs.keys(), msg)
+        prompt_tpl_inputs_type_mapping = get_input_type_mapping_for_prompt_template(prompt_tpl)
+        updated_node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_type_mapping, updated_node.inputs)
         api_func, init_args = BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, updated_node.inputs
         )
@@ -245,6 +258,8 @@ class ToolResolver:
             f"These inputs are duplicated with the inputs of custom llm tool."
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs, resolved_tool.definition.inputs.keys(), msg)
+        prompt_tpl_inputs_type_mapping = get_input_type_mapping_for_prompt_template(prompt_tpl)
+        node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_type_mapping, node.inputs)
         callable = resolved_tool.callable
         prompt_tpl_param_name = get_prompt_param_name_from_func(callable)
         if prompt_tpl_param_name is None:
@@ -253,5 +268,6 @@ class ToolResolver:
                 f"function {callable.__name__} is missing a prompt template argument.",
                 target=ErrorTarget.EXECUTOR,
             )
+        resolved_tool.node = node
         resolved_tool.callable = partial(callable, **{prompt_tpl_param_name: prompt_tpl})
         return resolved_tool

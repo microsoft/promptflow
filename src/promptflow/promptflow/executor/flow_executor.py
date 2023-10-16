@@ -26,7 +26,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import Image
+from promptflow.contracts.multimedia import ChatInputList, Image, PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ValueType
@@ -698,7 +698,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value, input_dir)
+        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -790,17 +790,28 @@ class FlowExecutor:
         self,
         inputs: Dict[str, FlowInputDefinition],
         line_inputs: Mapping,
-        input_dir: Path = None
     ) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
-        if not input_dir:
-            input_dir = self._working_dir
-        elif not input_dir.is_absolute():
-            input_dir = self._working_dir / input_dir
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(Path.joinpath(input_dir, updated_inputs[key]))
+                updated_inputs[key] = Image.create(updated_inputs[key], self._working_dir)
+            elif value.type == ValueType.LIST:
+                updated_inputs[key] = self._process_images_in_input_list(updated_inputs[key], value.is_chat_input)
         return updated_inputs
+
+    def _process_images_in_input_list(self, value, is_chat_input):
+        if isinstance(value, list):
+            processed_value = [self._process_images_in_input_list(item, is_chat_input) for item in value]
+            if is_chat_input:
+                return ChatInputList(processed_value)
+            return processed_value
+        elif isinstance(value, dict):
+            if PFBytes.is_multimedia_data(value):
+                return Image.from_dict(value)
+            else:
+                return {k: self._process_images_in_input_list(v, is_chat_input) for k, v in value.items()}
+        else:
+            return value
 
     def _persist_images_from_output(self, output: dict, output_dir: Path = None):
         if output_dir.is_absolute():
@@ -810,10 +821,21 @@ class FlowExecutor:
             folder_path = self._working_dir
             relative_path = output_dir
         for key, value in output.items():
-            if isinstance(value, Image):
-                file_name = f"{key}_{uuid.uuid4()}"
-                output[key] = value.save_to_file(file_name, folder_path, relative_path)
+            output[key] = self._persist_images_recursively(value, key, folder_path, relative_path)
         return output
+
+    def _persist_images_recursively(self, value: Any, prefix: str, folder_path: Path, relative_path: Path = None):
+        if isinstance(value, Image):
+            file_name = f"{prefix}_{uuid.uuid4()}"
+            return value.save_to_file(file_name, folder_path, relative_path)
+        elif isinstance(value, list):
+            return [self._persist_images_recursively(item, prefix, folder_path, relative_path) for item in value]
+        elif isinstance(value, dict):
+            return {
+                k: self._persist_images_recursively(v, prefix, folder_path, relative_path) for k, v in value.items()
+            }
+        else:
+            return value
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.

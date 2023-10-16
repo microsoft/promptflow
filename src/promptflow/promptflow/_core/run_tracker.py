@@ -243,6 +243,10 @@ class RunTracker(ThreadLocalSingleton):
         if isinstance(val, Image):
             # Images will be persisted when persisting flow run or node run, so no need to persist it here.
             return val
+        if isinstance(val, list):
+            return [self._ensure_serializable_value(v, warning_msg) for v in val]
+        if isinstance(val, dict):
+            return {k: self._ensure_serializable_value(v, warning_msg) for k, v in val.items()}
         try:
             json.dumps(val)
             return val
