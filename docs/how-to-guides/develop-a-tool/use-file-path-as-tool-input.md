@@ -6,11 +6,13 @@ In this guide, we will provide a detailed walkthrough on how to use `FilePath` a
 
 ## Prerequisites
 
-As file path is currently in its preview phase, it is necessary for you to install the test version of the PromptFlow package:
+1. As file path is currently in its preview phase, it is necessary for you to install the test version of the PromptFlow package:
 
     ```bash
     pip install "promptflow==0.1.0b8.dev2" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
     ```
+
+2.  Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or a more recent version.
 
 ## Using File Path as Package Tool Input
 
