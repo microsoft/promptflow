@@ -54,7 +54,6 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_line_execution_process_pool(self, flow_folder, dev_connections):
-
         log_path = str(Path(mkdtemp()) / "test.log")
         log_context_initializer = LogContext(log_path).get_initializer()
         log_context = log_context_initializer()
@@ -150,7 +149,6 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_exec_line_with_exception(self, flow_folder, batch_input, error_message, error_class, dev_connections):
-        # Bulk run - the input is from sample.json
         executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
         executor.exec_bulk(
             batch_input,
