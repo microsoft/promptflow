@@ -117,8 +117,9 @@ def start():
 
 {% set indent_level = 4 %}
 {% for flow_input, (default_value, is_multi_model) in flow_inputs.items() %}
+{{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
 {% if is_multi_model %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], placeholder='{{flow_input}}')
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
 {% else %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
 {% endif %}
