@@ -361,21 +361,20 @@ class RunTracker(ThreadLocalSingleton):
         self._storage.persist_node_run(run_info)
 
     def persist_selected_node_runs(self, run_info: FlowRunInfo, node_names: List[str]):
-        """Persists the node runs for the specified node names.
+        """
+        Persists the node runs for the specified node names.
 
-        Args:
-            run_info (FlowRunInfo): The flow run information.
-            node_names (List[str]): The names of the nodes to persist.
-
-        Returns:
-            None
+        :param run_info: The flow run information.
+        :type run_info: FlowRunInfo
+        :param node_names: The names of the nodes to persist.
+        :type node_names: List[str]
+        :returns: None
         """
         run_id = run_info.run_id
-        selected_node_run_info = [
-            run_info
-            for run_info in self.node_run_list
-            if run_info.parent_run_id == run_id and run_info.node in node_names
-        ]
+
+        selected_node_run_info = (
+            run_info for run_info in self.collect_child_node_runs(run_id) if run_info.node in node_names
+        )
         for node_run_info in selected_node_run_info:
             self.persist_node_run(node_run_info)
 
