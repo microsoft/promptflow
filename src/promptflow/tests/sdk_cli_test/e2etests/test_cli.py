@@ -1221,6 +1221,7 @@ class TestCli:
             assert (package_folder / package_name / "utils.py").exists()
             assert (package_folder / package_name / "__init__.py").exists()
             assert (package_folder / "setup.py").exists()
+            assert (package_folder / "README.md").exists()
 
             spec = importlib.util.spec_from_file_location(
                 f"{package_name}.utils", package_folder / package_name / "utils.py")

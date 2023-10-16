@@ -13,6 +13,7 @@ from promptflow._cli._pf._init_entry_generators import (
     SetupGenerator,
     ToolPackageGenerator,
     ToolPackageUtilsGenerator,
+    ToolReadmeGenerator,
 )
 from promptflow._cli._utils import activate_action, exception_handler
 from promptflow._sdk._constants import LOGGER_NAME
@@ -87,6 +88,7 @@ def init_tool(args):
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate utils.py to list meta data of tools.
         ToolPackageUtilsGenerator(package_name=package_name).generate_to_file(script_code_path / "utils.py")
+        ToolReadmeGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "README.md")
     else:
         script_code_path = Path(".")
     # Generate tool script

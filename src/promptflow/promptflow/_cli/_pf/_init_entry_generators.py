@@ -268,6 +268,20 @@ class ToolPackageUtilsGenerator(BaseGenerator):
         return ["package_name"]
 
 
+class ToolReadmeGenerator(BaseGenerator):
+    def __init__(self, package_name, tool_name):
+        self.package_name = package_name
+        self.tool_name = tool_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "README.md.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["package_name", "tool_name"]
+
+
 class InitGenerator(BaseGenerator):
     @property
     def tpl_file(self):
