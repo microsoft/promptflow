@@ -14,7 +14,7 @@ As file path is currently in its preview phase, it is necessary for you to insta
 
 ## How to create a tool with file path input
 
-Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your owner tool, please refer to [create and use tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#create-custom-tool-package).
+Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your owner tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
 1. Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
 
@@ -53,12 +53,12 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
       type: python   
     ```
 
-    > [!Note] tool yaml file can be generated using a python script. For further details, please refer to [create custom tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#create-custom-tool-package).
+    > [!Note] tool yaml file can be generated using a python script. For further details, please refer to [create custom tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
 
 ## Use tool with a file path input in VS Code extension
 
-Follow steps to [build and install your tool package](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](https://github.com/microsoft/promptflow/blob/main/docs/how-to-guides/develop-a-tool/create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
+Follow steps to [build and install your tool package](create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
 Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/filepath-input-tool-showcase/flow.dag.yaml) in VS Code extension:
 - There is a node named "Tool_with_FilePath_Input" with a `file_path` type input called `input_file`.
