@@ -21,19 +21,21 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
   ```
 
 ## Add tool icon with _icon_ parameter 
-Use the `icon` parameter when generating your tool package to add a custom tool icon:
+Run below command under your tool project to auto generate your tool YAML, use _-i_ or _--icon_ parameter to add a custom tool icon:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name> --icon <your-tool-icon-path>
+python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description> -i <tool-icon-path>
 ```
 For example:
 ```
-python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message --icon D:\proj\github\promptflow\examples\tools\tool-package-quickstart\my_tool_package\icons\custom-tool-icon.png
+python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool." -i D:\proj\github\promptflow\examples\tools\tool-package-quickstart\my_tool_package\icons\custom-tool-icon.png
 ```
 
 In the auto-generated tool YAML file, the custom tool icon data URI is added in the `icon` field:
 ```yaml
 hello_world.tools.hello_world_tool.get_greeting_message
+  description: This is hello world tool
   function: get_greeting_message
+  icon: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACq0lEQVR4nKWTPWxTVxiGn3N/bF/fGyd2YxsQ5LdSmoqGgKJMEQNZYGBFkVhY2JGYmFG3ioWZpWukqqpaqaVKq6pFIAECAkSxMA6RHZP4Jnbs+O/6xvdjcCLKT6ee7ZwjvfrOc55XiYjwP5bx740IZDf3+PVZicdrVeK2yfzJJBem02iaQv1XQCCCCNz+Lce91R1mRvtYd5uEDIfl9SqpWIjZLxOIgPooRQtE0JQiU6xx91mJfNkjZoX47vIkM2Nx6l6Xmz9kWHywgVIQBB++WImI1Nv7fP/XOqah0fKFdH8YQwXcf1Vh6WWZTrfLaDLK4rVZrJD+wSQGwJrbQtc0rs4PAXDr5xy/PHW5NJsmGQuhNI0/XrisFmtMjwxwOLVCYXTaTdq+kHagXq0iAo4phE2dn564XD8/zLlTRwn8gK1dQaHQtfcgDDMcwQo1Wc43mEp16YpibdsjEKHdEX5/8YZEpIhjCckBi9a+ibfvETEsIobdY1Bp+Pz4cAvP67C522IsbeN1A0zd5r77LWF7hebe1xxJrzKRmON56W/OHDnHwskbaCIQt03OTsbJljxeuz4rxSYXp2JcmYszedQhrNscj/ehJIKuQpiaBegHEFVPoOHBKOPpKMXdNtlSmzt/bpC0XTb9LxgcmGDq2CT5mpC0hhiO1UhGe8ANBYgCQ1dcnR9iJGnxT6ZMrtLmbV1H78/QrD0nagQ82ljCP+HzqLBEsB8wP7bQ+8ZDpoauuHA6xfnpFA3Px4mY3M2cJbeTZjTxFQYm44lv0MRkPDH1aRcOtdaUwon0rgrbBdbd10S1AXJbWRxzkLXNLDEz1VP54wDtQLHuQUl36xUKpTzl6jYFN89OdYeCm6eyV3mv8mdKxuFxueHS8PawTJuW3yAacmh26jiRfhL2IO8AhSUo7nmFnjUAAAAASUVORK5CYII=
   inputs:
     connection:
       type:
@@ -43,9 +45,7 @@ hello_world.tools.hello_world_tool.get_greeting_message
       - string
   module: hello_world.tools.hello_world_tool
   name: Hello World Tool
-  description: This is hello world tool
   type: python
-  icon: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACq0lEQVR4nKWTPWxTVxiGn3N/bF/fGyd2YxsQ5LdSmoqGgKJMEQNZYGBFkVhY2JGYmFG3ioWZpWukqqpaqaVKq6pFIAECAkSxMA6RHZP4Jnbs+O/6xvdjcCLKT6ee7ZwjvfrOc55XiYjwP5bx740IZDf3+PVZicdrVeK2yfzJJBem02iaQv1XQCCCCNz+Lce91R1mRvtYd5uEDIfl9SqpWIjZLxOIgPooRQtE0JQiU6xx91mJfNkjZoX47vIkM2Nx6l6Xmz9kWHywgVIQBB++WImI1Nv7fP/XOqah0fKFdH8YQwXcf1Vh6WWZTrfLaDLK4rVZrJD+wSQGwJrbQtc0rs4PAXDr5xy/PHW5NJsmGQuhNI0/XrisFmtMjwxwOLVCYXTaTdq+kHagXq0iAo4phE2dn564XD8/zLlTRwn8gK1dQaHQtfcgDDMcwQo1Wc43mEp16YpibdsjEKHdEX5/8YZEpIhjCckBi9a+ibfvETEsIobdY1Bp+Pz4cAvP67C522IsbeN1A0zd5r77LWF7hebe1xxJrzKRmON56W/OHDnHwskbaCIQt03OTsbJljxeuz4rxSYXp2JcmYszedQhrNscj/ehJIKuQpiaBegHEFVPoOHBKOPpKMXdNtlSmzt/bpC0XTb9LxgcmGDq2CT5mpC0hhiO1UhGe8ANBYgCQ1dcnR9iJGnxT6ZMrtLmbV1H78/QrD0nagQ82ljCP+HzqLBEsB8wP7bQ+8ZDpoauuHA6xfnpFA3Px4mY3M2cJbeTZjTxFQYm44lv0MRkPDH1aRcOtdaUwon0rgrbBdbd10S1AXJbWRxzkLXNLDEz1VP54wDtQLHuQUl36xUKpTzl6jYFN89OdYeCm6eyV3mv8mdKxuFxueHS8PawTJuW3yAacmh26jiRfhL2IO8AhSUo7nmFnjUAAAAASUVORK5CYII=
 ```
 
 ## Verify the tool icon in VS Code extension
