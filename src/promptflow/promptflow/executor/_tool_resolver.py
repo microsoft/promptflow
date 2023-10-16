@@ -4,6 +4,7 @@
 
 import copy
 import inspect
+import types
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -11,18 +12,18 @@ from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
-from promptflow._sdk.entities import CustomConnection
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
-from promptflow.exceptions import ErrorTarget, UserErrorException
+from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     InvalidSource,
     NodeInputValidationError,
+    ResolveToolError,
     ValueTypeUnresolved,
 )
 
@@ -52,10 +53,6 @@ class ToolResolver:
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
-
-        if isinstance(connection_value, CustomConnection) and connection_value._is_custom_strong_type():
-            return connection_value._convert_to_custom_strong_type()
-
         # Check if type matched
         if not any(type(connection_value).__name__ == typ for typ in conn_types):
             msg = (
@@ -65,7 +62,23 @@ class ToolResolver:
             raise NodeInputValidationError(message=msg)
         return connection_value
 
-    def _convert_node_literal_input_types(self, node: Node, tool: Tool):
+    def _convert_to_custom_strong_type_connection_value(
+        self, k: str, v: InputAssignment, node: Node, conn_types: List[str], module: types.ModuleType
+    ):
+        if conn_types is None:
+            msg = f"Input '{k}' for node '{node.name}' has invalid types: None."
+            raise NodeInputValidationError(message=msg)
+        connection_value = self._connection_manager.get(v.value)
+        if not connection_value:
+            raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
+
+        custom_defined_connection_class = None
+        if node.source.type == ToolSourceType.Code:
+            custom_type_class_name = conn_types[0]
+            custom_defined_connection_class = getattr(module, custom_type_class_name)
+        return connection_value._convert_to_custom_strong_type(to_class=custom_defined_connection_class)
+
+    def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
             k: v
             for k, v in node.inputs.items()
@@ -80,7 +93,12 @@ class ToolResolver:
             value_type = tool_input.type[0]
             updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
-                updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                if tool_input.custom_type:
+                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
+                        k, v, node, tool_input.custom_type, module=module
+                    )
+                else:
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
@@ -98,26 +116,33 @@ class ToolResolver:
         return updated_node
 
     def resolve_tool_by_node(self, node: Node, convert_input_types=True) -> ResolvedTool:
-        if node.source is None:
-            raise UserErrorException(f"Node {node.name} does not have source defined.")
+        try:
+            if node.source is None:
+                raise UserErrorException(f"Node {node.name} does not have source defined.")
 
-        if node.type is ToolType.PYTHON:
-            if node.source.type == ToolSourceType.Package:
-                return self._resolve_package_node(node, convert_input_types=convert_input_types)
-            elif node.source.type == ToolSourceType.Code:
-                return self._resolve_script_node(node, convert_input_types=convert_input_types)
-            raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
-        elif node.type is ToolType.PROMPT:
-            return self._resolve_prompt_node(node)
-        elif node.type is ToolType.LLM:
-            return self._resolve_llm_node(node, convert_input_types=convert_input_types)
-        elif node.type is ToolType.CUSTOM_LLM:
-            if node.source.type == ToolSourceType.PackageWithPrompt:
-                resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
-                return self._integrate_prompt_in_package_node(node, resolved_tool)
-            raise NotImplementedError(f"Tool source type {node.source.type} for custom_llm tool is not supported yet.")
-        else:
-            raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+            if node.type is ToolType.PYTHON:
+                if node.source.type == ToolSourceType.Package:
+                    return self._resolve_package_node(node, convert_input_types=convert_input_types)
+                elif node.source.type == ToolSourceType.Code:
+                    return self._resolve_script_node(node, convert_input_types=convert_input_types)
+                raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
+            elif node.type is ToolType.PROMPT:
+                return self._resolve_prompt_node(node)
+            elif node.type is ToolType.LLM:
+                return self._resolve_llm_node(node, convert_input_types=convert_input_types)
+            elif node.type is ToolType.CUSTOM_LLM:
+                if node.source.type == ToolSourceType.PackageWithPrompt:
+                    resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
+                    return self._integrate_prompt_in_package_node(node, resolved_tool)
+                raise NotImplementedError(
+                    f"Tool source type {node.source.type} for custom_llm tool is not supported yet."
+                )
+            else:
+                raise NotImplementedError(f"Tool type {node.type} is not supported yet.")
+        except Exception as e:
+            if isinstance(e, PromptflowException) and e.target != ErrorTarget.UNKNOWN:
+                raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
+            raise ResolveToolError(node_name=node.name) from e
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
@@ -213,9 +238,17 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        f, tool = self._tool_loader.load_tool_for_script_node(node)
+        m, f, tool = self._tool_loader.load_tool_for_script_node(node)
+        # We only want to load script tool module once.
+        # Reloading the same module changes the ID of the class, which can cause issues with isinstance() checks.
+        # This is important when working with connection class checks. For instance, in user tool script it writes:
+        #       isinstance(conn, MyCustomConnection)
+        # Custom defined script tool and custom defined strong type connection are in the same module.
+        # The first time to load the module is in above line when loading a tool.
+        # We need the module again when converting the custom connection to strong type when converting input types.
+        # To avoid reloading, pass the loaded module to _convert_node_literal_input_types as an arg.
         if convert_input_types:
-            node = self._convert_node_literal_input_types(node, tool)
+            node = self._convert_node_literal_input_types(node, tool, m)
         return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
 
     def _resolve_package_node(self, node: Node, convert_input_types=False) -> ResolvedTool:

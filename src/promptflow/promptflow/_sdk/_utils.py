@@ -27,8 +27,10 @@ from filelock import FileLock
 from jinja2 import Template
 from keyring.errors import NoKeyringError
 from marshmallow import ValidationError
+from ruamel.yaml import YAML
 
 import promptflow
+from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -44,6 +46,7 @@ from promptflow._sdk._constants import (
     NODE_VARIANTS,
     NODES,
     PROMPT_FLOW_DIR_NAME,
+    REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
@@ -314,6 +317,29 @@ def _match_env_reference(val: str):
     return name
 
 
+def override_connection_config_with_environment_variable(connections: Dict[str, dict]):
+    """
+    The function will use relevant environment variable to override connection configurations. For instance, if there
+    is a custom connection named 'custom_connection' with a configuration key called 'chat_deployment_name,' the
+    function will attempt to retrieve 'chat_deployment_name' from the environment variable
+    'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the
+    original value as a fallback.
+    """
+    logger = logging.getLogger(LOGGER_NAME)
+    for connection_name, connection in connections.items():
+        values = connection.get("value", {})
+        for key, val in values.items():
+            connection_name = connection_name.replace(" ", "_")
+            env_name = f"{connection_name}_{key}".upper()
+            if env_name not in os.environ:
+                continue
+            values[key] = os.environ[env_name]
+            logger.info(
+                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
+            )
+    return connections
+
+
 def resolve_connections_environment_variable_reference(connections: Dict[str, dict]):
     """The function will resolve connection secrets env var reference like api_key: ${env:KEY}"""
     for connection in connections.values():
@@ -360,7 +386,7 @@ def in_jupyter_notebook() -> bool:
 
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
-    with open(template_path, "r") as f:
+    with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
         template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
     return template.render(**kwargs)
 
@@ -404,7 +430,7 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    with open(yaml_path, "r") as f:
+    with open(yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
         flow_dag = yaml.safe_load(f)
     return flow_dag.get("additional_includes", [])
 
@@ -635,7 +661,7 @@ def generate_flow_tools_json(
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
-    with open(flow_directory / DAG_FILE_NAME, "r") as f:
+    with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
         data = yaml.safe_load(f)
     tools = []  # List[Tuple[source_file, tool_type]]
     used_packages = set()
@@ -698,14 +724,33 @@ def generate_flow_tools_json(
     return flow_tools
 
 
-def setup_user_agent_to_operation_context(user_agent):
+def update_user_agent_from_env_var():
+    """Update user agent from env var to OperationContext"""
     from promptflow._core.operation_context import OperationContext
 
     if "USER_AGENT" in os.environ:
         # Append vscode or other user agent from env
         OperationContext.get_instance().append_user_agent(os.environ["USER_AGENT"])
+
+
+def setup_user_agent_to_operation_context(user_agent):
+    """Setup user agent to OperationContext"""
+    from promptflow._core.operation_context import OperationContext
+
+    update_user_agent_from_env_var()
     # Append user agent
-    OperationContext.get_instance().append_user_agent(user_agent)
+    context = OperationContext.get_instance()
+    context.append_user_agent(user_agent)
+    return context.get_user_agent()
+
+
+def call_from_extension() -> bool:
+    """Return true if current request is from extension."""
+    from promptflow._core.operation_context import OperationContext
+
+    update_user_agent_from_env_var()
+    context = OperationContext().get_instance()
+    return EXTENSION_UA in context.get_user_agent()
 
 
 def generate_random_string(length: int = 6) -> str:
@@ -768,21 +813,30 @@ def _generate_connections_dir():
     return connections_dir
 
 
+_refresh_connection_dir_lock = FileLock(REFRESH_CONNECTIONS_DIR_LOCK_PATH)
+
+
 # This function is used by extension to generate the connection files every time collect tools.
 def refresh_connections_dir(connection_spec_files, connection_template_yamls):
     connections_dir = _generate_connections_dir()
-    if os.path.isdir(connections_dir):
-        shutil.rmtree(connections_dir)
-    os.makedirs(connections_dir)
 
-    if connection_spec_files and connection_template_yamls:
-        for connection_name, content in connection_spec_files.items():
-            file_name = connection_name + ".spec.json"
-            with open(connections_dir / file_name, "w") as f:
-                json.dump(content, f, indent=2)
+    # Use lock to prevent concurrent access
+    with _refresh_connection_dir_lock:
+        if os.path.isdir(connections_dir):
+            shutil.rmtree(connections_dir)
+        os.makedirs(connections_dir)
 
-        for connection_name, content in connection_template_yamls.items():
-            yaml_data = yaml.safe_load(content)
-            file_name = connection_name + ".template.yaml"
-            with open(connections_dir / file_name, "w") as f:
-                yaml.dump(yaml_data, f, sort_keys=False)
+        if connection_spec_files and connection_template_yamls:
+            for connection_name, content in connection_spec_files.items():
+                file_name = connection_name + ".spec.json"
+                with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
+                    json.dump(content, f, indent=2)
+
+            # use YAML to dump template file in order to keep the comments
+            yaml = YAML()
+            yaml.preserve_quotes = True
+            for connection_name, content in connection_template_yamls.items():
+                yaml_data = yaml.load(content)
+                file_name = connection_name + ".template.yaml"
+                with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
+                    yaml.dump(yaml_data, f)

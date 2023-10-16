@@ -1,11 +1,13 @@
+import sys
 from pathlib import Path
 
 import pytest
 
 from promptflow._core.tools_manager import ToolLoader
+from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
-from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
+from promptflow.contracts.tool import InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
 from promptflow.executor._errors import (
@@ -13,13 +15,19 @@ from promptflow.executor._errors import (
     InvalidConnectionType,
     InvalidSource,
     NodeInputValidationError,
+    ResolveToolError,
     ValueTypeUnresolved,
 )
-from promptflow.executor._tool_resolver import ToolResolver, ResolvedTool
+from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
 WRONG_REQUESTS_PATH = TEST_ROOT / "test_configs/executor_wrong_requests"
+
+
+class MyFirstCSTConnection(CustomStrongTypeConnection):
+    api_key: Secret
+    api_base: str
 
 
 @pytest.mark.unittest
@@ -86,39 +94,48 @@ class TestToolResolver:
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.source = mocker.Mock(type=None)
 
-        with pytest.raises(NotImplementedError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "Tool type" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NotImplementedError)
+        assert "Tool type" in exec_info.value.message
 
     def test_resolve_tool_by_node_with_invalid_source_type(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PYTHON
         node.source = mocker.Mock(type=None)
 
-        with pytest.raises(NotImplementedError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "Tool source type" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NotImplementedError)
+        assert "Tool source type" in exec_info.value.message
 
         node.type = ToolType.CUSTOM_LLM
         node.source = mocker.Mock(type=None)
-        with pytest.raises(NotImplementedError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "Tool source type" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NotImplementedError)
+        assert "Tool source type" in exec_info.value.message
 
     def test_resolve_tool_by_node_with_no_source(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.source = None
 
-        with pytest.raises(UserErrorException):
+        with pytest.raises(ResolveToolError) as ex:
             resolver.resolve_tool_by_node(node)
+        assert isinstance(ex.value.inner_exception, UserErrorException)
 
     def test_resolve_tool_by_node_with_no_source_path(self, resolver, mocker):
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PROMPT
         node.source = mocker.Mock(type=ToolSourceType.Package, path=None)
 
-        with pytest.raises(InvalidSource) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
+
+        assert isinstance(exec_info.value.inner_exception, InvalidSource)
         assert "Node source path" in exec_info.value.message
 
     def test_resolve_tool_by_node_with_duplicated_inputs(self, resolver, mocker):
@@ -126,9 +143,11 @@ class TestToolResolver:
         node.type = ToolType.PROMPT
         mocker.patch.object(resolver, "_load_source_content", return_value="{{template}}")
 
-        with pytest.raises(NodeInputValidationError) as exec_info:
+        with pytest.raises(ResolveToolError) as exec_info:
             resolver.resolve_tool_by_node(node)
-        assert "These inputs are duplicated" in exec_info.value.args[0]
+
+        assert isinstance(exec_info.value.inner_exception, NodeInputValidationError)
+        assert "These inputs are duplicated" in exec_info.value.message
 
     def test_ensure_node_inputs_type(self):
         # Case 1: conn_name not in connections, should raise conn_name not found error
@@ -262,7 +281,7 @@ class TestToolResolver:
 
         mocker.patch(
             "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
-            return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection})
+            return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection}),
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
@@ -294,7 +313,7 @@ class TestToolResolver:
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
-        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(mock_python_func, tool))
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, mock_python_func, tool))
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
@@ -327,7 +346,7 @@ class TestToolResolver:
 
         mocker.patch(
             "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
-            return_value=(mock_package_func, {"conn": AzureOpenAIConnection})
+            return_value=(mock_package_func, {"conn": AzureOpenAIConnection}),
         )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
@@ -357,7 +376,11 @@ class TestToolResolver:
             return render_template_jinja2(prompt, **kwargs)
 
         tool_resolver = ToolResolver(working_dir=None, connections={})
-        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}",)
+        mocker.patch.object(
+            tool_resolver,
+            "_load_source_content",
+            return_value="{{text}}",
+        )
 
         tool = Tool(name="mock", type=ToolType.CUSTOM_LLM, inputs={"prompt": InputDefinition(type=["PromptTemplate"])})
         node = Node(
@@ -371,3 +394,25 @@ class TestToolResolver:
         resolved_tool = tool_resolver._integrate_prompt_in_package_node(node, resolved_tool)
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
+
+    @pytest.mark.parametrize(
+        "conn_types, expected_type",
+        [
+            (["MyFirstCSTConnection"], MyFirstCSTConnection),
+            (["CustomConnection", "MyFirstCSTConnection"], CustomConnection),
+            (["CustomConnection", "MyFirstCSTConnection", "MySecondCSTConnection"], CustomConnection),
+            (["MyFirstCSTConnection", "MySecondCSTConnection"], MyFirstCSTConnection),
+        ],
+    )
+    def test_convert_to_custom_strong_type_connection_value(self, conn_types: list[str], expected_type, mocker):
+        connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
+        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+
+        node = mocker.Mock(name="node", tool=None, inputs={})
+        node.type = ToolType.PYTHON
+        node.source = mocker.Mock(type=ToolSourceType.Code)
+        m = sys.modules[__name__]
+        v = InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)
+        actual = tool_resolver._convert_to_custom_strong_type_connection_value("conn_name", v, node, conn_types, m)
+        assert isinstance(actual, expected_type)
+        assert actual.api_base == "mock"

@@ -3,14 +3,17 @@
 # ---------------------------------------------------------
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
-from .types import PromptTemplate, Secret
+from .multimedia import Image
+from .types import FilePath, PromptTemplate, Secret
 
+logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
 
 
@@ -34,6 +37,8 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    FILE_PATH = "file_path"
+    IMAGE = "image"
 
     @staticmethod
     def from_value(t: Any) -> "ValueType":
@@ -59,6 +64,8 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
@@ -85,6 +92,10 @@ class ValueType(str, Enum):
             return ValueType.SECRET
         if t == PromptTemplate:
             return ValueType.PROMPT_TEMPLATE
+        if t == FilePath:
+            return ValueType.FILE_PATH
+        if t == Image:
+            return ValueType.IMAGE
         return ValueType.OBJECT
 
     def parse(self, v: Any) -> Any:  # noqa: C901
@@ -176,12 +187,26 @@ class ConnectionType:
         return val in connections.values() or ConnectionType.is_custom_strong_type(val)
 
     @staticmethod
-    def is_custom_strong_type(val):
-        """Check if the given value is a custom strong type connection."""
+    def is_custom_strong_type(val: Any) -> bool:
+        """Check if the given value is a custom strong type connection.
 
-        from promptflow._sdk.entities import CustomStrongTypeConnection
+        :param val: The value to check
+        :type val: Any
+        :return: Whether the given value is a custom strong type
+        :rtype: bool
+        """
 
-        return issubclass(val, CustomStrongTypeConnection)
+        from promptflow.connections import CustomStrongTypeConnection
+
+        val = type(val) if not isinstance(val, type) else val
+
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except TypeError as e:
+            # TypeError is not expected to happen, but if it does, we will log it for debugging and return False.
+            # The try-except block cannot be confidently removed due to the uncertainty of TypeError that may occur.
+            logger.warning(f"Failed to check if {val} is a custom strong type: {e}")
+            return False
 
     @staticmethod
     def serialize_conn(connection: Any) -> dict:
@@ -216,6 +241,10 @@ class InputDefinition:
     default: str = None
     description: str = None
     enum: List[str] = None
+    # Param 'custom_type' is currently used for inputs of custom strong type connection.
+    # For a custom strong type connection input, the type should be 'CustomConnection',
+    # while the custom_type should be the custom strong type connection class name.
+    custom_type: List[str] = None
 
     def serialize(self) -> dict:
         """Serialize input definition to dict.
@@ -234,6 +263,8 @@ class InputDefinition:
             data["description"] = self.description
         if self.enum:
             data["enum"] = self.enum
+        if self.custom_type:
+            data["custom_type"] = self.custom_type
         return data
 
     @staticmethod
@@ -257,6 +288,7 @@ class InputDefinition:
             data.get("default", ""),
             data.get("description", ""),
             data.get("enum", []),
+            data.get("custom_type", []),
         )
 
 

@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Red",
+        "id_text": "1.0",
+        "id_int": 1,
+        "id_float": 1.0
+    },
+    {
+        "name": "Blue",
+        "id_text": "3.0",
+        "id_int": 3,
+        "id_float": 3.0
+    },
+    {
+        "name": "Yellow",
+        "id_text": "2.0",
+        "id_int": 2,
+        "id_float": 2.0
+    }
+]

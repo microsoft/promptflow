@@ -3,7 +3,7 @@ type: custom
 name: custom_connection
 configs:
   CHAT_DEPLOYMENT_NAME: gpt-35-turbo
-  AZURE_OPENAI_API_BASE: https://wanhanopenai.openai.azure.com/
+  AZURE_OPENAI_API_BASE: https://gpt-test-eus.openai.azure.com/
 secrets:
   AZURE_OPENAI_API_KEY: ${env:CUSTOM_CONNECTION_AZURE_OPENAI_API_KEY}
 module: promptflow.connections
