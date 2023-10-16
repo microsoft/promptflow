@@ -50,6 +50,8 @@ class RecordStorage:
         path_hash = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
         local_content = RecordStorage.runItems.get(path_hash, None)
         if not local_content:
+            if not os.path.exists(flow_directory / "storage_record.json"):
+                return
             with open(flow_directory / "storage_record.json", "r") as fp:
                 RecordStorage.runItems[path_hash] = json.load(fp)
 
@@ -67,9 +69,9 @@ class RecordStorage:
                 real_item = base64.b64decode(bytes(item, "utf-8")).decode()
                 return real_item
             else:
-                raise f"Record item not found in folder {flow_directory}."
+                raise BaseException(f"Record item not found in folder {flow_directory}.")
         else:
-            raise f"Record file not found in folder {flow_directory}."
+            raise BaseException(f"Record file not found in folder {flow_directory}.")
 
     @staticmethod
     def set_record(flow_directory: Path, hashDict: OrderedDict, output: object) -> None:
@@ -78,6 +80,7 @@ class RecordStorage:
         output_base64: str = base64.b64encode(bytes(output, "utf-8")).decode()
         current_saved_record: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
         if current_saved_record is None:
+            RecordStorage.load_file(flow_directory)
             RecordStorage.runItems[path_hash] = {hash_value: output_base64}
             RecordStorage.write_file(flow_directory)
         else:
