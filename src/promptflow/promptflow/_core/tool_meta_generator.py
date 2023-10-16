@@ -42,7 +42,7 @@ def get_input_type(input: str, input_type_mapping: dict) -> ValueType:
     : return: the ValueType of the given input name
     : rtype: ~promptflow.contracts.tool.ValueType
     """
-    if input_type_mapping and input not in input_type_mapping:
+    if not input_type_mapping or input not in input_type_mapping:
         return ValueType.STRING
 
     if input_type_mapping[input] == "image":
