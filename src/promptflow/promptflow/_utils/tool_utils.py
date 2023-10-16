@@ -133,7 +133,23 @@ def get_prompt_param_name_from_func(f):
 
 
 def get_input_type_mapping_for_prompt_template(template_str):
-    """Get all tagged input type mapping from a template string"""
+    """Get all tagged input type mapping from a template string
+    Example:
+    >>> get_input_type_mapping_for_prompt_template(
+        template_str="A simple prompt with no variables"
+    )
+    {}
+
+    >>> get_input_type_mapping_for_prompt_template(
+        template_str="Prompt with only one string input {{str_input}}"
+    )
+    {}
+
+    >>> get_input_type_mapping_for_prompt_template(
+        template_str="Prompt with image input ![image]({{image_input}})"
+    )
+    {"image_input": "image"}
+    """
 
     # currently we only support image type
     pattern = r'\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)'
@@ -145,15 +161,5 @@ def get_input_type_mapping_for_prompt_template(template_str):
         input_name = match.group(2).strip()
         if input_name != "" and input_name not in result_dict:
             result_dict[input_name] = match.group(1).strip()
-
-    # try best to identify object types
-    try:
-        env = Environment()
-        template = env.parse(template_str)
-        for node in template.find_all(node_type=nodes.For):
-            if node.iter.name not in result_dict:
-                result_dict[node.iter.name] = "object"
-    except Exception:
-        pass
 
     return result_dict
