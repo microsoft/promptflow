@@ -103,7 +103,7 @@ class RunInfo:
 class FlowRunInfo:
     """A dataclass representing the run information.
 
-    :var run_id: The id of the run, which equals ``flow_run_id:child_flow_run_id``
+    :param run_id: The id of the run, which equals ``flow_run_id:child_flow_run_id``
     :type run_id: str
     :param status: Status of the flow run
     :type status: ~promptflow.contracts.run_info.Status
