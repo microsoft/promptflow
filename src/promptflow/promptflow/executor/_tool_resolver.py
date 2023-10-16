@@ -146,15 +146,16 @@ class ToolResolver:
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
-        if source is None or source.path is None or not Path(self._working_dir / source.path).exists():
+        # If is_file returns True, the path points to a existing file, so we don't need to check if exists.
+        if source is None or source.path is None or not Path(self._working_dir / source.path).is_file():
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
                 message_format="Node source path '{source_path}' is invalid on node '{node_name}'.",
                 source_path=source.path if source is not None else None,
                 node_name=node.name,
             )
-        with open(self._working_dir / source.path) as fin:
-            return fin.read()
+        file = Path(self._working_dir / source.path)
+        return file.read_text(encoding="utf-8")
 
     def _validate_duplicated_inputs(self, prompt_tpl_inputs: list, tool_params: list, msg: str):
         duplicated_inputs = set(prompt_tpl_inputs) & set(tool_params)
