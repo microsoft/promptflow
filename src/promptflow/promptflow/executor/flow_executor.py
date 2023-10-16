@@ -1004,7 +1004,7 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
+        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
 
     @staticmethod
     def apply_inputs_mapping(

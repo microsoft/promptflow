@@ -247,7 +247,9 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    def test_custom_strong_type_connection_basic_flow(self, install_custom_tool_pkg, local_client, pf):
+    def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
 
@@ -256,9 +258,25 @@ class TestFlowRun:
         importlib.reload(pkg_resources)
 
         result = pf.run(
-            flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
-            data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
             connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+        )
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+
+    def test_basic_flow_with_script_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
+        # Prepare custom connection
+        from promptflow.connections import CustomConnection
+
+        conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
+        local_client.connections.create_or_update(conn)
+
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection/data.jsonl",
         )
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"

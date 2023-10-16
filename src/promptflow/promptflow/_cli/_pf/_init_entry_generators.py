@@ -14,8 +14,9 @@ from jinja2 import Environment, Template, meta
 from promptflow._sdk._constants import LOGGER_NAME
 
 logger = logging.getLogger(LOGGER_NAME)
-TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
-CHAT_FLOW_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "chat_flow" / "template"
+TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
+CHAT_FLOW_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "chat_flow" / "template"
+TOOL_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "package_tool"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
 
 
@@ -266,3 +267,72 @@ def copy_extra_files(flow_path, extra_files):
         action = "Overwriting" if target_path.exists() else "Creating"
         print(f"{action} {target_path.resolve()}...")
         shutil.copy2(extra_file_path, target_path)
+
+
+class ToolPackageGenerator(BaseGenerator):
+    def __init__(self, tool_name):
+        self.tool_name = tool_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "tool.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["tool_name"]
+
+
+class SetupGenerator(BaseGenerator):
+    def __init__(self, package_name, tool_name):
+        self.package_name = package_name
+        self.tool_name = tool_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "setup.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["package_name", "tool_name"]
+
+
+class ToolPackageUtilsGenerator(BaseGenerator):
+    def __init__(self, package_name):
+        self.package_name = package_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "utils.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["package_name"]
+
+
+class ToolReadmeGenerator(BaseGenerator):
+    def __init__(self, package_name, tool_name):
+        self.package_name = package_name
+        self.tool_name = tool_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "README.md.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["package_name", "tool_name"]
+
+
+class InitGenerator(BaseGenerator):
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "init.py"
+
+    @property
+    def entry_template_keys(self):
+        pass
+
+    def generate(self) -> str:
+        with open(self.tpl_file) as f:
+            init_content = f.read()
+        return init_content
