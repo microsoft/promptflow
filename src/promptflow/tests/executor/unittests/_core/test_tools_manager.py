@@ -137,12 +137,6 @@ class TestToolsManager:
             gen_tool_by_source("fake_name", tool_source, tool_type, working_dir),
         assert str(ex.value) == error_message
 
-    def test(self):
-        tools, specs, templates = collect_package_tools_and_connections()
-        from promptflow._sdk._utils import refresh_connections_dir
-
-        refresh_connections_dir(specs, templates)
-
     def test_collect_package_tools_and_connections(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
