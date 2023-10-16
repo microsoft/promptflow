@@ -396,10 +396,7 @@ class TestExecutor:
     @pytest.mark.skip(reason="Just for tests")
     def test_batch_engine(self):
         executor = FlowExecutor.create(get_yaml_file("python_tool_with_image_input_and_output"), {})
-        input_dirs = {
-            "data": "D:/github/promptflow/src/promptflow/tests/test_configs/flows/"
-            "python_tool_with_image_input_and_output/image_inputs/inputs.jsonl"
-        }
+        input_dirs = {"data": "image_inputs/inputs.jsonl"}
         inputs_mapping = {"image": "${data.image}"}
         output_dir = Path(
             "D:/github/promptflow/src/promptflow/tests/test_configs/flows/"

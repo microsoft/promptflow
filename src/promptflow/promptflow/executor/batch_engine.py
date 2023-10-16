@@ -34,13 +34,19 @@ class BatchEngine:
 
     def _resolve_data(self, input_dirs: Dict[str, str]):
         result = {}
-        for input_key, local_file in input_dirs.items():
-            local_file = Path(local_file).resolve()
-            file_data = load_data(local_file)
+        for input_key, input_dir in input_dirs.items():
+            input_dir = self._resolve_input_dir(input_dir)
+            file_data = load_data(input_dir)
             for each_line in file_data:
-                self._resolve_image_path(local_file, each_line)
+                self._resolve_image_path(input_dir, each_line)
             result[input_key] = file_data
         return result
+
+    def _resolve_input_dir(self, input_dir: str):
+        input_path = Path(input_dir)
+        if not input_path.is_absolute():
+            input_path = self.flow_executor._working_dir / input_path
+        return input_path
 
     def _resolve_image_path(self, input_dir: Path, one_line_data: dict):
         for key, value in one_line_data.items():
