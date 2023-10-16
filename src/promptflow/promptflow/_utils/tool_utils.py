@@ -159,45 +159,43 @@ def function_to_tool_definition(f: Callable, type=None, initialize_inputs=None) 
 
 
 def get_inputs_for_prompt_template(template_str):
-    """Get all input variable names from a jinja2 template string."""
-    env = Environment()
-    template = env.parse(template_str)
-    return sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
+    """Get all input variable names and definitions from a jinja2 template string.
 
-
-def get_prompt_param_name_from_func(f):
-    """Get the param name of prompt template on provider."""
-    return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
-
-
-def get_input_type_mapping_for_prompt_template(template_str):
-    """Get all tagged input type mapping from a template string
+    : param template_str: template string
+    : type t: str
+    : return: the input name to InputDefinition dict
+    : rtype t: Dict[str, ~promptflow.contracts.tool.InputDefinition]
     Example:
-    >>> get_input_type_mapping_for_prompt_template(
+    >>> get_inputs_for_prompt_template(
         template_str="A simple prompt with no variables"
     )
     {}
 
-    >>> get_input_type_mapping_for_prompt_template(
+    >>> get_inputs_for_prompt_template(
         template_str="Prompt with only one string input {{str_input}}"
     )
-    {}
+    {"str_input": InputDefinition(type=[ValueType.STRING])}
 
-    >>> get_input_type_mapping_for_prompt_template(
-        template_str="Prompt with image input ![image]({{image_input}})"
+    >>> get_inputs_for_prompt_template(
+        template_str="Prompt with image input ![image]({{image_input}}) and string input {{str_input}}"
     )
-    {"image_input": "image"}
+    {"image_input": InputDefinition(type=[ValueType.IMAGE]), "str_input": InputDefinition(type=[ValueType.STRING])
     """
+    env = Environment()
+    template = env.parse(template_str)
+    inputs = sorted(meta.find_undeclared_variables(template), key=lambda x: template_str.find(x))
+    result_dict = {i: InputDefinition(type=[ValueType.STRING]) for i in inputs}
 
     # currently we only support image type
     pattern = r'\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)'
     matches = re.finditer(pattern, template_str)
 
-    result_dict = {}
-
     for match in matches:
         input_name = match.group(2).strip()
-        if input_name != "" and input_name not in result_dict:
-            result_dict[input_name] = match.group(1).strip()
+        result_dict[input_name] = InputDefinition([ValueType(match.group(1).strip())])
 
     return result_dict
+
+def get_prompt_param_name_from_func(f):
+    """Get the param name of prompt template on provider."""
+    return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
