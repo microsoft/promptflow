@@ -1,4 +1,5 @@
 import uuid
+from pathlib import Path
 from types import GeneratorType
 
 import pytest
@@ -8,7 +9,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
-from promptflow.executor import FlowExecutor
+from promptflow.executor import BatchEngine, FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 from promptflow.executor.flow_executor import BulkResult, LineResult
 from promptflow.storage import AbstractRunStorage
@@ -390,3 +391,19 @@ class TestExecutor:
             validate_inputs=validate_inputs,
         )
         assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
+
+    # Just for tests
+    @pytest.mark.skip(reason="Just for tests")
+    def test_batch_engine(self):
+        executor = FlowExecutor.create(get_yaml_file("python_tool_with_image_input_and_output"), {})
+        input_dirs = {
+            "data": "D:/github/promptflow/src/promptflow/tests/test_configs/flows/"
+            "python_tool_with_image_input_and_output/image_inputs/inputs.jsonl"
+        }
+        inputs_mapping = {"image": "${data.image}"}
+        output_dir = Path(
+            "D:/github/promptflow/src/promptflow/tests/test_configs/flows/"
+            "python_tool_with_image_input_and_output/outputs"
+        )
+        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
+        print(bulk_result.outputs)

@@ -5,7 +5,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -89,7 +89,9 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
     return df
 
 
-def load_data(local_path: str, *, logger: logging.Logger = None, max_rows_count: int = None) -> List[Dict[str, Any]]:
+def load_data(
+    local_path: Union[str, Path], *, logger: logging.Logger = None, max_rows_count: int = None
+) -> List[Dict[str, Any]]:
     """load data from local file"""
     df = load_df(local_path, logger, max_rows_count=max_rows_count)
 
@@ -100,9 +102,9 @@ def load_data(local_path: str, *, logger: logging.Logger = None, max_rows_count:
     return result
 
 
-def load_df(local_path: str, logger: logging.Logger = None, max_rows_count: int = None) -> pd.DataFrame:
+def load_df(local_path: Union[str, Path], logger: logging.Logger = None, max_rows_count: int = None) -> pd.DataFrame:
     """load data from local file to df. For the usage of PRS."""
-    lp = Path(local_path)
+    lp = local_path if isinstance(local_path, Path) else Path(local_path)
     try:
         if lp.is_file():
             df = _pd_read_file(local_path, logger=logger)
