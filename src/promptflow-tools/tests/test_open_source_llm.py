@@ -194,12 +194,9 @@ user:
 
     def test_open_source_llm_endpoint_name(self):
         os.environ["AZUREML_ARM_SUBSCRIPTION"] = "ba7979f7-d040-49c9-af1a-7414402bf622"
-        os.environ["AZUREML_ARM_RESOURCEGROUP"] = "test_resource_groups"
-        os.environ["AZUREML_ARM_WORKSPACE_NAME"] = "test_workspace"
+        os.environ["AZUREML_ARM_RESOURCEGROUP"] = "gewoods_rg"
+        os.environ["AZUREML_ARM_WORKSPACE_NAME"] = "gewoods_ml"
 
-        from azure.core.exceptions import ClientAuthenticationError
-        with pytest.raises(ClientAuthenticationError) as exc_info:
-            OpenSourceLLM(endpoint_name="Not_Real")
-
-        expected_message = "DefaultAzureCredential failed to retrieve a token from the included credentials."
-        assert exc_info.value.message .startswith(expected_message)
+        os_llm = OpenSourceLLM(endpoint_name="llama-temp-completion")
+        response = os_llm.call(self.completion_prompt, API.COMPLETION)
+        assert len(response) > 25

@@ -26,6 +26,7 @@ VALID_LLAMA_ROLES = {"user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
 DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
+ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
 
 
 def handle_oneline_endpoint_error(max_retries: int = 3,
@@ -105,9 +106,11 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
-    except:
-        from promptflow.runtime import PromptFlowRuntime
-        ml_client = PromptFlowRuntime.get_instance().config.get_ml_client(credential=credential)
+    except Exception as e:
+        print(e)
+        message = "Unable to connect to AzureML. Please ensure the following environment variables are set: "
+        message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
+        raise OpenSourceLLMOnlineEndpointError(message=message)
 
     found = False
     for ep in ml_client.online_endpoints.list():
@@ -453,7 +456,7 @@ class AzureMLOnlineEndpoint:
             logger_index.log_metric("completion_tokens", prompt_tokens + response_tokens)
             logger_index.log_metric("prompt_tokens", prompt_tokens)
             logger_index.log_metric("total_tokens", response_tokens)
-        except:
+        except Exception:
             pass
 
         return response
