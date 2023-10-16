@@ -13,10 +13,10 @@ pip install -r requirements.txt
 2. Build and install my_tools_packages. Go to root folder of tools\tool-package-quickstart, build and install.
    
 ```bash
-cd ..\..\..\tools\tool-package-quickstart
+cd ../../../tools/tool-package-quickstart
 python setup.py sdist bdist_wheel
-pip install dist\my_tools_package-0.0.1-py3-none-any.whl --force-reinstall
-cd ..\..\flows\standard\filepath-input-tool-showcase
+pip install dist/my_tools_package-0.0.1-py3-none-any.whl --force-reinstall
+cd ../../flows/standard/filepath-input-tool-showcase
 ```
 
 ## Flow description
