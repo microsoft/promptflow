@@ -5,7 +5,7 @@ from typing import Dict
 from promptflow._utils.load_data import load_data
 from promptflow.executor.flow_executor import FlowExecutor
 
-IMAGE_PATH_PATTERN = r"^data:image/.*:path$"
+IMAGE_PATH_PATTERN = r"^data:image/(.*);path$"
 
 
 class BatchEngine:
@@ -25,6 +25,9 @@ class BatchEngine:
         mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
         # 3. execute batch run
         batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id)
+        # 4. save output
+        for output in batch_result.outputs:
+            output = self.flow_executor._persist_images_from_output(output, output_dir)
         return batch_result
 
     def _resolve_data(self, input_dirs: Dict[str, str]):
