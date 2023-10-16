@@ -319,3 +319,17 @@ class RunOperations(TelemetryMixin):
             run = self.get(name=run)
         local_storage = LocalStorageOperations(run)
         return local_storage.load_inputs()
+
+    def _get_outputs_path(self, run: Union[str, Run]) -> str:
+        """Get the outputs file path of the run."""
+        if isinstance(run, str):
+            run = self.get(name=run)
+        local_storage = LocalStorageOperations(run)
+        return local_storage._outputs_path
+
+    def _get_inputs_path(self, run: Union[str, Run]) -> str:
+        """Get the outputs file path of the run."""
+        if isinstance(run, str):
+            run = self.get(name=run)
+        local_storage = LocalStorageOperations(run)
+        return local_storage._inputs_path

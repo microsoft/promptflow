@@ -50,7 +50,7 @@ from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
-from promptflow.executor import FlowExecutor
+from promptflow.executor import BatchEngine, FlowExecutor
 
 logger = LoggerFactory.get_logger(name=__name__)
 
@@ -288,27 +288,34 @@ class RunSubmitter:
             flow.code,
             storage=local_storage,
         )
+        batch_engine = BatchEngine(flow_executor=flow_executor)
         # prepare data
-        input_dicts = self._resolve_data(run)
+        input_dirs = self._resolve_data_file(run)
         self._validate_column_mapping(column_mapping)
-        mapped_inputs = flow_executor.validate_and_apply_inputs_mapping(input_dicts, column_mapping)
         bulk_result = None
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            bulk_result = batch_engine.run(
+                input_dirs=input_dirs,
+                inputs_mapping=column_mapping,
+                output_dir=Path(".promptflow/output"),
+                run_id=run_id,
+            )
             # Filter the failed line result
-            failed_line_result = \
-                [result for result in bulk_result.line_results if result.run_info.status == Status.Failed]
+            failed_line_result = [
+                result for result in bulk_result.line_results if result.run_info.status == Status.Failed
+            ]
             if failed_line_result:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = \
-                    f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                error_log = f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
                 if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                    error_log = error_log + \
-                                f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    error_log = (
+                        error_log
+                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    )
                 logger.warning(error_log)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
@@ -325,7 +332,7 @@ class RunSubmitter:
             # persist snapshot and result
             # snapshot: flow directory and (mapped) inputs
             local_storage.dump_snapshot(flow)
-            local_storage.dump_inputs(mapped_inputs)
+            local_storage.dump_inputs(input_dirs)
             # result: outputs and metrics
             local_storage.persist_result(bulk_result)
             # exceptions
@@ -357,6 +364,17 @@ class RunSubmitter:
                 variant_input = reverse_transpose(referenced_inputs)
                 result["run.inputs"] = variant_input
         return result
+
+    def _resolve_data_file(self, run: Run):
+        result = {"data": run.data if run.data else None}
+        if run.run is not None:
+            result.update(
+                {
+                    "run.outputs": self.run_operations._get_outputs_path(run.run),
+                    "run.inputs": self.run_operations._get_inputs_path(run.run),
+                }
+            )
+        return {k: v for k, v in result.items() if v is not None}
 
     @classmethod
     def _validate_column_mapping(cls, column_mapping: dict):
