@@ -1,5 +1,7 @@
 import re
 from pathlib import Path
+
+# from promptflow.contracts.multimedia import PFBytes, Image
 from typing import Dict
 
 from promptflow._utils.load_data import load_data
@@ -42,12 +44,24 @@ class BatchEngine:
 
     def _resolve_image_path(self, input_dir: Path, one_line_data: dict):
         for key, value in one_line_data.items():
-            if isinstance(value, dict):
+            if isinstance(value, list):
+                for each_item in value:
+                    each_item = self._resolve_image(input_dir, each_item)
+                one_line_data[key] = value
+            elif isinstance(value, dict):
                 one_line_data[key] = self._resolve_image(input_dir, value)
         return one_line_data
 
     def _resolve_image(self, input_dir: Path, data_dict: dict):
         # input_absolute_dir = os.path.abspath(input_dir)
+        """
+        if PFBytes.is_multimedia_data(data_dict):
+            for key in data_dict:
+                format, resource = Image.get_multimedia_info(key)
+                if resource == "path":
+                    data_dict[key] = str(input_dir.parent / data_dict[key])
+        return data_dict
+        """
         for key in data_dict:
             if re.match(IMAGE_PATH_PATTERN, key):
                 data_dict[key] = str(input_dir.parent / data_dict[key])
