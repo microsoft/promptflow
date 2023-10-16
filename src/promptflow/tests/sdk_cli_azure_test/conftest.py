@@ -3,19 +3,17 @@
 # ---------------------------------------------------------
 
 import logging
-from dataclasses import dataclass
 
 import pytest
 from azure.ai.ml import MLClient
-from azure.ai.ml.entities import Data, Workspace
+from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockFixture
 
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
-from ._fake_credentials import FakeTokenCredential
-from ._recording_utils import SanitizedValues, is_live
+from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_playback, is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -38,56 +36,35 @@ def ml_client(
     )
 
 
-@dataclass
-class MockDatastore:
-    """Mock Datastore class for `DatastoreOperations.get_default().name`."""
+@pytest.fixture
+def remote_client() -> PFClient:
+    if not is_live():
+        return get_pf_client_for_playback()
 
-    name: str
-
-
-@pytest.fixture(scope="class")
-def remote_client(request: pytest.FixtureRequest) -> PFClient:
-    if is_live():
-        remote_client = PFClient(
-            credential=get_cred(),
-            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-            resource_group_name="promptflow",
-            workspace_name="promptflow-eastus",
-        )
-    else:
-        ml_client = MLClient(
-            credential=FakeTokenCredential(),
-            subscription_id=SanitizedValues.SUBSCRIPTION_ID,
-            resource_group_name=SanitizedValues.RESOURCE_GROUP_NAME,
-            workspace_name=SanitizedValues.WORKSPACE_NAME,
-        )
-        ml_client.workspaces.get = lambda *args, **kwargs: Workspace(
-            name=SanitizedValues.WORKSPACE_NAME,
-            resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
-            discovery_url="https://eastus.api.azureml.ms/discovery",
-        )
-        ml_client.datastores.get_default = lambda *args, **kwargs: MockDatastore(name="workspaceblobstore")
-        remote_client = PFClient(ml_client=ml_client)
-
-    request.cls.remote_client = remote_client
-    return request.cls.remote_client
+    return PFClient(
+        credential=get_cred(),
+        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+        resource_group_name="promptflow",
+        workspace_name="promptflow-eastus",
+    )
 
 
-@pytest.fixture()
+@pytest.fixture
 def remote_client_int() -> PFClient:
-    client = MLClient(
+    if not is_live():
+        return get_pf_client_for_playback()
+
+    return PFClient(
         credential=get_cred(),
         subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
         resource_group_name="promptflow",
         workspace_name="promptflow-int",
     )
-    return PFClient(ml_client=client)
 
 
-@pytest.fixture(scope="class")
-def pf(request: pytest.FixtureRequest, remote_client: PFClient) -> PFClient:
-    request.cls.pf = remote_client
-    return request.cls.pf
+@pytest.fixture
+def pf(remote_client: PFClient) -> PFClient:
+    return remote_client
 
 
 @pytest.fixture
@@ -101,13 +78,13 @@ def remote_web_classification_data(remote_client):
         )
 
 
-@pytest.fixture(scope="class")
-def runtime(request: pytest.FixtureRequest) -> None:
-    request.cls.runtime = "demo-mir"
+@pytest.fixture
+def runtime() -> str:
+    return "demo-mir"
 
 
 @pytest.fixture
-def runtime_int():
+def runtime_int() -> str:
     return "daily-image-mir"
 
 
@@ -158,6 +135,17 @@ def ml_client_canary(
         workspace_name="promptflow-canary-dev",
         cloud="AzureCloud",
     )
+
+
+@pytest.fixture(scope="function", autouse=True)
+def vcr_recording(request: pytest.FixtureRequest) -> None:
+    recording = PFAzureIntegrationTestRecording(
+        test_class=request.cls,
+        test_func_name=request.node.name,
+    )
+    recording.enter_vcr()
+    request.addfinalizer(recording.exit_vcr)
+    yield
 
 
 @pytest.fixture(autouse=True)

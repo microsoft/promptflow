@@ -12,19 +12,14 @@ from promptflow.azure.operations._connection_operations import ConnectionOperati
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.types import Secret
 
-from .._recording_base import PFAzureIntegrationTestCase
-from .._recording_utils import fixture_provider
+
+@pytest.fixture
+def connection_ops(pf: PFClient) -> ConnectionOperations:
+    return pf._connections
 
 
-@pytest.fixture(scope="class")
-def connection_ops(request: pytest.FixtureRequest, pf: PFClient) -> ConnectionOperations:
-    request.cls.connection_ops = pf._connections
-    return request.cls.connection_ops
-
-
-@pytest.mark.usefixtures("connection_ops")
 @pytest.mark.e2etest
-class TestConnectionOperations(PFAzureIntegrationTestCase):
+class TestConnectionOperations:
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
     def test_connection_get_create_delete(self, connection_ops):
 
@@ -70,7 +65,6 @@ class TestConnectionOperations(PFAzureIntegrationTestCase):
         # soft delete
         connection_ops.delete(name=connection.name)
 
-    @fixture_provider
     def test_list_connection_spec(self, connection_ops: ConnectionOperations):
         result = {v.connection_type: v._to_dict() for v in connection_ops.list_connection_specs()}
         # Assert custom keys type
@@ -108,7 +102,6 @@ class TestConnectionOperations(PFAzureIntegrationTestCase):
         for spec in expected_config_specs:
             assert spec in result["AzureOpenAI"]["config_specs"]
 
-    @fixture_provider
     def test_get_connection(self, connection_ops: ConnectionOperations):
         # Note: No secrets will be returned by MT api
         result = connection_ops.get(name="azure_open_ai_connection")
