@@ -49,7 +49,7 @@ class BatchEngine:
                 self._resolve_image(input_dir, item)
 
     def _resolve_image(self, input_dir: str, data_dict: dict):
-        input_absolute_dir = os.path.abspath(input_dir)
+        # input_absolute_dir = os.path.abspath(input_dir)
         for key, value in data_dict.items():
             if re.match(IMAGE_PATH_PATTERN, key):
-                value = os.path.join(input_absolute_dir, value)
+                value = os.path.join(input_dir, value)
