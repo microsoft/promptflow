@@ -37,7 +37,7 @@ class TestFlowNodesScheduler:
         node1.name = "node1"
         node2 = MagicMock(spec=Node)
         node2.name = "node2"
-        self.scheduler.future_to_node = {future1: node1, future2: node2}
+        self.scheduler._future_to_node = {future1: node1, future2: node2}
 
         completed_nodes_outputs = self.scheduler._collect_outputs([future1, future2])
 
@@ -52,9 +52,9 @@ class TestFlowNodesScheduler:
         # The return value will be a list with one item for the first time.
         # Will be a list without item for the second time.
         dag_manager.pop_bypassable_nodes.side_effect = ([node1], [])
-        self.scheduler.dag_manager = dag_manager
+        self.scheduler._dag_manager = dag_manager
         self.scheduler._execute_nodes(executor)
-        self.scheduler.context.bypass_node.assert_called_once_with(
+        self.scheduler._context.bypass_node.assert_called_once_with(
             node1, dag_manager.get_bypassed_node_outputs.return_value
         )
 
@@ -68,14 +68,14 @@ class TestFlowNodesScheduler:
         # The return value will be a list with one item for the first time.
         # Will be a list without item for the second time.
         dag_manager.pop_ready_nodes.return_value = [node1]
-        self.scheduler.dag_manager = dag_manager
+        self.scheduler._dag_manager = dag_manager
         self.scheduler._execute_nodes(executor)
-        self.scheduler.context.bypass_node.assert_not_called()
-        assert node1 in self.scheduler.future_to_node.values()
+        self.scheduler._context.bypass_node.assert_not_called()
+        assert node1 in self.scheduler._future_to_node.values()
 
     def test_future_cancelled_for_exception(self):
         dag_manager = MagicMock(spec=DAGManager)
-        self.scheduler.dag_manager = dag_manager
+        self.scheduler._dag_manager = dag_manager
         dag_manager.completed.return_value = False
         dag_manager.pop_bypassable_nodes.return_value = []
         dag_manager.pop_ready_nodes.return_value = []
@@ -91,7 +91,7 @@ class TestFlowNodesScheduler:
         node1.name = "node1"
         node2 = MagicMock(spec=Node)
         node2.name = "node2"
-        self.scheduler.future_to_node = {failed_future: node1, cancelled_future: node2}
+        self.scheduler._future_to_node = {failed_future: node1, cancelled_future: node2}
         try:
             self.scheduler.execute()
         except Exception:
@@ -106,8 +106,8 @@ class TestFlowNodesScheduler:
         finished_future.set_result("output1")
         finished_node = MagicMock(spec=Node)
         finished_node.name = "node1"
-        self.scheduler.dag_manager = dag_manager
-        self.scheduler.future_to_node = {finished_future: finished_node}
+        self.scheduler._dag_manager = dag_manager
+        self.scheduler._future_to_node = {finished_future: finished_node}
         # No more nodes need to run.
         dag_manager.pop_bypassable_nodes.return_value = []
         dag_manager.pop_ready_nodes.return_value = []
@@ -126,7 +126,7 @@ class TestFlowNodesScheduler:
         dag_manager.pop_bypassable_nodes.return_value = []
         dag_manager.pop_ready_nodes.return_value = []
         dag_manager.completed.return_value = False
-        self.scheduler.dag_manager = dag_manager
+        self.scheduler._dag_manager = dag_manager
         with pytest.raises(NoNodeExecutedError) as _:
             self.scheduler.execute()
 
@@ -135,7 +135,7 @@ class TestFlowNodesScheduler:
         node_to_run.name = "node1"
         mock_callable = MagicMock(sepc=Callable)
         mock_callable.return_value = "output1"
-        self.scheduler.tools_manager.get_tool.return_value = mock_callable
+        self.scheduler._tools_manager.get_tool.return_value = mock_callable
         dag_manager = MagicMock(spec=DAGManager)
         dag_manager.get_node_valid_inputs.return_value = {"input": 1}
         result = self.scheduler._exec_single_node_in_thread((node_to_run, dag_manager))
