@@ -8,7 +8,7 @@ import re
 from enum import Enum, EnumMeta
 from typing import Callable, Union, get_args, get_origin
 
-from jinja2 import Environment, meta, nodes
+from jinja2 import Environment, meta
 
 from ..contracts.tool import ConnectionType, InputDefinition, Tool, ValueType
 from ..contracts.types import PromptTemplate
