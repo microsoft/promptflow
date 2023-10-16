@@ -222,11 +222,12 @@ class TestSubmitter:
             for node_name, node_result in node_run_infos.items():
                 # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
                 pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
-                node_logs = re.sub(pattern, "", node_result.logs["stdout"])
-                if node_logs:
-                    for log in node_logs.rstrip("\n").split("\n"):
-                        print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
-                        print(log)
+                if node_result.logs:
+                    node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+                    if node_logs:
+                        for log in node_logs.rstrip("\n").split("\n"):
+                            print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                            print(log)
                 if show_node_output:
                     print(f"{Fore.CYAN}{node_name}: ", end="")
                     # TODO executor return a type string of generator
