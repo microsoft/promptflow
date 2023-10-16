@@ -59,10 +59,10 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/flows/standard/filepath-input-tool-showcase/readme.md
+      - name: Extract Steps examples/flows/standard/filepath-input-tool-showcase/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/filepath-input-tool-showcase/readme.md -o examples/flows/standard/filepath-input-tool-showcase
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/standard/filepath-input-tool-showcase/README.md -o examples/flows/standard/filepath-input-tool-showcase
       - name: Cat script
         working-directory: examples/flows/standard/filepath-input-tool-showcase
         run: |
