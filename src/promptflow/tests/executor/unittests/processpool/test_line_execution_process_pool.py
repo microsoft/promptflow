@@ -15,18 +15,10 @@ from ...utils import (
     FLOW_ROOT
 )
 
-import time
 import uuid
 import sys
 
 SAMPLE_FLOW = "web_classification_no_variants"
-
-
-def end_process(healthy_ensured_process):
-    while healthy_ensured_process.process.is_alive():
-        healthy_ensured_process.end()
-        time.sleep(1)
-    return
 
 
 @pytest.mark.unittest
