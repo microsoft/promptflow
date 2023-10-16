@@ -158,6 +158,15 @@ class TestUtils:
             result = _generate_connections_dir()
             assert result == expected_result
 
+    def test_refresh_connections_dir(self):
+        from promptflow._core.tools_manager import collect_package_tools_and_connections
+
+        tools, specs, templates = collect_package_tools_and_connections()
+
+        refresh_connections_dir(specs, templates)
+        conn_dir = _generate_connections_dir()
+        assert len(os.listdir(conn_dir)) > 0, "No files were generated"
+
     @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
     def test_concurrent_execution_of_refresh_connections_dir(self, concurrent_count):
         threads = []
