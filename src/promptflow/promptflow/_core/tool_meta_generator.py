@@ -120,13 +120,13 @@ def collect_tool_methods_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, should_gen_custom_type=False):
+def _parse_tool_from_function(f, gen_custom_type_conn=False):
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f, should_gen_custom_type=should_gen_custom_type)
+        inputs, _, _ = function_to_interface(f, gen_custom_type_conn=gen_custom_type_conn)
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise BadFunctionInterface(

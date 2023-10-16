@@ -53,30 +53,30 @@ class TestToolUtils:
 
         sig = inspect.signature(some_func)
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn1"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn1"), gen_custom_type_conn=True)
         assert input_def.type == ["CustomConnection"]
         assert input_def.custom_type == ["MyFirstConnection"]
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn2"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn2"), gen_custom_type_conn=True)
         assert input_def.type == ["CustomConnection"]
         assert input_def.custom_type == ["MyFirstConnection"]
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn3"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn3"), gen_custom_type_conn=True)
         assert input_def.type == ["CustomConnection"]
         assert input_def.custom_type == ["MyFirstConnection"]
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn4"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn4"), gen_custom_type_conn=True)
         assert input_def.type == ["CustomConnection"]
         assert input_def.custom_type == ["MyFirstConnection", "MySecondConnection"]
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn5"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn5"), gen_custom_type_conn=True)
         assert input_def.type == ["CustomConnection"]
         assert input_def.custom_type is None
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn6"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn6"), gen_custom_type_conn=True)
         assert input_def.type == [ValueType.OBJECT]
         assert input_def.custom_type is None
 
-        input_def, _ = param_to_definition(sig.parameters.get("conn7"), should_gen_custom_type=True)
+        input_def, _ = param_to_definition(sig.parameters.get("conn7"), gen_custom_type_conn=True)
         assert input_def.type == [ValueType.OBJECT]
         assert input_def.custom_type is None

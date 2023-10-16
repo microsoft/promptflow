@@ -265,6 +265,22 @@ class TestFlowRun:
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
 
+    def test_basic_flow_with_script_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
+        # Prepare custom connection
+        from promptflow.connections import CustomConnection
+
+        conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
+        local_client.connections.create_or_update(conn)
+
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection/data.jsonl",
+        )
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
         with pytest.raises(Exception) as e:

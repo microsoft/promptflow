@@ -375,7 +375,7 @@ class ToolLoader:
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f = collect_tool_function_in_module(m)
-        return m, f, _parse_tool_from_function(f, should_gen_custom_type=True)
+        return m, f, _parse_tool_from_function(f, gen_custom_type_conn=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"
