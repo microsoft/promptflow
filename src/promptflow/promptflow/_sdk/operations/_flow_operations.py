@@ -368,8 +368,9 @@ class FlowOperations:
         try:
             import PyInstaller  # noqa: F401
             import streamlit
+            import streamlit_quill
         except ImportError as ex:
-            raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
+            raise UserErrorException(f"Please install PyInstaller, streamlit and streamlit_quill for building executable, {ex.msg}.")
 
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
@@ -391,7 +392,7 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: value.default for flow_input, value in executable.inputs.items()}
+        flow_inputs = {flow_input: (value.default, True if isinstance(value, list) else False) for flow_input, value in executable.inputs.items()}
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 

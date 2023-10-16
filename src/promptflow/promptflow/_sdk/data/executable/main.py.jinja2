@@ -2,11 +2,13 @@ import json
 import os
 import streamlit as st
 from pathlib import Path
+from streamlit_quill import st_quill
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-
+IMAGE_KEY = "data:image/png:base64"
 invoker = None
 
 
@@ -14,20 +16,52 @@ def start():
     def clear_chat() -> None:
         st.session_state.messages = []
 
+
+    def is_contains_rich_text(value):
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict) and IMAGE_KEY in item:
+                    return True
+        return False
+
+
+    def render_message(role, message_items):
+        {% raw %}
+        with st.chat_message(role):
+            for key, value in message_items.items():
+                is_rich_text = is_contains_rich_text(value)
+                if is_rich_text:
+                    st.markdown(f"`key : {key}`")
+                    st.markdown(f"`value : [`")
+                    for item in value:
+                        if isinstance(item, dict) and IMAGE_KEY in item:
+                            st.markdown(f"`{{ {IMAGE_KEY}: `")
+                            st.image(item[IMAGE_KEY])
+                            st.markdown("`},`")
+                        else:
+                            st.markdown(f"`{{ {item}  }},`")
+                    st.markdown("` ]`")
+                else:
+                    st.markdown(f"`key : {key}`")
+                    st.markdown(f"`value: {json.dumps(value)}`")
+        {% endraw %}
+
     def show_conversation() -> None:
         if "messages" not in st.session_state:
             st.session_state.messages = []
         if st.session_state.messages:
-            for role, message in st.session_state.messages:
-                st.chat_message(role).write(message)
+            for role, message_items in st.session_state.messages:
+                render_message(role, message_items)
 
 
     def submit(**kwargs) -> None:
-        container.chat_message("user").write(json.dumps(kwargs))
-        st.session_state.messages.append(("user", json.dumps(kwargs)))
+        st.session_state.messages.append(("user", kwargs))
+        with container:
+            render_message("user", kwargs)
         response = run_flow(kwargs)
-        container.chat_message("assistant").write(response)
         st.session_state.messages.append(("assistant", response))
+        with container:
+            render_message("assistant", response)
 
 
     def run_flow(data: dict) -> dict:
@@ -41,6 +75,29 @@ def start():
         return result
 
 
+    def extract_content(node):
+        if isinstance(node, NavigableString):
+            text = node.strip()
+            if text:
+                return [text]
+        elif isinstance(node, Tag):
+            if node.name == 'img':
+                return [{IMAGE_KEY: node['src']}]
+            else:
+                result = []
+                for child in node.contents:
+                    result.extend(extract_content(child))
+                return result
+        return []
+
+
+    def parse_html_content(html_content):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        result = []
+        for p in soup.find_all('p'):
+            result.extend(extract_content(p))
+        return result
+
     st.title("{{flow_name}} APP")
     st.chat_message("assistant").write("Hello, please input following flow inputs and connection keys.")
     container = st.container()
@@ -48,27 +105,40 @@ def start():
         show_conversation()
 
     with st.form(key='input_form', clear_on_submit=True):
-        with open(os.path.join(os.path.dirname(__file__), "settings.json"), "r") as file:
-            json_data = json.load(file)
-        environment_variables = list(json_data.keys())
-        for environment_variable in environment_variables:
-            secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
-            if secret_input != "":
-                os.environ[environment_variable] = secret_input
+        settings_path = os.path.join(os.path.dirname(__file__), "settings.json")
+        if os.path.exists(settings_path):
+            with open(settings_path, "r") as file:
+                json_data = json.load(file)
+            environment_variables = list(json_data.keys())
+            for environment_variable in environment_variables:
+                secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
+                if secret_input != "":
+                    os.environ[environment_variable] = secret_input
 
-    {% for flow_input, default_value in flow_inputs.items() %}
-    {{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-    {% endfor %}
+{% set indent_level = 4 %}
+{% for flow_input, (default_value, is_multi_model) in flow_inputs.items() %}
+{% if is_multi_model %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], placeholder='{{flow_input}}')
+{% else %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
+{% endif %}
+{% endfor %}
 
         cols = st.columns(7)
         submit_bt = cols[0].form_submit_button(label='Submit')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
-    if submit_bt:
-        submit({{flow_inputs_params}})
+        if submit_bt:
+{% for flow_input, (default_value, is_multi_model) in flow_inputs.items() %}
+{% if is_multi_model %}
+{{ ' ' * indent_level * 3 }}{{flow_input}} = parse_html_content({{flow_input}})
+{% endif %}
+{% endfor %}
 
-    if clear_bt:
-        clear_chat()
+            submit({{flow_inputs_params}})
+
+        if clear_bt:
+            clear_chat()
 
 if __name__ == "__main__":
     start()

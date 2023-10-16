@@ -16,7 +16,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "data" / "entry_flow"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
-
+SERVE_TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "sdk" / "data" / "executable"
 
 class BaseGenerator(ABC):
     @property
@@ -214,6 +214,33 @@ class FlowMetaYamlGenerator(BaseGenerator):
     @property
     def entry_template_keys(self):
         return ["flow_name"]
+
+
+class StreamlitFileGenerator(BaseGenerator):
+    def __init__(self, flow_name, flow_dag_path):
+        self.flow_name = flow_name
+        self.flow_dag_path = Path(flow_dag_path)
+
+    @property
+    def flow_inputs(self):
+        from promptflow.contracts.flow import Flow as ExecutableFlow
+        executable = ExecutableFlow.from_yaml(flow_file=Path(self.flow_dag_path.name),
+                                              working_dir=self.flow_dag_path.parent)
+        return {flow_input: (value.default, True if isinstance(value, list) else False) for flow_input, value
+                       in executable.inputs.items()}
+
+
+    @property
+    def flow_inputs_params(self):
+        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items()]
+        return ",".join(flow_inputs_params)
+    @property
+    def tpl_file(self):
+        return TEMPLATE_PATH / "main.py.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["flow_name", "flow_inputs", "flow_inputs_params"]
 
 
 def copy_extra_files(flow_path, extra_files):
