@@ -4,7 +4,6 @@
 
 import inspect
 import logging
-import re
 from enum import Enum, EnumMeta
 from typing import Callable, Union, get_args, get_origin
 
@@ -130,34 +129,3 @@ def get_inputs_for_prompt_template(template_str):
 def get_prompt_param_name_from_func(f):
     """Get the param name of prompt template on provider."""
     return next((k for k, annotation in f.__annotations__.items() if annotation == PromptTemplate), None)
-
-
-def get_input_type_mapping_for_prompt_template(template_str):
-    """Get all tagged input type mapping from a template string
-    Example:
-    >>> get_input_type_mapping_for_prompt_template(
-        template_str="A simple prompt with no variables"
-    )
-    {}
-    >>> get_input_type_mapping_for_prompt_template(
-        template_str="Prompt with only one string input {{str_input}}"
-    )
-    {}
-    >>> get_input_type_mapping_for_prompt_template(
-        template_str="Prompt with image input ![image]({{image_input}})"
-    )
-    {"image_input": "image"}
-    """
-
-    # currently we only support image type
-    pattern = r'\!\[(\s*image\s*)\]\(\{\{\s*([^{}]+)\s*\}\}\)'
-    matches = re.finditer(pattern, template_str)
-
-    result_dict = {}
-
-    for match in matches:
-        input_name = match.group(2).strip()
-        if input_name != "" and input_name not in result_dict:
-            result_dict[input_name] = match.group(1).strip()
-
-    return result_dict
