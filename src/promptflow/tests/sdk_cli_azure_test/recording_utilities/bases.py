@@ -3,20 +3,24 @@
 # ---------------------------------------------------------
 
 import inspect
+import json
 from pathlib import Path
 from typing import Dict, List
 
 import vcr
 from vcr.request import Request
 
-from .constants import FILTER_HEADERS
+from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING
 from .processors import (
     AzureOpenAIConnectionProcessor,
     AzureResourceProcessor,
     AzureWorkspaceTriadProcessor,
+    DropProcessor,
     RecordingProcessor,
+    StorageProcessor,
 )
 from .utils import is_live, is_live_and_not_recording
+from .variable_recorder import VariableRecorder
 
 
 class PFAzureIntegrationTestRecording:
@@ -30,6 +34,15 @@ class PFAzureIntegrationTestRecording:
         self.vcr = self._init_vcr()
         self._cm = None  # context manager from VCR
         self.cassette = None
+        self.variable_recorder = VariableRecorder()
+
+    @staticmethod
+    def from_test_case(test_class, test_func_name: str) -> "PFAzureIntegrationTestRecording":
+        test_class_name = test_class.__name__
+        if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
+            return PFAzureRunIntegrationTestRecording(test_class, test_func_name)
+        else:
+            return PFAzureIntegrationTestRecording(test_class, test_func_name)
 
     def _get_recording_file(self) -> Path:
         # recording files are expected to be located at "tests/test_configs/recordings"
@@ -61,6 +74,8 @@ class PFAzureIntegrationTestRecording:
         self.cassette = self._cm.__enter__()
 
     def exit_vcr(self):
+        if self.is_live and not is_live_and_not_recording():
+            self._postprocess_recording()
         self._cm.__exit__()
 
     def _process_request_recording(self, request: Request) -> Request:
@@ -101,7 +116,65 @@ class PFAzureIntegrationTestRecording:
             AzureOpenAIConnectionProcessor(),
             AzureResourceProcessor(),
             AzureWorkspaceTriadProcessor(),
+            DropProcessor(),
         ]
 
     def _get_replay_processors(self) -> List[RecordingProcessor]:
         return []
+
+    def get_or_record_variable(self, variable: str, default: str) -> str:
+        return self.variable_recorder.get_or_record_variable(variable, default)
+
+    def _postprocess_recording(self) -> None:
+        self._apply_replacement_for_recordings()
+        return
+
+    def _apply_replacement_for_recordings(self) -> None:
+        for i in range(len(self.cassette.data)):
+            req, resp = self.cassette.data[i]
+            req = self.variable_recorder.sanitize_request(req)
+            resp = self.variable_recorder.sanitize_response(resp)
+            self.cassette.data[i] = (req, resp)
+        return
+
+
+class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
+    def enter_vcr(self):
+        self._cm = self.vcr.use_cassette(
+            self.recording_file.as_posix(),
+            allow_playback_repeats=True,
+            filter_query_parameters=["api-version"],
+        )
+        self.cassette = self._cm.__enter__()
+
+    def _get_recording_processors(self) -> List[RecordingProcessor]:
+        return [
+            AzureOpenAIConnectionProcessor(),
+            AzureResourceProcessor(),
+            AzureWorkspaceTriadProcessor(),
+            DropProcessor(),
+            StorageProcessor(),
+        ]
+
+    def _postprocess_recording(self) -> None:
+        self._drop_duplicate_recordings()
+        super(PFAzureRunIntegrationTestRecording, self)._postprocess_recording()
+
+    def _drop_duplicate_recordings(self) -> None:
+        dropped_recordings = []
+        run_data_requests = dict()
+        for req, resp in self.cassette.data:
+            # run hisotry's rundata API
+            if str(req.path).endswith("rundata"):
+                body = req.body.decode("utf-8")
+                body_dict = json.loads(body)
+                name = body_dict["runId"]
+                run_data_requests[name] = (req, resp)
+                continue
+            dropped_recordings.append((req, resp))
+        # append rundata recording(s)
+        for req, resp in run_data_requests.values():
+            dropped_recordings.append((req, resp))
+
+        self.cassette.data = dropped_recordings
+        return

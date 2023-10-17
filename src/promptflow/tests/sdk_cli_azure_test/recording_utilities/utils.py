@@ -5,10 +5,12 @@
 import os
 import re
 from dataclasses import dataclass
+from typing import Dict
 
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import Workspace
 from azure.core.credentials import AccessToken
+from vcr.request import Request
 
 from promptflow.azure import PFClient
 
@@ -85,9 +87,48 @@ def sanitize_azure_workspace_triad(value: str) -> str:
         flags=re.IGNORECASE,
     )
     sanitized_ws = re.sub(
-        r"/(workspaces)/[-\w\._\(\)]+[/?]",
+        r"/(workspaces)/[-\w\._\(\)]+[/?\$]",
         r"/\1/{}/".format("00000"),
         sanitized_rg,
         flags=re.IGNORECASE,
     )
     return sanitized_ws
+
+
+def sanitize_upload_hash(value: str) -> str:
+    value = re.sub(
+        r"(az-ml-artifacts)/([0-9a-f]{32})",
+        r"\1/{}".format(SanitizedValues.UPLOAD_HASH),
+        value,
+        flags=re.IGNORECASE,
+    )
+    value = re.sub(
+        r"(LocalUpload)/([0-9a-f]{32})",
+        r"\1/{}".format(SanitizedValues.UPLOAD_HASH),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return value
+
+
+def _is_json_payload(headers: Dict, key: str) -> bool:
+    if not headers:
+        return False
+    content_type = headers.get(key)
+    if not content_type:
+        return False
+    # content-type can be an array, e.g. ["application/json; charset=utf-8"]
+    content_type = content_type[0] if isinstance(content_type, list) else content_type
+    content_type = content_type.split(";")[0].lower()
+    return "application/json" in content_type
+
+
+def is_json_payload_request(request: Request) -> bool:
+    headers = request.headers
+    return _is_json_payload(headers, key="Content-Type")
+
+
+def is_json_payload_response(response: Dict) -> bool:
+    headers = response.get("headers")
+    # PFAzureIntegrationTestRecording will lower keys in response headers
+    return _is_json_payload(headers, key="content-type")

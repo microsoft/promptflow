@@ -1,11 +1,17 @@
+# ---------------------------------------------------------
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# ---------------------------------------------------------
+
 import os
 import sys
 import uuid
+from typing import Callable
 
 import pytest
 
 from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk.entities import Run
+from promptflow.azure import PFClient
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -39,8 +45,8 @@ def run_pf_command(*args, pf, runtime, cwd=None):
 
 @pytest.mark.e2etest
 class TestCliWithAzure:
-    def test_basic_flow_run_bulk_without_env(self, pf, runtime) -> None:
-        name = str(uuid.uuid4())
+    def test_basic_flow_run_bulk_without_env(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+        name = randstr("name")
         run_pf_command(
             "run",
             "create",

@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 
 import logging
+import uuid
+from typing import Callable
 
 import pytest
 from azure.ai.ml import MLClient
@@ -138,14 +140,25 @@ def ml_client_canary(
 
 
 @pytest.fixture(scope="function", autouse=True)
-def vcr_recording(request: pytest.FixtureRequest) -> None:
-    recording = PFAzureIntegrationTestRecording(
+def vcr_recording(request: pytest.FixtureRequest) -> PFAzureIntegrationTestRecording:
+    recording = PFAzureIntegrationTestRecording.from_test_case(
         test_class=request.cls,
         test_func_name=request.node.name,
     )
     recording.enter_vcr()
     request.addfinalizer(recording.exit_vcr)
-    yield
+    yield recording
+
+
+@pytest.fixture
+def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], str]:
+    """Return a random UUID."""
+
+    def generate_random_string(variable_name: str) -> str:
+        random_string = str(uuid.uuid4())
+        return vcr_recording.get_or_record_variable(variable_name, random_string)
+
+    return generate_random_string
 
 
 @pytest.fixture(autouse=True)
