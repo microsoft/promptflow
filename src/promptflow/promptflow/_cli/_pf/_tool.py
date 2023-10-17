@@ -74,6 +74,8 @@ def add_parser_list_tool(subparsers):
 Examples:
 
 # List all package tool in the environment:
+pf tool list
+# List all package tool and code tool in the flow:
 pf tool list --flow flow-path
 """  # noqa: E501
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
