@@ -6,6 +6,7 @@ import logging
 import os
 import os.path
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -1261,8 +1262,8 @@ class TestCli:
             package_name = "package_name"
             func_name = "func_name"
             run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
-            sys.path.append(os.path.join(temp_dir, package_name))
             capsys.readouterr()
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", os.path.join(temp_dir, package_name)])
 
             # List package tools in environment
             run_pf_command("tool", "list")
@@ -1307,6 +1308,7 @@ class TestCli:
             with pytest.raises(Exception) as e:
                 run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
             assert "invalid_flow_folder does not exist" in e.value.args[0]
+            subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "package_name"])
 
     def test_chat_flow_with_conditional(self, monkeypatch, capsys):
         chat_list = ["1", "2"]
