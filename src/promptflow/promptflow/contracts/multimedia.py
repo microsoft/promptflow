@@ -198,7 +198,7 @@ class Image(PFBytes):
                 target=ErrorTarget.EXECUTOR,
             )
 
-    def _to_base64(self):
+    def to_base64(self):
         return base64.b64encode(self).decode("utf-8")
 
     def _serialize(self, encoder: Callable = None):
