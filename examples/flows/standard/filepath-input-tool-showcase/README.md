@@ -4,7 +4,13 @@ A case that shows how to use tool with FilePath as input.
 
 ## Prerequisites
 
-1. Install promptflow sdk and other dependencies:
+1. As file path is currently in its preview phase, it is necessary for you to install the test version of the PromptFlow package:
+
+```bash
+pip install "promptflow==0.1.0b8.dev2" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+```
+
+2. Install promptflow sdk and other dependencies:
 
 ```bash
 pip install -r requirements.txt
