@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
 
 
 class CapabilityState(Enum):
@@ -26,28 +25,26 @@ class Capability:
 
     name: str
     description: str
-    components: List[CapabilityComponent]
+    component: CapabilityComponent
     state: CapabilityState
 
     def to_dict(self):
         return {
             "name": self.name,
             "description": self.description,
-            "components": [component.value for component in self.components],
+            "component": self.component.value,
             "state": self.state.value,
         }
 
 
-CAPABILITY_LIST = [
-    Capability(
-        name="ActivateConfig",
-        description="Bypass node execution when the node does not meet activate condition.",
-        components=[CapabilityComponent.EXECUTOR],
-        state=CapabilityState.READY,
-    ),
-]
-
-
 def get_capability_list():
-    capability_list = [capability.to_dict() for capability in CAPABILITY_LIST]
+    capability_list = [
+        Capability(
+            name="ActivateConfig",
+            description="Bypass node execution when the node does not meet activate condition.",
+            component=CapabilityComponent.EXECUTOR,
+            state=CapabilityState.READY,
+        ),
+    ]
+
     return capability_list
