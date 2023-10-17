@@ -12,7 +12,7 @@ After you have developed and tested the flow in [init and test a flow](./init-an
 
 Since you have run your flow successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
 
-A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (E.g. `pf run list`)
+A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (e.g. `pf run list`)
 
 Let's create a run with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification). It is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
@@ -25,8 +25,10 @@ To begin with the guide, git clone the sample repository(above flow link) and se
 
 Create the run with flow and data, can add `--stream` to stream the run.
 ```sh
-pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --stream 
+pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream 
 ```
+
+Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](./use-column-mapping.md).
 
 You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
 
@@ -38,10 +40,13 @@ With a run name, you can easily view or visualize the run details using below co
 
 ```sh
 pf run show-details -n my_first_run
-pf run visualize -n my_first_run
 ```
 
 ![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-cli.png)
+
+```sh
+pf run visualize -n my_first_run
+```
 
 ![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
@@ -62,18 +67,23 @@ base_run = pf.run(
     data=data,
     stream=True,
 )
-
-# get the inputs/outputs details of a finished run.
-details = pf.get_details(base_run)
-details.head(10)
-
-# visualize the run in a web browser
-pf.visualize(base_run)
 ```
 
 ![q_0](../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
 
+```python
+# get the inputs/outputs details of a finished run.
+details = pf.get_details(base_run)
+details.head(10)
+```
+
 ![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-sdk.png)
+
+```python
+# visualize the run in a web browser
+pf.visualize(base_run)
+```
+
 ![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
 :::
@@ -110,6 +120,8 @@ After the run is finished, you can evaluate the run with below command, compared
 
 - `column-mapping`: A mapping from flow input name to specified data values. Reference [here](./use-column-mapping.md) for detailed information.
 - `run`: The run name of the flow run to be evaluated.
+
+More details can be found in [Use column mapping](./use-column-mapping.md).
 
 ```sh
 pf run create --flow evaluation/eval-classification-accuracy --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
@@ -148,7 +160,9 @@ After the run is finished, you can evaluate the run with below command, compared
   - If the data column is in your test dataset, then it is specified as `${data.<column_name>}`.
   - If the data column is from your flow output, then it is specified as `${run.outputs.<output_name>}`.
 - `run`: The run name or run instance of the flow run to be evaluated.
-  
+
+More details can be found in [Use column mapping](./use-column-mapping.md).
+
 ```python
 # set eval flow path
 eval_flow = "evaluation/eval-classification-accuracy"
@@ -197,6 +211,24 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 :::
 
 ::::
+
+## How to log metrics
+
+Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
+
+```python
+from promptflow import log_metric, tool
+
+@tool
+def example_log_metrics():
+  metric_key = "accuracy"
+  metric_value = 1.0
+  log_metric(metric_key, metric_value)
+```
+
+After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.
+
+![img](../media/how-to-guides/run_show_metrics.png)
 
 ## Next steps
 

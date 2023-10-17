@@ -334,9 +334,7 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
             if env_name not in os.environ:
                 continue
             values[key] = os.environ[env_name]
-            logger.info(
-                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
-            )
+            logger.info(f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}")
     return connections
 
 
