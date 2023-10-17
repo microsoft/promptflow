@@ -59,7 +59,6 @@ class BatchEngine:
 
     @staticmethod
     def resolve_image(input_dir: Path, data_dict: dict):
-        # input_absolute_dir = os.path.abspath(input_dir)
         """
         if PFBytes.is_multimedia_data(data_dict):
             for key in data_dict:
