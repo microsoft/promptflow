@@ -10,11 +10,12 @@ from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn,
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
     get_local_connections_from_executable,
+    override_connection_config_with_environment_variable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
-    override_connection_config_with_environment_variable,
 )
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.entities._flow import Flow
 from promptflow.executor import FlowExecutor
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -24,8 +25,8 @@ class FlowInvoker:
     """
     The invoker of a flow.
 
-    :param flow: The path of the flow.
-    :type flow: str
+    :param flow: The path of the flow, or the flow loaded by load_flow().
+    :type flow: [str, Flow]
     :param connection_provider: The connection provider, defaults to None
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
@@ -35,8 +36,7 @@ class FlowInvoker:
     def __init__(
         self, flow: str, connection_provider: [str, Callable] = None, streaming: Union[Callable[[], bool], bool] = False
     ):
-        self.flow_dir = flow
-        self.flow_entity = load_flow(self.flow_dir)
+        self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         self._init_connections(connection_provider)
         self._init_executor()
