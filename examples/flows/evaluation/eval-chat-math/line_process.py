@@ -41,3 +41,18 @@ def line_process(groundtruth: str, prediction: str) -> int:
             processed_result = -1
 
     return processed_result
+
+
+if __name__ == "__main__":
+    processed_result = line_process("3/5", "6/10")
+    print("The processed result is", processed_result)
+
+    processed_result = line_process("1/2", "0.5")
+    print("The processed result is", processed_result)
+
+    processed_result = line_process("3", "5")
+    print("The processed result is", processed_result)
+
+    processed_result = line_process("2/3", "the answer is \box{2/3}")
+    print("The processed result is", processed_result)
+
