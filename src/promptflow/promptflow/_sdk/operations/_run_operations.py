@@ -308,28 +308,26 @@ class RunOperations(TelemetryMixin):
 
     def _get_outputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
-        if isinstance(run, str):
-            run = self.get(name=run)
-        local_storage = LocalStorageOperations(run)
+        local_storage = self._get_local_storage(run)
         return local_storage.load_outputs()
 
     def _get_inputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
-        if isinstance(run, str):
-            run = self.get(name=run)
-        local_storage = LocalStorageOperations(run)
+        local_storage = self._get_local_storage(run)
         return local_storage.load_inputs()
 
     def _get_outputs_path(self, run: Union[str, Run]) -> str:
         """Get the outputs file path of the run."""
-        if isinstance(run, str):
-            run = self.get(name=run)
-        local_storage = LocalStorageOperations(run)
+        local_storage = self._get_local_storage(run)
         return local_storage._outputs_path
 
     def _get_inputs_path(self, run: Union[str, Run]) -> str:
         """Get the outputs file path of the run."""
+        local_storage = self._get_local_storage(run)
+        return local_storage._inputs_path
+
+    def _get_local_storage(self, run: Union[str, Run]) -> LocalStorageOperations:
+        """Get the local storage of the run."""
         if isinstance(run, str):
             run = self.get(name=run)
-        local_storage = LocalStorageOperations(run)
-        return local_storage._inputs_path
+        return LocalStorageOperations(run)

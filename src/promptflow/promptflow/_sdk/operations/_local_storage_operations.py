@@ -196,6 +196,7 @@ class LocalStorageOperations(AbstractRunStorage):
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
         outputs_folder = self._prepare_folder(self.path / "flow_outputs")
+        self.multimedia_path = outputs_folder / "multimedia"
         self._outputs_path = outputs_folder / "output.jsonl"
         self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
         self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")

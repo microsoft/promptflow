@@ -44,8 +44,6 @@ from promptflow._sdk.entities._run import Run
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.load_data import load_data
-from promptflow._utils.utils import reverse_transpose
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
@@ -290,7 +288,7 @@ class RunSubmitter:
         )
         batch_engine = BatchEngine(flow_executor=flow_executor)
         # prepare data
-        input_dirs = self._resolve_data_file(run)
+        input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
         mapped_inputs = None
         bulk_result = None
@@ -302,7 +300,7 @@ class RunSubmitter:
             mapped_inputs, bulk_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
-                output_dir=Path(".promptflow/output"),
+                output_dir=local_storage.multimedia_path,
                 run_id=run_id,
             )
             # Filter the failed line result
@@ -351,25 +349,7 @@ class RunSubmitter:
                 system_metrics=system_metrics,
             )
 
-    def _resolve_data(self, run: Run):
-        result = {}
-        input_dicts = {}
-        if run.data:
-            input_dicts["data"] = run.data
-        for input_key, local_file in input_dicts.items():
-            result[input_key] = load_data(local_file)
-        if run.run is not None:
-            referenced_outputs = self.run_operations._get_outputs(run.run)
-            if referenced_outputs:
-                variant_output = reverse_transpose(referenced_outputs)
-                result["run.outputs"] = variant_output
-            referenced_inputs = self.run_operations._get_inputs(run.run)
-            if referenced_inputs:
-                variant_input = reverse_transpose(referenced_inputs)
-                result["run.inputs"] = variant_input
-        return result
-
-    def _resolve_data_file(self, run: Run):
+    def _resolve_input_dirs(self, run: Run):
         result = {"data": run.data if run.data else None}
         if run.run is not None:
             result.update(
