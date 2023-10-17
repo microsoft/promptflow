@@ -1,9 +1,10 @@
-from enum import Enum
 
 import pytest
-
-from promptflow._core.tools_manager import connections
+from typing import Any, Callable, NewType, Optional, Tuple, TypeVar, Union
 from promptflow._sdk.entities import CustomStrongTypeConnection
+
+from enum import Enum
+from promptflow._core.tools_manager import connections
 from promptflow._sdk.entities._connection import AzureContentSafetyConnection
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
@@ -17,6 +18,17 @@ from promptflow.contracts.tool import (
     _deserialize_enum,
 )
 from promptflow.contracts.types import FilePath, PromptTemplate, Secret
+
+
+class MyConnection(CustomStrongTypeConnection):
+    pass
+
+
+my_connection = MyConnection(name="my_connection", secrets={"key": "value"})
+
+
+def some_function():
+    pass
 
 
 class TestStatus(Enum):
@@ -151,19 +163,39 @@ class TestConnectionType:
         # Test with a non-connection instance
         assert not ConnectionType.is_connection_value("non_connection_instance")
 
-    def test_is_custom_strong_type(self):
-        class MyCustomConnection(CustomStrongTypeConnection):
-            api_key: Secret
-            api_base: str
-
-        assert ConnectionType.is_custom_strong_type(MyCustomConnection) is True
-
-        class NotCustomConnection:
-            pass
-
-        assert ConnectionType.is_custom_strong_type(NotCustomConnection) is False
-
-        assert ConnectionType.is_custom_strong_type(123) is False
+    @pytest.mark.parametrize(
+        "val, expected_res",
+        [
+            (my_connection, True),
+            (MyConnection, True),
+            (list, False),
+            (list[str], False),
+            (list[int], False),
+            ([1, 2, 3], False),
+            (float, False),
+            (int, False),
+            (5, False),
+            (str, False),
+            (some_function, False),
+            (Union[str, int], False),
+            # ((int | str), False), # Python 3.10
+            (tuple, False),
+            (tuple[str, int], False),
+            (Tuple[int, ...], False),
+            (dict[str, Any], False),
+            ({"test1": [1, 2, 3], "test2": [4, 5, 6], "test3": [7, 8, 9]}, False),
+            (Any, False),
+            (None, False),
+            (Optional[str], False),
+            (TypeVar("T"), False),
+            (TypeVar, False),
+            (Callable, False),
+            (Callable[..., Any], False),
+            (NewType("MyType", int), False),
+        ],
+    )
+    def test_is_custom_strong_type(self, val, expected_res):
+        assert ConnectionType.is_custom_strong_type(val) == expected_res
 
     def test_serialize_conn(self):
         assert ConnectionType.serialize_conn(AzureContentSafetyConnection) == "ABCMeta"
@@ -309,58 +341,3 @@ class TestTool:
             inputs={"input1": InputDefinition(type=[ValueType.STRING])},
         )
         assert not tool3._require_connection()
-=======
-from typing import Any, Callable, NewType, Optional, Tuple, TypeVar, Union
-
-import pytest
-
-from promptflow._sdk.entities import CustomStrongTypeConnection
-from promptflow.contracts.tool import ConnectionType
-
-
-class MyConnection(CustomStrongTypeConnection):
-    pass
-
-
-my_connection = MyConnection(name="my_connection", secrets={"key": "value"})
-
-
-def some_function():
-    pass
-
-
-@pytest.mark.unittest
-class TestToolContract:
-    @pytest.mark.parametrize(
-        "val, expected_res",
-        [
-            (my_connection, True),
-            (MyConnection, True),
-            (list, False),
-            (list[str], False),
-            (list[int], False),
-            ([1, 2, 3], False),
-            (float, False),
-            (int, False),
-            (5, False),
-            (str, False),
-            (some_function, False),
-            (Union[str, int], False),
-            # ((int | str), False), # Python 3.10
-            (tuple, False),
-            (tuple[str, int], False),
-            (Tuple[int, ...], False),
-            (dict[str, Any], False),
-            ({"test1": [1, 2, 3], "test2": [4, 5, 6], "test3": [7, 8, 9]}, False),
-            (Any, False),
-            (None, False),
-            (Optional[str], False),
-            (TypeVar("T"), False),
-            (TypeVar, False),
-            (Callable, False),
-            (Callable[..., Any], False),
-            (NewType("MyType", int), False),
-        ],
-    )
-    def test_is_custom_strong_type(self, val, expected_res):
-        assert ConnectionType.is_custom_strong_type(val) == expected_res

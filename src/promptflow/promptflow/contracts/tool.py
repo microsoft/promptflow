@@ -61,7 +61,7 @@ class ValueType(str, Enum):
             return ValueType.INT
         if isinstance(t, float):
             return ValueType.DOUBLE
-        # FilePath is a subclass of str, so it must be checked before str 
+        # FilePath is a subclass of str, so it must be checked before str
         if isinstance(t, FilePath):
             return ValueType.FILE_PATH
         if isinstance(t, str):

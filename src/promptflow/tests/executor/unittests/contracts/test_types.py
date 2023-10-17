@@ -15,7 +15,8 @@ def test_prompt_template():
     assert isinstance(prompt, str)
     assert str(prompt) == 'my_prompt'
 
+
 @pytest.mark.unittest
-def test_file_path():  
-    file_path = FilePath('my_file_path')  
+def test_file_path():
+    file_path = FilePath('my_file_path')
     assert isinstance(file_path, str)
