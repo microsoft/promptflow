@@ -82,7 +82,7 @@ def validate_functions(functions):
 
 
 def parse_function_role_prompt(function_str):
-    pattern = r"\n*name:\n\s*(\S+)\s*\n*content:\n(.*)"
+    pattern = r"\n*#{0,2}\s*name:\n\s*(\S+)\s*\n*#{0,2}\s*content:\n(.*)"
     match = re.search(pattern, function_str, re.DOTALL)
     if match:
         return match.group(1), match.group(2)
@@ -98,7 +98,7 @@ def parse_function_role_prompt(function_str):
 
 def parse_chat(chat_str):
     # openai chat api only supports below roles.
-    separator = r"(?i)\n+\s*(system|user|assistant|function)\s*:\s*\n"
+    separator = r"(?i)\n+\s*#?\s*(system|user|assistant|function)\s*:\s*\n"
     # Add a newline at the beginning to ensure consistent formatting of role lines.
     # extra new line is removed when appending to the chat list.
     chunks = re.split(separator, '\n'+chat_str)
