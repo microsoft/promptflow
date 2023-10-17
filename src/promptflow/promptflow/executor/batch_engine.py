@@ -21,17 +21,15 @@ class BatchEngine:
         output_dir: Path,
         run_id: str = None,
     ):
-        try:
-            input_dicts = self._resolve_data(input_dirs)
-            mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
-        except Exception as e:
-            # If an exception occurs before executing batch run, it must be thrown first.
-            raise e
-
-        batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id)
+        input_dicts = self.get_input_dicts(input_dirs, inputs_mapping)
+        batch_result = self.flow_executor.exec_bulk(input_dicts, run_id)
         for output in batch_result.outputs:
             output = self.flow_executor._persist_images_from_output(output, output_dir)
-        return mapped_inputs, batch_result
+        return batch_result
+
+    def get_input_dicts(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
+        input_dicts = self._resolve_data(input_dirs)
+        return self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
 
     def _resolve_data(self, input_dirs: Dict[str, str]):
         result = {}
