@@ -214,6 +214,55 @@ user:
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
-    def test_open_source_llm_llama_chat_with_deploy(self, llama_chat_provider):
+    def test_open_source_llm_llama_chat(self, llama_chat_provider):
         response = llama_chat_provider.call(self.llama_chat_prompt, API.CHAT)
+        assert len(response) > 25
+
+    @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
+    def test_open_source_llm_llama_chat_history(self, llama_chat_provider):
+        chat_history_prompt = """user: 
+* Given the following conversation history and the users next question,rephrase the question to be a stand alone question.
+If the conversation is irrelevant or empty, just restate the original question.
+Do not add more details than necessary to the question.
+
+assistant:
+skip
+
+chat history:
+{% for item in chat_history %}
+user:
+{{ item.inputs.chat_input }}
+
+assistant:
+{{ item.outputs.chat_output }}
+{% endfor %}
+
+user:
+Follow up Input: {{ chat_input }}"""
+        response = llama_chat_provider.call(
+            chat_history_prompt,
+            API.CHAT,
+            chat_history = [
+                {
+                    "inputs":
+                    {
+                        "chat_input": "Hi"
+                    },
+                    "outputs":
+                    {
+                        "chat_output": "Hello! How can I assist you today?"
+                    }
+                },
+                {
+                    "inputs":
+                    {
+                        "chat_input": "What is Azure compute instance?"
+                    },
+                    "outputs":
+                    {
+                        "chat_output": "An Azure Machine Learning compute instance is a fully managed cloud-based workstation for data scientists. It provides a pre-configured and managed development environment in the cloud for machine learning. Compute instances can also be used as a compute target for training and inferencing for development and testing purposes. They have a job queue, run jobs securely in a virtual network environment, and can run multiple small jobs in parallel. Additionally, compute instances support single-node multi-GPU distributed training jobs."
+                    }
+                }
+            ],
+            chat_input = "Sorry I didn't follow, could you say that again?")
         assert len(response) > 25
