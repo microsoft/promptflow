@@ -796,7 +796,7 @@ class FlowExecutor:
             input_dir = self._working_dir / input_dir
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(Path(updated_inputs[key]))
+                updated_inputs[key] = Image.from_file(Path.joinpath(input_dir, updated_inputs[key]))
         return updated_inputs
 
     def _persist_images_from_output(self, output: dict, output_dir: Path = None):
