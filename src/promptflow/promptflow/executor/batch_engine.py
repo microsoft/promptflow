@@ -21,13 +21,14 @@ class BatchEngine:
         output_dir: Path,
         run_id: str = None,
     ):
-        # 1. load data
-        input_dicts = self._resolve_data(input_dirs)
-        # 2. apply inputs mapping
-        mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
-        # 3. execute batch run
+        try:
+            input_dicts = self._resolve_data(input_dirs)
+            mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        except Exception as e:
+            # If an exception occurs before executing batch run, it must be thrown first.
+            raise e
+
         batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id)
-        # 4. save output
         for output in batch_result.outputs:
             output = self.flow_executor._persist_images_from_output(output, output_dir)
         return mapped_inputs, batch_result
