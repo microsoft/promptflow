@@ -326,9 +326,6 @@ class RunSubmitter:
             if not isinstance(e, UserErrorException):
                 # for other errors, raise it to user to help debug root cause.
                 raise e
-            # raise exception if run failed before execution.
-            if bulk_result is None:
-                raise e
             # won't raise the exception since it's already included in run object.
         finally:
             # persist snapshot and result
