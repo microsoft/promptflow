@@ -87,7 +87,7 @@ def start():
                                 st.markdown("`},`")
                             elif isinstance(value, Image):  ## todo: remove this when decode function is ready
                                 st.markdown(f"`value : {{`")
-                                show_value = value._to_base64()
+                                show_value = value.to_base64()
                                 if not show_value.startswith("data:image"):
                                     image_bytes = base64.b64decode(show_value)
                                     format = imghdr.what(None, image_bytes)
