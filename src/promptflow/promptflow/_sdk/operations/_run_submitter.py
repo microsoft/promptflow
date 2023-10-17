@@ -290,14 +290,14 @@ class RunSubmitter:
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
-        mapped_inputs = None
+        mapped_inputs = batch_engine.get_input_dicts(input_dirs, column_mapping)
         bulk_result = None
         status = Status.Failed.value
         exception = None
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            mapped_inputs, bulk_result = batch_engine.run(
+            bulk_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
                 output_dir=local_storage.outputs_folder,
