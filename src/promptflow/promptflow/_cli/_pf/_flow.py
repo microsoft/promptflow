@@ -8,9 +8,9 @@ import json
 import logging
 import os
 import shutil
-import webbrowser
 import sys
 import tempfile
+import webbrowser
 from pathlib import Path
 
 from promptflow._cli._params import (
@@ -27,15 +27,16 @@ from promptflow._cli._params import (
 )
 from promptflow._cli._pf._init_entry_generators import (
     FlowDAGGenerator,
+    StreamlitFileGenerator,
     ToolMetaGenerator,
     ToolPyGenerator,
-    StreamlitFileGenerator,
     copy_extra_files,
 )
 from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._pf_client import PFClient
+from promptflow._sdk._utils import dump_flow_result
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -343,11 +344,12 @@ def test_flow(args):
         if args.multi_modal:
             with tempfile.TemporaryDirectory() as temp_dir:
                 from streamlit.web import cli as st_cli
-                from promptflow._sdk._load_functions import load_flow
 
                 flow = load_flow(args.flow)
                 script_path = os.path.join(temp_dir, "main.py")
-                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
+                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(
+                    script_path
+                )
                 shutil.copytree(args.flow, os.path.join(temp_dir, "flow"))
 
                 sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
@@ -372,14 +374,14 @@ def test_flow(args):
         # Dump flow/node test info
         flow = load_flow(args.flow)
         if args.node:
-            TestSubmitter._dump_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{args.node}.node")
+            dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{args.node}.node")
         else:
             if args.variant:
                 tuning_node, node_variant = parse_variant(args.variant)
                 prefix = f"flow-{tuning_node}-{node_variant}"
             else:
                 prefix = "flow"
-            TestSubmitter._dump_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
+            dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
 
         TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
         # Print flow/node test result
