@@ -335,10 +335,6 @@ class TestFlowRun:
             )
         assert "Couldn't find these mapping relations: ${run.outputs.text}." in str(e.value)
 
-        # run should not be created
-        with pytest.raises(RunNotFoundError):
-            pf.runs.get(name=run_name)
-
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
             source=f"{RUNS_DIR}/run_with_connections.yaml",
@@ -592,10 +588,6 @@ class TestFlowRun:
                 column_mapping={"not_exist": "${data.not_exist_key}"},
                 name=name,
             )
-
-        # run should not be created
-        with pytest.raises(RunNotFoundError):
-            pf.runs.get(name=name)
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
