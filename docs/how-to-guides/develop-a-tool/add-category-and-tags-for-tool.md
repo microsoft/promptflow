@@ -1,13 +1,12 @@
 # Add Category and Tags for Tool
-Users sometimes need their tools to be easy to find. To achieve this, we've introduced the `category` and `tags`. The tool category helps to organize tools into specific category folders, while the tool tags enables users to search for tools with similar tags, regardless of their categories.  
-Both category and tags are optional. If a tool isn't assigned a category, it will be displayed in the root folder. Similarly, if no tags are assigned, the tags field will remain empty.
+At times, users require their tools to be readily accessible. To facilitate this, we've implemented the `category` and `tags` features. The category aids in compartmentalizing tools into distinct category folders, whereas the tags allow users to locate tools with corresponding tags.  
+Both category and tags assignments are optional. If a tool isn't assigned a category, it will be displayed in the root folder. Similarly, if no tags are assigned, the tags field will remain empty.
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or a more recent version.
 
 ## How to add category and tags for a tool
-Here we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package), and you can add the _category_ and _tags_ fields in the tool's YAML.
-The YAML should appear as follows:
+Here we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_file_path_input.yaml) as an example. If you wish to create your own tool, kindly refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) guide. You can add the _category_ and _tags_ fields in the tool's YAML like this:
 ```yaml
 my_tool_package.tools.tool_with_file_path_input.my_tool:
   function: my_tool
@@ -31,11 +30,11 @@ my_tool_package.tools.tool_with_file_path_input.my_tool:
 
 ## Tool with category and tags shown in VS Code extension
 ### Tool with category and tags shown in tools tree
-Follow [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool from VS Code extension. Your tool will display with category and tags:  
+Follow the [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool via the VS Code extension. Your tool will be displayed along with its category and tags:  
 ![category_and_tags_in_extension](../../media/how-to-guides/develop-a-tool/category_and_tags_in_extension.png)
 
 ### Tool with category and tags shown in tool list
-You can see your tools with category and tags when clicking `More` in the visual editor:  
+By clicking `More` in the visual editor, you can view your tools along with their category and tags:  
 ![category_and_tags_in_tool_list](../../media/how-to-guides/develop-a-tool/category_and_tags_in_tool_list.png)  
-Additionally, you can filter tools by tags:  
+Furthermore, you have the option to filter tools based on tags:  
 ![filter_tools_by_tag](../../media/how-to-guides/develop-a-tool/filter_tools_by_tag.png)
