@@ -167,7 +167,7 @@ class ToolResolver:
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
         prompt_tpl = self._load_source_content(node)
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         from promptflow.tools.template_rendering import render_template_jinja2
 
         params = inspect.signature(render_template_jinja2).parameters
@@ -209,7 +209,7 @@ class ToolResolver:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
 
         prompt_tpl = self._load_source_content(node)
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the parameters of {node.provider}.{node.api}."
@@ -265,7 +265,7 @@ class ToolResolver:
 
     def _integrate_prompt_in_package_node(self, node: Node, resolved_tool: ResolvedTool):
         prompt_tpl = PromptTemplate(self._load_source_content(node))
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the inputs of custom llm tool."

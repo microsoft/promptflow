@@ -56,13 +56,23 @@ class TestCommon:
         [
             ("system:\nthis is my function:\ndef hello", [
                 {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
+            ("#system:\nthis is my ##function:\ndef hello", [
+                {'role': 'system', 'content': 'this is my ##function:\ndef hello'}]),
             (" \n system:\nthis is my function:\ndef hello", [
+                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
+            (" \n # system:\nthis is my function:\ndef hello", [
                 {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
             ("user:\nhi\nassistant:\nanswer\nfunction:\nname:\nn\ncontent:\nc", [
                 {'role': 'user', 'content': 'hi'},
                 {'role': 'assistant', 'content': 'answer'},
                 {'role': 'function', 'name': 'n', 'content': 'c'}]),
+            ("#user :\nhi\n #assistant:\nanswer\n# function:\n##name:\nn\n##content:\nc", [
+                {'role': 'user', 'content': 'hi'},
+                {'role': 'assistant', 'content': 'answer'},
+                {'role': 'function', 'name': 'n', 'content': 'c'}]),
             ("\nsystem:\nfirst\n\nsystem:\nsecond", [
+                {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
+            ("\n#system:\nfirst\n\n#system:\nsecond", [
                 {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}])
         ]
     )
