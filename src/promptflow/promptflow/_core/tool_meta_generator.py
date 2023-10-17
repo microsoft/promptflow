@@ -20,7 +20,7 @@ from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSup
 from promptflow._core.tool import ToolProvider
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
 from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
-from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
+from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 PF_MAIN_MODULE_NAME = "__pf_main__"
@@ -57,7 +57,7 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
 
         reserved_keys_to_raise = reserved_keys
 
-    for input in inputs:
+    for input in inputs.keys():
         if input in reserved_keys_to_raise:
             raise ReservedVariableCannotBeUsed(
                 message_format=(
@@ -76,7 +76,7 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
         name=name,
         description=description,
         type=tool_type,
-        inputs={i: InputDefinition(type=[ValueType.STRING]) for i in inputs},
+        inputs=inputs,
         outputs={},
     )
     if source is None:
