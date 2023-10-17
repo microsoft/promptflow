@@ -9,12 +9,14 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
+    dump_flow_result,
     get_local_connections_from_executable,
+    override_connection_config_with_environment_variable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
-    override_connection_config_with_environment_variable,
 )
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow.executor import FlowExecutor
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -33,7 +35,11 @@ class FlowInvoker:
     """
 
     def __init__(
-        self, flow: str, connection_provider: [str, Callable] = None, streaming: Union[Callable[[], bool], bool] = False
+        self,
+        flow: str,
+        connection_provider: [str, Callable] = None,
+        streaming: Union[Callable[[], bool], bool] = False,
+        **kwargs,
     ):
         self.flow_dir = flow
         self.flow_entity = load_flow(self.flow_dir)
@@ -41,12 +47,17 @@ class FlowInvoker:
         self._init_connections(connection_provider)
         self._init_executor()
         self.flow = self.executor._flow
+        # Pass dump_to path to dump flow result for extension.
+        self._dump_to = kwargs.get("dump_to", False)
+        self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
+        executable = self.flow_entity._init_executable()
+        self._is_chat_flow = FlowOperations._is_chat_flow(executable)
         if connection_provider == "local":
             logger.info("Getting connections from local pf client...")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
-            self.connections = get_local_connections_from_executable(executable=self.flow_entity._init_executable())
+            self.connections = get_local_connections_from_executable(executable=executable)
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()
@@ -93,4 +104,7 @@ class FlowInvoker:
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
+
+        if self._dump_to:
+            dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
         return result.output
