@@ -397,9 +397,6 @@ class TestExecutor:
         executor = FlowExecutor.create(get_yaml_file("python_tool_with_image_input_and_output"), {})
         input_dirs = {"data": "image_inputs/inputs.jsonl"}
         inputs_mapping = {"image": "${data.image}"}
-        output_dir = Path(
-            "D:/github/promptflow/src/promptflow/tests/test_configs/flows/"
-            "python_tool_with_image_input_and_output/outputs"
-        )
-        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
+        output_dir = Path("outputs")
+        _, bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
         print(bulk_result.outputs)
