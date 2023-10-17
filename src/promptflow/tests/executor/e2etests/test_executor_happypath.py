@@ -392,11 +392,10 @@ class TestExecutor:
         )
         assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
 
-    @pytest.mark.skip(reason="Just for tests")
     def test_batch_engine(self):
         executor = FlowExecutor.create(get_yaml_file("python_tool_with_image_input_and_output"), {})
         input_dirs = {"data": "image_inputs/inputs.jsonl"}
         inputs_mapping = {"image": "${data.image}"}
         output_dir = Path("outputs")
-        _, bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
-        print(bulk_result.outputs)
+        bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
+        assert all("data:image/jpg;path" in output["output"] for output in bulk_result.outputs)

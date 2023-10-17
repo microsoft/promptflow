@@ -811,7 +811,7 @@ class FlowExecutor:
 
     @staticmethod
     def _persist_images_from_output(output: dict, base_dir: Path, sub_dir: Path = None):
-        if sub_dir.is_absolute():
+        if sub_dir and sub_dir.is_absolute():
             folder_path = sub_dir
             relative_path = None
         else:
