@@ -66,7 +66,7 @@ class TestCommon:
                 {'role': 'user', 'content': 'hi'},
                 {'role': 'assistant', 'content': 'answer'},
                 {'role': 'function', 'name': 'n', 'content': 'c'}]),
-            ("#user :\nhi\n #assistant:\nanswer\n# function:\nname:\nn\n##content:\nc", [
+            ("#user :\nhi\n #assistant:\nanswer\n# function:\n##name:\nn\n##content:\nc", [
                 {'role': 'user', 'content': 'hi'},
                 {'role': 'assistant', 'content': 'answer'},
                 {'role': 'function', 'name': 'n', 'content': 'c'}]),
