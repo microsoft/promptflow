@@ -214,7 +214,9 @@ class ToolResolver:
 
     def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         # Provider must be prepared.
-        if node.api == "completion" and node.connection == "azure_open_ai_connection":
+        if node.api == "completion" and (
+            node.connection == "azure_open_ai_connection" or node.provider == "AzureOpenAI"
+        ):
             prompt_tpl = self._load_source_content(node)
             prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
             callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, self._working_dir)

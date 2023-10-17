@@ -220,18 +220,19 @@ class LocalStorageOperations(AbstractRunStorage):
         """Persist node run record to local storage."""
         hashDict = {}
         if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
-            if "name" in run_info.api_calls[0] and run_info.api_calls[0]["name"].startswith("AzureOpenAI"):
-                flow_folder = self._flow_path
+            for api_call in run_info.api_calls:
+                if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
+                    flow_folder = self._flow_path
 
-                prompt_tpl = run_info.inputs["prompt"]
-                prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+                    prompt_tpl = api_call["inputs"]["prompt"]
+                    prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
 
-                for keyword in prompt_tpl_inputs:
-                    if keyword in run_info.inputs:
-                        hashDict[keyword] = run_info.inputs[keyword]
-                hashDict["prompt"] = prompt_tpl
-                hashDict = collections.OrderedDict(sorted(hashDict.items()))
-                RecordStorage.set_record(flow_folder, hashDict, run_info.output)
+                    for keyword in prompt_tpl_inputs:
+                        if keyword in api_call["inputs"]:
+                            hashDict[keyword] = api_call["inputs"][keyword]
+                    hashDict["prompt"] = prompt_tpl
+                    hashDict = collections.OrderedDict(sorted(hashDict.items()))
+                    RecordStorage.set_record(flow_folder, hashDict, run_info.output)
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""

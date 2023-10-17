@@ -52,7 +52,7 @@ class RecordStorage:
         if not local_content:
             if not os.path.exists(flow_directory / "storage_record.json"):
                 return
-            with open(flow_directory / "storage_record.json", "r") as fp:
+            with open(flow_directory / "storage_record.json", "r", encoding="utf-8") as fp:
                 RecordStorage.runItems[path_hash] = json.load(fp)
 
     @staticmethod
@@ -77,11 +77,15 @@ class RecordStorage:
     def set_record(flow_directory: Path, hashDict: OrderedDict, output: object) -> None:
         hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
         path_hash: str = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
-        output_base64: str = base64.b64encode(bytes(output, "utf-8")).decode()
+        output_base64: str = base64.b64encode(bytes(output, "utf-8")).decode(encoding="utf-8")
         current_saved_record: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
         if current_saved_record is None:
             RecordStorage.load_file(flow_directory)
-            RecordStorage.runItems[path_hash] = {hash_value: output_base64}
+            if RecordStorage.runItems is None:
+                RecordStorage.runItems = {}
+            if (RecordStorage.runItems.get(path_hash, None)) is None:
+                RecordStorage.runItems[path_hash] = {}
+            RecordStorage.runItems[path_hash][hash_value] = output_base64
             RecordStorage.write_file(flow_directory)
         else:
             saved_output = current_saved_record.get(hash_value, None)

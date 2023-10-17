@@ -153,7 +153,7 @@ class TestCli:
         detail = local_storage.load_detail()
         tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
         # used variant_0 config, defaults using variant_1
-        assert tuning_node["inputs"]["temperature"] == 0.2
+        assert str(tuning_node["inputs"]["temperature"]) == "0.2"
 
     def test_environment_variable_overwrite(self, local_client, local_aoai_connection):
         run_id = str(uuid.uuid4())
@@ -1221,12 +1221,7 @@ class TestCli:
 
         monkeypatch.setattr("builtins.input", mock_input)
         run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/conditional_chat_flow_with_skip",
-            "--interactive",
-            "--verbose"
+            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
         )
         output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
         assert output_path.exists()
