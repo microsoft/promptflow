@@ -94,7 +94,12 @@ class ToolResolver:
             value_type = tool_input.type[0]
             updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
-                updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                if tool_input.custom_type:
+                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
+                        k, v, node, tool_input.custom_type, module=module
+                    )
+                else:
+                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
             elif value_type == ValueType.IMAGE:
                 updated_inputs[k].value = Image._create(v.value, self._working_dir)
             elif isinstance(value_type, ValueType):
