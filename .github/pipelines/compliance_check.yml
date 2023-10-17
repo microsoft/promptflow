@@ -17,7 +17,7 @@ trigger:
   - releases/*
 
 pool:
-  vmImage: windows-latest
+  name: pipeline-1ES-MMS
 
 steps:
 - checkout: self
