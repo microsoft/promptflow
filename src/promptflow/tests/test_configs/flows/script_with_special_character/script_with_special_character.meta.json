@@ -1,0 +1,13 @@
+{
+  "name": "script_with_special_character",
+  "type": "python",
+  "inputs": {
+    "input1": {
+      "type": [
+        "string"
+      ]
+    }
+  },
+  "source": "script_with_special_character.py",
+  "function": "print_special_character"
+}

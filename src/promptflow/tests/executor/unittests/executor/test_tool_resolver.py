@@ -6,7 +6,7 @@ import pytest
 from promptflow._core.tools_manager import ToolLoader
 from promptflow._sdk.entities import CustomConnection, CustomStrongTypeConnection
 from promptflow.connections import AzureOpenAIConnection
-from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import InputDefinition, Secret, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import UserErrorException
@@ -19,6 +19,8 @@ from promptflow.executor._errors import (
     ValueTypeUnresolved,
 )
 from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
+
+from ...utils import FLOW_ROOT
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -416,3 +418,30 @@ class TestToolResolver:
         actual = tool_resolver._convert_to_custom_strong_type_connection_value("conn_name", v, node, conn_types, m)
         assert isinstance(actual, expected_type)
         assert actual.api_base == "mock"
+
+    def test_load_source(self):
+        # Create a mock Node object with a valid source path
+        node = Node(name="mock", tool=None, inputs={}, source=ToolSource())
+        node.source.path = "./script_with_special_character/script_with_special_character.py"
+
+        resolver = ToolResolver(FLOW_ROOT)
+
+        result = resolver._load_source_content(node)
+        assert "https://www.bing.com/\ue000\ue001/" in result
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            None,
+            ToolSource(path=None),  # Then will try to read one directory.
+            ToolSource(path=""),  # Then will try to read one directory.
+            ToolSource(path="NotExistPath.py"),
+        ],
+    )
+    def test_load_source_error(self, source):
+        # Create a mock Node object with a valid source path
+        node = Node(name="mock", tool=None, inputs={}, source=source)
+        resolver = ToolResolver(FLOW_ROOT)
+
+        with pytest.raises(InvalidSource) as _:
+            resolver._load_source_content(node)
