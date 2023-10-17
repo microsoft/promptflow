@@ -1,3 +1,4 @@
-promptflow
+--extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+promptflow==0.1.0b8.dev2 
 promptflow-tools
 my-tools-package
