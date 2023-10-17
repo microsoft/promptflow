@@ -98,8 +98,10 @@ def parse_function_role_prompt(function_str):
 
 def parse_chat(chat_str):
     # openai chat api only supports below roles.
-    separator = r"(?i)\n*(system|user|assistant|function)\s*:\s*\n"
-    chunks = re.split(separator, chat_str)
+    separator = r"(?i)\n+\s*(system|user|assistant|function)\s*:\s*\n"
+    # Add a newline at the beginning to ensure consistent formatting of role lines.
+    # extra new line is removed when appending to the chat list.
+    chunks = re.split(separator, '\n'+chat_str)
     chat_list = []
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None
