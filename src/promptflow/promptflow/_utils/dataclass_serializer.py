@@ -58,7 +58,7 @@ def deserialize_value(obj, field_type):
     return obj
 
 
-def serialize(value: object, remove_null : bool = False, serialization_funcs: dict[type: Callable] = None) -> dict:
+def serialize(value: object, remove_null: bool = False, serialization_funcs: dict[type:Callable] = None) -> dict:
     if serialization_funcs:
         for cls, f in serialization_funcs.items():
             if isinstance(value, cls):
@@ -70,7 +70,10 @@ def serialize(value: object, remove_null : bool = False, serialization_funcs: di
     if isinstance(value, list):
         return [serialize(v, remove_null, serialization_funcs) for v in value]
     if isinstance(value, GeneratorProxy):
-        return [serialize(v, remove_null, serialization_funcs) for v in value.items]
+        # TODO: The current implementation of the serialize function is not self-explanatory, as value.items is mutable
+        # whereas the serialize function should deal with a fixed object. We should rename the function to
+        # to_serializable to better reflect its purpose.
+        return value.items
     #  Note that custom connection check should before dict check
     if ConnectionType.is_connection_value(value):
         return ConnectionType.serialize_conn(value)
@@ -83,8 +86,7 @@ def serialize(value: object, remove_null : bool = False, serialization_funcs: di
             result = value.serialize()
         else:
             result = {
-                f.name: serialize(getattr(value, f.name), remove_null, serialization_funcs)
-                for f in fields(value)
+                f.name: serialize(getattr(value, f.name), remove_null, serialization_funcs) for f in fields(value)
             }
         if not remove_null:
             return result
