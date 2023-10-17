@@ -247,12 +247,36 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    @pytest.mark.skip("TODO: need to fix random pacakge not found error")
-    def test_custom_strong_type_connection_basic_flow(self, install_custom_tool_pkg, local_client, pf):
+    def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
         result = pf.run(
-            flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
-            data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
             connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+        )
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+
+    def test_basic_flow_with_script_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
+        # Prepare custom connection
+        from promptflow.connections import CustomConnection
+
+        conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
+        local_client.connections.create_or_update(conn)
+
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection/data.jsonl",
         )
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
@@ -661,13 +685,11 @@ class TestFlowRun:
         )
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
-        assert "user log" in logs
-        # error logs can be stored
-        assert "error log" in logs
-        # flow logs can be stored
-        assert "Executing node print_val. node run id:" in logs
-        # executor logs can be stored
-        assert "Node print_val completes." in logs
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
         run = pf.run(

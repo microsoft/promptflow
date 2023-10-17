@@ -20,6 +20,8 @@ class RunMetadata:
     name: str
     display_name: str
     create_time: str
+    flow_path: str
+    output_path: str
     tags: Optional[List[Dict[str, str]]]
     lineage: Optional[str]
     metrics: Optional[Dict[str, Any]]

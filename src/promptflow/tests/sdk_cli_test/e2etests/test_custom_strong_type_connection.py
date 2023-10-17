@@ -129,14 +129,14 @@ class TestCustomStrongTypeConnection:
         assert conn.configs["api_base"] == "test"
 
         result = _client.connections.create_or_update(conn)
-        converted_conn = result._convert_to_custom_strong_type()
+        converted_conn = result._convert_to_custom_strong_type(MyCustomConnection)
 
+        assert isinstance(converted_conn, MyCustomConnection)
         assert converted_conn.api_base == "test"
         converted_conn.api_base = "test2"
         assert converted_conn.api_base == "test2"
         assert converted_conn.configs["api_base"] == "test2"
 
-    @pytest.mark.skip("TODO: need to fix random pacakge not found error")
     @pytest.mark.parametrize(
         "file_name, expected_updated_item, expected_secret_item",
         [
