@@ -1,11 +1,9 @@
 [WIP]
-# Flow with additional_includes
+# Flow with script tool using custom strong type connection
 
-User sometimes need to reference some common files or folders, this sample demos how to solve the problem using additional_includes. The file or folders in additional includes will be 
-copied to the snapshot folder by promptflow when operate this flow.
+A basic flow using a python tool that using a custom strong type connection. For how to write your own custom strong type connection, please refer to this [document](../../../../docs/how-to-guides/develop-a-tool/create-your-own-custom-strong-type-connection.md).
 
 ## Tools used in this flow
-- LLM Tool
 - Python Tool
 
 ## What you will learn

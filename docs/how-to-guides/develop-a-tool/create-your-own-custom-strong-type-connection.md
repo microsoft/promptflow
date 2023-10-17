@@ -8,10 +8,11 @@ This document provides a step-by-step guide on how to create and use a custom st
 Once the custom strong type connection is created, you can either use it in the package tool or script tool.
 
 ## Prerequisites
+- Promptflow VSCode Extension version >= [1.1.0-rc0](https://aka.ms/promptflow/vsc) // TODO: Use market public version
 - Install promptflow package.
 
   ```bash
-  # Eventually only pip install promptflow==0.1.0b8
+  # TODO: after promptflow pkg release, updated to pip install promptflow==0.1.0b8
   pip install "promptflow==0.0.107761800" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
   ```
 
@@ -71,7 +72,7 @@ Make sure that you adhere to the following guidelines:
 To develop a flow with a package tool that uses a custom strong type connection, follow these steps:
 * Step1: Refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) documentation to build and install your tool package in your local environment.
   > [!Note] After installing the new tool package in your local environment, you will need to reload the window for the changes to take effect.
-* Step2: Develop a flow with custom tools. Please take this [folder](../../../examples/flows/standard/flow-with-script-tool-with-custom-strong-type-connection/) as an example.
+* Step2: Develop a flow with custom tools. Please take this [folder](../../../examples/flows/standard/flow-with-package-tool-using-custom-strong-type-connection/) as an example.
 * Step3: Create a custom strong type connection using one of the following methods:
   - Click the 'Add connection' button in the node interface.
     ![create_custom_strong_type_connection_in_node_interface](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_node_interface.png)
@@ -88,7 +89,7 @@ To develop a flow with a package tool that uses a custom strong type connection,
 
 ## Develop a flow with a script tool with custom strong type connection
 To develop a flow with a script tool that uses a custom strong type connection, follow these steps:
-* Step1: Develop a flow with custom tools. Please take this [folder](../../../examples/flows/standard/flow-with-script-tool-with-custom-strong-type-connection/) as an example.
+* Step1: Develop a flow with custom tools. Please take this [folder](../../../examples/flows/standard/flow-with-script-tool-using-custom-strong-type-connection/) as an example.
 * Step2: Using a custom strong type connection in a script tool is slightly different from using it in a package tool. When creating the connection, you will create a `CustomConnection`. Fill in the `keys` and `values` in the connection template.
   ![custom](../../media/how-to-guides/develop-a-tool/custom_connection_template.png)
 * Step3: Use the created custom connection in your flow.
@@ -101,9 +102,9 @@ For more details on running PromptFlow in Azure AI, please refer to this [docume
 
 Here are some example commands:
 ```
-pfazure run create --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g promptflow -w chjinche-pf-eus --flow D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-package-tool-with-custom-strong-type-connection --data D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-package-tool-with-custom-strong-type-connection\data.jsonl --runtime test-compute
+pfazure run create --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g promptflow -w chjinche-pf-eus --flow D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-package-tool-using-custom-strong-type-connection --data D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-package-tool-using-custom-strong-type-connection\data.jsonl --runtime test-compute
 ```
 
 ```
-pfazure run create --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g promptflow -w chjinche-pf-eus --flow D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-script-tool-with-custom-strong-type-connection --data D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-script-tool-with-custom-strong-type-connection\data.jsonl --runtime test-compute
+pfazure run create --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g promptflow -w chjinche-pf-eus --flow D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-script-tool-using-custom-strong-type-connection --data D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-script-tool-using-custom-strong-type-connection\data.jsonl --runtime test-compute
 ```
