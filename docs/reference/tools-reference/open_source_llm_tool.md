@@ -52,7 +52,7 @@ The Open Source LLM tool has a number of parameters, some of which are required.
 | Name | Type | Description | Required |
 |------|------|-------------|----------|
 | api | string | This is the API mode and will depend on the model used and the scenario selected. *Supported values: (Completion \| Chat)* | Yes |
-| endpoint_name | string | asdasd | No |
+| endpoint_name | string | Name of an Online Inferencing Endpoint with a supported model deployed on it. Takes priority over connection. | No |
 | connection | CustomConnection | This is the name of the connection which points to the Online Inferencing endpoint. | No |
 | temperature | float | The randomness of the generated text. Default is 1. | No |
 | max_new_tokens | integer | The maximum number of tokens to generate in the completion. Default is 500. | No |
