@@ -220,8 +220,8 @@ user:
 
     @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
     def test_open_source_llm_llama_chat_history(self, llama_chat_provider):
-        chat_history_prompt = """user: 
-* Given the following conversation history and the users next question,rephrase the question to be a stand alone question.
+        chat_history_prompt = """user:
+* Given the following conversation history and the users next question, answer the next question.
 If the conversation is irrelevant or empty, just restate the original question.
 Do not add more details than necessary to the question.
 
@@ -238,11 +238,11 @@ assistant:
 {% endfor %}
 
 user:
-Follow up Input: {{ chat_input }}"""
+{{ chat_input }}"""
         response = llama_chat_provider.call(
             chat_history_prompt,
             API.CHAT,
-            chat_history = [
+            chat_history=[
                 {
                     "inputs":
                     {
@@ -260,9 +260,15 @@ Follow up Input: {{ chat_input }}"""
                     },
                     "outputs":
                     {
-                        "chat_output": "An Azure Machine Learning compute instance is a fully managed cloud-based workstation for data scientists. It provides a pre-configured and managed development environment in the cloud for machine learning. Compute instances can also be used as a compute target for training and inferencing for development and testing purposes. They have a job queue, run jobs securely in a virtual network environment, and can run multiple small jobs in parallel. Additionally, compute instances support single-node multi-GPU distributed training jobs."
+                        "chat_output": "An Azure Machine Learning compute instance is a fully managed cloud-based"
+                        + " workstation for data scientists. It provides a pre-configured and managed development"
+                        + " environment in the cloud for machine learning. Compute instances can also be used as a"
+                        + " compute target for training and inferencing for development and testing purposes. They"
+                        + " have a job queue, run jobs securely in a virtual network environment, and can run"
+                        + " multiple small jobs in parallel. Additionally, compute instances support single-node"
+                        + " multi-GPU distributed training jobs."
                     }
                 }
             ],
-            chat_input = "Sorry I didn't follow, could you say that again?")
+            chat_input="Sorry I didn't follow, could you say that again?")
         assert len(response) > 25
