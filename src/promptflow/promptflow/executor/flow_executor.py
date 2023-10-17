@@ -787,10 +787,7 @@ class FlowExecutor:
         return updated_inputs
 
     def _process_images_from_inputs(
-        self,
-        inputs: Dict[str, FlowInputDefinition],
-        line_inputs: Mapping,
-        input_dir: Path = None
+        self, inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path = None
     ) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         if not input_dir:
@@ -909,6 +906,11 @@ class FlowExecutor:
                 run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
+            # Persist the node runs for the nodes that have a generator output
+            generator_output_nodes = [
+                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+            ]
+            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -1004,7 +1006,7 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
+        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
 
     @staticmethod
     def apply_inputs_mapping(

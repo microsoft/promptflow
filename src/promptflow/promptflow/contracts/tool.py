@@ -241,6 +241,9 @@ class InputDefinition:
     default: str = None
     description: str = None
     enum: List[str] = None
+    # Param 'custom_type' is currently used for inputs of custom strong type connection.
+    # For a custom strong type connection input, the type should be 'CustomConnection',
+    # while the custom_type should be the custom strong type connection class name.
     custom_type: List[str] = None
 
     def serialize(self) -> dict:
@@ -285,6 +288,7 @@ class InputDefinition:
             data.get("default", ""),
             data.get("description", ""),
             data.get("enum", []),
+            data.get("custom_type", []),
         )
 
 
