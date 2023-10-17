@@ -1,0 +1,17 @@
+inputs:
+  my_input:
+    type: string
+    default: hello
+outputs:
+  my_output:
+    type: string
+    reference: ${my_package_tool.output}
+nodes:
+- name: my_package_tool
+  type: python
+  source:
+    type: package
+    tool: my_tool_package.tools.my_tool_2.MyTool.my_tool
+  inputs:
+    connection: my_second_connection
+    input_text: ${inputs.my_input}
