@@ -11,3 +11,7 @@ my_tool_package.tools.tool_with_file_path_input.my_tool:
   name: Tool with FilePath Input
   description: This is a tool to demonstrate the usage of FilePath input
   type: python
+  category: test_tool
+  tags:
+    input: FilePath
+    task: text-generation
