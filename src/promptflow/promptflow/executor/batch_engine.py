@@ -51,13 +51,14 @@ class BatchEngine:
         for key, value in one_line_data.items():
             if isinstance(value, list):
                 for each_item in value:
-                    each_item = self._resolve_image(input_dir, each_item)
+                    each_item = BatchEngine.resolve_image(input_dir, each_item)
                 one_line_data[key] = value
             elif isinstance(value, dict):
-                one_line_data[key] = self._resolve_image(input_dir, value)
+                one_line_data[key] = BatchEngine.resolve_image(input_dir, value)
         return one_line_data
 
-    def _resolve_image(self, input_dir: Path, data_dict: dict):
+    @staticmethod
+    def resolve_image(input_dir: Path, data_dict: dict):
         # input_absolute_dir = os.path.abspath(input_dir)
         """
         if PFBytes.is_multimedia_data(data_dict):
