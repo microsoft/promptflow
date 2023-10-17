@@ -30,26 +30,6 @@ def asdict_without_none(obj):
     return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
-def get_input_type(input: str, input_type_mapping: dict) -> ValueType:
-    """
-    Get input ValueType from input to input type mapping
-
-    : param input: the input name
-    : type t: str
-    : param input_type_mapping: input name to input type mapping
-    : type t: dict
-    : return: the ValueType of the given input name
-    : rtype: ~promptflow.contracts.tool.ValueType
-    """
-    if not input_type_mapping or input not in input_type_mapping:
-        return ValueType.STRING
-
-    if input_type_mapping[input] == "image":
-        return ValueType.IMAGE
-    else:
-        raise ToolValidationError(f"Unsupported input type {input_type_mapping[input]}.")
-
-
 def generate_prompt_tool(name, content, prompt_only=False, source=None):
     """Generate meta for a single jinja template file."""
     # Get all the variable name from a jinja template
