@@ -101,7 +101,7 @@ def parse_function_role_prompt(function_str):
 def parse_chat(chat_str):
     # openai chat api only supports below roles.
     # customer can add single # in front of role name for markdown highlight.
-    # and we still support role name withou # prefix for backward compatibility.
+    # and we still support role name without # prefix for backward compatibility.
     separator = r"(?i)\n+\s*#?\s*(system|user|assistant|function)\s*:\s*\n"
     # Add a newline at the beginning to ensure consistent formatting of role lines.
     # extra new line is removed when appending to the chat list.
