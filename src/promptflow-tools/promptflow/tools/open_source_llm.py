@@ -107,9 +107,9 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
     except Exception as e:
-        print(e)
         message = "Unable to connect to AzureML. Please ensure the following environment variables are set: "
         message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
+        message += "\nException: " + str(e)
         raise OpenSourceLLMOnlineEndpointError(message=message)
 
     found = False
@@ -440,24 +440,6 @@ class AzureMLOnlineEndpoint:
         endpoint_request = str.encode(body)
         endpoint_response = self._call_endpoint(endpoint_request)
         response = self.content_formatter.format_response_payload(endpoint_response)
-
-        try:
-            import tiktoken
-            GPT_TOKENIZER = tiktoken.get_encoding("cl100k_base")
-
-            def estimate_tokens(input_str: str) -> int:
-                return len(GPT_TOKENIZER.encode(input_str, allowed_special="all"))
-
-            prompt_tokens = estimate_tokens(body)
-            response_tokens = estimate_tokens(response)
-
-            from promptflow._core.metric_logger import MetricLoggerManager
-            logger_index = MetricLoggerManager.get_instance()
-            logger_index.log_metric("completion_tokens", prompt_tokens + response_tokens)
-            logger_index.log_metric("prompt_tokens", prompt_tokens)
-            logger_index.log_metric("total_tokens", response_tokens)
-        except Exception:
-            pass
 
         return response
 

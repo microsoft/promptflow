@@ -12,14 +12,23 @@ from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatte
 def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
     return OpenSourceLLM(gpt2_custom_connection)
 
+@pytest.fixture
+def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
+    return OpenSourceLLM(llama_chat_custom_connection)
 
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenSourceLLM:
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
-    chat_prompt = """user:
+
+    gpt2_chat_prompt = """user:
 You are a AI which helps Customers answer questions.
 
 user:
+""" + completion_prompt
+
+    llama_chat_prompt = """user:
+You are a AI which helps Customers answer questions.
+
 """ + completion_prompt
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
@@ -42,7 +51,7 @@ user:
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_chat(self, gpt2_provider):
         response = gpt2_provider.call(
-            self.chat_prompt,
+            self.gpt2_chat_prompt,
             API.CHAT)
         assert len(response) > 25
 
@@ -52,14 +61,14 @@ user:
             gpt2_custom_connection,
             deployment_name="gpt2-8")
         response = os_tool.call(
-            self.chat_prompt,
+            self.gpt2_chat_prompt,
             API.CHAT)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_chat_with_max_length(self, gpt2_provider):
         response = gpt2_provider.call(
-            self.chat_prompt,
+            self.gpt2_chat_prompt,
             API.CHAT,
             max_new_tokens=2)
         # GPT-2 doesn't take this parameter
@@ -103,7 +112,7 @@ Required keys are: endpoint_url,model_family."""
         assert out_of_danger == "The quick \\brown fox\\tjumped\\\\over \\the \\\\boy\\r\\n"
 
     def test_open_source_llm_llama_parse_chat_with_chat(self):
-        LlamaContentFormatter.parse_chat(self.chat_prompt)
+        LlamaContentFormatter.parse_chat(self.llama_chat_prompt)
 
     def test_open_source_llm_llama_parse_multi_turn(self):
         multi_turn_chat = """user:
@@ -197,6 +206,13 @@ user:
         os.environ["AZUREML_ARM_RESOURCEGROUP"] = "gewoods_rg"
         os.environ["AZUREML_ARM_WORKSPACE_NAME"] = "gewoods_ml"
 
-        os_llm = OpenSourceLLM(endpoint_name="llama-temp-completion")
-        response = os_llm.call(self.completion_prompt, API.COMPLETION)
+        os_llm = OpenSourceLLM(endpoint_name="llama-temp-chat")
+        response = os_llm.call(self.llama_chat_prompt, API.CHAT)
+        assert len(response) > 25
+
+    # def test_open_source_llm_get_model_type(self):
+
+    @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
+    def test_open_source_llm_completion_with_deploy(self, llama_chat_provider):
+        response = llama_chat_provider.call(self.llama_chat_prompt, API.CHAT)
         assert len(response) > 25
