@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
+import base64
 
 IMAGE_KEY = "data:image/png;base64"
 invoker = None
@@ -41,6 +42,18 @@ def start():
                         else:
                             st.markdown(f"`{{ {item}  }},`")
                     st.markdown("` ]`")
+                elif isinstance(value, dict):
+                    st.markdown(f"`key : {key}`")
+                    st.markdown(f"`value : {{`")
+                    if IMAGE_KEY in value:
+                        st.markdown(f"`key : {IMAGE_KEY}`")
+                        st.markdown(f"`value: {{`")
+                        st.image(value[IMAGE_KEY])
+                        st.markdown("`},`")
+                    else:
+                        st.markdown(f"`key : {key}`")
+                        st.markdown(f"`value: {json.dumps(value)}`")
+                    st.markdown("` }`")
                 else:
                     st.markdown(f"`key : {key}`")
                     st.markdown(f"`value: {json.dumps(value)}`")
@@ -116,10 +129,12 @@ def start():
                     os.environ[environment_variable] = secret_input
 
 {% set indent_level = 4 %}
-{% for flow_input, (default_value, is_multi_model) in flow_inputs.items() %}
-{% if is_multi_model %}
+{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
+{% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
+{% elif value_type == "image" %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
 {% else %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
 {% endif %}
@@ -130,9 +145,12 @@ def start():
         clear_bt = cols[1].form_submit_button(label='Clear')
 
         if submit_bt:
-{% for flow_input, (default_value, is_multi_model) in flow_inputs.items() %}
-{% if is_multi_model %}
+{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
+{% if value_type == "list" %}
 {{ ' ' * indent_level * 3 }}{{flow_input}} = parse_html_content({{flow_input}})
+{% if value_type == "image" %}
+{{ ' ' * indent_level * 3 }}file_contents = {{flow_input}}.read()
+{{ ' ' * indent_level * 3 }}{{flow_input}} = base64.b64encode(file_contents).decode('utf-8')
 {% endif %}
 {% endfor %}
 

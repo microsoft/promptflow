@@ -227,8 +227,7 @@ class StreamlitFileGenerator(BaseGenerator):
         from promptflow.contracts.flow import Flow as ExecutableFlow
         executable = ExecutableFlow.from_yaml(flow_file=Path(self.flow_dag_path.name),
                                               working_dir=self.flow_dag_path.parent)
-        return {flow_input: (value.default, True if isinstance(value.type, list) else False)
-                for flow_input, value in executable.inputs.items()}
+        return {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
 
     @property
     def flow_inputs_params(self):

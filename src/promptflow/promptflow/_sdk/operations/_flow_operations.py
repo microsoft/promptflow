@@ -393,8 +393,7 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: (value.default, True if isinstance(value.type, list) else False)
-                       for flow_input, value in executable.inputs.items()}
+        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
