@@ -15,7 +15,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.multimedia import Image
+from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -240,11 +240,16 @@ class RunTracker(ThreadLocalSingleton):
             return ConnectionType.serialize_conn(val)
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
-        if isinstance(val, Image):
-            # Images will be persisted when persisting flow run or node run, so no need to persist it here.
-            return val
+        if isinstance(val, list):
+            return [self._ensure_serializable_value(v, warning_msg) for v in val]
+        if isinstance(val, dict):
+            return {k: self._ensure_serializable_value(v, warning_msg) for k, v in val.items()}
         try:
-            json.dumps(val)
+            json.dumps(
+                val,
+                default=lambda obj: str(obj) if isinstance(obj, PFBytes) else
+                    exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
+            )
             return val
         except Exception:
             if not warning_msg:

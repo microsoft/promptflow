@@ -79,8 +79,6 @@ def serialize(value: object, remove_null: bool = False, serialization_funcs: dic
         return ConnectionType.serialize_conn(value)
     if isinstance(value, dict):
         return {k: serialize(v, remove_null, serialization_funcs) for k, v in value.items()}
-    if isinstance(value, Image):
-        return value.serialize()
     if is_dataclass(value):
         if hasattr(value, "serialize"):
             result = value.serialize()

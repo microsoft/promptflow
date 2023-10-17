@@ -14,6 +14,7 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -93,12 +94,9 @@ class ToolResolver:
             value_type = tool_input.type[0]
             updated_inputs[k] = InputAssignment(value=v.value, value_type=InputValueType.LITERAL)
             if ConnectionType.is_connection_class_name(value_type):
-                if tool_input.custom_type:
-                    updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
-                        k, v, node, tool_input.custom_type, module=module
-                    )
-                else:
-                    updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+                updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+            elif value_type == ValueType.IMAGE:
+                updated_inputs[k].value = Image._create(v.value, self._working_dir)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
