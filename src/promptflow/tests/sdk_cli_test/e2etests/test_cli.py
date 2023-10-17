@@ -1,4 +1,5 @@
 import contextlib
+import importlib
 import importlib.util
 import io
 import json
@@ -14,6 +15,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
 
+import pkg_resources
 import pytest
 import yaml
 
@@ -1263,7 +1265,8 @@ class TestCli:
             func_name = "func_name"
             run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
             capsys.readouterr()
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", os.path.join(temp_dir, package_name)])
+            subprocess.check_call(["pip", "install", "-e", os.path.join(temp_dir, package_name)])
+            importlib.reload(pkg_resources)
 
             # List package tools in environment
             run_pf_command("tool", "list")
@@ -1308,7 +1311,7 @@ class TestCli:
             with pytest.raises(Exception) as e:
                 run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
             assert "invalid_flow_folder does not exist" in e.value.args[0]
-            subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "package_name"])
+            subprocess.check_call(["pip", "uninstall", package_name, "-y"])
 
     def test_chat_flow_with_conditional(self, monkeypatch, capsys):
         chat_list = ["1", "2"]
