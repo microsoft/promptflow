@@ -300,7 +300,7 @@ class RunSubmitter:
             mapped_inputs, bulk_result = batch_engine.run(
                 input_dirs=input_dirs,
                 inputs_mapping=column_mapping,
-                output_dir=local_storage.multimedia_path,
+                output_dir=local_storage.outputs_folder,
                 run_id=run_id,
             )
             # Filter the failed line result
