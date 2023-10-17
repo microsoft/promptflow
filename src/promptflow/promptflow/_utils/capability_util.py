@@ -28,14 +28,6 @@ class Capability:
     component: CapabilityComponent
     state: CapabilityState
 
-    def to_dict(self):
-        return {
-            "name": self.name,
-            "description": self.description,
-            "component": self.component.value,
-            "state": self.state.value,
-        }
-
 
 def get_capability_list():
     capability_list = [
