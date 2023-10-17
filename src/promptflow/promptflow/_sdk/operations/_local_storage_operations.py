@@ -218,9 +218,9 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def _record_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
-        hashDict = {}
         if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
             for api_call in run_info.api_calls:
+                hashDict = {}
                 if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
                     flow_folder = self._flow_path
 

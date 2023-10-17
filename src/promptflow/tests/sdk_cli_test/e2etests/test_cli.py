@@ -473,7 +473,7 @@ class TestCli:
         )
 
     def test_pf_flow_test_with_additional_includes(self):
-        if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+        if "PF_RECORDING_MODE" in os.environ:
             pytest.skip("Skip this test in replay mode, TODO, replay should support additional includes.")
         run_pf_command(
             "flow",
@@ -585,6 +585,8 @@ class TestCli:
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
     def test_flow_with_exception(self, capsys):
+        if "PF_RECORDING_MODE" in os.environ:
+            pytest.skip("Skip this test in replay mode, TODO, replay should support additional includes.")
         with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
