@@ -405,3 +405,58 @@ class TestFlowLocalOperations:
             "package": {},
         }
         assert tools_error == {}
+
+    def test_flow_generate_tools_meta_with_pkg_tool_with_custom_strong_type_connection(self, pf) -> None:
+        source = f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection"
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source)
+
+        assert tools_error == {}
+        assert tools_meta["code"] == {}
+        assert tools_meta["package"] == {
+            "my_tool_package.tools.my_tool_1.my_tool": {
+                "function": "my_tool",
+                "inputs": {
+                    "connection": {
+                        "type": ["CustomConnection"],
+                        "custom_type": ["MyFirstConnection", "MySecondConnection"],
+                    },
+                    "input_text": {"type": ["string"]},
+                },
+                "module": "my_tool_package.tools.my_tool_1",
+                "name": "My First Tool",
+                "description": "This is my first tool",
+                "type": "python",
+                "package": "test-custom-tools",
+                "package_version": "0.0.2",
+            },
+            "my_tool_package.tools.my_tool_2.MyTool.my_tool": {
+                "class_name": "MyTool",
+                "function": "my_tool",
+                "inputs": {
+                    "connection": {"type": ["CustomConnection"], "custom_type": ["MySecondConnection"]},
+                    "input_text": {"type": ["string"]},
+                },
+                "module": "my_tool_package.tools.my_tool_2",
+                "name": "My Second Tool",
+                "description": "This is my second tool",
+                "type": "python",
+                "package": "test-custom-tools",
+                "package_version": "0.0.2",
+            },
+        }
+
+    def test_flow_generate_tools_meta_with_script_tool_with_custom_strong_type_connection(self, pf) -> None:
+        source = f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection"
+
+        tools_meta, tools_error = pf.flows._generate_tools_meta(source)
+        assert tools_error == {}
+        assert tools_meta["package"] == {}
+        assert tools_meta["code"] == {
+            "my_script_tool.py": {
+                "function": "my_tool",
+                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_param": {"type": ["string"]}},
+                "source": "my_script_tool.py",
+                "type": "python",
+            }
+        }

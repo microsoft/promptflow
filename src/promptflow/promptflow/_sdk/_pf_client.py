@@ -19,6 +19,7 @@ from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._flow_operations import FlowOperations
 from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from .operations._tool_operations import ToolOperations
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
@@ -37,6 +38,7 @@ class PFClient:
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations()
+        self._tools = ToolOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
