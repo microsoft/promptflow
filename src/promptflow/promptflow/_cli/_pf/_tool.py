@@ -77,7 +77,7 @@ Examples:
 pf tool list --flow flow-path
 """  # noqa: E501
     add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
-        "--flow", type=str, required=True, help="the flow directory"
+        "--flow", type=str, help="the flow directory"
     )
     add_params = [
         add_param_flow,
@@ -130,8 +130,11 @@ def init_tool(args):
 @exception_handler("Tool list")
 def list_tool(args):
     pf_client = PFClient()
-    tools = pf_client._tools.list()
     if args.flow:
-        flow_tools, _ = pf_client.flows._generate_tools_meta(args.flow)
-    tools.update(flow_tools["code"])
+        tools, _ = pf_client.flows._generate_tools_meta(args.flow)
+    else:
+        tools = {"package": {}, "code": {}}
+
+    package_tools = pf_client._tools.list()
+    tools["package"].update(package_tools)
     print(json.dumps(tools, indent=4))

@@ -9,7 +9,7 @@ from promptflow._core.tool_meta_generator import is_tool
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
-from promptflow._core.tools_manager import collect_package_tools_and_connections
+from promptflow._core.tools_manager import collect_package_tools
 
 
 class ToolOperations:
@@ -84,6 +84,6 @@ class ToolOperations:
 
     @staticmethod
     def list():
-        # List all package to in the environment
-        tools, _, _ = collect_package_tools_and_connections()
+        # List all package tools in the environment
+        tools = collect_package_tools()
         return tools

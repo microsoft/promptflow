@@ -1,6 +1,6 @@
 import contextlib
-import io
 import importlib.util
+import io
 import json
 import logging
 import os
@@ -1224,7 +1224,8 @@ class TestCli:
             assert (package_folder / "README.md").exists()
 
             spec = importlib.util.spec_from_file_location(
-                f"{package_name}.utils", package_folder / package_name / "utils.py")
+                f"{package_name}.utils", package_folder / package_name / "utils.py"
+            )
             utils = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(utils)
 
@@ -1254,6 +1255,59 @@ class TestCli:
             outerr = capsys.readouterr()
             assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
 
+    def test_tool_list(self, capsys):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Install package tool in environment
+            package_name = "package_name"
+            func_name = "func_name"
+            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
+            sys.path.append(os.path.join(temp_dir, package_name))
+            capsys.readouterr()
+
+            # List package tools in environment
+            run_pf_command("tool", "list")
+            outerr = capsys.readouterr()
+            package_tool_name = f"{package_name}.{func_name}.{func_name}"
+            expect_package_tool = {
+                "name": "func_name",
+                "type": "python",
+                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_text": {"type": ["string"]}},
+                "description": "This is func_name tool",
+                "module": "package_name.func_name",
+                "function": "func_name",
+                "package": "package-name",
+                "package_version": "0.0.1",
+            }
+            tools_dict = json.loads(outerr.out)
+            assert package_tool_name in tools_dict["package"]
+            assert tools_dict["package"][package_tool_name] == expect_package_tool
+
+            # List flow tools and package tools
+            run_pf_command("tool", "list", "--flow", f"{FLOWS_DIR}/chat_flow")
+            outerr = capsys.readouterr()
+            tools_dict = json.loads(outerr.out)
+            expect_flow_tools = {
+                "chat.jinja2": {
+                    "type": "llm",
+                    "inputs": {"chat_history": {"type": ["string"]}, "question": {"type": ["string"]}},
+                    "source": "chat.jinja2",
+                },
+                "show_answer.py": {
+                    "type": "python",
+                    "inputs": {"chat_answer": {"type": ["string"]}},
+                    "source": "show_answer.py",
+                    "function": "show_answer",
+                },
+            }
+            assert tools_dict["code"] == expect_flow_tools
+            assert package_tool_name in tools_dict["package"]
+            assert tools_dict["package"][package_tool_name] == expect_package_tool
+
+            # Invalid flow parameter
+            with pytest.raises(Exception) as e:
+                run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
+            assert "invalid_flow_folder does not exist" in e.value.args[0]
+
     def test_chat_flow_with_conditional(self, monkeypatch, capsys):
         chat_list = ["1", "2"]
 
@@ -1265,12 +1319,7 @@ class TestCli:
 
         monkeypatch.setattr("builtins.input", mock_input)
         run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/conditional_chat_flow_with_skip",
-            "--interactive",
-            "--verbose"
+            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
         )
         output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
         assert output_path.exists()
