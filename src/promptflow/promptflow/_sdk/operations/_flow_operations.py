@@ -406,6 +406,7 @@ class FlowOperations:
                 "runtime_interpreter_path": runtime_interpreter_path,
                 "flow_inputs": flow_inputs,
                 "flow_inputs_params": flow_inputs_params,
+                "flow_path": flow_dag_path.as_posix(),
             },
         )
         try:
