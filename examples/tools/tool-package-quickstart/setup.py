@@ -4,7 +4,7 @@ PACKAGE_NAME = "my-tools-package"
 
 setup(
     name=PACKAGE_NAME,
-    version="0.0.1",
+    version="0.0.2",
     description="This is my tools package",
     packages=find_packages(),
     entry_points={
