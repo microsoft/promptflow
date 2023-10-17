@@ -34,9 +34,9 @@ logger = logging.getLogger(LOGGER_NAME)
 
 def _record_node_run(run_info: NodeRunInfo, flow_folder: Path) -> None:
     """Persist node run record to local storage."""
-    hashDict = {}
     if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
         for api_call in run_info.api_calls:
+            hashDict = {}
             if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
                 prompt_tpl = api_call["inputs"]["prompt"]
                 prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
