@@ -248,7 +248,7 @@ class RunTracker(ThreadLocalSingleton):
             json.dumps(
                 val,
                 default=lambda obj: str(obj) if isinstance(obj, PFBytes) else
-                    exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
+                exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
             )
             return val
         except Exception:

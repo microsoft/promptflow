@@ -8,7 +8,6 @@ from enum import Enum
 from typing import Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ConnectionType
 
 T = TypeVar("T")

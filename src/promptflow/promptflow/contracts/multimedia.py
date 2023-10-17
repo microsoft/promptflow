@@ -62,13 +62,6 @@ class PFBytes(bytes):
         return None, None
 
     @staticmethod
-    def _is_path(value: str):
-        path_regex = re.compile(r'^(?:\.{1,2}|[a-zA-Z]:|(?:[\\/][^\\/]+))*[\\/]?[^\\/]+$')
-        if re.match(path_regex, value):
-            return True
-        return False
-
-    @staticmethod
     def _is_url(value: str):
         try:
             result = urlparse(value)
@@ -132,7 +125,7 @@ class Image(PFBytes):
         return Image(image_bytes, mime_type=mime_type)
 
     @staticmethod
-    def _from_url(url: str, mime_type = None):
+    def _from_url(url: str, mime_type: str = None):
         response = requests.get(url)
         if response.status_code == 200:
             if not mime_type:
@@ -161,7 +154,7 @@ class Image(PFBytes):
                     message_format=f"Unsupported image resource: {resource}. "
                     "Supported Resources are [path, base64, url].",
                     target=ErrorTarget.EXECUTOR,
-                )     
+                )
 
     @staticmethod
     def _create_from_string(value: str, image_dir: Path = None):
@@ -169,18 +162,12 @@ class Image(PFBytes):
             return Image._from_base64(value)
         elif PFBytes._is_url(value):
             return Image._from_url(value)
-        elif PFBytes._is_path(value):
+        else:
             image_path = Path(value)
             if not image_path.is_absolute():
                 if image_dir:
                     image_path = Path.joinpath(image_dir, image_path)
             return Image._from_file(image_path)
-        else:
-            raise InvalidImageInput(
-                message_format=f"Unsupported image input. "
-                "The image inputs should be a path, base64 or url.",
-                target=ErrorTarget.EXECUTOR,
-            )
 
     @staticmethod
     def _create(value: any, image_dir: Path = None):

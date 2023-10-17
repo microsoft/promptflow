@@ -84,7 +84,7 @@ class Tracer(ThreadLocalSingleton):
             json.dumps(
                 obj,
                 default=lambda obj: str(obj) if isinstance(obj, PFBytes) else
-                    exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
+                exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
             )
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
