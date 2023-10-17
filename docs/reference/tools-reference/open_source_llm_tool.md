@@ -52,7 +52,11 @@ The Open Source LLM tool has a number of parameters, some of which are required.
 | Name | Type | Description | Required |
 |------|------|-------------|----------|
 | api | string | This is the API mode and will depend on the model used and the scenario selected. *Supported values: (Completion \| Chat)* | Yes |
-| connection | CustomConnection | This is the name of the connection which points to the Online Inferencing endpoint. | Yes |
+| endpoint_name | string | asdasd | No |
+| connection | CustomConnection | This is the name of the connection which points to the Online Inferencing endpoint. | No |
+| temperature | float | The randomness of the generated text. Default is 1. | No |
+| max_new_tokens | integer | The maximum number of tokens to generate in the completion. Default is 500. | No |
+| top_p | float | The probability of using the top choice from the generated tokens. Default is 1. | No |
 | model_kwargs | dictionary | This input is used to provide configuration specific to the model used. For example, the Llama-02 model may use {\"temperature\":0.4}. *Default: {}* | No |
 | deployment_name | string | The name of the deployment to target on the Online Inferencing endpoint. If no value is passed, the Inferencing load balancer traffic settings will be used. | No |
 | prompt | string | The text prompt that the language model will use to generate it's response. | Yes |

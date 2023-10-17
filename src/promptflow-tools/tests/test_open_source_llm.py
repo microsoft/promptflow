@@ -12,9 +12,11 @@ from promptflow.tools.open_source_llm import OpenSourceLLM, API, ContentFormatte
 def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
     return OpenSourceLLM(gpt2_custom_connection)
 
+
 @pytest.fixture
 def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
     return OpenSourceLLM(llama_chat_custom_connection)
+
 
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenSourceLLM:
@@ -201,18 +203,17 @@ user:
             + "HTTPError: HTTP Error 404: Not Found")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
 
+    @pytest.mark.skip
     def test_open_source_llm_endpoint_name(self):
-        os.environ["AZUREML_ARM_SUBSCRIPTION"] = "ba7979f7-d040-49c9-af1a-7414402bf622"
-        os.environ["AZUREML_ARM_RESOURCEGROUP"] = "gewoods_rg"
-        os.environ["AZUREML_ARM_WORKSPACE_NAME"] = "gewoods_ml"
+        os.environ["AZUREML_ARM_SUBSCRIPTION"] = "<needs_value>"
+        os.environ["AZUREML_ARM_RESOURCEGROUP"] = "<needs_value>"
+        os.environ["AZUREML_ARM_WORKSPACE_NAME"] = "<needs_value>"
 
         os_llm = OpenSourceLLM(endpoint_name="llama-temp-chat")
         response = os_llm.call(self.llama_chat_prompt, API.CHAT)
         assert len(response) > 25
 
-    # def test_open_source_llm_get_model_type(self):
-
     @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
-    def test_open_source_llm_completion_with_deploy(self, llama_chat_provider):
+    def test_open_source_llm_llama_chat_with_deploy(self, llama_chat_provider):
         response = llama_chat_provider.call(self.llama_chat_prompt, API.CHAT)
         assert len(response) > 25
