@@ -376,7 +376,7 @@ class RunSubmitter:
                     "run.inputs": self.run_operations._get_inputs_path(run.run),
                 }
             )
-        return {k: v for k, v in result.items() if v is not None}
+        return {k: str(Path(v).resolve()) for k, v in result.items() if v is not None}
 
     @classmethod
     def _validate_column_mapping(cls, column_mapping: dict):

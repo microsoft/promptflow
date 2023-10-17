@@ -392,7 +392,6 @@ class TestExecutor:
         )
         assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
 
-    # Just for tests
     @pytest.mark.skip(reason="Just for tests")
     def test_batch_engine(self):
         executor = FlowExecutor.create(get_yaml_file("python_tool_with_image_input_and_output"), {})
