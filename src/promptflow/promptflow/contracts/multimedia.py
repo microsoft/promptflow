@@ -76,6 +76,13 @@ class PFBytes(bytes):
             return True
         return False
 
+    @staticmethod
+    def default_json_encoder(obj):
+        if isinstance(obj, PFBytes):
+            return str(obj)
+        else:
+            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
     def _save_to_file(self, file_name: str, folder_path: Path, relative_path: Path = None):
         ext = PFBytes._get_extension_from_mime_type(self._mime_type)
         file_name = f"{file_name}.{ext}" if ext else file_name

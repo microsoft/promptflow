@@ -240,16 +240,8 @@ class RunTracker(ThreadLocalSingleton):
             return ConnectionType.serialize_conn(val)
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
-        if isinstance(val, list):
-            return [self._ensure_serializable_value(v, warning_msg) for v in val]
-        if isinstance(val, dict):
-            return {k: self._ensure_serializable_value(v, warning_msg) for k, v in val.items()}
         try:
-            json.dumps(
-                val,
-                default=lambda obj: str(obj) if isinstance(obj, PFBytes) else
-                exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
-            )
+            json.dumps(val, default=PFBytes.default_json_encoder)
             return val
         except Exception:
             if not warning_msg:

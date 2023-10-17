@@ -81,11 +81,7 @@ class Tracer(ThreadLocalSingleton):
             return obj
         try:
             obj = serialize(obj)
-            json.dumps(
-                obj,
-                default=lambda obj: str(obj) if isinstance(obj, PFBytes) else
-                exec("raise TypeError(f'Object of type {type(obj).__name__} is not JSON serializable')")
-            )
+            json.dumps(obj, default=PFBytes.default_json_encoder)
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
             # so we simply convert it to str if it cannot be serialized.
