@@ -14,6 +14,7 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -99,6 +100,8 @@ class ToolResolver:
                     )
                 else:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+            elif value_type == ValueType.IMAGE:
+                updated_inputs[k].value = Image._create(v.value, self._working_dir)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
@@ -146,15 +149,16 @@ class ToolResolver:
 
     def _load_source_content(self, node: Node) -> str:
         source = node.source
-        if source is None or source.path is None or not Path(self._working_dir / source.path).exists():
+        # If is_file returns True, the path points to a existing file, so we don't need to check if exists.
+        if source is None or source.path is None or not (self._working_dir / source.path).is_file():
             raise InvalidSource(
                 target=ErrorTarget.EXECUTOR,
                 message_format="Node source path '{source_path}' is invalid on node '{node_name}'.",
                 source_path=source.path if source is not None else None,
                 node_name=node.name,
             )
-        with open(self._working_dir / source.path) as fin:
-            return fin.read()
+        file = self._working_dir / source.path
+        return file.read_text(encoding="utf-8")
 
     def _validate_duplicated_inputs(self, prompt_tpl_inputs: list, tool_params: list, msg: str):
         duplicated_inputs = set(prompt_tpl_inputs) & set(tool_params)
@@ -166,7 +170,7 @@ class ToolResolver:
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
         prompt_tpl = self._load_source_content(node)
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         from promptflow.tools.template_rendering import render_template_jinja2
 
         params = inspect.signature(render_template_jinja2).parameters
@@ -208,7 +212,7 @@ class ToolResolver:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
 
         prompt_tpl = self._load_source_content(node)
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the parameters of {node.provider}.{node.api}."
@@ -264,7 +268,7 @@ class ToolResolver:
 
     def _integrate_prompt_in_package_node(self, node: Node, resolved_tool: ResolvedTool):
         prompt_tpl = PromptTemplate(self._load_source_content(node))
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the inputs of custom llm tool."

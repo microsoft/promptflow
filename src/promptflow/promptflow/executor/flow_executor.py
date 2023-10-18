@@ -26,7 +26,7 @@ from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import Image
+from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ValueType
@@ -675,7 +675,6 @@ class FlowExecutor:
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
-        input_dir: Optional[Path] = None,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -698,7 +697,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value, input_dir)
+        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -790,30 +789,54 @@ class FlowExecutor:
         self,
         inputs: Dict[str, FlowInputDefinition],
         line_inputs: Mapping,
-        input_dir: Path = None
     ) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
-        if not input_dir:
-            input_dir = self._working_dir
-        elif not input_dir.is_absolute():
-            input_dir = self._working_dir / input_dir
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(Path.joinpath(input_dir, updated_inputs[key]))
+                updated_inputs[key] = Image._create(updated_inputs[key], self._working_dir)
+            elif value.type == ValueType.LIST:
+                updated_inputs[key] = self._process_images_in_input_list(updated_inputs[key])
         return updated_inputs
 
-    def _persist_images_from_output(self, output: dict, output_dir: Path = None):
-        if output_dir.is_absolute():
-            folder_path = output_dir
+    def _process_images_in_input_list(self, value):
+        if isinstance(value, list):
+            return [self._process_images_in_input_list(item) for item in value]
+        elif isinstance(value, dict):
+            if PFBytes._is_multimedia_dict(value):
+                return Image._from_dict(value)
+            else:
+                return {k: self._process_images_in_input_list(v) for k, v in value.items()}
+        else:
+            return value
+
+    @staticmethod
+    def _persist_images_from_output(output: dict, base_dir: Path, sub_dir: Path = None):
+        if sub_dir.is_absolute():
+            folder_path = sub_dir
             relative_path = None
         else:
-            folder_path = self._working_dir
-            relative_path = output_dir
+            folder_path = base_dir
+            relative_path = sub_dir
         for key, value in output.items():
-            if isinstance(value, Image):
-                file_name = f"{key}_{uuid.uuid4()}"
-                output[key] = value.save_to_file(file_name, folder_path, relative_path)
+            output[key] = FlowExecutor._persist_images_recursively(value, key, folder_path, relative_path)
         return output
+
+    @staticmethod
+    def _persist_images_recursively(value: Any, prefix: str, folder_path: Path, relative_path: Path = None):
+        if isinstance(value, Image):
+            file_name = f"{prefix}_{uuid.uuid4()}"
+            return value._save_to_file(file_name, folder_path, relative_path)
+        elif isinstance(value, list):
+            return [
+                FlowExecutor._persist_images_recursively(item, prefix, folder_path, relative_path) for item in value
+            ]
+        elif isinstance(value, dict):
+            return {
+                k: FlowExecutor._persist_images_recursively(v, prefix, folder_path, relative_path)
+                for k, v in value.items()
+            }
+        else:
+            return value
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
@@ -909,6 +932,11 @@ class FlowExecutor:
                 run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
+            # Persist the node runs for the nodes that have a generator output
+            generator_output_nodes = [
+                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+            ]
+            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -1004,7 +1032,7 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
+        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
 
     @staticmethod
     def apply_inputs_mapping(

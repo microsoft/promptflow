@@ -5,6 +5,7 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
 
 ## Prerequisites
 
+- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.0.10 or a more recent version.
 - Create a tool package as described in [Create and Use Tool Package](create-and-use-tool-package.md).
 - Prepare custom icon image that meets these requirements:
 
