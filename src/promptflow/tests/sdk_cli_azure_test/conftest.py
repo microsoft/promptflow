@@ -83,7 +83,7 @@ def pf(remote_client: PFClient) -> PFClient:
 
 
 @pytest.fixture
-def remote_web_classification_data(remote_client):
+def remote_web_classification_data(remote_client: PFClient) -> Data:
     data_name, data_version = "webClassification1", "1"
     try:
         return remote_client.ml_client.data.get(name=data_name, version=data_version)

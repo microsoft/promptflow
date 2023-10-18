@@ -8,6 +8,7 @@ import uuid
 from typing import Callable
 
 import pytest
+from azure.ai.ml.entities import Data
 
 from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk.entities import Run
@@ -81,7 +82,7 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
 
-    def test_run_with_remote_data(self, pf, runtime, remote_web_classification_data, temp_output_dir: str):
+    def test_run_with_remote_data(self, pf: PFClient, runtime: str, remote_web_classification_data: Data):
         # run with arm id
         name = str(uuid.uuid4())
         run_pf_command(
