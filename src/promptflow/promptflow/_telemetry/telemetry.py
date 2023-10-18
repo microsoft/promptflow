@@ -5,7 +5,7 @@ import logging
 import os
 
 from promptflow._sdk._configuration import Configuration
-from promptflow._telemetry.logging_handler import get_appinsights_log_handler
+from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 
 TELEMETRY_ENABLED = "TELEMETRY_ENABLED"
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
@@ -46,6 +46,10 @@ def get_telemetry_logger():
     # avoid telemetry log appearing in higher level loggers
     current_logger.propagate = False
     current_logger.setLevel(logging.INFO)
+    # check if current logger already has an appinsights handler to avoid logger handler duplication
+    for log_handler in current_logger.handlers:
+        if isinstance(log_handler, PromptFlowSDKLogHandler):
+            return current_logger
     handler = get_appinsights_log_handler()
     current_logger.addHandler(handler)
     return current_logger
