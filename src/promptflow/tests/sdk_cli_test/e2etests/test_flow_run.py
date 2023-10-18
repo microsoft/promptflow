@@ -751,5 +751,7 @@ class TestFlowRun:
         data_path = f"{FLOWS_DIR}/python_tool_with_image_input_and_output/image_inputs/inputs.jsonl"
 
         run = pf.run(flow=f"{FLOWS_DIR}/python_tool_with_image_input_and_output", data=data_path)
-        run_dict = run._to_dict()
-        print(run_dict)
+
+        local_storage = LocalStorageOperations(run)
+        detail = local_storage.load_detail()
+        print(detail)
