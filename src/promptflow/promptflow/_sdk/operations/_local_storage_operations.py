@@ -37,7 +37,7 @@ from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor.flow_executor import BulkResult
-from promptflow.storage import AbstractRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -168,7 +168,7 @@ class LineRunRecord:
             json.dump(asdict(self), f)
 
 
-class LocalStorageOperations(AbstractRunStorage):
+class LocalStorageOperations(DefaultRunStorage):
     """LocalStorageOperations."""
 
     LINE_NUMBER_WIDTH = 9
@@ -203,6 +203,8 @@ class LocalStorageOperations(AbstractRunStorage):
 
         self._meta_path = self.path / LocalStorageFilenames.META
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
+
+        self._base_dir = self._prepare_folder(self.path / "intermediate")
 
         self._dump_meta_file()
 
@@ -359,6 +361,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
+        super().persist_node_run(run_info)
         node_run_record = NodeRunRecord.from_run_info(run_info)
         node_folder = self._prepare_folder(self._node_infos_folder / node_run_record.NodeName)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
@@ -369,6 +372,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
+        super().persist_flow_run(run_info)
         if not Status.is_terminated(run_info.status):
             logger.info("Line run is not terminated, skip persisting line run record.")
             return
