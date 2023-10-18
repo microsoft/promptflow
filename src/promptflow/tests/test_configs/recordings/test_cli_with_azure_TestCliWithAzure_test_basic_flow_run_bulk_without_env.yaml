@@ -1,0 +1,948 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3519'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.031'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.048'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.13
+        (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3519'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.036'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.13
+        (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.069'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.13
+        (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1227'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.078'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.13
+        (Windows-10-10.0.22621-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.152'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.0 Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      x-ms-date:
+      - Wed, 18 Oct 2023 06:43:47 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      accept-ranges:
+      - bytes
+      content-length:
+      - '379'
+      content-md5:
+      - lI/pz9jzTQ7Td3RHPL7y7w==
+      content-type:
+      - application/octet-stream
+      last-modified:
+      - Tue, 25 Jul 2023 06:21:56 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      vary:
+      - Origin
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-creation-time:
+      - Tue, 25 Jul 2023 06:21:56 GMT
+      x-ms-meta-name:
+      - e0068493-1fbe-451c-96b3-cf6b013632ad
+      x-ms-meta-upload_status:
+      - completed
+      x-ms-meta-version:
+      - 1f73938f-def0-4a75-b4d0-6b07a2378e1b
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.0 Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      x-ms-date:
+      - Wed, 18 Oct 2023 06:43:48 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/webClassification3.jsonl
+  response:
+    body:
+      string: ''
+    headers:
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-ms-error-code:
+      - BlobNotFound
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 404
+      message: The specified blob does not exist.
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.13
+        (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1227'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.121'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '0'
+      User-Agent:
+      - azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0 Python/3.10.13
+        (Windows-10-10.0.22621-SP0)
+    method: POST
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore/listSecrets
+  response:
+    body:
+      string: '{"secretsType": "AccountKey", "key": "dGhpcyBpcyBmYWtlIGtleQ=="}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '134'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.130'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.0 Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      x-ms-date:
+      - Wed, 18 Oct 2023 06:43:51 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/LocalUpload/000000000000000000000000000000000000/web_classification/classify_with_llm.jinja2
+  response:
+    body:
+      string: ''
+    headers:
+      accept-ranges:
+      - bytes
+      content-length:
+      - '590'
+      content-md5:
+      - lO4oQJbXkB2KYDp3GfsrCg==
+      content-type:
+      - application/octet-stream
+      last-modified:
+      - Mon, 28 Aug 2023 14:22:57 GMT
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      vary:
+      - Origin
+      x-ms-blob-type:
+      - BlockBlob
+      x-ms-creation-time:
+      - Mon, 28 Aug 2023 14:22:57 GMT
+      x-ms-meta-name:
+      - f8d42f9b-ad14-4f6d-ad92-08c1b6de1b0d
+      x-ms-meta-upload_status:
+      - completed
+      x-ms-meta-version:
+      - '1'
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/xml
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - azsdk-python-storage-blob/12.18.0 Python/3.10.13 (Windows-10-10.0.22621-SP0)
+      x-ms-date:
+      - Wed, 18 Oct 2023 06:43:52 GMT
+      x-ms-version:
+      - '2023-08-03'
+    method: HEAD
+    uri: https://fake_account_name.blob.core.windows.net/fake-container-name/az-ml-artifacts/000000000000000000000000000000000000/web_classification/classify_with_llm.jinja2
+  response:
+    body:
+      string: ''
+    headers:
+      server:
+      - Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-ms-error-code:
+      - BlobNotFound
+      x-ms-version:
+      - '2023-08-03'
+    status:
+      code: 404
+      message: The specified blob does not exist.
+- request:
+    body: '{"flowDefinitionDataStoreName": "workspaceblobstore", "flowDefinitionBlobPath":
+      "LocalUpload/000000000000000000000000000000000000/web_classification/flow.dag.yaml",
+      "runId": "name", "runDisplayName": "web_classification", "runExperimentName":
+      "web_classification", "batchDataInput": {"dataUri": "azureml://datastores/workspaceblobstore/paths/LocalUpload/000000000000000000000000000000000000/webClassification3.jsonl"},
+      "inputsMapping": {}, "connections": {}, "environmentVariables": {}, "runtimeName":
+      "demo-mir", "sessionId": "4dd8f4d5f44dfeb817d3438cf84bd739215d87afd9458597",
+      "flowLineageId": "af1a6951de9be2ce13d3b58b23dbd8b6a0cd8fd4918ad9cb22b28fb8395fbcb0",
+      "runDisplayNameGenerationType": "UserProvidedMacro"}'
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '740'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: POST
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/submit
+  response:
+    body:
+      string: '"name"'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '38'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '11.744'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "name", "selectRunMetadata": true, "selectRunDefinition": true,
+      "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1697611446, "rootRunId": "name", "createdUtc":
+        "2023-10-18T06:44:06.0794184+00:00", "createdBy": {"userObjectId": "4e60fbf3-0338-41a8-bed5-fc341be556f8",
+        "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
+        "upn": null}, "userId": "4e60fbf3-0338-41a8-bed5-fc341be556f8", "token": null,
+        "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision": 2,
+        "statusRevision": 1, "runUuid": "c2671ecc-01eb-44aa-a6bc-a56118eeb0be", "parentRunUuid":
+        null, "rootRunUuid": "c2671ecc-01eb-44aa-a6bc-a56118eeb0be", "lastStartTimeUtc":
+        null, "currentComputeTime": "00:00:00", "computeDuration": null, "effectiveStartTimeUtc":
+        null, "lastModifiedBy": {"userObjectId": "4e60fbf3-0338-41a8-bed5-fc341be556f8",
+        "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
+        "upn": null}, "lastModifiedUtc": "2023-10-18T06:44:06.0794184+00:00", "duration":
+        null, "cancelationReason": null, "currentAttemptId": 1, "runId": "name", "parentRunId":
+        null, "experimentId": "d30efbeb-f81d-4cfa-b5cc-a0570a049009", "status": "Preparing",
+        "startTimeUtc": null, "endTimeUtc": null, "scheduleId": null, "displayName":
+        "web_classification", "name": null, "dataContainerId": "dcid.name", "description":
+        null, "hidden": false, "runType": "azureml.promptflow.FlowRun", "runTypeV2":
+        {"orchestrator": null, "traits": [], "attribution": "PromptFlow", "computeType":
+        "MIR_v2"}, "properties": {"azureml.promptflow.runtime_name": "demo-mir", "azureml.promptflow.runtime_version":
+        "20231011.v2", "azureml.promptflow.definition_file_name": "flow.dag.yaml",
+        "azureml.promptflow.session_id": "4dd8f4d5f44dfeb817d3438cf84bd739215d87afd9458597",
+        "azureml.promptflow.flow_lineage_id": "af1a6951de9be2ce13d3b58b23dbd8b6a0cd8fd4918ad9cb22b28fb8395fbcb0",
+        "azureml.promptflow.flow_definition_datastore_name": "workspaceblobstore",
+        "azureml.promptflow.flow_definition_blob_path": "LocalUpload/623c2a5b51c1eb9639ec4374ee09eaaa/web_classification/flow.dag.yaml",
+        "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/74c11bba717480b2d6b04b8e746d09d7/webClassification3.jsonl",
+        "azureml.promptflow.snapshot_id": "868fa60d-d964-4a64-a1a6-05fb4cac3c8e"},
+        "parameters": {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
+        [], "tags": {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
+        {"Nodes": [{"Name": "fetch_text_content_from_url", "Type": "python", "Source":
+        {"Type": "code", "Tool": null, "Path": "fetch_text_content_from_url.py"},
+        "Inputs": {"fetch_url": "${inputs.url}"}, "Tool": "fetch_text_content_from_url.py",
+        "Reduce": false, "Comment": null, "Activate": null, "Api": null, "Provider":
+        null, "Connection": null, "Module": null}, {"Name": "prepare_examples", "Type":
+        "python", "Source": {"Type": "code", "Tool": null, "Path": "prepare_examples.py"},
+        "Inputs": {}, "Tool": "prepare_examples.py", "Reduce": false, "Comment": null,
+        "Activate": null, "Api": null, "Provider": null, "Connection": null, "Module":
+        null}, {"Name": "classify_with_llm", "Type": "llm", "Source": {"Type": "code",
+        "Tool": null, "Path": "classify_with_llm.jinja2"}, "Inputs": {"deployment_name":
+        "text-davinci-003", "suffix": "", "max_tokens": "128", "temperature": "0.1",
+        "top_p": "1.0", "logprobs": "", "echo": "False", "stop": "", "presence_penalty":
+        "0", "frequency_penalty": "0", "best_of": "1", "logit_bias": "", "url": "${inputs.url}",
+        "examples": "${prepare_examples.output}", "text_content": "${summarize_text_content.output}"},
+        "Tool": "classify_with_llm.jinja2", "Reduce": false, "Comment": null, "Activate":
+        null, "Api": "completion", "Provider": "AzureOpenAI", "Connection": "azure_open_ai_connection",
+        "Module": "promptflow.tools.aoai"}, {"Name": "convert_to_dict", "Type": "python",
+        "Source": {"Type": "code", "Tool": null, "Path": "convert_to_dict.py"}, "Inputs":
+        {"input_str": "${classify_with_llm.output}"}, "Tool": "convert_to_dict.py",
+        "Reduce": false, "Comment": null, "Activate": null, "Api": null, "Provider":
+        null, "Connection": null, "Module": null}, {"Name": "summarize_text_content",
+        "Type": "llm", "Source": {"Type": "code", "Tool": null, "Path": "summarize_text_content__variant_1.jinja2"},
+        "Inputs": {"deployment_name": "text-davinci-003", "suffix": "", "max_tokens":
+        "256", "temperature": "0.3", "top_p": "1.0", "logprobs": "", "echo": "False",
+        "stop": "", "presence_penalty": "0", "frequency_penalty": "0", "best_of":
+        "1", "logit_bias": "", "text": "${fetch_text_content_from_url.output}"}, "Tool":
+        "summarize_text_content__variant_1.jinja2", "Reduce": false, "Comment": null,
+        "Activate": null, "Api": "completion", "Provider": null, "Connection": "azure_open_ai_connection",
+        "Module": null}], "Tools": [{"Name": "Content Safety (Text Analyze)", "Type":
+        "python", "Inputs": {"connection": {"Name": null, "Type": ["AzureContentSafetyConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "hate_category": {"Name": null, "Type": ["string"], "Default": "medium_sensitivity",
+        "Description": null, "Enum": ["disable", "low_sensitivity", "medium_sensitivity",
+        "high_sensitivity"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "self_harm_category": {"Name": null, "Type":
+        ["string"], "Default": "medium_sensitivity", "Description": null, "Enum":
+        ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false}, "sexual_category": {"Name": null, "Type": ["string"],
+        "Default": "medium_sensitivity", "Description": null, "Enum": ["disable",
+        "low_sensitivity", "medium_sensitivity", "high_sensitivity"], "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false}, "text": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "violence_category": {"Name": null, "Type":
+        ["string"], "Default": "medium_sensitivity", "Description": null, "Enum":
+        ["disable", "low_sensitivity", "medium_sensitivity", "high_sensitivity"],
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false}}, "Outputs": null, "Description": "Use Azure Content
+        Safety to detect harmful content.", "connection_type": null, "Module": "content_safety_text.tools.content_safety_text_tool",
+        "class_name": null, "Source": null, "LkgCode": null, "Code": null, "Function":
+        "analyze_text", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
+        "promptflow-contentsafety", "package_version": "0.0.5"}, {"Name": "Embedding",
+        "Type": "python", "Inputs": {"connection": {"Name": null, "Type": ["AzureOpenAIConnection",
+        "OpenAIConnection"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false}, "deployment_name": {"Name": null, "Type": ["string"], "Default": null,
+        "Description": null, "Enum": null, "enabled_by": "connection", "enabled_by_type":
+        ["AzureOpenAIConnection"], "enabled_by_value": null, "model_list": ["text-embedding-ada-002",
+        "text-search-ada-doc-001", "text-search-ada-query-001"], "Capabilities": {"completion":
+        false, "chat_completion": false, "embeddings": true}, "dynamic_list": null,
+        "allow_manual_entry": false, "is_multi_select": false}, "input": {"Name":
+        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
+        "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null, "model_list":
+        null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false,
+        "is_multi_select": false}, "model": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": ["text-embedding-ada-002", "text-search-ada-doc-001",
+        "text-search-ada-query-001"], "enabled_by": "connection", "enabled_by_type":
+        ["OpenAIConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
+        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false}}, "Outputs": null, "Description": "Use Open AI''s embedding model to
+        create an embedding vector representing the input text.", "connection_type":
+        null, "Module": "promptflow.tools.embedding", "class_name": null, "Source":
+        null, "LkgCode": null, "Code": null, "Function": "embedding", "action_type":
+        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
+        null, "Tags": null, "is_builtin": true, "package": "promptflow-tools", "package_version":
+        "0.1.0b8"}, {"Name": "Open Source LLM", "Type": "custom_llm", "Inputs": {"api":
+        {"Name": null, "Type": ["string"], "Default": null, "Description": null, "Enum":
+        ["chat", "completion"], "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "connection": {"Name": null, "Type": ["CustomConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "deployment_name": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "model_kwargs": {"Name": null, "Type": ["object"],
+        "Default": "{}", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": "Use an Open Source model from the Azure Model
+        catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion
+        API calls.", "connection_type": null, "Module": "promptflow.tools.open_source_llm",
+        "class_name": "OpenSourceLLM", "Source": null, "LkgCode": null, "Code": null,
+        "Function": "call", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
+        "promptflow-tools", "package_version": "0.1.0b8"}, {"Name": "Serp API", "Type":
+        "python", "Inputs": {"connection": {"Name": null, "Type": ["SerpConnection"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "engine": {"Name": null, "Type": ["string"], "Default": "google", "Description":
+        null, "Enum": ["google", "bing"], "enabled_by": null, "enabled_by_type": null,
+        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
+        null, "allow_manual_entry": false, "is_multi_select": false}, "location":
+        {"Name": null, "Type": ["string"], "Default": "", "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value": null,
+        "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "num": {"Name": null, "Type": ["int"], "Default":
+        "10", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "query": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "safe": {"Name": null, "Type": ["string"],
+        "Default": "off", "Description": null, "Enum": ["active", "off"], "enabled_by":
+        null, "enabled_by_type": null, "enabled_by_value": null, "model_list": null,
+        "Capabilities": null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false}}, "Outputs": null, "Description": "Use Serp API to obtain search results
+        from a specific search engine.", "connection_type": null, "Module": "promptflow.tools.serpapi",
+        "class_name": "SerpAPI", "Source": null, "LkgCode": null, "Code": null, "Function":
+        "search", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
+        "promptflow-tools", "package_version": "0.1.0b8"}, {"Name": "Faiss Index Lookup",
+        "Type": "python", "Inputs": {"path": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "top_k": {"Name": null, "Type": ["int"], "Default": "3", "Description": null,
+        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "vector": {"Name": null, "Type": ["list"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": "Search vector based query from the FAISS
+        index file.", "connection_type": null, "Module": "promptflow_vectordb.tool.faiss_index_lookup",
+        "class_name": "FaissIndexLookup", "Source": null, "LkgCode": null, "Code":
+        null, "Function": "search", "action_type": null, "provider_config": null,
+        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
+        true, "package": "promptflow-vectordb", "package_version": "0.0.1"}, {"Name":
+        "Vector DB Lookup", "Type": "python", "Inputs": {"class_name": {"Name": null,
+        "Type": ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        "connection", "enabled_by_type": ["WeaviateConnection"], "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "collection_name": {"Name": null, "Type":
+        ["string"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        "connection", "enabled_by_type": ["QdrantConnection"], "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "connection": {"Name": null, "Type": ["CognitiveSearchConnection",
+        "QdrantConnection", "WeaviateConnection"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "index_name": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": "connection",
+        "enabled_by_type": ["CognitiveSearchConnection"], "enabled_by_value": null,
+        "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "search_filters": {"Name": null, "Type":
+        ["object"], "Default": null, "Description": null, "Enum": null, "enabled_by":
+        "connection", "enabled_by_type": ["CognitiveSearchConnection", "QdrantConnection"],
+        "enabled_by_value": null, "model_list": null, "Capabilities": null, "dynamic_list":
+        null, "allow_manual_entry": false, "is_multi_select": false}, "search_params":
+        {"Name": null, "Type": ["object"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": "connection", "enabled_by_type": ["CognitiveSearchConnection",
+        "QdrantConnection"], "enabled_by_value": null, "model_list": null, "Capabilities":
+        null, "dynamic_list": null, "allow_manual_entry": false, "is_multi_select":
+        false}, "text_field": {"Name": null, "Type": ["string"], "Default": null,
+        "Description": null, "Enum": null, "enabled_by": "connection", "enabled_by_type":
+        ["CognitiveSearchConnection", "QdrantConnection", "WeaviateConnection"], "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "top_k": {"Name": null, "Type": ["int"],
+        "Default": "3", "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "vector": {"Name": null, "Type": ["list"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "vector_field": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": "connection",
+        "enabled_by_type": ["CognitiveSearchConnection"], "enabled_by_value": null,
+        "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}}, "Outputs": null, "Description": "Search
+        vector based query from existing Vector Database.", "connection_type": null,
+        "Module": "promptflow_vectordb.tool.vector_db_lookup", "class_name": "VectorDBLookup",
+        "Source": null, "LkgCode": null, "Code": null, "Function": "search", "action_type":
+        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
+        null, "Tags": null, "is_builtin": true, "package": "promptflow-vectordb",
+        "package_version": "0.0.1"}, {"Name": "Vector Index Lookup", "Type": "python",
+        "Inputs": {"path": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "query": {"Name": null, "Type": ["object"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "top_k": {"Name": null, "Type": ["int"], "Default": "3", "Description": null,
+        "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}}, "Outputs": null, "Description": "Search
+        text or vector based query from AzureML Vector Index.", "connection_type":
+        null, "Module": "promptflow_vectordb.tool.vector_index_lookup", "class_name":
+        "VectorIndexLookup", "Source": null, "LkgCode": null, "Code": null, "Function":
+        "search", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": true, "package":
+        "promptflow-vectordb", "package_version": "0.0.1"}, {"Name": "classify_with_llm.jinja2",
+        "Type": "llm", "Inputs": {"examples": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false},
+        "text_content": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "enabled_by_value":
+        null, "model_list": null, "Capabilities": null, "dynamic_list": null, "allow_manual_entry":
+        false, "is_multi_select": false}, "url": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
+        "class_name": null, "Source": "classify_with_llm.jinja2", "LkgCode": null,
+        "Code": null, "Function": null, "action_type": null, "provider_config": null,
+        "function_config": null, "Icon": null, "Category": null, "Tags": null, "is_builtin":
+        false, "package": null, "package_version": null}, {"Name": "convert_to_dict.py",
+        "Type": "python", "Inputs": {"input_str": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
+        "class_name": null, "Source": "convert_to_dict.py", "LkgCode": null, "Code":
+        null, "Function": "convert_to_dict", "action_type": null, "provider_config":
+        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
+        "is_builtin": false, "package": null, "package_version": null}, {"Name": "fetch_text_content_from_url.py",
+        "Type": "python", "Inputs": {"fetch_url": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
+        "class_name": null, "Source": "fetch_text_content_from_url.py", "LkgCode":
+        null, "Code": null, "Function": "fetch_text_content_from_url", "action_type":
+        null, "provider_config": null, "function_config": null, "Icon": null, "Category":
+        null, "Tags": null, "is_builtin": false, "package": null, "package_version":
+        null}, {"Name": "prepare_examples.py", "Type": "python", "Inputs": null, "Outputs":
+        null, "Description": null, "connection_type": null, "Module": null, "class_name":
+        null, "Source": "prepare_examples.py", "LkgCode": null, "Code": null, "Function":
+        "prepare_examples", "action_type": null, "provider_config": null, "function_config":
+        null, "Icon": null, "Category": null, "Tags": null, "is_builtin": false, "package":
+        null, "package_version": null}, {"Name": "summarize_text_content.jinja2",
+        "Type": "llm", "Inputs": {"text": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
+        "class_name": null, "Source": "summarize_text_content.jinja2", "LkgCode":
+        null, "Code": null, "Function": null, "action_type": null, "provider_config":
+        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
+        "is_builtin": false, "package": null, "package_version": null}, {"Name": "summarize_text_content__variant_1.jinja2",
+        "Type": "llm", "Inputs": {"text": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "enabled_by_value": null, "model_list": null, "Capabilities": null,
+        "dynamic_list": null, "allow_manual_entry": false, "is_multi_select": false}},
+        "Outputs": null, "Description": null, "connection_type": null, "Module": null,
+        "class_name": null, "Source": "summarize_text_content__variant_1.jinja2",
+        "LkgCode": null, "Code": null, "Function": null, "action_type": null, "provider_config":
+        null, "function_config": null, "Icon": null, "Category": null, "Tags": null,
+        "is_builtin": false, "package": null, "package_version": null}], "Codes":
+        null, "Inputs": {"url": {"Name": null, "Type": "string", "Default": "https://www.microsoft.com/en-us/d/xbox-wireless-controller-stellar-shift-special-edition/94fbjc7h0h6h",
+        "Description": null, "is_chat_input": false, "is_chat_history": null}}, "Outputs":
+        {"category": {"Name": null, "Type": "string", "Description": null, "Reference":
+        "${convert_to_dict.output.category}", "evaluation_only": false, "is_chat_output":
+        false}, "evidence": {"Name": null, "Type": "string", "Description": null,
+        "Reference": "${convert_to_dict.output.evidence}", "evaluation_only": false,
+        "is_chat_output": false}}}, "jobSpecification": null, "systemSettings": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '40354'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.068'
+    status:
+      code: 200
+      message: OK
+version: 1
