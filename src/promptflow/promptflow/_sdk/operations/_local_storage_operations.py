@@ -205,6 +205,7 @@ class LocalStorageOperations(DefaultRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._base_dir = self._prepare_folder(self.path / "intermediate")
+        self._sub_dir = None
 
         self._dump_meta_file()
 
