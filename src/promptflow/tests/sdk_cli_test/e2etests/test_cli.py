@@ -1276,3 +1276,15 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_flow_test_with_image_input_and_output(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_image_input_and_output",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "intermediate"
+        assert image_path.exists()

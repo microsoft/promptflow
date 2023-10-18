@@ -17,7 +17,7 @@ logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
 TOOL_TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "package_tool"
 EXTRA_FILES_MAPPING = {"requirements.txt": "requirements_txt", ".gitignore": "gitignore"}
-SERVE_TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "sdk" / "data" / "executable"
+SERVE_TEMPLATE_PATH = Path(__file__).resolve().parent.parent.parent / "_sdk" / "data" / "executable"
 
 
 class BaseGenerator(ABC):
