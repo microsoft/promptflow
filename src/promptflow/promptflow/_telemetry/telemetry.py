@@ -49,7 +49,13 @@ def get_telemetry_logger():
     # check if current logger already has an appinsights handler to avoid logger handler duplication
     for log_handler in current_logger.handlers:
         if isinstance(log_handler, PromptFlowSDKLogHandler):
-            return current_logger
+            # if existing handler has same region, reuse it
+            config = Configuration.get_instance()
+            if log_handler.eu_user == config.is_eu_user():
+                return current_logger
+    # otherwise, remove the existing handler and create a new one
+    for log_handler in current_logger.handlers:
+        current_logger.removeHandler(log_handler)
     handler = get_appinsights_log_handler()
     current_logger.addHandler(handler)
     return current_logger

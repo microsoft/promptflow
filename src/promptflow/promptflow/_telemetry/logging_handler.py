@@ -41,6 +41,7 @@ def get_appinsights_log_handler():
             connection_string=f"InstrumentationKey={instrumentation_key}",
             custom_properties=custom_properties,
             enable_telemetry=is_telemetry_enabled(),
+            eu_user=config.is_eu_user(),
         )
         return handler
     except Exception:  # pylint: disable=broad-except
@@ -52,11 +53,12 @@ def get_appinsights_log_handler():
 class PromptFlowSDKLogHandler(AzureEventHandler):
     """Customized AzureLogHandler for PromptFlow SDK"""
 
-    def __init__(self, custom_properties, enable_telemetry, **kwargs):
+    def __init__(self, custom_properties, enable_telemetry, eu_user, **kwargs):
         super().__init__(**kwargs)
 
         self._is_telemetry_enabled = enable_telemetry
         self._custom_dimensions = custom_properties
+        self.eu_user = eu_user
 
     def emit(self, record):
         # skip logging if telemetry is disabled
