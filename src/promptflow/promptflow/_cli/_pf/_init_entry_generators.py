@@ -237,7 +237,7 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def tpl_file(self):
-        return TEMPLATE_PATH / "main.py.jinja2"
+        return SERVE_TEMPLATE_PATH / "main.py.jinja2"
 
     @property
     def flow_path(self):
