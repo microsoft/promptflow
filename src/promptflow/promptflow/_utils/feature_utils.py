@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 
 class FeatureState(Enum):
@@ -13,20 +14,14 @@ class FeatureState(Enum):
     E2ETEST = "E2ETest"
 
 
-class FeatureComponent(Enum):
-    """The enum of feature component."""
-
-    EXECUTOR = "executor"
-
-
 @dataclass
 class Feature:
     """The dataclass of feature."""
 
     name: str
     description: str
-    component: FeatureComponent
     state: FeatureState
+    component: Optional[str] = "executor"
 
 
 def get_feature_list():
@@ -34,7 +29,6 @@ def get_feature_list():
         Feature(
             name="ActivateConfig",
             description="Bypass node execution when the node does not meet activate condition.",
-            component=FeatureComponent.EXECUTOR,
             state=FeatureState.READY,
         ),
     ]
