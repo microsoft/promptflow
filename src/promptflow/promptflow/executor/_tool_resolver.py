@@ -64,20 +64,21 @@ class ToolResolver:
         return connection_value
 
     def _convert_to_custom_strong_type_connection_value(
-        self, k: str, v: InputAssignment, node: Node, conn_types: List[str], module: types.ModuleType
+        self, k: str, v: InputAssignment, node: Node, tool: Tool, conn_types: List[str], module: types.ModuleType
     ):
-        if conn_types is None:
-            msg = f"Input '{k}' for node '{node.name}' has invalid types: None."
+        if not conn_types:
+            msg = f"Input '{k}' for node '{node.name}' has invalid types: {conn_types}."
             raise NodeInputValidationError(message=msg)
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
 
-        custom_defined_connection_class = None
-        if node.source.type == ToolSourceType.Code:
-            custom_type_class_name = conn_types[0]
-            custom_defined_connection_class = getattr(module, custom_type_class_name)
-        return connection_value._convert_to_custom_strong_type(to_class=custom_defined_connection_class)
+        custom_defined_connection_class_name = conn_types[0]
+        if node.source.type == ToolSourceType.Package:
+            module = tool.module
+        return connection_value._convert_to_custom_strong_type(
+            module=module, to_class=custom_defined_connection_class_name
+        )
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
@@ -96,7 +97,7 @@ class ToolResolver:
             if ConnectionType.is_connection_class_name(value_type):
                 if tool_input.custom_type:
                     updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
-                        k, v, node, tool_input.custom_type, module=module
+                        k, v, node, tool, tool_input.custom_type, module=module
                     )
                 else:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
