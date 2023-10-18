@@ -49,8 +49,11 @@ pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World! pr
 
 - create run
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.
 
 - list and show run meta
 ```bash
@@ -87,7 +90,7 @@ pf connection create --file ../../../connections/azure_openai.yml --set api_key=
 Run flow with newly created connection.
 
 ```bash
-pf run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --stream
+pf run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --column-mapping text='${data.text}' --stream
 ```
 
 ### Run in cloud with connection override

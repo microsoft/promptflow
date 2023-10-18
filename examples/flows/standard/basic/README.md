@@ -42,8 +42,11 @@ pf flow test --flow . --node llm --inputs prompt="Write a simple Hello World pro
 - Create run with multiple lines data
 ```bash
 # using environment from .env file (loaded in user code: hello.py)
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping text='${data.text}' --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.
 
 - List and show run meta
 ```bash
@@ -87,7 +90,7 @@ pf flow test --flow . --environment-variables AZURE_OPENAI_API_KEY='${open_ai_co
 - Create run using connection secret binding specified in environment variables, see [run.yml](run.yml)
 ```bash
 # create run
-pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}'
+pf run create --flow . --data ./data.jsonl --stream --environment-variables AZURE_OPENAI_API_KEY='${open_ai_connection.api_key}' AZURE_OPENAI_API_BASE='${open_ai_connection.api_base}' --column-mapping text='${data.text}'
 # create run using yaml file
 pf run create --file run.yml --stream
 

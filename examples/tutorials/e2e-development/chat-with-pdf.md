@@ -245,6 +245,7 @@ The output will include something like below:
 }
 ```
 
+Reference [here](../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.
 And we developed two evaluation flows one for "[groundedness](../../flows/evaluation/eval-groundedness/)" and one for "[perceived intelligence](../../flows/evaluation/eval-perceived-intelligence/)". These two flows are using GPT models (ChatGPT or GPT4) to "grade" the answers. Reading the prompts will give you better idea what are these two metrics:
 - [groundedness prompt](../../flows/evaluation/eval-groundedness/gpt_groundedness.md)
 - [perceived intelligence prompt](../../flows/evaluation/eval-perceived-intelligence/gpt_perceived_intelligence.md)

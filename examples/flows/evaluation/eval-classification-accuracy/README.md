@@ -38,8 +38,11 @@ pf flow test --flow . --node grade --inputs groundtruth=groundtruth prediction=p
 There are two ways to evaluate an classification flow.
 
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping groundtruth='${data.groundtruth}' prediction='${data.prediction}' --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.
 
 ### 3. create run against other flow run
 

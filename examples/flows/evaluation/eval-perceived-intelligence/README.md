@@ -26,6 +26,8 @@ pf flow test --flow .
 ### 2. create flow run with multi line data
 
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping question='${data.question}' answer='${data.answer}' context='${data.context}' --stream
 ```
 
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.

@@ -56,10 +56,13 @@ pf flow test --flow . --inputs url='https://www.microsoft.com/en-us/d/xbox-wirel
 
 ```bash
 # create run using command line args
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream
 # create run using yaml file
 pf run create --file run.yml --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.
 
 #### Submit run to cloud
 
