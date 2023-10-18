@@ -158,7 +158,7 @@ def convert_multimedia_date_to_base64(value: Any):
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def recursive_process(value: Any, process_funcs: dict[type:Callable] = None) -> dict:
+def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
