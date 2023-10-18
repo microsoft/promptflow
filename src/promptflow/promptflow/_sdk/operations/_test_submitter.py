@@ -22,6 +22,7 @@ from promptflow._utils.exception_utils import ErrorResponse
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -150,9 +151,15 @@ class TestSubmitter:
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
-            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = FlowExecutor.create(
+                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
+            )
             flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+            line_result.output = flow_executor._persist_images_from_output(
+                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+            )
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
@@ -215,11 +222,12 @@ class TestSubmitter:
             for node_name, node_result in node_run_infos.items():
                 # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
                 pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
-                node_logs = re.sub(pattern, "", node_result.logs["stdout"])
-                if node_logs:
-                    for log in node_logs.rstrip("\n").split("\n"):
-                        print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
-                        print(log)
+                if node_result.logs:
+                    node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+                    if node_logs:
+                        for log in node_logs.rstrip("\n").split("\n"):
+                            print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                            print(log)
                 if show_node_output:
                     print(f"{Fore.CYAN}{node_name}: ", end="")
                     # TODO executor return a type string of generator

@@ -1,6 +1,9 @@
+import inspect
+from typing import Union
+
 import pytest
 
-from promptflow._utils.tool_utils import function_to_interface
+from promptflow._utils.tool_utils import function_to_interface, param_to_definition
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.tool import ValueType
 
@@ -24,3 +27,56 @@ class TestToolUtils:
         with pytest.raises(Exception) as exec_info:
             function_to_interface(func, {"input_str": "test"})
         assert "Duplicate inputs found from" in exec_info.value.args[0]
+
+    def test_param_to_definition(self):
+        from promptflow._sdk.entities import CustomStrongTypeConnection
+        from promptflow.contracts.tool import Secret
+
+        class MyFirstConnection(CustomStrongTypeConnection):
+            api_key: Secret
+            api_base: str
+
+        class MySecondConnection(CustomStrongTypeConnection):
+            api_key: Secret
+            api_base: str
+
+        def some_func(
+            conn1: MyFirstConnection,
+            conn2: Union[CustomConnection, MyFirstConnection],
+            conn3: Union[MyFirstConnection, CustomConnection],
+            conn4: Union[MyFirstConnection, MySecondConnection],
+            conn5: CustomConnection,
+            conn6: Union[CustomConnection, int],
+            conn7: Union[MyFirstConnection, int],
+        ):
+            pass
+
+        sig = inspect.signature(some_func)
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn1"), gen_custom_type_conn=True)
+        assert input_def.type == ["CustomConnection"]
+        assert input_def.custom_type == ["MyFirstConnection"]
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn2"), gen_custom_type_conn=True)
+        assert input_def.type == ["CustomConnection"]
+        assert input_def.custom_type == ["MyFirstConnection"]
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn3"), gen_custom_type_conn=True)
+        assert input_def.type == ["CustomConnection"]
+        assert input_def.custom_type == ["MyFirstConnection"]
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn4"), gen_custom_type_conn=True)
+        assert input_def.type == ["CustomConnection"]
+        assert input_def.custom_type == ["MyFirstConnection", "MySecondConnection"]
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn5"), gen_custom_type_conn=True)
+        assert input_def.type == ["CustomConnection"]
+        assert input_def.custom_type is None
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn6"), gen_custom_type_conn=True)
+        assert input_def.type == [ValueType.OBJECT]
+        assert input_def.custom_type is None
+
+        input_def, _ = param_to_definition(sig.parameters.get("conn7"), gen_custom_type_conn=True)
+        assert input_def.type == [ValueType.OBJECT]
+        assert input_def.custom_type is None

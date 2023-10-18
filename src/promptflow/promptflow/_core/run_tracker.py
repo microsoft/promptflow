@@ -15,7 +15,7 @@ from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.multimedia import Image
+from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -240,10 +240,8 @@ class RunTracker(ThreadLocalSingleton):
             return ConnectionType.serialize_conn(val)
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
-        if isinstance(val, Image):
-            return val.serialize()
         try:
-            json.dumps(val)
+            json.dumps(val, default=PFBytes.default_json_encoder)
             return val
         except Exception:
             if not warning_msg:
@@ -358,6 +356,24 @@ class RunTracker(ThreadLocalSingleton):
 
     def persist_node_run(self, run_info: RunInfo):
         self._storage.persist_node_run(run_info)
+
+    def persist_selected_node_runs(self, run_info: FlowRunInfo, node_names: List[str]):
+        """
+        Persists the node runs for the specified node names.
+
+        :param run_info: The flow run information.
+        :type run_info: FlowRunInfo
+        :param node_names: The names of the nodes to persist.
+        :type node_names: List[str]
+        :returns: None
+        """
+        run_id = run_info.run_id
+
+        selected_node_run_info = (
+            run_info for run_info in self.collect_child_node_runs(run_id) if run_info.node in node_names
+        )
+        for node_run_info in selected_node_run_info:
+            self.persist_node_run(node_run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         self._storage.persist_flow_run(run_info)
