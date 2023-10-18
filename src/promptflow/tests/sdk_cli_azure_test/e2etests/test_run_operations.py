@@ -374,7 +374,7 @@ class TestFlowRun:
         )
         remote_client.runs.stream(run=run.name)
 
-    @pytest.mark.skip(condition=not is_live(), reason="looks big and horrible, handle it later...")
+    @pytest.mark.skipif(condition=not is_live(), reason="looks big and horrible, handle it later...")
     def test_run_bulk_without_retry(self, remote_client):
         from azure.core.exceptions import ServiceResponseError
         from azure.core.pipeline.transport._requests_basic import RequestsTransport
