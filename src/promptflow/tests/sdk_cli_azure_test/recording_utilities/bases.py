@@ -53,11 +53,23 @@ class PFAzureIntegrationTestRecording:
         test_file_path = Path(inspect.getfile(self.test_class)).resolve()
         recording_dir = (test_file_path.parent.parent.parent / "test_configs" / "recordings").resolve()
         recording_dir.mkdir(exist_ok=True)
-        # recording filename pattern: {test_file_name}_{test_class_name}_{test_func_name}.yaml
+
         test_file_name = test_file_path.stem
         test_class_name = self.test_class.__name__
-        recording_filename = f"{test_file_name}_{test_class_name}_{self.test_func_name}.yaml"
-        recording_file = (recording_dir / recording_filename).resolve()
+        if "[" in self.test_func_name:
+            # for tests that use pytest.mark.parametrize, there will be "[]" in test function name
+            # recording filename pattern:
+            # {test_file_name}_{test_class_name}_{test_func_name}/{parameter_id}.yaml
+            test_func_name, parameter_id = self.test_func_name.split("[")
+            parameter_id = parameter_id.rstrip("]")
+            test_func_dir = (recording_dir / f"{test_file_name}_{test_class_name}_{test_func_name}").resolve()
+            test_func_dir.mkdir(exist_ok=True)
+            recording_file = (test_func_dir / f"{parameter_id}.yaml").resolve()
+        else:
+            # for most remaining tests
+            # recording filename pattern: {test_file_name}_{test_class_name}_{test_func_name}.yaml
+            recording_filename = f"{test_file_name}_{test_class_name}_{self.test_func_name}.yaml"
+            recording_file = (recording_dir / recording_filename).resolve()
         if self.is_live and not is_live_and_not_recording() and recording_file.is_file():
             recording_file.unlink()
         return recording_file
