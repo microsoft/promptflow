@@ -56,9 +56,10 @@ class BatchEngine:
 
     @staticmethod
     def resolve_image(input_dir: Path, data_dict: dict):
+        input_dir = input_dir.parent if input_dir.is_file() else input_dir
         if PFBytes._is_multimedia_dict(data_dict):
             for key in data_dict:
                 _, resource = Image._get_multimedia_info(key)
                 if resource == "path":
-                    data_dict[key] = str(input_dir.parent / data_dict[key])
+                    data_dict[key] = str(input_dir / data_dict[key])
         return data_dict
