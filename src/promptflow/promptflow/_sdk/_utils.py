@@ -60,7 +60,29 @@ from promptflow._sdk._errors import (
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
+from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.tool_utils import get_inputs_for_prompt_template
+from promptflow._utils.utils import RecordStorage
+from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.tool import ToolType
+
+
+def record_node_run(run_info: NodeRunInfo, flow_folder: Path) -> None:
+    """Persist node run record to local storage."""
+    if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
+        for api_call in run_info.api_calls:
+            hashDict = {}
+            if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
+                prompt_tpl = api_call["inputs"]["prompt"]
+                prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+
+                for keyword in prompt_tpl_inputs:
+                    if keyword in api_call["inputs"]:
+                        hashDict[keyword] = api_call["inputs"][keyword]
+                hashDict["prompt"] = prompt_tpl
+                hashDict = collections.OrderedDict(sorted(hashDict.items()))
+                item = serialize(run_info)
+                RecordStorage.set_record(flow_folder, hashDict, str(item["output"]))
 
 
 def snake_to_camel(name):
@@ -334,9 +356,7 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
             if env_name not in os.environ:
                 continue
             values[key] = os.environ[env_name]
-            logger.info(
-                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
-            )
+            logger.info(f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}")
     return connections
 
 

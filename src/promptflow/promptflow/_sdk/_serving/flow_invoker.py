@@ -10,9 +10,10 @@ from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn,
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
     get_local_connections_from_executable,
+    override_connection_config_with_environment_variable,
+    record_node_run,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
-    override_connection_config_with_environment_variable,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.executor import FlowExecutor
@@ -93,4 +94,5 @@ class FlowInvoker:
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
+        record_node_run(result.run_info, self.flow.code)
         return result.output

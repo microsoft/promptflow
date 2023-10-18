@@ -2,11 +2,9 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
-import collections
 import contextlib
 import json
 import logging
-import os
 import re
 import time
 from pathlib import Path
@@ -14,40 +12,19 @@ from types import GeneratorType
 from typing import Any, Mapping
 
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import parse_variant
+from promptflow._sdk._utils import parse_variant, record_node_run
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template
-from promptflow._utils.utils import RecordStorage
 from promptflow.contracts.flow import Flow as ExecutableFlow
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
 from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
-
-
-def _record_node_run(run_info: NodeRunInfo, flow_folder: Path) -> None:
-    """Persist node run record to local storage."""
-    if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
-        for api_call in run_info.api_calls:
-            hashDict = {}
-            if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
-                prompt_tpl = api_call["inputs"]["prompt"]
-                prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-
-                for keyword in prompt_tpl_inputs:
-                    if keyword in api_call["inputs"]:
-                        hashDict[keyword] = api_call["inputs"][keyword]
-                hashDict["prompt"] = prompt_tpl
-                hashDict = collections.OrderedDict(sorted(hashDict.items()))
-                item = serialize(run_info)
-                RecordStorage.set_record(flow_folder, hashDict, str(item["output"]))
 
 
 class TestSubmitter:
@@ -196,7 +173,7 @@ class TestSubmitter:
                 generator_outputs = self._get_generator_outputs(line_result.output)
                 if generator_outputs:
                     logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-            _record_node_run(line_result.run_info, self._origin_flow.code)
+            record_node_run(line_result.run_info, self._origin_flow.code)
             return line_result
 
     def node_test(
@@ -223,7 +200,7 @@ class TestSubmitter:
                 connections=connections,
                 working_dir=self.flow.code,
             )
-            _record_node_run(result, self._origin_flow.code)
+            record_node_run(result, self._origin_flow.code)
             return result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
