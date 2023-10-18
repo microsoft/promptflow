@@ -47,3 +47,33 @@ class TestCli:
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
+
+    def test_flow_chat(self, monkeypatch, capsys, remote_workspace_resource_id):
+        chat_list = ["hi", "what is chat gpt?"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow",
+            "--interactive",
+            "--verbose",
+            "--connection-provider",
+            remote_workspace_resource_id,
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+        outerr = capsys.readouterr()
+        # Check node output
+        assert "chat_node:" in outerr.out
+        assert "show_answer:" in outerr.out
+        assert "[show_answer]: print:" in outerr.out
