@@ -150,8 +150,8 @@ def add_run_update(subparsers):
     epilog = """
 Example:
 
-# Update a run metdata:
-pf run update --name <name> --set display_name="<display-name>" description="<description>" tag.key="<value>"
+# Update a run metadata:
+pf run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
 """
     add_params = [
         add_param_run_name,
@@ -419,7 +419,7 @@ def dispatch_run_commands(args: argparse.Namespace):
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
 
-def _merge_params(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
+def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
     display_name, description, tags = None, None, {}
     for param in params:
         for k, v in param.items():
@@ -444,9 +444,9 @@ def _merge_params(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional
 @exception_handler("Update run")
 def update_run(name: str, params: List[Dict[str, str]]) -> None:
     # params_override can have multiple items when user specifies with
-    # `--set key1=value1 --set key2=value`
+    # `--set key1=value1 key2=value`
     # so we need to merge them first.
-    display_name, description, tags = _merge_params(params)
+    display_name, description, tags = _parse_metadata_args(params)
     pf_client = PFClient()
     run = pf_client.runs.update(
         name=name,
@@ -528,7 +528,6 @@ def visualize_run(names: str, html_path: Optional[str] = None) -> None:
 def archive_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.archive(name=name)
-    print("Archived run:")
     print(json.dumps(run._to_dict(), indent=4))
 
 
@@ -536,7 +535,6 @@ def archive_run(name: str) -> None:
 def restore_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.restore(name=name)
-    print("Restored run:")
     print(json.dumps(run._to_dict(), indent=4))
 
 
