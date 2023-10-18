@@ -37,21 +37,29 @@ class DefaultRunStorage(AbstractRunStorage):
         if run_info.inputs:
             run_info.inputs = self._serialize(run_info.inputs)
         if run_info.output:
-            run_info.output = self._serialize(run_info.output)
+            serialized_output = self._serialize(run_info.output)
+            run_info.output = serialized_output
+            run_info.result = serialized_output
+        if run_info.api_calls:
+            run_info.api_calls = self._serialize(run_info.api_calls)
 
     def persist_flow_run(self, run_info: FlowRunInfo):
         if run_info.inputs:
             run_info.inputs = self._serialize(run_info.inputs)
         if run_info.output:
-            run_info.output = self._serialize(run_info.output)
+            serialized_output = self._serialize(run_info.output)
+            run_info.output = serialized_output
+            run_info.result = serialized_output
+        if run_info.api_calls:
+            run_info.api_calls = self._serialize(run_info.api_calls)
 
     def _serialize(self, value):
         if self._base_dir:
-            pfbytes_file_reference_encoder = PFBytes.get_file_reference_encoder(
+            pfbytes_file_reference_encoder = PFBytes._get_file_reference_encoder(
                 folder_path=self._base_dir,
                 relative_path=self._sub_dir
             )
         else:
             pfbytes_file_reference_encoder = None
-        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
+        serialization_funcs = {Image: partial(Image._serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return serialize(value, serialization_funcs=serialization_funcs)
