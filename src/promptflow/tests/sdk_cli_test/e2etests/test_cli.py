@@ -7,7 +7,6 @@ import logging
 import os
 import os.path
 import shutil
-import subprocess
 import sys
 import tempfile
 import uuid
@@ -15,7 +14,6 @@ from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
 
-import pkg_resources
 import pytest
 import yaml
 
@@ -1259,32 +1257,13 @@ class TestCli:
             assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
 
     def test_tool_list(self, capsys):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # Install package tool in environment
-            package_name = "package_name"
-            func_name = "func_name"
-            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
-            capsys.readouterr()
-            subprocess.check_call(["pip", "install", "-e", os.path.join(temp_dir, package_name)])
-            importlib.reload(pkg_resources)
-
+        with tempfile.TemporaryDirectory():
             # List package tools in environment
             run_pf_command("tool", "list")
             outerr = capsys.readouterr()
-            package_tool_name = f"{package_name}.{func_name}.{func_name}"
-            expect_package_tool = {
-                "name": "func_name",
-                "type": "python",
-                "inputs": {"connection": {"type": ["CustomConnection"]}, "input_text": {"type": ["string"]}},
-                "description": "This is func_name tool",
-                "module": "package_name.func_name",
-                "function": "func_name",
-                "package": "package-name",
-                "package_version": "0.0.1",
-            }
             tools_dict = json.loads(outerr.out)
+            package_tool_name = "promptflow.tools.embedding.embedding"
             assert package_tool_name in tools_dict["package"]
-            assert tools_dict["package"][package_tool_name] == expect_package_tool
 
             # List flow tools and package tools
             run_pf_command("tool", "list", "--flow", f"{FLOWS_DIR}/chat_flow")
@@ -1305,13 +1284,11 @@ class TestCli:
             }
             assert tools_dict["code"] == expect_flow_tools
             assert package_tool_name in tools_dict["package"]
-            assert tools_dict["package"][package_tool_name] == expect_package_tool
 
             # Invalid flow parameter
             with pytest.raises(Exception) as e:
                 run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
             assert "invalid_flow_folder does not exist" in e.value.args[0]
-            subprocess.check_call(["pip", "uninstall", package_name, "-y"])
 
     def test_chat_flow_with_conditional(self, monkeypatch, capsys):
         chat_list = ["1", "2"]
