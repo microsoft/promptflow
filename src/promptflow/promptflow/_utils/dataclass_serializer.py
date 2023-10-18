@@ -58,7 +58,7 @@ def deserialize_value(obj, field_type):
     return obj
 
 
-def serialize(value: object, remove_null: bool = False, serialization_funcs: dict[type:Callable] = None) -> dict:
+def serialize(value: object, remove_null: bool = False, serialization_funcs: Dict[type, Callable] = None) -> dict:
     if serialization_funcs:
         for cls, f in serialization_funcs.items():
             if isinstance(value, cls):
