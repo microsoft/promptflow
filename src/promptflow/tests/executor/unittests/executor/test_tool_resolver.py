@@ -413,9 +413,12 @@ class TestToolResolver:
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PYTHON
         node.source = mocker.Mock(type=ToolSourceType.Code)
+        tool = Tool(name="tool", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         m = sys.modules[__name__]
         v = InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)
-        actual = tool_resolver._convert_to_custom_strong_type_connection_value("conn_name", v, node, conn_types, m)
+        actual = tool_resolver._convert_to_custom_strong_type_connection_value(
+            "conn_name", v, node, tool, conn_types, m
+        )
         assert isinstance(actual, expected_type)
         assert actual.api_base == "mock"
 
