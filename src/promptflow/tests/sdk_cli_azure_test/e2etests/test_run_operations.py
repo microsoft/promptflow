@@ -1,14 +1,16 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import json
 import shutil
-import uuid
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Callable
 from unittest.mock import MagicMock, patch
 
 import pytest
+from azure.ai.ml.entities import Data
 
 from promptflow._sdk._constants import RunStatus
 from promptflow._sdk._errors import InvalidRunError, RunNotFoundError, RunOperationParameterError
@@ -18,6 +20,8 @@ from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
+
+from ..recording_utilities import is_live
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -29,30 +33,35 @@ RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-# TODO(2528577): we should run these test with recording mode.
 @pytest.mark.e2etest
+@pytest.mark.usefixtures(
+    "mock_set_headers_with_user_aml_token",
+    "single_worker_thread_pool",
+)
 class TestFlowRun:
-    def test_run_bulk(self, pf: PFClient, runtime: str):
+    def test_run_bulk(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+        name = randstr("name")
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
             runtime=runtime,
+            name=name,
         )
         assert isinstance(run, Run)
-        assert run.name.startswith("web_classification")
+        assert run.name == name
 
-    def test_run_bulk_from_yaml(self, remote_client, pf, runtime):
-        run_id = str(uuid.uuid4())
+    def test_run_bulk_from_yaml(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+        run_id = randstr("run_id")
         run = load_run(
             source=f"{RUNS_DIR}/sample_bulk_run_cloud.yaml",
             params_override=[{"name": run_id, "runtime": runtime}],
         )
-        run = remote_client.runs.create_or_update(run=run)
+        run = pf.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_basic_evaluation(self, pf, runtime):
+    def test_basic_evaluation(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         run = pf.run(
@@ -61,6 +70,7 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
             runtime=runtime,
+            name=randstr("batch_run_name"),
         )
         assert isinstance(run, Run)
         run = pf.runs.stream(run=run.name)
@@ -72,6 +82,7 @@ class TestFlowRun:
             run=run,
             column_mapping={"groundtruth": "${data.answer}", "prediction": "${run.outputs.category}"},
             runtime=runtime,
+            name=randstr("eval_run_name"),
         )
         assert isinstance(eval_run, Run)
         pf.runs.stream(run=eval_run.name)
@@ -86,11 +97,12 @@ class TestFlowRun:
                 "prediction": "${run.outputs.category}",
             },
             runtime=runtime,
+            name=randstr("eval_run_name_1"),
         )
         assert isinstance(eval_run, Run)
         pf.runs.stream(run=eval_run.name)
 
-    def test_run_with_connection_overwrite(self, remote_client, pf, runtime):
+    def test_run_with_connection_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
@@ -98,29 +110,34 @@ class TestFlowRun:
             variant="${summarize_text_content.variant_0}",
             connections={"classify_with_llm": {"connection": "azure_open_ai", "model": "gpt-3.5-turbo"}},
             runtime=runtime,
+            name=randstr("name"),
         )
         assert isinstance(run, Run)
 
-    def test_run_with_env_overwrite(self, remote_client, pf, runtime):
+    def test_run_with_env_overwrite(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = load_run(
             source=f"{RUNS_DIR}/run_with_env.yaml",
             params_override=[{"runtime": runtime}],
         )
-        run = remote_client.runs.create_or_update(run=run)
+        run.name = randstr("name")
+        run = pf.runs.create_or_update(run=run)
         assert isinstance(run, Run)
 
-    def test_run_display_name_with_macro(self, pf, runtime):
+    def test_run_display_name_with_macro(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = load_run(
             source=f"{RUNS_DIR}/run_with_env.yaml",
             params_override=[{"runtime": runtime}],
         )
+        run.name = randstr("name")
         run.display_name = "my_display_name_${variant_id}_${timestamp}"
         run = pf.runs.create_or_update(run=run)
         assert run.display_name.startswith("my_display_name_variant_0_")
         assert "${timestamp}" not in run.display_name
         assert isinstance(run, Run)
 
-    def test_run_with_remote_data(self, remote_client, pf, runtime, remote_web_classification_data):
+    def test_run_with_remote_data(
+        self, pf: PFClient, runtime: str, remote_web_classification_data: Data, randstr: Callable[[str], str]
+    ):
         # run with arm id
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -128,6 +145,7 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
             runtime=runtime,
+            name=randstr("name1"),
         )
         assert isinstance(run, Run)
         # run with name version
@@ -137,10 +155,12 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
             runtime=runtime,
+            name=randstr("name2"),
         )
         assert isinstance(run, Run)
 
-    def test_run_bulk_not_exist(self, pf, runtime):
+    # TODO: confirm whether this test is a end-to-end test
+    def test_run_bulk_not_exist(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         test_data = f"{DATAS_DIR}/webClassification1.jsonl"
         with pytest.raises(FileNotFoundError) as e:
             pf.run(
@@ -150,17 +170,19 @@ class TestFlowRun:
                 column_mapping={"url": "${data.url}"},
                 variant="${summarize_text_content.variant_0}",
                 runtime=runtime,
+                name=randstr("name"),
             )
         assert "does not exist" in str(e.value)
 
-    def test_list_runs(self, remote_client):
-        runs = remote_client.runs.list(max_results=10)
+    def test_list_runs(self, pf: PFClient):
+        runs = pf.runs.list(max_results=10)
         for run in runs:
             print(json.dumps(run._to_dict(), indent=4))
         assert len(runs) == 10
 
-    def test_show_run(self, remote_client):
-        run = remote_client.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
+    # TODO: confirm whether to sanitize tenant id
+    def test_show_run(self, pf: PFClient):
+        run = pf.runs.get(run="classification_accuracy_eval_default_20230808_153241_422491")
         run_dict = run._to_dict()
         print(json.dumps(run_dict, indent=4))
         assert run_dict == {
@@ -200,35 +222,35 @@ class TestFlowRun:
             "input_run_portal_url": "https://ml.azure.com/prompts/flow/bulkrun/run/web_classification_default_20230804_143634_056856/details?wsid=/subscriptions/96aede12-2f73-41cb-b983-6d11a904839b/resourceGroups/promptflow/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus",  # noqa: E501
         }
 
-    def test_show_run_details(self, remote_client):
+    def test_show_run_details(self, pf: PFClient):
         run = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
 
         # get first 20 results
-        details = remote_client.get_details(run=run, max_results=20)
+        details = pf.get_details(run=run, max_results=20)
 
         assert details.shape[0] == 20
 
         # get first 1000 results while it only has 40
-        details = remote_client.get_details(run=run, max_results=1000)
+        details = pf.get_details(run=run, max_results=1000)
         assert details.shape[0] == 40
 
         # get all results
-        details = remote_client.get_details(
+        details = pf.get_details(
             run=run,
             all_results=True,
         )
         assert details.shape[0] == 40
 
         # get all results even if max_results is set to 10
-        details = remote_client.get_details(
+        details = pf.get_details(
             run=run,
             max_results=10,
             all_results=True,
         )
         assert details.shape[0] == 40
 
-    def test_show_metrics(self, remote_client):
-        metrics = remote_client.runs.get_metrics(
+    def test_show_metrics(self, pf: PFClient):
+        metrics = pf.runs.get_metrics(
             run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
         )
         print(json.dumps(metrics, indent=4))
@@ -239,24 +261,29 @@ class TestFlowRun:
             "gpt_relevance_pass_rate(%).variant_0": 0.0,
         }
 
-    def test_stream_run_logs(self, remote_client, pf):
+    def test_stream_invalid_run_logs(self, pf: PFClient, randstr: Callable[[str], str]):
         # test get invalid run name
-        non_exist_run = str(uuid.uuid4())
+        non_exist_run = randstr("non_exist_run")
         with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
             pf.runs.stream(run=non_exist_run)
 
-        run = remote_client.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
+    def test_stream_run_logs(self, pf: PFClient):
+        run = pf.runs.stream(run="4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74")
         assert run.status == RunStatus.COMPLETED
 
-    def test_stream_failed_run_logs(self, remote_client, pf, capfd):
-        run = remote_client.runs.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
-        out, err = capfd.readouterr()
+    def test_stream_failed_run_logs(self, pf: PFClient, capfd):
+        run = pf.runs.stream(run="3dfd077a-f071-443e-9c4e-d41531710950")
+        out, _ = capfd.readouterr()
         print(out)
         assert run.status == "Failed"
         # error info will store in run dict
         assert "error" in run._to_dict()
 
-    def test_archive_and_restore_run(self, remote_client):
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="cannot differ the two requests to run history in replay mode.",
+    )
+    def test_archive_and_restore_run(self, pf: PFClient):
         from promptflow._sdk._constants import RunHistoryKeys
 
         run_meta_data = RunHistoryKeys.RunMetaData
@@ -265,24 +292,24 @@ class TestFlowRun:
         run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
 
         # test archive
-        remote_client.runs.archive(run=run_id)
-        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        pf.runs.archive(run=run_id)
+        run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         assert run_data[hidden] is True
 
         # test restore
-        remote_client.runs.restore(run=run_id)
-        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        pf.runs.restore(run=run_id)
+        run_data = pf.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
         assert run_data[hidden] is False
 
-    def test_update_run(self, remote_client):
+    def test_update_run(self, pf: PFClient, randstr: Callable[[str], str]):
         run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
-        test_mark = str(uuid.uuid4())
+        test_mark = randstr("test_mark")
 
         new_display_name = f"test_display_name_{test_mark}"
         new_description = f"test_description_{test_mark}"
         new_tags = {"test_tag": test_mark}
 
-        run = remote_client.runs.update(
+        run = pf.runs.update(
             run=run_id,
             display_name=new_display_name,
             description=new_description,
@@ -293,7 +320,7 @@ class TestFlowRun:
         assert run.tags["test_tag"] == test_mark
 
         # test wrong type of parameters won't raise error, just log warnings and got ignored
-        run = remote_client.runs.update(
+        run = pf.runs.update(
             run=run_id,
             tags={"test_tag": {"a": 1}},
         )
@@ -301,15 +328,19 @@ class TestFlowRun:
         assert run.description == new_description
         assert run.tags["test_tag"] == test_mark
 
-    def test_run_with_additional_includes(self, remote_client, pf, runtime):
+    @pytest.mark.skipif(
+        condition=not is_live(), reason="request uri contains temp folder name, need some time to sanitize."
+    )
+    def test_run_with_additional_includes(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         run = pf.run(
             flow=f"{FLOWS_DIR}/web_classification_with_additional_include",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             inputs_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
             runtime=runtime,
+            name=randstr("name"),
         )
-        run = remote_client.runs.stream(run=run.name)
+        run = pf.runs.stream(run=run.name)
         assert run.status == RunStatus.COMPLETED
 
         # Test additional includes don't exist
@@ -320,6 +351,7 @@ class TestFlowRun:
                 inputs_mapping={"url": "${data.url}"},
                 variant="${summarize_text_content.variant_0}",
                 runtime=runtime,
+                name=randstr("name_invalid"),
             )
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
@@ -334,6 +366,7 @@ class TestFlowRun:
         )
         remote_client.runs.stream(run=run.name)
 
+    @pytest.mark.skip(condition=not is_live(), reason="looks big and horrible, handle it later...")
     def test_run_bulk_without_retry(self, remote_client):
         from azure.core.exceptions import ServiceResponseError
         from azure.core.pipeline.transport._requests_basic import RequestsTransport
@@ -395,7 +428,7 @@ class TestFlowRun:
                     remote_client.runs.create_or_update(run=mock_run)
                 assert mock_request.call_count == 4
 
-    def test_pf_run_with_env_var(self, remote_client, pf):
+    def test_pf_run_with_env_var(self, pf: PFClient, randstr: Callable[[str], str]):
         def create_or_update(run, **kwargs):
             # make run.flow a datastore path uri, so that it can be parsed by AzureMLDatastorePathUri
             run.flow = "azureml://datastores/workspaceblobstore/paths/LocalUpload/not/important/path"
@@ -408,10 +441,11 @@ class TestFlowRun:
                 flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 environment_variables=env_var,
+                name=randstr("name"),
             )
             assert run._to_rest_object().environment_variables == env_var
 
-    def test_automatic_runtime(self, remote_client, pf):
+    def test_automatic_runtime(self, pf: PFClient, randstr: Callable[[str], str]):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
         def submit(*args, **kwargs):
@@ -429,6 +463,7 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/print_env_var",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name1"),
             )
 
         with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
@@ -436,9 +471,14 @@ class TestFlowRun:
         ), patch.object(FlowServiceCaller, "create_flow_session"):
             mock_submit.side_effect = submit
             # automatic is a reserved runtime name, will use automatic runtime if specified.
-            pf.run(flow=f"{FLOWS_DIR}/print_env_var", data=f"{DATAS_DIR}/env_var_names.jsonl", runtime="automatic")
+            pf.run(
+                flow=f"{FLOWS_DIR}/print_env_var",
+                data=f"{DATAS_DIR}/env_var_names.jsonl",
+                runtime="automatic",
+                name=randstr("name2"),
+            )
 
-    def test_automatic_runtime_with_environment(self, pf):
+    def test_automatic_runtime_with_environment(self, pf: PFClient, randstr: Callable[[str], str]):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
         def submit(*args, **kwargs):
@@ -455,16 +495,18 @@ class TestFlowRun:
             pf.run(
                 flow=f"{FLOWS_DIR}/flow_with_environment",
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name"),
             )
 
-    def test_run_data_not_provided(self, pf):
+    def test_run_data_not_provided(self, pf: PFClient, randstr: Callable[[str], str]):
         with pytest.raises(ValueError) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
+                name=randstr("name"),
             )
         assert "at least one of data or run must be provided" in str(e)
 
-    def test_run_without_dump(self, remote_client: PFClient, pf, runtime: str) -> None:
+    def test_run_without_dump(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
         from promptflow._sdk._errors import RunNotFoundError
         from promptflow._sdk._orm.run_info import RunInfo
 
@@ -474,12 +516,13 @@ class TestFlowRun:
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
             runtime=runtime,
+            name=randstr("name"),
         )
         # cloud run should not dump to database
         with pytest.raises(RunNotFoundError):
             RunInfo.get(run.name)
 
-    def test_input_mapping_with_dict(self, pf, runtime: str):
+    def test_input_mapping_with_dict(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
         run = pf.run(
@@ -487,21 +530,23 @@ class TestFlowRun:
             data=data_path,
             column_mapping=dict(key={"a": 1}, extra="${data.url}"),
             runtime=runtime,
+            name=randstr("name"),
         )
         assert '"{\\"a\\": 1}"' in run.properties["azureml.promptflow.inputs_mapping"]
         run = pf.runs.stream(run=run)
         assert run.status == "Completed"
 
-    def test_get_invalid_run_cases(self, pf):
+    def test_get_invalid_run_cases(self, pf: PFClient, randstr: Callable[[str], str]):
         # test get invalid run type
         with pytest.raises(InvalidRunError, match="expected 'str' or 'Run' object"):
             pf.runs.get(run=object())
 
         # test get invalid run name
-        non_exist_run = str(uuid.uuid4())
+        non_exist_run = randstr("non_exist_run")
         with pytest.raises(RunNotFoundError, match=f"Run {non_exist_run!r} not found"):
             pf.runs.get(run=non_exist_run)
 
+    # TODO: need to confirm whether this is an end-to-end test
     def test_exp_id(self):
         with TemporaryDirectory() as tmp_dir:
             shutil.copytree(f"{FLOWS_DIR}/flow_with_dict_input", f"{tmp_dir}/flow dir with space")
@@ -520,7 +565,7 @@ class TestFlowRun:
             rest_run = run._to_rest_object()
             assert rest_run.run_experiment_name == "flow_dir_with_dash"
 
-    def test_tools_json_ignored(self, pf):
+    def test_tools_json_ignored(self, pf: PFClient, randstr: Callable[[str], str]):
         from azure.ai.ml._artifacts._blob_storage_helper import BlobStorageClient
 
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
@@ -542,6 +587,7 @@ class TestFlowRun:
                 data=data_path,
                 column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
                 runtime="fake_runtime",
+                name=randstr("name"),
             )
 
             # make sure .promptflow/flow.tools.json not uploaded
@@ -549,7 +595,11 @@ class TestFlowRun:
                 if ".promptflow/flow.tools.json" in f:
                     raise Exception(f"flow.tools.json should not be uploaded, got {f}")
 
-    def test_automatic_runtime_creation_user_aml_token(self, pf):
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="aml-user-token injection will be mocked in replay mode.",
+    )
+    def test_automatic_runtime_creation_user_aml_token(self, pf: PFClient):
         from azure.core.pipeline import Pipeline
 
         def submit(*args, **kwargs):
@@ -570,6 +620,10 @@ class TestFlowRun:
                 runtime=None,
             )
 
+    @pytest.mark.skipif(
+        condition=not is_live(),
+        reason="aml-user-token injection will be mocked in replay mode.",
+    )
     def test_submit_run_user_aml_token(self, pf, runtime):
         from promptflow.azure._restclient.flow.operations import BulkRunsOperations
 
@@ -586,7 +640,7 @@ class TestFlowRun:
                 runtime=runtime,
             )
 
-    def test_flow_id_in_submission(self, remote_client, pf, runtime):
+    def test_flow_id_in_submission(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
         flow_path = f"{FLOWS_DIR}/print_env_var"
@@ -608,6 +662,7 @@ class TestFlowRun:
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
                 runtime=runtime,
+                name=randstr("name1"),
             )
 
         with patch.object(FlowServiceCaller, "submit_bulk_run") as mock_submit, patch.object(
@@ -618,6 +673,7 @@ class TestFlowRun:
             pf.run(
                 flow=flow_path,
                 data=f"{DATAS_DIR}/env_var_names.jsonl",
+                name=randstr("name2"),
             )
 
     @pytest.mark.skip(reason="temporarily disable this for service-side error.")
@@ -634,7 +690,7 @@ class TestFlowRun:
             )
         assert "Session creation failed for" in str(e.value)
 
-    def test_run_submission_exception(self, remote_client):
+    def test_run_submission_exception(self, pf: PFClient):
         from azure.core.exceptions import HttpResponseError
 
         from promptflow.azure._restclient.flow.operations import BulkRunsOperations
@@ -643,7 +699,7 @@ class TestFlowRun:
             headers = kwargs.get("headers", None)
             request_id_in_headers = headers["x-ms-client-request-id"]
             # request id in headers should be same with request id in service caller
-            assert request_id_in_headers == remote_client.runs._service_caller._request_id
+            assert request_id_in_headers == pf.runs._service_caller._request_id
             raise HttpResponseError("customized error message.")
 
         with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_request, patch.object(
@@ -651,22 +707,22 @@ class TestFlowRun:
         ):
             mock_request.side_effect = fake_submit
             with pytest.raises(FlowRequestException) as e:
-                original_request_id = remote_client.runs._service_caller._request_id
-                remote_client.runs._service_caller.submit_bulk_run(
+                original_request_id = pf.runs._service_caller._request_id
+                pf.runs._service_caller.submit_bulk_run(
                     subscription_id="fake_subscription_id",
                     resource_group_name="fake_resource_group",
                     workspace_name="fake_workspace_name",
                 )
                 # request id has been updated
-                assert original_request_id != remote_client.runs._service_caller._request_id
+                assert original_request_id != pf.runs._service_caller._request_id
 
             # original error message should be included in FlowRequestException
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
-            assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
+            assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
-    def test_input_output_portal_url_parser(self, remote_client):
-        runs_op = remote_client.runs
+    def test_input_output_portal_url_parser(self, pf: PFClient):
+        runs_op = pf.runs
 
         # test input with datastore path
         input_datastore_path = (
@@ -707,17 +763,21 @@ class TestFlowRun:
                 workspace_name="fake_workspace_name",
             )
 
-    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+    def test_get_detail_against_partial_fail_run(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
+    ) -> None:
         run = pf.run(
             flow=f"{FLOWS_DIR}/partial_fail",
             data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
             runtime=runtime,
+            name=randstr("name"),
         )
         pf.runs.stream(run=run.name)
-        detail = remote_client.get_details(run=run.name)
+        detail = pf.get_details(run=run.name)
         assert len(detail) == 3
 
-    def test_vnext_workspace_base_url(self, pf):
+    # TODO: seems another unit test...
+    def test_vnext_workspace_base_url(self):
         from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 
         mock_workspace = MagicMock()

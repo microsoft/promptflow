@@ -185,17 +185,23 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
     def _drop_duplicate_recordings(self) -> None:
         dropped_recordings = []
         run_data_requests = dict()
+        log_content_requests = dict()
         for req, resp in self.cassette.data:
             # run hisotry's rundata API
-            if str(req.path).endswith("rundata"):
+            if str(req.path).endswith("/rundata"):
                 body = req.body.decode("utf-8")
                 body_dict = json.loads(body)
                 name = body_dict["runId"]
                 run_data_requests[name] = (req, resp)
                 continue
+            if str(req.path).endswith("/logContent"):
+                log_content_requests[req.uri] = (req, resp)
+                continue
             dropped_recordings.append((req, resp))
         # append rundata recording(s)
         for req, resp in run_data_requests.values():
+            dropped_recordings.append((req, resp))
+        for req, resp in log_content_requests.values():
             dropped_recordings.append((req, resp))
 
         self.cassette.data = dropped_recordings
