@@ -218,13 +218,12 @@ def process_function_call(function_call):
         common_tsg = f"Here is a valid example: {function_call_example}. See the guide at " \
                      "https://platform.openai.com/docs/api-reference/chat/create#chat/create-function_call " \
                      "or view sample 'How to call functions with chat models' in our gallery."
-
+        param = function_call
         if not isinstance(function_call, dict):
             raise ChatAPIInvalidFunctions(
                 message=f"function_call parameter '{function_call}' must be a dict, but not {type(function_call)}. {common_tsg}"
             )
         else:
-            param = function_call
             if "name" not in function_call:
                 raise ChatAPIInvalidFunctions(
                     message=f'function_call parameter {function_call} must contain "name" field. {common_tsg}'
