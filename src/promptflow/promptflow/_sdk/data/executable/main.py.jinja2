@@ -116,17 +116,27 @@ def start():
     def show_conversation() -> None:
         if "messages" not in st.session_state:
             st.session_state.messages = []
+            st.session_state.history = []
         if st.session_state.messages:
             for role, message_items in st.session_state.messages:
                 render_message(role, message_items)
 
 
+    def get_chat_history_from_session():
+        if "history" in st.session_state:
+            return st.session_state.history
+        return []
+
+
     def submit(**kwargs) -> None:
         st.session_state.messages.append(("user", kwargs))
+        st.session_state.history.append({"input": kwargs})
         with container:
             render_message("user", kwargs)
-        response = run_flow(kwargs)
+        # Force append chat history to kwargs
+        response = run_flow({"chat_history": get_chat_history_from_session(), **kwargs})
         st.session_state.messages.append(("assistant", response))
+        st.session_state.history.append({"output": kwargs})
         with container:
             render_message("assistant", response)
 
@@ -185,7 +195,7 @@ def start():
 
 
     st.title("{{flow_name}} APP")
-    st.chat_message("assistant").write("Hello, please input following flow inputs and connection keys.")
+    st.chat_message("assistant").write("Hello, please input following flow inputs.")
     container = st.container()
     with container:
         show_conversation()
