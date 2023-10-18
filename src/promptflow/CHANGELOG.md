@@ -4,6 +4,7 @@
 
 ### Features Added
 - [Executor] Add average execution time and estimated execution time to batch run logs
+- [SDK/CLI] Support `pfazure run archive/restore/update`.
 
 ### Bugs Fixed
 - **pf config set**:
