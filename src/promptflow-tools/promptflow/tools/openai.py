@@ -107,7 +107,7 @@ class OpenAI(ToolProvider):
             frequency_penalty: float = 0,
             logit_bias: dict = {},
             user: str = "",
-            function_call: str = None,
+            function_call: object = None,
             functions: list = None,
             **kwargs,
     ) -> [str, dict]:
@@ -211,7 +211,7 @@ def chat(
         frequency_penalty: float = 0,
         logit_bias: dict = {},
         user: str = "",
-        function_call: str = None,
+        function_call: object = None,
         functions: list = None,
         **kwargs,
 ) -> [str, dict]:
