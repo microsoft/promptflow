@@ -219,9 +219,9 @@ def process_function_call(function_call):
                      "https://platform.openai.com/docs/api-reference/chat/create#chat/create-function_call " \
                      "or view sample 'How to call functions with chat models' in our gallery."
         param = function_call
-        if not isinstance(function_call, dict):
+        if not isinstance(param, dict):
             raise ChatAPIInvalidFunctions(
-                message=f"function_call parameter '{function_call}' must be a dict, but not {type(function_call)}. {common_tsg}"
+                message=f"function_call parameter '{param}' must be a dict, but not {type(function_call)}. {common_tsg}"
             )
         else:
             if "name" not in function_call:
