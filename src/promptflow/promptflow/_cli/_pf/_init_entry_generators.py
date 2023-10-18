@@ -241,7 +241,7 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def flow_path(self):
-        return  self.flow_dag_path.as_posix()
+        return self.flow_dag_path.as_posix()
 
     @property
     def entry_template_keys(self):
