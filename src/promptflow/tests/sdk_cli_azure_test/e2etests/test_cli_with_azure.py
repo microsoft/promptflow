@@ -47,7 +47,7 @@ def run_pf_command(*args, pf, runtime, cwd=None):
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("single_worker_thread_pool")
 class TestCliWithAzure:
-    def test_basic_flow_run_bulk_without_env(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
+    def test_basic_flow_run_bulk_without_env(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")
         run_pf_command(
             "run",
@@ -82,9 +82,11 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
 
-    def test_run_with_remote_data(self, pf: PFClient, runtime: str, remote_web_classification_data: Data):
+    def test_run_with_remote_data(
+        self, pf: PFClient, runtime: str, remote_web_classification_data: Data, randstr: Callable[[str], str]
+    ) -> None:
         # run with arm id
-        name = str(uuid.uuid4())
+        name = randstr("name1")
         run_pf_command(
             "run",
             "create",
@@ -102,7 +104,7 @@ class TestCliWithAzure:
         assert isinstance(run, Run)
 
         # run with name version
-        name = str(uuid.uuid4())
+        name = randstr("name2")
         run_pf_command(
             "run",
             "create",
