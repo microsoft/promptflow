@@ -24,7 +24,7 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
-from promptflow._utils.multimedia_utils import load_multimedia_data
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -242,6 +242,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        output_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
         connections: Optional[dict] = None,
@@ -294,8 +295,10 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value, working_dir)
+        load_multimedia_data_recursively(dependency_nodes_outputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -320,7 +323,9 @@ class FlowExecutor:
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
         # TODO: Simplify the logic here
-        run_tracker = RunTracker(DummyRunStorage())
+        sub_dir = "." if output_dir is None else output_dir
+        storage = DefaultRunStorage(base_dir=".", sub_dir=sub_dir)
+        run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             ToolInvoker.activate(DefaultToolInvoker())
 

@@ -1,0 +1,28 @@
+inputs:
+  image:
+    type: image
+    default: logo.jpg
+  image_name:
+    type: string
+    default: microsoft
+outputs:
+  output:
+    type: image
+    reference: ${duplicate_image.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: python_with_image.py
+  inputs:
+    image: ${inputs.image}
+- name: duplicate_image
+  type: python
+  source:
+    type: code
+    path: duplicate_image.py
+  inputs:
+    name: ${inputs.image_name}
+    image: ${python_node.output}
+  aggregation: false

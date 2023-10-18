@@ -16,6 +16,7 @@ from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
@@ -195,6 +196,9 @@ class TestSubmitter:
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
+
+        flow_inputs = load_multimedia_data(flow_inputs, {}, self._working_dir)
+        load_multimedia_data_recursively(dependency_nodes_outputs)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
             result = FlowExecutor.load_and_exec_node(
