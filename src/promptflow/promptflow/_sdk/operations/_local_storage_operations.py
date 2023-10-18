@@ -345,10 +345,14 @@ class LocalStorageOperations(AbstractRunStorage):
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+                if line_run_record_file.suffix.lower() != ".jsonl":
+                    continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
                     flow_runs.append(json.load(f)["run_info"])
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
+                    if node_run_record_file.suffix.lower() != ".jsonl":
+                        continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
                         node_runs.append(json.load(f)["run_info"])
             return {"flow_runs": flow_runs, "node_runs": node_runs}
