@@ -104,6 +104,8 @@ promptflow.tools.embedding.embedding:
 
 > Note: Both "enabled_by_type" and "enabled_by_value" are list types, which means you can use multiple inputs to enable a single input. For instance, if "enabled_by_type" is [AzureOpenAIConnection, OpenAIConnection], the input will be enabled when the connection type is either AzureOpenAIConnection or OpenAIConnection.
 
-After you build and share the tool package generated with the above steps, you can use your tool from VSCode Extension. When you select a connection with azure openai type, only deployment_name input is enabled and displayed.
+After you build and share the tool package with "enabled_by" feature, you can use your tool from VSCode Extension. When you select a connection with "AzureOpenAIConnection" type, only "deployment_name" input is enabled and displayed.
 
 ![enabled_by_type.png](../../media/how-to-guides/develop-a-tool/enabled_by_type.png)
+
+> Note: "enabled_by_value" is similar to "enabled_by_type", but it enables an input by a specific input value. For instance, if "enabled_by_value" is ["azure-openai-connection", "openai-connection"], the input will be enabled when the connection value is either "azure-openai-connection" or "openai-connection".
