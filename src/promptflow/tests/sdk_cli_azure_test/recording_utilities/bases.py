@@ -139,7 +139,11 @@ class PFAzureIntegrationTestRecording:
         return []
 
     def get_or_record_variable(self, variable: str, default: str) -> str:
-        return self.variable_recorder.get_or_record_variable(variable, default)
+        if is_live():
+            return self.variable_recorder.get_or_record_variable(variable, default)
+        else:
+            # return variable when playback, which is expected to be sanitized
+            return variable
 
     def _postprocess_recording(self) -> None:
         self._apply_replacement_for_recordings()

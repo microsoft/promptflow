@@ -179,6 +179,7 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
 def mock_appinsights_log_handler(mocker: MockFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
     mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
+    return
 
 
 @pytest.fixture
@@ -191,3 +192,9 @@ def single_worker_thread_pool() -> None:
         new=single_worker_thread_pool_executor,
     ):
         yield
+
+
+@pytest.fixture
+def mock_set_headers_with_user_aml_token(mocker: MockFixture) -> None:
+    mocker.patch("promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._set_headers_with_user_aml_token")
+    return
