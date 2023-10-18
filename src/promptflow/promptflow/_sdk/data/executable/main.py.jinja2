@@ -31,6 +31,32 @@ def start():
             return value
 
 
+    def is_list_contains_rich_text(rich_text):
+        result = False
+        for item in rich_text:
+            if isinstance(item, list):
+                result |= is_list_contains_rich_text(item)
+            elif isinstance(item, dict):
+                result |= is_dict_contains_rich_text(item)
+            else:
+                # todo: remove this when decode function is ready
+                if isinstance(item, Image):
+                    result = True
+        return result
+
+
+    def is_dict_contains_rich_text(rich_text):
+        result = False
+        for rich_text_key, rich_text_value in rich_text.items():
+            if isinstance(rich_text_value, list):
+                result |= is_list_contains_rich_text(rich_text_value)
+            elif isinstance(rich_text_value, dict):
+                result |= is_dict_contains_rich_text(rich_text_value)
+            elif re.match(Image.MIME_PATTERN, rich_text_key) or isinstance(rich_text_value, Image):       # todo: remove this when decode function is ready
+                result = True
+        return result
+
+
     def render_message(role, message_items):
         {% raw %}
         def item_render_message(value, key=None):
@@ -52,29 +78,34 @@ def start():
                 st.markdown(f"`{json_dumps(value)},`")
 
         def list_iter_render_message(message_items):
-            for item in message_items:
-                if isinstance(item, list):
-                    st.markdown(f"`[`")
-                    list_iter_render_message(item)
-                    st.markdown("` ],`")
-                if isinstance(item, dict):
-                    st.markdown("`{ `")
-                    dict_iter_render_message(item)
-                    st.markdown("`}, `")
-                else:
-                    item_render_message(item)
+            if is_list_contains_rich_text(message_items):
+                st.markdown("`[`")
+                for item in message_items:
+                    if isinstance(item, list):
+                        list_iter_render_message(item)
+                    if isinstance(item, dict):
+                        st.markdown("`{ `")
+                        dict_iter_render_message(item)
+                        st.markdown("`}, `")
+                    else:
+                        item_render_message(item)
+                st.markdown("`]`")
+            else:
+                st.markdown(f"`{json_dumps(message_items)},`")
 
         def dict_iter_render_message(message_items):
             for key, value in message_items.items():
                 st.markdown(f"`key : {key}`")
                 if isinstance(value, list):
-                    st.markdown(f"`value : [`")
+                    st.markdown(f"`value : `")
                     list_iter_render_message(value)
-                    st.markdown("` ]`")
                 elif isinstance(value, dict):
-                    st.markdown(f"`value : {{`")
-                    dict_iter_render_message(value)
-                    st.markdown("`}`")
+                    if is_dict_contains_rich_text(value):
+                        st.markdown(f"`value : {{`")
+                        dict_iter_render_message(value)
+                        st.markdown("`}`")
+                    else:
+                        st.markdown(f"`value: {json_dumps(value)}`")
                 else:
                     st.markdown(f"`value : {{`")
                     item_render_message(value, key)
@@ -107,16 +138,14 @@ def start():
         if not invoker:
 {% if flow_path %}
 {{ ' ' * indent_level * 3 }}flow = Path('{{flow_path}}')
-{{ ' ' * indent_level * 3 }}dump_path = Path('{{flow_path}}').parent
 {% else %}
 {{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
-{{ ' ' * indent_level * 3 }}dump_path = None
 {% endif %}
             if flow.is_dir():
                 os.chdir(flow)
             else:
                 os.chdir(flow.parent)
-            invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
+            invoker = FlowInvoker(flow, connection_provider="local")
         result = invoker.invoke(data)
         print_yellow_warning(f"Result: {result}")
         return result
