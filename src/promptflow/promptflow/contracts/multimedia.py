@@ -1,8 +1,5 @@
 import base64
 import hashlib
-import os
-import uuid
-from pathlib import Path
 from typing import Callable
 
 
@@ -23,30 +20,6 @@ class PFBytes(bytes):
         # Use this hash to identify this bytes.
         self._hash = hashlib.sha1(data).hexdigest()[:8]
         self._mime_type = mime_type.lower()
-
-    def _save_to_file(self, file_name: str, folder_path: Path, relative_path: Path = None):
-        from promptflow._utils.multimedia_utils import get_extension_from_mime_type
-
-        ext = get_extension_from_mime_type(self._mime_type)
-        file_name = f"{file_name}.{ext}" if ext else file_name
-        image_info = {
-            f"data:{self._mime_type};path": str(relative_path / file_name) if relative_path else file_name
-        }
-        path = folder_path / relative_path if relative_path else folder_path
-        os.makedirs(path, exist_ok=True)
-        with open(os.path.join(path, file_name), 'wb') as file:
-            file.write(self)
-        return image_info
-
-    @classmethod
-    def _get_file_reference_encoder(cls, folder_path: Path, relative_path: Path = None) -> Callable:
-        def pfbytes_file_reference_encoder(obj):
-            """Dumps PFBytes to a file and returns its reference."""
-            if isinstance(obj, PFBytes):
-                file_name = str(uuid.uuid4())
-                return obj._save_to_file(file_name, folder_path, relative_path)
-            raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
-        return pfbytes_file_reference_encoder
 
     def to_base64(self):
         """Returns the base64 representation of the PFBytes."""

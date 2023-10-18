@@ -1,7 +1,9 @@
 import base64
 import imghdr
+import os
 import re
 import requests
+import uuid
 
 from functools import partial
 from pathlib import Path
@@ -139,6 +141,29 @@ def create_image(value: any, base_dir: Path = None):
         )
 
 
+def save_image_to_file(image: Image, file_name: str, folder_path: Path, relative_path: Path = None):
+    ext = get_extension_from_mime_type(image._mime_type)
+    file_name = f"{file_name}.{ext}" if ext else file_name
+    image_reference = {
+        f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name
+    }
+    path = folder_path / relative_path if relative_path else folder_path
+    os.makedirs(path, exist_ok=True)
+    with open(os.path.join(path, file_name), 'wb') as file:
+        file.write(image)
+    return image_reference
+
+
+def get_file_reference_encoder(folder_path: Path, relative_path: Path = None) -> Callable:
+    def pfbytes_file_reference_encoder(obj):
+        """Dumps PFBytes to a file and returns its reference."""
+        if isinstance(obj, PFBytes):
+            file_name = str(uuid.uuid4())
+            return save_image_to_file(obj, file_name, folder_path, relative_path)
+        raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
+    return pfbytes_file_reference_encoder
+
+
 def default_json_encoder(obj):
     if isinstance(obj, PFBytes):
         return str(obj)
@@ -147,7 +172,7 @@ def default_json_encoder(obj):
 
 
 def persist_multimedia_date(value: Any, base_dir: Path, sub_dir: Path = None):
-    pfbytes_file_reference_encoder = PFBytes._get_file_reference_encoder(base_dir, sub_dir)
+    pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return recursive_process(value, process_funcs=serialization_funcs)
 

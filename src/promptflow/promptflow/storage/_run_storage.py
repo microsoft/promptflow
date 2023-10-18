@@ -5,8 +5,8 @@
 from functools import partial
 from pathlib import Path
 
-from promptflow._utils.multimedia_utils import recursive_process
-from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow._utils.multimedia_utils import get_file_reference_encoder, recursive_process
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo as NodeRunInfo
 
 
@@ -55,7 +55,7 @@ class DefaultRunStorage(AbstractRunStorage):
 
     def _persist_images(self, value):
         if self._base_dir:
-            pfbytes_file_reference_encoder = PFBytes._get_file_reference_encoder(
+            pfbytes_file_reference_encoder = get_file_reference_encoder(
                 folder_path=self._base_dir,
                 relative_path=self._sub_dir
             )

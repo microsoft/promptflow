@@ -171,7 +171,8 @@ class ToolResolver:
     def _load_images_for_prompt_tpl(self, prompt_tpl_inputs_mapping: dict, node_inputs: dict):
         for input_name, input in prompt_tpl_inputs_mapping.items():
             if ValueType.IMAGE in input.type and input_name in node_inputs:
-                node_inputs[input_name].value = create_image(node_inputs[input_name].value, self._working_dir)
+                if node_inputs[input_name].value_type == InputValueType.LITERAL:
+                    node_inputs[input_name].value = create_image(node_inputs[input_name].value, self._working_dir)
         return node_inputs
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
