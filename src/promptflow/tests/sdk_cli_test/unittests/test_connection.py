@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from promptflow._cli._pf._connection import validate_and_interactive_get_secrets
-from promptflow._sdk._constants import SCRUBBED_VALUE
+from promptflow._sdk._constants import SCRUBBED_VALUE, CustomStrongTypeConnectionConfigs
 from promptflow._sdk._load_functions import _load_env_to_connection
 from promptflow._sdk.entities._connection import (
     AzureContentSafetyConnection,
@@ -287,3 +287,53 @@ secrets:
         with pytest.raises(Exception) as e:
             connection._validate_and_encrypt_secrets()
         assert "secrets ['key3', 'key4', 'key5'] value invalid, please fill them" in str(e.value)
+
+    def test_convert_to_custom_strong_type(self, install_custom_tool_pkg):
+        module_name = "my_tool_package.tools.my_tool_2"
+        custom_conn_type = "MyFirstConnection"
+        import importlib
+
+        module = importlib.import_module(module_name)
+        # Connection created by custom strong type connection template for package tool
+        connection = CustomConnection(
+            name="test_connection",
+            configs={
+                "a": "1",
+                CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY: module_name,
+                CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY: custom_conn_type,
+            },
+            secrets={"b": "2"},
+        )
+        res = connection._convert_to_custom_strong_type()
+        assert isinstance(res, module.MyFirstConnection)
+        assert res.secrets == {"b": "2"}
+
+        # Connection created by custom connection template for script tool
+        connection = CustomConnection(name="test_connection", configs={"a": "1"}, secrets={"b": "2"})
+        res = connection._convert_to_custom_strong_type(module=module, to_class=custom_conn_type)
+        assert isinstance(res, module.MyFirstConnection)
+        assert res.configs == {"a": "1"}
+
+        # Connection created with custom connection type in portal for package tool
+        connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
+        assert isinstance(res, module.MyFirstConnection)
+        assert res.configs == {"a": "1"}
+
+        # Invalid module
+        module_name = "not_existing_module"
+        with pytest.raises(ModuleNotFoundError, match=r".*No module named 'not_existing_module'*"):
+            connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
+
+        module_name = None
+        with pytest.raises(
+            ValueError,
+            match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
+        ):
+            connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
+
+        custom_conn_type = None
+        with pytest.raises(
+            ValueError,
+            match=r".*Failed to convert to custom strong type connection because of invalid module or class*",
+        ):
+            connection._convert_to_custom_strong_type(module=module_name, to_class=custom_conn_type)
