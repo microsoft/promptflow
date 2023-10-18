@@ -1,0 +1,17 @@
+from setuptools import find_packages, setup
+
+PACKAGE_NAME = "{{ package_name }}"
+
+setup(
+    name=PACKAGE_NAME,
+    version="0.0.1",
+    description="This is my tools package",
+    packages=find_packages(),
+    entry_points={
+        "package_tools": ["{{ tool_name }} = {{ package_name }}.utils:list_package_tools"],
+    },
+    install_requires=[
+        "promptflow",
+        "promptflow-tools"
+    ]
+)

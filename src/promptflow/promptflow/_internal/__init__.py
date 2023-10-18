@@ -58,6 +58,7 @@ from promptflow._sdk._utils import (
     setup_user_agent_to_operation_context,
     update_environment_variables_with_connections,
 )
+from promptflow._utils.capability_util import get_capability_list
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.dataclass_serializer import deserialize_dataclass, serialize
