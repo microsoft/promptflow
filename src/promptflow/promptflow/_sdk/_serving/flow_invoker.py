@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import logging
 from typing import Callable, Union
+from pathlib import Path
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
@@ -18,6 +19,8 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow.executor import FlowExecutor
+from promptflow.storage._run_storage import DefaultRunStorage
+
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -44,16 +47,17 @@ class FlowInvoker:
         self.flow_dir = flow
         self.flow_entity = load_flow(self.flow_dir)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
+        # Pass dump_to path to dump flow result for extension.
+        self._dump_to = kwargs.get("dump_to", False)
+
         self._init_connections(connection_provider)
         self._init_executor()
         self.flow = self.executor._flow
-        # Pass dump_to path to dump flow result for extension.
-        self._dump_to = kwargs.get("dump_to", False)
         self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
         executable = self.flow_entity._init_executable()
-        self._is_chat_flow = FlowOperations._is_chat_flow(executable)
+        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(executable)
         if connection_provider == "local":
             logger.info("Getting connections from local pf client...")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
@@ -80,11 +84,15 @@ class FlowInvoker:
 
     def _init_executor(self):
         logger.info("Promptflow executor starts initializing...")
+        storage = None
+        if self._dump_to:
+            storage = DefaultRunStorage(base_dir=self._dump_to, sub_dir=Path(".promptflow/intermediate"))
         self.executor = FlowExecutor.create(
             flow_file=self.flow_entity.path,
             working_dir=self.flow_entity.code,
             connections=self.connections,
             raise_ex=True,
+            storage=storage,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         logger.info("Promptflow executor initiated successfully.")
@@ -106,5 +114,8 @@ class FlowInvoker:
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
 
         if self._dump_to:
+            result.output = self.executor._persist_images_from_output(
+                result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
+            )
             dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
         return result.output

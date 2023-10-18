@@ -340,19 +340,19 @@ def test_flow(args):
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
 
-    if args.interactive:
-        if args.multi_modal:
-            with tempfile.TemporaryDirectory() as temp_dir:
-                from streamlit.web import cli as st_cli
+    if args.multi_modal:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            from streamlit.web import cli as st_cli
 
-                flow = load_flow(args.flow)
-                script_path = os.path.join(temp_dir, "main.py")
-                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(
-                    script_path
-                )
-                sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
-                st_cli.main()
-        else:
+            flow = load_flow(args.flow)
+            script_path = os.path.join(temp_dir, "main.py")
+            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(
+                script_path
+            )
+            sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
+            st_cli.main()
+    else:
+        if args.interactive:
             pf_client.flows._chat(
                 flow=args.flow,
                 inputs=inputs,
@@ -360,33 +360,33 @@ def test_flow(args):
                 variant=args.variant,
                 show_step_output=args.verbose,
             )
-    else:
-        result = pf_client.flows._test(
-            flow=args.flow,
-            inputs=inputs,
-            environment_variables=environment_variables,
-            variant=args.variant,
-            node=args.node,
-            allow_generator_output=False,
-        )
-        # Dump flow/node test info
-        flow = load_flow(args.flow)
-        if args.node:
-            dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{args.node}.node")
         else:
-            if args.variant:
-                tuning_node, node_variant = parse_variant(args.variant)
-                prefix = f"flow-{tuning_node}-{node_variant}"
+            result = pf_client.flows._test(
+                flow=args.flow,
+                inputs=inputs,
+                environment_variables=environment_variables,
+                variant=args.variant,
+                node=args.node,
+                allow_generator_output=False,
+            )
+            # Dump flow/node test info
+            flow = load_flow(args.flow)
+            if args.node:
+                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{args.node}.node")
             else:
-                prefix = "flow"
-            dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
+                if args.variant:
+                    tuning_node, node_variant = parse_variant(args.variant)
+                    prefix = f"flow-{tuning_node}-{node_variant}"
+                else:
+                    prefix = "flow"
+                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
 
-        TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
-        # Print flow/node test result
-        if isinstance(result.output, dict):
-            print(json.dumps(result.output, indent=4))
-        else:
-            print(result.output)
+            TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
+            # Print flow/node test result
+            if isinstance(result.output, dict):
+                print(json.dumps(result.output, indent=4))
+            else:
+                print(result.output)
 
 
 def serve_flow(args):
