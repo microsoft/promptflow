@@ -136,11 +136,15 @@ class Configuration(object):
     def get_connection_provider(self) -> Optional[str]:
         """Get the current connection provider. Default to local if not configured."""
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
+        return self.resolve_connection_provider(provider)
+
+    @classmethod
+    def resolve_connection_provider(cls, provider) -> Optional[str]:
         if provider is None:
             return ConnectionProvider.LOCAL
         if provider == ConnectionProvider.AZUREML.value:
             # Note: The below function has azure-ai-ml dependency.
-            return "azureml:" + self._get_workspace_from_config()
+            return "azureml:" + cls._get_workspace_from_config()
         # If provider not None and not Azure, return it directly.
         # It can be the full path of a workspace.
         return provider
