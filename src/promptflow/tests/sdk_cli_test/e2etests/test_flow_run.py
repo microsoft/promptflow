@@ -745,3 +745,11 @@ class TestFlowRun:
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
+
+    # test image
+    def test_basic_image_flow_bulk_run(self, pf) -> None:
+        data_path = f"{FLOWS_DIR}/python_tool_with_image_input_and_output/image_inputs/inputs.jsonl"
+
+        run = pf.run(flow=f"{FLOWS_DIR}/python_tool_with_image_input_and_output", data=data_path)
+        run_dict = run._to_dict()
+        print(run_dict)

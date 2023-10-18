@@ -360,13 +360,13 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
+        node_folder = self._prepare_folder(self._node_infos_folder / run_info.node)
+        self._persist_run_multimedia(run_info, node_folder)
         node_run_record = NodeRunRecord.from_run_info(run_info)
-        node_folder = self._prepare_folder(self._node_infos_folder / node_run_record.NodeName)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
-        self._persist_run_multimedia(run_info, node_folder)
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
@@ -374,6 +374,7 @@ class LocalStorageOperations(AbstractRunStorage):
         if not Status.is_terminated(run_info.status):
             logger.info("Line run is not terminated, skip persisting line run record.")
             return
+        self._persist_run_multimedia(run_info, self._run_infos_folder)
         line_run_record = LineRunRecord.from_flow_run_info(run_info)
         # calculate filename according to the batch size
         # note that if batch_size > 1, need to well handle concurrent write scenario
@@ -383,7 +384,6 @@ class LocalStorageOperations(AbstractRunStorage):
             f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
             f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         )
-        self._persist_run_multimedia(run_info, self._run_infos_folder)
         line_run_record.dump(self._run_infos_folder / filename)
 
     def persist_result(self, result: Optional[BulkResult]) -> None:
