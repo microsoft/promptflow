@@ -17,7 +17,7 @@ trigger:
   - releases/*
 
 pool:
-  name: pipeline-1ES-MMS
+  name: promptflow-1ES-win
 
 steps:
 - checkout: self
