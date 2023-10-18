@@ -3,11 +3,12 @@ import hashlib
 import imghdr
 import os
 import re
-import requests
 import uuid
 from pathlib import Path
 from typing import Callable
 from urllib.parse import urlparse
+
+import requests
 
 from promptflow.contracts._errors import InvalidImageInput
 from promptflow.exceptions import ErrorTarget
@@ -83,26 +84,30 @@ class PFBytes(bytes):
         else:
             raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
-    def _save_to_file(self, file_name: str, folder_path: Path, relative_path: Path = None):
+    def _save_to_file(self, file_name: str, folder_path: Path, relative_path: Path = None, use_absolute_path=False):
         ext = PFBytes._get_extension_from_mime_type(self._mime_type)
         file_name = f"{file_name}.{ext}" if ext else file_name
-        image_info = {
-            f"data:{self._mime_type};path": str(relative_path / file_name) if relative_path else file_name
-        }
+        image_path = str(relative_path / file_name) if relative_path else file_name
+        if use_absolute_path:
+            image_path = str(folder_path / image_path)
+        image_info = {f"data:{self._mime_type};path": image_path}
         path = folder_path / relative_path if relative_path else folder_path
         os.makedirs(path, exist_ok=True)
-        with open(os.path.join(path, file_name), 'wb') as file:
+        with open(os.path.join(path, file_name), "wb") as file:
             file.write(self)
         return image_info
 
     @classmethod
-    def _get_file_reference_encoder(cls, folder_path: Path, relative_path: Path = None) -> Callable:
+    def _get_file_reference_encoder(
+        cls, folder_path: Path, relative_path: Path = None, *, use_absolute_path=False
+    ) -> Callable:
         def pfbytes_file_reference_encoder(obj):
             """Dumps PFBytes to a file and returns its reference."""
             if isinstance(obj, PFBytes):
                 file_name = str(uuid.uuid4())
-                return obj._save_to_file(file_name, folder_path, relative_path)
+                return obj._save_to_file(file_name, folder_path, relative_path, use_absolute_path)
             raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
         return pfbytes_file_reference_encoder
 
 

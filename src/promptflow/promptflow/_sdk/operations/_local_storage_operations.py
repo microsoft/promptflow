@@ -32,12 +32,13 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
+from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.executor.flow_executor import BulkResult
-from promptflow.storage._run_storage import DefaultRunStorage
+from promptflow.storage import AbstractRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -168,7 +169,7 @@ class LineRunRecord:
             json.dump(asdict(self), f)
 
 
-class LocalStorageOperations(DefaultRunStorage):
+class LocalStorageOperations(AbstractRunStorage):
     """LocalStorageOperations."""
 
     LINE_NUMBER_WIDTH = 9
@@ -203,9 +204,6 @@ class LocalStorageOperations(DefaultRunStorage):
 
         self._meta_path = self.path / LocalStorageFilenames.META
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
-
-        self._base_dir = self._prepare_folder(self.path / "intermediate")
-        self._sub_dir = None
 
         self._dump_meta_file()
 
@@ -362,18 +360,17 @@ class LocalStorageOperations(DefaultRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
-        super().persist_node_run(run_info)
         node_run_record = NodeRunRecord.from_run_info(run_info)
         node_folder = self._prepare_folder(self._node_infos_folder / node_run_record.NodeName)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
+        self._persist_run_multimedia(run_info, node_folder)
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""
-        super().persist_flow_run(run_info)
         if not Status.is_terminated(run_info.status):
             logger.info("Line run is not terminated, skip persisting line run record.")
             return
@@ -386,6 +383,7 @@ class LocalStorageOperations(DefaultRunStorage):
             f"{str(lower_bound).zfill(self.LINE_NUMBER_WIDTH)}_"
             f"{str(upper_bound).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         )
+        self._persist_run_multimedia(run_info, self._run_infos_folder)
         line_run_record.dump(self._run_infos_folder / filename)
 
     def persist_result(self, result: Optional[BulkResult]) -> None:
@@ -394,6 +392,25 @@ class LocalStorageOperations(DefaultRunStorage):
             return
         self.dump_outputs(result.outputs)
         self.dump_metrics(result.metrics)
+
+    def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):
+        if run_info.inputs:
+            run_info.inputs = self._serialize_multimedia(run_info.inputs, folder_path)
+        if run_info.output:
+            serialized_output = self._serialize_multimedia(run_info.output, folder_path)
+            run_info.output = serialized_output
+            run_info.result = serialized_output
+        if run_info.api_calls:
+            run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
+
+    def _serialize_multimedia(self, value, folder_path: Path, relative_path: Path = None):
+        pfbytes_file_reference_encoder = PFBytes._get_file_reference_encoder(
+            folder_path=folder_path,
+            relative_path=relative_path,
+            use_absolute_path=True,
+        )
+        serialization_funcs = {Image: partial(Image._serialize, **{"encoder": pfbytes_file_reference_encoder})}
+        return serialize(value, serialization_funcs=serialization_funcs)
 
     @staticmethod
     def _prepare_folder(path: Union[str, Path]) -> Path:
