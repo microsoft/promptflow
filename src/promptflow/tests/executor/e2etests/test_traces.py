@@ -92,17 +92,15 @@ class TestExecutorTraces:
         tool_trace = flow_result.run_info.api_calls[0]
         output = tool_trace.get("output")
         assert isinstance(output, list)
-
+        assert not output
+        answer = flow_result.output.get("answer")
         if allow_generator_output:
-            assert not output
-            answer_gen = flow_result.output.get("answer")
-            assert isinstance(answer_gen, GeneratorType)
+            assert isinstance(answer, GeneratorType)
             # Consume the generator and validate that it generates some text
             try:
-                generated_text = next(answer_gen)
+                generated_text = next(answer)
                 assert isinstance(generated_text, str)
             except StopIteration:
                 assert False, "Generator did not generate any text"
         else:
-            assert output
-            assert all(isinstance(item, str) for item in output)
+            assert answer == "Echo-Thisisatest"
