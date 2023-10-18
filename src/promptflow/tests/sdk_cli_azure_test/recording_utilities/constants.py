@@ -8,7 +8,6 @@ SKIP_LIVE_RECORDING = "PROMPT_FLOW_SKIP_LIVE_RECORDING"
 FILTER_HEADERS = [
     "aml-user-token",
     "authorization",
-    "content-md5",
     "date",
     "etag",
     "request-context",
@@ -21,9 +20,6 @@ FILTER_HEADERS = [
     "x-ms-correlation-request-id",
     "x-ms-lease-state",
     "x-ms-lease-status",
-    "x-ms-meta-name",
-    "x-ms-meta-upload_status",
-    "x-ms-meta-version",
     "x-ms-server-encrypted",
     "x-ms-ratelimit-remaining-subscription-reads",
     "x-ms-ratelimit-remaining-subscription-writes",
@@ -38,6 +34,9 @@ class SanitizedValues:
     SUBSCRIPTION_ID = "00000000-0000-0000-0000-000000000000"
     RESOURCE_GROUP_NAME = "00000"
     WORKSPACE_NAME = "00000"
+    TENANT_ID = "00000000-0000-0000-0000-000000000000"
+    # workspace
+    DISCOVERY_URL = "https://eastus.api.azureml.ms/discovery"
     # datastore
     FAKE_KEY = "this is fake key"
     FAKE_ACCOUNT_NAME = "fake_account_name"
@@ -46,6 +45,7 @@ class SanitizedValues:
     FAKE_API_BASE = "https://fake.openai.azure.com"
     # storage
     UPLOAD_HASH = "000000000000000000000000000000000000"
+    BLOB_STORAGE_REQUEST_HOST = "fake_account_name.blob.core.windows.net"
 
 
 class AzureMLResourceTypes:

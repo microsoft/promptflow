@@ -89,6 +89,10 @@ class AzureResourceProcessor(RecordingProcessor):
         for k in filter_keys:
             if k in body:
                 body.pop(k)
+
+        # need during the constructor of FlowServiceCaller (for vNet case)
+        body["properties"] = {"discoveryUrl": SanitizedValues.DISCOVERY_URL}
+
         name = body["name"]
         body["name"] = SanitizedValues.WORKSPACE_NAME
         body["id"] = body["id"].replace(name, SanitizedValues.WORKSPACE_NAME)
@@ -159,3 +163,17 @@ class DropProcessor(RecordingProcessor):
         if "/metadata/identity/oauth2/token" in request.path:
             return None
         return request
+
+
+class TenantProcessor(RecordingProcessor):
+    """Sanitize tenant id in responses."""
+
+    def __init__(self, tenant_id: str):
+        self.tenant_id = tenant_id
+
+    def process_response(self, response: Dict) -> Dict:
+        if is_json_payload_response(response):
+            response["body"]["string"] = str(response["body"]["string"]).replace(
+                self.tenant_id, SanitizedValues.TENANT_ID
+            )
+        return response

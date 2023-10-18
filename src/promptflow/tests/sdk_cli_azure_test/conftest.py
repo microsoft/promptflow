@@ -4,8 +4,11 @@
 
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
+from unittest.mock import patch
 
+import jwt
 import pytest
 from azure.ai.ml import MLClient
 from azure.ai.ml.entities import Data
@@ -19,6 +22,16 @@ from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+
+
+@pytest.fixture
+def tenant_id() -> str:
+    if not is_live():
+        return ""
+    credential = get_cred()
+    access_token = credential.get_token("https://management.azure.com/.default")
+    decoded_token = jwt.decode(access_token.token, options={"verify_signature": False})
+    return decoded_token["tid"]
 
 
 @pytest.fixture
@@ -140,10 +153,11 @@ def ml_client_canary(
 
 
 @pytest.fixture(scope="function", autouse=True)
-def vcr_recording(request: pytest.FixtureRequest) -> PFAzureIntegrationTestRecording:
+def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureIntegrationTestRecording:
     recording = PFAzureIntegrationTestRecording.from_test_case(
         test_class=request.cls,
         test_func_name=request.node.name,
+        tenant_id=tenant_id,
     )
     recording.enter_vcr()
     request.addfinalizer(recording.exit_vcr)
@@ -165,3 +179,15 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
 def mock_appinsights_log_handler(mocker: MockFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
     mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
+
+
+@pytest.fixture
+def single_worker_thread_pool() -> None:
+    def single_worker_thread_pool_executor(*args, **kwargs):
+        return ThreadPoolExecutor(max_workers=1)
+
+    with patch(
+        "promptflow.azure.operations._run_operations.ThreadPoolExecutor",
+        new=single_worker_thread_pool_executor,
+    ):
+        yield

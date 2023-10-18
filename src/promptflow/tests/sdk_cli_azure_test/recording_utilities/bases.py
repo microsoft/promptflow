@@ -10,7 +10,7 @@ from typing import Dict, List
 import vcr
 from vcr.request import Request
 
-from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING
+from .constants import FILTER_HEADERS, TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING, SanitizedValues
 from .processors import (
     AzureOpenAIConnectionProcessor,
     AzureResourceProcessor,
@@ -18,15 +18,17 @@ from .processors import (
     DropProcessor,
     RecordingProcessor,
     StorageProcessor,
+    TenantProcessor,
 )
-from .utils import is_live, is_live_and_not_recording
+from .utils import is_live, is_live_and_not_recording, sanitize_upload_hash
 from .variable_recorder import VariableRecorder
 
 
 class PFAzureIntegrationTestRecording:
-    def __init__(self, test_class, test_func_name: str):
+    def __init__(self, test_class, test_func_name: str, tenant_id: str):
         self.test_class = test_class
         self.test_func_name = test_func_name
+        self.tenant_id = tenant_id
         self.is_live = is_live()
         self.recording_file = self._get_recording_file()
         self.recording_processors = self._get_recording_processors()
@@ -37,12 +39,13 @@ class PFAzureIntegrationTestRecording:
         self.variable_recorder = VariableRecorder()
 
     @staticmethod
-    def from_test_case(test_class, test_func_name: str) -> "PFAzureIntegrationTestRecording":
+    def from_test_case(test_class, test_func_name: str, **kwargs) -> "PFAzureIntegrationTestRecording":
         test_class_name = test_class.__name__
+        tenant_id = kwargs.get("tenant_id", "")
         if test_class_name in TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING:
-            return PFAzureRunIntegrationTestRecording(test_class, test_func_name)
+            return PFAzureRunIntegrationTestRecording(test_class, test_func_name, tenant_id=tenant_id)
         else:
-            return PFAzureIntegrationTestRecording(test_class, test_func_name)
+            return PFAzureIntegrationTestRecording(test_class, test_func_name, tenant_id=tenant_id)
 
     def _get_recording_file(self) -> Path:
         # recording files are expected to be located at "tests/test_configs/recordings"
@@ -117,6 +120,7 @@ class PFAzureIntegrationTestRecording:
             AzureResourceProcessor(),
             AzureWorkspaceTriadProcessor(),
             DropProcessor(),
+            TenantProcessor(tenant_id=self.tenant_id),
         ]
 
     def _get_replay_processors(self) -> List[RecordingProcessor]:
@@ -139,6 +143,11 @@ class PFAzureIntegrationTestRecording:
 
 
 class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
+    def _init_vcr(self) -> vcr.VCR:
+        _vcr = super(PFAzureRunIntegrationTestRecording, self)._init_vcr()
+        _vcr.register_matcher("path", self._custom_request_path_matcher)
+        return _vcr
+
     def enter_vcr(self):
         self._cm = self.vcr.use_cassette(
             self.recording_file.as_posix(),
@@ -148,13 +157,9 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         self.cassette = self._cm.__enter__()
 
     def _get_recording_processors(self) -> List[RecordingProcessor]:
-        return [
-            AzureOpenAIConnectionProcessor(),
-            AzureResourceProcessor(),
-            AzureWorkspaceTriadProcessor(),
-            DropProcessor(),
-            StorageProcessor(),
-        ]
+        recording_processors = super(PFAzureRunIntegrationTestRecording, self)._get_recording_processors()
+        recording_processors.append(StorageProcessor())
+        return recording_processors
 
     def _postprocess_recording(self) -> None:
         self._drop_duplicate_recordings()
@@ -178,3 +183,8 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
 
         self.cassette.data = dropped_recordings
         return
+
+    def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
+        if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
+            return sanitize_upload_hash(r1.path) == r2.path
+        return r1.path == r2.path

@@ -55,7 +55,7 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
     return Workspace(
         name=SanitizedValues.WORKSPACE_NAME,
         resource_group=SanitizedValues.RESOURCE_GROUP_NAME,
-        discovery_url="https://eastus.api.azureml.ms/discovery",
+        discovery_url=SanitizedValues.DISCOVERY_URL,
     )
 
 
@@ -87,11 +87,20 @@ def sanitize_azure_workspace_triad(value: str) -> str:
         flags=re.IGNORECASE,
     )
     sanitized_ws = re.sub(
-        r"/(workspaces)/[-\w\._\(\)]+[/?\$]",
+        r"/(workspaces)/[-\w\._\(\)]+[/?]",
         r"/\1/{}/".format("00000"),
         sanitized_rg,
         flags=re.IGNORECASE,
     )
+
+    # workspace name can be the last part of the string
+    # e.g. xxx/Microsoft.MachineLearningServices/workspaces/<workspace-name>
+    # apply a special handle here to sanitize
+    if sanitized_ws.startswith("https://"):
+        split1, split2 = sanitized_ws.split("/")[-2:]
+        if split1 == "workspaces":
+            sanitized_ws = sanitized_ws.replace(split2, SanitizedValues.WORKSPACE_NAME)
+
     return sanitized_ws
 
 
