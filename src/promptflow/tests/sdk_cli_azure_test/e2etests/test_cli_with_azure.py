@@ -45,7 +45,10 @@ def run_pf_command(*args, pf, runtime, cwd=None):
 
 
 @pytest.mark.e2etest
-@pytest.mark.usefixtures("single_worker_thread_pool")
+@pytest.mark.usefixtures(
+    "single_worker_thread_pool",
+    "vcr_recording",
+)
 class TestCliWithAzure:
     def test_basic_flow_run_bulk_without_env(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")

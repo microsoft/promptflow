@@ -19,6 +19,7 @@ def connection_ops(pf: PFClient) -> ConnectionOperations:
 
 
 @pytest.mark.e2etest
+@pytest.mark.usefixtures("vcr_recording")
 class TestConnectionOperations:
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
     def test_connection_get_create_delete(self, connection_ops):

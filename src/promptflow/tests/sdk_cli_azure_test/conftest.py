@@ -152,7 +152,7 @@ def ml_client_canary(
     )
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureIntegrationTestRecording:
     recording = PFAzureIntegrationTestRecording.from_test_case(
         test_class=request.cls,

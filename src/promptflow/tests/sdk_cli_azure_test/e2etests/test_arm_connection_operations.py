@@ -14,6 +14,7 @@ def connection_ops(pf: PFClient) -> ArmConnectionOperations:
 
 
 @pytest.mark.e2etest
+@pytest.mark.usefixtures("vcr_recording")
 class TestArmConnectionOperations:
     def test_get_connection(self, connection_ops: ArmConnectionOperations):
         # Note: Secrets will be returned by arm api

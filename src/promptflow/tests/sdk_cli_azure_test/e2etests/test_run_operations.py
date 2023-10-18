@@ -37,6 +37,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 @pytest.mark.usefixtures(
     "mock_set_headers_with_user_aml_token",
     "single_worker_thread_pool",
+    "vcr_recording",
 )
 class TestFlowRun:
     def test_run_bulk(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
