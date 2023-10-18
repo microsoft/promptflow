@@ -1,0 +1,21 @@
+inputs:
+  image_list:
+    type: list
+    default:
+     - data:image/jpg;path: logo.jpg
+     - data:image/jpg;path: logo_2.jpg
+     - data:image/jpg;path: logo_3.jpg
+outputs:
+  output:
+    type: list
+    reference: ${python_node.output}
+nodes:
+- name: python_node
+  type: python
+  source:
+    type: code
+    path: pick_images_from_list.py
+  inputs:
+    image_list: ${inputs.image_list}
+    idx_l: 1
+    idx_r: 2

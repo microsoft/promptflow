@@ -1,0 +1,13 @@
+my_tool_package.tools.tool_with_file_path_input.my_tool:
+  function: my_tool
+  inputs:
+    input_file:
+      type:
+      - file_path
+    input_text:
+      type:
+      - string
+  module: my_tool_package.tools.tool_with_file_path_input
+  name: Tool with FilePath Input
+  description: This is a tool to demonstrate the usage of FilePath input
+  type: python

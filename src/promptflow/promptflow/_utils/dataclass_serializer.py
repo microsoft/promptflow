@@ -5,10 +5,9 @@
 from dataclasses import fields, is_dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Type, TypeVar
+from typing import Callable, Dict, List, Type, TypeVar
 
 from promptflow._core.generator_proxy import GeneratorProxy
-from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ConnectionType
 
 T = TypeVar("T")
@@ -58,27 +57,34 @@ def deserialize_value(obj, field_type):
     return obj
 
 
-def serialize(value: object, remove_null=False) -> dict:
+def serialize(value: object, remove_null: bool = False, serialization_funcs: dict[type:Callable] = None) -> dict:
+    if serialization_funcs:
+        for cls, f in serialization_funcs.items():
+            if isinstance(value, cls):
+                return f(value)
     if isinstance(value, datetime):
         return value.isoformat() + "Z"
     if isinstance(value, Enum):
         return value.value
     if isinstance(value, list):
-        return [serialize(v, remove_null) for v in value]
+        return [serialize(v, remove_null, serialization_funcs) for v in value]
     if isinstance(value, GeneratorProxy):
-        return [serialize(v, remove_null) for v in value.items]
+        # TODO: The current implementation of the serialize function is not self-explanatory, as value.items is mutable
+        # whereas the serialize function should deal with a fixed object. We should rename the function to
+        # to_serializable to better reflect its purpose.
+        return value.items
     #  Note that custom connection check should before dict check
     if ConnectionType.is_connection_value(value):
         return ConnectionType.serialize_conn(value)
     if isinstance(value, dict):
-        return {k: serialize(v, remove_null) for k, v in value.items()}
-    if isinstance(value, Image):
-        return value.serialize()
+        return {k: serialize(v, remove_null, serialization_funcs) for k, v in value.items()}
     if is_dataclass(value):
         if hasattr(value, "serialize"):
             result = value.serialize()
         else:
-            result = {f.name: serialize(getattr(value, f.name), remove_null) for f in fields(value)}
+            result = {
+                f.name: serialize(getattr(value, f.name), remove_null, serialization_funcs) for f in fields(value)
+            }
         if not remove_null:
             return result
         null_keys = [k for k, v in result.items() if v is None]

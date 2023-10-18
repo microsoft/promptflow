@@ -334,9 +334,7 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
             if env_name not in os.environ:
                 continue
             values[key] = os.environ[env_name]
-            logger.info(
-                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
-            )
+            logger.info(f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}")
     return connections
 
 
@@ -386,7 +384,7 @@ def in_jupyter_notebook() -> bool:
 
 
 def render_jinja_template(template_path, *, trim_blocks=True, keep_trailing_newline=True, **kwargs):
-    with open(template_path, "r") as f:
+    with open(template_path, "r", encoding=DEFAULT_ENCODING) as f:
         template = Template(f.read(), trim_blocks=trim_blocks, keep_trailing_newline=keep_trailing_newline)
     return template.render(**kwargs)
 
@@ -430,7 +428,7 @@ def _sanitize_python_variable_name(name: str):
 
 
 def _get_additional_includes(yaml_path):
-    with open(yaml_path, "r") as f:
+    with open(yaml_path, "r", encoding=DEFAULT_ENCODING) as f:
         flow_dag = yaml.safe_load(f)
     return flow_dag.get("additional_includes", [])
 
@@ -661,7 +659,7 @@ def generate_flow_tools_json(
     """
     flow_directory = Path(flow_directory).resolve()
     # parse flow DAG
-    with open(flow_directory / DAG_FILE_NAME, "r") as f:
+    with open(flow_directory / DAG_FILE_NAME, "r", encoding=DEFAULT_ENCODING) as f:
         data = yaml.safe_load(f)
     tools = []  # List[Tuple[source_file, tool_type]]
     used_packages = set()
@@ -829,7 +827,7 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
         if connection_spec_files and connection_template_yamls:
             for connection_name, content in connection_spec_files.items():
                 file_name = connection_name + ".spec.json"
-                with open(connections_dir / file_name, "w") as f:
+                with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
                     json.dump(content, f, indent=2)
 
             # use YAML to dump template file in order to keep the comments
@@ -838,5 +836,5 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
             for connection_name, content in connection_template_yamls.items():
                 yaml_data = yaml.load(content)
                 file_name = connection_name + ".template.yaml"
-                with open(connections_dir / file_name, "w") as f:
+                with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
                     yaml.dump(yaml_data, f)
