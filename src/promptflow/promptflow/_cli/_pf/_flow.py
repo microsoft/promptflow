@@ -350,8 +350,6 @@ def test_flow(args):
                 StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(
                     script_path
                 )
-                shutil.copytree(args.flow, os.path.join(temp_dir, "flow"))
-
                 sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
                 st_cli.main()
         else:

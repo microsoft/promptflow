@@ -125,14 +125,16 @@ def start():
         if not invoker:
 {% if flow_path %}
 {{ ' ' * indent_level * 3 }}flow = Path('{{flow_path}}')
+{{ ' ' * indent_level * 3 }}dump_path = Path('{{flow_path}}').parent
 {% else %}
 {{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
+{{ ' ' * indent_level * 3 }}dump_path = None
 {% endif %}
             if flow.is_dir():
                 os.chdir(flow)
             else:
                 os.chdir(flow.parent)
-            invoker = FlowInvoker(flow, connection_provider="local")
+            invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
         result = invoker.invoke(data)
         print_yellow_warning(f"Result: {result}")
         return result
