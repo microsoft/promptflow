@@ -99,8 +99,8 @@ az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir
-# pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
+pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream --runtime demo-mir
+# pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream # automatic runtime
 
 # (Optional) create a new random run name for further use
 run_name="web_classification_"$(openssl rand -hex 12)

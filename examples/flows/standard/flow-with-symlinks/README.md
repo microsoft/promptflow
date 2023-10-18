@@ -78,8 +78,8 @@ Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for defau
 
 ``` bash
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
-# pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
+pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
+# pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream # automatic runtime
 
 # set default workspace
 az account set -s <your_subscription_id>

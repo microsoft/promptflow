@@ -104,5 +104,5 @@ Run flow with connection `open_ai_connection`.
 az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
-pfazure run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --stream --runtime demo-mir
+pfazure run create --flow . --data ./data.jsonl --connections llm.connection=open_ai_connection --column-mapping text='${data.text}' --stream --runtime demo-mir
 ```
