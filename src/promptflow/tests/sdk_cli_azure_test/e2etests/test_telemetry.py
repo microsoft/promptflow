@@ -11,6 +11,8 @@ from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._utils import call_from_extension
 from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 
+from ..recording_utilities import is_live
+
 
 @contextlib.contextmanager
 def environment_variable_overwrite(key, val):
@@ -43,6 +45,7 @@ def cli_consent_config_overwrite(val):
             config.set_telemetry_consent(False)
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="telemetry tests, only run in live mode.")
 @pytest.mark.e2etest
 class TestTelemetry:
     @pytest.mark.skip(reason="telemetry is disabled for now")
