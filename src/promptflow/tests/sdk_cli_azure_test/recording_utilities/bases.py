@@ -146,6 +146,7 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
     def _init_vcr(self) -> vcr.VCR:
         _vcr = super(PFAzureRunIntegrationTestRecording, self)._init_vcr()
         _vcr.register_matcher("path", self._custom_request_path_matcher)
+        _vcr.register_matcher("body", self._custom_request_body_matcher)
         return _vcr
 
     def enter_vcr(self):
@@ -185,6 +186,20 @@ class PFAzureRunIntegrationTestRecording(PFAzureIntegrationTestRecording):
         return
 
     def _custom_request_path_matcher(self, r1: Request, r2: Request) -> bool:
+        # for blob storage request, sanitize the upload hash in path
         if r1.host == r2.host and r1.host == SanitizedValues.BLOB_STORAGE_REQUEST_HOST:
             return sanitize_upload_hash(r1.path) == r2.path
         return r1.path == r2.path
+
+    def _custom_request_body_matcher(self, r1: Request, r2: Request) -> bool:
+        if r1.path == r2.path:
+            # /BulkRuns/submit - submit run, match by "runId" in body
+            # /rundata - get run, match by "runId" in body
+            if r1.path.endswith("/BulkRuns/submit") or r1.path.endswith("/rundata"):
+                return r1.body.get("runId") == r2.body.get("runId")
+            else:
+                # we don't match by body for other requests, so return True
+                return True
+        else:
+            # path no match, so this pair shall not match
+            return False
