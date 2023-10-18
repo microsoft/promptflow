@@ -45,6 +45,7 @@ class FlowOperations:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        **kwargs,
     ) -> dict:
         """Test flow or node.
 
@@ -66,7 +67,7 @@ class FlowOperations:
         :rtype: dict
         """
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables
+            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
         )
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
@@ -81,6 +82,7 @@ class FlowOperations:
         environment_variables: dict = None,
         stream_log: bool = True,
         allow_generator_output: bool = True,
+        **kwargs,
     ):
         """Test flow or node.
 
@@ -100,7 +102,8 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        with TestSubmitter(flow=flow, variant=variant).init() as submitter:
+        connection_provider = kwargs.get("connection_provider", None)
+        with TestSubmitter(flow=flow, variant=variant, connection_provider=connection_provider).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
                 node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
@@ -173,7 +176,8 @@ class FlowOperations:
         from promptflow._sdk._load_functions import load_flow
 
         flow = load_flow(flow)
-        with TestSubmitter(flow=flow, variant=variant).init() as submitter:
+        connection_provider = kwargs.get("connection_provider", None)
+        with TestSubmitter(flow=flow, variant=variant, connection_provider=connection_provider).init() as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")

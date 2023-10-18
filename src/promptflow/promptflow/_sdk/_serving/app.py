@@ -47,6 +47,8 @@ class PromptflowServingApp(Flask):
             self.environment_variables = kwargs.get("environment_variables", {})
             os.environ.update(self.environment_variables)
             logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
+            self.connection_provider = kwargs.get("connection_provider", None)
+            logger.info(f"Connection provider: {self.connection_provider or 'local'}")
             self.sample = get_sample_json(self.project_path, logger)
             self.init_swagger()
             # ensure response has the correct content type
@@ -59,7 +61,7 @@ class PromptflowServingApp(Flask):
             return
         logger.info("Promptflow executor starts initializing...")
         self.flow_invoker = FlowInvoker(
-            self.project_path, connection_provider="local", streaming=streaming_response_required
+            self.project_path, connection_provider=self.connection_provider, streaming=streaming_response_required
         )
         self.flow = self.flow_invoker.flow
         # Set the flow name as folder name

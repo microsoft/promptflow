@@ -32,9 +32,9 @@ def _create_run(run: Run, **kwargs):
 class PFClient:
     """A client class to interact with prompt flow entities."""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._runs = RunOperations()
-        self._connection_provider = None
+        self._connection_provider = kwargs.get("connection_provider", None)
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations()

@@ -12,6 +12,7 @@ import webbrowser
 from pathlib import Path
 
 from promptflow._cli._params import (
+    add_param_connection_provider,
     add_param_entry,
     add_param_environment_variables,
     add_param_flow_name,
@@ -139,6 +140,7 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
             add_param_host,
             add_param_static_folder,
             add_param_environment_variables,
+            add_param_connection_provider,
         ]
         + logging_params,
         subparsers=subparsers,
@@ -206,6 +208,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_input,
         add_param_inputs,
         add_param_environment_variables,
+        add_param_connection_provider,
     ] + logging_params
     activate_action(
         name="test",
@@ -316,7 +319,7 @@ def test_flow(args):
     from promptflow._sdk._utils import parse_variant
     from promptflow._sdk.operations._test_submitter import TestSubmitter
 
-    pf_client = PFClient()
+    pf_client = PFClient(connection_provider=args.connection_provider)
 
     if args.environment_variables:
         environment_variables = list_of_dict_to_dict(args.environment_variables)
@@ -339,6 +342,7 @@ def test_flow(args):
             environment_variables=environment_variables,
             variant=args.variant,
             show_step_output=args.verbose,
+            connection_provider=args.connection_provider,
         )
     else:
         result = pf_client.flows._test(
@@ -348,6 +352,7 @@ def test_flow(args):
             variant=args.variant,
             node=args.node,
             allow_generator_output=False,
+            connection_provider=args.connection_provider,
         )
         # Dump flow/node test info
         flow = load_flow(args.flow)
@@ -387,7 +392,9 @@ def serve_flow(args):
     print(f"Change working directory to model dir {source}")
     os.chdir(source)
     app = create_app(
-        static_folder=static_folder, environment_variables=list_of_dict_to_dict(args.environment_variables)
+        static_folder=static_folder,
+        environment_variables=list_of_dict_to_dict(args.environment_variables),
+        connection_provider=args.connection_provider,
     )
     target = f"http://{args.host}:{args.port}"
     print(f"Opening browser {target}...")

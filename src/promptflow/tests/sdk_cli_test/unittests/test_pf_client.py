@@ -49,6 +49,16 @@ class TestPFClient:
             client = PFClient()
             assert isinstance(client.connections, LocalAzureConnectionOperations)
 
+        with mock.patch(target) as mocked:
+            mocked.get_instance.return_value.get_connection_provider.return_value = (
+                "azureml:"
+                + RESOURCE_ID_FORMAT.format(
+                    "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
+                )
+            )
+            client = PFClient(connection_provider="local")
+            assert isinstance(client.connections, ConnectionOperations)
+
     def test_local_azure_connection_extract_workspace(self):
         res = LocalAzureConnectionOperations._extract_workspace(
             "azureml:/subscriptions/123/resourceGroups/456/providers/Microsoft.MachineLearningServices/workspaces/789"

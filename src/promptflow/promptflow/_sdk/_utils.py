@@ -778,7 +778,7 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable):
+def get_local_connections_from_executable(executable, connection_provider=None):
     """Get local connections from executable.
 
     Please avoid using this function anymore, and we should remove this function once all references are removed.
@@ -786,7 +786,7 @@ def get_local_connections_from_executable(executable):
     from promptflow._sdk._pf_client import PFClient
 
     connection_names = executable.get_connection_names()
-    local_client = PFClient()
+    local_client = PFClient(connection_provider=connection_provider)
     result = {}
     for n in connection_names:
         try:

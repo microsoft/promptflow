@@ -306,4 +306,12 @@ def add_param_verbose(parser):
     )
 
 
+def add_param_connection_provider(parser):
+    parser.add_argument(
+        "--connection-provider",
+        type=str,
+        help=argparse.SUPPRESS,
+    )
+
+
 logging_params = [add_param_verbose, add_param_debug]
