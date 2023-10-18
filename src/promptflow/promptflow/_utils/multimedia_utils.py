@@ -112,9 +112,8 @@ def create_image_from_string(value: str, base_dir: Path = None):
         return create_image_from_url(value)
     else:
         path = Path(value)
-        if not path.is_absolute():
-            if base_dir:
-                path = Path.joinpath(base_dir, path)
+        if base_dir and not path.is_absolute():
+            path = Path.joinpath(base_dir, path)
         return create_image_from_file(path)
 
 
@@ -147,13 +146,13 @@ def default_json_encoder(obj):
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def persist_images(value: Any, base_dir: Path, sub_dir: Path = None):
+def persist_multimedia_date(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = PFBytes._get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_images_to_base64(value: Any):
+def convert_multimedia_date_to_base64(value: Any):
     to_base64_funcs = {PFBytes: PFBytes.to_base64}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
