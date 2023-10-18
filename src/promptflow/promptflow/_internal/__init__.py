@@ -58,7 +58,6 @@ from promptflow._sdk._utils import (
     setup_user_agent_to_operation_context,
     update_environment_variables_with_connections,
 )
-from promptflow._utils.capability_util import Capability, CapabilityComponent, CapabilityState, get_capability_list
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.credential_scrubber import CredentialScrubber
 from promptflow._utils.dataclass_serializer import deserialize_dataclass, serialize
@@ -69,6 +68,7 @@ from promptflow._utils.exception_utils import (
     RootErrorCode,
     infer_error_code_from_class,
 )
+from promptflow._utils.feature_utils import Feature, FeatureComponent, FeatureState, get_feature_list
 from promptflow._utils.logger_utils import (
     DATETIME_FORMAT,
     LOG_FORMAT,

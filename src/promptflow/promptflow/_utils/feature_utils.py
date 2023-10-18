@@ -2,8 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 
 
-class CapabilityState(Enum):
-    """The enum of capability state.
+class FeatureState(Enum):
+    """The enum of feature state.
 
     READY: The feature is ready to use.
     E2ETEST: The feature is not ready to be shipped to customer and is in e2e testing.
@@ -13,30 +13,30 @@ class CapabilityState(Enum):
     E2ETEST = "E2ETest"
 
 
-class CapabilityComponent(Enum):
-    """The enum of capability component."""
+class FeatureComponent(Enum):
+    """The enum of feature component."""
 
     EXECUTOR = "executor"
 
 
 @dataclass
-class Capability:
-    """The dataclass of capability."""
+class Feature:
+    """The dataclass of feature."""
 
     name: str
     description: str
-    component: CapabilityComponent
-    state: CapabilityState
+    component: FeatureComponent
+    state: FeatureState
 
 
-def get_capability_list():
-    capability_list = [
-        Capability(
+def get_feature_list():
+    feature_list = [
+        Feature(
             name="ActivateConfig",
             description="Bypass node execution when the node does not meet activate condition.",
-            component=CapabilityComponent.EXECUTOR,
-            state=CapabilityState.READY,
+            component=FeatureComponent.EXECUTOR,
+            state=FeatureState.READY,
         ),
     ]
 
-    return capability_list
+    return feature_list
