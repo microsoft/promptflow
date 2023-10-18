@@ -1,62 +1,105 @@
+import base64
 import json
 import os
+import re
 import streamlit as st
+import imghdr
 from pathlib import Path
 from streamlit_quill import st_quill
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
-import base64
+from promptflow.contracts.multimedia import Image
 
-IMAGE_KEY = "data:image/png;base64"
 invoker = None
-
+{% set indent_level = 4 %}
 
 def start():
     def clear_chat() -> None:
         st.session_state.messages = []
 
 
-    def is_contains_rich_text(value):
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict) and IMAGE_KEY in item:
-                    return True
-        return False
+    def is_list_contains_rich_text(rich_text):
+        result = False
+        for item in rich_text:
+            if isinstance(item, list):
+                result |= is_list_contains_rich_text(item)
+            elif isinstance(item, dict):
+                result |= is_dict_contains_rich_text(item)
+            else:
+                # todo: remove this when decode function is ready
+                if isinstance(item, Image):
+                    result = True
+        return result
+
+
+    def is_dict_contains_rich_text(rich_text):
+        result = False
+        for rich_text_key, rich_text_value in rich_text.items():
+            if isinstance(rich_text_value, list):
+                result |= is_list_contains_rich_text(rich_text_value)
+            elif isinstance(rich_text_value, dict):
+                result |= is_dict_contains_rich_text(rich_text_value)
+            elif re.match(Image.MIME_PATTERN, rich_text_key) or isinstance(rich_text_value, Image):       # todo: remove this when decode function is ready
+                result = True
+        return result
 
 
     def render_message(role, message_items):
         {% raw %}
         with st.chat_message(role):
-            for key, value in message_items.items():
-                is_rich_text = is_contains_rich_text(value)
-                if is_rich_text:
-                    st.markdown(f"`key : {key}`")
-                    st.markdown(f"`value : [`")
-                    for item in value:
-                        if isinstance(item, dict) and IMAGE_KEY in item:
-                            st.markdown(f"`{{ {IMAGE_KEY}: `")
-                            st.image(item[IMAGE_KEY])
-                            st.markdown("`},`")
-                        else:
-                            st.markdown(f"`{{ {item}  }},`")
-                    st.markdown("` ]`")
-                elif isinstance(value, dict):
-                    st.markdown(f"`key : {key}`")
-                    st.markdown(f"`value : {{`")
-                    if IMAGE_KEY in value:
-                        st.markdown(f"`key : {IMAGE_KEY}`")
-                        st.markdown(f"`value: {{`")
-                        st.image(value[IMAGE_KEY])
-                        st.markdown("`},`")
+            def iter_render_message(role, message_items):
+                if isinstance(message_items, list):
+                    if is_list_contains_rich_text(message_items):
+                        st.markdown(f"`value : [`")
+                        for item in message_items:
+                            if isinstance(item, list):
+                                iter_render_message(role, item)
+                            if isinstance(item, dict):
+                                st.markdown("`{ `")
+                                iter_render_message(role, item)
+                                st.markdown("`}, `")
+                            else:
+                                st.markdown(f"`{{ {item}  }},`")
+                        st.markdown("` ]`")
                     else:
+                        st.markdown(f"`value: {json.dumps(message_items)}`")
+                elif isinstance(message_items, dict):
+                    for key, value in message_items.items():
                         st.markdown(f"`key : {key}`")
-                        st.markdown(f"`value: {json.dumps(value)}`")
-                    st.markdown("` }`")
-                else:
-                    st.markdown(f"`key : {key}`")
-                    st.markdown(f"`value: {json.dumps(value)}`")
+                        if isinstance(value, list):
+                            iter_render_message(role, value)
+                        elif isinstance(value, dict):
+                            if is_dict_contains_rich_text(value):
+                                st.markdown(f"`value : {{`")
+                                iter_render_message(role, value)
+                                st.markdown("`},`")
+                            else:
+                                st.markdown(f"`value: {json.dumps(value)}`")
+                        else:
+                            if re.match(Image.MIME_PATTERN, key):
+                                st.markdown(f"`value : {{`")
+                                if not value.startswith("data:image"):
+                                    st.image(key + ',' + value)
+                                else:
+                                    st.image(value)
+                                st.markdown("`},`")
+                            elif isinstance(value, Image):  ## todo: remove this when decode function is ready
+                                st.markdown(f"`value : {{`")
+                                show_value = value.to_base64()
+                                if not show_value.startswith("data:image"):
+                                    image_bytes = base64.b64decode(show_value)
+                                    format = imghdr.what(None, image_bytes)
+                                    prefix = f"data:{format};base64"
+                                    st.image(prefix + ',' + show_value)
+                                else:
+                                    st.image(show_value)
+                                st.markdown("`},`")
+                            else:
+                                st.markdown(f"`value: {json.dumps(value)}`")
+
+            iter_render_message(role, message_items)
         {% endraw %}
 
     def show_conversation() -> None:
@@ -80,8 +123,15 @@ def start():
     def run_flow(data: dict) -> dict:
         global invoker
         if not invoker:
-            flow = Path(__file__).parent / "flow"
-            os.chdir(flow)
+{% if flow_path %}
+{{ ' ' * indent_level * 3 }}flow = Path('{{flow_path}}')
+{% else %}
+{{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
+{% endif %}
+            if flow.is_dir():
+                os.chdir(flow)
+            else:
+                os.chdir(flow.parent)
             invoker = FlowInvoker(flow, connection_provider="local")
         result = invoker.invoke(data)
         print_yellow_warning(f"Result: {result}")
@@ -95,7 +145,8 @@ def start():
                 return [text]
         elif isinstance(node, Tag):
             if node.name == 'img':
-                return [{IMAGE_KEY: node['src']}]
+                prefix, base64_str = node['src'].split(',', 1)
+                return [{prefix: base64_str}]
             else:
                 result = []
                 for child in node.contents:
@@ -110,6 +161,15 @@ def start():
         for p in soup.find_all('p'):
             result.extend(extract_content(p))
         return result
+
+
+    def parse_image_content(image_content, image_type):
+        if image_content is not None:
+            file_contents = image_content.read()
+            image_content = base64.b64encode(file_contents).decode('utf-8')
+            prefix = f"data:{image_type};base64"
+            return {prefix: image_content}
+
 
     st.title("{{flow_name}} APP")
     st.chat_message("assistant").write("Hello, please input following flow inputs and connection keys.")
@@ -128,7 +188,6 @@ def start():
                 if secret_input != "":
                     os.environ[environment_variable] = secret_input
 
-{% set indent_level = 4 %}
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
@@ -148,14 +207,12 @@ def start():
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 3 }}{{flow_input}} = parse_html_content({{flow_input}})
-{% if value_type == "image" %}
-{{ ' ' * indent_level * 3 }}file_contents = {{flow_input}}.read()
-{{ ' ' * indent_level * 3 }}{{flow_input}} = base64.b64encode(file_contents).decode('utf-8')
+{% elif value_type == "image" %}
+{{ ' ' * indent_level * 3 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
 {% endif %}
 {% endfor %}
 
             submit({{flow_inputs_params}})
-
         if clear_bt:
             clear_chat()
 

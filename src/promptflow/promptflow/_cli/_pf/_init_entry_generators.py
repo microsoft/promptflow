@@ -240,8 +240,12 @@ class StreamlitFileGenerator(BaseGenerator):
         return SERVE_TEMPLATE_PATH / "main.py.jinja2"
 
     @property
+    def flow_path(self):
+        return  self.flow_dag_path.as_posix()
+
+    @property
     def entry_template_keys(self):
-        return ["flow_name", "flow_inputs", "flow_inputs_params"]
+        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path"]
 
 
 def copy_extra_files(flow_path, extra_files):
