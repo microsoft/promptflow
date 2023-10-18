@@ -84,9 +84,7 @@ def start():
                     if isinstance(item, list):
                         list_iter_render_message(item)
                     if isinstance(item, dict):
-                        st.markdown("`{ `")
                         dict_iter_render_message(item)
-                        st.markdown("`}, `")
                     else:
                         item_render_message(item)
                 st.markdown("`]`")
@@ -94,22 +92,22 @@ def start():
                 st.markdown(f"`{json_dumps(message_items)},`")
 
         def dict_iter_render_message(message_items):
-            for key, value in message_items.items():
-                st.markdown(f"`key : {key}`")
-                if isinstance(value, list):
-                    st.markdown(f"`value : `")
-                    list_iter_render_message(value)
-                elif isinstance(value, dict):
-                    if is_dict_contains_rich_text(value):
-                        st.markdown(f"`value : {{`")
+            if is_dict_contains_rich_text(message_items):
+                st.markdown("`{ `")
+                for key, value in message_items.items():
+                    st.markdown(f"`key : {key}`")
+                    if isinstance(value, list):
+                        st.markdown(f"`value : `")
+                        list_iter_render_message(value)
+                    elif isinstance(value, dict):
+                        st.markdown(f"`value : `")
                         dict_iter_render_message(value)
-                        st.markdown("`}`")
                     else:
-                        st.markdown(f"`value: {json_dumps(value)}`")
-                else:
-                    st.markdown(f"`value : {{`")
-                    item_render_message(value, key)
-                    st.markdown("`}`")
+                        st.markdown(f"`value : `")
+                        item_render_message(value, key)
+                st.markdown("`}, `")
+            else:
+                st.markdown(f"`{json_dumps(message_items)},`")
 
         with st.chat_message(role):
             dict_iter_render_message(message_items)
