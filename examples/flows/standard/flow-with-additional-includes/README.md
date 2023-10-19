@@ -61,6 +61,9 @@ pf run create --flow . --data ./data.jsonl --stream
 pf run create --file run.yml --stream
 ```
 
+You can find additional information about flow yaml schema in [Run YAML Schema](../../../../docs/reference/run-yaml-schema-reference.md).
+
+
 #### Submit run to cloud
 
 Assume we already have a connection named `open_ai_connection` in workspace.

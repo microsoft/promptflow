@@ -69,6 +69,8 @@ pf run show --name $run_name
 pf run show-details --name $run_name
 ```
 
+You can find additional information about flow yaml schema in [Run YAML Schema](../../../../docs/reference/run-yaml-schema-reference.md).
+
 ### 5. Run with classification evaluation flow
 
 create `evaluation` run:
