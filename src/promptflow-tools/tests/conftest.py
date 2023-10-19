@@ -44,6 +44,7 @@ def open_ai_connection():
 def serp_connection():
     return ConnectionManager().get("serp_connection")
 
+
 def verify_custom_connection(connection: CustomConnection) -> bool:
     import urllib.request
     from urllib.request import HTTPError
@@ -56,10 +57,11 @@ def verify_custom_connection(connection: CustomConnection) -> bool:
     except HTTPError as e:
         # verify that the connection is not authorized, anything else would mean the endpoint is failed
         return e.code == 403
-    except URLError as e:
+    except URLError:
         # Endpoint does not exist - skip the test
         return False
     raise Exception("Task Succeeded unexpectedly.")
+
 
 @pytest.fixture
 def gpt2_custom_connection():
