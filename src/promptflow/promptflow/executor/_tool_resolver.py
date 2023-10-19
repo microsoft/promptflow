@@ -14,6 +14,7 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
@@ -63,20 +64,21 @@ class ToolResolver:
         return connection_value
 
     def _convert_to_custom_strong_type_connection_value(
-        self, k: str, v: InputAssignment, node: Node, conn_types: List[str], module: types.ModuleType
+        self, k: str, v: InputAssignment, node: Node, tool: Tool, conn_types: List[str], module: types.ModuleType
     ):
-        if conn_types is None:
-            msg = f"Input '{k}' for node '{node.name}' has invalid types: None."
+        if not conn_types:
+            msg = f"Input '{k}' for node '{node.name}' has invalid types: {conn_types}."
             raise NodeInputValidationError(message=msg)
         connection_value = self._connection_manager.get(v.value)
         if not connection_value:
             raise ConnectionNotFound(f"Connection {v.value} not found for node {node.name!r} input {k!r}.")
 
-        custom_defined_connection_class = None
-        if node.source.type == ToolSourceType.Code:
-            custom_type_class_name = conn_types[0]
-            custom_defined_connection_class = getattr(module, custom_type_class_name)
-        return connection_value._convert_to_custom_strong_type(to_class=custom_defined_connection_class)
+        custom_defined_connection_class_name = conn_types[0]
+        if node.source.type == ToolSourceType.Package:
+            module = tool.module
+        return connection_value._convert_to_custom_strong_type(
+            module=module, to_class=custom_defined_connection_class_name
+        )
 
     def _convert_node_literal_input_types(self, node: Node, tool: Tool, module: types.ModuleType = None):
         updated_inputs = {
@@ -95,10 +97,12 @@ class ToolResolver:
             if ConnectionType.is_connection_class_name(value_type):
                 if tool_input.custom_type:
                     updated_inputs[k].value = self._convert_to_custom_strong_type_connection_value(
-                        k, v, node, tool_input.custom_type, module=module
+                        k, v, node, tool, tool_input.custom_type, module=module
                     )
                 else:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
+            elif value_type == ValueType.IMAGE:
+                updated_inputs[k].value = Image._create(v.value, self._working_dir)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
@@ -167,7 +171,7 @@ class ToolResolver:
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
         prompt_tpl = self._load_source_content(node)
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         from promptflow.tools.template_rendering import render_template_jinja2
 
         params = inspect.signature(render_template_jinja2).parameters
@@ -209,7 +213,7 @@ class ToolResolver:
             updated_node = self._convert_node_literal_input_types(updated_node, tool)
 
         prompt_tpl = self._load_source_content(node)
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the parameters of {node.provider}.{node.api}."
@@ -265,7 +269,7 @@ class ToolResolver:
 
     def _integrate_prompt_in_package_node(self, node: Node, resolved_tool: ResolvedTool):
         prompt_tpl = PromptTemplate(self._load_source_content(node))
-        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+        prompt_tpl_inputs = list(get_inputs_for_prompt_template(prompt_tpl).keys())
         msg = (
             f"Invalid inputs {{duplicated_inputs}} in prompt template of node {node.name}. "
             f"These inputs are duplicated with the inputs of custom llm tool."
