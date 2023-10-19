@@ -17,9 +17,9 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
-
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+
 if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
 
@@ -43,19 +43,32 @@ SCRUBBED_VALUE = "******"
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 CHAT_HISTORY = "chat_history"
-
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
-
 LINE_NUMBER = "line_number"
-
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
 AZURE_WORKSPACE_REGEX_FORMAT = (
     "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
     "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
 )
-
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
+LOCAL_SERVICE_PORT = 5000
+BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+RUN_MACRO = "${run}"
+VARIANT_ID_MACRO = "${variant_id}"
+TIMESTAMP_MACRO = "${timestamp}"
+DEFAULT_VARIANT = "variant_0"
+# run visualize constants
+VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
+VIS_LIB_CDN_LINK_TMPL = (
+    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
+)
+VIS_LIB_VERSION = "0.0.30"
+VIS_PORTAL_URL_TMPL = (
+    "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
+    "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
+    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
+)
 
 
 class CustomStrongTypeConnectionConfigs:
@@ -231,19 +244,6 @@ def get_list_view_type(archived_only: bool, include_archived: bool) -> ListViewT
         return ListViewType.ACTIVE_ONLY
 
 
-# run visualize constants
-VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_LIB_CDN_LINK_TMPL = (
-    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
-)
-VIS_LIB_VERSION = "0.0.31"
-VIS_PORTAL_URL_TMPL = (
-    "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
-    "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
-    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
-)
-
-
 class RunInfoSources(str, Enum):
     """Run sources."""
 
@@ -279,6 +279,13 @@ class ConnectionFields(str, Enum):
     MODEL = "model"
 
 
+SUPPORTED_CONNECTION_FIELDS = {
+    ConnectionFields.CONNECTION.value,
+    ConnectionFields.DEPLOYMENT_NAME.value,
+    ConnectionFields.MODEL.value,
+}
+
+
 class RunDataKeys:
     PORTAL_URL = "portal_url"
     DATA = "data"
@@ -289,23 +296,11 @@ class RunDataKeys:
     OUTPUT_PORTAL_URL = "output_portal_url"
 
 
+class RunHistoryKeys:
+    RunMetaData = "runMetadata"
+    HIDDEN = "hidden"
+
+
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
     AZUREML = "azureml"
-
-
-SUPPORTED_CONNECTION_FIELDS = {
-    ConnectionFields.CONNECTION.value,
-    ConnectionFields.DEPLOYMENT_NAME.value,
-    ConnectionFields.MODEL.value,
-}
-
-LOCAL_SERVICE_PORT = 5000
-
-BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
-
-RUN_MACRO = "${run}"
-VARIANT_ID_MACRO = "${variant_id}"
-TIMESTAMP_MACRO = "${timestamp}"
-
-DEFAULT_VARIANT = "variant_0"

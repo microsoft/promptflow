@@ -9,6 +9,7 @@ import yaml
 sys.path.append("src/promptflow-tools")
 sys.path.append(os.getcwd())
 
+from convert_image_to_data_url import check_image_type_and_generate_data_url  # noqa: E402
 from utils.generate_tool_meta_utils import generate_custom_llm_tools_in_module_as_dict, generate_python_tools_in_module_as_dict  # noqa: E402, E501
 
 
@@ -31,12 +32,31 @@ if __name__ == "__main__":
         type=str,
     )
     parser.add_argument("--description", "-d", help="Provide a brief description of the tool.", type=str)
+    parser.add_argument(
+        "--icon",
+        "-i",
+        type=str,
+        help="your tool's icon image path, if not provided, the system will use the default icon",
+        required=False)
     args = parser.parse_args()
     m = importlib.import_module(args.module)
+
+    icon = ""
+    if args.icon:
+        icon = check_image_type_and_generate_data_url(args.icon)
+
     if args.tool_type == "custom_llm":
-        tools_dict = generate_custom_llm_tools_in_module_as_dict(m, name=args.name, description=args.description)
+        tools_dict = generate_custom_llm_tools_in_module_as_dict(
+            m,
+            name=args.name,
+            description=args.description,
+            icon=icon)
     else:
-        tools_dict = generate_python_tools_in_module_as_dict(m, name=args.name, description=args.description)
+        tools_dict = generate_python_tools_in_module_as_dict(
+            m,
+            name=args.name,
+            description=args.description,
+            icon=icon)
     # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
     tools_dict = json.loads(json.dumps(tools_dict))
     with open(args.output, "w") as f:
