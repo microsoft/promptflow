@@ -307,6 +307,11 @@ def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
             f"The generated chat flow is requiring a connection named {connection}, "
             "please follow the steps in README.md to create if you haven't done that."
         )
+    else:
+        print(
+            f"The generated chat flow is requiring a connection named {connection}, "
+            "please ensure it exists in workspace."
+        )
     flow_test_command = f"pf flow test --flow {flow_name} --interactive"
     print(f"You can execute this command to test the flow, {flow_test_command}")
 
