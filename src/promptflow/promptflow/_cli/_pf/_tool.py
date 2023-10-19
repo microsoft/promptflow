@@ -132,11 +132,5 @@ def init_tool(args):
 @exception_handler("Tool list")
 def list_tool(args):
     pf_client = PFClient()
-    if args.flow:
-        tools, _ = pf_client.flows._generate_tools_meta(args.flow)
-    else:
-        tools = {"package": {}, "code": {}}
-
-    package_tools = pf_client._tools.list()
-    tools["package"].update(package_tools)
-    print(json.dumps(tools, indent=4))
+    package_tools = pf_client._tools.list(args.flow)
+    print(json.dumps(package_tools, indent=4))

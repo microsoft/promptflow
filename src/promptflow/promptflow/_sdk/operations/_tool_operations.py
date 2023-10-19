@@ -4,12 +4,14 @@
 import inspect
 import json
 from dataclasses import asdict
+from os import PathLike
+from typing import Union
 
 from promptflow._core.tool_meta_generator import is_tool
+from promptflow._core.tools_manager import collect_package_tools
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
-from promptflow._core.tools_manager import collect_package_tools
 
 
 class ToolOperations:
@@ -82,12 +84,25 @@ class ToolOperations:
             module=f.__module__,
         )
 
-    def list(self):
+    def list(
+        self,
+        flow: Union[str, PathLike],
+    ):
         """
-        List all package tools in the environment.
+        List all package tools in the environment and code tools in the flow.
 
-        :return: Dict of package tools info.
+        :param flow: path to the flow directory
+        :type flow: Union[str, PathLike]
+        :return: Dict of package tools and code tools info.
         :rtype: Dict[str, Dict]
         """
-        tools = collect_package_tools()
+        from promptflow._sdk._pf_client import PFClient
+
+        local_client = PFClient()
+        package_tools = collect_package_tools()
+        if flow:
+            tools, _ = local_client.flows._generate_tools_meta(flow)
+        else:
+            tools = {"package": {}, "code": {}}
+        tools["package"].update(package_tools)
         return tools
