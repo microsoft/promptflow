@@ -197,3 +197,14 @@ def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) ->
     if isinstance(value, dict):
         return {k: recursive_process(v, process_funcs) for k, v in value.items()}
     return value
+
+
+def resolve_image_path(input_dir: Path, image_dict: dict):
+    """Resolve image path to absolute path in image dict"""
+    input_dir = input_dir.parent if input_dir.is_file() else input_dir
+    if is_multimedia_dict(image_dict):
+        for key in image_dict:
+            _, resource = get_multimedia_info(key)
+            if resource == "path":
+                image_dict[key] = str(input_dir / image_dict[key])
+    return image_dict
