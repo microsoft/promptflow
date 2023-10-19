@@ -732,7 +732,9 @@ class TestFlowRun:
             # request id should be included in FlowRequestException
             assert f"request id: {pf.runs._service_caller._request_id}" in str(e.value)
 
-    def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
+    def test_get_detail_against_partial_fail_run(
+        self, pf: PFClient, runtime: str, randstr: Callable[[str], str]
+    ) -> None:
         run = pf.run(
             flow=f"{FLOWS_DIR}/partial_fail",
             data=f"{FLOWS_DIR}/partial_fail/data.jsonl",
