@@ -31,7 +31,8 @@ class TestCommon:
         "function_call, error_message",
         [
             ("123", "function_call parameter '123' must be a dict"),
-            ({"name1": "get_current_weather"}, 'function_call parameter {"name1": "get_current_weather"} must '
+            ({"name1": "get_current_weather"},
+             'function_call parameter {"name1": "get_current_weather"} must '
                                                  'contain "name" field'),
         ],
     )

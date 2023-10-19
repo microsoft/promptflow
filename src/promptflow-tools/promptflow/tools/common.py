@@ -226,7 +226,7 @@ def process_function_call(function_call):
         else:
             if "name" not in function_call:
                 raise ChatAPIInvalidFunctions(
-                    message=f'function_call parameter {function_call} must contain "name" field. {common_tsg}'
+                    message=f'function_call parameter {json.dumps(param)} must contain "name" field. {common_tsg}'
                 )
     return param
 
