@@ -96,8 +96,6 @@ name=$(pf run list -r 10 | jq '.[] | select(.name | contains("basic_variant_0"))
 pf run show-details --name $name
 ```
 
-You can find additional information about flow yaml schema in [Run YAML Schema](../../../../docs/reference/run-yaml-schema-reference.md).
-
 ## Run flow in cloud with connection
 - Assume we already have a connection named `open_ai_connection` in workspace.
 ```bash
