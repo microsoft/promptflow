@@ -18,7 +18,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._flow_operations import FlowOperations
-from promptflow._utils.multimedia_utils import convert_multimedia_date_to_base64
+from promptflow._utils.multimedia_utils import convert_multimedia_date_to_base64, persist_multimedia_date
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -48,7 +48,7 @@ class FlowInvoker:
         self.flow_entity = load_flow(self.flow_dir)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
-        self._dump_to = kwargs.get("dump_to", False)
+        self._dump_to = kwargs.get("dump_to", None)
 
         self._init_connections(connection_provider)
         self._init_executor()
@@ -112,13 +112,11 @@ class FlowInvoker:
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
-
+        # Get base64 for multi modal object
+        resolved_outputs = {k: convert_multimedia_date_to_base64(v, with_type=True) for k, v in result.output.items()}
         if self._dump_to:
-            result.output = self.executor._persist_images_from_output(
+            result.output = persist_multimedia_date(
                 result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
-
-        # Get base64 for multi modal object
-        resolved_outputs = {k: convert_multimedia_date_to_base64(v, with_type=True) for k, v in result.output.items()}
         return resolved_outputs
