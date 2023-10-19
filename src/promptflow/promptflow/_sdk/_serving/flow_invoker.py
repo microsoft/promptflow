@@ -2,8 +2,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
-from typing import Callable, Union
 from pathlib import Path
+from typing import Callable, Union
 
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
@@ -18,9 +18,9 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.multimedia_utils import convert_multimedia_date_to_base64
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
-
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -118,4 +118,7 @@ class FlowInvoker:
                 result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
-        return result.output
+
+        # Get base64 for multi modal object
+        resolved_outputs = {k: convert_multimedia_date_to_base64(v, with_type=True) for k, v in result.output.items()}
+        return resolved_outputs

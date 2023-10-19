@@ -2,13 +2,13 @@ import base64
 import imghdr
 import os
 import re
-import requests
 import uuid
-
 from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import urlparse
+
+import requests
 
 from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.multimedia import Image, PFBytes
@@ -144,12 +144,10 @@ def create_image(value: any, base_dir: Path = None):
 def save_image_to_file(image: Image, file_name: str, folder_path: Path, relative_path: Path = None):
     ext = get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_reference = {
-        f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name
-    }
+    image_reference = {f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
-    with open(os.path.join(path, file_name), 'wb') as file:
+    with open(os.path.join(path, file_name), "wb") as file:
         file.write(image)
     return image_reference
 
@@ -161,6 +159,7 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None) ->
             file_name = str(uuid.uuid4())
             return save_image_to_file(obj, file_name, folder_path, relative_path)
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
+
     return pfbytes_file_reference_encoder
 
 
@@ -177,8 +176,11 @@ def persist_multimedia_date(value: Any, base_dir: Path, sub_dir: Path = None):
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_date_to_base64(value: Any):
-    to_base64_funcs = {PFBytes: PFBytes.to_base64}
+def convert_multimedia_date_to_base64(value: Any, with_type=False):
+    func = (
+        lambda x: f"data:{x._mime_type};base64," + PFBytes.to_base64(x) if with_type else PFBytes.to_base64
+    )  # noqa: E731
+    to_base64_funcs = {PFBytes: func}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
