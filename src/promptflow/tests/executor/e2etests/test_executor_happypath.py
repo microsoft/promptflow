@@ -399,3 +399,13 @@ class TestExecutor:
         output_dir = Path("outputs")
         bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
         assert all("data:image/jpg;path" in output["output"] for output in bulk_result.outputs)
+
+        assert isinstance(bulk_result, BulkResult)
+        for i, output in enumerate(bulk_result.outputs):
+            assert isinstance(output, dict)
+            assert "line_number" in output, f"line_number is not in {i}th output {output}"
+            assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
+            assert "data:image/jpg;path" in output["output"], f"image is not in {i}th output {output}"
+        for i, line_result in enumerate(bulk_result.line_results):
+            assert isinstance(line_result, LineResult)
+            assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"

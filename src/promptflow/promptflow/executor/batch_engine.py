@@ -3,7 +3,7 @@ from typing import Dict, Union
 
 from promptflow._utils.load_data import load_data
 from promptflow.contracts.multimedia import Image, PFBytes
-from promptflow.executor import FlowExecutor
+from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.executor._result import BulkResult
 
 
