@@ -9,7 +9,7 @@ from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
 
-OUTPUT_FILE_NAME = "executor_outputs.jsonl"
+OUTPUT_FILE_NAME = "output.jsonl"
 
 
 class BatchEngine:
