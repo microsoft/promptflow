@@ -306,10 +306,11 @@ def add_param_verbose(parser):
     )
 
 
-def add_param_connection_provider(parser):
+def add_param_config(parser):
     parser.add_argument(
-        "--connection-provider",
-        type=str,
+        "--config",
+        nargs="+",
+        action=AppendToDictAction,
         help=argparse.SUPPRESS,
     )
 

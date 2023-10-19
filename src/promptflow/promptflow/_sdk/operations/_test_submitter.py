@@ -28,12 +28,14 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None, connection_provider=None):
+    def __init__(self, flow: Flow, variant=None, config=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
         self._variant = variant
-        self._connection_provider = connection_provider
+        from .._pf_client import PFClient
+
+        self._client = PFClient(config=config)
 
     @property
     def dataplane_flow(self):
@@ -147,13 +149,9 @@ class TestSubmitter:
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
         if not connections:
-            connections = SubmitterHelper.resolve_connections(
-                flow=self.flow, connection_provider=self._connection_provider
-            )
+            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(
-            environment_variables=environment_variables, connection_provider=self._connection_provider
-        )
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
@@ -192,11 +190,9 @@ class TestSubmitter:
     ):
         from promptflow.executor import FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow, connection_provider=self._connection_provider)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(
-            environment_variables=environment_variables, connection_provider=self._connection_provider
-        )
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):

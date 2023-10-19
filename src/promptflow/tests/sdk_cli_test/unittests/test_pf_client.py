@@ -56,7 +56,7 @@ class TestPFClient:
                     "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
                 )
             )
-            client = PFClient(connection_provider="local")
+            client = PFClient(config={"connection.provider": "local"})
             assert isinstance(client.connections, ConnectionOperations)
 
     def test_local_azure_connection_extract_workspace(self):

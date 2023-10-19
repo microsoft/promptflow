@@ -205,32 +205,27 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, connection_provider=None):
+    def resolve_connections(flow: Flow, client):
         with _change_working_dir(flow.code):
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return get_local_connections_from_executable(executable=executable, connection_provider=connection_provider)
+        return get_local_connections_from_executable(executable=executable, client=client)
 
     @classmethod
-    def resolve_environment_variables(cls, environment_variables: dict, connection_provider=None):
+    def resolve_environment_variables(cls, environment_variables: dict, client):
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
-        connections = cls.resolve_connection_names(
-            connection_names=connection_names, connection_provider=connection_provider
-        )
+        connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, raise_error=False, connection_provider=None):
-        from promptflow import PFClient
-
-        local_client = PFClient(connection_provider=connection_provider)
+    def resolve_connection_names(connection_names, client, raise_error=False):
         result = {}
         for n in connection_names:
             try:
-                conn = local_client.connections.get(name=n, with_secrets=True)
+                conn = client.connections.get(name=n, with_secrets=True)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:

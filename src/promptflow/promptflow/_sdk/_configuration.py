@@ -32,7 +32,7 @@ class Configuration(object):
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         if not os.path.exists(self.CONFIG_PATH.parent):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
@@ -41,6 +41,9 @@ class Configuration(object):
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
             self._config = {}
+        # Allow config override by kwargs
+        for key, value in kwargs.items():
+            pydash.set_(self._config, key, value)
 
     @property
     def config(self):

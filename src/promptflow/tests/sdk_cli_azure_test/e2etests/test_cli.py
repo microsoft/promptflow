@@ -42,8 +42,8 @@ class TestCli:
             "test",
             "--flow",
             f"{FLOWS_DIR}/web_classification",
-            "--connection-provider",
-            remote_workspace_resource_id,
+            "--config",
+            f"connection.provider={remote_workspace_resource_id}",
         )
         output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
@@ -65,8 +65,8 @@ class TestCli:
             f"{FLOWS_DIR}/chat_flow",
             "--interactive",
             "--verbose",
-            "--connection-provider",
-            remote_workspace_resource_id,
+            "--config",
+            f"connection.provider={remote_workspace_resource_id}",
         )
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "chat.output.json"
         assert output_path.exists()
