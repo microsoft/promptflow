@@ -3,14 +3,13 @@ import json
 import os
 import re
 import streamlit as st
-import imghdr
 from pathlib import Path
 from streamlit_quill import st_quill
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
-from promptflow.contracts.multimedia import Image
+from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
 
 invoker = None
 {% set indent_level = 4 %}
@@ -40,8 +39,7 @@ def start():
             elif isinstance(item, dict):
                 result |= is_dict_contains_rich_text(item)
             else:
-                # todo: remove this when decode function is ready
-                if isinstance(item, Image):
+                if isinstance(item, str) and item.startswith("data:image"):
                     result = True
         return result
 
@@ -53,7 +51,7 @@ def start():
                 result |= is_list_contains_rich_text(rich_text_value)
             elif isinstance(rich_text_value, dict):
                 result |= is_dict_contains_rich_text(rich_text_value)
-            elif re.match(Image.MIME_PATTERN, rich_text_key) or isinstance(rich_text_value, Image):       # todo: remove this when decode function is ready
+            elif re.match(MIME_PATTERN, rich_text_key) or (isinstance(rich_text_value, str) and rich_text_value.startswith("data:image")):
                 result = True
         return result
 
@@ -61,17 +59,10 @@ def start():
     def render_message(role, message_items):
         {% raw %}
         def item_render_message(value, key=None):
-            if key and re.match(Image.MIME_PATTERN, key):
+            if key and re.match(MIME_PATTERN, key):
                 show_image(value, key)
-            elif isinstance(value, Image):  ## todo: remove this when decode function is ready
-                show_value = value.to_base64()
-                if not show_value.startswith("data:image"):
-                    image_bytes = base64.b64decode(show_value)
-                    format = imghdr.what(None, image_bytes)
-                    prefix = f"data:image/{format};base64"
-                    show_image(prefix + ',' + show_value)
-                else:
-                    show_image(show_value)
+            elif isinstance(value, str) and value.startswith("data:image"):
+                show_image(value)
             else:
                 if key is None:
                     st.markdown(f"`{json_dumps(value)},`")
@@ -93,14 +84,14 @@ def start():
                 st.markdown(f"`{json_dumps(message_items)},`")
 
         def dict_iter_render_message(message_items):
-            if Image._is_multimedia_dict(message_items):
+            if is_multimedia_dict(message_items):
                 key = list(message_items.keys())[0]
                 value = message_items[key]
                 show_image(value, key)
             elif is_dict_contains_rich_text(message_items):
                 st.markdown("`{ `")
                 for key, value in message_items.items():
-                    if re.match(Image.MIME_PATTERN, key):
+                    if re.match(MIME_PATTERN, key):
                         show_image(value, key)
                     else:
                         if isinstance(value, list):
