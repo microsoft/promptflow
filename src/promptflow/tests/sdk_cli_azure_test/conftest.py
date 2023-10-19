@@ -60,11 +60,10 @@ def ml_client(
 
 @pytest.fixture
 def remote_client() -> PFClient:
-    # enable telemetry for CI
     if not is_live():
-        return get_pf_client_for_playback()
-
-    if is_live_and_not_recording():
+        yield get_pf_client_for_playback()
+    else:
+        # enable telemetry for non-playback CI
         with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
             yield PFClient(
                 credential=get_cred(),
@@ -72,26 +71,22 @@ def remote_client() -> PFClient:
                 resource_group_name="promptflow",
                 workspace_name="promptflow-eastus",
             )
-    else:
-        yield PFClient(
-            credential=get_cred(),
-            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-            resource_group_name="promptflow",
-            workspace_name="promptflow-eastus",
-        )
 
 
 @pytest.fixture
 def remote_client_int() -> PFClient:
-    # enable telemetry for CI
-    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-        client = MLClient(
-            credential=get_cred(),
-            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-            resource_group_name="promptflow",
-            workspace_name="promptflow-int",
-        )
-        yield PFClient(ml_client=client)
+    if not is_live():
+        yield get_pf_client_for_playback()
+    else:
+        # enable telemetry for non-playback CI
+        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+            client = MLClient(
+                credential=get_cred(),
+                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+                resource_group_name="promptflow",
+                workspace_name="promptflow-int",
+            )
+            yield PFClient(ml_client=client)
 
 
 @pytest.fixture()
@@ -192,7 +187,10 @@ def randstr(vcr_recording: PFAzureIntegrationTestRecording) -> Callable[[str], s
     return generate_random_string
 
 
-@pytest.fixture(autouse=True)
+# we expect this fixture only work when running live test without recording
+# when recording, we don't want to record any application insights secrets
+# when replaying, we also don't need this
+@pytest.fixture(autouse=not is_live_and_not_recording())
 def mock_appinsights_log_handler(mocker: MockFixture) -> None:
     dummy_logger = logging.getLogger("dummy")
     mocker.patch("promptflow._telemetry.telemetry.get_telemetry_logger", return_value=dummy_logger)
