@@ -66,6 +66,9 @@ def skip_if_no_key(request, mocker):
             if "-api-key" in connection.api_key:
                 pytest.skip('skipped because no key')
         elif isinstance(connection, CustomConnection):
+            print("########################################################")
+            print(connection.secrets)
+            print("########################################################")
             if "endpoint_api_key" not in connection.secrets or "-api-key" in connection.secrets["endpoint_api_key"]:
                 pytest.skip('skipped because no key')
 
