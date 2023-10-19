@@ -1,3 +1,4 @@
+import shutil
 import uuid
 from pathlib import Path
 from types import GeneratorType
@@ -18,8 +19,11 @@ from ..utils import (
     FLOW_ROOT,
     get_flow_expected_metrics,
     get_flow_expected_status_summary,
+    get_flow_folder,
     get_flow_sample_inputs,
     get_yaml_file,
+    is_image_file,
+    is_jsonl_file,
 )
 
 SAMPLE_FLOW = "web_classification_no_variants"
@@ -393,12 +397,12 @@ class TestExecutor:
         assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
 
     def test_batch_engine(self):
-        executor = FlowExecutor.create(get_yaml_file("python_tool_with_image_input_and_output"), {})
+        flow_folder = "python_tool_with_image_input_and_output"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
         input_dirs = {"data": "image_inputs/inputs.jsonl"}
         inputs_mapping = {"image": "${data.image}"}
         output_dir = Path("outputs")
         bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
-        assert all("data:image/jpg;path" in output["output"] for output in bulk_result.outputs)
 
         assert isinstance(bulk_result, BulkResult)
         for i, output in enumerate(bulk_result.outputs):
@@ -409,3 +413,7 @@ class TestExecutor:
         for i, line_result in enumerate(bulk_result.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
+
+        output_dir = get_flow_folder(flow_folder) / output_dir
+        assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
+        shutil.rmtree(output_dir)
