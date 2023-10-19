@@ -12,12 +12,15 @@ from promptflow.azure.operations._connection_operations import ConnectionOperati
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.types import Secret
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @pytest.fixture
 def connection_ops(pf: PFClient) -> ConnectionOperations:
     return pf._connections
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("vcr_recording")
 class TestConnectionOperations:

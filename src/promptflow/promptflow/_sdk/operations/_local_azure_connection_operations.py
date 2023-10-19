@@ -9,16 +9,18 @@ from promptflow._sdk._constants import AZURE_WORKSPACE_REGEX_FORMAT, LOGGER_NAME
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 
 logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
-class LocalAzureConnectionOperations:
-    def __init__(self, connection_provider):
+class LocalAzureConnectionOperations(TelemetryMixin):
+    def __init__(self, connection_provider, **kwargs):
         from azure.identity import DefaultAzureCredential
 
         from promptflow.azure._pf_client import PFClient as PFAzureClient
 
+        super().__init__(**kwargs)
         subscription_id, resource_group, workspace_name = self._extract_workspace(connection_provider)
         self._pfazure_client = PFAzureClient(
             # TODO: disable interactive credential when starting as a service
@@ -27,6 +29,18 @@ class LocalAzureConnectionOperations:
             resource_group_name=resource_group,
             workspace_name=workspace_name,
         )
+
+    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """Return the telemetry values of run operations.
+
+        :return: The telemetry values
+        :rtype: Dict
+        """
+        return {
+            "subscription_id": self._pfazure_client._ml_client.subscription_id,
+            "resource_group_name": self._pfazure_client._ml_client.resource_group_name,
+            "workspace_name": self._pfazure_client._ml_client.workspace_name,
+        }
 
     @classmethod
     def _extract_workspace(cls, connection_provider):

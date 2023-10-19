@@ -7,12 +7,15 @@ import pytest
 from promptflow.azure import PFClient
 from promptflow.azure.operations._arm_connection_operations import ArmConnectionOperations
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @pytest.fixture
 def connection_ops(pf: PFClient) -> ArmConnectionOperations:
     return pf._arm_connections
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures("vcr_recording")
 class TestArmConnectionOperations:

@@ -15,10 +15,17 @@ from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockFixture
 
+from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
+from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
-from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_playback, is_live
+from .recording_utilities import (
+    PFAzureIntegrationTestRecording,
+    get_pf_client_for_playback,
+    is_live,
+    is_live_and_not_recording,
+)
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -53,33 +60,43 @@ def ml_client(
 
 @pytest.fixture
 def remote_client() -> PFClient:
+    # enable telemetry for CI
     if not is_live():
         return get_pf_client_for_playback()
 
-    return PFClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-eastus",
-    )
+    if is_live_and_not_recording():
+        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+            yield PFClient(
+                credential=get_cred(),
+                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+                resource_group_name="promptflow",
+                workspace_name="promptflow-eastus",
+            )
+    else:
+        yield PFClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-eastus",
+        )
 
 
 @pytest.fixture
 def remote_client_int() -> PFClient:
-    if not is_live():
-        return get_pf_client_for_playback()
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        client = MLClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-int",
+        )
+        yield PFClient(ml_client=client)
 
-    return PFClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-int",
-    )
 
-
-@pytest.fixture
+@pytest.fixture()
 def pf(remote_client: PFClient) -> PFClient:
-    return remote_client
+    yield remote_client
 
 
 @pytest.fixture
