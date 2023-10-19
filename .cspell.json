@@ -140,6 +140,7 @@
     "pkill",
     "pgrep",
     "Hwfoxydrg",
+    "llms",
     "vcrpy"
   ],
   "allowCompoundWords": true
