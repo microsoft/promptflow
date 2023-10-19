@@ -22,7 +22,7 @@ pf flow test --flow .
 ### 2. create flow run with multi line data
 
 ```bash
-pf run create --flow . --data ./data.jsonl --column-mapping groundtruth='${data.groundtruth}' entities='${data.entities}' --stream
+pf run create --flow . --data ./data.jsonl --column-mapping ground_truth='${data.ground_truth}' entities='${data.entities}' --stream
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
