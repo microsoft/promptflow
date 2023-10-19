@@ -17,6 +17,7 @@ from promptflow._sdk.operations._local_storage_operations import LoggerOperation
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow._utils.multimedia_utils import persist_multimedia_date
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -155,7 +156,7 @@ class TestSubmitter:
             )
             flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
-            line_result.output = flow_executor._persist_images_from_output(
+            line_result.output = persist_multimedia_date(
                 line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
             )
             if line_result.aggregation_inputs:
