@@ -8,4 +8,5 @@ You can develope your flow locally and seamlessly move the experience to azure c
 azureai/quick-start
 azureai/deploy-to-azure-appservice
 azureai/faq
+azureai/flow-example-sharing-in-organization
 ```

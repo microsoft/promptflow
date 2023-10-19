@@ -74,7 +74,7 @@ az ml model create -f model.yml --registry-name <organization-registry-name>
 - Open a workspace in a region that is compatible with the organization registry.
 - Click the `Create` button to open the Flow Gallery, and you can find the flow registered before:
 
-![organization examples in flow gallery](../../media/how-to-guides/share-example-in-org-registry/org_examples_in_flow_gallery.png)
+![organization examples in flow gallery](../../media/cloud/azureml/org_examples_in_flow_gallery.png)
 
 1. `azureml.promptflow.type`: the `evaluate` will be displayed under the 'Evaluation' tab, while other values will appear under the 'Flow' tab.
 2. `azureml.promptflow.name`: shown as flow name in the flow card.
