@@ -158,6 +158,15 @@ class TestUtils:
             result = _generate_connections_dir()
             assert result == expected_result
 
+    def test_refresh_connections_dir(self):
+        from promptflow._core.tools_manager import collect_package_tools_and_connections
+
+        tools, specs, templates = collect_package_tools_and_connections()
+
+        refresh_connections_dir(specs, templates)
+        conn_dir = _generate_connections_dir()
+        assert len(os.listdir(conn_dir)) > 0, "No files were generated"
+
     @pytest.mark.parametrize("concurrent_count", [1, 2, 4, 8])
     def test_concurrent_execution_of_refresh_connections_dir(self, concurrent_count):
         threads = []
@@ -200,6 +209,20 @@ class TestUtils:
             assert df[0]["id_int"] == 1
             assert isinstance(df[0]["id_float"], float)
             assert df[0]["id_float"] == 1.0
+
+    @pytest.mark.parametrize(
+        "data_path",
+        [
+            "./tests/test_configs/datas/load_data_cases/10k.jsonl",
+            "./tests/test_configs/datas/load_data_cases/10k",
+        ],
+    )
+    def test_load_10k_data(self, data_path: str) -> None:
+        df = load_data(data_path)
+        assert len(df) == 10000
+        # specify max_rows_count
+        df = load_data(data_path, max_rows_count=5000)
+        assert len(df) == 5000
 
 
 @pytest.mark.unittest

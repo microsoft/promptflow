@@ -2,6 +2,7 @@
 myst:
   html_meta:
     "description lang=en": "Prompt flow Doc"
+    "google-site-verification": "rEZN-2h5TVqEco07aaMpqNcDx4bjr2czx1Hwfoxydrg"
 html_theme.sidebar_secondary.remove: true
 ---
 

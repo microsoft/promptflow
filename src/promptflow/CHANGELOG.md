@@ -4,13 +4,18 @@
 
 ### Features Added
 - [Executor] Add average execution time and estimated execution time to batch run logs
+- [SDK/CLI] Support `pfazure run archive/restore/update`.
+- [SDK/CLI] Support custom strong type connection.
+- [SDK/CLI] Enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
 
 ### Bugs Fixed
 - **pf config set**:
   - Fix bug for workspace `connection.provider=azureml` doesn't work as expected.
 - [SDK/CLI] Fix the bug that using sdk/cli to submit batch run did not display the log correctly.
 - [SDK/CLI] Fix encoding issues when input is non-English with `pf flow test`.
+- [Executor] Fix the bug can't read file containing "Private Use" unicode character.
 - [SDK/CLI] Fix string type data will be converted to integer/float.
+- [SDK/CLI] Remove the max rows limitation of loading data.
 
 ### Improvements
 
