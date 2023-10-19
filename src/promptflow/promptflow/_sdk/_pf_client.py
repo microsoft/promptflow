@@ -187,7 +187,7 @@ class PFClient:
         if not self._connections:
             if not self._connection_provider:
                 # Get a copy with config override instead of the config instance
-                self._connection_provider = Configuration(**self._config).get_connection_provider()
+                self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
             if self._connection_provider == ConnectionProvider.LOCAL.value:
                 logger.debug("Using local connection operations.")
                 self._connections = ConnectionOperations()

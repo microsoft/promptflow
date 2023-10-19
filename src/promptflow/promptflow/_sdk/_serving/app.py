@@ -49,7 +49,7 @@ class PromptflowServingApp(Flask):
             os.environ.update(self.environment_variables)
             logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
             app_config = kwargs.get("config", None) or {}
-            self._promptflow_config = Configuration(**app_config)
+            self._promptflow_config = Configuration(overrides=app_config)
             logger.info(f"Promptflow config: {self._promptflow_config.config}")
             self.sample = get_sample_json(self.project_path, logger)
             self.init_swagger()
