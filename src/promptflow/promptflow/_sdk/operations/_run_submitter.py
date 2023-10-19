@@ -205,7 +205,10 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client):
+    def resolve_connections(flow: Flow, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         with _change_working_dir(flow.code):
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
@@ -213,7 +216,10 @@ class SubmitterHelper:
         return get_local_connections_from_executable(executable=executable, client=client)
 
     @classmethod
-    def resolve_environment_variables(cls, environment_variables: dict, client):
+    def resolve_environment_variables(cls, environment_variables: dict, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
