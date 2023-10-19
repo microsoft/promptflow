@@ -33,7 +33,7 @@ class TestCommon:
             ("123", "function_call parameter '123' must be a dict"),
             ({"name1": "get_current_weather"},
              'function_call parameter {"name1": "get_current_weather"} must '
-                                                 'contain "name" field'),
+             'contain "name" field'),
         ],
     )
     def test_chat_api_invalid_function_call(self, function_call, error_message):
