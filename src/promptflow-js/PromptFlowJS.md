@@ -277,7 +277,7 @@ export const MyComponent: React.FC = () => {
     
     return (
     	<div>
-            <MyYamlEditor onChange={onDagDidChange} />
+           <MyYamlEditor onChange={onDagDidChange} />
         	<FlowGraph flowDag={flowDag} />
         </div>
     );
@@ -294,7 +294,7 @@ import PromptFlowDOM from "@promptflow/web";
 import flowYAMLString from "path/to/flow.dag.yaml";
 
 const flowDAG: FlowDAG = FlowDAG.fromYAML(flowYAMLString);
-const htmlContent: string = PromptFlowDOM.render(flowDAG);
+const htmlContent: string = PromptFlowDOM.toHTMLString(flowDAG);
 ```
 
 ### Whole playground experience
@@ -302,12 +302,17 @@ const htmlContent: string = PromptFlowDOM.render(flowDAG);
 #### React component
 
 ```tsx
-import { Flow } from "@promptflow/core";
+import { Flow, emptyFlowDag } from "@promptflow/core";
 import { PlayGround } from "@promptflow/react";
 import * as React from "react";
 
 export const MyWebPage: React.FC = () => {
-    
+  const [flow, setFlow] = React.useState<Flow>({
+    flowDag: emptyFlowDag,
+    tools: []
+  });  
+  
+  return <PlayGround flow={flow} onFlowDidChange={setFlow} />;
 }
 ```
 
