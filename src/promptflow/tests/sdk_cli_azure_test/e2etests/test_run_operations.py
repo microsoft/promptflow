@@ -19,6 +19,8 @@ from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -30,6 +32,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 # TODO(2528577): we should run these test with recording mode.
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestFlowRun:
     def test_run_bulk(self, remote_client, pf, runtime):
