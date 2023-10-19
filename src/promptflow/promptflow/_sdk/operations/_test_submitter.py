@@ -300,7 +300,7 @@ class TestSubmitter:
         )
 
         # Pass connections to avoid duplicate calculation (especially http call)
-        connections = SubmitterHelper.resolve_connections(flow=self.flow, connection_provider=self._connection_provider)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         while True:
             try:
                 print(f"{Fore.GREEN}User: ", end="")
