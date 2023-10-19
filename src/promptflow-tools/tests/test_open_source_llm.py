@@ -193,6 +193,7 @@ user:
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_llama_deployment_miss(self, gpt2_custom_connection):
+        print("test")
         os = OpenSourceLLM(
             gpt2_custom_connection,
             deployment_name="completely/real/deployment-007")
