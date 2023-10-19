@@ -391,10 +391,10 @@ class LocalStorageOperations(AbstractRunStorage):
         line_run_record.dump(self._run_infos_folder / filename)
 
     def persist_result(self, result: Optional[BulkResult]) -> None:
-        """Persist outputs and metrics from return of executor."""
+        """Persist metrics from return of executor."""
         if result is None:
             return
-        self.dump_outputs(result.outputs)
+        # The executor will persist outputs to output directory, so only dump metrics here for the time being.
         self.dump_metrics(result.metrics)
 
     def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):

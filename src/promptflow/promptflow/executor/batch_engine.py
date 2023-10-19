@@ -1,10 +1,15 @@
 from pathlib import Path
-from typing import Dict, Union
+from typing import Any, Dict, List, Mapping, Union
 
+import pandas as pd
+
+from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.load_data import load_data
 from promptflow.contracts.multimedia import Image, PFBytes
-from promptflow.executor.flow_executor import FlowExecutor
 from promptflow.executor._result import BulkResult
+from promptflow.executor.flow_executor import FlowExecutor
+
+OUTPUT_FILE_NAME = "executor_outputs.jsonl"
 
 
 class BatchEngine:
@@ -44,9 +49,7 @@ class BatchEngine:
         """
         input_dicts = self.get_input_dicts(input_dirs, inputs_mapping)
         batch_result = self.flow_executor.exec_bulk(input_dicts, run_id)
-        for output in batch_result.outputs:
-            output_dir = self._resolve_dir(output_dir)
-            output = self.flow_executor._persist_images_from_output(output, output_dir)
+        self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
 
     def get_input_dicts(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
@@ -93,3 +96,15 @@ class BatchEngine:
                 if resource == "path":
                     data_dict[key] = str(input_dir / data_dict[key])
         return data_dict
+
+    def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
+        """Persist outputs to output directory"""
+        output_dir = self._resolve_dir(output_dir)
+        output_file = output_dir / OUTPUT_FILE_NAME
+        # persist images to output directory
+        for output in outputs:
+            output = self.flow_executor._persist_images_from_output(output, output_dir)
+        # persist outputs to json line file
+        df = pd.DataFrame(outputs)
+        with open(output_file, mode="w", encoding=DEFAULT_ENCODING) as f:
+            df.to_json(f, "records", lines=True)
