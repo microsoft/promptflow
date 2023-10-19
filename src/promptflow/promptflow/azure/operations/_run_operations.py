@@ -12,7 +12,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import requests
@@ -37,6 +37,7 @@ from promptflow._sdk._constants import (
     AzureRunTypes,
     ListViewType,
     RunDataKeys,
+    RunHistoryKeys,
     RunStatus,
 )
 from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
@@ -75,7 +76,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
-    create an PFClient instance that instantiates it for you and
+    create an :class:`~promptflow.azure.PFClient` instance that instantiates it for you and
     attaches it as an attribute.
     """
 
@@ -308,8 +309,8 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     def get_metrics(self, run: Union[str, Run], **kwargs) -> dict:
         """Get the metrics from the run.
 
-        :param run: The run
-        :type run: str
+        :param run: The run or the run object
+        :type run: Union[str, ~promptflow.entities.Run]
         :return: The metrics
         :rtype: dict
         """
@@ -456,18 +457,18 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         )
 
     @monitor_operation(activity_name="pfazure.runs.get", activity_type=ActivityType.PUBLICAPI)
-    def get(self, run: str, **kwargs) -> Run:
+    def get(self, run: Union[str, Run], **kwargs) -> Run:
         """Get a run.
 
         :param run: The run name
-        :type run: str
-        :return: The run
-        :rtype: Run
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
         """
         run = Run._validate_and_return_run_name(run)
         return self._get_run_from_run_history(flow_run_id=run, **kwargs)
 
-    def _get_run_from_run_history(self, flow_run_id, **kwargs):
+    def _get_run_from_run_history(self, flow_run_id, original_form=False, **kwargs):
         """Get run info from run history"""
         headers = self._get_headers()
         url = self._run_history_endpoint_url + "/rundata"
@@ -482,6 +483,9 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         response = requests.post(url, headers=headers, json=payload)
         if response.status_code == 200:
             run = response.json()
+            # if original_form is True, return the original run data from run history, mainly for test use
+            if original_form:
+                return run
             run_data = self._refine_run_data_from_run_history(run)
             run = Run._from_run_history_entity(run_data)
             return run
@@ -497,7 +501,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
 
         Generate the portal url, input and output value from run history data.
         """
-        run_data = run_data["runMetadata"]
+        run_data = run_data[RunHistoryKeys.RunMetaData]
         # add cloud run url
         run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_data["runId"])
 
@@ -550,26 +554,35 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             )
 
     @monitor_operation(activity_name="pfazure.runs.archive", activity_type=ActivityType.PUBLICAPI)
-    def archive(self, run: str) -> Run:
+    def archive(self, run: Union[str, Run]) -> Run:
         """Archive a run.
 
-        :param run: The run name
-        :type run: str
-        :return: The run
-        :rtype: Run
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
         """
-        pass
+
+        run = Run._validate_and_return_run_name(run)
+        payload = {
+            RunHistoryKeys.HIDDEN: True,
+        }
+        return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     @monitor_operation(activity_name="pfazure.runs.restore", activity_type=ActivityType.PUBLICAPI)
-    def restore(self, run: str) -> Run:
+    def restore(self, run: Union[str, Run]) -> Run:
         """Restore a run.
 
-        :param run: The run name
-        :type run: str
-        :return: The run
-        :rtype: Run
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
         """
-        pass
+        run = Run._validate_and_return_run_name(run)
+        payload = {
+            RunHistoryKeys.HIDDEN: False,
+        }
+        return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     def _get_log(self, flow_run_id: str) -> str:
         return self._service_caller.caller.bulk_runs.get_flow_run_log_content(
@@ -580,9 +593,71 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             headers=self._get_headers(),
         )
 
+    @monitor_operation(activity_name="pfazure.runs.update", activity_type=ActivityType.PUBLICAPI)
+    def update(
+        self,
+        run: Union[str, Run],
+        display_name: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> Optional[Run]:
+        """Update a run. May update the display name, description or tags.
+
+        .. note::
+
+            - Display name and description are strings, and tags is a dictionary of key-value pairs, both key and value
+              are also strings.
+            - Tags is a dictionary of key-value pairs. Updating tags will overwrite the existing key-value pair,
+              but will not delete the existing key-value pairs.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param display_name: The display name
+        :type display_name: Optional[str]
+        :param description: The description
+        :type description: Optional[str]
+        :param tags: The tags
+        :type tags: Optional[Dict[str, str]]
+        :raises UpdateRunError: If nothing or wrong type values provided to update the run.
+        :return: The run object
+        :rtype: Optional[~promptflow.entities.Run]
+        """
+        run = Run._validate_and_return_run_name(run)
+        if display_name is None and description is None and tags is None:
+            logger.warning("Nothing provided to update the run.")
+            return None
+
+        payload = {}
+
+        if isinstance(display_name, str):
+            payload["displayName"] = display_name
+        elif display_name is not None:
+            logger.warning(f"Display name must be a string, got {type(display_name)!r}: {display_name!r}.")
+
+        if isinstance(description, str):
+            payload["description"] = description
+        elif description is not None:
+            logger.warning(f"Description must be a string, got {type(description)!r}: {description!r}.")
+
+        # check if the tags type is Dict[str, str]
+        if isinstance(tags, dict) and all(
+            isinstance(key, str) and isinstance(value, str) for key, value in tags.items()
+        ):
+            payload["tags"] = tags
+        elif tags is not None:
+            logger.warning(f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}.")
+
+        return self._modify_run_in_run_history(run_id=run, payload=payload)
+
     @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
     def stream(self, run: Union[str, Run]) -> Run:
-        """Stream the logs of a run."""
+        """Stream the logs of a run.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
+        """
         run = self.get(run=run)
         # TODO: maybe we need to make this configurable
         file_handler = sys.stdout
@@ -857,3 +932,25 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
             rest_obj.runtime_name = None
 
         return rest_obj
+
+    def _refine_payload_for_run_update(self, payload: dict, key: str, value, expected_type: type) -> dict:
+        """Refine the payload for run update."""
+        if value is not None:
+            payload[key] = value
+        return payload
+
+    def _modify_run_in_run_history(self, run_id: str, payload: dict) -> Run:
+        """Modify run info in run history."""
+        headers = self._get_headers()
+        url = self._run_history_endpoint_url + f"/runs/{run_id}/modify"
+
+        response = requests.patch(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            # the modify api returns different data format compared with get api, so we use get api here to
+            # return standard Run object
+            return self.get(run=run_id)
+        else:
+            raise RunRequestException(
+                f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
+            )

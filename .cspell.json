@@ -25,6 +25,7 @@
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/tests/**",
+    "src/promptflow-tools/tests/**",
     "**/flow.dag.yaml",
     "**/setup.py"
   ],

@@ -1,3 +1,5 @@
+from types import GeneratorType
+
 import pytest
 
 from promptflow._utils.dataclass_serializer import serialize
@@ -76,3 +78,29 @@ class TestExecutorTraces:
 
         output = generator_trace.get("output")
         assert isinstance(output, list)
+
+    @pytest.mark.parametrize("allow_generator_output", [False, True])
+    def test_executor_generator_nodes(self, dev_connections, allow_generator_output):
+        executor = FlowExecutor.create(get_yaml_file("generator_nodes"), dev_connections)
+        inputs = {"text": "This is a test"}
+        flow_result = executor.exec_line(inputs, allow_generator_output=allow_generator_output)
+
+        assert isinstance(flow_result.output, dict)
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.run_info.api_calls is not None
+
+        tool_trace = flow_result.run_info.api_calls[0]
+        output = tool_trace.get("output")
+        assert isinstance(output, list)
+        assert not output
+        answer = flow_result.output.get("answer")
+        if allow_generator_output:
+            assert isinstance(answer, GeneratorType)
+            # Consume the generator and validate that it generates some text
+            try:
+                generated_text = next(answer)
+                assert isinstance(generated_text, str)
+            except StopIteration:
+                assert False, "Generator did not generate any text"
+        else:
+            assert answer == "Echo-Thisisatest"
