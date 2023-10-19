@@ -1,7 +1,7 @@
 # Flow Example Sharing in Organization
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
 In this document, we will walk you through the steps to share your flow in an organization scope. This needs to register your flow as a model with some specific properties in an organization registry. Once completed, the model will be shown as a flow example in workspace portal.
