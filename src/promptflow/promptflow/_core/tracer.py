@@ -12,6 +12,7 @@ from typing import Optional
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
@@ -80,7 +81,7 @@ class Tracer(ThreadLocalSingleton):
             return obj
         try:
             obj = serialize(obj)
-            json.dumps(obj)
+            json.dumps(obj, default=PFBytes.default_json_encoder)
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
             # so we simply convert it to str if it cannot be serialized.

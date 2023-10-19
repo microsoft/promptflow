@@ -6,7 +6,7 @@ from dataclasses import asdict
 
 from flask import Blueprint, jsonify, request
 
-from promptflow._sdk._constants import get_list_view_type
+from promptflow._sdk._constants import FlowRunProperties, get_list_view_type
 from promptflow._sdk._service.utils import api_wrapper
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
@@ -53,6 +53,8 @@ def get_metadata(name: str):
         name=run.name,
         display_name=run.display_name,
         create_time=run.created_on,
+        flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+        output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
         tags=run.tags,
         lineage=run.run,
         metrics=local_storage_op.load_metrics(),

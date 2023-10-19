@@ -96,7 +96,7 @@ class TestFlowRun:
             data=f"{DATAS_DIR}/webClassification1.jsonl",
             column_mapping={"url": "${data.url}"},
             variant="${summarize_text_content.variant_0}",
-            connections={"classify_with_llm": {"connection": "azure_open_ai"}},
+            connections={"classify_with_llm": {"connection": "azure_open_ai", "model": "gpt-3.5-turbo"}},
             runtime=runtime,
         )
         assert isinstance(run, Run)
@@ -107,6 +107,17 @@ class TestFlowRun:
             params_override=[{"runtime": runtime}],
         )
         run = remote_client.runs.create_or_update(run=run)
+        assert isinstance(run, Run)
+
+    def test_run_display_name_with_macro(self, pf, runtime):
+        run = load_run(
+            source=f"{RUNS_DIR}/run_with_env.yaml",
+            params_override=[{"runtime": runtime}],
+        )
+        run.display_name = "my_display_name_${variant_id}_${timestamp}"
+        run = pf.runs.create_or_update(run=run)
+        assert run.display_name.startswith("my_display_name_variant_0_")
+        assert "${timestamp}" not in run.display_name
         assert isinstance(run, Run)
 
     def test_run_with_remote_data(self, remote_client, pf, runtime, remote_web_classification_data):
@@ -244,6 +255,51 @@ class TestFlowRun:
         assert run.status == "Failed"
         # error info will store in run dict
         assert "error" in run._to_dict()
+
+    def test_archive_and_restore_run(self, remote_client):
+        from promptflow._sdk._constants import RunHistoryKeys
+
+        run_meta_data = RunHistoryKeys.RunMetaData
+        hidden = RunHistoryKeys.HIDDEN
+
+        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # test archive
+        remote_client.runs.archive(run=run_id)
+        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is True
+
+        # test restore
+        remote_client.runs.restore(run=run_id)
+        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is False
+
+    def test_update_run(self, remote_client):
+        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+        test_mark = str(uuid.uuid4())
+
+        new_display_name = f"test_display_name_{test_mark}"
+        new_description = f"test_description_{test_mark}"
+        new_tags = {"test_tag": test_mark}
+
+        run = remote_client.runs.update(
+            run=run_id,
+            display_name=new_display_name,
+            description=new_description,
+            tags=new_tags,
+        )
+        assert run.display_name == new_display_name
+        assert run.description == new_description
+        assert run.tags["test_tag"] == test_mark
+
+        # test wrong type of parameters won't raise error, just log warnings and got ignored
+        run = remote_client.runs.update(
+            run=run_id,
+            tags={"test_tag": {"a": 1}},
+        )
+        assert run.display_name == new_display_name
+        assert run.description == new_description
+        assert run.tags["test_tag"] == test_mark
 
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
@@ -660,3 +716,11 @@ class TestFlowRun:
         pf.runs.stream(run=run.name)
         detail = remote_client.get_details(run=run.name)
         assert len(detail) == 3
+
+    def test_vnext_workspace_base_url(self, pf):
+        from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
+
+        mock_workspace = MagicMock()
+        mock_workspace.discovery_url = "https://promptflow.azure-api.net/discovery/workspaces/fake_workspace_id"
+        service_caller = _FlowServiceCallerFactory.get_instance(workspace=mock_workspace, credential=MagicMock())
+        assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"

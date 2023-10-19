@@ -15,7 +15,7 @@ from azure.core.tracing.decorator_async import distributed_trace_async
 
 from ... import models as _models
 from ..._vendor import _convert_request
-from ...operations._bulk_runs_operations import build_cancel_flow_run_request, build_clone_flow_from_flow_run_request, build_get_flow_child_runs_request, build_get_flow_node_runs_request, build_get_flow_root_run_request, build_get_flow_run_info_request, build_get_flow_run_log_content_request, build_submit_bulk_run_request
+from ...operations._bulk_runs_operations import build_cancel_flow_run_request, build_clone_flow_from_flow_run_request, build_get_flow_child_runs_request, build_get_flow_node_runs_request, build_get_flow_run_info_request, build_get_flow_run_log_content_request, build_submit_bulk_run_request
 T = TypeVar('T')
 ClsType = Optional[Callable[[PipelineResponse[HttpRequest, AsyncHttpResponse], T, Dict[str, Any]], Any]]
 
@@ -300,65 +300,6 @@ class BulkRunsOperations:
         return deserialized
 
     get_flow_run_info.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/{flowRunId}'}  # type: ignore
-
-
-    @distributed_trace_async
-    async def get_flow_root_run(
-        self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        flow_run_id: str,
-        **kwargs: Any
-    ) -> str:
-        """get_flow_root_run.
-
-        :param subscription_id: The Azure Subscription ID.
-        :type subscription_id: str
-        :param resource_group_name: The Name of the resource group in which the workspace is located.
-        :type resource_group_name: str
-        :param workspace_name: The name of the workspace.
-        :type workspace_name: str
-        :param flow_run_id:
-        :type flow_run_id: str
-        :keyword callable cls: A custom type or function that will be passed the direct response
-        :return: str, or the result of cls(response)
-        :rtype: str
-        :raises: ~azure.core.exceptions.HttpResponseError
-        """
-        cls = kwargs.pop('cls', None)  # type: ClsType[str]
-        error_map = {
-            401: ClientAuthenticationError, 404: ResourceNotFoundError, 409: ResourceExistsError
-        }
-        error_map.update(kwargs.pop('error_map', {}))
-
-        
-        request = build_get_flow_root_run_request(
-            subscription_id=subscription_id,
-            resource_group_name=resource_group_name,
-            workspace_name=workspace_name,
-            flow_run_id=flow_run_id,
-            template_url=self.get_flow_root_run.metadata['url'],
-        )
-        request = _convert_request(request)
-        request.url = self._client.format_url(request.url)
-
-        pipeline_response = await self._client._pipeline.run(request, stream=False, **kwargs)
-        response = pipeline_response.http_response
-
-        if response.status_code not in [200]:
-            map_error(status_code=response.status_code, response=response, error_map=error_map)
-            error = self._deserialize.failsafe_deserialize(_models.ErrorResponse, pipeline_response)
-            raise HttpResponseError(response=response, model=error)
-
-        deserialized = self._deserialize('str', pipeline_response)
-
-        if cls:
-            return cls(pipeline_response, deserialized, {})
-
-        return deserialized
-
-    get_flow_root_run.metadata = {'url': '/flow/api/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/BulkRuns/{flowRunId}/rootRun'}  # type: ignore
 
 
     @distributed_trace_async

@@ -13,6 +13,7 @@ from dateutil import parser as date_parser
 
 from promptflow._sdk._constants import (
     BASE_PATH_CONTEXT_KEY,
+    DEFAULT_VARIANT,
     PARAMS_OVERRIDE_KEY,
     RUN_MACRO,
     TIMESTAMP_MACRO,
@@ -383,7 +384,7 @@ class Run(YAMLTranslatableMixin):
             flow_name = self._get_flow_dir().name
             variant = self.variant
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            variant = parse_variant(variant)[1] if variant else "default"
+            variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
             run_name_prefix = f"{flow_name}_{variant}"
             # TODO(2562996): limit run name to avoid it become too long
             run_name = f"{run_name_prefix}_{timestamp}"
@@ -413,7 +414,7 @@ class Run(YAMLTranslatableMixin):
             display_name = display_name.replace(RUN_MACRO, self._validate_and_return_run_name(self.run))
         display_name = display_name.replace(TIMESTAMP_MACRO, time_stamp)
         variant = self.variant
-        variant = parse_variant(variant)[1] if variant else "default"
+        variant = parse_variant(variant)[1] if variant else DEFAULT_VARIANT
         display_name = display_name.replace(VARIANT_ID_MACRO, variant)
 
         return display_name
@@ -431,7 +432,11 @@ class Run(YAMLTranslatableMixin):
     def _to_rest_object(self):
         from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
-        from promptflow.azure._restclient.flow.models import BatchDataInput, SubmitBulkRunRequest
+        from promptflow.azure._restclient.flow.models import (
+            BatchDataInput,
+            RunDisplayNameGenerationType,
+            SubmitBulkRunRequest,
+        )
 
         if self.run is not None:
             if isinstance(self.run, Run):
@@ -487,6 +492,7 @@ class Run(YAMLTranslatableMixin):
                 environment_variables=self.environment_variables,
                 connections=self.connections,
                 flow_lineage_id=self._lineage_id,
+                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             )
         else:
             # upload via CodeOperations.create_or_update
@@ -507,6 +513,7 @@ class Run(YAMLTranslatableMixin):
                 environment_variables=self.environment_variables,
                 connections=self.connections,
                 flow_lineage_id=self._lineage_id,
+                run_display_name_generation_type=RunDisplayNameGenerationType.USER_PROVIDED_MACRO,
             )
 
     def _check_run_status_is_completed(self) -> None:

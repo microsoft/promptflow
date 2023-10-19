@@ -7,6 +7,7 @@ import importlib.util
 import inspect
 import logging
 import traceback
+import types
 from functools import partial
 from pathlib import Path
 from typing import Callable, List, Mapping, Optional, Tuple, Union
@@ -97,7 +98,9 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 custom_strong_type_connections_classes = [
                     obj
                     for name, obj in inspect.getmembers(module)
-                    if inspect.isclass(obj) and ConnectionType.is_custom_strong_type(obj)
+                    if inspect.isclass(obj)
+                    and ConnectionType.is_custom_strong_type(obj)
+                    and (not ConnectionType.is_connection_class_name(name))
                 ]
 
                 if custom_strong_type_connections_classes:
@@ -349,7 +352,7 @@ class ToolLoader:
             if node.source.type == ToolSourceType.Package:
                 return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
-                tool = self.load_tool_for_script_node(node)
+                _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type == ToolType.CUSTOM_LLM:
@@ -368,7 +371,7 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node) -> Tool:
+    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Callable, Tool]:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
         path = node.source.path
@@ -376,7 +379,7 @@ class ToolLoader:
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
         f, init_inputs = collect_script_tools(m)
-        return _parse_tool_from_function(f, init_inputs)
+        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"

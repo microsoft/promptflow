@@ -13,12 +13,6 @@ from promptflow.exceptions import ErrorTarget, UserErrorException
 
 module_logger = logging.getLogger(__name__)
 
-MAX_ROWS_COUNT = 1000
-DATA_EXCEED_LIMITATION = (
-    "The supplied data contains %s lines that exceed the limit. Currently, only the first %s lines will be processed."
-    " We are actively working on supporting larger datasets in the near future. Please stay tuned for updates."
-)
-
 
 def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFrame:
     local_path = str(local_path)
@@ -28,21 +22,28 @@ def _pd_read_file(local_path: str, logger: logging.Logger = None) -> pd.DataFram
     ):  # CodeQL [SM01305] Safe use per local_path is set by PRT service not by end user
         return pd.DataFrame()
     # load different file formats
+
+    # set dtype to object to avoid auto type conversion
+    # executor will apply type conversion based on flow definition, so no conversion should be acceptable
+    # note that for csv and tsv format, this will make integer and float columns to be string;
+    # for rest, integer will be int and float will be float
+    dtype = object
+
     if local_path.endswith(".csv"):
-        df = pd.read_csv(local_path, keep_default_na=False)
+        df = pd.read_csv(local_path, dtype=dtype, keep_default_na=False)
     elif local_path.endswith(".json"):
-        df = pd.read_json(local_path)
+        df = pd.read_json(local_path, dtype=dtype)
     elif local_path.endswith(".jsonl"):
-        df = pd.read_json(local_path, lines=True)
+        df = pd.read_json(local_path, dtype=dtype, lines=True)
     elif local_path.endswith(".tsv"):
-        df = pd.read_table(local_path, keep_default_na=False)
+        df = pd.read_table(local_path, dtype=dtype, keep_default_na=False)
     elif local_path.endswith(".parquet"):
-        df = pd.read_parquet(local_path)
+        df = pd.read_parquet(local_path)  # read_parquet has no parameter dtype
     else:
         # parse file as jsonl when extension is not known (including unavailable)
         # ignore and logging if failed to load file content.
         try:
-            df = pd.read_json(local_path, lines=True)
+            df = pd.read_json(local_path, dtype=dtype, lines=True)
         except:  # noqa: E722
             if logger is None:
                 logger = module_logger
@@ -81,9 +82,6 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
         length = len(df)
         if max_rows_count and length > 0:
             if length > max_rows_count:
-                if logger is None:
-                    logger = module_logger
-                logger.warning(DATA_EXCEED_LIMITATION, length, max_rows_count)
                 df = df.head(max_rows_count)
             break
         # no readable data in current level, dive into next level
@@ -93,11 +91,10 @@ def _handle_dir(dir_path: str, max_rows_count: int, logger: logging.Logger = Non
 
 def load_data(local_path: str, *, logger: logging.Logger = None, max_rows_count: int = None) -> List[Dict[str, Any]]:
     """load data from local file"""
-    df = load_df(local_path, logger, max_rows_count=max_rows_count or MAX_ROWS_COUNT)
+    df = load_df(local_path, logger, max_rows_count=max_rows_count)
 
     # convert dataframe to list of dict
     result = []
-    # df = df.reset_index() # add index column
     for _, row in df.iterrows():
         result.append(row.to_dict())
     return result
@@ -111,9 +108,6 @@ def load_df(local_path: str, logger: logging.Logger = None, max_rows_count: int 
             df = _pd_read_file(local_path, logger=logger)
             # honor max_rows_count if it is specified
             if max_rows_count and len(df) > max_rows_count:
-                if logger is None:
-                    logger = module_logger
-                logger.warning(DATA_EXCEED_LIMITATION, len(df), max_rows_count)
                 df = df.head(max_rows_count)
         else:
             df = _handle_dir(local_path, max_rows_count=max_rows_count, logger=logger)

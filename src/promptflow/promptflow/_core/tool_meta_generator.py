@@ -17,11 +17,11 @@ from traceback import TracebackException
 
 from jinja2.environment import COMMENT_END_STRING, COMMENT_START_STRING
 
-from promptflow._core._errors import MetaFileNotFound, MetaFileReadError
+from promptflow._core._errors import MetaFileNotFound, MetaFileReadError, NotSupported
 from promptflow._core.tool import ToolProvider
 from promptflow._utils.exception_utils import ADDITIONAL_INFO_USER_CODE_STACKTRACE, get_tb_next, last_frame_info
 from promptflow._utils.tool_utils import function_to_interface, get_inputs_for_prompt_template
-from promptflow.contracts.tool import InputDefinition, Tool, ToolType, ValueType
+from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 PF_MAIN_MODULE_NAME = "__pf_main__"
@@ -38,8 +38,14 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
     try:
         inputs = get_inputs_for_prompt_template(content)
     except Exception as e:
-        msg = f"Parsing jinja got exception: {e}"
-        raise JinjaParsingError(msg) from e
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
+        raise JinjaParsingError(
+            message_format=(
+                "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: {error_type_and_message}"
+            ),
+            tool_type=tool_type,
+            error_type_and_message=error_type_and_message,
+        ) from e
 
     if prompt_only:
         # Currently this is a hard code for prompt tool
@@ -52,13 +58,16 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
 
         reserved_keys_to_raise = reserved_keys
 
-    for input in inputs:
+    for input in inputs.keys():
         if input in reserved_keys_to_raise:
-            msg = (
-                f"Parsing jinja got exception: Variable name {input} is reserved by {tool_type.value} tool."
-                + " Please change another name."
+            raise ReservedVariableCannotBeUsed(
+                message_format=(
+                    "Generate tool meta failed for {tool_type} tool. Jinja parsing failed: "
+                    "Variable name '{key}' is a reserved name by {tool_type} tools, please change to another name."
+                ),
+                key=input,
+                tool_type=tool_type.value,
             )
-            raise ReservedVariableCannotBeUsed(msg)
 
     pattern = f"{COMMENT_START_STRING}(((?!{COMMENT_END_STRING}).)*){COMMENT_END_STRING}"
     match_result = re.match(pattern, content)
@@ -68,7 +77,7 @@ def generate_prompt_tool(name, content, prompt_only=False, source=None):
         name=name,
         description=description,
         type=tool_type,
-        inputs={i: InputDefinition(type=[ValueType.STRING]) for i in inputs},
+        inputs=inputs,
         outputs={},
     )
     if source is None:
@@ -122,15 +131,20 @@ def collect_tool_methods_with_init_inputs_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, initialize_inputs=None):
+def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False):
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
         return f.__tool
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f, initialize_inputs)
+        inputs, _, _ = function_to_interface(f, initialize_inputs, gen_custom_type_conn=gen_custom_type_conn)
     except Exception as e:
-        raise BadFunctionInterface(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
+        raise BadFunctionInterface(
+            message_format="Parse interface for tool '{tool_name}' failed: {error_type_and_message}",
+            tool_name=f.__name__,
+            error_type_and_message=error_type_and_message,
+        ) from e
     class_name = None
     if "." in f.__qualname__:
         class_name = f.__qualname__.replace(f".{f.__name__}", "")
@@ -161,14 +175,22 @@ def load_python_module_from_file(src_file: Path):
     src_file = Path(src_file).resolve()  # Make sure the path is absolute to align with python import behavior.
     spec = importlib.util.spec_from_file_location("__pf_main__", location=src_file)
     if spec is None or spec.loader is None:
-        raise PythonLoaderNotFound(f"Failed to load python file '{src_file}', please make sure it is a valid .py file.")
+        raise PythonLoaderNotFound(
+            message_format="Failed to load python file '{src_file}'. Please make sure it is a valid .py file.",
+            src_file=src_file,
+        )
     m = importlib.util.module_from_spec(spec)
     sys.modules["__pf_main__"] = m
     try:
         spec.loader.exec_module(m)
     except Exception as e:
         # TODO: add stacktrace to additional info
-        raise PythonLoadError(f"Failed to load python module from file '{src_file}', reason: {e}.") from e
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
+        raise PythonLoadError(
+            message_format="Failed to load python module from file '{src_file}': {error_type_and_message}",
+            src_file=src_file,
+            error_type_and_message=error_type_and_message,
+        ) from e
     return m
 
 
@@ -181,17 +203,32 @@ def load_python_module(content, source=None):
         exec(content, m.__dict__)
         return m
     except Exception as e:
-        msg = f"Parsing python got exception: {e}"
-        raise PythonParsingError(msg) from e
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
+        raise PythonParsingError(
+            message_format="Failed to load python module. Python parsing failed: {error_type_and_message}",
+            error_type_and_message=error_type_and_message,
+        ) from e
 
 
 def collect_tool_function_in_module(m):
     tools = collect_tool_functions_in_module(m)
     if len(tools) == 0:
-        raise NoToolDefined("No tool found in the python script.")
+        raise NoToolDefined(
+            message_format=(
+                "No tool found in the python script. "
+                "Please make sure you have one and only one tool definition in your script."
+            )
+        )
     elif len(tools) > 1:
         tool_names = ", ".join(t.__name__ for t in tools)
-        raise MultipleToolsDefined(f"Expected 1 but collected {len(tools)} tools: {tool_names}.")
+        raise MultipleToolsDefined(
+            message_format=(
+                "Expected 1 but collected {tool_count} tools: {tool_names}. "
+                "Please make sure you have one and only one tool definition in your script."
+            ),
+            tool_count=len(tools),
+            tool_names=tool_names,
+        )
     return tools[0]
 
 
@@ -244,18 +281,22 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
     file = Path(path).resolve()
     if not file.is_file():
         raise MetaFileNotFound(
-            message_format="Meta file not found, path '{file_path}', type '{tool_type}'.",
-            file_path=str(file),
+            message_format="Generate tool meta failed for {tool_type} tool. Meta file '{file_path}' can not be found.",
             tool_type=tool_type,
+            file_path=str(file),
         )
     try:
-        content = file.read_text()
+        content = file.read_text(encoding="utf-8")
     except Exception as e:
+        error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise MetaFileReadError(
-            message_format=("Reading meta file failed, path '{file_path}', type '{tool_type}', exception {exception}."),
-            file_path=str(file),
+            message_format=(
+                "Generate tool meta failed for {tool_type} tool. "
+                "Read meta file '{file_path}' failed: {error_type_and_message}"
+            ),
             tool_type=tool_type,
-            exception=str(e),
+            file_path=str(file),
+            error_type_and_message=error_type_and_message,
         ) from e
 
     name = file.stem
@@ -266,14 +307,22 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
     elif tool_type == ToolType.PROMPT:
         return generate_prompt_meta_dict(name, content, prompt_only=True, source=path)
     else:
-        raise ValueError(f"Unsupported tool type {tool_type}.")
+        raise NotSupported(
+            message_format=(
+                "Generate tool meta failed. "
+                "The type '{tool_type}' is currently unsupported. "
+                "Please choose from available types: {supported_tool_types} and try again."
+            ),
+            tool_type=tool_type,
+            supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
+        )
 
 
 class ToolValidationError(UserErrorException):
     """Base exception raised when failed to validate tool."""
 
-    def __init__(self, message):
-        super().__init__(message, target=ErrorTarget.TOOL)
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.TOOL, **kwargs)
 
 
 class JinjaParsingError(ToolValidationError):

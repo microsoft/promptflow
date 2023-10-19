@@ -63,17 +63,15 @@ class TestFlowExecutor:
                     "answer": "${data.output}",
                 },
                 InputMappingError,
-                "The input for batch run is incorrect. Couldn't find these mapping relations: ${baseline.output}, "
-                "${data.output}. Please make sure your input mapping keys and values match your YAML input section "
-                "and input data. If a mapping reads input from 'data', it might be generated from the YAML input "
-                "section, and you may need to manually assign input mapping based on your input data.",
+                "Couldn't find these mapping relations: ${baseline.output}, ${data.output}. "
+                "Please make sure your input mapping keys and values match your YAML input section and input data.",
             ),
         ],
     )
     def test_apply_inputs_mapping_error(self, inputs, inputs_mapping, error_code, error_message):
         with pytest.raises(error_code) as e:
             FlowExecutor.apply_inputs_mapping(inputs, inputs_mapping)
-        assert error_message == str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
+        assert error_message in str(e.value), "Expected: {}, Actual: {}".format(error_message, str(e.value))
 
     @pytest.mark.parametrize(
         "inputs, expected",

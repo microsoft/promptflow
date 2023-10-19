@@ -1,0 +1,21 @@
+inputs:
+  chat_history:
+    type: list
+    is_chat_history: true
+  question:
+    type: string
+    is_chat_input: true
+outputs:
+  answer:
+    type: string
+    reference: ${stream.output.answer}
+    is_chat_output: true
+nodes:
+- name: stream
+  type: python
+  source:
+    type: code
+    path: stream.py
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}
