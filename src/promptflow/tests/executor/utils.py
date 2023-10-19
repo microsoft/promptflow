@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Union
 
 TEST_ROOT = Path(__file__).parent.parent
+DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 
