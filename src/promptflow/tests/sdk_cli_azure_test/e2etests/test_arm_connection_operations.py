@@ -3,6 +3,8 @@
 # ---------------------------------------------------------
 import pytest
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @pytest.fixture
 def connection_ops(ml_client):
@@ -12,6 +14,7 @@ def connection_ops(ml_client):
     yield pf._arm_connections
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestArmConnectionOperations:
     def test_get_connection(self, connection_ops):
