@@ -7,6 +7,7 @@
 - [SDK/CLI] Support `pfazure run archive/restore/update`.
 - [SDK/CLI] Support custom strong type connection.
 - [SDK/CLI] Enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
+- [Executor] Support image type in executor.
 
 ### Bugs Fixed
 - **pf config set**:
