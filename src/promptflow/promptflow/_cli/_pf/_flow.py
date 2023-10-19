@@ -201,7 +201,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         "--interactive", action="store_true", help="start a interactive chat session for chat flow."
     )
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
-        "--multi_modal", action="store_true", help=argparse.SUPPRESS
+        "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
@@ -346,9 +346,7 @@ def test_flow(args):
 
             flow = load_flow(args.flow)
             script_path = os.path.join(temp_dir, "main.py")
-            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(
-                script_path
-            )
+            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
             sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
             st_cli.main()
     else:
