@@ -10,6 +10,8 @@ from azure.ai.ml.entities import Component, PipelineJob
 
 from promptflow.connections import AzureOpenAIConnection
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -63,6 +65,7 @@ def update_saved_spec(component: Component, saved_spec_path: str):
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestFlowInAzureML:
     @pytest.mark.parametrize(
