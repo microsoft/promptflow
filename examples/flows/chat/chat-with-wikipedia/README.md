@@ -20,18 +20,18 @@ In this flow, you will learn
 - prompt template format of LLM tool chat api. Message delimiter is a separate line containing role name and colon: "system:", "user:", "assistant:".
 See <a href="https://platform.openai.com/docs/api-reference/chat/create#chat/create-role" target="_blank">OpenAI Chat</a> for more about message role.
     ```jinja
-    system:
+    # system:
     You are a chatbot having a conversation with a human.
 
-    user:
+    # user:
     {{question}}
     ```
 - how to consume chat history in prompt.
     ```jinja
     {% for item in chat_history %}
-    user:
+    # user:
     {{item.inputs.question}}
-    assistant:
+    # assistant:
     {{item.outputs.answer}}
     {% endfor %}
     ```
