@@ -25,7 +25,7 @@ The source JSON schema can be found at [Run.schema.json](https://azuremlschemas.
 | `tags`                  | object        | Dictionary of tags of the run.                                                                                                                                                                                                                                          |
 | `resources`             | object        | Dictionary of resources used for automatic runtime. Only supported for cloud run. See [Resources Schema](#resources-schema) for the set of configurable properties.                                                                                                     |
 | `variant`               | string        | The variant for the run.                                                                                                                                                                                                                                                |
-| `status`                | string        | The status of the run (read-only).                                                                                                                                                                                                                                      |
+| `status`                | string        | The status of the run. Only available for when getting an existing run. Won't take affect if set when creating a run.                                                                                                                                                   |
 
 ### Resources Schema  
 
