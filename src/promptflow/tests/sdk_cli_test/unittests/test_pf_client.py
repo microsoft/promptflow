@@ -21,43 +21,40 @@ class TestPFClient:
     def test_connection_provider(self):
         target = "promptflow._sdk._pf_client.Configuration"
         with mock.patch(target) as mocked:
-            mocked.get_instance.return_value.get_connection_provider.return_value = "abc"
+            mocked.return_value.get_connection_provider.return_value = "abc"
             with pytest.raises(ValueError) as e:
                 client = PFClient()
                 assert client.connections
             assert "Unsupported connection provider" in str(e.value)
 
         with mock.patch(target) as mocked:
-            mocked.get_instance.return_value.get_connection_provider.return_value = "azureml:xx"
+            mocked.return_value.get_connection_provider.return_value = "azureml:xx"
             with pytest.raises(ValueError) as e:
                 client = PFClient()
                 assert client.connections
             assert "Malformed connection provider string" in str(e.value)
 
         with mock.patch(target) as mocked:
-            mocked.get_instance.return_value.get_connection_provider.return_value = "local"
+            mocked.return_value.get_connection_provider.return_value = "local"
             client = PFClient()
             assert isinstance(client.connections, ConnectionOperations)
 
         with mock.patch(target) as mocked:
-            mocked.get_instance.return_value.get_connection_provider.return_value = (
-                "azureml:"
-                + RESOURCE_ID_FORMAT.format(
-                    "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
-                )
+            mocked.return_value.get_connection_provider.return_value = "azureml:" + RESOURCE_ID_FORMAT.format(
+                "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
             )
             client = PFClient()
             assert isinstance(client.connections, LocalAzureConnectionOperations)
 
-        with mock.patch(target) as mocked:
-            mocked.get_instance.return_value.get_connection_provider.return_value = (
-                "azureml:"
+        client = PFClient(
+            config={
+                "connection.provider": "azureml:"
                 + RESOURCE_ID_FORMAT.format(
                     "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
                 )
-            )
-            client = PFClient(config={"connection.provider": "local"})
-            assert isinstance(client.connections, ConnectionOperations)
+            }
+        )
+        assert isinstance(client.connections, LocalAzureConnectionOperations)
 
     def test_local_azure_connection_extract_workspace(self):
         res = LocalAzureConnectionOperations._extract_workspace(

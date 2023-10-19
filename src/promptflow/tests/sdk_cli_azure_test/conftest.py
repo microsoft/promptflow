@@ -151,7 +151,7 @@ def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspac
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
     app = create_serving_app(
-        connection_provider=remote_workspace_resource_id,
+        config={"connection.provider": remote_workspace_resource_id},
         environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
     )
     app.config.update(
