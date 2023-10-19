@@ -20,12 +20,10 @@ def start():
         st.session_state.messages = []
 
     def show_image(image, key=None):
-        st.markdown("`{ `")
         if not image.startswith("data:image"):
             st.image(key + ',' + image)
         else:
             st.image(image)
-        st.markdown("`},`")
 
     def json_dumps(value):
         try:
@@ -75,11 +73,14 @@ def start():
                 else:
                     show_image(show_value)
             else:
-                st.markdown(f"`{json_dumps(value)},`")
+                if key is None:
+                    st.markdown(f"`{json_dumps(value)},`")
+                else:
+                    st.markdown(f"`{key}: {json_dumps(value)},`")
 
         def list_iter_render_message(message_items):
             if is_list_contains_rich_text(message_items):
-                st.markdown("`[`")
+                st.markdown("`[ `")
                 for item in message_items:
                     if isinstance(item, list):
                         list_iter_render_message(item)
@@ -87,7 +88,7 @@ def start():
                         dict_iter_render_message(item)
                     else:
                         item_render_message(item)
-                st.markdown("`]`")
+                st.markdown("`], `")
             else:
                 st.markdown(f"`{json_dumps(message_items)},`")
 
@@ -102,15 +103,13 @@ def start():
                     if re.match(Image.MIME_PATTERN, key):
                         show_image(value, key)
                     else:
-                        st.markdown(f"`key : {key}`")
                         if isinstance(value, list):
-                            st.markdown(f"`value : `")
+                            st.markdown(f"`{key}: `")
                             list_iter_render_message(value)
                         elif isinstance(value, dict):
-                            st.markdown(f"`value : `")
+                            st.markdown(f"`{key}: `")
                             dict_iter_render_message(value)
                         else:
-                            st.markdown(f"`value : `")
                             item_render_message(value, key)
                 st.markdown("`}, `")
             else:
