@@ -27,6 +27,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
+from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
@@ -37,6 +38,7 @@ class FlowOperations:
     def __init__(self):
         pass
 
+    @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
         self,
         flow: Union[str, PathLike],
@@ -420,6 +422,7 @@ class FlowOperations:
         finally:
             os.chdir(current_directory)
 
+    @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
         self,
         flow: Union[str, PathLike],
@@ -506,6 +509,7 @@ class FlowOperations:
         else:
             yield flow_dag_path
 
+    @monitor_operation(activity_name="pf.flows.validate", activity_type=ActivityType.PUBLICAPI)
     def validate(self, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> ValidationResult:
         """
         Validate flow.

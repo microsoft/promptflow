@@ -6,6 +6,7 @@
 - [Executor] Add average execution time and estimated execution time to batch run logs
 - [SDK/CLI] Support `pfazure run archive/restore/update`.
 - [SDK/CLI] Support custom strong type connection.
+- [SDK/CLI] Enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
 
 ### Bugs Fixed
 - **pf config set**:

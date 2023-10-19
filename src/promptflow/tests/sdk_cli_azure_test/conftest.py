@@ -11,6 +11,8 @@ from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
 from pytest_mock import MockerFixture
 
+from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
+from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
@@ -38,12 +40,14 @@ def ml_client(
 
 @pytest.fixture()
 def remote_client() -> PFClient:
-    return PFClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-eastus",
-    )
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        yield PFClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-eastus",
+        )
 
 
 @pytest.fixture()
@@ -55,18 +59,20 @@ def remote_workspace_resource_id():
 
 @pytest.fixture()
 def remote_client_int() -> PFClient:
-    client = MLClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-int",
-    )
-    return PFClient(ml_client=client)
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        client = MLClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-int",
+        )
+        yield PFClient(ml_client=client)
 
 
 @pytest.fixture()
 def pf(remote_client) -> PFClient:
-    return remote_client
+    yield remote_client
 
 
 @pytest.fixture

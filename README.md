@@ -139,6 +139,29 @@ For more information see the
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com)
 with any additional questions or comments.
 
+## Data Collection
+
+The software may collect information about you and your use of the software and
+send it to Microsoft if configured to enable telemetry.
+Microsoft may use this information to provide services and improve our products and services.
+You may turn on the telemetry as described in the repository.
+There are also some features in the software that may enable you and Microsoft
+to collect data from users of your applications. If you use these features, you
+must comply with applicable law, including providing appropriate notices to
+users of your applications together with a copy of Microsoft's privacy
+statement. Our privacy statement is located at
+https://go.microsoft.com/fwlink/?LinkID=824704. You can learn more about data
+collection and use in the help documentation and our privacy statement. Your
+use of the software operates as your consent to these practices.
+
+### Telemetry Configuration
+
+Telemetry collection is off by default.
+
+To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
+
+For Europe user, please run `pf config set cli.eu_user=true` to make sure telemetry is sent to Europe server.
+
 ## License
 
 Copyright (c) Microsoft Corporation. All rights reserved.

@@ -2,8 +2,10 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+import os
 
-from promptflow._telemetry.logging_handler import get_appinsights_log_handler
+from promptflow._sdk._configuration import Configuration
+from promptflow._telemetry.logging_handler import PromptFlowSDKLogHandler, get_appinsights_log_handler
 
 TELEMETRY_ENABLED = "TELEMETRY_ENABLED"
 PROMPTFLOW_LOGGER_NAMESPACE = "promptflow._telemetry"
@@ -26,19 +28,17 @@ class TelemetryMixin(object):
 def is_telemetry_enabled():
     """Check if telemetry is enabled. User can enable telemetry by
     1. setting environment variable TELEMETRY_ENABLED to true.
-    2. running `pf config set cli.collect_telemetry=true` command.
+    2. running `pf config set cli.telemetry_enabled=true` command.
     If None of the above is set, telemetry is disabled by default.
     """
-    # TODO(2709576): enable when CI stuck issue is fixed
+    telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
+    if telemetry_enabled is not None:
+        return str(telemetry_enabled).lower() == "true"
+    config = Configuration.get_instance()
+    telemetry_consent = config.get_telemetry_consent()
+    if telemetry_consent is not None:
+        return telemetry_consent
     return False
-    # telemetry_enabled = os.getenv(TELEMETRY_ENABLED)
-    # if telemetry_enabled is not None:
-    #     return str(telemetry_enabled).lower() == "true"
-    # config = Configuration.get_instance()
-    # telemetry_consent = config.get_telemetry_consent()
-    # if telemetry_consent is not None:
-    #     return telemetry_consent
-    # return False
 
 
 def get_telemetry_logger():
@@ -46,6 +46,16 @@ def get_telemetry_logger():
     # avoid telemetry log appearing in higher level loggers
     current_logger.propagate = False
     current_logger.setLevel(logging.INFO)
+    # check if current logger already has an appinsights handler to avoid logger handler duplication
+    for log_handler in current_logger.handlers:
+        if isinstance(log_handler, PromptFlowSDKLogHandler):
+            # if existing handler has same region, reuse it
+            config = Configuration.get_instance()
+            if log_handler.eu_user == config.is_eu_user():
+                return current_logger
+    # otherwise, remove the existing handler and create a new one
+    for log_handler in current_logger.handlers:
+        current_logger.removeHandler(log_handler)
     handler = get_appinsights_log_handler()
     current_logger.addHandler(handler)
     return current_logger
