@@ -8,12 +8,12 @@ This document provides a step-by-step guide on how to create and use a custom st
 Once the custom strong type connection is created, you can either use it in the package tool or script tool.
 
 ## Prerequisites
-- Promptflow VSCode Extension version >= [1.1.0-rc0](https://aka.ms/promptflow/vsc) // TODO: Use market public version
+- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.2 or a more recent version.
 - Install promptflow package.
 
   ```bash
-  # TODO: after promptflow pkg release, updated to pip install promptflow==0.1.0b8
-  pip install "promptflow==0.0.107761800" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+  # Eventually only need to pip install promptflow==0.1.0b8
+  pip install "promptflow==0.0.108028960" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
   ```
 
 ## Create your own custom strong type connection
