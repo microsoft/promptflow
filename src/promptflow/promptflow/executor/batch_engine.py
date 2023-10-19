@@ -5,6 +5,7 @@ import pandas as pd
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.load_data import load_data
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
@@ -103,7 +104,7 @@ class BatchEngine:
         output_file = output_dir / OUTPUT_FILE_NAME
         # persist images to output directory
         for output in outputs:
-            output = self.flow_executor._persist_images_from_output(output, output_dir)
+            output = persist_multimedia_data(output, output_dir)
         # persist outputs to json line file
         df = pd.DataFrame(outputs)
         with open(output_file, mode="w", encoding=DEFAULT_ENCODING) as f:

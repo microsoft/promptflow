@@ -409,11 +409,7 @@ class LocalStorageOperations(AbstractRunStorage):
             run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
 
     def _serialize_multimedia(self, value, folder_path: Path, relative_path: Path = None):
-        pfbytes_file_reference_encoder = get_file_reference_encoder(
-            folder_path=folder_path,
-            relative_path=relative_path,
-            use_absolute_path=True,
-        )
+        pfbytes_file_reference_encoder = get_file_reference_encoder(folder_path, relative_path, use_absolute_path=True)
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return serialize(value, serialization_funcs=serialization_funcs)
 

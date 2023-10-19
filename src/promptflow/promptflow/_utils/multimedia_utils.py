@@ -157,7 +157,7 @@ def save_image_to_file(
     return image_reference
 
 
-def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, use_absolute_path=False) -> Callable:
+def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):
@@ -175,13 +175,13 @@ def default_json_encoder(obj):
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def persist_multimedia_date(value: Any, base_dir: Path, sub_dir: Path = None):
+def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_date_to_base64(value: Any):
+def convert_multimedia_data_to_base64(value: Any):
     to_base64_funcs = {PFBytes: PFBytes.to_base64}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
