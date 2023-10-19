@@ -15,6 +15,7 @@ from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -46,6 +47,7 @@ def run_pf_command(*args, pf, runtime, cwd=None):
         os.chdir(origin_cwd)
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="CLI tests, only run in live mode.")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
