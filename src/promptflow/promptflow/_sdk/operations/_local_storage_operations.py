@@ -32,7 +32,8 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
-from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -408,12 +409,12 @@ class LocalStorageOperations(AbstractRunStorage):
             run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
 
     def _serialize_multimedia(self, value, folder_path: Path, relative_path: Path = None):
-        pfbytes_file_reference_encoder = PFBytes._get_file_reference_encoder(
+        pfbytes_file_reference_encoder = get_file_reference_encoder(
             folder_path=folder_path,
             relative_path=relative_path,
             use_absolute_path=True,
         )
-        serialization_funcs = {Image: partial(Image._serialize, **{"encoder": pfbytes_file_reference_encoder})}
+        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
         return serialize(value, serialization_funcs=serialization_funcs)
 
     @staticmethod

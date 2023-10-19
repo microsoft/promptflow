@@ -2,13 +2,13 @@ import base64
 import imghdr
 import os
 import re
-import requests
 import uuid
-
 from functools import partial
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import urlparse
+
+import requests
 
 from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.multimedia import Image, PFBytes
@@ -141,26 +141,30 @@ def create_image(value: any, base_dir: Path = None):
         )
 
 
-def save_image_to_file(image: Image, file_name: str, folder_path: Path, relative_path: Path = None):
+def save_image_to_file(
+    image: Image, file_name: str, folder_path: Path, relative_path: Path = None, use_absolute_path=False
+):
     ext = get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_reference = {
-        f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name
-    }
+    image_path = str(relative_path / file_name) if relative_path else file_name
+    if use_absolute_path:
+        image_path = str(folder_path / image_path)
+    image_reference = {f"data:{image._mime_type};path": image_path}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
-    with open(os.path.join(path, file_name), 'wb') as file:
+    with open(os.path.join(path, file_name), "wb") as file:
         file.write(image)
     return image_reference
 
 
-def get_file_reference_encoder(folder_path: Path, relative_path: Path = None) -> Callable:
+def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, use_absolute_path=False) -> Callable:
     def pfbytes_file_reference_encoder(obj):
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):
             file_name = str(uuid.uuid4())
-            return save_image_to_file(obj, file_name, folder_path, relative_path)
+            return save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path)
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
+
     return pfbytes_file_reference_encoder
 
 
