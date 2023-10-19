@@ -5,7 +5,7 @@ import pandas as pd
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.load_data import load_data
-from promptflow._utils.multimedia_utils import get_multimedia_info, is_multimedia_dict, persist_multimedia_data
+from promptflow._utils.multimedia_utils import persist_multimedia_data, resolve_image_path
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -64,7 +64,7 @@ class BatchEngine:
             input_dir = self._resolve_dir(input_dir)
             file_data = load_data(input_dir)
             for each_line in file_data:
-                self._resolve_image_path(input_dir, each_line)
+                self._resolve_image(input_dir, each_line)
             result[input_key] = file_data
         return result
 
@@ -75,27 +75,16 @@ class BatchEngine:
             path = self.flow_executor._working_dir / path
         return path
 
-    def _resolve_image_path(self, input_dir: Path, one_line_data: dict):
+    def _resolve_image(self, input_dir: Path, one_line_data: dict):
         """Resolve image path to absolute path in one line data"""
         for key, value in one_line_data.items():
             if isinstance(value, list):
-                for each_item in value:
-                    each_item = BatchEngine.resolve_image(input_dir, each_item)
+                for item in value:
+                    item = resolve_image_path(input_dir, item)
                 one_line_data[key] = value
             elif isinstance(value, dict):
-                one_line_data[key] = BatchEngine.resolve_image(input_dir, value)
+                one_line_data[key] = resolve_image_path(input_dir, value)
         return one_line_data
-
-    @staticmethod
-    def resolve_image(input_dir: Path, data_dict: dict):
-        """Resolve image path to absolute path in data dict"""
-        input_dir = input_dir.parent if input_dir.is_file() else input_dir
-        if is_multimedia_dict(data_dict):
-            for key in data_dict:
-                _, resource = get_multimedia_info(key)
-                if resource == "path":
-                    data_dict[key] = str(input_dir / data_dict[key])
-        return data_dict
 
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to output directory"""
