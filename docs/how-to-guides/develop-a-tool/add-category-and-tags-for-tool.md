@@ -11,7 +11,19 @@ Previously, all tools were listed at the top level. It would be challenging for 
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or later.
 
 ## How to add category and tags for a tool
-Here, we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/my_tool_1.yaml) as an example. If you wish to create your own tool, please refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) guide. You can add the `category` and `tags` fields in the tool's YAML like this:
+Run the command below in your tool project directory to automatically generate your tool YAML, use _-c_ or _--category_ to add category, and use _--tags_ to add tags for your tool:
+
+```
+python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> --category <tool_category> --tags <tool_tags>
+```
+
+Here, we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/my_tool_1.yaml) as an example. If you wish to create your own tool, please refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) guide. 
+```
+cd D:\proj\github\promptflow\examples\tools\tool-package-quickstart
+
+python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.my_tool_1 -o my_tool_package\yamls\my_tool_1.yaml --category "test_tool" --tags "{'tag1':'value1','tag2':'value2'}"
+```
+In the auto-generated tool YAML file, the category and tags are shown as below:
 ```yaml
 my_tool_package.tools.my_tool_1.my_tool:
   function: my_tool
@@ -26,7 +38,7 @@ my_tool_package.tools.my_tool_1.my_tool:
   name: My First Tool
   description: This is my first tool
   type: python
-  # Add category and tags as shown below.
+  # Category and tags are shown as below.
   category: test_tool
   tags:
     tag1: value1
