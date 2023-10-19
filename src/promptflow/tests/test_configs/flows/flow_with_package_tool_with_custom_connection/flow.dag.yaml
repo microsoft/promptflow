@@ -1,0 +1,17 @@
+inputs:
+  text:
+    type: string
+    default: Hello!
+outputs:
+  out:
+    type: string
+    reference: ${my_first_tool.output}
+nodes:
+- name: my_first_tool
+  type: python
+  source:
+    type: package
+    tool: my_tool_package.tools.my_tool_1.my_tool
+  inputs:
+    connection: custom_connection_3
+    input_text: ${inputs.text}
