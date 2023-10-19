@@ -82,8 +82,12 @@ class ToolOperations:
             module=f.__module__,
         )
 
-    @staticmethod
-    def list():
-        # List all package tools in the environment
+    def list(self):
+        """
+        List all package tools in the environment.
+
+        :return: Dict of package tools info.
+        :rtype: Dict[str, Dict]
+        """
         tools = collect_package_tools()
         return tools
