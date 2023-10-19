@@ -3,7 +3,8 @@
 # ---------------------------------------------------------
 
 # This file is part of scripts\generate_json_schema.py in sdk-cli-v2, which is used to generate json schema
-# To use this script, run `python <this_file>` in promptflow env, and the json schema will be generated in the same folder.
+# To use this script, run `python <this_file>` in promptflow env, 
+# and the json schema will be generated in the same folder.
 
 from inspect import isclass
 import json
@@ -33,6 +34,7 @@ class PatchedJSONSchema(JSONSchema):
         setattr(self.opts, "ordered", self.props_ordered)
         super().__init__(*args, **kwargs)
 
+    # cspell: ignore pytype
     def _from_python_type(self, obj, field, pytype):
         metadata = field.metadata.get("metadata", {})
         metadata.update(field.metadata)
@@ -132,6 +134,8 @@ class PatchedJSONSchema(JSONSchema):
 
         return required or missing
 
+
+# noqa: F401, E402, E122 
 from promptflow._sdk.schemas._connection import AzureOpenAIConnectionSchema, OpenAIConnectionSchema, \
 QdrantConnectionSchema, CognitiveSearchConnectionSchema, SerpConnectionSchema, AzureContentSafetyConnectionSchema, \
 FormRecognizerConnectionSchema, CustomConnectionSchema, WeaviateConnectionSchema
