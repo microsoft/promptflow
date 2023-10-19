@@ -5,8 +5,7 @@ import pandas as pd
 
 from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.load_data import load_data
-from promptflow._utils.multimedia_utils import persist_multimedia_data
-from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow._utils.multimedia_utils import get_multimedia_info, is_multimedia_dict, persist_multimedia_data
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -91,9 +90,9 @@ class BatchEngine:
     def resolve_image(input_dir: Path, data_dict: dict):
         """Resolve image path to absolute path in data dict"""
         input_dir = input_dir.parent if input_dir.is_file() else input_dir
-        if PFBytes._is_multimedia_dict(data_dict):
+        if is_multimedia_dict(data_dict):
             for key in data_dict:
-                _, resource = Image._get_multimedia_info(key)
+                _, resource = get_multimedia_info(key)
                 if resource == "path":
                     data_dict[key] = str(input_dir / data_dict[key])
         return data_dict
