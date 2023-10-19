@@ -1,6 +1,6 @@
 import base64
 import hashlib
-from pathlib import Path
+from typing import Callable
 
 
 class PFBytes(bytes):
@@ -15,42 +15,35 @@ class PFBytes(bytes):
         # See https://docs.python.org/3/reference/datamodel.html#object.__new__
         return super().__new__(cls, value)
 
-    def __init__(self, data: bytes, mime_type):
+    def __init__(self, data: bytes, mime_type: str):
         super().__init__()
         # Use this hash to identify this bytes.
         self._hash = hashlib.sha1(data).hexdigest()[:8]
-        self._mime_type = mime_type
+        self._mime_type = mime_type.lower()
+
+    def to_base64(self):
+        """Returns the base64 representation of the PFBytes."""
+
+        return base64.b64encode(self).decode("utf-8")
 
 
 class Image(PFBytes):
+    """This class is used to represent an image in PromptFlow. It is a subclass of
+    ~promptflow.contracts.multimedia.PFBytes.
+    """
+
     def __init__(self, data: bytes, mime_type: str = "image/*"):
         return super().__init__(data, mime_type)
-
-    @staticmethod
-    def from_file(f):
-        with open(f, "rb") as fin:
-            return Image(fin.read())
 
     def __str__(self):
         return f"Image({self._hash})"
 
-    def to_base64(self):
-        return base64.b64encode(self).decode("utf-8")
+    def __repr__(self) -> str:
+        return f"Image({self._hash})"
 
-    def get_extension(self):
-        ext = self._mime_type.split("/")[-1]
-        if ext == "*":
-            return "png"
-        return ext
+    def serialize(self, encoder: Callable = None):
+        """Serialize the image to a dictionary."""
 
-    def serialize(self):
-        name = f"image_{self._hash}"
-        return self.save_to(name)
-
-    def save_to(self, name, working_dir=None):
-        file_name = f"{name}.{self.get_extension()}"
-        if not working_dir:
-            working_dir = Path.cwd()
-        with open(Path(working_dir) / file_name, "wb") as f:
-            f.write(self)
-        return {"pf_mime_type": self._mime_type, "path": file_name}
+        if encoder is None:
+            return self.__str__()
+        return encoder(self)

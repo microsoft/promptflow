@@ -7,6 +7,8 @@ import pytest
 from promptflow._cli._pf_azure.entry import main
 from promptflow._sdk.entities import Run
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
 
@@ -37,6 +39,7 @@ def run_pf_command(*args, pf, runtime, cwd=None):
         os.chdir(origin_cwd)
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestCliWithAzure:
     def test_basic_flow_run_bulk_without_env(self, pf, runtime) -> None:
@@ -57,15 +60,15 @@ class TestCliWithAzure:
         assert isinstance(run, Run)
 
     @pytest.mark.skip("Custom tool pkg and promptprompt pkg with CustomStrongTypeConnection not installed on runtime.")
-    def test_basic_flow_run_with_custom_strong_type_connection(self, pf, runtime) -> None:
+    def test_basic_flow_with_package_tool_with_custom_strong_type_connection(self, pf, runtime) -> None:
         name = str(uuid.uuid4())
         run_pf_command(
             "run",
             "create",
             "--flow",
-            f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
+            f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
             "--data",
-            f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
             "--name",
             name,
             pf=pf,

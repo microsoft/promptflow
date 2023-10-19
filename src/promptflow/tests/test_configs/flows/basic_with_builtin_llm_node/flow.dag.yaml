@@ -1,0 +1,30 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  text:
+    type: string
+    default: Python Hello World!
+outputs:
+  output:
+    type: string
+    reference: ${llm.output}
+nodes:
+- name: hello_prompt
+  type: prompt
+  inputs:
+    text: ${inputs.text}
+  source:
+    type: code
+    path: hello.jinja2
+- name: llm
+  type: llm
+  inputs:
+    prompt: ${hello_prompt.output}
+    deployment_name: gpt-35-turbo
+    model: gpt-3.5-turbo
+    max_tokens: '120'
+  source:
+    type: code
+    path: hello.jinja2
+  connection: azure_open_ai_connection
+  api: chat
+node_variants: {}

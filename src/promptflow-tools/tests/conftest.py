@@ -50,6 +50,11 @@ def gpt2_custom_connection():
     return ConnectionManager().get("gpt2_connection")
 
 
+@pytest.fixture
+def llama_chat_custom_connection():
+    return ConnectionManager().get("llama_chat_connection")
+
+
 @pytest.fixture(autouse=True)
 def skip_if_no_key(request, mocker):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})

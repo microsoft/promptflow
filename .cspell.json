@@ -25,7 +25,9 @@
     "scripts/docs/_build/**",
     "src/promptflow/promptflow/azure/_restclient/flow/**",
     "src/promptflow/tests/**",
-    "**/flow.dag.yaml"
+    "src/promptflow-tools/tests/**",
+    "**/flow.dag.yaml",
+    "**/setup.py"
   ],
   "words": [
     "aoai",
@@ -69,7 +71,8 @@
     "westus",
     "msrest",
     "cref",
-    "msal"
+    "msal",
+    "pfbytes"
   ],
   "ignoreWords": [
     "openmpi",
@@ -126,12 +129,18 @@
     "tcsetattr",
     "pysqlite",
     "AADSTS700082",
+    "Pyinstaller",
     "runsvdir",
     "runsv",
     "levelno",
     "LANCZOS",
     "Mobius",
-    "ruamel"
+    "ruamel",
+    "gunicorn",
+    "pkill",
+    "pgrep",
+    "Hwfoxydrg",
+    "llms"
   ],
   "allowCompoundWords": true
 }
