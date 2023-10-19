@@ -62,7 +62,7 @@ properties:
   azureml.promptflow.description: ChatGPT-based chatbot that leverages Wikipedia data to ground the responses.
 ```
 
-### Register a model in a organization registry
+### Register a model in an organization registry
 
 Run the following command to register the previous model to an organization registry. More details about [model creation](https://learn.microsoft.com/en-us/cli/azure/ml/model?view=azure-cli-latest#az-ml-model-create):
 ```
