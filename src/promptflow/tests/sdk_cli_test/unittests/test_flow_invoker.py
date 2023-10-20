@@ -19,6 +19,9 @@ class TestFlowInvoker:
     # Note: e2e test of flow invoker has been covered by test_flow_serve.
     def test_flow_invoker_unsupported_connection_provider(self):
         with pytest.raises(UnsupportedConnectionProvider):
+            FlowInvoker(flow=EXAMPLE_FLOW, connection_provider=[])
+
+        with pytest.raises(ValueError):
             FlowInvoker(flow=EXAMPLE_FLOW, connection_provider="unsupported")
 
     def test_flow_invoker_custom_connection_provider(self):
