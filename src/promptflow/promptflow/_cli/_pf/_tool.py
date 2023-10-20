@@ -5,6 +5,7 @@
 import argparse
 import logging
 import re
+import json
 from pathlib import Path
 import shutil
 
@@ -19,6 +20,7 @@ from promptflow._cli._pf._init_entry_generators import (
 )
 from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -33,6 +35,7 @@ def add_tool_parser(subparsers):
     )
     subparsers = tool_parser.add_subparsers()
     add_parser_init_tool(subparsers)
+    add_parser_list_tool(subparsers)
     tool_parser.set_defaults(action="tool")
 
 
@@ -70,9 +73,38 @@ pf tool init --tool tool_name
     )
 
 
+def add_parser_list_tool(subparsers):
+    """Add tool list parser to the pf tool subparsers."""
+    epilog = """
+Examples:
+
+# List all package tool in the environment:
+pf tool list
+# List all package tool and code tool in the flow:
+pf tool list --flow flow-path
+"""  # noqa: E501
+    add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
+        "--flow", type=str, help="the flow directory"
+    )
+    add_params = [
+        add_param_flow,
+    ] + logging_params
+    return activate_action(
+        name="list",
+        description="List tools.",
+        epilog=epilog,
+        add_params=add_params,
+        subparsers=subparsers,
+        help_message="List all tools in the environment.",
+        action_param_name="sub_action",
+    )
+
+
 def dispatch_tool_commands(args: argparse.Namespace):
     if args.sub_action == "init":
         init_tool(args)
+    elif args.sub_action == "list":
+        list_tool(args)
 
 
 @exception_handler("Tool init")
@@ -112,3 +144,10 @@ def init_tool(args):
     ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(script_code_path / f"{args.tool}.py")
     InitGenerator().generate_to_file(script_code_path / "__init__.py")
     print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
+
+
+@exception_handler("Tool list")
+def list_tool(args):
+    pf_client = PFClient()
+    package_tools = pf_client._tools.list(args.flow)
+    print(json.dumps(package_tools, indent=4))

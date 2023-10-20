@@ -2,16 +2,18 @@ import base64
 import imghdr
 import os
 import re
-import requests
 import uuid
-
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 from urllib.parse import urlparse
 
+import requests
+
 from promptflow.contracts._errors import InvalidImageInput
+from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
@@ -144,12 +146,10 @@ def create_image(value: any, base_dir: Path = None):
 def save_image_to_file(image: Image, file_name: str, folder_path: Path, relative_path: Path = None):
     ext = get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_reference = {
-        f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name
-    }
+    image_reference = {f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
-    with open(os.path.join(path, file_name), 'wb') as file:
+    with open(os.path.join(path, file_name), "wb") as file:
         file.write(image)
     return image_reference
 
@@ -161,6 +161,7 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None) ->
             file_name = str(uuid.uuid4())
             return save_image_to_file(obj, file_name, folder_path, relative_path)
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
+
     return pfbytes_file_reference_encoder
 
 
@@ -171,19 +172,19 @@ def default_json_encoder(obj):
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def persist_multimedia_date(value: Any, base_dir: Path, sub_dir: Path = None):
+def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_date_to_base64(value: Any):
+def convert_multimedia_data_to_base64(value: Any):
     to_base64_funcs = {PFBytes: PFBytes.to_base64}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) -> dict:
+def recursive_process(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
@@ -193,3 +194,25 @@ def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) ->
     if isinstance(value, dict):
         return {k: recursive_process(v, process_funcs) for k, v in value.items()}
     return value
+
+
+def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict, base_dir: Path):
+    updated_inputs = dict(line_inputs or {})
+    for key, value in inputs.items():
+        if value.type == ValueType.IMAGE:
+            updated_inputs[key] = create_image(updated_inputs[key], base_dir)
+        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+    return updated_inputs
+
+
+def load_multimedia_data_recursively(value: Any):
+    if isinstance(value, list):
+        return [load_multimedia_data_recursively(item) for item in value]
+    elif isinstance(value, dict):
+        if is_multimedia_dict(value):
+            return create_image_from_dict(value)
+        else:
+            return {k: load_multimedia_data_recursively(v) for k, v in value.items()}
+    else:
+        return value

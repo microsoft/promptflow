@@ -7,12 +7,14 @@ import inspect
 import json
 from pathlib import Path
 from dataclasses import asdict
+from os import PathLike
+from typing import Union
 
 from promptflow._core.tool_meta_generator import is_tool
+from promptflow._core.tools_manager import collect_package_tools
 from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
-from promptflow._utils.multimedia_utils import create_image_from_file
 
 
 class ToolOperations:
@@ -127,3 +129,26 @@ class ToolOperations:
         img_str = base64.b64encode(buffered.getvalue())
         data_url = 'data:image/png;base64,' + img_str.decode('utf-8')
         return data_url
+
+    def list(
+        self,
+        flow: Union[str, PathLike] = None,
+    ):
+        """
+        List all package tools in the environment and code tools in the flow.
+
+        :param flow: path to the flow directory
+        :type flow: Union[str, PathLike]
+        :return: Dict of package tools and code tools info.
+        :rtype: Dict[str, Dict]
+        """
+        from promptflow._sdk._pf_client import PFClient
+
+        local_client = PFClient()
+        package_tools = collect_package_tools()
+        if flow:
+            tools, _ = local_client.flows._generate_tools_meta(flow)
+        else:
+            tools = {"package": {}, "code": {}}
+        tools["package"].update(package_tools)
+        return tools
