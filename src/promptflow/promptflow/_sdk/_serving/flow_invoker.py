@@ -27,7 +27,7 @@ class FlowInvoker:
     The invoker of a flow.
 
     :param flow: The path of the flow, or the flow loaded by load_flow().
-    :type flow: [str, Flow]
+    :type flow: [str, ~promptflow._sdk.entities._flow.Flow]
     :param connection_provider: The connection provider, defaults to None
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
@@ -35,7 +35,10 @@ class FlowInvoker:
     """
 
     def __init__(
-        self, flow: str, connection_provider: [str, Callable] = None, streaming: Union[Callable[[], bool], bool] = False
+        self,
+        flow: [str, Flow],
+        connection_provider: [str, Callable] = None,
+        streaming: Union[Callable[[], bool], bool] = False,
     ):
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
