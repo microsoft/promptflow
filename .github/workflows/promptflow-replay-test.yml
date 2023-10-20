@@ -74,7 +74,20 @@ jobs:
         Set-PSDebug -Trace 1
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools
+        python -m pip install --upgrade nox
+        python -m pip install --upgrade mock
+        python -m pip install --upgrade pytest-cov
+        python -m pip install --upgrade coverage==6.0.1
+        python -m pip install --upgrade pytest-forked
+        python -m pip install --upgrade pytest-xdist
+        python -m pip install --upgrade pytest-timeout
+        python -m pip install --upgrade pytest-mock
+        python -m pip install --upgrade pytest-nunit
+        python -m pip install --upgrade pytest
+        python -m pip install --upgrade pydash
         python -m pip install --upgrade wheel
+        python -m pip install --upgrade keyrings.alt
+        python -m pip install --upgrade beautifulsoup4==4.12.2
         gci . -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Azure Login
