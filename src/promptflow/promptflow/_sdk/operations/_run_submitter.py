@@ -290,7 +290,7 @@ class RunSubmitter:
         # prepare data
         input_dirs = self._resolve_input_dirs(run)
         self._validate_column_mapping(column_mapping)
-        mapped_inputs = batch_engine.get_input_dicts(input_dirs, column_mapping)
+        mapped_inputs = batch_engine._get_input_dicts(input_dirs, column_mapping)
         bulk_result = None
         status = Status.Failed.value
         exception = None
