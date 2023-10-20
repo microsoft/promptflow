@@ -167,6 +167,7 @@ class TestToolsManager:
         }
 
         expected_template = {
+            "$schema": "https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json",
             "name": "to_replace_with_connection_name",
             "type": "custom",
             "custom_type": "MyFirstConnection",
@@ -183,6 +184,7 @@ class TestToolsManager:
         tools, specs, templates = collect_package_tools_and_connections(keys)
         assert len(templates) == 1
         expected_template = """
+            $schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json,
             name: "to_replace_with_connection_name"
             type: custom
             custom_type: MyCustomConnection
