@@ -40,8 +40,8 @@ jobs:
       with:
         name: wheel
         path: |
-          ${{ env.testWorkingDirectory }}/dist/*.whl
-          ${{ env.testWorkingDirectory }}/../promptflow-tools/dist/*.whl
+          ${{ github.workspace }}/src/promptflow/dist/*.whl
+          ${{ github.workspace }}/src/promptflow-tools/dist/*.whl
   sdk_cli_tests:
     needs: build
     strategy:
