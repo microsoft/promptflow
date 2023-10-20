@@ -5,7 +5,9 @@ This guide will instruct you on how to use the "enabled by" feature in the tool 
 We introduce parameter "enabled_by" in the tool yaml to determine which input is enabled by which other input.
 Concurrently, we support enabling an input by another input type or input value, Hence, we introduce two additional parameters: "enabled_by_type" and "enabled_by_value".
 
-> Note: We do not recommend using "enabled_by_type" and "enabled_by_value" simultaneously. If both are used, "enabled_by_type" will be ignored.
+> Note 1: We do not recommend using "enabled_by_type" and "enabled_by_value" simultaneously. If both are used, "enabled_by_type" will be ignored.
+
+> Note 2: Both "enabled_by_type" and "enabled_by_value" in tool yaml are list types, which means you can use multiple inputs to enable a single input. For instance, if "enabled_by_type" is [AzureOpenAIConnection, OpenAIConnection], the input will be enabled when the connection type is either AzureOpenAIConnection or OpenAIConnection.
 
 ## Prerequisites
 To proceed, it's crucial for you to understand the process of developing a tool and generating a tool yaml. For thorough insights and instructions, please refer to [Create and Use Tool Package](create-and-use-tool-package.md). 
@@ -63,7 +65,7 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input:
 ```
 
 ### Step 2: Support "enabled_by_type" in the tool yaml
-Once you have generated a tool yaml, you can incorporate the "enabled_by_type" into it. Here is an example showcasing the use of 'enabled_by_type' in the tool yaml:
+Once you have generated a tool yaml, you can incorporate the "enabled_by_type" into it. Here is an example showcasing the use of "enabled_by_type" in the tool yaml:
 
 ```yaml
 promptflow.tools.embedding.embedding:
@@ -207,8 +209,6 @@ promptflow.tools.embedding.embedding:
       type:
       - string
 ```
-
-> Note: Both "enabled_by_type" and "enabled_by_value" in tool yaml are list types, which means you can use multiple inputs to enable a single input. For instance, if "enabled_by_type" is [AzureOpenAIConnection, OpenAIConnection], the input will be enabled when the connection type is either AzureOpenAIConnection or OpenAIConnection.
 
 ## Use the tool from VSCode Extension
 After you build and share the tool package with "enabled_by" feature, you can use your tool from VSCode Extension according to [Create and Use Tool Package](create-and-use-tool-package.md). For instance, when you select a connection with "AzureOpenAIConnection" type, only "deployment_name" input is enabled and displayed for "enabled_by_type" example.
