@@ -45,7 +45,7 @@ column_mapping:
 run: <existing-flow-run-name>
 ```
 
-Reference [here](./use-column-mapping.md) for detailed information for column mapping.
+Reference [here](./run-and-evaluate-a-flow/use-column-mapping.md) for detailed information for column mapping.
 You can find additional information about flow yaml schema in [Run YAML Schema](../reference/run-yaml-schema-reference.md).
 
 After preparing the yaml file, use the CLI command below to create them:
