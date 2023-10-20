@@ -162,4 +162,5 @@ Alternatively, you can test your tool package using the script below to ensure t
 * If you encounter a `403 Forbidden Error`, it's likely due to a naming conflict with an existing package. You will need to choose a different name. Package names must be unique on PyPI to avoid confusion and conflicts among users. Before creating a new package, it's recommended to search PyPI (https://pypi.org/) to verify that your chosen name is not already taken. If the name you want is unavailable, consider selecting an alternative name or a variation that clearly differentiates your package from the existing one.
 
 ## Advanced features
-[Customize your tool icon](add-a-tool-icon.md)
+[Customize your tool icon](add-a-tool-icon.md)  
+[Add category and tags for tool](add-category-and-tags-for-tool.md)  
