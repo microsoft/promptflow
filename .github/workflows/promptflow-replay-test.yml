@@ -40,7 +40,9 @@ jobs:
         name: Python Wheels
         path: |
           ${{ env.testWorkingDirectory }}/dist/*.whl
+          ${{ env.testWorkingDirectory }}/../promptflow-tools/dist/*.whl
   sdk_cli_tests:
+    needs: build
     strategy:
       fail-fast: false
       matrix:
