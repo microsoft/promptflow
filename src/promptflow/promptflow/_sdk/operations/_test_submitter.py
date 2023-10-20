@@ -16,7 +16,6 @@ from promptflow._sdk._utils import parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
-from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
