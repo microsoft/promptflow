@@ -86,7 +86,7 @@ class ToolOperations:
 
     def list(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, PathLike] = None,
     ):
         """
         List all package tools in the environment and code tools in the flow.
