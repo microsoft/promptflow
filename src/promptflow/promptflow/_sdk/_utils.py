@@ -626,12 +626,10 @@ def _generate_tool_meta(
     return res
 
 
-def _gen_dynamic_list(function_config) -> List:
+def _gen_dynamic_list(function_config: Dict) -> List:
     """Generate dynamic list for a tool input.
 
-    :param function_config: function config in tool meta. It should contain
-    'func_path' and 'func_kwargs'.
-    :type function_config: dict
+    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
     :return: a list of tool input dynamic enums.
     """
     func_path = function_config.get("func_path", "")
@@ -643,7 +641,7 @@ def _gen_dynamic_list(function_config) -> List:
 
     workspace_triad = get_workspace_triad_from_local()
     if (workspace_triad.subscription_id and workspace_triad.resource_group_name
-        and workspace_triad.workspace_name):
+            and workspace_triad.workspace_name):
         return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
     # if no workspace triple available, just skip.
     else:

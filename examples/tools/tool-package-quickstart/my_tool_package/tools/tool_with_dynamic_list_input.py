@@ -3,7 +3,6 @@ from typing import List, Union, Dict
 
 
 def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    import pdb; pdb.set_trace()
     """This is a dummy function to generate a list of items.
 
     :param prefix: prefix to add to each item.

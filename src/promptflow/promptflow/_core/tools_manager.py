@@ -182,7 +182,7 @@ def append_workspace_triple_to_func_input_params(func_sig_params, func_input_par
     # 1. func signature has kwargs param.
     # 2. func signature has param named 'subscription_id','resource_group_name','workspace_name'.
     has_kwargs_param = any([param.kind == inspect.Parameter.VAR_KEYWORD for _, param in func_sig_params.items()])
-    if has_kwargs_param == False:
+    if has_kwargs_param is False:
         # keep only params that are in func signature. Or run into error when calling func.
         avail_ws_info_dict = {k: v for k, v in ws_triple_dict.items() if k in set(func_sig_params.keys())}
     else:
