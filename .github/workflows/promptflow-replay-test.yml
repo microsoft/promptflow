@@ -75,11 +75,8 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools
         python -m pip install --upgrade wheel
-        ls
-        $packages = Get-ChildItem . -Filter *.whl
-        foreach ($package in $packages) {
-          python -m pip install $package.FullName
-        }
+        gci . -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        pip freeze
     - name: Azure Login
       uses: azure/login@v1
       with:
