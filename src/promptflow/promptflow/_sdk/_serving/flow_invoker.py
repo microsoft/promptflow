@@ -19,7 +19,7 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.operations._flow_operations import FlowOperations
-from promptflow._utils.multimedia_utils import convert_multimedia_date_to_base64, persist_multimedia_date
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.executor import FlowExecutor
 from promptflow.storage._run_storage import DefaultRunStorage
 
@@ -118,9 +118,9 @@ class FlowInvoker:
         logger.info(f"Execute flow with data {data!r}")
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
         # Get base64 for multi modal object
-        resolved_outputs = {k: convert_multimedia_date_to_base64(v, with_type=True) for k, v in result.output.items()}
+        resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in result.output.items()}
         if self._dump_to:
-            result.output = persist_multimedia_date(
+            result.output = persist_multimedia_data(
                 result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
