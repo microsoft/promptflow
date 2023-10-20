@@ -708,7 +708,7 @@ pf tool list [--flow]
 
 #### Examples
 
-List all package tool in the environment
+List all package tool in the environment.
 
 ```bash
 pf tool list
