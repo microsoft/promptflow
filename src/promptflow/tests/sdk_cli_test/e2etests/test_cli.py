@@ -13,6 +13,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
 
+import mock
 import pytest
 import yaml
 
@@ -540,7 +541,7 @@ class TestCli:
                 assert details["node_runs"][0]["logs"]["stdout"]
 
         env = {"API_BASE": "${azure_open_ai_connection.api_base}"}
-        SubmitterHelper.resolve_environment_variables(env)
+        SubmitterHelper.resolve_environment_variables(env, local_client)
         run_pf_command(
             "flow",
             "test",
@@ -770,6 +771,94 @@ class TestCli:
             chat_prompt_node = next(filter(lambda item: item["name"] == "chat_prompt", flow_dict["nodes"]))
             assert "chat_history" in chat_prompt_node["inputs"]
             assert "customer_info" in chat_prompt_node["inputs"]
+
+    def test_flow_init_with_connection_and_deployment(self):
+        def check_connection_and_deployment(flow_folder, connection, deployment):
+            with open(Path(flow_folder) / "flow.dag.yaml", "r") as f:
+                flow_dict = yaml.safe_load(f)
+                assert flow_dict["nodes"][0]["inputs"]["deployment_name"] == deployment
+                assert flow_dict["nodes"][0]["connection"] == connection
+
+        temp_dir = mkdtemp()
+        with _change_working_dir(temp_dir):
+            flow_name = "chat_flow"
+            flow_folder = Path(temp_dir) / flow_name
+            # When configure local connection provider, init chat flow without connection and deployment.
+            run_pf_command(
+                "flow",
+                "init",
+                "--flow",
+                flow_name,
+                "--type",
+                "chat",
+            )
+            # Assert connection files created
+            assert (flow_folder / "azure_openai.yaml").exists()
+            assert (flow_folder / "openai.yaml").exists()
+
+            # When configure local connection provider, init chat flow with connection and deployment.
+            connection = "connection_name"
+            deployment = "deployment_name"
+            run_pf_command(
+                "flow",
+                "init",
+                "--flow",
+                flow_name,
+                "--type",
+                "chat",
+                "--connection",
+                connection,
+                "--deployment",
+                deployment,
+                "--yes",
+            )
+            # Assert connection files created and the connection/deployment is set in flow.dag.yaml
+            check_connection_and_deployment(flow_folder, connection=connection, deployment=deployment)
+            connection_files = [flow_folder / "azure_openai.yaml", flow_folder / "openai.yaml"]
+            for file in connection_files:
+                assert file.exists()
+                with open(file, "r") as f:
+                    connection_dict = yaml.safe_load(f)
+                    assert connection_dict["name"] == connection
+
+            shutil.rmtree(flow_folder)
+            target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
+            with mock.patch(target) as mocked:
+                mocked.return_value = "azureml:xx"
+                # When configure azure connection provider, init chat flow without connection and deployment.
+                run_pf_command(
+                    "flow",
+                    "init",
+                    "--flow",
+                    flow_name,
+                    "--type",
+                    "chat",
+                    "--yes",
+                )
+                # Assert connection files not created.
+                assert not (flow_folder / "azure_openai.yaml").exists()
+                assert not (flow_folder / "openai.yaml").exists()
+
+                # When configure azure connection provider, init chat flow with connection and deployment.
+                connection = "connection_name"
+                deployment = "deployment_name"
+                run_pf_command(
+                    "flow",
+                    "init",
+                    "--flow",
+                    flow_name,
+                    "--type",
+                    "chat",
+                    "--connection",
+                    connection,
+                    "--deployment",
+                    deployment,
+                    "--yes",
+                )
+                # Assert connection files not created and the connection/deployment is set in flow.dag.yaml
+                check_connection_and_deployment(flow_folder, connection=connection, deployment=deployment)
+                assert not (flow_folder / "azure_openai.yaml").exists()
+                assert not (flow_folder / "openai.yaml").exists()
 
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
