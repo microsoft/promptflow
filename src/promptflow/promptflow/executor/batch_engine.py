@@ -1,11 +1,9 @@
 from pathlib import Path
 from typing import Any, Dict, List, Mapping, Union
 
-import pandas as pd
-
-from promptflow._constants import DEFAULT_ENCODING
 from promptflow._utils.load_data import load_data
 from promptflow._utils.multimedia_utils import persist_multimedia_data, resolve_image_path
+from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
 
@@ -92,11 +90,9 @@ class BatchEngine:
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to output directory"""
         output_dir = self._resolve_dir(output_dir)
-        output_file = output_dir / OUTPUT_FILE_NAME
         # persist images to output directory
         outputs = [persist_multimedia_data(output, output_dir) for output in outputs]
         # persist outputs to json line file
-        df = pd.DataFrame(outputs)
-        with open(output_file, mode="w", encoding=DEFAULT_ENCODING) as f:
-            df.to_json(f, "records", lines=True)
+        output_file = output_dir / OUTPUT_FILE_NAME
+        dump_list_to_jsonl(output_file, outputs)
         return outputs

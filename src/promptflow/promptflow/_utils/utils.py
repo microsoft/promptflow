@@ -19,6 +19,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
+from promptflow._constants import DEFAULT_ENCODING
+
 T = TypeVar("T")
 
 
@@ -47,6 +49,13 @@ class DateTimeEncoder(json.JSONEncoder):
 def load_json(file_path: Union[str, Path]) -> dict:
     with open(file_path, "r") as f:
         return json.load(f)
+
+
+def dump_list_to_jsonl(file_path: Union[str, Path], list_data: List[Dict]):
+    with open(file_path, "w", encoding=DEFAULT_ENCODING) as jsonl_file:
+        for data in list_data:
+            json.dump(data, jsonl_file, ensure_ascii=False)
+            jsonl_file.write("\n")
 
 
 def transpose(values: List[Dict[str, Any]], keys: Optional[List] = None) -> Dict[str, List]:
