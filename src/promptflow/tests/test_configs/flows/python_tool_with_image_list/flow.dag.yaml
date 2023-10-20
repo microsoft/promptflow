@@ -23,7 +23,11 @@ nodes:
     type: code
     path: pick_images_from_list.py
   inputs:
-    image_list: ${inputs.image_list}
+    image_list:
+      - data:image/jpg;path: logo.jpg
+      - data:image/jpg;path: logo_2.jpg
+      - data:image/jpg;path: logo_3.jpg
+    image_list_2: ${inputs.image_list}
     image_dict: ${inputs.image_dict}
-    idx_l: 1
-    idx_r: 2
+    idx_1: 1
+    idx_2: 2
