@@ -2,7 +2,10 @@ import json
 
 import pytest
 
+from ..recording_utilities import is_live
 
+
+@pytest.mark.skipif(condition=not is_live(), reason="serving tests, only run in live mode.")
 @pytest.mark.usefixtures("flow_serving_client_remote_connection")
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client_remote_connection):
