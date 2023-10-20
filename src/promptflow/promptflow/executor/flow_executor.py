@@ -24,9 +24,9 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
+from promptflow._utils.multimedia_utils import create_image, create_image_from_dict, is_multimedia_dict
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import Image, PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ValueType
@@ -793,7 +793,7 @@ class FlowExecutor:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image._create(updated_inputs[key], self._working_dir)
+                updated_inputs[key] = create_image(updated_inputs[key], self._working_dir)
             elif value.type == ValueType.LIST:
                 updated_inputs[key] = self._process_images_in_input_list(updated_inputs[key])
         return updated_inputs
@@ -802,39 +802,10 @@ class FlowExecutor:
         if isinstance(value, list):
             return [self._process_images_in_input_list(item) for item in value]
         elif isinstance(value, dict):
-            if PFBytes._is_multimedia_dict(value):
-                return Image._from_dict(value)
+            if is_multimedia_dict(value):
+                return create_image_from_dict(value)
             else:
                 return {k: self._process_images_in_input_list(v) for k, v in value.items()}
-        else:
-            return value
-
-    @staticmethod
-    def _persist_images_from_output(output: dict, base_dir: Path, sub_dir: Path = None):
-        if sub_dir.is_absolute():
-            folder_path = sub_dir
-            relative_path = None
-        else:
-            folder_path = base_dir
-            relative_path = sub_dir
-        for key, value in output.items():
-            output[key] = FlowExecutor._persist_images_recursively(value, key, folder_path, relative_path)
-        return output
-
-    @staticmethod
-    def _persist_images_recursively(value: Any, prefix: str, folder_path: Path, relative_path: Path = None):
-        if isinstance(value, Image):
-            file_name = f"{prefix}_{uuid.uuid4()}"
-            return value._save_to_file(file_name, folder_path, relative_path)
-        elif isinstance(value, list):
-            return [
-                FlowExecutor._persist_images_recursively(item, prefix, folder_path, relative_path) for item in value
-            ]
-        elif isinstance(value, dict):
-            return {
-                k: FlowExecutor._persist_images_recursively(v, prefix, folder_path, relative_path)
-                for k, v in value.items()
-            }
         else:
             return value
 

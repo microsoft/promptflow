@@ -7,5 +7,9 @@ We provide guides on how to develop a tool and use it.
 
 create-and-use-tool-package
 add-a-tool-icon
+<<<<<<< HEAD
 how-to-use-enabled-by
+=======
+add-category-and-tags-for-tool
+>>>>>>> main
 ```

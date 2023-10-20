@@ -28,11 +28,13 @@ class Configuration(object):
     CONFIG_PATH = Path.home() / ".promptflow" / "pf.yaml"
     COLLECT_TELEMETRY = "cli.telemetry_enabled"
     EXTENSION_COLLECT_TELEMETRY = "extension.telemetry_enabled"
+    EU_USER = "cli.eu_user"
+    EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
     _instance = None
 
-    def __init__(self):
+    def __init__(self, overrides=None):
         if not os.path.exists(self.CONFIG_PATH.parent):
             os.makedirs(self.CONFIG_PATH.parent, exist_ok=True)
         if not os.path.exists(self.CONFIG_PATH):
@@ -41,6 +43,10 @@ class Configuration(object):
         self._config = load_yaml(self.CONFIG_PATH)
         if not self._config:
             self._config = {}
+        # Allow config override by kwargs
+        overrides = overrides or {}
+        for key, value in overrides.items():
+            pydash.set_(self._config, key, value)
 
     @property
     def config(self):
@@ -136,11 +142,15 @@ class Configuration(object):
     def get_connection_provider(self) -> Optional[str]:
         """Get the current connection provider. Default to local if not configured."""
         provider = self.get_config(key=self.CONNECTION_PROVIDER)
+        return self.resolve_connection_provider(provider)
+
+    @classmethod
+    def resolve_connection_provider(cls, provider) -> Optional[str]:
         if provider is None:
             return ConnectionProvider.LOCAL
         if provider == ConnectionProvider.AZUREML.value:
             # Note: The below function has azure-ai-ml dependency.
-            return "azureml:" + self._get_workspace_from_config()
+            return "azureml:" + cls._get_workspace_from_config()
         # If provider not None and not Azure, return it directly.
         # It can be the full path of a workspace.
         return provider
@@ -154,6 +164,12 @@ class Configuration(object):
     def set_telemetry_consent(self, value):
         """Set the telemetry consent value and store in local."""
         self.set_config(key=self.COLLECT_TELEMETRY, value=value)
+
+    def is_eu_user(self) -> Optional[bool]:
+        """Check if user is from europe. Return None if not configured."""
+        if call_from_extension():
+            return self.get_config(key=self.EXTENSION_EU_USER)
+        return self.get_config(key=self.EU_USER)
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""

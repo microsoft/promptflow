@@ -6,6 +6,7 @@
 # so it should not contain any dependency on azure or azureml-related packages.
 
 
+import json
 import logging
 import sys
 from contextvars import ContextVar
@@ -14,6 +15,7 @@ from functools import partial
 from typing import List, Optional
 
 from promptflow._utils.credential_scrubber import CredentialScrubber
+from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow.contracts.run_mode import RunMode
 
 # The maximum length of logger name is 18 ("promptflow-runtime").
@@ -59,11 +61,25 @@ class CredentialScrubberFormatter(logging.Formatter):
         return self.credential_scrubber.scrub(s)
 
     def _handle_customer_content(self, s: str, record: logging.LogRecord) -> str:
-        """Interface method for handling customer content in log message.
+        """Handle customer content in log message.
 
         Derived class can override this method to handle customer content in log.
         """
-        return s
+        # If log record does not have "customer_content" field, return input logging string directly.
+        if not hasattr(record, "customer_content"):
+            return s
+
+        customer_content = record.customer_content
+
+        if isinstance(customer_content, Exception):
+            # If customer_content is an exception, convert it to string.
+            customer_str = self._convert_exception_to_str(customer_content)
+        elif isinstance(customer_content, str):
+            customer_str = customer_content
+        else:
+            customer_str = str(customer_content)
+
+        return s.replace("{customer_content}", customer_str)
 
     def _handle_traceback(self, s: str, record: logging.LogRecord) -> str:
         """Interface method for handling traceback in log message.
@@ -71,6 +87,13 @@ class CredentialScrubberFormatter(logging.Formatter):
         Derived class can override this method to handle traceback in log.
         """
         return s
+
+    def _convert_exception_to_str(self, ex: Exception) -> str:
+        """Convert exception a user-friendly string."""
+        try:
+            return json.dumps(ExceptionPresenter.create(ex).to_dict(include_debug_info=True), indent=2)
+        except:  # noqa: E722
+            return str(ex)
 
 
 class FileHandler:

@@ -7,11 +7,11 @@ import importlib
 import json
 import logging
 import os
-import shutil
 import webbrowser
 from pathlib import Path
 
 from promptflow._cli._params import (
+    add_param_config,
     add_param_entry,
     add_param_environment_variables,
     add_param_flow_name,
@@ -24,16 +24,21 @@ from promptflow._cli._params import (
     logging_params,
 )
 from promptflow._cli._pf._init_entry_generators import (
+    AzureOpenAIConnectionGenerator,
+    ChatFlowDAGGenerator,
     FlowDAGGenerator,
+    OpenAIConnectionGenerator,
     ToolMetaGenerator,
     ToolPyGenerator,
     copy_extra_files,
 )
 from promptflow._cli._pf._run import exception_handler
-from promptflow._cli._utils import activate_action, confirm, inject_sys_path, list_of_dict_to_dict
-from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
+from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
+from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 
+DEFAULT_CONNECTION = "open_ai_connection"
+DEFAULT_DEPLOYMENT = "gpt-35-turbo"
 logger = logging.getLogger(LOGGER_NAME)
 
 
@@ -90,6 +95,12 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
         help="The initialized flow type.",
         default="standard",
     )
+    add_param_connection = lambda parser: parser.add_argument(  # noqa: E731
+        "--connection", type=str, help=argparse.SUPPRESS
+    )
+    add_param_deployment = lambda parser: parser.add_argument(  # noqa: E731
+        "--deployment", type=str, help=argparse.SUPPRESS
+    )
 
     add_params = [
         add_param_type,
@@ -98,6 +109,8 @@ pf flow init --flow intent_copilot --entry intent.py --function extract_intent -
         add_param_entry,
         add_param_function,
         add_param_prompt_template,
+        add_param_connection,
+        add_param_deployment,
     ] + logging_params
     activate_action(
         name="init",
@@ -139,6 +152,7 @@ pf flow serve --source <path_to_flow> --port 8080 --host localhost --environment
             add_param_host,
             add_param_static_folder,
             add_param_environment_variables,
+            add_param_config,
         ]
         + logging_params,
         subparsers=subparsers,
@@ -206,6 +220,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_input,
         add_param_inputs,
         add_param_environment_variables,
+        add_param_config,
     ] + logging_params
     activate_action(
         name="test",
@@ -229,7 +244,7 @@ def init_flow(args):
     else:
         # Create an example flow
         print("Creating flow from scratch...")
-        _init_flow_by_template(args.flow, args.type, args.yes)
+        _init_flow_by_template(args.flow, args.type, args.yes, args.connection, args.deployment)
 
 
 def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dict = None):
@@ -270,7 +285,51 @@ def _init_existing_flow(flow_name, entry=None, function=None, prompt_params: dic
     print(f"Done. Generated flow in folder: {flow_path.resolve()}.")
 
 
-def _init_flow_by_template(flow_name, flow_type, overwrite=False):
+def _init_chat_flow(flow_name, flow_path, connection=None, deployment=None):
+    from promptflow._sdk._configuration import Configuration
+
+    example_flow_path = Path(__file__).parent.parent / "data" / "chat_flow" / "flow_files"
+    for item in list(example_flow_path.iterdir()):
+        _copy_to_flow(flow_path=flow_path, source_file=item)
+
+    # Generate flow.dag.yaml to chat flow.
+    connection = connection or DEFAULT_CONNECTION
+    deployment = deployment or DEFAULT_DEPLOYMENT
+    ChatFlowDAGGenerator(connection=connection, deployment=deployment).generate_to_file(flow_path / "flow.dag.yaml")
+    # When customer not configure the remote connection provider, create connection yaml to chat flow.
+    is_local_connection = Configuration.get_instance().get_connection_provider() == ConnectionProvider.LOCAL
+    if is_local_connection:
+        OpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "openai.yaml")
+        AzureOpenAIConnectionGenerator(connection=connection).generate_to_file(flow_path / "azure_openai.yaml")
+
+    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
+
+    print(f"Done. Created chat flow folder: {flow_path.resolve()}.")
+    if is_local_connection:
+        print(
+            f"The generated chat flow is requiring a connection named {connection}, "
+            "please follow the steps in README.md to create if you haven't done that."
+        )
+    else:
+        print(
+            f"The generated chat flow is requiring a connection named {connection}, "
+            "please ensure it exists in workspace."
+        )
+    flow_test_command = f"pf flow test --flow {flow_name} --interactive"
+    print(f"You can execute this command to test the flow, {flow_test_command}")
+
+
+def _init_standard_or_evaluation_flow(flow_name, flow_path, flow_type):
+    example_flow_path = Path(__file__).parent.parent / "data" / f"{flow_type}_flow"
+    for item in list(example_flow_path.iterdir()):
+        _copy_to_flow(flow_path=flow_path, source_file=item)
+    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
+    print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
+    flow_test_command = f"pf flow test --flow {flow_name} --input {os.path.join(flow_name, 'data.jsonl')}"
+    print(f"You can execute this command to test the flow, {flow_test_command}")
+
+
+def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=None, deployment=None):
     flow_path = Path(flow_name)
     if flow_path.exists():
         if not flow_path.is_dir():
@@ -285,29 +344,10 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False):
             print("The 'pf init' command has been cancelled.")
             return
     flow_path.mkdir(parents=True, exist_ok=True)
-    example_flow_path = Path(__file__).parent.parent / "data" / f"{flow_type}_flow"
-    for item in list(example_flow_path.iterdir()):
-        target = flow_path / item.name
-        action = "Overwriting" if target.exists() else "Creating"
-        if item.is_file():
-            print(f"{action} {item.name}...")
-            shutil.copy2(item, target)
-        else:
-            print(f"{action} {item.name} folder...")
-            shutil.copytree(item, target, dirs_exist_ok=True)
-    copy_extra_files(flow_path=flow_path, extra_files=["requirements.txt", ".gitignore"])
-
-    print(f"Done. Created {flow_type} flow folder: {flow_path.resolve()}.")
     if flow_type == "chat":
-        flow_test_args = "--interactive"
-        print(
-            "The generated chat flow is requiring a connection named open_ai_connection, "
-            "please follow the steps in README.md to create if you haven't done that."
-        )
+        _init_chat_flow(flow_name=flow_name, flow_path=flow_path, connection=connection, deployment=deployment)
     else:
-        flow_test_args = f"--input {os.path.join(flow_name, 'data.jsonl')}"
-    flow_test_command = f"pf flow test --flow {flow_name} " + flow_test_args
-    print(f"You can execute this command to test the flow, {flow_test_command}")
+        _init_standard_or_evaluation_flow(flow_name=flow_name, flow_path=flow_path, flow_type=flow_type)
 
 
 @exception_handler("Flow test")
@@ -316,7 +356,8 @@ def test_flow(args):
     from promptflow._sdk._utils import parse_variant
     from promptflow._sdk.operations._test_submitter import TestSubmitter
 
-    pf_client = PFClient()
+    config = list_of_dict_to_dict(args.config)
+    pf_client = PFClient(config=config)
 
     if args.environment_variables:
         environment_variables = list_of_dict_to_dict(args.environment_variables)
@@ -339,6 +380,7 @@ def test_flow(args):
             environment_variables=environment_variables,
             variant=args.variant,
             show_step_output=args.verbose,
+            config=config,
         )
     else:
         result = pf_client.flows._test(
@@ -348,6 +390,7 @@ def test_flow(args):
             variant=args.variant,
             node=args.node,
             allow_generator_output=False,
+            config=config,
         )
         # Dump flow/node test info
         flow = load_flow(args.flow)
@@ -383,11 +426,14 @@ def serve_flow(args):
         "Start promptflow server with port %s",
         args.port,
     )
+    config = list_of_dict_to_dict(args.config)
     # Change working directory to model dir
     print(f"Change working directory to model dir {source}")
     os.chdir(source)
     app = create_app(
-        static_folder=static_folder, environment_variables=list_of_dict_to_dict(args.environment_variables)
+        static_folder=static_folder,
+        environment_variables=list_of_dict_to_dict(args.environment_variables),
+        config=config,
     )
     target = f"http://{args.host}:{args.port}"
     print(f"Opening browser {target}...")
