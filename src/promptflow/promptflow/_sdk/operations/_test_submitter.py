@@ -206,6 +206,9 @@ class TestSubmitter:
                 connections=connections,
                 working_dir=self.flow.code,
             )
+            result.output = persist_multimedia_data(
+                result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+            )
             return result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
