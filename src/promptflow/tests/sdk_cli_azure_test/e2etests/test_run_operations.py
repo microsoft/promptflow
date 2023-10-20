@@ -606,51 +606,6 @@ class TestFlowRun:
                 if ".promptflow/flow.tools.json" in f:
                     raise Exception(f"flow.tools.json should not be uploaded, got {f}")
 
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="aml-user-token injection will be mocked in replay mode.",
-    )
-    def test_automatic_runtime_creation_user_aml_token(self, pf: PFClient):
-        from azure.core.pipeline import Pipeline
-
-        def submit(*args, **kwargs):
-            assert "aml-user-token" in args[0].headers
-
-            fake_response = MagicMock()
-            fake_response.http_response.status_code = 200
-            return fake_response
-
-        with patch.object(Pipeline, "run") as mock_session_create:
-            mock_session_create.side_effect = submit
-            pf.runs._resolve_runtime(
-                run=Run(
-                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                    data=f"{DATAS_DIR}/env_var_names.jsonl",
-                ),
-                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
-                runtime=None,
-            )
-
-    @pytest.mark.skipif(
-        condition=not is_live(),
-        reason="aml-user-token injection will be mocked in replay mode.",
-    )
-    def test_submit_run_user_aml_token(self, pf, runtime):
-        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
-
-        def submit(*args, **kwargs):
-            headers = kwargs.get("headers", None)
-            assert "aml-user-token" in headers
-
-        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
-            mock_submit.side_effect = submit
-            pf.run(
-                flow=f"{FLOWS_DIR}/flow_with_dict_input",
-                data=f"{DATAS_DIR}/webClassification3.jsonl",
-                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
-                runtime=runtime,
-            )
-
     def test_flow_id_in_submission(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]):
         from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 
@@ -753,3 +708,47 @@ class TestFlowRun:
         mock_workspace.discovery_url = "https://promptflow.azure-api.net/discovery/workspaces/fake_workspace_id"
         service_caller = _FlowServiceCallerFactory.get_instance(workspace=mock_workspace, credential=MagicMock())
         assert service_caller.caller._client._base_url == "https://promptflow.azure-api.net/"
+
+
+# separate some tests as they cannot use the fixture that mocks the aml-user-token
+@pytest.mark.skipif(reason=not is_live(), reason="aml-user-token will be mocked")
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
+@pytest.mark.e2etest
+@pytest.mark.usefixtures("single_worker_thread_pool", "vcr_recording")
+class TestFlowRunRelatedToAMLToken:
+    def test_automatic_runtime_creation_user_aml_token(self, pf: PFClient):
+        from azure.core.pipeline import Pipeline
+
+        def submit(*args, **kwargs):
+            assert "aml-user-token" in args[0].headers
+
+            fake_response = MagicMock()
+            fake_response.http_response.status_code = 200
+            return fake_response
+
+        with patch.object(Pipeline, "run") as mock_session_create:
+            mock_session_create.side_effect = submit
+            pf.runs._resolve_runtime(
+                run=Run(
+                    flow=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                    data=f"{DATAS_DIR}/env_var_names.jsonl",
+                ),
+                flow_path=Path(f"{FLOWS_DIR}/flow_with_environment"),
+                runtime=None,
+            )
+
+    def test_submit_run_user_aml_token(self, pf, runtime):
+        from promptflow.azure._restclient.flow.operations import BulkRunsOperations
+
+        def submit(*args, **kwargs):
+            headers = kwargs.get("headers", None)
+            assert "aml-user-token" in headers
+
+        with patch.object(BulkRunsOperations, "submit_bulk_run") as mock_submit, patch.object(RunOperations, "get"):
+            mock_submit.side_effect = submit
+            pf.run(
+                flow=f"{FLOWS_DIR}/flow_with_dict_input",
+                data=f"{DATAS_DIR}/webClassification3.jsonl",
+                column_mapping={"key": {"value": "1"}, "url": "${data.url}"},
+                runtime=runtime,
+            )
