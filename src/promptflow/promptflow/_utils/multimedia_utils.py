@@ -2,13 +2,13 @@ import base64
 import imghdr
 import os
 import re
-import requests
 import uuid
-
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 from urllib.parse import urlparse
+
+import requests
 
 from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import FlowInputDefinition
@@ -143,12 +143,10 @@ def create_image(value: any):
 def _save_image_to_file(image: Image, file_name: str, folder_path: Path, relative_path: Path = None):
     ext = _get_extension_from_mime_type(image._mime_type)
     file_name = f"{file_name}.{ext}" if ext else file_name
-    image_reference = {
-        f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name
-    }
+    image_reference = {f"data:{image._mime_type};path": str(relative_path / file_name) if relative_path else file_name}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
-    with open(os.path.join(path, file_name), 'wb') as file:
+    with open(os.path.join(path, file_name), "wb") as file:
         file.write(image)
     return image_reference
 
@@ -160,6 +158,7 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None) ->
             file_name = str(uuid.uuid4())
             return _save_image_to_file(obj, file_name, folder_path, relative_path)
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
+
     return pfbytes_file_reference_encoder
 
 
@@ -182,7 +181,7 @@ def convert_multimedia_data_to_base64(value: Any):
 
 
 # TODO: Move this function to a more general place and integrate serialization to this function.
-def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) -> dict:
+def recursive_process(value: Any, process_funcs: Dict[type, Callable] = None) -> dict:
     if process_funcs:
         for cls, f in process_funcs.items():
             if isinstance(value, cls):
@@ -194,7 +193,7 @@ def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) ->
     return value
 
 
-def load_multimedia_data(inputs: dict[str, FlowInputDefinition], line_inputs: dict):
+def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
     updated_inputs = dict(line_inputs or {})
     for key, value in inputs.items():
         if value.type == ValueType.IMAGE:
