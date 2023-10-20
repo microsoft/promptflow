@@ -60,11 +60,12 @@ jobs:
         path: artifacts
     - name: Install wheel
       shell: pwsh
+      working-directory: artifacts
       run: |
         python -m pip install --upgrade pip
         python -m pip install --upgrade setuptools
         python -m pip install --upgrade wheel
-        $packages = Get-ChildItem artifacts | ? { $_.Name.Contains('.whl')}
+        $packages = Get-ChildItem . | ? { $_.Name.Contains('.whl')}
         foreach ($package in $packages) {
           python -m pip install $package.FullName
         }
@@ -102,12 +103,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     if: always()
-
     steps:
     - name: checkout
       uses: actions/checkout@v3
-      with:
-        ref: ${{ github.event.pull_request.head.sha || github.ref }}
     - name: Publish Test Results
       uses: "./.github/actions/step_publish_test_results"
       with:
