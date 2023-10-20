@@ -823,8 +823,7 @@ class FlowExecutor:
             logger.warning(
                 msg=(
                     "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
                 )
             )
 
@@ -1079,8 +1078,7 @@ class FlowExecutor:
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
                 ),
                 invalid_relations=invalid_relations,
             )
