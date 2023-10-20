@@ -306,4 +306,13 @@ def add_param_verbose(parser):
     )
 
 
+def add_param_config(parser):
+    parser.add_argument(
+        "--config",
+        nargs="+",
+        action=AppendToDictAction,
+        help=argparse.SUPPRESS,
+    )
+
+
 logging_params = [add_param_verbose, add_param_debug]
