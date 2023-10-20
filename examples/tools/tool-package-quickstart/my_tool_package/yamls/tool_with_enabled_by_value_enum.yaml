@@ -1,0 +1,33 @@
+my_tool_package.tools.tool_with_enabled_by_value_enum.my_tool:
+  description: This is a tool to test the enabled_by_value
+  function: my_tool
+  inputs:
+    input_num:
+      enum:
+      - "1"
+      - "2"
+      - "3"
+      type:
+      - string
+    input_str:
+      enum:
+      - string1
+      - string2
+      - string3
+      type:
+      - string
+      enabled_by: input_num
+      enabled_by_value: ["1"]
+    input3:
+      type:
+      - string
+      enabled_by: input_str
+      enabled_by_value: [string1, string2]
+    input4:
+      type:
+      - string
+      enabled_by: input_str
+      enabled_by_value: [string2, string3]
+  module: my_tool_package.tools.tool_with_enabled_by_value_enum
+  name: Tool with Enabled by Value Enum
+  type: python
