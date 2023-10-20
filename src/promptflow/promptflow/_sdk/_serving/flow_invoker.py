@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Callable, Union
 
+from promptflow import PFClient
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
@@ -58,10 +59,14 @@ class FlowInvoker:
     def _init_connections(self, connection_provider):
         executable = self.flow_entity._init_executable()
         self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(executable)
-        if connection_provider == "local":
-            logger.info("Getting connections from local pf client...")
+        connection_provider = "local" if connection_provider is None else connection_provider
+        if isinstance(connection_provider, str):
+            logger.info(f"Getting connections from pf client with provider {connection_provider}...")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
-            self.connections = get_local_connections_from_executable(executable=executable)
+            self.connections = get_local_connections_from_executable(
+                executable=self.flow_entity._init_executable(),
+                client=PFClient(config={"connection.provider": connection_provider}),
+            )
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()
