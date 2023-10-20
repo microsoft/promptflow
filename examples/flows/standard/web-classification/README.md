@@ -61,7 +61,7 @@ pf run create --file run.yml --stream --name $run_name
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
-Reference [here](../../../../docs/how-to-guides/use-column-mapping.md) for default behavior when `column-mapping` not provided in CLI.
+Reference [here](aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
 
 ```bash
 # list run
