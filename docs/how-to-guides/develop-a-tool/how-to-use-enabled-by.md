@@ -10,7 +10,7 @@ Concurrently, we support enabling an input by another input type or input value,
 ## Prerequisites
 To proceed, it's crucial for you to understand the process of developing a tool and generating a tool yaml. For thorough insights and instructions, please refer to [Create and Use Tool Package](create-and-use-tool-package.md). 
 
-## How to use 'enabled_by_type'
+## How to use "enabled_by_type"
 Assume you want to develop a tool with four inputs: "connection", "input", "deployment_name", and "model". The "deployment_name" and "model" are enabled by "connection" type. When the "connection" type is AzureOpenAIConnection, the "deployment_name" input is enabled and displayed. When the "connection" type is OpenAIConnection, the "model" input is enabled and displayed. You need to support enable by in two part: tool and tool yaml. Here is an example of how you can support the "enabled by" feature in your tool and tool yaml.
 
 
@@ -63,7 +63,7 @@ def embedding(connection: Union[AzureOpenAIConnection, OpenAIConnection], input:
 ```
 
 ### Step 2: Support "enabled_by_type" in the tool yaml
-Once you have generated a tool yaml, you can incorporate the 'enabled by' feature into it. Here is an example showcasing the use of 'enabled_by_type' in the tool yaml:
+Once you have generated a tool yaml, you can incorporate the "enabled_by_type" into it. Here is an example showcasing the use of 'enabled_by_type' in the tool yaml:
 
 ```yaml
 promptflow.tools.embedding.embedding:
@@ -108,7 +108,7 @@ promptflow.tools.embedding.embedding:
 
 
 
-## How to use 'enabled_by_value'
+## How to use "enabled_by_value"
 Assume you want to develop a tool with four inputs: "connection", "input", "deployment_name", and "model". The "deployment_name" and "model" are enabled by "connection" value. When the "connection" value is "azure-open-ai-connection", the "deployment_name" input is enabled and displayed. When the "connection" value is "open-ai-connection", the "model" input is enabled and displayed. You need to support enable by in two part: tool and tool yaml. Here is an example of how you can support the "enabled by" feature in your tool and tool yaml.
 
 
@@ -140,14 +140,14 @@ class ConnectionName(str, Enum):
 @tool
 def embedding(connection: Enum, input: str, deployment_name: str = "", model: EmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_ADA_002):
     connection_dict = dict(connection)
-    # If the connection type is AzureOpenAIConnection, use the deployment_name input.
+    # If the connection value is azure-open-ai-connection, use the deployment_name input.
     if connection == ConnectionName.Azure_Open_AI_CONNECTION:
         return openai.Embedding.create(
             input=input,
             engine=deployment_name,
             **connection_dict,
         )["data"][0]["embedding"]
-    # If the connection type is OpenAIConnection, use the model input.
+    # If the connection type is open-ai-connection, use the model input.
     elif connection == ConnectionName.OPEN_AI_CONNECTION:
         return openai.Embedding.create(
             input=input,
@@ -182,7 +182,7 @@ promptflow.tools.embedding.embedding:
       - string
       # The input deployment_name is enabled by connection
       enabled_by: connection
-      # When the connection type is AzureOpenAIConnection, deployment_name is enabled and displayed.
+      # When the connection value is azure-open-ai-connection, deployment_name is enabled and displayed.
       enabled_by_value: [azure-open-ai-connection]
       capabilities:
         completion: false
@@ -197,7 +197,7 @@ promptflow.tools.embedding.embedding:
       - string
       # The input model is enabled by connection
       enabled_by: connection
-      # When the connection type is OpenAIConnection, model is enabled and displayed.
+      # When the connection value is open-ai-connection, model is enabled and displayed.
       enabled_by_value: [open-ai-connection]
       enum:
       - text-embedding-ada-002
