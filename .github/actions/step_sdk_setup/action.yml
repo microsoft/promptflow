@@ -30,7 +30,7 @@ runs:
     if: inputs.setupType == 'promptflow_with_extra'
     shell: pwsh
     run: |
-      Set-PSDebug -Trace 2
+      Set-PSDebug -Trace 1
       pip install -r ./dev_requirements.txt
       echo "########### pip list (Before) ###########"
       pip list
@@ -44,7 +44,7 @@ runs:
     if: inputs.setupType == 'promptflow_dev'
     shell: pwsh
     run: |
-      Set-PSDebug -Trace 2
+      Set-PSDebug -Trace 1
       pip install -r ./dev_requirements.txt
       python ./setup.py bdist_wheel
       $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
