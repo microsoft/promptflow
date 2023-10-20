@@ -12,7 +12,7 @@ class MyCustomConnection(CustomStrongTypeConnection):
     :type api_base: String
     """
     api_key: Secret
-    api_base: str = "This is a fake api url."
+    api_base: str = "This is a fake api base."
 
 
 @tool
