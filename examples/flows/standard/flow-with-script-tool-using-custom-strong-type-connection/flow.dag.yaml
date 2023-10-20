@@ -1,7 +1,7 @@
 inputs:
-  my_input:
+  text:
     type: string
-    default: hello
+    default: Microsoft
 outputs:
   my_output:
     type: string
@@ -13,5 +13,5 @@ nodes:
     type: code
     path: my_script_tool.py
   inputs:
-    connection: custom_connection
-    input_param: ${inputs.my_input}
+    connection: normal_custom_connection
+    input_text: ${inputs.text}

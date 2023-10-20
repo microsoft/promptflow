@@ -13,5 +13,5 @@ nodes:
     type: package
     tool: my_tool_package.tools.my_tool_2.MyTool.my_tool
   inputs:
-    connection: custom_connection_2
+    connection: my_custom_connection
     input_text: ${inputs.my_input}
