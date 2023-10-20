@@ -197,9 +197,6 @@ class TestSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        flow_inputs = load_multimedia_data(flow_inputs, {}, None)
-        load_multimedia_data_recursively(dependency_nodes_outputs)
-
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
