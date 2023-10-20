@@ -535,7 +535,7 @@ class TestCli:
                 assert details["node_runs"][0]["logs"]["stdout"]
 
         env = {"API_BASE": "${azure_open_ai_connection.api_base}"}
-        SubmitterHelper.resolve_environment_variables(env)
+        SubmitterHelper.resolve_environment_variables(env, local_client)
         run_pf_command(
             "flow",
             "test",
