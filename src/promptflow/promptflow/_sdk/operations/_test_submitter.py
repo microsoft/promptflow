@@ -204,6 +204,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
+                output_dir=".promptflow/intermediate",
             )
             result.output = persist_multimedia_data(
                 result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")

@@ -252,6 +252,7 @@ class TestExecutor:
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
             working_dir=working_dir,
+            output_dir=("./temp"),
             raise_ex=True,
         )
         assert run_info.output is not None

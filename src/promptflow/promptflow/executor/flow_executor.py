@@ -297,7 +297,7 @@ class FlowExecutor:
 
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
         inputs = load_multimedia_data(flow.inputs, inputs_with_default_value, working_dir)
-        load_multimedia_data_recursively(dependency_nodes_outputs)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
         converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
@@ -324,7 +324,7 @@ class FlowExecutor:
 
         # TODO: Simplify the logic here
         sub_dir = "." if output_dir is None else output_dir
-        storage = DefaultRunStorage(base_dir=".", sub_dir=sub_dir)
+        storage = DefaultRunStorage(base_dir=Path("."), sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             ToolInvoker.activate(DefaultToolInvoker())
