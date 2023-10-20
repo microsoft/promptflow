@@ -20,8 +20,9 @@ Manage promptflow flow flows.
 | --- | --- |
 | [pf flow init](#pf-flow-init) | Initialize a prompt flow directory. |
 | [pf flow test](#pf-flow-test) | Test the prompt flow or flow node. |
+| [pf flow validate](#pf-flow-validate) | Validate a flow and generate `flow.tools.json` for it. |
 | [pf flow build](#pf-flow-build) | Build a flow for further sharing or deployment. |
-| [pf flow serve](#pf-flow-serve) | Serving a flow as an endpoint. |
+| [pf flow serve](#pf-flow-serve) | Serve a flow as an endpoint. |
 
 ### pf flow init
 
@@ -166,6 +167,30 @@ Start a interactive chat session for chat flow.
 `--verbose`
 
 Displays the output for each step in the chat flow.
+
+### pf flow validate
+
+Validate the prompt flow and generate a `flow.tools.json` under `.promptflow`. This file is required when using flow as a component in a Azure ML pipeline.
+
+```bash
+pf flow validate --source
+                 [--debug]
+                 [--verbose]
+```
+
+#### Examples
+
+Validate the flow.
+
+```bash
+pf flow validate --source <path-to-flow>
+```
+
+#### Required Parameter
+
+`--source`
+
+The flow source to validate.
 
 ### pf flow build
 

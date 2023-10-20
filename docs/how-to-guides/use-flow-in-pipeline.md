@@ -9,7 +9,9 @@ After you have developed and tested the flow in [init and test a flow](./init-an
 :::{admonition} Pre-requirements
 - Customer need to install the extension `ml>=2.21.0` to enable this feature in CLI and package `azure-ai-ml>=1.11.0` to enable this feature in SDK;
 - Customer need to put `$schema` in the target `flow.dag.yaml` to enable this feature;
-- Customer need to generate `flow.tools.json` for the target flow before below usage. Usually the generation can be done by `pf flow validate`.
+  - `flow.dag.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json`
+  - `run.yaml`: `$schema`: `https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json`
+- Customer need to generate `flow.tools.json` for the target flow before below usage. The generation can be done by `pf flow validate`.
 :::
 
 For more information about AzureML and component:
@@ -46,8 +48,9 @@ from azure.ai.ml import MLClient, load_component
 ml_client = MLClient()
 
 # Register flow as a component
-# Default component name will be the name of flow folder, which is web-classification here; default version will be "1"
 flow_component = load_component("standard/web-classification/flow.dag.yaml")
+# Default component name will be the name of flow folder, which is not a valid component name, so we override it here; default version will be "1"
+flow_component.name = "web_classification"
 ml_client.components.create_or_update(flow_component)
 
 # Register flow as a component with parameters override
@@ -55,7 +58,7 @@ ml_client.components.create_or_update(
     "standard/web-classification/flow.dag.yaml",
     version="2",
     params_override=[
-        {"name": "web-classification_updated"}
+        {"name": "web_classification_updated"}
     ]
 )
 ```
@@ -69,5 +72,8 @@ After registered a flow as a component, they can be referred in a pipeline job l
 ## Directly use a flow in a pipeline job
 
 Besides explicitly registering a flow as a component, customer can also directly use flow in a pipeline job:
-- [CLI sample](https://github.com/Azure/azureml-examples/tree/zhangxingzhi/flow-in-pipeline/cli/jobs/pipelines-with-components/flow_in_pipeline/1a_flow_in_pipeline)
-- [SDK sample](https://github.com/Azure/azureml-examples/blob/zhangxingzhi/flow-in-pipeline/sdk/python/jobs/pipelines/1l_flow_in_pipeline/flow_in_pipeline.ipynb)
+- [CLI example](https://github.com/Azure/azureml-examples/tree/main/cli/jobs/pipelines-with-components/pipeline_job_with_flow_as_component)
+- [SDK example](https://github.com/Azure/azureml-examples/tree/main/sdk/python/jobs/pipelines/1l_flow_in_pipeline)
+
+All connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission:
+- [CLI/SDK example](../../examples/tutorials/flow-in-pipeline/pipeline.ipynb)
