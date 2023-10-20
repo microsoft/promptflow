@@ -31,6 +31,11 @@ def get_feature_list():
             description="Bypass node execution when the node does not meet activate condition.",
             state=FeatureState.READY,
         ),
+        Feature(
+            name="Image",
+            description="Support image inputs and outputs for flow test and batch run.",
+            state=FeatureState.READY,
+        ),
     ]
 
     return feature_list
