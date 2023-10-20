@@ -9,6 +9,7 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  PF_RECORDING_MODE: "replay"
 jobs:
   build:
     strategy:
