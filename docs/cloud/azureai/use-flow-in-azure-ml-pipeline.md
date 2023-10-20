@@ -1,10 +1,6 @@
-# Use flow in pipeline job
+# Use flow in Azure ML pipeline job
 
-:::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
-:::
-
-After you have developed and tested the flow in [init and test a flow](./init-and-test-a-flow.md), this guide will help you learn how to use a flow as a parallel component in a pipeline job on AzureML, so that you can integrate the created flow with existing pipelines and process a large amount of data.
+After you have developed and tested the flow in [init and test a flow](../../how-to-guides/init-and-test-a-flow.md), this guide will help you learn how to use a flow as a parallel component in a pipeline job on AzureML, so that you can integrate the created flow with existing pipelines and process a large amount of data.
 
 :::{admonition} Pre-requirements
 - Customer need to install the extension `ml>=2.21.0` to enable this feature in CLI and package `azure-ai-ml>=1.11.0` to enable this feature in SDK;
@@ -76,4 +72,58 @@ Besides explicitly registering a flow as a component, customer can also directly
 - [SDK example](https://github.com/Azure/azureml-examples/tree/main/sdk/python/jobs/pipelines/1l_flow_in_pipeline)
 
 All connections and flow inputs will be exposed as input parameters of the component. Default value can be provided in flow/run definition; they can also be set/overwrite on job submission:
-- [CLI/SDK example](../../examples/tutorials/flow-in-pipeline/pipeline.ipynb)
+
+::::{tab-set}
+:::{tab-item} CLI
+:sync: CLI
+
+```yaml
+...
+jobs:
+  flow_node:
+    type: parallel
+    component: standard/web-classification/flow.dag.yaml
+    inputs:
+      data: ${{parent.inputs.web_classification_input}}
+      url: "${data.url}"
+      connections.summarize_text_content.connection: azure_open_ai_connection
+      connections.summarize_text_content.deployment_name: text-davinci-003
+...
+```
+
+:::
+
+:::{tab-item} SDK
+:sync: SDK
+
+```python
+from azure.ai.ml import dsl
+
+ml_client = MLClient()
+
+# Register flow as a component
+flow_component = load_component("standard/web-classification/flow.dag.yaml")
+data_input = Input(path="standard/web-classification/data.jsonl", type=AssetTypes.URI_FILE)
+
+@dsl.pipeline
+def pipeline_func_with_flow(data):
+    flow_node = flow_component(
+        data=data,
+        url="${data.url}",
+        connections={
+            "summarize_text_content": {
+                "connection": "azure_open_ai_connection",
+                "deployment_name": "text-davinci-003",
+            },
+        },
+    )
+    flow_node.compute = "cpu-cluster"
+
+pipeline_with_flow = pipeline_func_with_flow(data=data_input)
+
+ml_client.jobs.create_or_update(pipeline_with_flow)
+```
+
+:::
+
+::::
