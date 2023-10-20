@@ -18,11 +18,11 @@ from .constants import SKIP_LIVE_RECORDING, TEST_RUN_LIVE, SanitizedValues
 
 
 def is_live() -> bool:
-    return os.getenv(TEST_RUN_LIVE, None) == "true"
+    return os.getenv(TEST_RUN_LIVE, "true") == "true"
 
 
 def is_live_and_not_recording() -> bool:
-    return is_live() and os.getenv(SKIP_LIVE_RECORDING, None) == "true"
+    return is_live() and os.getenv(SKIP_LIVE_RECORDING, "true") == "true"
 
 
 class FakeTokenCredential:

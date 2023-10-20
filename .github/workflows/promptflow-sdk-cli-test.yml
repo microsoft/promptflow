@@ -74,8 +74,6 @@ jobs:
       run: |
         gci env:* | sort-object name
         az account show
-        export PROMPT_FLOW_TEST_RUN_LIVE="true"
-        export PROMPT_FLOW_SKIP_LIVE_RECORDING="true"
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
