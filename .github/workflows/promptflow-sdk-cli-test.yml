@@ -13,6 +13,8 @@ env:
   testWorkingDirectory: ${{ github.workspace }}/src/promptflow
   PYTHONPATH: ${{ github.workspace }}/src/promptflow
   IS_IN_CI_PIPELINE: "true"
+  PROMPT_FLOW_TEST_RUN_LIVE: "true"
+  PROMPT_FLOW_SKIP_LIVE_RECORDING: "true"
 jobs:
   authorize:
     environment:
