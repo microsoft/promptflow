@@ -7,13 +7,13 @@ my_tool_package.tools.tool_with_dynamic_list_input.my_tool:
       dynamic_list:
         # UX send dynamic_list content to backend.
         # specifies the function to generate dynamic list. format: <module>.<func>
-        func_path: my_tool_package.tools.tool_with_dynamic_list_input.dummy_list
+        func_path: my_tool_package.tools.tool_with_dynamic_list_input.my_list_func
         func_kwargs: 
         - name: prefix  # Argument name to be passed to the function
           type: 
           - string
           # if optional is not specified, default to false.
-          # this is for UX pre-validaton. If optional is false, but no nput. UX can throw error in advanced.
+          # this is for UX pre-validaton. If optional is false, but no input. UX can throw error in advanced.
           optional: true
           reference: ${inputs.input_prefix}  # Dynamic reference to another input parameter
         - name: size  # Another argument name to be passed to the function
