@@ -9,6 +9,8 @@ from promptflow.azure._restclient.flow_service_caller import FlowRequestExceptio
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.types import Secret
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @pytest.fixture
 def connection_ops(ml_client):
@@ -18,6 +20,7 @@ def connection_ops(ml_client):
     yield pf._connections
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestConnectionOperations:
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")

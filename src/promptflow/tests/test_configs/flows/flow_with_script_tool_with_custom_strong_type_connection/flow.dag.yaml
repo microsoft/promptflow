@@ -1,0 +1,17 @@
+inputs:
+  text:
+    type: string
+    default: this is an input
+outputs:
+  out:
+    type: string
+    reference: ${my_script_tool.output}
+nodes:
+- name: my_script_tool
+  type: python
+  source:
+    type: code
+    path: my_script_tool.py
+  inputs:
+    connection: custom_connection_2
+    input_param: ${inputs.text}

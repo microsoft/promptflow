@@ -4,15 +4,16 @@
 import logging
 from typing import Callable, Union
 
+from promptflow import PFClient
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
     get_local_connections_from_executable,
+    override_connection_config_with_environment_variable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
-    override_connection_config_with_environment_variable,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow.executor import FlowExecutor
@@ -43,10 +44,14 @@ class FlowInvoker:
         self.flow = self.executor._flow
 
     def _init_connections(self, connection_provider):
-        if connection_provider == "local":
-            logger.info("Getting connections from local pf client...")
+        connection_provider = "local" if connection_provider is None else connection_provider
+        if isinstance(connection_provider, str):
+            logger.info(f"Getting connections from pf client with provider {connection_provider}...")
             # Note: The connection here could be local or workspace, depends on the connection.provider in pf.yaml.
-            self.connections = get_local_connections_from_executable(executable=self.flow_entity._init_executable())
+            self.connections = get_local_connections_from_executable(
+                executable=self.flow_entity._init_executable(),
+                client=PFClient(config={"connection.provider": connection_provider}),
+            )
         elif isinstance(connection_provider, Callable):
             logger.info("Getting connections from custom connection provider...")
             connection_list = connection_provider()

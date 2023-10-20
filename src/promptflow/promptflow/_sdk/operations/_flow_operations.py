@@ -2,12 +2,13 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import contextlib
+import glob
 import json
 import os
+import subprocess
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
-import subprocess
 from typing import Dict, Iterable, List, Tuple, Union
 
 import yaml
@@ -26,6 +27,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
+from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
@@ -36,6 +38,7 @@ class FlowOperations:
     def __init__(self):
         pass
 
+    @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
         self,
         flow: Union[str, PathLike],
@@ -44,6 +47,7 @@ class FlowOperations:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        **kwargs,
     ) -> dict:
         """Test flow or node.
 
@@ -65,7 +69,7 @@ class FlowOperations:
         :rtype: dict
         """
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables
+            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
         )
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
@@ -80,6 +84,7 @@ class FlowOperations:
         environment_variables: dict = None,
         stream_log: bool = True,
         allow_generator_output: bool = True,
+        **kwargs,
     ):
         """Test flow or node.
 
@@ -99,10 +104,12 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        with TestSubmitter(flow=flow, variant=variant).init() as submitter:
+        config = kwargs.get("config", None)
+        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
-                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name)
+                node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
+            )
 
             if node:
                 return submitter.node_test(
@@ -171,7 +178,8 @@ class FlowOperations:
         from promptflow._sdk._load_functions import load_flow
 
         flow = load_flow(flow)
-        with TestSubmitter(flow=flow, variant=variant).init() as submitter:
+        config = kwargs.get("config", None)
+        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -290,8 +298,9 @@ class FlowOperations:
     ):
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
-        executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name),
-                                              working_dir=flow_dag_path.parent.absolute())
+        executable = ExecutableFlow.from_yaml(
+            flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent.absolute()
+        )
 
         with _change_working_dir(flow_dag_path.parent):
             return self._migrate_connections(
@@ -363,8 +372,8 @@ class FlowOperations:
         env_var_names: List[str],
     ):
         try:
-            import streamlit
             import PyInstaller  # noqa: F401
+            import streamlit
         except ImportError as ex:
             raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
 
@@ -377,9 +386,11 @@ class FlowOperations:
 
         environment_config = self._build_environment_config(flow_dag_path)
         hidden_imports = []
-        if (environment_config.get("python_requirements_txt", None) and
-                (flow_dag_path.parent / "requirements.txt").is_file()):
-            with open(flow_dag_path.parent / "requirements.txt", 'r', encoding='utf-8') as file:
+        if (
+            environment_config.get("python_requirements_txt", None)
+            and (flow_dag_path.parent / "requirements.txt").is_file()
+        ):
+            with open(flow_dag_path.parent / "requirements.txt", "r", encoding="utf-8") as file:
                 file_content = file.read()
             hidden_imports = file_content.splitlines()
 
@@ -398,7 +409,7 @@ class FlowOperations:
                 "flow_name": flow_name,
                 "runtime_interpreter_path": runtime_interpreter_path,
                 "flow_inputs": flow_inputs,
-                "flow_inputs_params": flow_inputs_params
+                "flow_inputs_params": flow_inputs_params,
             },
         )
         try:
@@ -411,6 +422,7 @@ class FlowOperations:
         finally:
             os.chdir(current_directory)
 
+    @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
         self,
         flow: Union[str, PathLike],
@@ -497,6 +509,7 @@ class FlowOperations:
         else:
             yield flow_dag_path
 
+    @monitor_operation(activity_name="pf.flows.validate", activity_type=ActivityType.PUBLICAPI)
     def validate(self, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> ValidationResult:
         """
         Validate flow.
@@ -587,6 +600,29 @@ class FlowOperations:
         nodes_with_error = [node_name for node_name, message in flow_tools_meta.items() if isinstance(message, str)]
         for node_name in nodes_with_error:
             tools_errors[node_name] = flow_tools_meta.pop(node_name)
+
+        additional_includes = _get_additional_includes(flow.flow_dag_path)
+        if additional_includes:
+            additional_files = {}
+            for include in additional_includes:
+                include_path = Path(include) if Path(include).is_absolute() else flow.code / include
+                if include_path.is_file():
+                    file_name = Path(include).name
+                    additional_files[Path(file_name)] = os.path.relpath(include_path, flow.code)
+                else:
+                    if not Path(include).is_absolute():
+                        include = flow.code / include
+                    files = glob.glob(os.path.join(include, "**"), recursive=True)
+                    additional_files.update(
+                        {
+                            Path(os.path.relpath(path, include.parent)): os.path.relpath(path, flow.code)
+                            for path in files
+                        }
+                    )
+            for tool in flow_tools_meta.values():
+                source = tool.get("source", None)
+                if source and Path(source) in additional_files:
+                    tool["source"] = additional_files[Path(source)]
 
         flow_tools["code"] = flow_tools_meta
 

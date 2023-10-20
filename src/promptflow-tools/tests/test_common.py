@@ -1,7 +1,7 @@
 import pytest
 
 from promptflow.tools.common import parse_function_role_prompt, ChatAPIInvalidFunctions, validate_functions, \
-    process_function_call
+    process_function_call, parse_chat
 
 
 class TestCommon:
@@ -50,3 +50,32 @@ class TestCommon:
         result = parse_function_role_prompt(function_str)
         assert result[0] == "get_location"
         assert result[1] == 'Boston\nabc'
+
+    @pytest.mark.parametrize(
+        "chat_str, expected_result",
+        [
+            ("system:\nthis is my function:\ndef hello", [
+                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
+            ("#system:\nthis is my ##function:\ndef hello", [
+                {'role': 'system', 'content': 'this is my ##function:\ndef hello'}]),
+            (" \n system:\nthis is my function:\ndef hello", [
+                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
+            (" \n # system:\nthis is my function:\ndef hello", [
+                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
+            ("user:\nhi\nassistant:\nanswer\nfunction:\nname:\nn\ncontent:\nc", [
+                {'role': 'user', 'content': 'hi'},
+                {'role': 'assistant', 'content': 'answer'},
+                {'role': 'function', 'name': 'n', 'content': 'c'}]),
+            ("#user :\nhi\n #assistant:\nanswer\n# function:\n##name:\nn\n##content:\nc", [
+                {'role': 'user', 'content': 'hi'},
+                {'role': 'assistant', 'content': 'answer'},
+                {'role': 'function', 'name': 'n', 'content': 'c'}]),
+            ("\nsystem:\nfirst\n\nsystem:\nsecond", [
+                {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
+            ("\n#system:\nfirst\n\n#system:\nsecond", [
+                {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}])
+        ]
+    )
+    def test_success_parse_role_prompt(self, chat_str, expected_result):
+        actual_result = parse_chat(chat_str)
+        assert actual_result == expected_result
