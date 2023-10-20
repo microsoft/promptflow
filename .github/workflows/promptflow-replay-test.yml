@@ -1,4 +1,4 @@
-name: promptflow-sdk-cli-test
+name: promptflow-replay-test
 on:
   pull_request:
     paths:
