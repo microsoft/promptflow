@@ -205,30 +205,33 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow):
+    def resolve_connections(flow: Flow, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         with _change_working_dir(flow.code):
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return get_local_connections_from_executable(executable=executable)
+        return get_local_connections_from_executable(executable=executable, client=client)
 
     @classmethod
-    def resolve_environment_variables(cls, environment_variables: dict):
+    def resolve_environment_variables(cls, environment_variables: dict, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
-        connections = cls.resolve_connection_names(connection_names=connection_names)
+        connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, raise_error=False):
-        from promptflow import PFClient
-
-        local_client = PFClient()
+    def resolve_connection_names(connection_names, client, raise_error=False):
         result = {}
         for n in connection_names:
             try:
-                conn = local_client.connections.get(name=n, with_secrets=True)
+                conn = client.connections.get(name=n, with_secrets=True)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:
@@ -300,15 +303,17 @@ class RunSubmitter:
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
             # Filter the failed line result
-            failed_line_result = \
-                [result for result in bulk_result.line_results if result.run_info.status == Status.Failed]
+            failed_line_result = [
+                result for result in bulk_result.line_results if result.run_info.status == Status.Failed
+            ]
             if failed_line_result:
                 # Log warning message when there are failed line run in bulk run.
-                error_log = \
-                    f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                error_log = f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
                 if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
-                    error_log = error_log + \
-                                f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    error_log = (
+                        error_log
+                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    )
                 logger.warning(error_log)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value

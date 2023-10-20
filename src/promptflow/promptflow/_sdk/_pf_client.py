@@ -32,9 +32,10 @@ def _create_run(run: Run, **kwargs):
 class PFClient:
     """A client class to interact with prompt flow entities."""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._runs = RunOperations()
         self._connection_provider = None
+        self._config = kwargs.get("config", None) or {}
         # Lazy init to avoid azure credential requires too early
         self._connections = None
         self._flows = FlowOperations()
@@ -185,7 +186,8 @@ class PFClient:
         """Connection operations that can manage connections."""
         if not self._connections:
             if not self._connection_provider:
-                self._connection_provider = Configuration.get_instance().get_connection_provider()
+                # Get a copy with config override instead of the config instance
+                self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
             if self._connection_provider == ConnectionProvider.LOCAL.value:
                 logger.debug("Using local connection operations.")
                 self._connections = ConnectionOperations()

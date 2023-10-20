@@ -355,7 +355,7 @@ class TestFlowRun:
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
-        connections = SubmitterHelper.resolve_connections(flow)
+        connections = SubmitterHelper.resolve_connections(flow, local_client)
         assert local_aoai_connection.name in connections
 
     def test_run_with_env_overwrite(self, local_client, local_aoai_connection):
