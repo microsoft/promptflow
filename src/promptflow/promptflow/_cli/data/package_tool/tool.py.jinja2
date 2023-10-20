@@ -1,8 +1,21 @@
+{% if icon %}
+import os
+
+{% endif %}
 from promptflow import tool
 from promptflow.connections import CustomConnection
 
 
-@tool(name="{{ tool_name }}", description="This is {{ tool_name }} tool")
+@tool(
+    name="{{ tool_name }}",
+    description="This is {{ tool_name }} tool",
+{% if icon %}
+    icon={{ icon }},
+{% endif %}
+{% for key, value in extra_info.items() %}
+    {{ key }}={{ value }},
+{% endfor %}
+)
 def {{ tool_name }}(connection: CustomConnection, input_text: str) -> str:
     # Replace with your tool code.
     # Usually connection contains configs to connect to an API.
