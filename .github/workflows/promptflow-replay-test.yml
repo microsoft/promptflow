@@ -34,13 +34,6 @@ jobs:
       with:
         setupType: promptflow_with_extra
         scriptPath: ${{ env.testWorkingDirectory }}
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v3
-      with:
-        name: Python Wheels
-        path: |
-          ${{ env.testWorkingDirectory }}/dist/*.whl
-          ${{ env.testWorkingDirectory }}/../promptflow-tools/dist/*.whl
   sdk_cli_tests:
     needs: build
     strategy:
