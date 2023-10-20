@@ -49,7 +49,7 @@ class BatchEngine:
         """
         input_dicts = self._get_input_dicts(input_dirs, inputs_mapping)
         batch_result = self.flow_executor.exec_bulk(input_dicts, run_id)
-        self._persist_outputs(batch_result.outputs, output_dir)
+        batch_result.outputs = self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
 
     def _get_input_dicts(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
@@ -94,9 +94,9 @@ class BatchEngine:
         output_dir = self._resolve_dir(output_dir)
         output_file = output_dir / OUTPUT_FILE_NAME
         # persist images to output directory
-        for output in outputs:
-            output = persist_multimedia_data(output, output_dir)
+        outputs = [persist_multimedia_data(output, output_dir) for output in outputs]
         # persist outputs to json line file
         df = pd.DataFrame(outputs)
         with open(output_file, mode="w", encoding=DEFAULT_ENCODING) as f:
             df.to_json(f, "records", lines=True)
+        return outputs
