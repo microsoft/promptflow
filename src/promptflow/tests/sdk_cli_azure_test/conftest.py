@@ -63,14 +63,17 @@ def ml_client(
 
 @pytest.fixture
 def remote_client() -> PFClient:
-    # enable telemetry for CI
-    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
-        yield PFClient(
-            credential=get_cred(),
-            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-            resource_group_name="promptflow",
-            workspace_name="promptflow-eastus",
-        )
+    if not is_live():
+        yield get_pf_client_for_playback()
+    else:
+        # enable telemetry for CI
+        with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+            yield PFClient(
+                credential=get_cred(),
+                subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+                resource_group_name="promptflow",
+                workspace_name="promptflow-eastus",
+            )
 
 
 @pytest.fixture()
