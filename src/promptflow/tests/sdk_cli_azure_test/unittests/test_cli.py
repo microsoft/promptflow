@@ -67,6 +67,7 @@ class TestAzureCli:
             "test_run",
             "--max-results",
             "10",
+            "--all-results",
             *operation_scope_args,
         )
         mocked.assert_called_once()
@@ -159,3 +160,55 @@ class TestAzureCli:
             names=names,
         )
         assert expected_portal_url in captured.out
+
+    def test_run_archive(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked = mocker.patch.object(RunOperations, "archive")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "run",
+            "archive",
+            "--name",
+            "test_run",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_run_restore(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked = mocker.patch.object(RunOperations, "restore")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "run",
+            "restore",
+            "--name",
+            "test_run",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()
+
+    def test_run_update(
+        self,
+        mocker: MockFixture,
+        operation_scope_args,
+    ):
+        mocked = mocker.patch.object(RunOperations, "update")
+        mocked.return_value._to_dict.return_value = {"name": "test_run"}
+        run_pf_command(
+            "run",
+            "update",
+            "--name",
+            "test_run",
+            "--set",
+            "display_name=test_run",
+            "description='test_description'",
+            "tags.key1=value1",
+            *operation_scope_args,
+        )
+        mocked.assert_called_once()

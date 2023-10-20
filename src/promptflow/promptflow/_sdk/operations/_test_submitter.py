@@ -3,9 +3,9 @@
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
 import contextlib
-import re
 import json
 import logging
+import re
 import time
 from pathlib import Path
 from types import GeneratorType
@@ -19,19 +19,24 @@ from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_o
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None):
+    def __init__(self, flow: Flow, variant=None, config=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
         self._variant = variant
+        from .._pf_client import PFClient
+
+        self._client = PFClient(config=config)
 
     @property
     def dataplane_flow(self):
@@ -57,7 +62,7 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def _resolve_data(self, node_name: str = None, inputs: dict = None):
+    def _resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -66,6 +71,8 @@ class TestSubmitter:
         :type node_name: str
         :param inputs: Inputs of flow/node test.
         :type inputs: dict
+        :param chat_history_name: Chat history name.
+        :type chat_history_name: str
         :return: Dict of flow inputs, Dict of reference node output.
         :rtype: dict, dict
         """
@@ -114,7 +121,11 @@ class TestSubmitter:
                     merged_inputs[name] = flow_inputs[name]
                 else:
                     if value.default is None:
-                        missing_inputs.append(name)
+                        # When the flow is a chat flow and chat_history has no default value, set an empty list for it
+                        if chat_history_name and name == chat_history_name:
+                            flow_inputs[name] = []
+                        else:
+                            missing_inputs.append(name)
                     else:
                         flow_inputs[name] = value.default
                         merged_inputs[name] = flow_inputs[name]
@@ -134,26 +145,34 @@ class TestSubmitter:
         environment_variables: dict = None,
         stream_log: bool = True,
         allow_generator_output: bool = False,
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        if not connections:
+            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
-            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = FlowExecutor.create(
+                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
+            )
             flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+            line_result.output = persist_multimedia_data(
+                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+            )
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
                 aggregation_inputs = {k: [v] for k, v in line_result.aggregation_inputs.items()}
-                aggr_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
-                line_result.node_run_infos.update(aggr_results.node_run_infos)
-                line_result.run_info.metrics = aggr_results.metrics
+                aggregation_results = flow_executor.exec_aggregation(flow_inputs, aggregation_inputs=aggregation_inputs)
+                line_result.node_run_infos.update(aggregation_results.node_run_infos)
+                line_result.run_info.metrics = aggregation_results.metrics
             if isinstance(line_result.output, dict):
                 # Remove line_number from output
                 line_result.output.pop(LINE_NUMBER_KEY, None)
@@ -172,9 +191,9 @@ class TestSubmitter:
     ):
         from promptflow.executor import FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
@@ -209,11 +228,12 @@ class TestSubmitter:
             for node_name, node_result in node_run_infos.items():
                 # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
                 pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
-                node_logs = re.sub(pattern, "", node_result.logs["stdout"])
-                if node_logs:
-                    for log in node_logs.rstrip("\n").split("\n"):
-                        print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
-                        print(log)
+                if node_result.logs:
+                    node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+                    if node_logs:
+                        for log in node_logs.rstrip("\n").split("\n"):
+                            print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                            print(log)
                 if show_node_output:
                     print(f"{Fore.CYAN}{node_name}: ", end="")
                     # TODO executor return a type string of generator
@@ -236,10 +256,17 @@ class TestSubmitter:
         def get_result_output(output):
             if isinstance(output, GeneratorType):
                 if output in generator_record:
-                    output = iter(generator_record[output].items)
+                    if hasattr(generator_record[output], "items"):
+                        output = iter(generator_record[output].items)
+                    else:
+                        output = iter(generator_record[output])
                 else:
-                    proxy = output.gi_frame.f_locals["proxy"]
-                    generator_record[output] = proxy
+                    if hasattr(output.gi_frame.f_locals, "proxy"):
+                        proxy = output.gi_frame.f_locals["proxy"]
+                        generator_record[output] = proxy
+                    else:
+                        generator_record[output] = list(output)
+                        output = generator_record[output]
             return output
 
         def resolve_generator(flow_result):
@@ -273,6 +300,8 @@ class TestSubmitter:
             )
         )
 
+        # Pass connections to avoid duplicate calculation (especially http call)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         while True:
             try:
                 print(f"{Fore.GREEN}User: ", end="")
@@ -293,6 +322,7 @@ class TestSubmitter:
                 environment_variables=environment_variables,
                 stream_log=False,
                 allow_generator_output=True,
+                connections=connections,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output)

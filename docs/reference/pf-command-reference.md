@@ -50,7 +50,7 @@ Create an evaluation prompt flow
 pf flow init --flow <path-to-flow-direcotry> --type evaluation
 ```
 
-Create a flow in exsiting folder
+Create a flow in existing folder
 
 ```bash
 pf flow init --flow <path-to-existing-folder> --entry <entry.py> --function <function-name> --prompt-template <path-to-prompt-template.md>
@@ -452,7 +452,7 @@ pf run create --flow <path-to-flow-directory> --data <path-to-data-file> --colum
 
 `--file -f`
 
-Local path to the YAML file containing the prompt flow run specification; can be overrided by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
+Local path to the YAML file containing the prompt flow run specification; can be overwritten by other parameters. Reference [here](https://azuremlschemas.azureedge.net/promptflow/latest/Run.schema.json) for YAML schema.
 
 `--flow`
 
@@ -655,3 +655,73 @@ pf run restore --name
 `--name -n`
 
 Name of the run.
+
+## pf tool
+
+Manage promptflow tools.
+
+| Command | Description |
+| --- | --- |
+| [pf tool init](#pf-tool-init) | Initialize a tool directory. |
+| [pf tool list](#pf-tool-list) | List all tools in the environment. |
+
+### pf tool init
+
+Initialize a tool directory.
+
+```bash
+pf tool init [--package]
+             [--tool]
+```
+
+#### Examples
+
+Creating a package tool from scratch.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name>
+```
+
+Creating a python tool from scratch.
+
+```bash
+pf tool init --tool <tool-name>
+```
+
+#### Optional Parameters
+
+`--package`
+
+The package name to create.
+
+`--tool`
+
+The tool name to create.
+
+### pf tool list
+
+List all tools in the environment.
+
+```bash
+pf tool list [--flow]
+```
+
+#### Examples
+
+List all package tool in the environment.
+
+```bash
+pf tool list
+```
+
+List all package tool and code tool in the flow.
+
+```bash
+pf tool list --flow <path-to-flow-direcotry>
+```
+
+#### Optional Parameters
+
+`--flow`
+
+The flow directory.

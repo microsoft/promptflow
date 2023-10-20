@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
+    DEFAULT_ENCODING,
     DEFAULT_VAR_ID,
     INPUTS,
     NODE,
@@ -25,12 +26,15 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     ConnectionFields,
+    FlowRunProperties,
 )
 from promptflow._sdk._errors import InvalidFlowError
+from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
+    get_local_connections_from_executable,
     get_used_connection_names_from_dict,
     parse_variant,
     update_dict_value_with_connections,
@@ -44,6 +48,7 @@ from promptflow._utils.load_data import load_data
 from promptflow._utils.utils import reverse_transpose
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_mode import RunMode
 from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 
@@ -56,7 +61,7 @@ def _load_flow_dag(flow_path: Path):
     if not flow_path.exists():
         raise FileNotFoundError(f"Flow file {flow_path} not found")
 
-    with open(flow_path, "r") as f:
+    with open(flow_path, "r", encoding=DEFAULT_ENCODING) as f:
         flow_dag = yaml.safe_load(f)
     return flow_path, flow_dag
 
@@ -99,7 +104,7 @@ def overwrite_variant(flow_path: Path, tuning_node: str = None, variant: str = N
     except KeyError as e:
         raise KeyError("Failed to overwrite tuning node with variant") from e
 
-    with open(flow_path, "w") as f:
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         yaml.safe_dump(flow_dag, f)
 
 
@@ -145,14 +150,14 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
                     raise InvalidFlowError(f"Connection with name {c} not found in node {node_name}'s inputs")
                 node[INPUTS][c] = v
 
-    with open(flow_path, "w") as f:
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         yaml.safe_dump(flow_dag, f)
 
 
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
-    with open(flow_path, "w") as f:
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
         yaml.safe_dump(flow_dag, f)
 
 
@@ -176,7 +181,7 @@ def variant_overwrite_context(
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
             remove_additional_includes(Path(temp_dir))
-            flow = Flow.load(temp_dir)
+            flow = load_flow(temp_dir)
             yield flow
     else:
         # Generate a flow, the code path points to the original flow folder,
@@ -200,30 +205,33 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow):
+    def resolve_connections(flow: Flow, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         with _change_working_dir(flow.code):
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return Flow._get_local_connections(executable=executable)
+        return get_local_connections_from_executable(executable=executable, client=client)
 
     @classmethod
-    def resolve_environment_variables(cls, environment_variables: dict):
+    def resolve_environment_variables(cls, environment_variables: dict, client=None):
+        from .._pf_client import PFClient
+
+        client = client or PFClient()
         if not environment_variables:
             return None
         connection_names = get_used_connection_names_from_dict(environment_variables)
-        connections = cls.resolve_connection_names(connection_names=connection_names)
+        connections = cls.resolve_connection_names(connection_names=connection_names, client=client)
         update_dict_value_with_connections(built_connections=connections, connection_dict=environment_variables)
 
     @staticmethod
-    def resolve_connection_names(connection_names, raise_error=False):
-        from promptflow import PFClient
-
-        local_client = PFClient()
+    def resolve_connection_names(connection_names, client, raise_error=False):
         result = {}
         for n in connection_names:
             try:
-                conn = local_client.connections.get(name=n, with_secrets=True)
+                conn = client.connections.get(name=n, with_secrets=True)
                 result[n] = conn._to_execution_connection_dict()
             except Exception as e:
                 if raise_error:
@@ -264,13 +272,14 @@ class RunSubmitter:
 
         # running specified variant
         with variant_overwrite_context(run.flow, tuning_node, variant, connections=run.connections) as flow:
-            local_storage = LocalStorageOperations(run, stream=stream)
+            local_storage = LocalStorageOperations(run, stream=stream, run_mode=RunMode.Batch)
             with local_storage.logger:
                 self._submit_bulk_run(flow=flow, run=run, local_storage=local_storage)
 
     def _submit_bulk_run(self, flow: Flow, run: Run, local_storage: LocalStorageOperations) -> dict:
         run_id = run.name
-        connections = SubmitterHelper.resolve_connections(flow=flow)
+        with _change_working_dir(flow.code):
+            connections = SubmitterHelper.resolve_connections(flow=flow)
         column_mapping = run.column_mapping
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=run.environment_variables)
@@ -293,6 +302,19 @@ class RunSubmitter:
         run._dump()  # pylint: disable=protected-access
         try:
             bulk_result = flow_executor.exec_bulk(mapped_inputs, run_id=run_id)
+            # Filter the failed line result
+            failed_line_result = [
+                result for result in bulk_result.line_results if result.run_info.status == Status.Failed
+            ]
+            if failed_line_result:
+                # Log warning message when there are failed line run in bulk run.
+                error_log = f"{len(failed_line_result)} out of {len(bulk_result.line_results)} runs failed in bulk run."
+                if run.properties.get(FlowRunProperties.OUTPUT_PATH, None):
+                    error_log = (
+                        error_log
+                        + f" Please check out {run.properties[FlowRunProperties.OUTPUT_PATH]} for more details."
+                    )
+                logger.warning(error_log)
             # The bulk run is completed if the exec_bulk successfully completed.
             status = Status.Completed.value
         except Exception as e:
@@ -314,7 +336,7 @@ class RunSubmitter:
             # exceptions
             local_storage.dump_exception(exception=exception, bulk_results=bulk_result)
             # system metrics: token related
-            system_metrics = bulk_result.get_openai_metrics()
+            system_metrics = {} if bulk_result is None else bulk_result.get_openai_metrics()
 
             self.run_operations.update(
                 name=run.name,

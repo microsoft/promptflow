@@ -5,7 +5,7 @@
 # Prompt flow
 
 [![Python package](https://img.shields.io/pypi/v/promptflow)](https://pypi.org/project/promptflow/)
-[![Python](https://img.shields.io/pypi/pyversions/promptflow.svg?maxAge=2592000)](https://pypi.python.org/pypi/promptflow/) 
+[![Python](https://img.shields.io/pypi/pyversions/promptflow.svg?maxAge=2592000)](https://pypi.python.org/pypi/promptflow/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/promptflow)](https://pypi.org/project/promptflow/)
 [![CLI](https://img.shields.io/badge/CLI-reference-blue)](https://microsoft.github.io/promptflow/reference/pf-command-reference.html)
 [![vsc extension](https://img.shields.io/visual-studio-marketplace/i/prompt-flow.prompt-flow?logo=Visual%20Studio&label=Extension%20)](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow)
@@ -57,10 +57,9 @@ pf flow init --flow ./my_chatbot --type chat
 
 **Setup a connection for your API key**
 
-For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key:
+For OpenAI key, establish a connection by running the command, using the `openai.yaml` file in the `my_chatbot` folder, which stores your OpenAI key (override keys and name with --set to avoid yaml file changes):
 
 ```sh
-# Override keys with --set to avoid yaml file changes
 pf connection create --file ./my_chatbot/openai.yaml --set api_key=<your_api_key> --name open_ai_connection
 ```
 
@@ -94,9 +93,9 @@ Prompt Flow is a tool designed to **build high quality LLM apps**, the developme
 
 ### Develop your own LLM apps
 
-#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/> 
+#### VS Code Extension<img src="examples/tutorials/quick-start/media/logo_pf.png" alt="logo" width="25"/>
 
-We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI. 
+We also offer a VS Code extension (a flow designer) for an interactive flow development experience with UI.
 
 <img src="examples/tutorials/quick-start/media/vsc.png" alt="vsc" width="1000"/>
 
@@ -147,6 +146,29 @@ For more information see the
 [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com)
 with any additional questions or comments.
+
+## Data Collection
+
+The software may collect information about you and your use of the software and
+send it to Microsoft if configured to enable telemetry.
+Microsoft may use this information to provide services and improve our products and services.
+You may turn on the telemetry as described in the repository.
+There are also some features in the software that may enable you and Microsoft
+to collect data from users of your applications. If you use these features, you
+must comply with applicable law, including providing appropriate notices to
+users of your applications together with a copy of Microsoft's privacy
+statement. Our privacy statement is located at
+https://go.microsoft.com/fwlink/?LinkID=824704. You can learn more about data
+collection and use in the help documentation and our privacy statement. Your
+use of the software operates as your consent to these practices.
+
+### Telemetry Configuration
+
+Telemetry collection is off by default.
+
+To opt in, please run `pf config set cli.telemetry_enabled=true` to turn it on.
+
+For Europe user, please run `pf config set cli.eu_user=true` to make sure telemetry is sent to Europe server.
 
 ## License
 

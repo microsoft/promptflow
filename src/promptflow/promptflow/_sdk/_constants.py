@@ -17,9 +17,9 @@ USE_VARIANTS = "use_variants"
 DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
-
 PROMPT_FLOW_DIR_NAME = ".promptflow"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
+
 if not HOME_PROMPT_FLOW_DIR.is_dir():
     HOME_PROMPT_FLOW_DIR.mkdir(exist_ok=True)
 
@@ -30,25 +30,66 @@ RUN_INFO_TABLENAME = "run_info"
 RUN_INFO_CREATED_ON_INDEX_NAME = "idx_run_info_created_on"
 CONNECTION_TABLE_NAME = "connection"
 BASE_PATH_CONTEXT_KEY = "base_path"
+SCHEMA_KEYS_CONTEXT_CONFIG_KEY = "schema_configs_keys"
+SCHEMA_KEYS_CONTEXT_SECRET_KEY = "schema_secrets_keys"
 PARAMS_OVERRIDE_KEY = "params_override"
 FILE_PREFIX = "file:"
 KEYRING_SYSTEM = "promptflow"
 KEYRING_ENCRYPTION_KEY_NAME = "encryption_key"
 KEYRING_ENCRYPTION_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "encryption_key.lock").resolve()
+REFRESH_CONNECTIONS_DIR_LOCK_PATH = (HOME_PROMPT_FLOW_DIR / "refresh_connections_dir.lock").resolve()
 # Note: Use this only for show. Reading input should regard all '*' string as scrubbed, no matter the length.
 SCRUBBED_VALUE = "******"
 SCRUBBED_VALUE_NO_CHANGE = "<no-change>"
 SCRUBBED_VALUE_USER_INPUT = "<user-input>"
 CHAT_HISTORY = "chat_history"
-
 WORKSPACE_LINKED_DATASTORE_NAME = "workspaceblobstore"
-
 LINE_NUMBER = "line_number"
-
 AZUREML_PF_RUN_PROPERTIES_LINEAGE = "azureml.promptflow.input_run_id"
-
+AZURE_WORKSPACE_REGEX_FORMAT = (
+    "^azureml:[/]{1,2}subscriptions/([^/]+)/resource(groups|Groups)/([^/]+)"
+    "(/providers/Microsoft.MachineLearningServices)?/workspaces/([^/]+)$"
+)
 DEFAULT_ENCODING = "utf-8"
 LOCAL_STORAGE_BATCH_SIZE = 1
+LOCAL_SERVICE_PORT = 5000
+BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+RUN_MACRO = "${run}"
+VARIANT_ID_MACRO = "${variant_id}"
+TIMESTAMP_MACRO = "${timestamp}"
+DEFAULT_VARIANT = "variant_0"
+# run visualize constants
+VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
+VIS_LIB_CDN_LINK_TMPL = (
+    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
+)
+VIS_LIB_VERSION = "0.0.29"
+VIS_PORTAL_URL_TMPL = (
+    "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
+    "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
+    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
+)
+
+
+class CustomStrongTypeConnectionConfigs:
+    PREFIX = "promptflow.connection."
+    TYPE = "custom_type"
+    MODULE = "module"
+    PACKAGE = "package"
+    PACKAGE_VERSION = "package_version"
+    PROMPTFLOW_TYPE_KEY = PREFIX + TYPE
+    PROMPTFLOW_MODULE_KEY = PREFIX + MODULE
+    PROMPTFLOW_PACKAGE_KEY = PREFIX + PACKAGE
+    PROMPTFLOW_PACKAGE_VERSION_KEY = PREFIX + PACKAGE_VERSION
+
+    @staticmethod
+    def is_custom_key(key):
+        return key not in [
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_KEY,
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_PACKAGE_VERSION_KEY,
+        ]
 
 
 class RunTypes:
@@ -203,19 +244,6 @@ def get_list_view_type(archived_only: bool, include_archived: bool) -> ListViewT
         return ListViewType.ACTIVE_ONLY
 
 
-# run visualize constants
-VIS_HTML_TMPL = Path(__file__).parent / "data" / "visualize.j2"
-VIS_LIB_CDN_LINK_TMPL = (
-    "https://sdk-bulk-test-endpoint.azureedge.net/bulk-test-details/view/{version}/bulkTestDetails.min.js?version=1"
-)
-VIS_LIB_VERSION = "0.0.28"
-VIS_PORTAL_URL_TMPL = (
-    "https://ml.azure.com/prompts/flow/bulkrun/runs/outputs"
-    "?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
-    "/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}&runId={names}"
-)
-
-
 class RunInfoSources(str, Enum):
     """Run sources."""
 
@@ -248,6 +276,14 @@ class ConnectionType(str, Enum):
 class ConnectionFields(str, Enum):
     CONNECTION = "connection"
     DEPLOYMENT_NAME = "deployment_name"
+    MODEL = "model"
+
+
+SUPPORTED_CONNECTION_FIELDS = {
+    ConnectionFields.CONNECTION.value,
+    ConnectionFields.DEPLOYMENT_NAME.value,
+    ConnectionFields.MODEL.value,
+}
 
 
 class RunDataKeys:
@@ -260,7 +296,11 @@ class RunDataKeys:
     OUTPUT_PORTAL_URL = "output_portal_url"
 
 
-SUPPORTED_CONNECTION_FIELDS = {ConnectionFields.CONNECTION.value, ConnectionFields.DEPLOYMENT_NAME.value}
+class RunHistoryKeys:
+    RunMetaData = "runMetadata"
+    HIDDEN = "hidden"
 
 
-BULK_RUN_LINE_ERRORS = "BulkRunLineErrors"
+class ConnectionProvider(str, Enum):
+    LOCAL = "local"
+    AZUREML = "azureml"

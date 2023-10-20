@@ -37,6 +37,7 @@ tools-reference/serp-api-tool
 tools-reference/faiss_index_lookup_tool
 tools-reference/vector_db_lookup_tool
 tools-reference/embedding_tool
+tools-reference/open_source_llm_tool
 ```
 
 ```{toctree}
@@ -44,5 +45,6 @@ tools-reference/embedding_tool
 :maxdepth: 1
 
 flow-yaml-schema-reference.md
+run-yaml-schema-reference.md
 
 ```

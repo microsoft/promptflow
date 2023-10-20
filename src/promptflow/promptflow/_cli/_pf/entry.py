@@ -6,9 +6,11 @@ import logging
 import sys
 import timeit
 
+from promptflow._cli._pf._config import add_config_parser, dispatch_config_commands
 from promptflow._cli._pf._connection import add_connection_parser, dispatch_connection_commands
 from promptflow._cli._pf._flow import add_flow_parser, dispatch_flow_commands
 from promptflow._cli._pf._run import add_run_parser, dispatch_run_commands
+from promptflow._cli._pf._tool import add_tool_parser, dispatch_tool_commands
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._logger_factory import LoggerFactory
@@ -38,6 +40,8 @@ def entry(argv):
     add_flow_parser(subparsers)
     add_connection_parser(subparsers)
     add_run_parser(subparsers)
+    add_config_parser(subparsers)
+    add_tool_parser(subparsers)
 
     args = parser.parse_args(argv)
     # Log the init finish time
@@ -59,6 +63,10 @@ def entry(argv):
             dispatch_connection_commands(args)
         elif args.action == "run":
             dispatch_run_commands(args)
+        elif args.action == "config":
+            dispatch_config_commands(args)
+        elif args.action == "tool":
+            dispatch_tool_commands(args)
     except KeyboardInterrupt as ex:
         logger.debug("Keyboard interrupt is captured.")
         raise ex

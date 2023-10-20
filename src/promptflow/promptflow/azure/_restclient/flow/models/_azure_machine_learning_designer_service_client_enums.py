@@ -403,6 +403,7 @@ class ApplicationEndpointType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)
     THEIA = "Theia"
     GRAFANA = "Grafana"
     CUSTOM = "Custom"
+    RAY_DASHBOARD = "RayDashboard"
 
 class ArgumentValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -536,6 +537,85 @@ class ConnectionCategory(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     COGNITIVE_SEARCH = "CognitiveSearch"
     COGNITIVE_SERVICE = "CognitiveService"
     CUSTOM_KEYS = "CustomKeys"
+    AZURE_AI_CONTENT_SAFETY = "AzureAIContentSafety"
+    COSMOS_DB = "CosmosDb"
+    COSMOS_DB_MONGO_DB_API = "CosmosDbMongoDbApi"
+    AZURE_DATA_EXPLORER = "AzureDataExplorer"
+    AZURE_MARIA_DB = "AzureMariaDb"
+    AZURE_DATABRICKS_DELTA_LAKE = "AzureDatabricksDeltaLake"
+    AZURE_SQL_MI = "AzureSqlMi"
+    AZURE_TABLE_STORAGE = "AzureTableStorage"
+    AMAZON_RDS_FOR_ORACLE = "AmazonRdsForOracle"
+    AMAZON_RDS_FOR_SQL_SERVER = "AmazonRdsForSqlServer"
+    AMAZON_REDSHIFT = "AmazonRedshift"
+    DB2 = "Db2"
+    DRILL = "Drill"
+    GOOGLE_BIG_QUERY = "GoogleBigQuery"
+    GREENPLUM = "Greenplum"
+    HBASE = "Hbase"
+    HIVE = "Hive"
+    IMPALA = "Impala"
+    INFORMIX = "Informix"
+    MARIA_DB = "MariaDb"
+    MICROSOFT_ACCESS = "MicrosoftAccess"
+    MY_SQL = "MySql"
+    NETEZZA = "Netezza"
+    ORACLE = "Oracle"
+    PHOENIX = "Phoenix"
+    POSTGRE_SQL = "PostgreSql"
+    PRESTO = "Presto"
+    SAP_OPEN_HUB = "SapOpenHub"
+    SAP_BW = "SapBw"
+    SAP_HANA = "SapHana"
+    SAP_TABLE = "SapTable"
+    SPARK = "Spark"
+    SQL_SERVER = "SqlServer"
+    SYBASE = "Sybase"
+    TERADATA = "Teradata"
+    VERTICA = "Vertica"
+    CASSANDRA = "Cassandra"
+    COUCHBASE = "Couchbase"
+    MONGO_DB_V2 = "MongoDbV2"
+    MONGO_DB_ATLAS = "MongoDbAtlas"
+    AMAZON_S3_COMPATIBLE = "AmazonS3Compatible"
+    FILE_SERVER = "FileServer"
+    FTP_SERVER = "FtpServer"
+    GOOGLE_CLOUD_STORAGE = "GoogleCloudStorage"
+    HDFS = "Hdfs"
+    ORACLE_CLOUD_STORAGE = "OracleCloudStorage"
+    SFTP = "Sftp"
+    GENERIC_HTTP = "GenericHttp"
+    O_DATA_REST = "ODataRest"
+    ODBC = "Odbc"
+    GENERIC_REST = "GenericRest"
+    AMAZON_MWS = "AmazonMws"
+    CONCUR = "Concur"
+    DYNAMICS = "Dynamics"
+    DYNAMICS_AX = "DynamicsAx"
+    DYNAMICS_CRM = "DynamicsCrm"
+    GOOGLE_AD_WORDS = "GoogleAdWords"
+    HUBSPOT = "Hubspot"
+    JIRA = "Jira"
+    MAGENTO = "Magento"
+    MARKETO = "Marketo"
+    OFFICE365 = "Office365"
+    ELOQUA = "Eloqua"
+    RESPONSYS = "Responsys"
+    ORACLE_SERVICE_CLOUD = "OracleServiceCloud"
+    PAY_PAL = "PayPal"
+    QUICK_BOOKS = "QuickBooks"
+    SALESFORCE = "Salesforce"
+    SALESFORCE_SERVICE_CLOUD = "SalesforceServiceCloud"
+    SALESFORCE_MARKETING_CLOUD = "SalesforceMarketingCloud"
+    SAP_CLOUD_FOR_CUSTOMER = "SapCloudForCustomer"
+    SAP_ECC = "SapEcc"
+    SERVICE_NOW = "ServiceNow"
+    SHARE_POINT_ONLINE_LIST = "SharePointOnlineList"
+    SHOPIFY = "Shopify"
+    SQUARE = "Square"
+    WEB_TABLE = "WebTable"
+    XERO = "Xero"
+    ZOHO = "Zoho"
 
 class ConnectionScope(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -778,24 +858,6 @@ class FlowRunMode(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     BULK_TEST = "BulkTest"
     EVAL = "Eval"
     PAIRWISE_EVAL = "PairwiseEval"
-
-class FlowRunStatusEnum(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
-
-    STARTED = "Started"
-    COMPLETED = "Completed"
-    FAILED = "Failed"
-    CANCELLED = "Cancelled"
-    NOT_STARTED = "NotStarted"
-    RUNNING = "Running"
-    QUEUED = "Queued"
-    PAUSED = "Paused"
-    UNAPPROVED = "Unapproved"
-    STARTING = "Starting"
-    PREPARING = "Preparing"
-    CANCEL_REQUESTED = "CancelRequested"
-    PAUSING = "Pausing"
-    FINALIZING = "Finalizing"
-    CANCELED = "Canceled"
 
 class FlowRuntimeSubmissionApiVersion(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1307,6 +1369,11 @@ class RecurrenceFrequency(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     WEEK = "Week"
     MONTH = "Month"
 
+class RunDisplayNameGenerationType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
+
+    AUTO_APPEND = "AutoAppend"
+    USER_PROVIDED_MACRO = "UserProvidedMacro"
+
 class RunSettingParameterType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
     UNDEFINED = "Undefined"
@@ -1535,6 +1602,7 @@ class ToolType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     PYTHON = "python"
     ACTION = "action"
     PROMPT = "prompt"
+    CUSTOM_LLM = "custom_llm"
 
 class TrainingOutputType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 
@@ -1639,6 +1707,7 @@ class ValueType(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
     FUNCTION_LIST = "function_list"
     FUNCTION_STR = "function_str"
     FORM_RECOGNIZER_CONNECTION = "FormRecognizerConnection"
+    FILE_PATH = "file_path"
 
 class VmPriority(with_metaclass(CaseInsensitiveEnumMeta, str, Enum)):
 

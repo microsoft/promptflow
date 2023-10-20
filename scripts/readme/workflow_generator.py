@@ -98,7 +98,7 @@ def write_notebook_workflow(notebook, name, output_telemetry=Telemetry()):
     output_telemetry.gh_working_dir = gh_working_dir
 
 
-def write_workflows(notebooks, output_telemetrys=[]):
+def write_workflows(notebooks, output_telemetries=[]):
     # process notebooks
     for notebook in notebooks:
         # get notebook name
@@ -109,7 +109,7 @@ def write_workflows(notebooks, output_telemetrys=[]):
         # write workflow file
         write_notebook_workflow(notebook, name, output_telemetry)
         output_telemetry.notebook = nb_path
-        output_telemetrys.append(output_telemetry)
+        output_telemetries.append(output_telemetry)
 
 
 def local_filter(callback, array):

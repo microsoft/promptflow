@@ -1,6 +1,7 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import logging
 import os
 from os import PathLike
 from pathlib import Path
@@ -8,12 +9,19 @@ from typing import Any, Dict, List, Union
 
 import pandas as pd
 
+from ._configuration import Configuration
+from ._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, ConnectionProvider
+from ._logger_factory import LoggerFactory
 from ._user_agent import USER_AGENT
 from ._utils import setup_user_agent_to_operation_context
 from .entities import Run
 from .operations import RunOperations
 from .operations._connection_operations import ConnectionOperations
 from .operations._flow_operations import FlowOperations
+from .operations._local_azure_connection_operations import LocalAzureConnectionOperations
+from .operations._tool_operations import ToolOperations
+
+logger = LoggerFactory.get_logger(name=LOGGER_NAME, verbosity=logging.WARNING)
 
 
 def _create_run(run: Run, **kwargs):
@@ -24,10 +32,14 @@ def _create_run(run: Run, **kwargs):
 class PFClient:
     """A client class to interact with prompt flow entities."""
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         self._runs = RunOperations()
-        self._connections = ConnectionOperations()
+        self._connection_provider = None
+        self._config = kwargs.get("config", None) or {}
+        # Lazy init to avoid azure credential requires too early
+        self._connections = None
         self._flows = FlowOperations()
+        self._tools = ToolOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
     def run(
@@ -125,15 +137,26 @@ class PFClient:
         """
         return self.runs.stream(run)
 
-    def get_details(self, run: Union[str, Run]) -> pd.DataFrame:
-        """Get run inputs and outputs.
+    def get_details(
+        self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False
+    ) -> pd.DataFrame:
+        """Get the details from the run including inputs and outputs.
 
-        :param run: Run object or name of the run.
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
+
+        :param run: The run name or run object
         :type run: Union[str, ~promptflow.sdk.entities.Run]
-        :return: Run details.
-        :rtype: ~pandas.DataFrame
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
+        :return: The details data frame.
+        :rtype: pandas.DataFrame
         """
-        return self.runs.get_details(run)
+        return self.runs.get_details(name=run, max_results=max_results, all_results=all_results)
 
     def get_metrics(self, run: Union[str, Run]) -> Dict[str, Any]:
         """Get run metrics.
@@ -161,6 +184,18 @@ class PFClient:
     @property
     def connections(self) -> ConnectionOperations:
         """Connection operations that can manage connections."""
+        if not self._connections:
+            if not self._connection_provider:
+                # Get a copy with config override instead of the config instance
+                self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+            if self._connection_provider == ConnectionProvider.LOCAL.value:
+                logger.debug("Using local connection operations.")
+                self._connections = ConnectionOperations()
+            elif self._connection_provider.startswith(ConnectionProvider.AZUREML.value):
+                logger.debug("Using local azure connection operations.")
+                self._connections = LocalAzureConnectionOperations(self._connection_provider)
+            else:
+                raise ValueError(f"Unsupported connection provider: {self._connection_provider}")
         return self._connections
 
     @property

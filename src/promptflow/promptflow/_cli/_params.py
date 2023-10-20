@@ -4,6 +4,9 @@
 
 import argparse
 
+# TODO: avoid azure dependency here
+MAX_LIST_CLI_RESULTS = 50
+
 
 class AppendToDictAction(argparse._AppendAction):  # pylint: disable=protected-access
     def __call__(self, parser, namespace, values, option_string=None):
@@ -69,6 +72,16 @@ def add_param_set(parser):
         dest="params_override",
         action=AppendToDictAction,
         help="Update an object by specifying a property path and value to set. Example: --set "
+        "property1.property2=<value>.",
+        nargs="+",
+    )
+
+
+def add_param_set_positional(parser):
+    parser.add_argument(
+        "params_override",
+        action=AppendToDictAction,
+        help="Set an object by specifying a property path and value to set. Example: set "
         "property1.property2=<value>.",
         nargs="+",
     )
@@ -187,6 +200,27 @@ def add_param_variants(parser):
     )
 
 
+def add_param_max_results(parser):
+    parser.add_argument(  # noqa: E731
+        "-r",
+        "--max-results",
+        dest="max_results",
+        type=int,
+        default=MAX_LIST_CLI_RESULTS,
+        help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
+    )
+
+
+def add_param_all_results(parser):
+    parser.add_argument(  # noqa: E731
+        "--all-results",
+        action="store_true",
+        dest="all_results",
+        default=False,
+        help="Returns all results. Default to False.",
+    )
+
+
 def add_param_subscription(parser):
     parser.add_argument(
         "-s",
@@ -269,6 +303,15 @@ def add_param_verbose(parser):
         "--verbose",
         action="store_true",
         help="Increase logging verbosity. Use --debug for full debug logs.",
+    )
+
+
+def add_param_config(parser):
+    parser.add_argument(
+        "--config",
+        nargs="+",
+        action=AppendToDictAction,
+        help=argparse.SUPPRESS,
     )
 
 

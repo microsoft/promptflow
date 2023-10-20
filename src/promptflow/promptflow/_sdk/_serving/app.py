@@ -12,7 +12,10 @@ import flask
 from flask import Flask, jsonify, request, url_for
 from jinja2 import Template
 
+from promptflow._sdk._configuration import Configuration
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._sdk._serving.response_creator import ResponseCreator
 from promptflow._sdk._serving.utils import (
     get_output_fields_to_remove,
@@ -20,17 +23,9 @@ from promptflow._sdk._serving.utils import (
     handle_error_to_response,
     load_request_data,
     streaming_response_required,
-    validate_request_data,
 )
-from promptflow._sdk._utils import (
-    resolve_connections_environment_variable_reference,
-    setup_user_agent_to_operation_context,
-    update_environment_variables_with_connections,
-)
-from promptflow._sdk.entities._flow import Flow
-from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+from promptflow._sdk._utils import setup_user_agent_to_operation_context
 from promptflow._version import VERSION
-from promptflow.executor.flow_executor import FlowExecutor
 
 from .swagger import generate_swagger
 
@@ -42,17 +37,20 @@ USER_AGENT = f"promptflow-local-serving/{VERSION}"
 class PromptflowServingApp(Flask):
     def init(self, **kwargs):
         with self.app_context():
-            self.executor: FlowExecutor = None
+            self.flow_invoker: FlowInvoker = None
             # parse promptflow project path
             self.project_path = os.getenv("PROMPTFLOW_PROJECT_PATH", ".")
             logger.info(f"Project path: {self.project_path}")
-            self.flow_entity = Flow.load(self.project_path)
+            self.flow_entity = load_flow(self.project_path)
             static_folder = kwargs.get("static_folder", None)
             self.static_folder = static_folder if static_folder else DEFAULT_STATIC_PATH
             logger.info(f"Static_folder: {self.static_folder}")
             self.environment_variables = kwargs.get("environment_variables", {})
             os.environ.update(self.environment_variables)
             logger.info(f"Environment variable keys: {self.environment_variables.keys()}")
+            app_config = kwargs.get("config", None) or {}
+            self._promptflow_config = Configuration(overrides=app_config)
+            logger.info(f"Promptflow config: {self._promptflow_config.config}")
             self.sample = get_sample_json(self.project_path, logger)
             self.init_swagger()
             # ensure response has the correct content type
@@ -60,25 +58,19 @@ class PromptflowServingApp(Flask):
             mimetypes.add_type("text/css", ".css")
             setup_user_agent_to_operation_context(USER_AGENT)
 
-    def init_executor_if_not_exist(self):
-        if self.executor:
+    def init_invoker_if_not_exist(self):
+        if self.flow_invoker:
             return
         logger.info("Promptflow executor starts initializing...")
-        # try get the connections
-        logger.info("Promptflow serving app start getting connections from local...")
-        connections = Flow._get_local_connections(executable=self.flow_entity._init_executable())
-        resolve_connections_environment_variable_reference(connections)
-        update_environment_variables_with_connections(connections)
-        logger.info(f"Promptflow serving app get connections successfully. keys: {connections.keys()}")
-        with variant_overwrite_context(self.flow_entity.code, None, None) as flow:
-            self.executor = FlowExecutor.create(
-                flow_file=flow.path, working_dir=flow.code, connections=connections, raise_ex=True
-            )
-        self.flow = self.executor._flow
+        self.flow_invoker = FlowInvoker(
+            self.project_path,
+            connection_provider=self._promptflow_config.get_connection_provider(),
+            streaming=streaming_response_required,
+        )
+        self.flow = self.flow_invoker.flow
         # Set the flow name as folder name
         self.flow.name = Path(self.project_path).stem
         self.response_fields_to_remove = get_output_fields_to_remove(self.flow, logger)
-        self.executor.enable_streaming_for_llm_flow(streaming_response_required)
         logger.info("Promptflow executor initiated successfully.")
 
     def init_swagger(self):
@@ -108,7 +100,7 @@ def score():
     """process a flow request in the runtime."""
     raw_data = request.get_data()
     logger.info(f"PromptFlow executor received data: {raw_data}")
-    app.init_executor_if_not_exist()
+    app.init_invoker_if_not_exist()
     if app.flow.inputs.keys().__len__() == 0:
         data = {}
         logger.info(f"Flow has no input, request data '{raw_data}' will be ignored.")
@@ -116,15 +108,12 @@ def score():
         logger.info(f"Start loading request data '{raw_data}'.")
         data = load_request_data(app.flow, raw_data, logger)
 
-    logger.info(f"Validating flow input with data {data!r}")
-    validate_request_data(app.flow, data)
-    logger.info(f"Execute flow with data {data!r}")
-    result = app.executor.exec_line(data, allow_generator_output=streaming_response_required())
+    result_output = app.flow_invoker.invoke(data)
     # remove evaluation only fields
-    result = {k: v for k, v in result.output.items() if k not in app.response_fields_to_remove}
+    result_output = {k: v for k, v in result_output.items() if k not in app.response_fields_to_remove}
 
     response_creator = ResponseCreator(
-        flow_run_result=result,
+        flow_run_result=result_output,
         accept_mimetypes=request.accept_mimetypes,
     )
     return response_creator.create_response()

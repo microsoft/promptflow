@@ -10,9 +10,11 @@ from typing import Callable, Dict, List, Optional, Tuple
 import pandas as pd
 
 from promptflow._cli._params import (
+    add_param_all_results,
     add_param_columns_mapping,
     add_param_connections,
     add_param_environment_variables,
+    add_param_max_results,
     add_param_run_name,
     add_param_set,
     add_parser_build,
@@ -25,13 +27,7 @@ from promptflow._cli._utils import (
     list_of_dict_to_nested_dict,
     pretty_print_dataframe_as_table,
 )
-from promptflow._sdk._constants import (
-    LOGGER_NAME,
-    MAX_LIST_CLI_RESULTS,
-    MAX_SHOW_DETAILS_RESULTS,
-    CLIListOutputFormat,
-    get_list_view_type,
-)
+from promptflow._sdk._constants import LOGGER_NAME, MAX_SHOW_DETAILS_RESULTS, CLIListOutputFormat, get_list_view_type
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import _create_run
@@ -154,8 +150,8 @@ def add_run_update(subparsers):
     epilog = """
 Example:
 
-# Update a run metdata:
-pf run update --name <name> --set display_name="<display-name>" description="<description>" tag.key="<value>"
+# Update a run metadata:
+pf run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
 """
     add_params = [
         add_param_run_name,
@@ -201,28 +197,13 @@ pf run list
 pf run list --max-results 10
 # List active and archived runs status:
 pf run list --include-archived
-# List arhived runs status only:
+# List archived runs status only:
 pf run list --archived-only
 # List all runs status:
 pf run list --all-results
 # List all runs status as table:
 pf run list --output table
 """
-    add_param_max_results = lambda parser: parser.add_argument(  # noqa: E731
-        "-r",
-        "--max-results",
-        dest="max_results",
-        type=int,
-        default=MAX_LIST_CLI_RESULTS,
-        help=f"Max number of results to return. Default is {MAX_LIST_CLI_RESULTS}.",
-    )
-    add_param_all_results = lambda parser: parser.add_argument(  # noqa: E731
-        "--all-results",
-        action="store_true",
-        dest="all_results",
-        default=False,
-        help="Returns all results",
-    )
     add_param_archived_only = lambda parser: parser.add_argument(  # noqa: E731
         "--archived-only",
         action="store_true",
@@ -301,7 +282,7 @@ pf run show-details --name <name>
         help=f"Number of lines to show. Default is {MAX_SHOW_DETAILS_RESULTS}.",
     )
 
-    add_params = [add_param_max_results, add_param_run_name] + logging_params
+    add_params = [add_param_max_results, add_param_run_name, add_param_all_results] + logging_params
 
     activate_action(
         name="show-details",
@@ -423,7 +404,7 @@ def dispatch_run_commands(args: argparse.Namespace):
     elif args.sub_action == "show":
         show_run(name=args.name)
     elif args.sub_action == "show-details":
-        show_run_details(name=args.name, max_results=args.max_results)
+        show_run_details(name=args.name, max_results=args.max_results, all_results=args.all_results)
     elif args.sub_action == "show-metrics":
         show_run_metrics(name=args.name)
     elif args.sub_action == "visualize":
@@ -438,7 +419,7 @@ def dispatch_run_commands(args: argparse.Namespace):
         raise ValueError(f"Unrecognized command: {args.sub_action}")
 
 
-def _merge_params(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
+def _parse_metadata_args(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional[str], Optional[Dict[str, str]]]:
     display_name, description, tags = None, None, {}
     for param in params:
         for k, v in param.items():
@@ -463,9 +444,9 @@ def _merge_params(params: List[Dict[str, str]]) -> Tuple[Optional[str], Optional
 @exception_handler("Update run")
 def update_run(name: str, params: List[Dict[str, str]]) -> None:
     # params_override can have multiple items when user specifies with
-    # `--set key1=value1 --set key2=value`
+    # `--set key1=value1 key2=value`
     # so we need to merge them first.
-    display_name, description, tags = _merge_params(params)
+    display_name, description, tags = _parse_metadata_args(params)
     pf_client = PFClient()
     run = pf_client.runs.update(
         name=name,
@@ -523,10 +504,10 @@ def show_run(name: str) -> None:
 
 
 @exception_handler("Show run details")
-def show_run_details(name: str, max_results: int) -> None:
+def show_run_details(name: str, max_results: int, all_results: bool) -> None:
     pf_client = PFClient()
-    details = pf_client.runs.get_details(name=name)
-    pretty_print_dataframe_as_table(details.head(max_results))
+    details = pf_client.runs.get_details(name=name, max_results=max_results, all_results=all_results)
+    pretty_print_dataframe_as_table(details)
 
 
 @exception_handler("Show run metrics")
@@ -547,7 +528,6 @@ def visualize_run(names: str, html_path: Optional[str] = None) -> None:
 def archive_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.archive(name=name)
-    print("Archived run:")
     print(json.dumps(run._to_dict(), indent=4))
 
 
@@ -555,7 +535,6 @@ def archive_run(name: str) -> None:
 def restore_run(name: str) -> None:
     pf_client = PFClient()
     run = pf_client.runs.restore(name=name)
-    print("Restored run:")
     print(json.dumps(run._to_dict(), indent=4))
 
 

@@ -35,6 +35,7 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
+from promptflow.contracts.run_mode import RunMode
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
@@ -54,7 +55,7 @@ class LoggerOperations(LogContext):
         return str(self.file_path)
 
     def get_logs(self) -> str:
-        with open(self.file_path, "r") as f:
+        with open(self.file_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             return f.read()
 
     def _get_execute_loggers_list(cls) -> List[logging.Logger]:
@@ -77,7 +78,7 @@ class LoggerOperations(LogContext):
         if log_path.exists():
             # Clean up previous log content
             try:
-                with open(log_path, 'w') as file:
+                with open(log_path, mode="w", encoding=DEFAULT_ENCODING) as file:
                     file.truncate(0)
             except Exception as e:
                 logger.warning(f"Failed to clean up the previous log content because {e}")
@@ -172,11 +173,13 @@ class LocalStorageOperations(AbstractRunStorage):
 
     LINE_NUMBER_WIDTH = 9
 
-    def __init__(self, run: Run, stream=False):
+    def __init__(self, run: Run, stream=False, run_mode=RunMode.Test):
         self._run = run
         self.path = self._prepare_folder(get_run_output_path(self._run))
 
-        self.logger = LoggerOperations(file_path=self.path / LocalStorageFilenames.LOG, stream=stream)
+        self.logger = LoggerOperations(
+            file_path=self.path / LocalStorageFilenames.LOG, stream=stream, run_mode=run_mode
+        )
         # snapshot
         self._snapshot_folder_path = self._prepare_folder(self.path / LocalStorageFilenames.SNAPSHOT_FOLDER)
         self._dag_path = self._snapshot_folder_path / LocalStorageFilenames.DAG
@@ -212,8 +215,7 @@ class LocalStorageOperations(AbstractRunStorage):
         shutil.copytree(
             flow.code.as_posix(),
             self._snapshot_folder_path,
-            # ignore .promptflow/ and .runs, otherwise will raise RecursionError
-            ignore=shutil.ignore_patterns(".*"),
+            ignore=shutil.ignore_patterns("__pycache__"),
             dirs_exist_ok=True,
         )
         # replace DAG file with the overwrite one

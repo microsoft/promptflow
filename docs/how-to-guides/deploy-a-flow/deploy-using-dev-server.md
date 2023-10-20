@@ -12,7 +12,14 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy a flow.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+refer to [Setup connection for web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+
+Note: We will use relevant environment variable ({connection_name}_{key_name}) to override connection configurations in 
+serving mode, white space in connection name will be removed directly from environment variable name. For instance, 
+if there is a custom connection named 'custom_connection' with a configuration key called 'chat_deployment_name,' the 
+function will attempt to retrieve 'chat_deployment_name' from the environment variable 
+'CUSTOM_CONNECTION_CHAT_DEPLOYMENT_NAME' by default. If the environment variable is not set, it will use the original 
+value as a fallback.
 
 
 The following CLI commands allows you serve a flow folder as an endpoint. By running this command, a [flask](https://flask.palletsprojects.com/en/) app will start in the environment where command is executed, please ensure all prerequisites required by flow have been installed.

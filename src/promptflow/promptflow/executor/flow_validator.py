@@ -3,16 +3,21 @@
 # ---------------------------------------------------------
 
 import copy
-from typing import Any, Mapping, Optional
+from json import JSONDecodeError
+from typing import Any, List, Mapping, Optional
 
 from promptflow._utils.logger_utils import logger
 from promptflow.contracts.flow import Flow, InputValueType, Node
+from promptflow.contracts.tool import ValueType
 from promptflow.executor._errors import (
     DuplicateNodeName,
     EmptyOutputReference,
     InputNotFound,
+    InputParseError,
     InputReferenceNotFound,
     InputTypeError,
+    InvalidAggregationInput,
+    InvalidNodeReference,
     NodeCircularDependency,
     NodeReferenceNotFound,
     OutputReferenceNotFound,
@@ -20,14 +25,46 @@ from promptflow.executor._errors import (
 
 
 class FlowValidator:
+    """This is a validation class designed to verify the integrity and validity of flow definitions and input data."""
+
     @staticmethod
     def _ensure_nodes_order(flow: Flow):
         dependencies = {n.name: set() for n in flow.nodes}
+        aggregation_nodes = set(node.name for node in flow.nodes if node.aggregation)
         for n in flow.nodes:
             inputs_list = [i for i in n.inputs.values()]
             if n.skip:
+                if n.aggregation and (
+                    (
+                        n.skip.condition.value_type == InputValueType.NODE_REFERENCE
+                        and n.skip.condition.value not in aggregation_nodes
+                    )
+                    or (
+                        n.skip.return_value.value_type == InputValueType.NODE_REFERENCE
+                        and n.skip.return_value.value not in aggregation_nodes
+                    )
+                ):
+                    msg_format = (
+                        "Invalid node definitions found in the flow graph. Non-aggregation nodes cannot be "
+                        "referenced in the skip config of the aggregation node '{node_name}'. Please review "
+                        "and rectify the node reference."
+                    )
+                    raise InvalidNodeReference(message_format=msg_format, node_name=n.name)
                 inputs_list.extend([n.skip.condition, n.skip.return_value])
             if n.activate:
+                if (
+                    n.aggregation
+                    and n.activate.condition.value_type == InputValueType.NODE_REFERENCE
+                    and n.activate.condition.value not in aggregation_nodes
+                ):
+                    msg_format = (
+                        "Invalid node definitions found in the flow graph. Non-aggregation node '{invalid_reference}' "
+                        "cannot be referenced in the activate config of the aggregation node '{node_name}'. Please "
+                        "review and rectify the node reference."
+                    )
+                    raise InvalidNodeReference(
+                        message_format=msg_format, invalid_reference=n.activate.condition.value, node_name=n.name
+                    )
                 inputs_list.extend([n.activate.condition])
             for i in inputs_list:
                 if i.value_type != InputValueType.NODE_REFERENCE:
@@ -42,6 +79,18 @@ class FlowValidator:
                         message_format=msg_format, node_name=n.name, reference_node_name=i.value
                     )
                 dependencies[n.name].add(i.value)
+            if not n.aggregation:
+                invalid_reference = dependencies[n.name].intersection(aggregation_nodes)
+                if invalid_reference:
+                    msg_format = (
+                        "Invalid node definitions found in the flow graph. Non-aggregate node '{node_name}' "
+                        "cannot reference aggregate nodes {invalid_reference}. Please review and rectify "
+                        "the node reference."
+                    )
+                    raise InvalidNodeReference(
+                        message_format=msg_format, node_name=n.name, invalid_reference=invalid_reference
+                    )
+
         sorted_nodes = []
         picked = set()
         for _ in range(len(flow.nodes)):
@@ -104,37 +153,88 @@ class FlowValidator:
         return FlowValidator._ensure_nodes_order(flow)
 
     @staticmethod
-    def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        Resolve inputs by type if existing. Ignore missing inputs. This method is used for PRS case
+    def _parse_input_value(input_key: str, input_value: Any, expected_type: ValueType, idx=None):
+        try:
+            return expected_type.parse(input_value)
+        except JSONDecodeError as e:
+            line_info = "" if idx is None else f" in line {idx} of input data"
+            flow_input_info = f"'{input_key}'{line_info}"
+            error_type_and_message = f"({e.__class__.__name__}) {e}"
 
-        return:
-            type converted inputs
+            msg_format = (
+                "Failed to parse the flow input. The value for flow input {flow_input_info} "
+                "was interpreted as JSON string since its type is '{value_type}'. However, the value "
+                "'{input_value}' is invalid for JSON parsing. Error details: {error_type_and_message}. "
+                "Please make sure your inputs are properly formatted."
+            )
+            raise InputParseError(
+                message_format=msg_format,
+                flow_input_info=flow_input_info,
+                input_value=input_value,
+                value_type=expected_type,
+                error_type_and_message=error_type_and_message,
+            ) from e
+        except Exception as e:
+            line_info = "" if idx is None else f" in line {idx} of input data"
+            flow_input_info = f"'{input_key}'{line_info}"
+            msg_format = (
+                "The input for flow is incorrect. The value for flow input {flow_input_info} "
+                "does not match the expected type '{expected_type}'. Please change flow input type "
+                "or adjust the input value in your input data."
+            )
+            raise InputTypeError(
+                message_format=msg_format, flow_input_info=flow_input_info, expected_type=expected_type
+            ) from e
+
+    @staticmethod
+    def resolve_aggregated_flow_inputs_type(flow: Flow, inputs: Mapping[str, List[Any]]) -> Mapping[str, Any]:
+        updated_inputs = {}
+        for input_key, input_def in flow.inputs.items():
+            if input_key in inputs:
+                input_value_list = inputs[input_key]
+                updated_inputs[input_key] = [
+                    FlowValidator._parse_input_value(input_key, each_line_item, input_def.type, idx)
+                    for idx, each_line_item in enumerate(input_value_list)
+                ]
+        return updated_inputs
+
+    @staticmethod
+    def resolve_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
+        """Resolve inputs by type if existing. Ignore missing inputs.
+
+        :param flow: The `flow` parameter is of type `Flow` and represents a flow object
+        :type flow: ~promptflow.contracts.flow.Flow
+        :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
+            flow inputs, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :param idx: The `idx` parameter is an optional integer that represents the line index of the input
+            data. It is used to provide additional information in case there is an error with the input data
+        :type idx: Optional[int]
+        :return: The updated inputs with values are type-converted based on the expected type specified
+            in the `flow` object.
+        :rtype: Mapping[str, Any]
         """
         updated_inputs = {k: v for k, v in inputs.items()}
         for k, v in flow.inputs.items():
-            try:
-                if k in inputs:
-                    updated_inputs[k] = v.type.parse(inputs[k])
-            except Exception as e:
-                line_info = "" if idx is None else f"in line {idx} of input data"
-                msg_format = (
-                    "The input for flow is incorrect. The value for flow input '{flow_input_name}' {line_info} "
-                    "does not match the expected type '{expected_type}'. Please change flow input type "
-                    "or adjust the input value in your input data."
-                )
-                raise InputTypeError(
-                    message_format=msg_format, flow_input_name=k, line_info=line_info, expected_type=v.type
-                ) from e
+            if k in inputs:
+                updated_inputs[k] = FlowValidator._parse_input_value(k, inputs[k], v.type, idx)
         return updated_inputs
 
     @staticmethod
     def ensure_flow_inputs_type(flow: Flow, inputs: Mapping[str, Any], idx: Optional[int] = None) -> Mapping[str, Any]:
-        """
-        Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
+        """Make sure the inputs are completed and in the correct type. Raise Exception if not valid.
 
-        return:
-            type converted inputs
+        :param flow: The `flow` parameter is of type `Flow` and represents a flow object
+        :type flow: ~promptflow.contracts.flow.Flow
+        :param inputs: A dictionary containing the input values for the flow. The keys are the names of the
+            flow inputs, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :param idx: The `idx` parameter is an optional integer that represents the line index of the input
+            data. It is used to provide additional information in case there is an error with the input data
+        :type idx: Optional[int]
+        :return: The updated inputs, where the values are type-converted based on the expected
+            type specified in the `flow` object.
+        :rtype: Mapping[str, Any]
         """
         for k, v in flow.inputs.items():
             if k not in inputs:
@@ -148,12 +248,19 @@ class FlowValidator:
         return FlowValidator.resolve_flow_inputs_type(flow, inputs, idx)
 
     @staticmethod
-    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]):
-        """
-        Filter the flow inputs for node and resolve the value by type.
+    def convert_flow_inputs_for_node(flow: Flow, node: Node, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+        """Filter the flow inputs for node and resolve the value by type.
 
-        return:
-            the resolved flow inputs which are needed by the node only
+        :param flow: The `flow` parameter is an instance of the `Flow` class. It represents the flow or
+            workflow that contains the node and inputs
+        :type flow: ~promptflow.contracts.flow.Flow
+        :param node: The `node` parameter is an instance of the `Node` class
+        :type node: ~promptflow.contracts.flow.Node
+        :param inputs: A dictionary containing the input values for the node. The keys are the names of the
+            input variables, and the values are the corresponding input values
+        :type inputs: Mapping[str, Any]
+        :return: the resolved flow inputs which are needed by the node only by the node only.
+        :rtype: Mapping[str, Any]
         """
         updated_inputs = {}
         inputs = inputs or {}
@@ -191,6 +298,54 @@ class FlowValidator:
                         expected_type=flow.inputs[v.value].type,
                     ) from e
         return updated_inputs
+
+    @staticmethod
+    def _validate_aggregation_inputs(aggregated_flow_inputs: Mapping[str, Any], aggregation_inputs: Mapping[str, Any]):
+        """Validate the aggregation inputs according to the flow inputs."""
+        for key, value in aggregated_flow_inputs.items():
+            if key in aggregation_inputs:
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. The input '{input_key}' appears in both "
+                        "aggregated flow input and aggregated reference input. "
+                        "Please remove one of them and try the operation again."
+                    ),
+                    input_key=key,
+                )
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. "
+                        "The value for aggregated flow input '{input_key}' should be a list, "
+                        "but received {value_type}. Please adjust the input value to match the expected format."
+                    ),
+                    input_key=key,
+                    value_type=type(value).__name__,
+                )
+
+        for key, value in aggregation_inputs.items():
+            if not isinstance(value, list):
+                raise InvalidAggregationInput(
+                    message_format=(
+                        "The input for aggregation is incorrect. "
+                        "The value for aggregated reference input '{input_key}' should be a list, "
+                        "but received {value_type}. Please adjust the input value to match the expected format."
+                    ),
+                    input_key=key,
+                    value_type=type(value).__name__,
+                )
+
+        inputs_len = {key: len(value) for key, value in aggregated_flow_inputs.items()}
+        inputs_len.update({key: len(value) for key, value in aggregation_inputs.items()})
+        if len(set(inputs_len.values())) > 1:
+            raise InvalidAggregationInput(
+                message_format=(
+                    "The input for aggregation is incorrect. "
+                    "The length of all aggregated inputs should be the same. Current input lengths are: "
+                    "{key_len}. Please adjust the input value in your input data."
+                ),
+                key_len=inputs_len,
+            )
 
     @staticmethod
     def _ensure_outputs_valid(flow: Flow):

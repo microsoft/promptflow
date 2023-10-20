@@ -68,6 +68,7 @@ from promptflow._utils.exception_utils import (
     RootErrorCode,
     infer_error_code_from_class,
 )
+from promptflow._utils.feature_utils import Feature, FeatureState, get_feature_list
 from promptflow._utils.logger_utils import (
     DATETIME_FORMAT,
     LOG_FORMAT,
@@ -93,9 +94,7 @@ from promptflow._utils.utils import (
 from promptflow._version import VERSION
 from promptflow.executor._errors import InputNotFound
 from promptflow.executor._tool_invoker import DefaultToolInvoker
-
 from promptflow.storage._cache_storage import LocalCacheStorage
-from promptflow.storage._common import reconstruct_metrics_dict
 from promptflow.storage._sqlite_client import (
     INDEX,
     PRIMARY_KEY,

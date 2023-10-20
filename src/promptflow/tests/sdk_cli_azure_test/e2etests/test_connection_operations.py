@@ -9,6 +9,8 @@ from promptflow.azure._restclient.flow_service_caller import FlowRequestExceptio
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.types import Secret
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @pytest.fixture
 def connection_ops(ml_client):
@@ -18,6 +20,7 @@ def connection_ops(ml_client):
     yield pf._connections
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestConnectionOperations:
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
@@ -101,3 +104,26 @@ class TestConnectionOperations:
         ]
         for spec in expected_config_specs:
             assert spec in result["AzureOpenAI"]["config_specs"]
+
+    def test_get_connection(self, connection_ops):
+        # Note: No secrets will be returned by MT api
+        result = connection_ops.get(name="azure_open_ai_connection")
+        assert (
+            result._to_dict().items()
+            > {
+                "api_type": "azure",
+                "module": "promptflow.connections",
+                "name": "azure_open_ai_connection",
+            }.items()
+        )
+
+        result = connection_ops.get(name="custom_connection")
+        assert (
+            result._to_dict().items()
+            > {
+                "name": "custom_connection",
+                "module": "promptflow.connections",
+                "configs": {},
+                "secrets": {},
+            }.items()
+        )

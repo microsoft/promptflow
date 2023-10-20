@@ -5,6 +5,7 @@
 """This is a common util file.
 !!!Please do not include any project related import.!!!
 """
+import contextlib
 import contextvars
 import functools
 import importlib
@@ -117,10 +118,22 @@ def count_and_log_progress(
         yield item
 
 
-def log_progress(logger: logging.Logger, count: int, total_count: int, formatter="{count} / {total_count} finished."):
+def log_progress(
+    run_start_time: datetime,
+    logger: logging.Logger,
+    count: int,
+    total_count: int,
+    formatter="{count} / {total_count} finished.",
+):
     log_interval = max(int(total_count / 10), 1)
-    if count % log_interval == 0 or count == total_count:
+    if count > 0 and (count % log_interval == 0 or count == total_count):
+        average_execution_time = round((datetime.now().timestamp() - run_start_time.timestamp()) / count, 2)
+        estimated_execution_time = round(average_execution_time * (total_count - count), 2)
         logger.info(formatter.format(count=count, total_count=total_count))
+        logger.info(
+            f"Average execution time for completed lines: {average_execution_time} seconds. "
+            f"Estimated time for incomplete lines: {estimated_execution_time} seconds."
+        )
 
 
 def extract_user_frame_summaries(frame_summaries: List[traceback.FrameSummary]):
@@ -174,3 +187,20 @@ def convert_inputs_mapping_to_param(inputs_mapping: dict):
     # TODO: Finalize the format of inputs_mapping
     """
     return ",".join([f"{k}={v}" for k, v in inputs_mapping.items()])
+
+
+@contextlib.contextmanager
+def environment_variable_overwrite(key, val):
+    if key in os.environ.keys():
+        backup_value = os.environ[key]
+    else:
+        backup_value = None
+    os.environ[key] = val
+
+    try:
+        yield
+    finally:
+        if backup_value:
+            os.environ[key] = backup_value
+        else:
+            os.environ.pop(key)

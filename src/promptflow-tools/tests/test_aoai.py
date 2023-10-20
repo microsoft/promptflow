@@ -31,10 +31,10 @@ class TestAOAI:
             deployment_name="gpt-35-turbo",
             max_tokens="32",
             temperature=0,
-            user_input="Fill in more detalis about trend 2.",
+            user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
         )
-        assert "details about trend 2" in result.lower()
+        assert "additional details" in result.lower()
 
     def test_aoai_chat_api(self, azure_open_ai_connection, example_prompt_template, chat_history):
         result = chat(
@@ -83,7 +83,7 @@ class TestAOAI:
             deployment_name="gpt-35-turbo",
             max_tokens="32",
             temperature=0,
-            user_input="Fill in more detalis about trend 2.",
+            user_input="Fill in more details about trend 2.",
             chat_history=chat_history,
             stream=True,
         )
@@ -93,7 +93,7 @@ class TestAOAI:
                 answer += next(result)
             except Exception:
                 break
-        assert "details about trend 2" in answer.lower()
+        assert "additional details" in answer.lower()
 
     @pytest.mark.parametrize(
         "params, expected",

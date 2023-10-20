@@ -13,7 +13,7 @@ from mock.mock import Mock
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._vendor import get_upload_files_from_folder
 from promptflow.azure._load_functions import load_flow
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 FLOWS_DIR = Path("./tests/test_configs/flows")
@@ -89,19 +89,24 @@ class TestFlow:
 
             flow_files = list(sorted([item[1] for item in upload_paths]))
             # assert that .runs/mock.file are ignored
-            assert flow_files == [
-                ".promptflow/flow.tools.json",
-                "classify_with_llm.jinja2",
-                "convert_to_dict.py",
-                "fetch_text_content_from_url.py",
-                "fetch_text_content_from_url_input.jsonl",
-                "flow.dag.yaml",
-                "prepare_examples.py",
-                "samples.json",
-                "summarize_text_content.jinja2",
-                "summarize_text_content__variant_1.jinja2",
-                "webClassification20.csv",
-            ]
+            assert ".runs/mock.file" not in flow_files
+            # Web classification may be executed and include flow.detail.json, flow.logs, flow.outputs.json
+            assert all(
+                file in flow_files
+                for file in [
+                    ".promptflow/flow.tools.json",
+                    "classify_with_llm.jinja2",
+                    "convert_to_dict.py",
+                    "fetch_text_content_from_url.py",
+                    "fetch_text_content_from_url_input.jsonl",
+                    "flow.dag.yaml",
+                    "prepare_examples.py",
+                    "samples.json",
+                    "summarize_text_content.jinja2",
+                    "summarize_text_content__variant_1.jinja2",
+                    "webClassification20.csv",
+                ]
+            )
 
     def test_load_yaml_run_with_resources(self):
         source = f"{RUNS_DIR}/sample_bulk_run_with_resources.yaml"

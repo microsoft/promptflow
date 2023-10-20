@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from promptflow.exceptions import ErrorTarget
+from .._sdk._constants import DEFAULT_ENCODING
 
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
@@ -78,7 +79,7 @@ class InputAssignment:
 
         :param value: The string to be deserialized.
         :type value: str
-        :return: The input assignment of referenece types.
+        :return: The input assignment of reference types.
         :rtype: InputAssignment
         """
         if FlowInputAssignment.is_flow_input(value):
@@ -522,7 +523,7 @@ class Flow:
     def from_yaml(flow_file: Path, working_dir=None) -> "Flow":
         """Load flow from yaml file."""
         working_dir = Flow._resolve_working_dir(flow_file, working_dir)
-        with open(working_dir / flow_file, "r") as fin:
+        with open(working_dir / flow_file, "r", encoding=DEFAULT_ENCODING) as fin:
             flow = Flow.deserialize(yaml.safe_load(fin))
             flow._set_tool_loader(working_dir)
         return flow

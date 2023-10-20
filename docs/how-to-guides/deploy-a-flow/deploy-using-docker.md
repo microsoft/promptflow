@@ -38,6 +38,8 @@ Exported Dockerfile & its dependencies are located in the same folder. The struc
   - ...
 - Dockerfile: the dockerfile to build the image
 - start.sh: the script used in `CMD` of `Dockerfile` to start the service
+- runit: the folder contains all the runit scripts
+  - ...
 - settings.json: a json file to store the settings of the docker image
 - README.md: Simple introduction of the files
 
@@ -46,7 +48,7 @@ We are going to use the [web-classification](https://github.com/microsoft/prompt
 an example to show how to deploy with docker.
 
 Please ensure you have [create the connection](../manage-connections.md#create-a-connection) required by flow, if not, you could
-refer to [Setup connection for web-classifiction](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
+refer to [Setup connection for web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification).
 
 ## Build a flow as docker format app
 

@@ -9,6 +9,8 @@ from promptflow import PFClient
 from promptflow._sdk._serving.app import create_app as create_serving_app
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
+from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
+from promptflow._utils.utils import environment_variable_overwrite
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
@@ -18,12 +20,16 @@ MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 
 @pytest.fixture(scope="session")
 def local_client() -> PFClient:
-    return PFClient()
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        yield PFClient()
 
 
 @pytest.fixture(scope="session")
 def pf() -> PFClient:
-    return PFClient()
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        yield PFClient()
 
 
 @pytest.fixture()
@@ -80,7 +86,6 @@ def flow_serving_client(mocker: MockerFixture):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
     app = create_serving_app(environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"})
-    app.init_executor_if_not_exist()
     app.config.update(
         {
             "TESTING": True,
@@ -94,10 +99,31 @@ def evaluation_flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "web_classification").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
     app = create_serving_app()
-    app.init_executor_if_not_exist()
     app.config.update(
         {
             "TESTING": True,
         }
     )
     return app.test_client()
+
+
+def create_client_by_model(model_name: str, mocker: MockerFixture):
+    model_path = (Path(MODEL_ROOT) / model_name).resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    app = create_serving_app()
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()
+
+
+@pytest.fixture
+def serving_client_llm_chat(mocker: MockerFixture):
+    return create_client_by_model("chat_flow_with_stream_output", mocker)
+
+
+@pytest.fixture
+def serving_client_python_stream_tools(mocker: MockerFixture):
+    return create_client_by_model("python_stream_tools", mocker)

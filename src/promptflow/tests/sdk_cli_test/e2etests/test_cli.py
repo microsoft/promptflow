@@ -1,4 +1,6 @@
 import contextlib
+import importlib
+import importlib.util
 import io
 import json
 import logging
@@ -12,6 +14,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from unittest.mock import patch
 
+import mock
 import pytest
 import yaml
 
@@ -45,7 +48,7 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:
@@ -197,6 +200,20 @@ class TestCli:
                 f"{DATAS_DIR}/webClassification3.jsonl",
                 "--connection",
                 "classify_with_llm.connection=new_ai_connection",
+            )
+        assert "Completed" in f.getvalue()
+
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.model=new_model",
             )
         assert "Completed" in f.getvalue()
 
@@ -519,7 +536,7 @@ class TestCli:
                 assert details["node_runs"][0]["logs"]["stdout"]
 
         env = {"API_BASE": "${azure_open_ai_connection.api_base}"}
-        SubmitterHelper.resolve_environment_variables(env)
+        SubmitterHelper.resolve_environment_variables(env, local_client)
         run_pf_command(
             "flow",
             "test",
@@ -748,6 +765,94 @@ class TestCli:
             assert "chat_history" in chat_prompt_node["inputs"]
             assert "customer_info" in chat_prompt_node["inputs"]
 
+    def test_flow_init_with_connection_and_deployment(self):
+        def check_connection_and_deployment(flow_folder, connection, deployment):
+            with open(Path(flow_folder) / "flow.dag.yaml", "r") as f:
+                flow_dict = yaml.safe_load(f)
+                assert flow_dict["nodes"][0]["inputs"]["deployment_name"] == deployment
+                assert flow_dict["nodes"][0]["connection"] == connection
+
+        temp_dir = mkdtemp()
+        with _change_working_dir(temp_dir):
+            flow_name = "chat_flow"
+            flow_folder = Path(temp_dir) / flow_name
+            # When configure local connection provider, init chat flow without connection and deployment.
+            run_pf_command(
+                "flow",
+                "init",
+                "--flow",
+                flow_name,
+                "--type",
+                "chat",
+            )
+            # Assert connection files created
+            assert (flow_folder / "azure_openai.yaml").exists()
+            assert (flow_folder / "openai.yaml").exists()
+
+            # When configure local connection provider, init chat flow with connection and deployment.
+            connection = "connection_name"
+            deployment = "deployment_name"
+            run_pf_command(
+                "flow",
+                "init",
+                "--flow",
+                flow_name,
+                "--type",
+                "chat",
+                "--connection",
+                connection,
+                "--deployment",
+                deployment,
+                "--yes",
+            )
+            # Assert connection files created and the connection/deployment is set in flow.dag.yaml
+            check_connection_and_deployment(flow_folder, connection=connection, deployment=deployment)
+            connection_files = [flow_folder / "azure_openai.yaml", flow_folder / "openai.yaml"]
+            for file in connection_files:
+                assert file.exists()
+                with open(file, "r") as f:
+                    connection_dict = yaml.safe_load(f)
+                    assert connection_dict["name"] == connection
+
+            shutil.rmtree(flow_folder)
+            target = "promptflow._sdk._pf_client.Configuration.get_connection_provider"
+            with mock.patch(target) as mocked:
+                mocked.return_value = "azureml:xx"
+                # When configure azure connection provider, init chat flow without connection and deployment.
+                run_pf_command(
+                    "flow",
+                    "init",
+                    "--flow",
+                    flow_name,
+                    "--type",
+                    "chat",
+                    "--yes",
+                )
+                # Assert connection files not created.
+                assert not (flow_folder / "azure_openai.yaml").exists()
+                assert not (flow_folder / "openai.yaml").exists()
+
+                # When configure azure connection provider, init chat flow with connection and deployment.
+                connection = "connection_name"
+                deployment = "deployment_name"
+                run_pf_command(
+                    "flow",
+                    "init",
+                    "--flow",
+                    flow_name,
+                    "--type",
+                    "chat",
+                    "--connection",
+                    connection,
+                    "--deployment",
+                    deployment,
+                    "--yes",
+                )
+                # Assert connection files not created and the connection/deployment is set in flow.dag.yaml
+                check_connection_and_deployment(flow_folder, connection=connection, deployment=deployment)
+                assert not (flow_folder / "azure_openai.yaml").exists()
+                assert not (flow_folder / "openai.yaml").exists()
+
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
 
@@ -777,6 +882,19 @@ class TestCli:
             "test",
             "--flow",
             f"{FLOWS_DIR}/chat_flow_with_stream_output",
+            "--interactive",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()
+
+        chat_list = ["hi", "what is chat gpt?"]
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output",
             "--interactive",
         )
         output_path = Path(FLOWS_DIR) / "chat_flow_with_stream_output" / ".promptflow" / "chat.output.json"
@@ -819,6 +937,25 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert "chat flow does not support multiple chat outputs" in outerr.out
+
+    def test_flow_test_with_default_chat_history(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow_with_default_history",
+        )
+        output_path = Path(FLOWS_DIR) / "chat_flow_with_default_history" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "chat_flow_with_default_history" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r") as f:
+            details = json.load(f)
+        expect_chat_history = [
+            {"inputs": {"question": "hi"}, "outputs": {"answer": "hi"}},
+            {"inputs": {"question": "who are you"}, "outputs": {"answer": "who are you"}},
+        ]
+        assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
@@ -1007,9 +1144,27 @@ class TestCli:
                 },
                 ("configs.key1", "new_value"),
             ),
+            (
+                "custom_strong_type_connection.yaml",
+                {
+                    "module": "promptflow.connections",
+                    "type": "custom",
+                    "configs": {
+                        "api_base": "This is my first connection.",
+                        "promptflow.connection.custom_type": "MyFirstConnection",
+                        "promptflow.connection.module": "my_tool_package.connections",
+                        "promptflow.connection.package": "test-custom-tools",
+                        "promptflow.connection.package_version": "0.0.2",
+                    },
+                    "secrets": {"api_key": SCRUBBED_VALUE},
+                },
+                ("configs.api_base", "new_value"),
+            ),
         ],
     )
-    def test_connection_create_update(self, file_name, expected, update_item, capfd, local_client):
+    def test_connection_create_update(
+        self, install_custom_tool_pkg, file_name, expected, update_item, capfd, local_client
+    ):
         name = f"Connection_{str(uuid.uuid4())[:4]}"
         run_pf_command("connection", "create", "--file", f"{CONNECTIONS_DIR}/{file_name}", "--name", f"{name}")
         out, err = capfd.readouterr()
@@ -1073,12 +1228,12 @@ class TestCli:
                 "extra=${data.url}",
                 "--stream",
             )
-        assert "user log" in f.getvalue()
-        assert "error log" in f.getvalue()
-        # flow logs will stream
-        assert "Executing node print_val. node run id:" in f.getvalue()
-        # executor logs will stream
-        assert "Node print_val completes." in f.getvalue()
+        logs = f.getvalue()
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_pf_run_no_stream_log(self):
         f = io.StringIO()
@@ -1145,3 +1300,98 @@ class TestCli:
             )
         outerr = capsys.readouterr()
         assert not outerr.err
+
+    def test_tool_init(self, capsys):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            package_name = "package_name"
+            func_name = "func_name"
+            run_pf_command("tool", "init", "--package", package_name, "--tool", func_name, cwd=temp_dir)
+            package_folder = Path(temp_dir) / package_name
+            assert (package_folder / package_name / f"{func_name}.py").exists()
+            assert (package_folder / package_name / "utils.py").exists()
+            assert (package_folder / package_name / "__init__.py").exists()
+            assert (package_folder / "setup.py").exists()
+            assert (package_folder / "README.md").exists()
+
+            spec = importlib.util.spec_from_file_location(
+                f"{package_name}.utils", package_folder / package_name / "utils.py"
+            )
+            utils = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(utils)
+
+            assert hasattr(utils, "list_package_tools")
+            tools_meta = utils.list_package_tools()
+            assert f"{package_name}.{func_name}.{func_name}" in tools_meta
+            meta = tools_meta[f"{package_name}.{func_name}.{func_name}"]
+            assert meta["function"] == func_name
+            assert meta["module"] == f"{package_name}.{func_name}"
+            assert meta["name"] == func_name
+            assert meta["description"] == f"This is {func_name} tool"
+            assert meta["type"] == "python"
+
+            # Invalid package/tool name
+            invalid_package_name = "123-package-name"
+            invalid_tool_name = "123_tool_name"
+            with pytest.raises(SystemExit):
+                run_pf_command("tool", "init", "--package", invalid_package_name, "--tool", func_name, cwd=temp_dir)
+            outerr = capsys.readouterr()
+            assert f"The package name {invalid_package_name} is a invalid identifier." in outerr.out
+            with pytest.raises(SystemExit):
+                run_pf_command("tool", "init", "--package", package_name, "--tool", invalid_tool_name, cwd=temp_dir)
+            outerr = capsys.readouterr()
+            assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
+            with pytest.raises(SystemExit):
+                run_pf_command("tool", "init", "--tool", invalid_tool_name, cwd=temp_dir)
+            outerr = capsys.readouterr()
+            assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
+
+    def test_tool_list(self, capsys):
+        # List package tools in environment
+        run_pf_command("tool", "list")
+        outerr = capsys.readouterr()
+        tools_dict = json.loads(outerr.out)
+        package_tool_name = "promptflow.tools.embedding.embedding"
+        assert package_tool_name in tools_dict["package"]
+
+        # List flow tools and package tools
+        run_pf_command("tool", "list", "--flow", f"{FLOWS_DIR}/chat_flow")
+        outerr = capsys.readouterr()
+        tools_dict = json.loads(outerr.out)
+        expect_flow_tools = {
+            "chat.jinja2": {
+                "type": "llm",
+                "inputs": {"chat_history": {"type": ["string"]}, "question": {"type": ["string"]}},
+                "source": "chat.jinja2",
+            },
+            "show_answer.py": {
+                "type": "python",
+                "inputs": {"chat_answer": {"type": ["string"]}},
+                "source": "show_answer.py",
+                "function": "show_answer",
+            },
+        }
+        assert tools_dict["code"] == expect_flow_tools
+        assert package_tool_name in tools_dict["package"]
+
+        # Invalid flow parameter
+        with pytest.raises(Exception) as e:
+            run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
+        assert "invalid_flow_folder does not exist" in e.value.args[0]
+
+    def test_chat_flow_with_conditional(self, monkeypatch, capsys):
+        chat_list = ["1", "2"]
+
+        def mock_input(*args, **kwargs):
+            if chat_list:
+                return chat_list.pop()
+            else:
+                raise KeyboardInterrupt()
+
+        monkeypatch.setattr("builtins.input", mock_input)
+        run_pf_command(
+            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
+        )
+        output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
+        assert output_path.exists()
+        detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
+        assert detail_path.exists()

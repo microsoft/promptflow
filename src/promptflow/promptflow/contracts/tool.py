@@ -3,18 +3,21 @@
 # ---------------------------------------------------------
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, TypeVar
 
 from promptflow._constants import CONNECTION_NAME_PROPERTY
 
-from .types import PromptTemplate, Secret
+from .multimedia import Image
+from .types import FilePath, PromptTemplate, Secret
 
+logger = logging.getLogger(__name__)
 T = TypeVar("T", bound="Enum")
 
 
-def deserialize_enum(cls: Type[T], val) -> T:
+def _deserialize_enum(cls: Type[T], val) -> T:
     if not all(isinstance(i, str) for i in cls):
         return val
     typ = next((i for i in cls if val.lower() == i.lower()), None)
@@ -24,6 +27,8 @@ def deserialize_enum(cls: Type[T], val) -> T:
 
 
 class ValueType(str, Enum):
+    """Value types."""
+
     INT = "int"
     DOUBLE = "double"
     BOOL = "bool"
@@ -32,9 +37,19 @@ class ValueType(str, Enum):
     PROMPT_TEMPLATE = "prompt_template"
     LIST = "list"
     OBJECT = "object"
+    FILE_PATH = "file_path"
+    IMAGE = "image"
 
     @staticmethod
-    def from_value(t: Any):
+    def from_value(t: Any) -> "ValueType":
+        """Get :class:`~promptflow.contracts.tool.ValueType` by value.
+
+        :param t: The value needs to get its :class:`~promptflow.contracts.tool.ValueType`
+        :type t: Any
+        :return: The :class:`~promptflow.contracts.tool.ValueType` of the given value
+        :rtype: ~promptflow.contracts.tool.ValueType
+        """
+
         if isinstance(t, Secret):
             return ValueType.SECRET
         if isinstance(t, PromptTemplate):
@@ -49,10 +64,20 @@ class ValueType(str, Enum):
             return ValueType.STRING
         if isinstance(t, list):
             return ValueType.LIST
+        if isinstance(t, FilePath):
+            return ValueType.FILE_PATH
         return ValueType.OBJECT
 
     @staticmethod
-    def from_type(t: type):
+    def from_type(t: type) -> "ValueType":
+        """Get :class:`~promptflow.contracts.tool.ValueType` by type.
+
+        :param t: The type needs to get its :class:`~promptflow.contracts.tool.ValueType`
+        :type t: type
+        :return: The :class:`~promptflow.contracts.tool.ValueType` of the given type
+        :rtype: ~promptflow.contracts.tool.ValueType
+        """
+
         if t == int:
             return ValueType.INT
         if t == float:
@@ -67,9 +92,21 @@ class ValueType(str, Enum):
             return ValueType.SECRET
         if t == PromptTemplate:
             return ValueType.PROMPT_TEMPLATE
+        if t == FilePath:
+            return ValueType.FILE_PATH
+        if t == Image:
+            return ValueType.IMAGE
         return ValueType.OBJECT
 
-    def parse(self, v):  # noqa: C901
+    def parse(self, v: Any) -> Any:  # noqa: C901
+        """Parse value to the given :class:`~promptflow.contracts.tool.ValueType`.
+
+        :param v: The value needs to be parsed to the given :class:`~promptflow.contracts.tool.ValueType`
+        :type v: Any
+        :return: The parsed value
+        :rtype: Any
+        """
+
         if self == ValueType.INT:
             return int(v)
         if self == ValueType.DOUBLE:
@@ -100,8 +137,18 @@ class ValueType(str, Enum):
 
 
 class ConnectionType:
+    """This class provides methods to interact with connection types."""
+
     @staticmethod
-    def get_connection_class(type_name: str):
+    def get_connection_class(type_name: str) -> Optional[type]:
+        """Get connection type by type name.
+
+        :param type_name: The type name of the connection
+        :type type_name: str
+        :return: The connection type
+        :rtype: type
+        """
+
         # Note: This function must be called after ensure_flow_valid, as required modules may not be imported yet,
         # and connections may not be registered yet.
         from promptflow._core.tools_manager import connections
@@ -111,26 +158,74 @@ class ConnectionType:
         return connections.get(type_name)
 
     @staticmethod
-    def is_connection_class_name(type_name: str):
+    def is_connection_class_name(type_name: str) -> bool:
+        """Check if the given type name is a connection type.
+
+        :param type_name: The type name of the connection
+        :type type_name: str
+        :return: Whether the given type name is a connection type
+        :rtype: bool
+        """
+
         return ConnectionType.get_connection_class(type_name) is not None
 
     @staticmethod
-    def is_connection_value(val):
+    def is_connection_value(val: Any) -> bool:
+        """Check if the given value is a connection.
+
+        :param val: The value to check
+        :type val: Any
+        :return: Whether the given value is a connection
+        :rtype: bool
+        """
+
         # Note: This function must be called after ensure_flow_valid, as required modules may not be imported yet,
         # and connections may not be registered yet.
         from promptflow._core.tools_manager import connections
 
         val = type(val) if not isinstance(val, type) else val
-        return val in connections.values()
+        return val in connections.values() or ConnectionType.is_custom_strong_type(val)
 
     @staticmethod
-    def serialize_conn(connection):
+    def is_custom_strong_type(val: Any) -> bool:
+        """Check if the given value is a custom strong type connection.
+
+        :param val: The value to check
+        :type val: Any
+        :return: Whether the given value is a custom strong type
+        :rtype: bool
+        """
+
+        from promptflow.connections import CustomStrongTypeConnection
+
+        val = type(val) if not isinstance(val, type) else val
+
+        try:
+            return issubclass(val, CustomStrongTypeConnection)
+        except TypeError as e:
+            # TypeError is not expected to happen, but if it does, we will log it for debugging and return False.
+            # The try-except block cannot be confidently removed due to the uncertainty of TypeError that may occur.
+            logger.warning(f"Failed to check if {val} is a custom strong type: {e}")
+            return False
+
+    @staticmethod
+    def serialize_conn(connection: Any) -> dict:
+        """Serialize the given connection.
+
+        :param connection: The connection to serialize
+        :type connection: Any
+        :return: A dictionary representation of the connection.
+        :rtype: dict
+        """
+
         if not ConnectionType.is_connection_value(connection):
             raise ValueError(f"Invalid connection value {connection!r}")
         return getattr(connection, CONNECTION_NAME_PROPERTY, type(connection).__name__)
 
 
 class ToolType(str, Enum):
+    """Tool types."""
+
     LLM = "llm"
     PYTHON = "python"
     PROMPT = "prompt"
@@ -140,12 +235,24 @@ class ToolType(str, Enum):
 
 @dataclass
 class InputDefinition:
+    """Input definition."""
+
     type: List[ValueType]
     default: str = None
     description: str = None
     enum: List[str] = None
+    # Param 'custom_type' is currently used for inputs of custom strong type connection.
+    # For a custom strong type connection input, the type should be 'CustomConnection',
+    # while the custom_type should be the custom strong type connection class name.
+    custom_type: List[str] = None
 
-    def serialize(self):
+    def serialize(self) -> dict:
+        """Serialize input definition to dict.
+
+        :return: The serialized input definition
+        :rtype: dict
+        """
+
         data = {}
         data["type"] = ([t.value for t in self.type],)
         if len(self.type) == 1:
@@ -156,31 +263,50 @@ class InputDefinition:
             data["description"] = self.description
         if self.enum:
             data["enum"] = self.enum
+        if self.custom_type:
+            data["custom_type"] = self.custom_type
         return data
 
     @staticmethod
     def deserialize(data: dict) -> "InputDefinition":
-        def deserialize_type(v):
+        """Deserialize dict to input definition.
+
+        :param data: The dict needs to be deserialized
+        :type data: dict
+        :return: The deserialized input definition
+        :rtype: ~promptflow.contracts.tool.InputDefinition
+        """
+
+        def _deserialize_type(v):
             v = [v] if not isinstance(v, list) else v
             # Note: Connection type will be keep as string value,
             # as they may be resolved later after some requisites imported.
-            return [deserialize_enum(ValueType, item) for item in v]
+            return [_deserialize_enum(ValueType, item) for item in v]
 
         return InputDefinition(
-            deserialize_type(data["type"]),
+            _deserialize_type(data["type"]),
             data.get("default", ""),
             data.get("description", ""),
             data.get("enum", []),
+            data.get("custom_type", []),
         )
 
 
 @dataclass
 class OutputDefinition:
+    """Output definition."""
+
     type: List["ValueType"]
     description: str = ""
     is_property: bool = False
 
-    def serialize(self):
+    def serialize(self) -> dict:
+        """Serialize output definition to dict.
+
+        :return: The serialized output definition
+        :rtype: dict
+        """
+
         data = {"type": [t.value for t in self.type], "is_property": self.is_property}
         if len(data["type"]) == 1:
             data["type"] = data["type"][0]
@@ -189,7 +315,15 @@ class OutputDefinition:
         return data
 
     @staticmethod
-    def deserialize(data: dict):
+    def deserialize(data: dict) -> "OutputDefinition":
+        """Deserialize dict to output definition.
+
+        :param data: The dict needs to be deserialized
+        :type data: dict
+        :return: The deserialized output definition
+        :rtype: ~promptflow.contracts.tool.OutputDefinition
+        """
+
         return OutputDefinition(
             [ValueType(t) for t in data["type"]] if isinstance(data["type"], list) else [ValueType(data["type"])],
             data.get("description", ""),
@@ -199,6 +333,36 @@ class OutputDefinition:
 
 @dataclass
 class Tool:
+    """Tool definition.
+
+    :param name: The name of the tool
+    :type name: str
+    :param type: The type of the tool
+    :type type: ~promptflow.contracts.tool.ToolType
+    :param inputs: The inputs of the tool
+    :type inputs: Dict[str, ~promptflow.contracts.tool.InputDefinition]
+    :param outputs: The outputs of the tool
+    :type outputs: Optional[Dict[str, ~promptflow.contracts.tool.OutputDefinition]]
+    :param description: The description of the tool
+    :type description: Optional[str]
+    :param module: The module of the tool
+    :type module: Optional[str]
+    :param class_name: The class name of the tool
+    :type class_name: Optional[str]
+    :param source: The source of the tool
+    :type source: Optional[str]
+    :param code: The code of the tool
+    :type code: Optional[str]
+    :param function: The function of the tool
+    :type function: Optional[str]
+    :param connection_type: The connection type of the tool
+    :type connection_type: Optional[List[str]]
+    :param is_builtin: Whether the tool is a built-in tool
+    :type is_builtin: Optional[bool]
+    :param stage: The stage of the tool
+    :type stage: Optional[str]
+    """
+
     name: str
     type: ToolType
     inputs: Dict[str, InputDefinition]
@@ -214,7 +378,12 @@ class Tool:
     stage: Optional[str] = None
 
     def serialize(self) -> dict:
-        # serialize to dict and skip None fields
+        """Serialize tool to dict and skip None fields.
+
+        :return: The serialized tool
+        :rtype: dict
+        """
+
         data = asdict(self, dict_factory=lambda x: {k: v for (k, v) in x if v is not None and k != "outputs"})
         if not self.type == ToolType._ACTION:
             return data
@@ -224,10 +393,18 @@ class Tool:
 
     @staticmethod
     def deserialize(data: dict) -> "Tool":
+        """Deserialize dict to tool.
+
+        :param data: The dict needs to be deserialized
+        :type data: dict
+        :return: The deserialized tool
+        :rtype: ~promptflow.contracts.tool.Tool
+        """
+
         return Tool(
             name=data["name"],
             description=data.get("description", ""),
-            type=deserialize_enum(ToolType, data["type"]),
+            type=_deserialize_enum(ToolType, data["type"]),
             inputs={k: InputDefinition.deserialize(i) for k, i in data.get("inputs", {}).items()},
             outputs={k: OutputDefinition.deserialize(o) for k, o in data.get("outputs", {}).items()},
             module=data.get("module"),
@@ -240,5 +417,5 @@ class Tool:
             stage=data.get("stage"),
         )
 
-    def require_connection(self) -> bool:
+    def _require_connection(self) -> bool:
         return self.type is ToolType.LLM or isinstance(self.connection_type, list) and len(self.connection_type) > 0

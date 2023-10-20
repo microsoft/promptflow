@@ -30,8 +30,8 @@ and the input value.
 :::
 
 ::::
-For Web Classification sample as shown the screenshot above, the flow input is a url of string type. We also support 
-the input type of `int`, `bool`, `double`, `list` and `object`.
+For Web Classification sample as shown the screenshot above, the flow input is an url of string type.
+For more input types in a python tool, please refer to [Input types](../../reference/tools-reference/python-tool.md#types).
 
 ## Develop the flow using different tools
 In one flow, you can consume different kinds of tools. We now support built-in tool like 

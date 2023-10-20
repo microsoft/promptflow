@@ -5,13 +5,14 @@
 import inspect
 import json
 import logging
+from collections.abc import Iterator
 from contextvars import ContextVar
 from datetime import datetime
-from types import GeneratorType
 from typing import Optional
 
 from promptflow._core.generator_proxy import GeneratorProxy, generate_from_proxy
 from promptflow._utils.dataclass_serializer import serialize
+from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow.contracts.tool import ConnectionType
 from promptflow.contracts.trace import Trace, TraceType
 
@@ -80,7 +81,7 @@ class Tracer(ThreadLocalSingleton):
             return obj
         try:
             obj = serialize(obj)
-            json.dumps(obj)
+            json.dumps(obj, default=default_json_encoder)
         except Exception:
             # We don't want to fail the whole function call because of a serialization error,
             # so we simply convert it to str if it cannot be serialized.
@@ -106,7 +107,7 @@ class Tracer(ThreadLocalSingleton):
 
     def _pop(self, output=None, error: Optional[Exception] = None):
         last_trace = self._trace_stack[-1]
-        if isinstance(output, GeneratorType):
+        if isinstance(output, Iterator):
             output = GeneratorProxy(output)
         if output is not None:
             last_trace.output = self.to_serializable(output)

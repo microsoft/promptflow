@@ -12,7 +12,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import cached_property
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
 import requests
@@ -29,29 +29,36 @@ from azure.ai.ml.operations._operation_orchestrator import OperationOrchestrator
 from pandas import DataFrame
 
 from promptflow._sdk._constants import (
+    LINE_NUMBER,
     LOGGER_NAME,
+    MAX_RUN_LIST_RESULTS,
+    MAX_SHOW_DETAILS_RESULTS,
     VIS_PORTAL_URL_TMPL,
     AzureRunTypes,
     ListViewType,
     RunDataKeys,
+    RunHistoryKeys,
     RunStatus,
 )
-from promptflow._sdk._errors import RunNotFoundError
+from promptflow._sdk._errors import RunNotFoundError, RunOperationParameterError
 from promptflow._sdk._logger_factory import LoggerFactory
 from promptflow._sdk._utils import in_jupyter_notebook, incremental_print
 from promptflow._sdk.entities import Run
+from promptflow._telemetry.activity import ActivityType, monitor_operation
+from promptflow._telemetry.telemetry import TelemetryMixin
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure._constants._flow import (
     AUTOMATIC_RUNTIME,
     AUTOMATIC_RUNTIME_NAME,
     BASE_IMAGE,
+    CLOUD_RUNS_PAGE_SIZE,
     PYTHON_REQUIREMENTS_TXT,
 )
 from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow.models import SetupFlowSessionAction
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure._utils.gerneral import get_user_alias_from_credential, is_remote_uri
-from promptflow.azure.operations._flow_opearations import FlowOperations
+from promptflow.azure.operations._flow_operations import FlowOperations
 
 RUNNING_STATUSES = RunStatus.get_running_statuses()
 
@@ -65,16 +72,17 @@ class RunRequestException(Exception):
         super().__init__(message)
 
 
-class RunOperations(_ScopeDependentOperations):
+class RunOperations(_ScopeDependentOperations, TelemetryMixin):
     """RunOperations that can manage runs.
 
     You should not instantiate this class directly. Instead, you should
-    create an PFClient instance that instantiates it for you and
+    create an :class:`~promptflow.azure.PFClient` instance that instantiates it for you and
     attaches it as an attribute.
     """
 
-    DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
-    ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
+    # add "_" in front of the constant to hide them from the docstring
+    _DATASTORE_PATH_PATTERN = re.compile(r"azureml://datastores/(?P<datastore>[\w/]+)/paths/(?P<path>.*)$")
+    _ASSET_ID_PATTERN = re.compile(r"azureml:/.*?/data/(?P<name>.*?)/versions/(?P<version>.*?)$")
 
     def __init__(
         self,
@@ -119,6 +127,18 @@ class RunOperations(_ScopeDependentOperations):
         endpoint = self._service_caller._service_endpoint
         return endpoint + "history/v1.0" + self._common_azure_url_pattern
 
+    def _get_telemetry_values(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """Return the telemetry values of run operations.
+
+        :return: The telemetry values
+        :rtype: Dict
+        """
+        return {
+            "subscription_id": self._operation_scope.subscription_id,
+            "resource_group_name": self._operation_scope.resource_group_name,
+            "workspace_name": self._operation_scope.workspace_name,
+        }
+
     def _get_run_portal_url(self, run_id: str):
         """Get the portal url for the run."""
         url = f"https://ml.azure.com/prompts/flow/bulkrun/run/{run_id}/details?wsid={self._common_azure_url_pattern}"
@@ -130,18 +150,17 @@ class RunOperations(_ScopeDependentOperations):
         if not input_uri:
             return None
         if input_uri.startswith("azureml://"):
-            # input uri is a datastore path
-            match = self.DATASTORE_PATH_PATTERN.match(input_uri)
-            if not match or len(match.groups()) != 2:
+            res = self._get_portal_url_from_asset_id(input_uri)
+            if res is None:
+                res = self._get_portal_url_from_datastore_path(input_uri)
+            if res is None:
+                error_msg = (
+                    f"Failed to get portal url: {input_uri!r} is not a valid azureml asset id or datastore path."
+                )
                 logger.warning(error_msg)
-                return None
-            datastore, path = match.groups()
-            return (
-                f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
-                f"&activeFilePath={path}#browseTab"
-            )
+            return res
         elif input_uri.startswith("azureml:/"):
-            # when input uri is an asset id, leverage the asset id pattern to get the portal url
+            # some asset id could start with "azureml:/"
             return self._get_portal_url_from_asset_id(input_uri)
         elif input_uri.startswith("azureml:"):
             # named asset id
@@ -151,14 +170,33 @@ class RunOperations(_ScopeDependentOperations):
             logger.warning(error_msg)
             return None
 
-    def _get_portal_url_from_asset_id(self, output_uri):
-        """Get the portal url for the data output."""
-        error_msg = f"Failed to get portal url: {output_uri!r} is not a valid azureml asset id."
-        if not output_uri:
+    def _get_portal_url_from_datastore_path(self, datastore_path, log_warning=False):
+        """Get the portal url from the datastore path."""
+        error_msg = (
+            f"Failed to get portal url: Datastore path {datastore_path!r} is not a valid azureml datastore path."
+        )
+        if not datastore_path:
             return None
-        match = self.ASSET_ID_PATTERN.match(output_uri)
+        match = self._DATASTORE_PATH_PATTERN.match(datastore_path)
         if not match or len(match.groups()) != 2:
-            logger.warning(error_msg)
+            if log_warning:
+                logger.warning(error_msg)
+            return None
+        datastore, path = match.groups()
+        return (
+            f"https://ml.azure.com/data/datastore/{datastore}/edit?wsid={self._common_azure_url_pattern}"
+            f"&activeFilePath={path}#browseTab"
+        )
+
+    def _get_portal_url_from_asset_id(self, asset_id, log_warning=False):
+        """Get the portal url from asset id."""
+        error_msg = f"Failed to get portal url: {asset_id!r} is not a valid azureml asset id."
+        if not asset_id:
+            return None
+        match = self._ASSET_ID_PATTERN.match(asset_id)
+        if not match or len(match.groups()) != 2:
+            if log_warning:
+                logger.warning(error_msg)
             return None
         name, version = match.groups()
         return f"https://ml.azure.com/data/{name}/{version}/details?wsid={self._common_azure_url_pattern}"
@@ -171,6 +209,7 @@ class RunOperations(_ScopeDependentOperations):
         }
         return custom_header
 
+    @monitor_operation(activity_name="pfazure.runs.create_or_update", activity_type=ActivityType.PUBLICAPI)
     def create_or_update(self, run: Run, **kwargs) -> Run:
         """Create or update a run.
 
@@ -196,8 +235,22 @@ class RunOperations(_ScopeDependentOperations):
             self.stream(run=run.name)
         return self.get(run=run.name)
 
-    def list(self, max_results, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs):
-        """List runs in the workspace with index service call."""
+    @monitor_operation(activity_name="pfazure.runs.list", activity_type=ActivityType.PUBLICAPI)
+    def list(
+        self, max_results: int = MAX_RUN_LIST_RESULTS, list_view_type: ListViewType = ListViewType.ACTIVE_ONLY, **kwargs
+    ) -> List[Run]:
+        """List runs in the workspace.
+
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param list_view_type: The list view type, defaults to ListViewType.ACTIVE_ONLY
+        :type list_view_type: ListViewType
+        :return: The list of runs.
+        :rtype: List[~promptflow.entities.Run]
+        """
+        if not isinstance(max_results, int) or max_results < 0:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         headers = self._get_headers()
         filter_archived = []
         if list_view_type == ListViewType.ACTIVE_ONLY:
@@ -206,6 +259,10 @@ class RunOperations(_ScopeDependentOperations):
             filter_archived = ["true"]
         elif list_view_type == ListViewType.ALL:
             filter_archived = ["true", "false"]
+        else:
+            raise RunOperationParameterError(
+                f"Invalid list view type: {list_view_type!r}, expecting one of ['ActiveOnly', 'ArchivedOnly', 'All']"
+            )
 
         pay_load = {
             "filters": [
@@ -248,11 +305,12 @@ class RunOperations(_ScopeDependentOperations):
             refined_runs.append(Run._from_index_service_entity(run))
         return refined_runs
 
+    @monitor_operation(activity_name="pfazure.runs.get_metrics", activity_type=ActivityType.PUBLICAPI)
     def get_metrics(self, run: Union[str, Run], **kwargs) -> dict:
         """Get the metrics from the run.
 
-        :param run: The run
-        :type run: str
+        :param run: The run or the run object
+        :type run: Union[str, ~promptflow.entities.Run]
         :return: The metrics
         :rtype: dict
         """
@@ -261,18 +319,59 @@ class RunOperations(_ScopeDependentOperations):
         metrics = self._get_metrics_from_metric_service(run)
         return metrics
 
-    def get_details(self, run: Union[str, Run], **kwargs) -> DataFrame:
+    @monitor_operation(activity_name="pfazure.runs.get_details", activity_type=ActivityType.PUBLICAPI)
+    def get_details(
+        self, run: Union[str, Run], max_results: int = MAX_SHOW_DETAILS_RESULTS, all_results: bool = False, **kwargs
+    ) -> DataFrame:
         """Get the details from the run.
 
-        :param run: The run
-        :type run: str
-        :return: The details
+        .. note::
+
+            If `all_results` is set to True, `max_results` will be overwritten to sys.maxsize.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.sdk.entities.Run]
+        :param max_results: The max number of runs to return, defaults to 100
+        :type max_results: int
+        :param all_results: Whether to return all results, defaults to False
+        :type all_results: bool
+        :raises RunOperationParameterError: If `max_results` is not a positive integer.
+        :return: The details data frame.
         :rtype: pandas.DataFrame
         """
+        # if all_results is True, set max_results to sys.maxsize
+        if all_results:
+            max_results = sys.maxsize
+
+        if not isinstance(max_results, int) or max_results < 1:
+            raise RunOperationParameterError(f"'max_results' must be a positive integer, got {max_results!r}")
+
         run = Run._validate_and_return_run_name(run)
         self._check_cloud_run_completed(run_name=run)
-        child_runs = self._get_child_runs_from_pfs(run)
+        child_runs = self._get_flow_runs_pagination(run, max_results=max_results)
         inputs, outputs = self._get_inputs_outputs_from_child_runs(child_runs)
+
+        # if there is any line run failed, the number of inputs and outputs will be different
+        # this will result in pandas raising ValueError, so we need to handle mismatched case
+        # if all line runs are failed, no need to fill the outputs
+        if len(outputs) > 0:
+            # get total number of line runs from inputs
+            num_line_runs = len(list(inputs.values())[0])
+            num_outputs = len(list(outputs.values())[0])
+            if num_line_runs > num_outputs:
+                # build full set with None as placeholder
+                filled_outputs = {}
+                output_keys = list(outputs.keys())
+                for k in output_keys:
+                    filled_outputs[k] = [None] * num_line_runs
+                filled_outputs[LINE_NUMBER] = list(range(num_line_runs))
+                for i in range(num_outputs):
+                    line_number = outputs[LINE_NUMBER][i]
+                    for k in output_keys:
+                        filled_outputs[k][line_number] = outputs[k][i]
+                # replace defective outputs with full set
+                outputs = copy.deepcopy(filled_outputs)
+
         data = {}
         columns = []
         for k in inputs:
@@ -284,12 +383,35 @@ class RunOperations(_ScopeDependentOperations):
             data[new_k] = copy.deepcopy(outputs[k])
             columns.append(new_k)
         df = pd.DataFrame(data).reindex(columns=columns)
+        if f"outputs.{LINE_NUMBER}" in columns:
+            df = df.set_index(f"outputs.{LINE_NUMBER}")
         return df
 
     def _check_cloud_run_completed(self, run_name: str) -> bool:
         """Check if the cloud run is completed."""
         run = self.get(run=run_name)
         run._check_run_status_is_completed()
+
+    def _get_flow_runs_pagination(self, name: str, max_results: int) -> List[dict]:
+        # call childRuns API with pagination to avoid PFS OOM
+        # different from UX, run status should be completed here
+        flow_runs = []
+        start_index, end_index = 0, CLOUD_RUNS_PAGE_SIZE - 1
+        while start_index < max_results:
+            current_flow_runs = self._service_caller.get_child_runs(
+                subscription_id=self._operation_scope.subscription_id,
+                resource_group_name=self._operation_scope.resource_group_name,
+                workspace_name=self._operation_scope.workspace_name,
+                flow_run_id=name,
+                start_index=start_index,
+                end_index=end_index,
+            )
+            # no data in current page
+            if len(current_flow_runs) == 0:
+                break
+            start_index, end_index = start_index + CLOUD_RUNS_PAGE_SIZE, end_index + CLOUD_RUNS_PAGE_SIZE
+            flow_runs += current_flow_runs
+        return flow_runs[0:max_results]
 
     def _extract_metrics_from_metric_service_response(self, values) -> dict:
         """Get metrics from the metric service response."""
@@ -334,18 +456,19 @@ class RunOperations(_ScopeDependentOperations):
             or metric.endswith(".is_completed")
         )
 
-    def get(self, run: str, **kwargs) -> Run:
+    @monitor_operation(activity_name="pfazure.runs.get", activity_type=ActivityType.PUBLICAPI)
+    def get(self, run: Union[str, Run], **kwargs) -> Run:
         """Get a run.
 
         :param run: The run name
-        :type run: str
-        :return: The run
-        :rtype: Run
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
         """
         run = Run._validate_and_return_run_name(run)
         return self._get_run_from_run_history(flow_run_id=run, **kwargs)
 
-    def _get_run_from_run_history(self, flow_run_id, **kwargs):
+    def _get_run_from_run_history(self, flow_run_id, original_form=False, **kwargs):
         """Get run info from run history"""
         headers = self._get_headers()
         url = self._run_history_endpoint_url + "/rundata"
@@ -360,6 +483,9 @@ class RunOperations(_ScopeDependentOperations):
         response = requests.post(url, headers=headers, json=payload)
         if response.status_code == 200:
             run = response.json()
+            # if original_form is True, return the original run data from run history, mainly for test use
+            if original_form:
+                return run
             run_data = self._refine_run_data_from_run_history(run)
             run = Run._from_run_history_entity(run_data)
             return run
@@ -375,7 +501,7 @@ class RunOperations(_ScopeDependentOperations):
 
         Generate the portal url, input and output value from run history data.
         """
-        run_data = run_data["runMetadata"]
+        run_data = run_data[RunHistoryKeys.RunMetaData]
         # add cloud run url
         run_data[RunDataKeys.PORTAL_URL] = self._get_run_portal_url(run_id=run_data["runId"])
 
@@ -394,7 +520,7 @@ class RunOperations(_ScopeDependentOperations):
         # get portal urls
         run_data[RunDataKeys.DATA_PORTAL_URL] = self._get_input_portal_url_from_input_uri(input_data)
         run_data[RunDataKeys.INPUT_RUN_PORTAL_URL] = self._get_run_portal_url(run_id=input_run_id)
-        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data)
+        run_data[RunDataKeys.OUTPUT_PORTAL_URL] = self._get_portal_url_from_asset_id(output_data, log_warning=True)
         return run_data
 
     def _get_run_from_index_service(self, flow_run_id, **kwargs):
@@ -427,25 +553,36 @@ class RunOperations(_ScopeDependentOperations):
                 f"Failed to get run metrics from service. Code: {response.status_code}, text: {response.text}"
             )
 
-    def archive(self, run: str) -> Run:
+    @monitor_operation(activity_name="pfazure.runs.archive", activity_type=ActivityType.PUBLICAPI)
+    def archive(self, run: Union[str, Run]) -> Run:
         """Archive a run.
 
-        :param run: The run name
-        :type run: str
-        :return: The run
-        :rtype: Run
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
         """
-        pass
 
-    def restore(self, run: str) -> Run:
+        run = Run._validate_and_return_run_name(run)
+        payload = {
+            RunHistoryKeys.HIDDEN: True,
+        }
+        return self._modify_run_in_run_history(run_id=run, payload=payload)
+
+    @monitor_operation(activity_name="pfazure.runs.restore", activity_type=ActivityType.PUBLICAPI)
+    def restore(self, run: Union[str, Run]) -> Run:
         """Restore a run.
 
-        :param run: The run name
-        :type run: str
-        :return: The run
-        :rtype: Run
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
         """
-        pass
+        run = Run._validate_and_return_run_name(run)
+        payload = {
+            RunHistoryKeys.HIDDEN: False,
+        }
+        return self._modify_run_in_run_history(run_id=run, payload=payload)
 
     def _get_log(self, flow_run_id: str) -> str:
         return self._service_caller.caller.bulk_runs.get_flow_run_log_content(
@@ -456,8 +593,71 @@ class RunOperations(_ScopeDependentOperations):
             headers=self._get_headers(),
         )
 
+    @monitor_operation(activity_name="pfazure.runs.update", activity_type=ActivityType.PUBLICAPI)
+    def update(
+        self,
+        run: Union[str, Run],
+        display_name: Optional[str] = None,
+        description: Optional[str] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> Optional[Run]:
+        """Update a run. May update the display name, description or tags.
+
+        .. note::
+
+            - Display name and description are strings, and tags is a dictionary of key-value pairs, both key and value
+              are also strings.
+            - Tags is a dictionary of key-value pairs. Updating tags will overwrite the existing key-value pair,
+              but will not delete the existing key-value pairs.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :param display_name: The display name
+        :type display_name: Optional[str]
+        :param description: The description
+        :type description: Optional[str]
+        :param tags: The tags
+        :type tags: Optional[Dict[str, str]]
+        :raises UpdateRunError: If nothing or wrong type values provided to update the run.
+        :return: The run object
+        :rtype: Optional[~promptflow.entities.Run]
+        """
+        run = Run._validate_and_return_run_name(run)
+        if display_name is None and description is None and tags is None:
+            logger.warning("Nothing provided to update the run.")
+            return None
+
+        payload = {}
+
+        if isinstance(display_name, str):
+            payload["displayName"] = display_name
+        elif display_name is not None:
+            logger.warning(f"Display name must be a string, got {type(display_name)!r}: {display_name!r}.")
+
+        if isinstance(description, str):
+            payload["description"] = description
+        elif description is not None:
+            logger.warning(f"Description must be a string, got {type(description)!r}: {description!r}.")
+
+        # check if the tags type is Dict[str, str]
+        if isinstance(tags, dict) and all(
+            isinstance(key, str) and isinstance(value, str) for key, value in tags.items()
+        ):
+            payload["tags"] = tags
+        elif tags is not None:
+            logger.warning(f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}.")
+
+        return self._modify_run_in_run_history(run_id=run, payload=payload)
+
+    @monitor_operation(activity_name="pfazure.runs.stream", activity_type=ActivityType.PUBLICAPI)
     def stream(self, run: Union[str, Run]) -> Run:
-        """Stream the logs of a run."""
+        """Stream the logs of a run.
+
+        :param run: The run name or run object
+        :type run: Union[str, ~promptflow.entities.Run]
+        :return: The run object
+        :rtype: ~promptflow.entities.Run
+        """
         run = self.get(run=run)
         # TODO: maybe we need to make this configurable
         file_handler = sys.stdout
@@ -553,7 +753,7 @@ class RunOperations(_ScopeDependentOperations):
 
     def _resolve_flow(self, run: Run):
         flow = load_flow(run.flow)
-        # ignore .promptflow/dag.toos.json only for run submission scenario
+        # ignore .promptflow/dag.tools.json only for run submission scenario
         self._flow_operations._resolve_arm_id_or_upload_dependencies(flow=flow, ignore_tools_json=True)
         return flow.path
 
@@ -571,26 +771,13 @@ class RunOperations(_ScopeDependentOperations):
         session_id = str(hashlib.sha256(session_id.encode()).hexdigest())[:48]
         return session_id
 
-    def _get_child_runs_from_pfs(self, run_id: str):
-        """Get the child runs from the PFS."""
-        headers = self._get_headers()
-        endpoint_url = self._run_history_endpoint_url.replace("/history/v1.0", "/flow/api")
-        url = endpoint_url + f"/BulkRuns/{run_id}/childRuns"
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            runs = response.json()
-            return runs
-        else:
-            raise RunRequestException(
-                f"Failed to get child runs from service. Code: {response.status_code}, text: {response.text}"
-            )
-
     def _get_inputs_outputs_from_child_runs(self, runs: List[Dict[str, Any]]):
         """Get the inputs and outputs from the child runs."""
         inputs = {}
         outputs = {}
+        outputs[LINE_NUMBER] = []
         for run in runs:
-            run_inputs, run_outputs = run["inputs"], run["output"]
+            index, run_inputs, run_outputs = run["index"], run["inputs"], run["output"]
             if isinstance(run_inputs, dict):
                 for k, v in run_inputs.items():
                     if k not in inputs:
@@ -601,8 +788,10 @@ class RunOperations(_ScopeDependentOperations):
                     if k not in outputs:
                         outputs[k] = []
                     outputs[k].append(v)
+                outputs[LINE_NUMBER].append(index)
         return inputs, outputs
 
+    @monitor_operation(activity_name="pfazure.runs.visualize", activity_type=ActivityType.PUBLICAPI)
     def visualize(self, runs: Union[str, Run, List[str], List[Run]], **kwargs) -> None:
         """Visualize run(s) using Azure AI portal.
 
@@ -743,3 +932,25 @@ class RunOperations(_ScopeDependentOperations):
             rest_obj.runtime_name = None
 
         return rest_obj
+
+    def _refine_payload_for_run_update(self, payload: dict, key: str, value, expected_type: type) -> dict:
+        """Refine the payload for run update."""
+        if value is not None:
+            payload[key] = value
+        return payload
+
+    def _modify_run_in_run_history(self, run_id: str, payload: dict) -> Run:
+        """Modify run info in run history."""
+        headers = self._get_headers()
+        url = self._run_history_endpoint_url + f"/runs/{run_id}/modify"
+
+        response = requests.patch(url, headers=headers, json=payload)
+
+        if response.status_code == 200:
+            # the modify api returns different data format compared with get api, so we use get api here to
+            # return standard Run object
+            return self.get(run=run_id)
+        else:
+            raise RunRequestException(
+                f"Failed to modify run in run history. Code: {response.status_code}, text: {response.text}"
+            )
