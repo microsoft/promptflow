@@ -14,8 +14,8 @@ from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import flow_logger
+from promptflow._utils.multimedia_utils import default_json_encoder
 from promptflow._utils.openai_metrics_calculator import OpenAIMetricsCalculator
-from promptflow.contracts.multimedia import PFBytes
 from promptflow.contracts.run_info import FlowRunInfo, RunInfo, Status
 from promptflow.contracts.run_mode import RunMode
 from promptflow.contracts.tool import ConnectionType
@@ -241,7 +241,7 @@ class RunTracker(ThreadLocalSingleton):
         if self.allow_generator_types and isinstance(val, GeneratorType):
             return str(val)
         try:
-            json.dumps(val, default=PFBytes.default_json_encoder)
+            json.dumps(val, default=default_json_encoder)
             return val
         except Exception:
             if not warning_msg:
