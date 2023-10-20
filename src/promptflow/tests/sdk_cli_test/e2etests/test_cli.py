@@ -1,6 +1,6 @@
 import contextlib
-import io
 import importlib.util
+import io
 import json
 import logging
 import os
@@ -534,7 +534,7 @@ class TestCli:
                 assert details["node_runs"][0]["logs"]["stdout"]
 
         env = {"API_BASE": "${azure_open_ai_connection.api_base}"}
-        SubmitterHelper.resolve_environment_variables(env)
+        SubmitterHelper.resolve_environment_variables(env, local_client)
         run_pf_command(
             "flow",
             "test",
@@ -1224,7 +1224,8 @@ class TestCli:
             assert (package_folder / "README.md").exists()
 
             spec = importlib.util.spec_from_file_location(
-                f"{package_name}.utils", package_folder / package_name / "utils.py")
+                f"{package_name}.utils", package_folder / package_name / "utils.py"
+            )
             utils = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(utils)
 
@@ -1265,12 +1266,7 @@ class TestCli:
 
         monkeypatch.setattr("builtins.input", mock_input)
         run_pf_command(
-            "flow",
-            "test",
-            "--flow",
-            f"{FLOWS_DIR}/conditional_chat_flow_with_skip",
-            "--interactive",
-            "--verbose"
+            "flow", "test", "--flow", f"{FLOWS_DIR}/conditional_chat_flow_with_skip", "--interactive", "--verbose"
         )
         output_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.output.json"
         assert output_path.exists()
