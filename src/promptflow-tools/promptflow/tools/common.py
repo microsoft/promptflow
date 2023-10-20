@@ -82,7 +82,9 @@ def validate_functions(functions):
 
 
 def parse_function_role_prompt(function_str):
-    pattern = r"\n*name:\n\s*(\S+)\s*\n*content:\n(.*)"
+    # customer can add ## in front of name/content for markdown highlight.
+    # and we still support name/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*name:\n\s*(\S+)\s*\n*#{0,2}\s*content:\n(.*)"
     match = re.search(pattern, function_str, re.DOTALL)
     if match:
         return match.group(1), match.group(2)
@@ -98,8 +100,12 @@ def parse_function_role_prompt(function_str):
 
 def parse_chat(chat_str):
     # openai chat api only supports below roles.
-    separator = r"(?i)\n*(system|user|assistant|function)\s*:\s*\n"
-    chunks = re.split(separator, chat_str)
+    # customer can add single # in front of role name for markdown highlight.
+    # and we still support role name without # prefix for backward compatibility.
+    separator = r"(?i)\n+\s*#?\s*(system|user|assistant|function)\s*:\s*\n"
+    # Add a newline at the beginning to ensure consistent formatting of role lines.
+    # extra new line is removed when appending to the chat list.
+    chunks = re.split(separator, '\n'+chat_str)
     chat_list = []
     for chunk in chunks:
         last_message = chat_list[-1] if len(chat_list) > 0 else None

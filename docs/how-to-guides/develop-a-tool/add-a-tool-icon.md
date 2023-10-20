@@ -5,6 +5,7 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
 
 ## Prerequisites
 
+- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.0.10 or a more recent version.
 - Create a tool package as described in [Create and Use Tool Package](create-and-use-tool-package.md).
 - Prepare custom icon image that meets these requirements:
 
@@ -20,19 +21,22 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
   ```
 
 ## Add tool icon with _icon_ parameter 
-Use the `icon` parameter when generating your tool package to add a custom tool icon:
+Run the command below in your tool project directory to automatically generate your tool YAML, use _-i_ or _--icon_ parameter to add a custom tool icon:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name> --icon <your-tool-icon-path>
+python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -i <tool-icon-path>
 ```
-For example:
+Here we use [an existing tool project](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart) as an example.
 ```
-python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message --icon D:\proj\github\promptflow\examples\tools\tool-package-quickstart\my_tool_package\icons\custom-tool-icon.png
+cd D:\proj\github\promptflow\examples\tools\tool-package-quickstart
+
+python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.my_tool_1 -o my_tool_package\yamls\my_tool_1.yaml -i my_tool_package\icons\custom-tool-icon.png
 ```
 
 In the auto-generated tool YAML file, the custom tool icon data URI is added in the `icon` field:
 ```yaml
-hello_world.tools.hello_world_tool.get_greeting_message
-  function: get_greeting_message
+my_tool_package.tools.my_tool_1.my_tool:
+  function: my_tool
+  icon: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACR0lEQVR4nKWS3UuTcRTHP79nm9ujM+fccqFGI5viRRpjJgkJ3hiCENVN/QMWdBHUVRdBNwX9ARHd2FVEWFLRjaS9XPmSC/EFTNOWc3Pi48y9PHNzz68L7UXTCvreHM65+PA953uElFLyHzLvHMwsJrnzfJqFeAan3cKV9mr8XseeAOXX5vqjSS53jdF+tIz1nIFAMDCzwpvJ5b87+LSYYHw+gcWkEAwluXnOR2Q1R+9YjJ7BKJG4zoXmqr0ddL3+QnV5EeUOK821LsJammcjEeZiafJScrd3bm8H6zkDd4mVztZKAK49/Mj8is4Z/35GPq9R5VJ5GYztDtB1HT1vovGQSiqVAqDugI3I6jpP3i9x9VQVfu8+1N/OvbWCqqqoBSa6h1fQNA1N0xiYTWJSBCZF8HgwSjQapbRQ2RUg5NYj3O6ZochmYkFL03S4mImIzjFvCf2xS5gtCRYXWvBUvKXjyEVeTN/DXuDgxsnuzSMK4HTAw1Q0hZba4NXEKp0tbpq9VkxCwTAETrsVwxBIBIYhMPI7YqyrtONQzSznJXrO4H5/GJ9LUGg0YFYydJxoYnwpj1s9SEN5KzZz4fYYAW6dr+VsowdFgamlPE/Hs8SzQZYzg0S+zjIc6iOWDDEc6uND+N12B9/VVu+mrd79o38wFCCdTeBSK6hxBii1eahxBlAtRbsDdmoiHGRNj1NZ7GM0NISvzM9oaIhiqwOO/wMgl4FsRpLf2KxGXpLNSLLInzH+CWBIA6RECIGUEiEUpDRACBSh8A3pXfGWdXfMgAAAAABJRU5ErkJggg==
   inputs:
     connection:
       type:
@@ -40,16 +44,14 @@ hello_world.tools.hello_world_tool.get_greeting_message
     input_text:
       type:
       - string
-  module: hello_world.tools.hello_world_tool
-  name: Hello World Tool
-  description: This is hello world tool
+  module: my_tool_package.tools.my_tool_1
+  name: my_tool
   type: python
-  icon: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACq0lEQVR4nKWTPWxTVxiGn3N/bF/fGyd2YxsQ5LdSmoqGgKJMEQNZYGBFkVhY2JGYmFG3ioWZpWukqqpaqaVKq6pFIAECAkSxMA6RHZP4Jnbs+O/6xvdjcCLKT6ee7ZwjvfrOc55XiYjwP5bx740IZDf3+PVZicdrVeK2yfzJJBem02iaQv1XQCCCCNz+Lce91R1mRvtYd5uEDIfl9SqpWIjZLxOIgPooRQtE0JQiU6xx91mJfNkjZoX47vIkM2Nx6l6Xmz9kWHywgVIQBB++WImI1Nv7fP/XOqah0fKFdH8YQwXcf1Vh6WWZTrfLaDLK4rVZrJD+wSQGwJrbQtc0rs4PAXDr5xy/PHW5NJsmGQuhNI0/XrisFmtMjwxwOLVCYXTaTdq+kHagXq0iAo4phE2dn564XD8/zLlTRwn8gK1dQaHQtfcgDDMcwQo1Wc43mEp16YpibdsjEKHdEX5/8YZEpIhjCckBi9a+ibfvETEsIobdY1Bp+Pz4cAvP67C522IsbeN1A0zd5r77LWF7hebe1xxJrzKRmON56W/OHDnHwskbaCIQt03OTsbJljxeuz4rxSYXp2JcmYszedQhrNscj/ehJIKuQpiaBegHEFVPoOHBKOPpKMXdNtlSmzt/bpC0XTb9LxgcmGDq2CT5mpC0hhiO1UhGe8ANBYgCQ1dcnR9iJGnxT6ZMrtLmbV1H78/QrD0nagQ82ljCP+HzqLBEsB8wP7bQ+8ZDpoauuHA6xfnpFA3Px4mY3M2cJbeTZjTxFQYm44lv0MRkPDH1aRcOtdaUwon0rgrbBdbd10S1AXJbWRxzkLXNLDEz1VP54wDtQLHuQUl36xUKpTzl6jYFN89OdYeCm6eyV3mv8mdKxuFxueHS8PawTJuW3yAacmh26jiRfhL2IO8AhSUo7nmFnjUAAAAASUVORK5CYII=
 ```
 
 ## Verify the tool icon in VS Code extension
 Follow [steps](create-and-use-tool-package.md#use-your-tool-from-vscode-extension) to use your tool from VS Code extension. Your tool displays with the custom icon:  
-![custom-tool-with-icon-in-extension](../../media/contributing/custom-tool-with-icon-in-extension.png)
+![custom-tool-with-icon-in-extension](../../media/how-to-guides/develop-a-tool/custom-tool-with-icon-in-extension.png)
 
 ## FAQ
 ### Can I preview the tool icon image before adding it to a tool?
@@ -65,7 +67,7 @@ The content of `output.html` looks like the following, open it in a web browser 
 ```html
 <html>
 <body>
-<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACq0lEQVR4nKWTPWxTVxiGn3N/bF/fGyd2YxsQ5LdSmoqGgKJMEQNZYGBFkVhY2JGYmFG3ioWZpWukqqpaqaVKq6pFIAECAkSxMA6RHZP4Jnbs+O/6xvdjcCLKT6ee7ZwjvfrOc55XiYjwP5bx740IZDf3+PVZicdrVeK2yfzJJBem02iaQv1XQCCCCNz+Lce91R1mRvtYd5uEDIfl9SqpWIjZLxOIgPooRQtE0JQiU6xx91mJfNkjZoX47vIkM2Nx6l6Xmz9kWHywgVIQBB++WImI1Nv7fP/XOqah0fKFdH8YQwXcf1Vh6WWZTrfLaDLK4rVZrJD+wSQGwJrbQtc0rs4PAXDr5xy/PHW5NJsmGQuhNI0/XrisFmtMjwxwOLVCYXTaTdq+kHagXq0iAo4phE2dn564XD8/zLlTRwn8gK1dQaHQtfcgDDMcwQo1Wc43mEp16YpibdsjEKHdEX5/8YZEpIhjCckBi9a+ibfvETEsIobdY1Bp+Pz4cAvP67C522IsbeN1A0zd5r77LWF7hebe1xxJrzKRmON56W/OHDnHwskbaCIQt03OTsbJljxeuz4rxSYXp2JcmYszedQhrNscj/ehJIKuQpiaBegHEFVPoOHBKOPpKMXdNtlSmzt/bpC0XTb9LxgcmGDq2CT5mpC0hhiO1UhGe8ANBYgCQ1dcnR9iJGnxT6ZMrtLmbV1H78/QrD0nagQ82ljCP+HzqLBEsB8wP7bQ+8ZDpoauuHA6xfnpFA3Px4mY3M2cJbeTZjTxFQYm44lv0MRkPDH1aRcOtdaUwon0rgrbBdbd10S1AXJbWRxzkLXNLDEz1VP54wDtQLHuQUl36xUKpTzl6jYFN89OdYeCm6eyV3mv8mdKxuFxueHS8PawTJuW3yAacmh26jiRfhL2IO8AhSUo7nmFnjUAAAAASUVORK5CYII=" alt="My Image">
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACR0lEQVR4nKWS3UuTcRTHP79nm9ujM+fccqFGI5viRRpjJgkJ3hiCENVN/QMWdBHUVRdBNwX9ARHd2FVEWFLRjaS9XPmSC/EFTNOWc3Pi48y9PHNzz68L7UXTCvreHM65+PA953uElFLyHzLvHMwsJrnzfJqFeAan3cKV9mr8XseeAOXX5vqjSS53jdF+tIz1nIFAMDCzwpvJ5b87+LSYYHw+gcWkEAwluXnOR2Q1R+9YjJ7BKJG4zoXmqr0ddL3+QnV5EeUOK821LsJammcjEeZiafJScrd3bm8H6zkDd4mVztZKAK49/Mj8is4Z/35GPq9R5VJ5GYztDtB1HT1vovGQSiqVAqDugI3I6jpP3i9x9VQVfu8+1N/OvbWCqqqoBSa6h1fQNA1N0xiYTWJSBCZF8HgwSjQapbRQ2RUg5NYj3O6ZochmYkFL03S4mImIzjFvCf2xS5gtCRYXWvBUvKXjyEVeTN/DXuDgxsnuzSMK4HTAw1Q0hZba4NXEKp0tbpq9VkxCwTAETrsVwxBIBIYhMPI7YqyrtONQzSznJXrO4H5/GJ9LUGg0YFYydJxoYnwpj1s9SEN5KzZz4fYYAW6dr+VsowdFgamlPE/Hs8SzQZYzg0S+zjIc6iOWDDEc6uND+N12B9/VVu+mrd79o38wFCCdTeBSK6hxBii1eahxBlAtRbsDdmoiHGRNj1NZ7GM0NISvzM9oaIhiqwOO/wMgl4FsRpLf2KxGXpLNSLLInzH+CWBIA6RECIGUEiEUpDRACBSh8A3pXfGWdXfMgAAAAABJRU5ErkJggg==" alt="My Image">
 </body>
 </html>
 ```

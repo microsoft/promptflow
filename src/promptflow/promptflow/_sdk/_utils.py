@@ -334,9 +334,7 @@ def override_connection_config_with_environment_variable(connections: Dict[str, 
             if env_name not in os.environ:
                 continue
             values[key] = os.environ[env_name]
-            logger.info(
-                f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}"
-            )
+            logger.info(f"Connection {connection_name}'s {key} is overridden with environment variable {env_name}")
     return connections
 
 
@@ -780,19 +778,17 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable):
+def get_local_connections_from_executable(executable, client):
     """Get local connections from executable.
 
     Please avoid using this function anymore, and we should remove this function once all references are removed.
     """
-    from promptflow._sdk._pf_client import PFClient
 
     connection_names = executable.get_connection_names()
-    local_client = PFClient()
     result = {}
     for n in connection_names:
         try:
-            conn = local_client.connections.get(name=n, with_secrets=True)
+            conn = client.connections.get(name=n, with_secrets=True)
             result[n] = conn._to_execution_connection_dict()
         except ConnectionNotFoundError:
             # ignore when connection not found since it can be configured with env var.

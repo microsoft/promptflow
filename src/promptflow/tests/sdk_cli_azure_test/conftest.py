@@ -1,12 +1,18 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+import os
+from pathlib import Path
 
 import pytest
 from azure.ai.ml import MLClient
+from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
+from pytest_mock import MockerFixture
 
+from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
+from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
@@ -34,28 +40,39 @@ def ml_client(
 
 @pytest.fixture()
 def remote_client() -> PFClient:
-    return PFClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-eastus",
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        yield PFClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-eastus",
+        )
+
+
+@pytest.fixture()
+def remote_workspace_resource_id():
+    return "azureml:" + RESOURCE_ID_FORMAT.format(
+        "96aede12-2f73-41cb-b983-6d11a904839b", "promptflow", AZUREML_RESOURCE_PROVIDER, "promptflow-eastus"
     )
 
 
 @pytest.fixture()
 def remote_client_int() -> PFClient:
-    client = MLClient(
-        credential=get_cred(),
-        subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
-        resource_group_name="promptflow",
-        workspace_name="promptflow-int",
-    )
-    return PFClient(ml_client=client)
+    # enable telemetry for CI
+    with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
+        client = MLClient(
+            credential=get_cred(),
+            subscription_id="96aede12-2f73-41cb-b983-6d11a904839b",
+            resource_group_name="promptflow",
+            workspace_name="promptflow-int",
+        )
+        yield PFClient(ml_client=client)
 
 
 @pytest.fixture()
 def pf(remote_client) -> PFClient:
-    return remote_client
+    yield remote_client
 
 
 @pytest.fixture
@@ -126,3 +143,26 @@ def ml_client_canary(
         workspace_name="promptflow-canary-dev",
         cloud="AzureCloud",
     )
+
+
+PROMPTFLOW_ROOT = Path(__file__) / "../../.."
+MODEL_ROOT = Path(PROMPTFLOW_ROOT / "tests/test_configs/flows")
+
+
+@pytest.fixture
+def flow_serving_client_remote_connection(mocker: MockerFixture, remote_workspace_resource_id):
+    from promptflow._sdk._serving.app import create_app as create_serving_app
+
+    model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
+    mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
+    mocker.patch.dict(os.environ, {"USER_AGENT": "test-user-agent"})
+    app = create_serving_app(
+        config={"connection.provider": remote_workspace_resource_id},
+        environment_variables={"API_TYPE": "${azure_open_ai_connection.api_type}"},
+    )
+    app.config.update(
+        {
+            "TESTING": True,
+        }
+    )
+    return app.test_client()

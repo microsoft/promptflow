@@ -104,3 +104,9 @@ reference/index
 :maxdepth: 1
 cloud/index
 ```
+
+```{toctree}
+:hidden:
+:maxdepth: 1
+integrations/index
+```

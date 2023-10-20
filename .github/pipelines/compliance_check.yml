@@ -17,7 +17,7 @@ trigger:
   - releases/*
 
 pool:
-  vmImage: windows-latest
+  name: promptflow-1ES-win
 
 steps:
 - checkout: self
