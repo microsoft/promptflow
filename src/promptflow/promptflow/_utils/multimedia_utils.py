@@ -11,7 +11,9 @@ from urllib.parse import urlparse
 import requests
 
 from promptflow.contracts._errors import InvalidImageInput
+from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
@@ -170,7 +172,7 @@ def default_json_encoder(obj):
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
-def persist_multimedia_date(value: Any, base_dir: Path, sub_dir: Path = None):
+def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     pfbytes_file_reference_encoder = get_file_reference_encoder(base_dir, sub_dir)
     serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
     return recursive_process(value, process_funcs=serialization_funcs)
@@ -195,3 +197,25 @@ def recursive_process(value: Any, process_funcs: dict[type, Callable] = None) ->
     if isinstance(value, dict):
         return {k: recursive_process(v, process_funcs) for k, v in value.items()}
     return value
+
+
+def load_multimedia_data(inputs: dict[str, FlowInputDefinition], line_inputs: dict, base_dir: Path):
+    updated_inputs = dict(line_inputs or {})
+    for key, value in inputs.items():
+        if value.type == ValueType.IMAGE:
+            updated_inputs[key] = create_image(updated_inputs[key], base_dir)
+        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+    return updated_inputs
+
+
+def load_multimedia_data_recursively(value: Any):
+    if isinstance(value, list):
+        return [load_multimedia_data_recursively(item) for item in value]
+    elif isinstance(value, dict):
+        if is_multimedia_dict(value):
+            return create_image_from_dict(value)
+        else:
+            return {k: load_multimedia_data_recursively(v) for k, v in value.items()}
+    else:
+        return value
