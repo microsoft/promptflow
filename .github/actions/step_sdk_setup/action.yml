@@ -1,4 +1,4 @@
-name: step_sdk_setup_win
+name: step_sdk_setup
 inputs:
   scriptPath:
     required: false
