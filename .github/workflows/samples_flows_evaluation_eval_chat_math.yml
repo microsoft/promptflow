@@ -3,13 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_chat_chat_math_variant
+name: samples_flows_evaluation_eval_chat_math
 on:
   schedule:
-    - cron: "35 20 * * *" # Every day starting at 4:35 BJT
+    - cron: "52 19 * * *" # Every day starting at 3:52 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/flows/chat/chat-math-variant/**, examples/*requirements.txt, .github/workflows/samples_flows_chat_chat_math_variant.yml ]
+    paths: [ examples/flows/evaluation/eval-chat-math/**, examples/*requirements.txt, .github/workflows/samples_flows_evaluation_eval_chat_math.yml ]
   workflow_dispatch:
 
 jobs:
@@ -23,11 +23,7 @@ jobs:
         with:
           python-version: "3.9"
       - name: Generate config.json
-<<<<<<< HEAD
-        run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
-=======
         run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
->>>>>>> 48132db3dd247817428a3e032d8c3c9030c58e08
       - name: Prepare requirements
         working-directory: examples
         run: |
@@ -41,7 +37,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev_requirements.txt
       - name: Refine .env file
-        working-directory: examples/flows/chat/chat-math-variant
+        working-directory: examples/flows/evaluation/eval-chat-math
         run: |
           AOAI_API_KEY=${{ secrets.AOAI_API_KEY_TEST }}
           AOAI_API_ENDPOINT=${{ secrets.AOAI_API_ENDPOINT_TEST }}
@@ -52,7 +48,7 @@ jobs:
             mv .env.example .env
           fi
       - name: Create run.yml
-        working-directory: examples/flows/chat/chat-math-variant
+        working-directory: examples/flows/evaluation/eval-chat-math
         run: |
           gpt_base=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           gpt_base=$(echo ${gpt_base//\//\\/})
@@ -63,30 +59,26 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Extract Steps examples/flows/chat/chat-math-variant/README.md
+      - name: Extract Steps examples/flows/evaluation/eval-chat-math/README.md
         working-directory: ${{ github.workspace }}
         run: |
-          python scripts/readme/extract_steps_from_readme.py -f examples/flows/chat/chat-math-variant/README.md -o examples/flows/chat/chat-math-variant
+          python scripts/readme/extract_steps_from_readme.py -f examples/flows/evaluation/eval-chat-math/README.md -o examples/flows/evaluation/eval-chat-math
       - name: Cat script
-        working-directory: examples/flows/chat/chat-math-variant
+        working-directory: examples/flows/evaluation/eval-chat-math
         run: |
           cat bash_script.sh
       - name: Run scripts
-        working-directory: examples/flows/chat/chat-math-variant
+        working-directory: examples/flows/evaluation/eval-chat-math
         run: |
           export aoai_api_key=${{secrets.AOAI_API_KEY_TEST }}
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-<<<<<<< HEAD
-          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
-=======
           export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
->>>>>>> 48132db3dd247817428a3e032d8c3c9030c58e08
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}
-        working-directory: examples/flows/chat/chat-math-variant
+        working-directory: examples/flows/evaluation/eval-chat-math
         run: |
           pip list
       - name: Upload artifact
@@ -94,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: artifact
-          path: examples/flows/chat/chat-math-variant/bash_script.sh
+          path: examples/flows/evaluation/eval-chat-math/bash_script.sh
