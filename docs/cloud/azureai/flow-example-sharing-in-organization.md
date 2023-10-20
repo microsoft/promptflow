@@ -66,7 +66,7 @@ properties:
 az ml model create -f model.yml --registry-name <organization-registry-name>
 ```
 
-> [!Note] More details about [organization registry creation](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-registries?view=azureml-api-2&tabs=studio#create-a-registry) and [model creation](https://learn.microsoft.com/en-us/cli/azure/ml/model?view=azure-cli-latest#az-ml-model-create)
+> [!Note] More details about [registry creation](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-registries?view=azureml-api-2&tabs=studio#create-a-registry) and [model creation](https://learn.microsoft.com/en-us/cli/azure/ml/model?view=azure-cli-latest#az-ml-model-create)
 
 ## Locate the flow in the Flow Gallery
 
