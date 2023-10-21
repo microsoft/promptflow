@@ -44,7 +44,7 @@ You are a AI which helps Customers answer questions.
     def test_open_source_llm_completion_with_deploy(self, gpt2_custom_connection):
         os_tool = OpenSourceLLM(
             gpt2_custom_connection,
-            deployment_name="gpt2-8")
+            deployment_name="gpt2-9")
         response = os_tool.call(
             self.completion_prompt,
             API.COMPLETION)
@@ -61,7 +61,7 @@ You are a AI which helps Customers answer questions.
     def test_open_source_llm_chat_with_deploy(self, gpt2_custom_connection):
         os_tool = OpenSourceLLM(
             gpt2_custom_connection,
-            deployment_name="gpt2-8")
+            deployment_name="gpt2-9")
         response = os_tool.call(
             self.gpt2_chat_prompt,
             API.CHAT)

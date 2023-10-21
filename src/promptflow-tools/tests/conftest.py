@@ -91,7 +91,7 @@ def skip_if_no_key(request, mocker):
             if "endpoint_api_key" not in connection.secrets or "-api-key" in connection.secrets["endpoint_api_key"]:
                 pytest.skip('skipped because no key')
             # Verify Custom Connections, but only those used by the Open_Source_LLM Tool
-            if "endpoint_url" in connection.secrets and "-endpoint-url" in connection.secrets["endpoint_url"]:
+            if "endpoint_url" in connection.configs and "-endpoint-url" not in connection.configs["endpoint_url"]:
                 if not verify_oss_llm_custom_connection(connection):
                     pytest.skip('skipped because the connection is not valid')
 
