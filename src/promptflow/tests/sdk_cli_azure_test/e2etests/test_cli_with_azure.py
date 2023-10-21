@@ -15,7 +15,6 @@ from promptflow._sdk.entities import Run
 from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
-from ..recording_utilities import is_live
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -47,9 +46,14 @@ def run_pf_command(*args, pf, runtime, cwd=None):
         os.chdir(origin_cwd)
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="CLI tests, only run in live mode.")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
+@pytest.mark.usefixtures(
+    "mock_get_azure_pf_client",
+    "mock_set_headers_with_user_aml_token",
+    "single_worker_thread_pool",
+    "vcr_recording",
+)
 class TestCliWithAzure:
     def test_basic_flow_run_bulk_without_env(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
         name = randstr("name")
