@@ -204,8 +204,9 @@ def vcr_recording(request: pytest.FixtureRequest, tenant_id: str) -> PFAzureInte
         test_func_name=request.node.name,
         tenant_id=tenant_id,
     )
-    recording.enter_vcr()
-    request.addfinalizer(recording.exit_vcr)
+    if not is_live_and_not_recording():
+        recording.enter_vcr()
+        request.addfinalizer(recording.exit_vcr)
     yield recording
 
 
@@ -246,3 +247,12 @@ def single_worker_thread_pool() -> None:
 def mock_set_headers_with_user_aml_token(mocker: MockerFixture) -> None:
     mocker.patch("promptflow.azure._restclient.flow_service_caller.FlowServiceCaller._set_headers_with_user_aml_token")
     return
+
+
+@pytest.fixture
+def mock_get_azure_pf_client(mocker: MockerFixture, remote_client: PFClient) -> None:
+    mocker.patch(
+        "promptflow._cli._pf_azure._run._get_azure_pf_client",
+        return_value=remote_client,
+    )
+    yield
