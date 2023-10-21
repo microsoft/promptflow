@@ -473,7 +473,7 @@ class OpenSourceLLM(ToolProvider):
             (self.endpoint_uri,
              self.endpoint_key,
              self.model_family) = get_deployment_from_endpoint(self.endpoint_name, self.deployment_name)
-        
+
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
 
         model_kwargs["top_p"] = top_p
