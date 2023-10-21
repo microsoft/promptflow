@@ -65,7 +65,10 @@ def update_saved_spec(component: Component, saved_spec_path: str):
     saved_spec_path.write_text(yaml_text)
 
 
-@pytest.mark.skipif(condition=not is_live(), reason="flow in pipeline tests, only run in live mode.")
+@pytest.mark.skipif(
+    condition=not is_live(),
+    reason="flow in pipeline tests require secrets config file, only run in live mode.",
+)
 @pytest.mark.usefixtures("use_secrets_config_file")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
