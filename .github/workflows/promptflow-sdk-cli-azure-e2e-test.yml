@@ -52,11 +52,6 @@ jobs:
           setupType: ${{ env.packageSetupType }}
           scriptPath: ${{ env.testWorkingDirectory }}
 
-      # - name: Generate Configs
-      #   uses: "./.github/actions/step_generate_configs"
-      #   with:
-      #     targetFolder: ${{ env.testWorkingDirectory }}
-
       - name: Get number of CPU cores
         uses: SimenB/github-actions-cpu-cores@v1
         id: cpu-cores
