@@ -1,10 +1,10 @@
 # Run and evaluate a flow
 
 :::{admonition} Experimental feature
-This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
+This is an experimental feature, and may change at any time. Learn [more](../faq.md#stable-vs-experimental).
 :::
 
-After you have developed and tested the flow in [init and test a flow](./init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
+After you have developed and tested the flow in [init and test a flow](../init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
 
 
@@ -12,7 +12,7 @@ After you have developed and tested the flow in [init and test a flow](./init-an
 
 Since you have run your flow successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
 
-A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../reference/pf-command-reference.md) to view the run results at anytime. (e.g. `pf run list`)
+A bulk test allows you to run your flow with a large dataset and generate outputs for each data row, and the run results will be recorded in local db so you can use [pf commands](../../reference/pf-command-reference.md) to view the run results at anytime. (e.g. `pf run list`)
 
 Let's create a run with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification). It is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
@@ -33,7 +33,7 @@ Note `column-mapping` is a mapping from flow input name to specified values, see
 You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
 
 
-![q_0](../media/how-to-guides/quick-start/flow-run-create-output-cli.png)
+![q_0](../../media/how-to-guides/quick-start/flow-run-create-output-cli.png)
 
 
 With a run name, you can easily view or visualize the run details using below commands:
@@ -42,13 +42,13 @@ With a run name, you can easily view or visualize the run details using below co
 pf run show-details -n my_first_run
 ```
 
-![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-cli.png)
+![q_0](../../media/how-to-guides/quick-start/flow-run-show-details-output-cli.png)
 
 ```sh
 pf run visualize -n my_first_run
 ```
 
-![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
+![q_0](../../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
 More details can be found with `pf run --help`
 
@@ -69,7 +69,7 @@ base_run = pf.run(
 )
 ```
 
-![q_0](../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
+![q_0](../../media/how-to-guides/quick-start/flow-run-create-with-stream-output-sdk.png)
 
 ```python
 # get the inputs/outputs details of a finished run.
@@ -77,25 +77,25 @@ details = pf.get_details(base_run)
 details.head(10)
 ```
 
-![q_0](../media/how-to-guides/quick-start/flow-run-show-details-output-sdk.png)
+![q_0](../../media/how-to-guides/quick-start/flow-run-show-details-output-sdk.png)
 
 ```python
 # visualize the run in a web browser
 pf.visualize(base_run)
 ```
 
-![q_0](../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
+![q_0](../../media/how-to-guides/quick-start/flow-run-visualize-single-run.png)
 
 :::
 
 :::{tab-item} VS Code Extension
 :sync: VS Code Extension
 Use the code lens action on the top of the yaml editor to trigger batch run
-![dag_yaml_flow_test](../media/how-to-guides/quick-start/batch_run_dag_yaml.png)
+![dag_yaml_flow_test](../../media/how-to-guides/quick-start/batch_run_dag_yaml.png)
 
 
 Click the bulk test button on the top of the visual editor to trigger flow test.
-![visual_editor_flow_test](../media/how-to-guides/quick-start/bulk_run_visual_editor.png)
+![visual_editor_flow_test](../../media/how-to-guides/quick-start/bulk_run_visual_editor.png)
 :::
 
 ::::
@@ -145,7 +145,7 @@ pf run visualize -n "my_first_run,my_first_eval_run"
 
 A web browser will be opened to show the visualization result.
 
-![q_0](../media/how-to-guides/visualize_run.png)
+![q_0](../../media/how-to-guides/visualize_run.png)
 
 :::
 
@@ -197,7 +197,7 @@ pf.visualize([base_run, eval_run])
 
 A web browser will be opened to show the visualization result.
 
-![q_0](../media/how-to-guides/visualize_run.png)
+![q_0](../../media/how-to-guides/visualize_run.png)
 
 :::
 
@@ -206,8 +206,8 @@ A web browser will be opened to show the visualization result.
 
 There are actions to trigger local batch runs. To perform an evaluation you can use the run against "existing runs" actions.
 
-![img](../media/how-to-guides/vscode_against_run.png)
-![img](../media/how-to-guides/vscode_against_run_2.png)
+![img](../../media/how-to-guides/vscode_against_run.png)
+![img](../../media/how-to-guides/vscode_against_run_2.png)
 :::
 
 ::::
@@ -228,10 +228,10 @@ def example_log_metrics():
 
 After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.
 
-![img](../media/how-to-guides/run_show_metrics.png)
+![img](../../media/how-to-guides/run_show_metrics.png)
 
 ## Next steps
 
 Learn more about:
-- [Tune prompts with variants](./tune-prompts-with-variants.md)
-- [Deploy a flow](./deploy-a-flow/index.md)
+- [Tune prompts with variants](../tune-prompts-with-variants.md)
+- [Deploy a flow](../deploy-a-flow/index.md)

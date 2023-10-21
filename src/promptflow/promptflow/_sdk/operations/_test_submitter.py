@@ -19,7 +19,7 @@ from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_o
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
-from promptflow._utils.multimedia_utils import persist_multimedia_date
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
@@ -29,11 +29,14 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None):
+    def __init__(self, flow: Flow, variant=None, config=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
         self._variant = variant
+        from .._pf_client import PFClient
+
+        self._client = PFClient(config=config)
 
     @property
     def dataplane_flow(self):
@@ -142,12 +145,14 @@ class TestSubmitter:
         environment_variables: dict = None,
         stream_log: bool = True,
         allow_generator_output: bool = False,
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        if not connections:
+            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
@@ -158,7 +163,7 @@ class TestSubmitter:
             )
             flow_executor.enable_streaming_for_llm_flow(lambda: True)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
-            line_result.output = persist_multimedia_date(
+            line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
             )
             if line_result.aggregation_inputs:
@@ -186,9 +191,9 @@ class TestSubmitter:
     ):
         from promptflow.executor import FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
         with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
@@ -295,6 +300,8 @@ class TestSubmitter:
             )
         )
 
+        # Pass connections to avoid duplicate calculation (especially http call)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         while True:
             try:
                 print(f"{Fore.GREEN}User: ", end="")
@@ -315,6 +322,7 @@ class TestSubmitter:
                 environment_variables=environment_variables,
                 stream_log=False,
                 allow_generator_output=True,
+                connections=connections,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output)
