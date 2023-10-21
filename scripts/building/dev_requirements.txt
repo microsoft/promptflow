@@ -11,6 +11,5 @@ azure-keyvault
 azure-identity
 # record and replay http requests for pfazure tests
 vcrpy==5.1.0
-urllib3==2.0.6
 # parse token to get tenant id during sanitization
 PyJWT==2.8.0
