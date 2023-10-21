@@ -24,12 +24,11 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
-from promptflow._utils.multimedia_utils import create_image, create_image_from_dict, is_multimedia_dict
+from promptflow._utils.multimedia_utils import load_multimedia_data
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
@@ -697,7 +696,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value)
+        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -785,30 +784,6 @@ class FlowExecutor:
                 updated_inputs[key] = value.default
         return updated_inputs
 
-    def _process_images_from_inputs(
-        self,
-        inputs: Dict[str, FlowInputDefinition],
-        line_inputs: Mapping,
-    ) -> Dict[str, Any]:
-        updated_inputs = dict(line_inputs or {})
-        for key, value in inputs.items():
-            if value.type == ValueType.IMAGE:
-                updated_inputs[key] = create_image(updated_inputs[key], self._working_dir)
-            elif value.type == ValueType.LIST:
-                updated_inputs[key] = self._process_images_in_input_list(updated_inputs[key])
-        return updated_inputs
-
-    def _process_images_in_input_list(self, value):
-        if isinstance(value, list):
-            return [self._process_images_in_input_list(item) for item in value]
-        elif isinstance(value, dict):
-            if is_multimedia_dict(value):
-                return create_image_from_dict(value)
-            else:
-                return {k: self._process_images_in_input_list(v) for k, v in value.items()}
-        else:
-            return value
-
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
 
@@ -823,8 +798,7 @@ class FlowExecutor:
             logger.warning(
                 msg=(
                     "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
                 )
             )
 
@@ -1079,8 +1053,7 @@ class FlowExecutor:
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
                 ),
                 invalid_relations=invalid_relations,
             )
