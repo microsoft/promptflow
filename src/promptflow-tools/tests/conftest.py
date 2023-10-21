@@ -73,6 +73,19 @@ def llama_chat_custom_connection():
     return ConnectionManager().get("llama_chat_connection")
 
 
+@pytest.fixture
+def open_source_llm_ws_service_connection() -> bool:
+    try:
+        creds_custom_connection: CustomConnection = ConnectionManager().get("open_source_llm_ws_service_connection")
+        subs = json.loads(creds_custom_connection.secrets['service_credential'])
+        for key, value in subs.items():
+            os.environ[key] = value
+        return True
+    except Exception as e:
+        print(f'Something failed setting environment variables for service credentials. Error: {e}')
+        return False
+
+
 @pytest.fixture(autouse=True)
 def skip_if_no_key(request, mocker):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
