@@ -69,7 +69,7 @@ pip install -r requirements.txt
 ```
 
 ### Understand the flow yaml
-The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. The flow dag of this sample likes below:
+The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. Below is a sample of flow DAG:
 
 ![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
 
