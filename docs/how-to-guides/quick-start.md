@@ -56,7 +56,7 @@ cd promptflow/examples/flows/standard/web-classification
 A flow directory is a directory that contains all contents of a flow. Structure of flow folder:
 - **flow.dag.yaml**: The flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
 - **.promptflow/flow.tools.json**: It contains all package tools meta that references in `flow.dag.yaml`.
-- **Source code files (.py, .jinja2)**: User managed, the code scripts that references by tools.
+- **Source code files (.py, .jinja2)**: User managed, the code scripts referenced by tools.
 - **requirements.txt**: Python package dependencies for this flow.
 
 
