@@ -36,7 +36,7 @@ pf -v
 
 ## Understand what's a flow
 
-A flow, represented as a YAML file, is a DAG of functions, which connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
+A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
 
 ### Get the flow sample
 
