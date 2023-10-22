@@ -205,7 +205,7 @@ class TestExecutor:
             "script_with_import",
             "package_tools",
             "connection_as_input",
-            "python_tool_with_muti_image_node"
+            "python_tool_with_multiple_image_nodes"
         ],
     )
     def test_executor_exec_line(self, flow_folder, dev_connections):
