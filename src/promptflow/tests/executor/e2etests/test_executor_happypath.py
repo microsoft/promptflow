@@ -236,8 +236,10 @@ class TestExecutor:
             ("connection_as_input", "conn_node", None, None),
             ("simple_aggregation", "accuracy", {"text": "A"}, {"passthrough": "B"}),
             ("script_with_import", "node1", {"text": "text"}, None),
-            ("python_tool_with_muti_image_node", "duplicate_image", {"image_name": "microsoft_logo.jpg"},
-             {"python_node": {'data:image/jpg;path': 'logo.jpg'}},)
+            ("python_tool_with_multiple_image_nodes", "python_node_2", {"logo_content": "Microsoft and four squares"},
+             {"python_node": {"image": "logo.jpg", "image_name": "Microsoft's logo", "image_list": ["logo.jpg"]}}),
+            ("python_tool_with_multiple_image_nodes", "python_node", {
+             "image": "logo.jpg", "image_name": "Microsoft's logo"}, {},)
         ],
     )
     def test_executor_exec_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections):
@@ -251,7 +253,6 @@ class TestExecutor:
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            working_dir=working_dir,
             output_dir=("./temp"),
             raise_ex=True,
         )
