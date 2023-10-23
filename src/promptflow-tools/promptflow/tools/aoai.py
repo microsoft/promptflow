@@ -112,6 +112,7 @@ class AzureOpenAI(ToolProvider):
         frequency_penalty: float = 0,
         logit_bias: dict = {},
         user: str = "",
+        # function_call must be of object type
         function_call: object = None,
         functions: list = None,
         **kwargs,
