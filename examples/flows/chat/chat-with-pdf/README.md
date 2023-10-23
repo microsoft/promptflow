@@ -33,6 +33,9 @@ fi
 
 #### Run flow
 
+**Note**: this sample uses [predownloaded PDFs](./chat_with_pdf/.pdfs/) and [prebuilt FAISS Index](./chat_with_pdf/.index/) to speed up execution time.
+You can remove the folders to start a fresh run.
+
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
