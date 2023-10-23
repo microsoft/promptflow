@@ -3,20 +3,20 @@
 # ---------------------------------------------------------
 
 import argparse
+import json
 import logging
 import re
-import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
-from promptflow._cli._params import logging_params, add_param_set_tool_extra_info
+from promptflow._cli._params import add_param_set_tool_extra_info, logging_params
 from promptflow._cli._pf._init_entry_generators import (
     InitGenerator,
+    ManifestGenerator,
     SetupGenerator,
     ToolPackageGenerator,
     ToolPackageUtilsGenerator,
     ToolReadmeGenerator,
-    ManifestGenerator,
 )
 from promptflow._cli._utils import activate_action, exception_handler, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME
@@ -83,9 +83,7 @@ pf tool list
 # List all package tool and code tool in the flow:
 pf tool list --flow flow-path
 """  # noqa: E501
-    add_param_flow = lambda parser: parser.add_argument(  # noqa: E731
-        "--flow", type=str, help="the flow directory"
-    )
+    add_param_flow = lambda parser: parser.add_argument("--flow", type=str, help="the flow directory")  # noqa: E731
     add_params = [
         add_param_flow,
     ] + logging_params
@@ -130,7 +128,7 @@ def init_tool(args):
             package_icon_path = package_path / "icon"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
-            icon_path = f"Path(__file__).parent.parent / \"icon\" / \"{Path(dst).name}\""
+            icon_path = f'Path(__file__).parent.parent / "icon" / "{Path(dst).name}"'
         # Generate package setup.py
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate manifest file
@@ -141,7 +139,9 @@ def init_tool(args):
     else:
         script_code_path = Path(".")
     # Generate tool script
-    ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(script_code_path / f"{args.tool}.py")
+    ToolPackageGenerator(tool_name=args.tool, icon=icon_path, extra_info=extra_info).generate_to_file(
+        script_code_path / f"{args.tool}.py"
+    )
     InitGenerator().generate_to_file(script_code_path / "__init__.py")
     print(f'Done. Created the tool "{args.tool}" in {script_code_path.resolve()}.')
 
