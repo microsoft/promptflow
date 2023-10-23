@@ -163,4 +163,5 @@ Alternatively, you can test your tool package using the script below to ensure t
 
 ## Advanced features
 [Customize your tool icon](add-a-tool-icon.md)  
-[Add category and tags for tool](add-category-and-tags-for-tool.md)  
+[Add category and tags for tool](add-category-and-tags-for-tool.md)
+[Create your own custom strong type connection](create-your-own-custom-strong-type-connection.md) 
