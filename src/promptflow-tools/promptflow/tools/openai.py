@@ -107,7 +107,7 @@ class OpenAI(ToolProvider):
             frequency_penalty: float = 0,
             logit_bias: dict = {},
             user: str = "",
-            # function_call must be of object type
+            # function_call can be of type str or dict.
             function_call: object = None,
             functions: list = None,
             **kwargs,
