@@ -245,7 +245,9 @@ class ToolResolver:
         return ResolvedTool(updated_node, tool, api_func, init_args)
 
     def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        # Provider must be prepared.
+        # in replay mode, replace original tool with just_return tool
+        # the tool iteslf just return saved record from storage_record.json
+        # processing no logic.
         if (node.api == "completion" or node.api == "chat") and (
             node.connection == "azure_open_ai_connection" or node.provider == "AzureOpenAI"
         ):

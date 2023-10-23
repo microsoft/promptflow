@@ -78,6 +78,7 @@ class BulkResult:
 
     def get_openai_metrics(self):
         if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            # Some tests request the metrics in replay mode.
             total_metrics = {"total_tokens": 0, "duration": 0}
             return total_metrics
         node_run_infos = chain(self._get_line_run_infos(), self._get_aggr_run_infos())

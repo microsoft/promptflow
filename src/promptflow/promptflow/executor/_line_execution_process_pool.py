@@ -3,7 +3,6 @@ import math
 import multiprocessing
 import os
 import queue
-import time
 from datetime import datetime
 from functools import partial
 from logging import INFO

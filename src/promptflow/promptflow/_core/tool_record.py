@@ -8,6 +8,11 @@ from promptflow._internal import RecordStorage, ToolProvider, tool
 
 
 class ToolRecord(ToolProvider):
+    """
+    ToolRecord Record inputs and outputs of llm tool, in replay mode,
+    this tool will read the cached result from storage_record.json
+    """
+
     @tool
     def completion(toolType: str, *args, **kwargs) -> str:
         # "AzureOpenAI" =  args[0], this is type indicator, there may be more than one indicators

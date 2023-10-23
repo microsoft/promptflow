@@ -35,7 +35,10 @@ class AttrDict(dict):
 
 
 class RecordStorage:
-    # static class for recording
+    """
+    RecordStorage static class to manage recording file storage_record.json
+    """
+
     runItems: Dict[str, Dict[str, str]] = {}
 
     @staticmethod
