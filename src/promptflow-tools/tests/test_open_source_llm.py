@@ -82,7 +82,6 @@ You are a AI which helps Customers answer questions.
 user:
 """ + completion_prompt
 
-
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_completion(self, gpt2_provider):
         response = gpt2_provider.call(
