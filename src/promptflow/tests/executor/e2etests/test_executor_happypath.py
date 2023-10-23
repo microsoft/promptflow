@@ -243,7 +243,7 @@ class TestExecutor:
         os.chdir(working_dir)
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
-        flow_result = executor.exec_line(self.get_line_inputs())
+        flow_result = executor.exec_line({})
         assert not executor._run_tracker._flow_runs, "Flow runs in run tracker should be empty."
         assert not executor._run_tracker._node_runs, "Node runs in run tracker should be empty."
         assert isinstance(flow_result.output, dict)
@@ -316,7 +316,7 @@ class TestExecutor:
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_relative_path_dir=("./temp"),
+            output_sub_dir=("./temp"),
             raise_ex=True,
         )
         substrings = ["data:image/jpg;path", "temp", ".jpg"]

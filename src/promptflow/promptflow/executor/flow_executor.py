@@ -242,7 +242,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
-        output_relative_path_dir: Optional[str] = None,
+        output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
         connections: Optional[dict] = None,
@@ -323,7 +323,7 @@ class FlowExecutor:
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
         # TODO: Simplify the logic here
-        sub_dir = "." if output_relative_path_dir is None else output_relative_path_dir
+        sub_dir = "." if output_sub_dir is None else output_sub_dir
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
         run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
