@@ -1,0 +1,15 @@
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  user_type:
+    type: string
+outputs: {}
+nodes:
+- name: Tool_with_Enabled_By_Value
+  type: python
+  source:
+    type: package
+    tool: my_tool_package.tools.tool_with_enabled_by_value.my_tool
+  inputs:
+    user_type: ${inputs.user_type}
+    student_id: "123"
