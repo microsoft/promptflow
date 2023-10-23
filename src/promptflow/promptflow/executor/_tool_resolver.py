@@ -246,7 +246,7 @@ class ToolResolver:
 
     def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         # Provider must be prepared.
-        if node.api == "completion" and (
+        if (node.api == "completion" or node.api == "chat") and (
             node.connection == "azure_open_ai_connection" or node.provider == "AzureOpenAI"
         ):
             prompt_tpl = self._load_source_content(node)

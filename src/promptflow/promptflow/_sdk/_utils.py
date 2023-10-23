@@ -811,6 +811,9 @@ def get_local_connections_from_executable(executable, client):
     for n in connection_names:
         try:
             conn = client.connections.get(name=n, with_secrets=True)
+            if conn.api_base == "dummy_base" and conn.api_key == "dummy_key":
+                if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+                    return {}
             result[n] = conn._to_execution_connection_dict()
         except ConnectionNotFoundError:
             if os.environ.get("PF_RECORDING_MODE", None) == "replay":

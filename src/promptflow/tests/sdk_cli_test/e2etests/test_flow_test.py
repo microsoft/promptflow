@@ -93,6 +93,9 @@ class TestFlowTest:
         assert result == "connection_value is MyCustomConnection: True"
 
     def test_pf_test_with_streaming_output(self):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in record mode, TODO, record should support streaming output.")
+        # Cannot handle generator type in replay mode
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
         result = _client.test(flow=flow_path)
         chat_output = result["answer"]
@@ -168,6 +171,8 @@ class TestFlowTest:
         assert "mock exception" in str(exception.value)
 
     def test_node_test_with_connection_input(self):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in record mode, TODO, record should support single node.")
         flow_path = Path(f"{FLOWS_DIR}/basic-with-connection").absolute()
         inputs = {
             "connection": "azure_open_ai_connection",

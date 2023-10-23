@@ -66,6 +66,8 @@ def test_user_agent(flow_serving_client):
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
 @pytest.mark.e2etest
 def test_serving_api(flow_serving_client):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+        pytest.skip("Skip this test in replay mode, TODO, cannot get flow folder in serve mode.")
     response = flow_serving_client.get("/health")
     assert b'{"status":"Healthy","version":"0.0.1"}' in response.data
     response = flow_serving_client.post("/score", data=json.dumps({"text": "hi"}))
@@ -80,6 +82,8 @@ def test_serving_api(flow_serving_client):
 @pytest.mark.usefixtures("evaluation_flow_serving_client", "setup_local_connection")
 @pytest.mark.e2etest
 def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+        pytest.skip("Skip this test in replay mode, TODO, cannot get flow folder in serve mode.")
     response = evaluation_flow_serving_client.post("/score", data=json.dumps({"url": "https://www.microsoft.com/"}))
     assert (
         response.status_code == 200
@@ -89,6 +93,8 @@ def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
 
 @pytest.mark.e2etest
 def test_unknown_api(flow_serving_client):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+        pytest.skip("Skip this test in replay mode, TODO, cannot get flow folder in serve mode.")
     response = flow_serving_client.get("/unknown")
     assert b"not supported by current app" in response.data
     assert response.status_code == 404
@@ -116,6 +122,8 @@ def test_stream_llm_chat(
     expected_status_code,
     expected_content_type,
 ):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+        pytest.skip("Skip this test in replay mode, TODO, cannot get flow folder in serve mode.")
     payload = {
         "question": "What is the capital of France?",
         "chat_history": [],
@@ -162,6 +170,8 @@ def test_stream_python_stream_tools(
     expected_status_code,
     expected_content_type,
 ):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+        pytest.skip("Skip this test in replay mode, TODO, cannot get flow folder in serve mode.")
     payload = {
         "text": "Hello World!",
     }
@@ -222,6 +232,8 @@ def test_stream_python_nonstream_tools(
     expected_status_code,
     expected_content_type,
 ):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+        pytest.skip("Skip this test in replay mode, TODO, cannot get flow folder in serve mode.")
     payload = {
         "text": "Hello World!",
     }

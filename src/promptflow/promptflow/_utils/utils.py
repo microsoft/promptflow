@@ -84,9 +84,6 @@ class RecordStorage:
             hashDict.pop("text_content")
         hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
         path_hash: str = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
-        logging.warning(f"set record input: {str(hashDict)}")
-        logging.warning(f"set record input: {hash_value}")
-        logging.warning(f"set record output: {output}")
         output_base64: str = base64.b64encode(bytes(output, "utf-8")).decode(encoding="utf-8")
         current_saved_record: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
         if current_saved_record is None:

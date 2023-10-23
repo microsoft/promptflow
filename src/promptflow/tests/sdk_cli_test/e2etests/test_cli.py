@@ -594,8 +594,8 @@ class TestCli:
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
     def test_flow_with_exception(self, capsys):
-        if "PF_RECORDING_MODE" in os.environ:
-            pytest.skip("Skip this test in replay mode, TODO, replay should support additional includes.")
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in replay mode, Cannot test exceptions.")
         with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
@@ -872,6 +872,8 @@ class TestCli:
                 assert not (flow_folder / "openai.yaml").exists()
 
     def test_flow_chat(self, monkeypatch, capsys):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in record mode, TODO, record should support chat.")
         chat_list = ["hi", "what is chat gpt?"]
 
         def mock_input(*args, **kwargs):
@@ -976,6 +978,8 @@ class TestCli:
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in record mode, TODO, record should support chat.")
         chat_list = ["hi", "what is chat gpt?"]
 
         def mock_input(*args, **kwargs):
