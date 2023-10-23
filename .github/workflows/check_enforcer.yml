@@ -70,6 +70,8 @@ jobs:
                 -f description='Waiting for all checks to succeed' `
                 -f context='https://aka.ms/azsdk/checkenforcer' 
             }
+
+            Start-Sleep -Seconds 300
           }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
