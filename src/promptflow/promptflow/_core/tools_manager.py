@@ -18,7 +18,7 @@ import yaml
 from promptflow._core._errors import MissingRequiredInputs, NotSupported, PackageToolNotFoundError, ToolLoadError
 from promptflow._core.tool_meta_generator import (
     _parse_tool_from_function,
-    collect_script_tools,
+    collect_tool_function_in_module,
     generate_prompt_tool,
     generate_python_tool,
     load_python_module_from_file,
@@ -422,7 +422,7 @@ class ToolLoader:
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f, init_inputs = collect_script_tools(m)
+        f, init_inputs = collect_tool_function_in_module(m)
         return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:

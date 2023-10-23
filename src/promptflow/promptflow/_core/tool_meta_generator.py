@@ -211,46 +211,36 @@ def load_python_module(content, source=None):
 
 
 def collect_tool_function_in_module(m):
-    tools = collect_tool_functions_in_module(m)
-    if len(tools) == 0:
+    tool_functions = collect_tool_functions_in_module(m)
+    tool_methods = collect_tool_methods_with_init_inputs_in_module(m)
+    num_tools = len(tool_functions) + len(tool_methods)
+    if num_tools == 0:
         raise NoToolDefined(
             message_format=(
                 "No tool found in the python script. "
                 "Please make sure you have one and only one tool definition in your script."
             )
         )
-    elif len(tools) > 1:
-        tool_names = ", ".join(t.__name__ for t in tools)
+    elif num_tools > 1:
+        tool_names = ", ".join(t.__name__ for t in tool_functions + tool_methods)
         raise MultipleToolsDefined(
             message_format=(
                 "Expected 1 but collected {tool_count} tools: {tool_names}. "
                 "Please make sure you have one and only one tool definition in your script."
             ),
-            tool_count=len(tools),
+            tool_count=num_tools,
             tool_names=tool_names,
         )
-    return tools[0]
-
-
-def collect_script_tools(m):
-    functions = collect_tool_functions_in_module(m)
-    methods = collect_tool_methods_with_init_inputs_in_module(m)
-    num_tools = len(functions) + len(methods)
-    if num_tools == 0:
-        raise NoToolDefined("No tool found in the python script.")
-    elif num_tools > 1:
-        tool_names = ", ".join(t.__name__ for t in functions + methods)
-        raise MultipleToolsDefined(f"Expected 1 but collected {num_tools} tools: {tool_names}.")
-    if functions:
-        return functions[0], None
+    if tool_functions:
+        return tool_functions[0], None
     else:
-        return methods[0]
+        return tool_methods[0]
 
 
 def generate_python_tool(name, content, source=None):
     m = load_python_module(content, source)
-    f = collect_tool_function_in_module(m)
-    tool = _parse_tool_from_function(f)
+    f, initialize_inputs = collect_tool_function_in_module(m)
+    tool = _parse_tool_from_function(f, initialize_inputs)
     tool.module = None
     if name is not None:
         tool.name = name
