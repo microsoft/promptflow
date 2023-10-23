@@ -1,7 +1,8 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
 inputs:
-  my_input:
+  text:
     type: string
-    default: hello
+    default: Microsoft
 outputs:
   my_output:
     type: string
@@ -11,7 +12,7 @@ nodes:
   type: python
   source:
     type: package
-    tool: my_tool_package.tools.my_tool_2.MyTool.my_tool
+    tool: my_tool_package.tools.tool_with_custom_strong_type_connection.my_tool
   inputs:
     connection: my_custom_connection
-    input_text: ${inputs.my_input}
+    input_text: ${inputs.text}
