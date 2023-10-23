@@ -22,7 +22,7 @@ from promptflow.tools.exception import (
     ChatAPIInvalidRole
 )
 
-VALID_LLAMA_ROLES = {"user", "assistant"}
+VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
 DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
@@ -385,6 +385,7 @@ class AzureMLOnlineEndpoint:
         endpoint_url: str,
         endpoint_api_key: str,
         content_formatter: ContentFormatterBase,
+        model_family: ModelFamily,
         deployment_name: Optional[str] = None,
         model_kwargs: Optional[Dict] = None,
     ):
@@ -393,6 +394,7 @@ class AzureMLOnlineEndpoint:
         self.deployment_name = deployment_name
         self.content_formatter = content_formatter
         self.model_kwargs = model_kwargs
+        self.model_family = model_family
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -410,7 +412,10 @@ class AzureMLOnlineEndpoint:
     def _call_endpoint(self, body: bytes) -> bytes:
         """call."""
 
-        headers = {"Content-Type": "application/json", "Authorization": ("Bearer " + self.endpoint_api_key)}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": ("Bearer " + self.endpoint_api_key),
+            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family}
 
         # If this is not set it'll use the default deployment on the endpoint.
         if self.deployment_name is not None:
@@ -489,6 +494,7 @@ class OpenSourceLLM(ToolProvider):
         llm = AzureMLOnlineEndpoint(
             endpoint_url=self.endpoint_uri,
             endpoint_api_key=self.endpoint_key,
+            model_family=self.model_family,
             content_formatter=content_formatter,
             deployment_name=self.deployment_name,
             model_kwargs=model_kwargs
