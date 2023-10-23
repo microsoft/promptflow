@@ -356,6 +356,8 @@ class TestFlowRun:
         assert run.status == "Completed"
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in replay mode, expected")
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow, local_client)
         assert local_aoai_connection.name in connections
