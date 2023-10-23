@@ -307,12 +307,12 @@ class TestExecutor:
     @pytest.mark.parametrize(
         "flow_folder, inputs",
         [
-            ("python_with_image_input_and_output", get_simple_image_input(False, False)),
-            ("python_with_image_input_and_output", get_simple_image_input(False, True)),
-            ("python_with_image_input_and_output", get_simple_image_input(True, False)),
-            ("python_with_image_input_and_output", get_simple_image_input(True, True)),
-            ("python_with_composite_image_inputs_and_outputs", get_composite_image_input(False)),
-            ("python_with_composite_image_inputs_and_outputs", get_composite_image_input(True)),
+            ("python_tool_with_simple_image", get_simple_image_input(False, False)),
+            ("python_tool_with_simple_image", get_simple_image_input(False, True)),
+            ("python_tool_with_simple_image", get_simple_image_input(True, False)),
+            ("python_tool_with_simple_image", get_simple_image_input(True, True)),
+            ("python_tool_with_composite_image", get_composite_image_input(False)),
+            ("python_tool_with_composite_image", get_composite_image_input(True)),
         ],
     )
     def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
@@ -364,15 +364,15 @@ class TestExecutor:
     @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
         [
-            ("python_with_image_input_and_output", "python_node", get_simple_image_input(False, False), None),
+            ("python_tool_with_simple_image", "python_node", get_simple_image_input(False, False), None),
             (
-                "python_with_image_input_and_output", "python_node_2", get_simple_image_input(False, False),
+                "python_tool_with_simple_image", "python_node_2", get_simple_image_input(False, False),
                 {"python_node": {"data:image/jpg;path": "logo.jpg"}}
             ),
-            ("python_with_composite_image_inputs_and_outputs", "python_node", get_composite_image_input(False), None),
-            ("python_with_composite_image_inputs_and_outputs", "python_node_2", None, None),
+            ("python_tool_with_composite_image", "python_node", get_composite_image_input(False), None),
+            ("python_tool_with_composite_image", "python_node_2", None, None),
             (
-                "python_with_composite_image_inputs_and_outputs", "python_node_3", get_composite_image_input(False),
+                "python_tool_with_composite_image", "python_node_3", get_composite_image_input(False),
                 {"python_node": get_composite_node_input(), "python_node_2": get_composite_node_input()}
             ),
         ],
