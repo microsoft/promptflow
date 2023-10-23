@@ -2,7 +2,7 @@
 A basic standard flow with package tool that using custom strong type connection.
 
 Tools used in this flow：
-- custom package Tool
+- custom package tool
 
 Connections used in this flow:
 - custom strong type connection

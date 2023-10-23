@@ -2,7 +2,7 @@
 A basic standard flow with script tool that using custom strong type connection.
 
 Tools used in this flow：
-- custom `python` Tool
+- custom `python` tool
 
 Connections used in this flow:
 - custom strong type connection
