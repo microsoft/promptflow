@@ -114,11 +114,11 @@ def extract_comments_mapping(keys, doc):
             param_pattern = rf":param {key}: (.*)"
             key_description = " ".join(re.findall(param_pattern, doc))
             type_pattern = rf":type {key}: (.*)"
-            key_type = " ".join(re.findall(type_pattern, doc)).rstrip(".") + " type."
+            key_type = " ".join(re.findall(type_pattern, doc)).rstrip(".")
             if key_type and key_description:
-                comments_map[key] = " ".join([key_type, key_description])
+                comments_map[key] = " ".join([key_type + " type.", key_description])
             elif key_type:
-                comments_map[key] = key_type
+                comments_map[key] = key_type + " type."
             elif key_description:
                 comments_map[key] = key_description
         except re.error:
