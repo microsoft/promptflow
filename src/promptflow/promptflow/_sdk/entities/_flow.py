@@ -52,6 +52,9 @@ class Flow(FlowBase):
         self._code = Path(code)
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
+        # TODO: store here or in FlowExecutor?
+        self.connections = kwargs.pop("connections", None) or {}
+        self.variant = kwargs.pop("variant", None) or {}
         super().__init__(**kwargs)
 
     @property
@@ -190,3 +193,17 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return {k: v.type.value for k, v in self._executable.outputs.items()}
 
     # endregion
+
+    def __call__(self, *args, **kwargs):
+        # run flow test here
+        # TODO: cache the submitter?
+        from promptflow import PFClient
+        from promptflow._sdk.operations._test_submitter import TestSubmitter
+
+        if args:
+            raise UserErrorException("Flow can only be called with keyword arguments.")
+        client = PFClient()
+        # TODO: gap: variants, environment_variables
+        result = client.flows._test_flow(flow=self, inputs=kwargs, variant=self.variant)
+        TestSubmitter._raise_error_when_test_failed(result, show_trace=False)
+        return result.output

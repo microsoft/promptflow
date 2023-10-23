@@ -62,9 +62,19 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
+    connections=None,
+    variant=None,
     **kwargs,
 ):
-    return ProtectedFlow.load(source, **kwargs)
+    """Load a flow from source file. The loaded flow can be used as a function.
+
+    :param source: Source file path.
+    :param connections: Connections for the run.
+    :param variant: Variant of the run.
+    :param kwargs:
+    :return:
+    """
+    return ProtectedFlow.load(source, connections=connections, variant=variant, **kwargs)
 
 
 def load_run(

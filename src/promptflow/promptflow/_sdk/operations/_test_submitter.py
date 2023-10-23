@@ -48,7 +48,9 @@ class TestSubmitter:
             tuning_node, node_variant = parse_variant(self._variant)
         else:
             tuning_node, node_variant = None, None
-        with variant_overwrite_context(self._origin_flow.code, tuning_node, node_variant) as temp_flow:
+        with variant_overwrite_context(
+            self._origin_flow.code, tuning_node, node_variant, connections=self.flow.connections
+        ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
                 self.flow = temp_flow

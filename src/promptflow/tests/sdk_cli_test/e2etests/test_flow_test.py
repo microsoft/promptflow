@@ -4,6 +4,7 @@ from types import GeneratorType
 
 import pytest
 
+from promptflow import load_flow
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
@@ -193,3 +194,36 @@ class TestFlowTest:
     def test_pf_test_with_non_english_input(self):
         result = _client.test(flow=f"{FLOWS_DIR}/flow_with_non_english_input")
         assert result["output"] == "Hello 日本語"
+
+    def test_flow_as_a_func(self):
+        f = load_flow(f"{FLOWS_DIR}/flow_with_non_english_input")
+        result = f()
+        assert result["output"] == "Hello 日本語"
+
+    def test_flow_as_a_func_with_inputs(self):
+        flow_path = Path(f"{FLOWS_DIR}/classification_accuracy_evaluation").absolute()
+        f = load_flow(flow_path)
+        result = f(variant_id="variant_0", groundtruth="Pdf", prediction="PDF")
+        assert result["grade"] == "Correct"
+
+    def test_flow_as_a_func_with_connection_overwrite(self):
+        from promptflow._sdk._errors import ConnectionNotFoundError
+
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        f = load_flow(
+            flow_path,
+            connections={"classify_with_llm": {"connection": "not_exist"}},
+        )
+        with pytest.raises(ConnectionNotFoundError) as e:
+            f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
+        assert "Connection 'not_exist' required for flow" in str(e.value)
+
+    def test_flow_as_a_func_with_variant(self):
+
+        flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
+        f = load_flow(
+            flow_path,
+            variant="${summarize_text_content.variant_0}",
+        )
+
+        f(url="https://www.youtube.com/watch?v=o5ZQyXaAv1g")
