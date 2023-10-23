@@ -860,3 +860,40 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
                     yaml.dump(yaml_data, f)
+
+
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+    """Dump flow result for extension.
+
+    :param flow_folder: The flow folder.
+    :param prefix: The file prefix.
+    :param flow_result: The flow result returned by exec_line.
+    :param node_result: The node result when test node returned by load_and_exec_node.
+    """
+    if flow_result:
+        flow_serialize_result = {
+            "flow_runs": [serialize(flow_result.run_info)],
+            "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
+        }
+    else:
+        flow_serialize_result = {
+            "flow_runs": [],
+            "node_runs": [serialize(node_result)],
+        }
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+    dump_folder.mkdir(parents=True, exist_ok=True)
+
+    with open(dump_folder / f"{prefix}.detail.json", "w") as f:
+        json.dump(flow_serialize_result, f, indent=2)
+    if node_result:
+        metrics = flow_serialize_result["node_runs"][0]["metrics"]
+        output = flow_serialize_result["node_runs"][0]["output"]
+    else:
+        metrics = flow_serialize_result["flow_runs"][0]["metrics"]
+        output = flow_serialize_result["flow_runs"][0]["output"]
+    if metrics:
+        with open(dump_folder / f"{prefix}.metrics.json", "w") as f:
+            json.dump(metrics, f, indent=2)
+    if output:
+        with open(dump_folder / f"{prefix}.output.json", "w") as f:
+            json.dump(output, f, indent=2)

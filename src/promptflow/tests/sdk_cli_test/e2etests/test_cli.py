@@ -1,4 +1,5 @@
 import contextlib
+import importlib
 import importlib.util
 import io
 import json
@@ -1364,6 +1365,39 @@ class TestCli:
             outerr = capsys.readouterr()
             assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
 
+    def test_tool_list(self, capsys):
+        # List package tools in environment
+        run_pf_command("tool", "list")
+        outerr = capsys.readouterr()
+        tools_dict = json.loads(outerr.out)
+        package_tool_name = "promptflow.tools.embedding.embedding"
+        assert package_tool_name in tools_dict["package"]
+
+        # List flow tools and package tools
+        run_pf_command("tool", "list", "--flow", f"{FLOWS_DIR}/chat_flow")
+        outerr = capsys.readouterr()
+        tools_dict = json.loads(outerr.out)
+        expect_flow_tools = {
+            "chat.jinja2": {
+                "type": "llm",
+                "inputs": {"chat_history": {"type": ["string"]}, "question": {"type": ["string"]}},
+                "source": "chat.jinja2",
+            },
+            "show_answer.py": {
+                "type": "python",
+                "inputs": {"chat_answer": {"type": ["string"]}},
+                "source": "show_answer.py",
+                "function": "show_answer",
+            },
+        }
+        assert tools_dict["code"] == expect_flow_tools
+        assert package_tool_name in tools_dict["package"]
+
+        # Invalid flow parameter
+        with pytest.raises(Exception) as e:
+            run_pf_command("tool", "list", "--flow", "invalid_flow_folder")
+        assert "invalid_flow_folder does not exist" in e.value.args[0]
+
     def test_chat_flow_with_conditional(self, monkeypatch, capsys):
         chat_list = ["1", "2"]
 
@@ -1381,3 +1415,15 @@ class TestCli:
         assert output_path.exists()
         detail_path = Path(FLOWS_DIR) / "conditional_chat_flow_with_skip" / ".promptflow" / "chat.detail.json"
         assert detail_path.exists()
+
+    def test_flow_test_with_image_input_and_output(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_image_input_and_output",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "intermediate"
+        assert image_path.exists()

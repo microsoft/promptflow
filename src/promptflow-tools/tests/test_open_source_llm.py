@@ -22,13 +22,13 @@ def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
 class TestOpenSourceLLM:
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
 
-    gpt2_chat_prompt = """user:
+    gpt2_chat_prompt = """system:
 You are a AI which helps Customers answer questions.
 
 user:
 """ + completion_prompt
 
-    llama_chat_prompt = """user:
+    llama_chat_prompt = """system:
 You are a AI which helps Customers answer questions.
 
 """ + completion_prompt
@@ -44,7 +44,7 @@ You are a AI which helps Customers answer questions.
     def test_open_source_llm_completion_with_deploy(self, gpt2_custom_connection):
         os_tool = OpenSourceLLM(
             gpt2_custom_connection,
-            deployment_name="gpt2-8")
+            deployment_name="gpt2-9")
         response = os_tool.call(
             self.completion_prompt,
             API.COMPLETION)
@@ -61,7 +61,7 @@ You are a AI which helps Customers answer questions.
     def test_open_source_llm_chat_with_deploy(self, gpt2_custom_connection):
         os_tool = OpenSourceLLM(
             gpt2_custom_connection,
-            deployment_name="gpt2-8")
+            deployment_name="gpt2-9")
         response = os_tool.call(
             self.gpt2_chat_prompt,
             API.CHAT)
@@ -130,23 +130,6 @@ Why was that the greatest movie of all time?
 """
         LlamaContentFormatter.parse_chat(multi_turn_chat)
 
-    def test_open_source_llm_llama_parse_system_not_accepted(self):
-        bad_chat_prompt = """system:
-You are a AI which helps Customers answer questions.
-
-user:
-""" + self.completion_prompt
-        with pytest.raises(OpenSourceLLMUserError) as exc_info:
-            LlamaContentFormatter.parse_chat(bad_chat_prompt)
-        assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition,"
-            + " and the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'."
-            + " Current parsed role 'system' does not meet the requirement. If you intend to use the Completion "
-            + "API, please select the appropriate API type and deployment name. If you do intend to use the Chat "
-            + "API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
-            + "gallery that contain 'Chat' in the name.")
-        assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
-
     def test_open_source_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
 You are a AI which helps Customers answer questions.
@@ -158,24 +141,24 @@ user:
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(bad_chat_prompt)
         assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and "
-            + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
-            + "role 'system' does not meet the requirement. If you intend to use the Completion API, please select the "
-            + "appropriate API type and deployment name. If you do intend to use the Chat API, please refer to the "
-            + "guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our gallery that contain 'Chat' "
-            + "in the name.")
+            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
+            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
+            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
+            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use "
+            + "the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in "
+            + "our gallery that contain 'Chat' in the name.")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     def test_open_source_llm_llama_parse_chat_with_comp(self):
         with pytest.raises(OpenSourceLLMUserError) as exc_info:
             LlamaContentFormatter.parse_chat(self.completion_prompt)
         assert exc_info.value.message == (
-            "The Chat API requires a specific format for prompt definition, and "
-            + "the prompt should include separate lines as role delimiters: 'assistant:\\n','user:\\n'. Current parsed "
-            + "role 'in the context of azure ml, what does the ml stand for?' does not meet the requirement. If you "
-            + "intend to use the Completion API, please select the appropriate API type and deployment name. If you do "
-            + "intend to use the Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view "
-            + "the samples in our gallery that contain 'Chat' in the name.")
+            "The Chat API requires a specific format for prompt definition, and the prompt should include separate "
+            + "lines as role delimiters: 'assistant:\\n','system:\\n','user:\\n'. Current parsed role 'in the context "
+            + "of azure ml, what does the ml stand for?' does not meet the requirement. If you intend to use the "
+            + "Completion API, please select the appropriate API type and deployment name. If you do intend to use the "
+            + "Chat API, please refer to the guideline at https://aka.ms/pfdoc/chat-prompt or view the samples in our "
+            + "gallery that contain 'Chat' in the name.")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
