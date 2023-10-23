@@ -1,0 +1,16 @@
+inputs:
+  text:
+    type: string
+    # default: microsoft
+outputs:
+  ou:
+    type: string
+    reference: ${my_script_tool.output}
+nodes:
+- name: my_script_tool
+  type: python
+  source:
+    type: code
+    path: test.py
+  inputs:
+    text: ${inputs.text}
