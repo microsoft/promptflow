@@ -1,7 +1,7 @@
 # Use Enabled_By to Support Cascading Settings between Inputs for Tool
 
 This guide will instruct you on how to use the "enabled by" feature in the tool package. The "enabled by" feature is designed to support cascading settings between inputs for tool. 
-Cascading settings between inputs are frequently used in situations where the selection in one input field determines what sebsequent inputs should be shown. 
+Cascading settings between inputs are frequently used in situations where the selection in one input field determines what subsequent inputs should be shown. 
 This approach help in creating a more efficient, user-friendly, and error-free input process. To support cascading settings between tool inputs, we've introduced following two configurations:
 * "enabled_by + enabled_by_type": This setting enabled the current input based on the value type of the input shown in "enabled_by" field.
 * "enabled_by + enabled_by_value": This setting enabled the current input based on the actual value of the input shown in "enabled_by" field.
