@@ -37,6 +37,13 @@ def create_run_against_multi_line_data(client) -> Run:
     )
 
 
+def create_run_against_multi_line_data_without_llm(client: PFClient) -> Run:
+    return client.run(
+        flow=f"{FLOWS_DIR}/print_env_var",
+        data=f"{DATAS_DIR}/env_var_names.jsonl",
+    )
+
+
 def create_run_against_run(client, run: Run) -> Run:
     return client.run(
         flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
@@ -745,3 +752,11 @@ class TestFlowRun:
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
+
+    def test_executor_logs_in_batch_run_logs(self, pf: PFClient) -> None:
+        run = create_run_against_multi_line_data_without_llm(pf)
+        local_storage = LocalStorageOperations(run=run)
+        logs = local_storage.logger.get_logs()
+        # below texts are printed by executor before the batch run executed
+        assert "total memory in use:" in logs
+        assert "available max worker count:" in logs
