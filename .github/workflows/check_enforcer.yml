@@ -2,8 +2,8 @@ name: GitHub Event Handler
 
 on:
   pull_request_target:
-    paths:
-      - .github/**
+    branches:
+      - main
 
 env:
   head_sha: ${{ github.sha }}
