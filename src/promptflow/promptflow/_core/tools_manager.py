@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Tuple, Union
+from typing import Callable, List, Mapping, Optional, Tuple, Union, Dict
 
 import pkg_resources
 import yaml
@@ -168,6 +168,50 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
                 tool_type=tool_type,
                 supported_types=",".join([ToolType.PYTHON, ToolType.PROMPT, ToolType.LLM]),
             )
+
+
+def append_workspace_triple_to_func_input_params(func_sig_params, func_input_params_dict, ws_triple_dict):
+    '''Append workspace triple to func input params.
+
+    :param func_sig_params: function signature parameters, full params.
+    :param func_input_params_dict: user input param key-values for dynamic list function.
+    :param ws_triple_dict: workspace triple dict, including subscription_id, resource_group_name, workspace_name.
+    :return: combined func input params.
+    '''
+    # append workspace triple to func input params if any below condition are met:
+    # 1. func signature has kwargs param.
+    # 2. func signature has param named 'subscription_id','resource_group_name','workspace_name'.
+    has_kwargs_param = any([param.kind == inspect.Parameter.VAR_KEYWORD for _, param in func_sig_params.items()])
+    if has_kwargs_param is False:
+        # keep only params that are in func signature. Or run into error when calling func.
+        avail_ws_info_dict = {k: v for k, v in ws_triple_dict.items() if k in set(func_sig_params.keys())}
+    else:
+        avail_ws_info_dict = ws_triple_dict
+
+    # if ws triple key is in func input params, it means user has provided value for it,
+    # do not expect implicit override.
+    combined_func_input_params = dict(avail_ws_info_dict, **func_input_params_dict)
+    return combined_func_input_params
+
+
+def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = None):
+    import importlib
+    import inspect
+
+    # TODO: validate func path.
+    module_name, func_name = func_path.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    func = getattr(module, func_name)
+    # get param names from func signature.
+    func_sig_params = inspect.signature(func).parameters
+    # TODO: validate if func input params are all in func signature params.
+    # TODO: add more tests to verify following appending logic.
+    combined_func_input_params = append_workspace_triple_to_func_input_params(
+        func_sig_params, func_input_params_dict, ws_triple_dict)
+    # TODO: error handling of func call.
+    result = func(**combined_func_input_params)
+    # TODO: validate response is of required format. Throw correct message if response is empty.
+    return result
 
 
 class BuiltinsManager:

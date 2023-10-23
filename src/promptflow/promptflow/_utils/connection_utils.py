@@ -37,6 +37,7 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
 
 def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
     connection_template_str = """
+    $schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json
     name: "to_replace_with_connection_name"
     type: custom
     custom_type: {{ custom_type }}
