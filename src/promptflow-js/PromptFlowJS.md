@@ -1,6 +1,28 @@
-# PromptFlow.js
+# Prompt flow for JavaScript/TypeScript
 
-We will make a Javascript library PromptFlow.js. User can use it to play with PromptFlow in the browser and in Node.js.
+## What is the value-add of providing JavaScript/TypeScript support for Prompt flow
+
+- JavaScript /TypeScript is a popular programming language for Web UI and web view based app development. JS/TS supports for Prompt flow will empower developers to code integration to connect the user interface with PF flows **without adding extra service or deployment**. The flows will be hosted and executed in the client JavaScript engine (Browser, web container, Node.js runtime) and flow developers do not have to worry about the distributing or hosting.
+
+## JS/TS language constraints and design considerations
+
+- Despite TypeScript are widely used in Microsoft and many other developers, it is not a official standard. There are lots of diverged JS standards.
+  - For language spec, es5(legacy), es6 es2016, es2017, ... es2023, supports.
+  - For typing support, there are TypeScript, Flow, etc.
+  - For module definition, there are IIFE, AMD, CJS, UMD, ESM.
+- JavaScript in real world is a programming language which requires to be **compiled before being interpreted**.
+  - Compiler's job: 
+    - [**Bundling**: Compilers can bundle multiple JavaScript files into a single file, which can be more efficient for the browser to download and execute ](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021) [ref](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021).
+    - [**Minification**: Compilers can also minify the code by removing whitespace and comments, which can reduce the file size and improve performance ](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021) [ref](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021).
+    - [**Transpilation**: Compilers can transpile newer JavaScript syntax into older syntax that is more widely supported by browsers ](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021) [ref](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021).
+    - [**Optimization**: Compilers can optimize the code by removing dead code and other unnecessary parts of the code](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021)
+  - Popular compiler options: Webpack, Rollup, Esbuild, Vite, etc. They are not compatible with each other.
+- Design considerations:
+  - Packing, distributing or deployment is not the priority for JavaScript supports. To make a clear statement: "If you believes you need deploy or distribute your flow separately from your app, rethink your decision to use the JavaScript support. Why not use the Prompt flow (python)?"
+  - In-code call experience should be a priority. 
+    - In current Prompt flow for Python, there is no function call support to consume a flow instance in user code. 
+    - Should be adapters for popular JavaScript frameworks. Like what XState does: [Packages | Stately](https://stately.ai/docs/category/xstate-packages)
+    - Should be caching to save customer LLM calls.
 
 ## Browser experience
 
