@@ -1,15 +1,21 @@
 import os
 import sys
+from pathlib import Path
 from typing import List
 from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
+from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 from pytest_mock import MockFixture
 
 from promptflow._cli._pf_azure.entry import main
+from promptflow._sdk._configuration import ConfigFileNotFound, Configuration
 from promptflow._sdk._constants import VIS_PORTAL_URL_TMPL
+from promptflow._utils.context_utils import _change_working_dir
 from promptflow.azure.operations._run_operations import RunOperations
+
+CONFIG_DATA_ROOT = Path(__file__).parent.parent.parent / "test_configs" / "configs"
 
 
 def run_pf_command(*args, cwd=None):
@@ -42,6 +48,25 @@ class TestAzureCli:
         run_pf_command("--version")
         out, err = capfd.readouterr()
         assert out == "0.0.1\n"
+
+    def test_get_workspace_from_config(self):
+        # New instance instead of get_instance() to avoid side effect
+        conf = Configuration(overrides={"connection.provider": "azureml"})
+        # Test config within flow folder
+        target_folder = CONFIG_DATA_ROOT / "mock_flow1"
+        with _change_working_dir(target_folder):
+            config1 = conf.get_connection_provider()
+        assert config1 == "azureml:" + RESOURCE_ID_FORMAT.format("sub1", "rg1", AZUREML_RESOURCE_PROVIDER, "ws1")
+        # Test config using flow parent folder
+        target_folder = CONFIG_DATA_ROOT / "mock_flow2"
+        with _change_working_dir(target_folder):
+            config2 = conf.get_connection_provider()
+        assert config2 == "azureml:" + RESOURCE_ID_FORMAT.format(
+            "sub_default", "rg_default", AZUREML_RESOURCE_PROVIDER, "ws_default"
+        )
+        # Test config not found
+        with pytest.raises(ConfigFileNotFound):
+            Configuration._get_workspace_from_config(path=CONFIG_DATA_ROOT.parent)
 
     def test_run_show(self, mocker: MockFixture, operation_scope_args):
         mocked = mocker.patch.object(RunOperations, "get")

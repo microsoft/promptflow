@@ -58,6 +58,9 @@ class RecordStorage:
 
     @staticmethod
     def get_record(flow_directory: Path, hashDict: OrderedDict) -> str:
+        # special deal remove text_content, because it is not stable.
+        if "text_content" in hashDict:
+            hashDict.pop("text_content")
         hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
         path_hash: str = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
         file_item: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
@@ -76,7 +79,9 @@ class RecordStorage:
 
     @staticmethod
     def set_record(flow_directory: Path, hashDict: OrderedDict, output: object) -> None:
-
+        # special deal remove text_content, because it is not stable.
+        if "text_content" in hashDict:
+            hashDict.pop("text_content")
         hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
         path_hash: str = hashlib.sha1(str(flow_directory).encode("utf-8")).hexdigest()
         logging.warning(f"set record input: {str(hashDict)}")

@@ -69,7 +69,7 @@ from promptflow.contracts.tool import ToolType
 
 def record_node_run(run_info: NodeRunInfo, flow_folder: Path) -> None:
     """Persist node run record to local storage."""
-    if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "record":
+    if os.environ.get("PF_RECORDING_MODE", None) == "record":
         for api_call in run_info.api_calls:
             hashDict = {}
             if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
@@ -813,7 +813,7 @@ def get_local_connections_from_executable(executable, client):
             conn = client.connections.get(name=n, with_secrets=True)
             result[n] = conn._to_execution_connection_dict()
         except ConnectionNotFoundError:
-            if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+            if os.environ.get("PF_RECORDING_MODE", None) == "replay":
                 return result
             # ignore when connection not found since it can be configured with env var.
             raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")

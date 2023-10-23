@@ -135,7 +135,7 @@ class ToolResolver:
             elif node.type is ToolType.PROMPT:
                 return self._resolve_prompt_node(node)
             elif node.type is ToolType.LLM:
-                if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+                if os.environ.get("PF_RECORDING_MODE", None) == "replay":
                     resolved_tool = self._resolve_replay_node(node, convert_input_types=convert_input_types)
                     if resolved_tool is None:
                         resolved_tool = self._resolve_llm_node(node, convert_input_types=convert_input_types)

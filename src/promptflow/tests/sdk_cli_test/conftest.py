@@ -70,7 +70,7 @@ _connection_setup = False
 @pytest.fixture
 def setup_local_connection(local_client):
     global _connection_setup
-    if _connection_setup or ("PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay"):
+    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     for name, _dct in connection_dict.items():

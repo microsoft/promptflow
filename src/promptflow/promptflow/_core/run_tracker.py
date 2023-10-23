@@ -176,7 +176,7 @@ class RunTracker(ThreadLocalSingleton):
         child_run_infos = self.collect_child_node_runs(run_id)
         run_info.system_metrics = run_info.system_metrics or {}
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
-        if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
             run_info.system_metrics["total_tokens"] = 0
 
     def _node_run_postprocess(self, run_info: RunInfo, output, ex: Optional[Exception]):

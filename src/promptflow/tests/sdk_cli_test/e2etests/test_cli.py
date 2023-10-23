@@ -47,6 +47,11 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
+def copy_file(src, dst):
+    shutil.copyfile(src, dst)
+    shutil.copymode(src, dst)
+
+
 @pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.cli_test
 @pytest.mark.e2etest
@@ -175,22 +180,20 @@ class TestCli:
         assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
-        if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
-            # Skip this test in replay mode
-            pass
-        else:
-            with pytest.raises(Exception) as e:
-                run_pf_command(
-                    "run",
-                    "create",
-                    "--flow",
-                    f"{FLOWS_DIR}/web_classification",
-                    "--data",
-                    f"{DATAS_DIR}/webClassification3.jsonl",
-                    "--connection",
-                    "classify_with_llm.connection=not_exist",
-                )
-            assert "Connection 'not_exist' required" in str(e.value)
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in replay mode, TODO, replay should support local_alt_aoai_connection.")
+        with pytest.raises(Exception) as e:
+            run_pf_command(
+                "run",
+                "create",
+                "--flow",
+                f"{FLOWS_DIR}/web_classification",
+                "--data",
+                f"{DATAS_DIR}/webClassification3.jsonl",
+                "--connection",
+                "classify_with_llm.connection=not_exist",
+            )
+        assert "Connection 'not_exist' required" in str(e.value)
 
         f = io.StringIO()
         with contextlib.redirect_stdout(f):
@@ -360,6 +363,9 @@ class TestCli:
                 )
             outerr = capsys.readouterr()
             assert f"Cannot find the variant invalid_variant for {node_name}." in outerr.out
+            copy_file(
+                Path(temp_dir) / "storage_record.json", Path(FLOWS_DIR) / "web_classification" / "storage_record.json"
+            )
 
     def test_pf_flow_test_single_node(self):
         node_name = "fetch_text_content_from_url"
@@ -475,7 +481,7 @@ class TestCli:
         )
 
     def test_pf_flow_test_with_additional_includes(self):
-        if "PF_RECORDING_MODE" in os.environ:
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
             pytest.skip("Skip this test in replay mode, TODO, replay should support additional includes.")
         run_pf_command(
             "flow",
@@ -644,6 +650,8 @@ class TestCli:
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
     def test_init_chat_flow(self):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in replay mode, temp dir included.")
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
             flow_name = "chat_flow"
@@ -672,6 +680,8 @@ class TestCli:
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
     def test_flow_init(self, capsys):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in replay mode, temp dir included.")
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
             flow_name = "standard_flow"
@@ -1000,6 +1010,8 @@ class TestCli:
         assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     def test_flow_test_inputs(self, capsys, caplog):
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+            pytest.skip("Skip this test in replay mode, Cannot test inputs in fake inputs.")
         # Flow test missing required inputs
         with pytest.raises(SystemExit):
             run_pf_command(

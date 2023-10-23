@@ -283,7 +283,7 @@ class TestFlowRun:
 
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
-        if "PF_RECORDING_MODE" in os.environ and os.environ["PF_RECORDING_MODE"] == "replay":
+        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
             pytest.skip("Skip this test in replay mode")
         with pytest.raises(Exception) as e:
             pf.run(
