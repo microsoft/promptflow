@@ -1,18 +1,19 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
-import base64
-import io
 import inspect
+import io
 import json
-from pathlib import Path
 from dataclasses import asdict
 from os import PathLike
+from pathlib import Path
 from typing import Union
 
 from promptflow._core.tool_meta_generator import is_tool
 from promptflow._core.tools_manager import collect_package_tools
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow._utils.tool_utils import function_to_interface
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
@@ -99,8 +100,11 @@ class ToolOperations:
         :rtype: str, Dict[str, str]
         """
         tool, extra_info = self._parse_tool_from_function(tool_func, initialize_inputs)
-        tool_name = f"{tool.module}.{tool.class_name}.{tool.function}" \
-            if tool.class_name is not None else f"{tool.module}.{tool.function}"
+        tool_name = (
+            f"{tool.module}.{tool.class_name}.{tool.function}"
+            if tool.class_name is not None
+            else f"{tool.module}.{tool.function}"
+        )
         construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
         if extra_info:
             if "icon" in extra_info:
@@ -113,23 +117,21 @@ class ToolOperations:
     @staticmethod
     def _serialize_image_data(image_path):
         """Serialize image to base64."""
-        from PIL import Image
+        from PIL import Image as PIL_Image
 
         with open(image_path, "rb") as image_file:
             # Create a BytesIO object from the image file
             image_data = io.BytesIO(image_file.read())
 
         # Open the image and resize it
-        img = Image.open(image_data)
+        img = PIL_Image.open(image_data)
         if img.size != (16, 16):
-            img = img.resize((16, 16), Image.Resampling.LANCZOS)
-
-        # Save the resized image to a data URL
+            img = img.resize((16, 16), PIL_Image.Resampling.LANCZOS)
         buffered = io.BytesIO()
         img.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue())
-        data_url = 'data:image/png;base64,' + img_str.decode('utf-8')
-        return data_url
+        icon_image = Image(buffered.getvalue(), mime_type="image/png")
+        image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
+        return image_url
 
     def list(
         self,
