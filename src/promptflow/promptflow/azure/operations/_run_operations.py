@@ -825,7 +825,7 @@ class RunOperations(_ScopeDependentOperations, TelemetryMixin):
         flow = run.flow
         if os.path.isdir(flow):
             flow = os.path.join(flow, DAG_FILE_NAME)
-        with open(flow, "r") as f:
+        with open(flow, "r", encoding="utf-8") as f:
             flow_dict = yaml.safe_load(f)
         environment = flow_dict.get("environment", {})
 
