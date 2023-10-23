@@ -1,0 +1,30 @@
+my_tool_package.tools.whisper.whisper:
+  name: Whisper
+  type: python
+  description: 101
+  module: my_tool_package.tools.whisper
+  function: whisper
+  inputs:
+    connection:
+      type:
+      - AzureOpenAIConnection
+    endpoint:
+      type:
+      - string
+      enum:
+      - transcription
+      - translation
+    file:
+      type:
+      - file_path
+    prompt:
+      type:
+      - string
+    response_format:
+      type:
+      - string
+      enum:
+      - text
+      - srt
+      - vtt
+      - verbose_json

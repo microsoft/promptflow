@@ -8,7 +8,7 @@ from promptflow.connections import AzureOpenAIConnection
 # since the code here is in promptflow namespace as well
 from promptflow._internal import tool
 from promptflow.tools.common import handle_openai_error
-from promptflow.tools.exception import InvalidWhisperEndpoint
+# from promptflow.tools.exception import InvalidWhisperEndpoint
 
 
 class WhisperEndpoint(str, Enum):
@@ -29,24 +29,21 @@ def whisper(connection: AzureOpenAIConnection, file: FilePath, endpoint: Whisper
     audio_file = open(file, 'rb')
     if endpoint == WhisperEndpoint.Transcription:
         return openai.Audio.transcribe(
-            model="whisper-1",
+            model="whisper",
             file=audio_file,
             prompt = prompt,
-            response_format = response_format
-            api_key=connection.api_key,
-            api_base=connection.api_base,
-            api_version=connection.api_version,
-            api_type=connection.api_type
+            response_format = response_format,
+            **connection_dict
         )
     elif endpoint == WhisperEndpoint.Translation:
         return openai.Audio.translate(
-            model="whisper-1",
+            model="whisper",
             file=audio_file,
             prompt = prompt,
-            response_format = response_format
+            response_format = response_format,
             **connection_dict
         )
     else:
         error_message = f"Not Support endpoint '{endpoint}' for whisper api. " \
                         f"Endpoint should be in [Transcription, Translation]."
-        raise InvalidWhisperEndpoint(message=error_message)
+        raise Exception(message=error_message)
