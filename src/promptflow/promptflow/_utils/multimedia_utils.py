@@ -96,7 +96,7 @@ def _create_image_from_dict(image_dict: dict):
     for k, v in image_dict.items():
         format, resource = _get_multimedia_info(k)
         if resource == "path":
-            return _create_image_from_file(v, mime_type=f"image/{format}")
+            return _create_image_from_file(Path(v), mime_type=f"image/{format}")
         elif resource == "base64":
             return _create_image_from_base64(v, mime_type=f"image/{format}")
         elif resource == "url":
@@ -176,10 +176,7 @@ def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
 
 
 def convert_multimedia_data_to_base64(value: Any, with_type=False):
-    func = (
-        lambda x: f"data:{x._mime_type};base64," + PFBytes.to_base64(x) if with_type else PFBytes.to_base64
-    )  # noqa: E731
-    to_base64_funcs = {PFBytes: func}
+    to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type})}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
