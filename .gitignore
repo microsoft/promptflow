@@ -182,3 +182,7 @@ scripts/docs/_build/
 .pdfs
 config.json
 src/promptflow/promptflow/azure/_restclient/swagger.json
+
+# chat-with-pdf's prebuilt index
+!.pdfs/
+!.index/
