@@ -241,8 +241,6 @@ class TestExecutor:
     def test_executor_exec_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections):
         self.skip_serp(flow_folder, dev_connections)
         yaml_file = get_yaml_file(flow_folder)
-        working_dir = get_yaml_working_dir(flow_folder)
-        os.chdir(working_dir)
         run_info = FlowExecutor.load_and_exec_node(
             yaml_file,
             node_name,
