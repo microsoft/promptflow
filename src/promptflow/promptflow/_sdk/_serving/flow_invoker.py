@@ -2,6 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import logging
+from pathlib import Path
 from typing import Callable, Union
 
 from promptflow import PFClient
@@ -10,6 +11,7 @@ from promptflow._sdk._load_functions import load_flow
 from promptflow._sdk._serving._errors import UnexpectedConnectionProviderReturn, UnsupportedConnectionProvider
 from promptflow._sdk._serving.utils import validate_request_data
 from promptflow._sdk._utils import (
+    dump_flow_result,
     get_local_connections_from_executable,
     override_connection_config_with_environment_variable,
     resolve_connections_environment_variable_reference,
@@ -17,7 +19,10 @@ from promptflow._sdk._utils import (
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
+from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.executor import FlowExecutor
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
@@ -39,14 +44,21 @@ class FlowInvoker:
         flow: [str, Flow],
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
+        **kwargs,
     ):
         self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
+        # Pass dump_to path to dump flow result for extension.
+        self._dump_to = kwargs.get("dump_to", None)
+
         self._init_connections(connection_provider)
         self._init_executor()
         self.flow = self.executor._flow
+        self._dump_file_prefix = "chat" if self._is_chat_flow else "flow"
 
     def _init_connections(self, connection_provider):
+        executable = self.flow_entity._init_executable()
+        self._is_chat_flow, _, _ = FlowOperations._is_chat_flow(executable)
         connection_provider = "local" if connection_provider is None else connection_provider
         if isinstance(connection_provider, str):
             logger.info(f"Getting connections from pf client with provider {connection_provider}...")
@@ -77,11 +89,15 @@ class FlowInvoker:
 
     def _init_executor(self):
         logger.info("Promptflow executor starts initializing...")
+        storage = None
+        if self._dump_to:
+            storage = DefaultRunStorage(base_dir=self._dump_to, sub_dir=Path(".promptflow/intermediate"))
         self.executor = FlowExecutor.create(
             flow_file=self.flow_entity.path,
             working_dir=self.flow_entity.code,
             connections=self.connections,
             raise_ex=True,
+            storage=storage,
         )
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         logger.info("Promptflow executor initiated successfully.")
@@ -101,4 +117,11 @@ class FlowInvoker:
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
-        return result.output
+        # Get base64 for multi modal object
+        resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in result.output.items()}
+        if self._dump_to:
+            result.output = persist_multimedia_data(
+                result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
+            )
+            dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
+        return resolved_outputs
