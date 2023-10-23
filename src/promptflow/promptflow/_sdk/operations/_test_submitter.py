@@ -203,6 +203,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
+                output_sub_dir=".promptflow/intermediate",
             )
             record_node_run(result, self._origin_flow.code)
             return result
