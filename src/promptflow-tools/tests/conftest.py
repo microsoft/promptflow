@@ -1,9 +1,9 @@
 import json
 import os
-import sys
-from pathlib import Path
-
 import pytest
+import sys
+
+from pathlib import Path
 from pytest_mock import MockerFixture  # noqa: E402
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
 # since the code here is in promptflow namespace as well
@@ -45,6 +45,28 @@ def serp_connection():
     return ConnectionManager().get("serp_connection")
 
 
+def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
+    '''Verify that there is a MIR endpoint up and available for the Custom Connection.
+    We explicitly do not pass the endpoint key to avoid the delay in generating a response.
+    '''
+
+    import urllib.request
+    from urllib.request import HTTPError
+    from urllib.error import URLError
+
+    try:
+        urllib.request.urlopen(
+            urllib.request.Request(connection.configs['endpoint_url']),
+            timeout=50)
+    except HTTPError as e:
+        # verify that the connection is not authorized, anything else would mean the endpoint is failed
+        return e.code == 403
+    except URLError:
+        # Endpoint does not exist - skip the test
+        return False
+    raise Exception("Task Succeeded unexpectedly.")
+
+
 @pytest.fixture
 def gpt2_custom_connection():
     return ConnectionManager().get("gpt2_connection")
@@ -68,6 +90,10 @@ def skip_if_no_key(request, mocker):
         elif isinstance(connection, CustomConnection):
             if "endpoint_api_key" not in connection.secrets or "-api-key" in connection.secrets["endpoint_api_key"]:
                 pytest.skip('skipped because no key')
+            # Verify Custom Connections, but only those used by the Open_Source_LLM Tool
+            if "endpoint_url" in connection.configs and "-endpoint-url" not in connection.configs["endpoint_url"]:
+                if not verify_oss_llm_custom_connection(connection):
+                    pytest.skip('skipped because the connection is not valid')
 
 
 # example prompts
