@@ -167,6 +167,7 @@ class TestToolsManager:
         }
 
         expected_template = {
+            "$schema": "https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json",
             "name": "to_replace_with_connection_name",
             "type": "custom",
             "custom_type": "MyFirstConnection",
@@ -197,5 +198,4 @@ class TestToolsManager:
 
         content = templates["my_tool_package.tools.my_tool_with_custom_strong_type_connection.MyCustomConnection"]
         expected_template_str = textwrap.dedent(expected_template)
-
-        assert content in expected_template_str
+        assert expected_template_str in content
