@@ -18,7 +18,7 @@ pip install -r requirements.txt
 Create connection if you haven't done that.
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create -f my_custom_connection.yml --set secrets.api_key='<your_api_key>' configs.api_url='<your_api_url>'
+pf connection create -f my_custom_connection.yml --set secrets.api_key='<your_api_key>' configs.api_base='<your_api_base>'
 ```
 
 Ensure you have created `my_custom_connection` connection.
@@ -36,7 +36,7 @@ pf flow test --flow .
 
 # test with flow inputs
 pf flow test --flow . --inputs text="Promptflow"
-
+```
 
 ### Run with multiple lines data
 

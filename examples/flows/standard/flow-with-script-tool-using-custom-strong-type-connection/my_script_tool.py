@@ -12,11 +12,11 @@ class MyCustomConnection(CustomStrongTypeConnection):
     :type api_base: String
     """
     api_key: Secret
-    api_url: str = "This is a fake api url."
+    api_base: str = "This is a fake api base."
 
 
 @tool
 def my_tool(connection: MyCustomConnection, input_text: str) -> str:
     # Replace with your tool code.
-    # Use custom strong type connection like: connection.api_key, connection.api_url
+    # Use custom strong type connection like: connection.api_key, connection.api_base
     return "Hello " + input_text

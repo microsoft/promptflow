@@ -36,7 +36,7 @@ pf flow test --flow .
 
 # test with flow inputs
 pf flow test --flow . --inputs text="Promptflow"
-
+```
 
 ### Run with multiple lines data
 
