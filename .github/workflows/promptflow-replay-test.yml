@@ -89,7 +89,7 @@ jobs:
         python -m pip install --upgrade wheel
         python -m pip install --upgrade keyrings.alt
         python -m pip install --upgrade beautifulsoup4==4.12.2
-        gci . -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci . -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName --force}}
         pip freeze
     - name: Azure Login
       uses: azure/login@v1
@@ -109,7 +109,6 @@ jobs:
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
           -l eastus `
           -m "unittest or e2etest" `
-          -n ${{ steps.cpu-cores.outputs.count }} `
           --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
     - name: Upload Test Results
       if: always()

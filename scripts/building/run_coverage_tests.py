@@ -16,7 +16,7 @@ if __name__ == "__main__":
         help="Pytest marker to identify the tests to run",
         default="all",
     )
-    parser.add_argument("-n", help="Pytest number of process to run the tests", default="15")
+    parser.add_argument("-n", help="Pytest number of process to run the tests", default="auto")
     parser.add_argument(
         "--model-name",
         help="The model file name to run the tests",
@@ -71,8 +71,6 @@ if __name__ == "__main__":
     pytest_command += [
         "-n",
         args.n,
-        "--dist",
-        "loadgroup",
         "--log-level=info",
         "--log-format=%(asctime)s %(levelname)s %(message)s",
         "--log-date-format=[%Y-%m-%d %H:%M:%S]",
