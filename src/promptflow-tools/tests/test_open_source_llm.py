@@ -76,12 +76,12 @@ def completion_endpoints_provider(endpoints_provider: Dict[str, List[str]]) -> D
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenSourceLLM:
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
-
     chat_prompt = """system:
 You are a AI which helps Customers answer questions.
 
 user:
 """ + completion_prompt
+
 
     @pytest.mark.skip_if_no_key("gpt2_custom_connection")
     def test_open_source_llm_completion(self, gpt2_provider):

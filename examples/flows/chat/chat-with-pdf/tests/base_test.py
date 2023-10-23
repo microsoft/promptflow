@@ -25,7 +25,7 @@ class BaseTest(unittest.TestCase):
             "MAX_COMPLETION_TOKENS": 256,
             "VERBOSE": True,
             "CHUNK_SIZE": 1024,
-            "CHUNK_OVERLAP": 32,
+            "CHUNK_OVERLAP": 64,
         }
         self.config_2k_context = {
             "EMBEDDING_MODEL_DEPLOYMENT_NAME": "text-embedding-ada-002",
@@ -34,7 +34,7 @@ class BaseTest(unittest.TestCase):
             "MAX_COMPLETION_TOKENS": 256,
             "VERBOSE": True,
             "CHUNK_SIZE": 1024,
-            "CHUNK_OVERLAP": 32,
+            "CHUNK_OVERLAP": 64,
         }
 
         # Switch current working directory to the folder of this file

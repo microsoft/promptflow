@@ -175,8 +175,11 @@ def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_data_to_base64(value: Any):
-    to_base64_funcs = {PFBytes: PFBytes.to_base64}
+def convert_multimedia_data_to_base64(value: Any, with_type=False):
+    func = (
+        lambda x: f"data:{x._mime_type};base64," + PFBytes.to_base64(x) if with_type else PFBytes.to_base64
+    )  # noqa: E731
+    to_base64_funcs = {PFBytes: func}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
