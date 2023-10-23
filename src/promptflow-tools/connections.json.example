@@ -39,6 +39,28 @@
       "endpoint_api_key"
     ]
   },
+  "llama_chat_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "endpoint_url": "llama-chat-endpoint-url",
+      "model_family": "LLAMA",
+      "endpoint_api_key": "llama-chat-endpoint-api-key"
+    },
+    "module": "promptflow.connections",
+    "secret_keys": [
+      "endpoint_api_key"
+    ]
+  },
+  "open_source_llm_ws_service_connection": {
+    "type": "CustomConnection",
+    "value": {
+      "service_credential": "service-credential"
+    },
+    "module": "promptflow.connections",
+    "secret_keys": [
+      "service_credential"
+    ]
+  },
   "open_ai_connection": {
     "type": "OpenAIConnection",
     "value": {

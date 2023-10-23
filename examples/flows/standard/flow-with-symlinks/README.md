@@ -75,13 +75,13 @@ pf run create --file run.yml --stream
 
 ``` bash
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
+pfazure run create --flow . --data ./data.jsonl --stream --runtime example-runtime-ci --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
 # pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
 
 # set default workspace
 az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
-pfazure run create --file run.yml --runtime demo-mir --stream
+pfazure run create --file run.yml --runtime example-runtime-ci --stream
 # pfazure run create --file run.yml --stream # automatic runtime
 ```

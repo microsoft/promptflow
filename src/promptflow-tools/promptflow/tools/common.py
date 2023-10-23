@@ -82,7 +82,9 @@ def validate_functions(functions):
 
 
 def parse_function_role_prompt(function_str):
-    pattern = r"\n*name:\n\s*(\S+)\s*\n*content:\n(.*)"
+    # customer can add ## in front of name/content for markdown highlight.
+    # and we still support name/content without ## prefix for backward compatibility.
+    pattern = r"\n*#{0,2}\s*name:\n\s*(\S+)\s*\n*#{0,2}\s*content:\n(.*)"
     match = re.search(pattern, function_str, re.DOTALL)
     if match:
         return match.group(1), match.group(2)
@@ -98,7 +100,9 @@ def parse_function_role_prompt(function_str):
 
 def parse_chat(chat_str):
     # openai chat api only supports below roles.
-    separator = r"(?i)\n+\s*(system|user|assistant|function)\s*:\s*\n"
+    # customer can add single # in front of role name for markdown highlight.
+    # and we still support role name without # prefix for backward compatibility.
+    separator = r"(?i)\n+\s*#?\s*(system|user|assistant|function)\s*:\s*\n"
     # Add a newline at the beginning to ensure consistent formatting of role lines.
     # extra new line is removed when appending to the chat list.
     chunks = re.split(separator, '\n'+chat_str)
@@ -214,24 +218,15 @@ def process_function_call(function_call):
         common_tsg = f"Here is a valid example: {function_call_example}. See the guide at " \
                      "https://platform.openai.com/docs/api-reference/chat/create#chat/create-function_call " \
                      "or view sample 'How to call functions with chat models' in our gallery."
-        try:
-            param = json.loads(function_call)
-        except json.JSONDecodeError:
-            raise ChatAPIInvalidFunctions(
-                message=f"function_call parameter '{function_call}' is an invalid json. {common_tsg}")
-        except TypeError:
-            raise ChatAPIInvalidFunctions(
-                message=f"function_call parameter '{function_call}' must be str, bytes or bytearray"
-                        f", but not {type(function_call)}. {common_tsg}"
-                )
+        param = function_call
         if not isinstance(param, dict):
             raise ChatAPIInvalidFunctions(
-                message=f"function_call parameter '{function_call}' must be a dict, but not {type(param)}. {common_tsg}"
+                message=f"function_call parameter '{param}' must be a dict, but not {type(function_call)}. {common_tsg}"
             )
         else:
-            if "name" not in param:
+            if "name" not in function_call:
                 raise ChatAPIInvalidFunctions(
-                    message=f'function_call parameter {function_call} must contain "name" field. {common_tsg}'
+                    message=f'function_call parameter {json.dumps(param)} must contain "name" field. {common_tsg}'
                 )
     return param
 

@@ -58,7 +58,7 @@ column_mapping:
 
 Since the flow will return each inputs in output, we can get the actual inputs from `outputs.output` field in run details:
 
-![column_mapping_details](../media/column_mapping_details.png)
+![column_mapping_details](../../media/column_mapping_details.png)
 
 - Input "input1" has value "val1_in_column_mapping" since it's specified as constance in `column_mapping`.
 - Input "input2" has value "default_val2" since it used default value in flow dag.
