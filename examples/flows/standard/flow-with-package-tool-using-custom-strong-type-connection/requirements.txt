@@ -1,4 +1,4 @@
 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
-promptflow==0.0.108028960
+promptflow==0.0.108377202
 
 my-tools-package==0.0.3

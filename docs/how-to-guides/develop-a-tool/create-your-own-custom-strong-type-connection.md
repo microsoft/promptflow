@@ -13,7 +13,7 @@ For other connections types, please refer to [Connections](https://microsoft.git
 
   ```bash
   # Eventually only need to pip install promptflow==0.1.0b8
-  pip install "promptflow==0.0.108028960" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+  pip install "promptflow==0.0.108377202" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
   ```
 
 ## Create your own custom strong type connection
@@ -56,6 +56,7 @@ Make sure that you adhere to the following guidelines:
   The purpose of parsing the docstring into a connection template is to enhance the clarity and understanding for users when creating a custom strong type connection. By providing detailed explanations for each key, users can easily grasp the meaning and purpose of each key, allowing them to accurately fill in the corresponding values.
   
   ```yaml
+  $schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json
   name: "to_replace_with_connection_name"
   type: custom
   custom_type: MyCustomConnection
