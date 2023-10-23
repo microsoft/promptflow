@@ -304,7 +304,7 @@ class TestExecutor:
              "image": "logo.jpg", "image_name": "Microsoft's logo"}, {},)
         ],
     )
-    def test_executor_exec_with_image_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs,
+    def test_executor_exec_node_with_image(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs,
                                            dev_connections):
         self.skip_serp(flow_folder, dev_connections)
         yaml_file = get_yaml_file(flow_folder)
