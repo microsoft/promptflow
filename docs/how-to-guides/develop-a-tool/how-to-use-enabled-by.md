@@ -1,20 +1,19 @@
-# How to use enabled by in the tool package
+# Use Enabled_By to Support Cascading Settings between Inputs for Tool
 
-This guide will instruct you on how to use the "enabled by" feature in the tool package. The "enabled by" feature is designed to display which inputs are enabled when a customer uses a specific input type or input value. This feature is particularly useful if you need to adapt your inputs based on varying requirements.
+This guide will instruct you on how to use the "enabled by" feature in the tool package. The "enabled by" feature is designed to support cascading settings between inputs for tool. 
+Cascading settings between inputs are frequently used in situations where the selection in one input field determines what sebsequent inputs should be shown. 
+This approach help in creating a more efficient, user-friendly, and error-free input process. To support cascading settings between tool inputs, we've introduced following two configurations:
+* "enabled_by + enabled_by_type": This setting enabled the current input based on the value type of the input shown in "enabled_by" field.
+* "enabled_by + enabled_by_value": This setting enabled the current input based on the actual value of the input shown in "enabled_by" field.
 
-We introduce parameter "enabled_by" in the tool yaml to determine which input is enabled by which other input.
-Concurrently, we support enabling an input by another input type or input value, Hence, we introduce two additional parameters: "enabled_by_type" and "enabled_by_value".
-
-> Note 1: We do not recommend using "enabled_by_type" and "enabled_by_value" simultaneously. If both are used, "enabled_by_type" will be ignored.
-
-> Note 2: Both "enabled_by_type" and "enabled_by_value" in tool yaml are list types, which means you can use multiple inputs to enable a single input. For instance, if "enabled_by_type" is [AzureOpenAIConnection, OpenAIConnection], the input will be enabled when the connection type is either AzureOpenAIConnection or OpenAIConnection.
-
+> Note: The "enabled_by_type" and "enabled_by_value" configurations should not be used simultaneously for the same input. Both enabled_by_type and enabled_by_value in the tool yaml are of list type, implying that a single input can be enabled by multiple values from the dependent input.
 ## Prerequisites
 To proceed, it's crucial for you to understand the process of developing a tool and generating a tool yaml. For thorough insights and instructions, please refer to [Create and Use Tool Package](create-and-use-tool-package.md). 
 
-## How to use "enabled_by_type"
-Assume you want to develop a tool with four inputs: "connection", "input", "deployment_name", and "model". The "deployment_name" and "model" are enabled by "connection" type. When the "connection" type is AzureOpenAIConnection, the "deployment_name" input is enabled and displayed. When the "connection" type is OpenAIConnection, the "model" input is enabled and displayed. You need to support enable by in two part: tool and tool yaml. Here is an example of how you can support the "enabled by" feature in your tool and tool yaml.
-
+## Use "enabled_by + enabled_by_type" in tool
+Here we take [this existing tool](https://github.com/microsoft/promptflow/blob/eeb1df65e55d93e1a6fe30f58adda1e9d241db61/src/promptflow-tools/promptflow/tools/embedding.py) as example, this tool has four inputs: "connection", "input", "deployment_name", and "model". 
+The "deployment_name" and "model" are enabled by the type of input "connection". When the type of "connection" input is AzureOpenAIConnection, the "deployment_name" input is enabled and displayed. When the type of "connection" input is OpenAIConnection, the "model" input is enabled and displayed. 
+Below shows how to support this cascading setting in both tool code and tool yaml.
 
 ### Step 1: How to define the rules in the tool
 All inputs will be passed to the tool, allowing you to define your own set of rules to determine which input to use. You need to pay attention to some key points:
@@ -110,7 +109,7 @@ promptflow.tools.embedding.embedding:
 
 
 
-## How to use "enabled_by_value"
+## Use "enabled_by + enabled_by_value" in tool
 Assume you want to develop a tool with four inputs: "connection", "input", "deployment_name", and "model". The "deployment_name" and "model" are enabled by "connection" value. When the "connection" value is "azure-open-ai-connection", the "deployment_name" input is enabled and displayed. When the "connection" value is "open-ai-connection", the "model" input is enabled and displayed. You need to support enable by in two part: tool and tool yaml. Here is an example of how you can support the "enabled by" feature in your tool and tool yaml.
 
 
