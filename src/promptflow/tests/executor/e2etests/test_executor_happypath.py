@@ -236,10 +236,6 @@ class TestExecutor:
             ("connection_as_input", "conn_node", None, None),
             ("simple_aggregation", "accuracy", {"text": "A"}, {"passthrough": "B"}),
             ("script_with_import", "node1", {"text": "text"}, None),
-            ("python_tool_with_multiple_image_nodes", "python_node_2", {"logo_content": "Microsoft and four squares"},
-             {"python_node": {"image": "logo.jpg", "image_name": "Microsoft's logo", "image_list": ["logo.jpg"]}}),
-            ("python_tool_with_multiple_image_nodes", "python_node", {
-             "image": "logo.jpg", "image_name": "Microsoft's logo"}, {},)
         ],
     )
     def test_executor_exec_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs, dev_connections):
@@ -253,10 +249,40 @@ class TestExecutor:
             flow_inputs=flow_inputs,
             dependency_nodes_outputs=dependency_nodes_outputs,
             connections=dev_connections,
-            output_dir=("./temp"),
             raise_ex=True,
         )
         assert run_info.output is not None
+        assert run_info.status == Status.Completed
+        assert isinstance(run_info.api_calls, list)
+        assert run_info.node == node_name
+        assert run_info.system_metrics["duration"] >= 0
+
+    @pytest.mark.parametrize(
+        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
+        [
+            ("python_tool_with_multiple_image_nodes", "python_node_2", {"logo_content": "Microsoft and four squares"},
+             {"python_node": {"image": {"data:image/jpg;path": "logo.jpg"}, "image_name": "Microsoft's logo",
+                              "image_list": [{"data:image/jpg;path": "logo.jpg"}]}}),
+            ("python_tool_with_multiple_image_nodes", "python_node", {
+             "image": "logo.jpg", "image_name": "Microsoft's logo"}, {},)
+        ],
+    )
+    def test_executor_exec_with_image_node(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs,
+                                           dev_connections):
+        self.skip_serp(flow_folder, dev_connections)
+        yaml_file = get_yaml_file(flow_folder)
+        working_dir = get_yaml_working_dir(flow_folder)
+        os.chdir(working_dir)
+        run_info = FlowExecutor.load_and_exec_node(
+            yaml_file,
+            node_name,
+            flow_inputs=flow_inputs,
+            dependency_nodes_outputs=dependency_nodes_outputs,
+            connections=dev_connections,
+            output_relative_path_dir=("./temp"),
+            raise_ex=True,
+        )
+        assert "data:image/jpg;path" and "temp" in str(run_info.output)
         assert run_info.status == Status.Completed
         assert isinstance(run_info.api_calls, list)
         assert run_info.node == node_name

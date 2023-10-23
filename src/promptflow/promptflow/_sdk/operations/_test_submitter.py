@@ -204,7 +204,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
-                output_dir=".promptflow/intermediate",
+                output_relative_path_dir=".promptflow/intermediate",
             )
             return result
 
