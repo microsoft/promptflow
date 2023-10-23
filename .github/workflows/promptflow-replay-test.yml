@@ -104,7 +104,9 @@ jobs:
       working-directory: ${{ env.testWorkingDirectory }}
       run: |
         gci env:* | sort-object name
+        $env:PYTHONPATH=""
         az account show
+        echo '{}' > ${{ github.workspace }}/src/promptflow/connections.json
         python "../../scripts/building/run_coverage_tests.py" `
           -p promptflow `
           -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
