@@ -1,7 +1,8 @@
 name: GitHub Event Handler
 
 on:
-  status
+  pull_request_target:
+    types: [opened]
 
 env:
   head_sha: ${{ github.sha }}
@@ -30,41 +31,45 @@ jobs:
               Write-Host "Pending: " $env:pending_count
             }
           }
-          $(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs) | ConvertFrom-Json | Select-Object -ExpandProperty check_runs | ForEach-Object {
-            if ($_.name.Contains('promptflow-executor-unit-test')) {
-              check_conclusion $_.conclusion $_.name
-            }
-            if ($_.name.Contains('promptflow-executor-e2e-test')) {
-              check_conclusion $_.conclusion $_.name
-            }
-            if ($_.name.Contains('promptflow-sdk-cli-test')) {
-              check_conclusion $_.conclusion $_.name
-            }
-          }
 
-          Write-Host "Total not success test numbers: "$pending_count
-          Write-Host "Total success test numbers: "$success_count
+          while ($true) {
+            $(gh api /repos/${{ github.repository }}/commits/${{ env.head_sha }}/check-runs) | ConvertFrom-Json | Select-Object -ExpandProperty check_runs | ForEach-Object {
+              if ($_.name.Contains('promptflow-executor-unit-test')) {
+                check_conclusion $_.conclusion $_.name
+              }
+              if ($_.name.Contains('promptflow-executor-e2e-test')) {
+                check_conclusion $_.conclusion $_.name
+              }
+              if ($_.name.Contains('promptflow-sdk-cli-test')) {
+                check_conclusion $_.conclusion $_.name
+              }
+            }
 
-          if ($pending_count -eq 0) {
-            gh api `
-              --method POST `
-              -H "Accept: application/vnd.github+json" `
-              -H "X-GitHub-Api-Version: 2022-11-28" `
-              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} `
-              -f state='success' `
-              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' `
-              -f description='The build succeeded!' `
-              -f context='https://aka.ms/azsdk/checkenforcer' 
-          } else {
-            gh api `
-              --method POST `
-              -H "Accept: application/vnd.github+json" `
-              -H "X-GitHub-Api-Version: 2022-11-28" `
-              /repos/${{ github.repository }}/statuses/${{ env.head_sha }} `
-              -f state='pending' `
-              -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' `
-              -f description='Waiting for all checks to succeed' `
-              -f context='https://aka.ms/azsdk/checkenforcer' 
+            Write-Host "Total not success test numbers: "$pending_count
+            Write-Host "Total success test numbers: "$success_count
+
+            if ($pending_count -eq 0) {
+              gh api `
+                --method POST `
+                -H "Accept: application/vnd.github+json" `
+                -H "X-GitHub-Api-Version: 2022-11-28" `
+                /repos/${{ github.repository }}/statuses/${{ env.head_sha }} `
+                -f state='success' `
+                -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' `
+                -f description='The build succeeded!' `
+                -f context='https://aka.ms/azsdk/checkenforcer' 
+                break
+            } else {
+              gh api `
+                --method POST `
+                -H "Accept: application/vnd.github+json" `
+                -H "X-GitHub-Api-Version: 2022-11-28" `
+                /repos/${{ github.repository }}/statuses/${{ env.head_sha }} `
+                -f state='pending' `
+                -f target_url='https://github.com/microsoft/promptflow/actions/runs/${{ github.run_id }}' `
+                -f description='Waiting for all checks to succeed' `
+                -f context='https://aka.ms/azsdk/checkenforcer' 
+            }
           }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
