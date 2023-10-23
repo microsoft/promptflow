@@ -3,5 +3,5 @@ from promptflow import tool
 
 
 @tool
-def python_with_image(image: Image) -> Image:
-    return image
+def python_with_image(image: Image, image_name: str) -> Image:
+    return {"image": image, "image_name": image_name, "image_list": [image, image]}
