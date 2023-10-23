@@ -167,6 +167,7 @@ class TestToolsManager:
         }
 
         expected_template = {
+            "$schema": "https: // azuremlschemas.azureedge.net / promptflow / latest / CustomStrongTypeConnection.schema.json",
             "name": "to_replace_with_connection_name",
             "type": "custom",
             "custom_type": "MyFirstConnection",
