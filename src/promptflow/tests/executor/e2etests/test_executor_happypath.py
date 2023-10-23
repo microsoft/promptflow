@@ -1,6 +1,7 @@
 import uuid
 import os
 from types import GeneratorType
+from pathlib import Path
 
 import pytest
 
@@ -12,6 +13,7 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 from promptflow.executor.flow_executor import BulkResult, LineResult
+from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
@@ -27,6 +29,11 @@ SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 SAMPLE_FLOW_WITH_LANGCHAIN_TRACES = "flow_with_langchain_traces"
+
+
+def assert_contains_substrings(s, substrings):
+    for substring in substrings:
+        assert substring in s
 
 
 class MemoryRunStorage(AbstractRunStorage):
@@ -225,6 +232,38 @@ class TestExecutor:
             assert isinstance(node_run_info.api_calls, list)  # api calls is set
 
     @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            "python_tool_with_multiple_image_nodes"
+        ],
+    )
+    def test_executor_exec_line_with_image(self, flow_folder, dev_connections):
+        self.skip_serp(flow_folder, dev_connections)
+        working_dir = get_yaml_working_dir(flow_folder)
+        os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
+        flow_result = executor.exec_line(self.get_line_inputs())
+        assert not executor._run_tracker._flow_runs, "Flow runs in run tracker should be empty."
+        assert not executor._run_tracker._node_runs, "Node runs in run tracker should be empty."
+        assert isinstance(flow_result.output, dict)
+        assert flow_result.run_info.status == Status.Completed
+        node_count = len(executor._flow.nodes)
+        assert isinstance(flow_result.run_info.api_calls, list) and len(flow_result.run_info.api_calls) == node_count
+        substrings = ["data:image/jpg;path", ".jpg"]
+        for i in range(node_count):
+            assert_contains_substrings(str(flow_result.run_info.api_calls[i]), substrings)
+        assert len(flow_result.node_run_infos) == node_count
+        for node, node_run_info in flow_result.node_run_infos.items():
+            assert node_run_info.status == Status.Completed
+            assert node_run_info.node == node
+            assert isinstance(node_run_info.api_calls, list)  # api calls is set
+            assert_contains_substrings(str(node_run_info.inputs), substrings)
+            assert_contains_substrings(str(node_run_info.output), substrings)
+            assert_contains_substrings(str(node_run_info.result), substrings)
+            assert_contains_substrings(str(node_run_info.api_calls[0]), substrings)
+
+    @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
         [
             ("web_classification_no_variants", "summarize_text_content", {}, {"fetch_text_content_from_url": "Hello"}),
@@ -280,13 +319,7 @@ class TestExecutor:
             output_relative_path_dir=("./temp"),
             raise_ex=True,
         )
-
-        def assert_contains_substrings(s, substrings):
-            for substring in substrings:
-                assert substring in s
-
-        substrings = ["data:image/jpg;path", "temp", "jpg"]
-
+        substrings = ["data:image/jpg;path", "temp", ".jpg"]
         assert_contains_substrings(str(run_info.inputs), substrings)
         assert_contains_substrings(str(run_info.output), substrings)
         assert_contains_substrings(str(run_info.result), substrings)
