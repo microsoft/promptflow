@@ -280,7 +280,17 @@ class TestExecutor:
             output_relative_path_dir=("./temp"),
             raise_ex=True,
         )
-        assert "data:image/jpg;path" and "temp" in str(run_info.output)
+
+        def assert_contains_substrings(s, substrings):
+            for substring in substrings:
+                assert substring in s
+
+        substrings = ["data:image/jpg;path", "temp", "jpg"]
+
+        assert_contains_substrings(str(run_info.inputs), substrings)
+        assert_contains_substrings(str(run_info.output), substrings)
+        assert_contains_substrings(str(run_info.result), substrings)
+        assert_contains_substrings(str(run_info.api_calls[0]), substrings)
         assert run_info.status == Status.Completed
         assert isinstance(run_info.api_calls, list)
         assert run_info.node == node_name
