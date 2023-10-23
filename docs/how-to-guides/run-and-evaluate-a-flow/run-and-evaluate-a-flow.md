@@ -28,7 +28,7 @@ Create the run with flow and data, can add `--stream` to stream the run.
 pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream 
 ```
 
-Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](aka.ms/pf/column-mapping).
+Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
 
@@ -118,10 +118,10 @@ In this guide, we use [eval-classification-accuracy](https://github.com/microsof
 
 After the run is finished, you can evaluate the run with below command, compared with the normal run create command, note there are two extra arguments:
 
-- `column-mapping`: A mapping from flow input name to specified data values. Reference [here](aka.ms/pf/column-mapping) for detailed information.
+- `column-mapping`: A mapping from flow input name to specified data values. Reference [here](https://aka.ms/pf/column-mapping) for detailed information.
 - `run`: The run name of the flow run to be evaluated.
 
-More details can be found in [Use column mapping](aka.ms/pf/column-mapping).
+More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```sh
 pf run create --flow evaluation/eval-classification-accuracy --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
@@ -161,7 +161,7 @@ After the run is finished, you can evaluate the run with below command, compared
   - If the data column is from your flow output, then it is specified as `${run.outputs.<output_name>}`.
 - `run`: The run name or run instance of the flow run to be evaluated.
 
-More details can be found in [Use column mapping](aka.ms/pf/column-mapping).
+More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```python
 # set eval flow path

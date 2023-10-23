@@ -42,7 +42,7 @@ pf run create --flow . --data ./data.jsonl --column-mapping groundtruth='${data.
 ```
 
 You can also skip providing `column-mapping` if provided data has same column name as the flow.
-Reference [here](aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
 
 ### 3. create run against other flow run
 
