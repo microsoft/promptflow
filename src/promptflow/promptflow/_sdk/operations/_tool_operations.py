@@ -99,7 +99,8 @@ class ToolOperations:
         :rtype: str, Dict[str, str]
         """
         tool, extra_info = self._parse_tool_from_function(tool_func, initialize_inputs)
-        tool_name = f"{tool.module}.{tool.class_name}.{tool.function}" if tool.class_name is not None else f"{tool.module}.{tool.function}"
+        tool_name = f"{tool.module}.{tool.class_name}.{tool.function}" \
+            if tool.class_name is not None else f"{tool.module}.{tool.function}"
         construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
         if extra_info:
             if "icon" in extra_info:

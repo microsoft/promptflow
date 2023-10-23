@@ -127,10 +127,10 @@ def init_tool(args):
         script_code_path = package_path / package_name
         script_code_path.mkdir(parents=True, exist_ok=True)
         if icon_path:
-            package_icon_path = script_code_path / "icon"
+            package_icon_path = package_path / "icon"
             package_icon_path.mkdir(exist_ok=True)
             dst = shutil.copy2(icon_path, package_icon_path)
-            icon_path = f"os.path.join(__file__, \"..\" , \"icon\", \"{Path(dst).name}\")"
+            icon_path = f"Path(__file__).parent.parent / \"icon\" / \"{Path(dst).name}\""
         # Generate package setup.py
         SetupGenerator(package_name=package_name, tool_name=args.tool).generate_to_file(package_path / "setup.py")
         # Generate manifest file
