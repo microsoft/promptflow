@@ -82,5 +82,5 @@ Run flow with connection `my_custom_connection`.
 az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
-pfazure run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream --runtime demo-mir
+pfazure run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream --runtime example-runtime-ci
 ```
