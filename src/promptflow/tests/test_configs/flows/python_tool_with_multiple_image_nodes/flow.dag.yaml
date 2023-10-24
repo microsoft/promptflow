@@ -2,6 +2,12 @@ inputs:
   image:
     type: image
     default: logo.jpg
+  image_name:
+    type: string
+    default: Microsoft's logo
+  logo_content:
+    type: string
+    default: Microsoft and four squares
 outputs:
   output:
     type: image
@@ -14,10 +20,12 @@ nodes:
     path: python_with_image.py
   inputs:
     image: ${inputs.image}
+    image_name: ${inputs.image_name}
 - name: python_node_2
   type: python
   source:
     type: code
-    path: python_with_image.py
+    path: python_node_2.py
   inputs:
-    image: ${python_node.output}
+    image_dict: ${python_node.output}
+    logo_content: ${inputs.logo_content}
