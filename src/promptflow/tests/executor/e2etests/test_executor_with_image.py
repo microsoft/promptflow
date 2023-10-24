@@ -147,8 +147,7 @@ class TestExecutorWithImage:
         assert_contain_image_reference(run_info)
 
     def test_executor_batch_engine_with_image(self):
-        flow_folder = "python_tool_with_image_input_and_output"
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
+        executor = FlowExecutor.create(get_yaml_file(SIMPLE_IMAGE_FLOW), {})
         input_dirs = {"data": "image_inputs/inputs.jsonl"}
         inputs_mapping = {"image": "${data.image}"}
         output_dir = Path("outputs")
@@ -159,11 +158,11 @@ class TestExecutorWithImage:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-            assert "data:image/jpg;path" in output["output"], f"image is not in {i}th output {output}"
+            assert "data:image/png;path" in output["output"], f"image is not in {i}th output {output}"
         for i, line_result in enumerate(bulk_result.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
-        output_dir = get_flow_folder(flow_folder) / output_dir
+        output_dir = get_flow_folder(SIMPLE_IMAGE_FLOW) / output_dir
         assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
         shutil.rmtree(output_dir)
