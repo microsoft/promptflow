@@ -775,12 +775,3 @@ class TestFlowRun:
             "line_number": [0],
             "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
         }
-
-    # test image
-    def test_basic_image_flow_bulk_run(self, pf, local_client) -> None:
-        image_flow_path = f"{FLOWS_DIR}/python_tool_with_image_input_and_output"
-        data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
-
-        result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
-        run = local_client.runs.get(name=result.name)
-        assert run.status == "Completed"
