@@ -3,13 +3,13 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_runmanagement_localrunmanagement
+name: samples_runmanagement_runmanagement
 on:
   schedule:
-    - cron: "10 19 * * *" # Every day starting at 3:10 BJT
+    - cron: "51 20 * * *" # Every day starting at 4:51 BJT
   pull_request:
     branches: [ main ]
-    paths: [ examples/**, .github/workflows/samples_runmanagement_localrunmanagement.yml ]
+    paths: [ examples/**, .github/workflows/samples_runmanagement_runmanagement.yml ]
   workflow_dispatch:
 
 jobs:
@@ -38,7 +38,7 @@ jobs:
       - name: Test Notebook
         working-directory: examples/tutorials/run-management
         run: |
-          papermill -k python local-run-management.ipynb local-run-management.output.ipynb
+          papermill -k python run-management.ipynb run-management.output.ipynb
       - name: Upload artifact
         if: ${{ always() }}
         uses: actions/upload-artifact@v3
