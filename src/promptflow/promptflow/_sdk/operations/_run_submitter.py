@@ -325,7 +325,7 @@ class RunSubmitter:
             logger.warning(f"Run {run.name} failed when executing in executor.")
             exception = e
             # for user error, swallow stack trace and return failed run since user don't need the stack trace
-            if not isinstance(e, UserErrorException) or bulk_result is None:
+            if not isinstance(e, UserErrorException):
                 # for other errors, raise it to user to help debug root cause.
                 raise e
             # won't raise the exception since it's already included in run object.

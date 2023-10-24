@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 from pathlib import Path
@@ -17,7 +18,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import InputMappingError
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -326,14 +326,18 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(InputMappingError) as e:
-            pf.run(
-                name=run_name,
-                run=failed_run,
-                flow=f"{FLOWS_DIR}/failed_flow",
-                column_mapping={"text": "${run.outputs.text}"},
-            )
-        assert "Couldn't find these mapping relations: ${run.outputs.text}." in str(e.value)
+        run = pf.run(
+            name=run_name,
+            run=failed_run,
+            flow=f"{FLOWS_DIR}/failed_flow",
+            column_mapping={"text": "${run.outputs.text}"},
+        )
+
+        local_storage = LocalStorageOperations(run)
+        with open(local_storage._exception_path, "r") as f:
+            exception = json.load(f)
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
+        assert exception["code"] == "BulkRunException"
 
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
@@ -581,13 +585,18 @@ class TestFlowRun:
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(InputMappingError):
-            pf.run(
-                flow=f"{FLOWS_DIR}/web_classification",
-                data=data_path,
-                column_mapping={"not_exist": "${data.not_exist_key}"},
-                name=name,
-            )
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=data_path,
+            column_mapping={"not_exist": "${data.not_exist_key}"},
+            name=name,
+        )
+
+        local_storage = LocalStorageOperations(run)
+        with open(local_storage._exception_path, "r") as f:
+            exception = json.load(f)
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
+        assert exception["code"] == "BulkRunException"
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
