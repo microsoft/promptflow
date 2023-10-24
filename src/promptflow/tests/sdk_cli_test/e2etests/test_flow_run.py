@@ -1,4 +1,3 @@
-import json
 import os
 import uuid
 from pathlib import Path
@@ -334,8 +333,9 @@ class TestFlowRun:
         )
 
         local_storage = LocalStorageOperations(run)
-        with open(local_storage._exception_path, "r") as f:
-            exception = json.load(f)
+        assert os.path.exists(local_storage._exception_path)
+
+        exception = local_storage.load_exception()
         assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
         assert exception["code"] == "BulkRunException"
 
@@ -593,8 +593,9 @@ class TestFlowRun:
         )
 
         local_storage = LocalStorageOperations(run)
-        with open(local_storage._exception_path, "r") as f:
-            exception = json.load(f)
+        assert os.path.exists(local_storage._exception_path)
+
+        exception = local_storage.load_exception()
         assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
         assert exception["code"] == "BulkRunException"
 
@@ -731,7 +732,7 @@ class TestFlowRun:
 
         assert os.path.exists(local_storage._exception_path)
         exception = local_storage.load_exception()
-        assert "Failed to run 1/1 lines: First error message is" in exception["message"]
+        assert "Failed to run 1/1 lines. First error message is" in exception["message"]
         # line run failures will be stored in additionalInfo
         assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
 
