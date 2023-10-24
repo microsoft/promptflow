@@ -267,8 +267,10 @@ class ToolResolver:
         # To avoid reloading, pass the loaded module to _convert_node_literal_input_types as an arg.
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool, m)
+        # We should pass in the module to the function to avoid reloading the module, due to the module
+        # of script tool was not been loaded in the sys.modules to avoid polluting the global environment.
         callable, init_args = BuiltinsManager._load_tool_from_module(
-            tool.name, tool.module, tool.class_name, tool.function, node.inputs
+            tool.name, tool.module, tool.class_name, tool.function, node.inputs, module=m
         )
         self._remove_init_args(node.inputs, init_args)
         return ResolvedTool(node=node, definition=tool, callable=callable, init_args=init_args)
