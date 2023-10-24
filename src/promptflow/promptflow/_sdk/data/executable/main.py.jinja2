@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
-from promptflow._utils.multimedia_utils import _is_multimedia_dict, MIME_PATTERN
+from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
 
 invoker = None
 {% set indent_level = 4 %}
@@ -84,7 +84,7 @@ def start():
                 st.markdown(f"`{json_dumps(message_items)},`")
 
         def dict_iter_render_message(message_items):
-            if _is_multimedia_dict(message_items):
+            if is_multimedia_dict(message_items):
                 key = list(message_items.keys())[0]
                 value = message_items[key]
                 show_image(value, key)

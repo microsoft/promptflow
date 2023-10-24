@@ -31,7 +31,7 @@ def _get_extension_from_mime_type(mime_type: str):
     return ext
 
 
-def _is_multimedia_dict(multimedia_dict: dict):
+def is_multimedia_dict(multimedia_dict: dict):
     if len(multimedia_dict) != 1:
         return False
     key = list(multimedia_dict.keys())[0]
@@ -122,7 +122,7 @@ def create_image(value: any):
     if isinstance(value, PFBytes):
         return value
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             return _create_image_from_dict(value)
         else:
             raise InvalidImageInput(
@@ -207,7 +207,7 @@ def load_multimedia_data_recursively(value: Any):
     if isinstance(value, list):
         return [load_multimedia_data_recursively(item) for item in value]
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             return _create_image_from_dict(value)
         else:
             return {k: load_multimedia_data_recursively(v) for k, v in value.items()}

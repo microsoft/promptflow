@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._utils.multimedia_utils import _create_image_from_file, _is_multimedia_dict
+from promptflow._utils.multimedia_utils import _create_image_from_file, is_multimedia_dict
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
 from promptflow.executor import FlowExecutor
@@ -83,7 +83,7 @@ def assert_contain_image_reference(value):
         for item in value:
             assert_contain_image_reference(item)
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             path = list(value.values())[0]
             assert isinstance(path, str)
             assert path.endswith(".jpg") or path.endswith(".jpeg") or path.endswith(".png")
@@ -97,7 +97,7 @@ def assert_contain_image_object(value):
         for item in value:
             assert_contain_image_object(item)
     elif isinstance(value, dict):
-        assert not _is_multimedia_dict(value)
+        assert not is_multimedia_dict(value)
         for _, v in value.items():
             assert_contain_image_object(v)
     else:
