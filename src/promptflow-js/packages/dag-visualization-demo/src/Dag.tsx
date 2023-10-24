@@ -3,6 +3,7 @@ import { ReactDagEditor, Graph, useGraphReducer, GraphModel, IGraphConfig, Graph
 import { ToolType } from "./types";
 import { FlowNode } from "./FlowNode";
 
+
 export interface INodeRunStatus {
   node: string;
   /**
@@ -113,7 +114,7 @@ export const Dag: React.FC = () => {
     settings: {
       graphConfig
     },
-    data: GraphModel.fromJSON({})
+    data: GraphModel.fromJSON()
   }, undefined);
   return (
     <ReactDagEditor
