@@ -116,9 +116,9 @@ def extract_comments_mapping(keys, doc):
             type_pattern = rf":type {key}: (.*)"
             key_type = " ".join(re.findall(type_pattern, doc)).rstrip(".")
             if key_type and key_description:
-                comments_map[key] = ", ".join([key_type, key_description])
+                comments_map[key] = " ".join([key_type + " type.", key_description])
             elif key_type:
-                comments_map[key] = key_type
+                comments_map[key] = key_type + " type."
             elif key_description:
                 comments_map[key] = key_description
         except re.error:

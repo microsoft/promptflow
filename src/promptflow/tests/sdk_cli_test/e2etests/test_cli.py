@@ -1401,9 +1401,9 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/python_tool_with_image_input_and_output",
+            f"{FLOWS_DIR}/python_tool_with_simple_image",
         )
-        output_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "output"
+        output_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "output"
         assert output_path.exists()
-        image_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "intermediate"
+        image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
