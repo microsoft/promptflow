@@ -15,10 +15,10 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
-
-# from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow._utils.multimedia_utils import persist_multimedia_data, recursive_process
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -214,7 +214,7 @@ class LineExecutionProcessPool:
                     message = healthy_ensured_process.get()
                     if isinstance(message, LineResult):
                         completed = True
-                        message = self._persist_multimedia_in_line_result(message)
+                        message = self._process_multimedia(message)
                         result_list.append(message)
                         break
                     elif isinstance(message, FlowRunInfo):
@@ -247,11 +247,41 @@ class LineExecutionProcessPool:
                 formatter="Finished {count} / {total_count} lines.",
             )
 
-    def _persist_multimedia_in_line_result(self, result: LineResult) -> LineResult:
+    def _process_multimedia(self, result: LineResult) -> LineResult:
+        """Replace multimedia data in line result with string place holder to prevent OOM
+        and persist multimedia data in output when batch running."""
         if not self._output_dir:
             return result
-        # result.output = persist_multimedia_data(result.output, self._output_dir)
+        self._process_multimedia_in_flow_run(result.run_info)
+        for node_name, node_run_info in result.node_run_infos.items():
+            result.node_run_infos[node_name] = self._process_multimedia_in_node_run(node_run_info)
+        result.output = persist_multimedia_data(result.output, self._output_dir)
         return result
+
+    def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
+        if run_info.inputs:
+            run_info.inputs = self._persist_images(run_info.inputs)
+        if run_info.output:
+            serialized_output = self._persist_images(run_info.output)
+            run_info.output = serialized_output
+            run_info.result = serialized_output
+        if run_info.api_calls:
+            run_info.api_calls = self._persist_images(run_info.api_calls)
+
+    def _process_multimedia_in_node_run(self, run_info: NodeRunInfo):
+        if run_info.inputs:
+            run_info.inputs = self._persist_images(run_info.inputs)
+        if run_info.output:
+            serialized_output = self._persist_images(run_info.output)
+            run_info.output = serialized_output
+            run_info.result = serialized_output
+        if run_info.api_calls:
+            run_info.api_calls = self._persist_images(run_info.api_calls)
+        return run_info
+
+    def _persist_images(self, value):
+        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
+        return recursive_process(value, process_funcs=serialization_funcs)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
