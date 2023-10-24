@@ -2,14 +2,18 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 import inspect
+import io
 import json
 from dataclasses import asdict
 from os import PathLike
+from pathlib import Path
 from typing import Union
 
 from promptflow._core.tool_meta_generator import is_tool
 from promptflow._core.tools_manager import collect_package_tools
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow._utils.tool_utils import function_to_interface
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
@@ -20,15 +24,13 @@ class ToolOperations:
     def generate_tool_meta(self, tool_module):
         tool_functions = self._collect_tool_functions_in_module(tool_module)
         tool_methods = self._collect_tool_class_methods_in_module(tool_module)
-        tools = [self._parse_tool_from_function(f) for f in tool_functions] + [
-            self._parse_tool_from_function(f, initialize_inputs) for (f, initialize_inputs) in tool_methods
-        ]
-        construct_tools = {
-            f"{t.module}.{t.class_name}.{t.function}"
-            if t.class_name is not None
-            else f"{t.module}.{t.function}": asdict(t, dict_factory=lambda x: {k: v for (k, v) in x if v})
-            for t in tools
-        }
+        construct_tools = {}
+        for f in tool_functions:
+            tool_name, construct_tool = self._serialize_tool(f)
+            construct_tools[tool_name] = construct_tool
+        for (f, initialize_inputs) in tool_methods:
+            tool_name, construct_tool = self._serialize_tool(f, initialize_inputs)
+            construct_tools[tool_name] = construct_tool
         # The generated dict cannot be dumped as yaml directly since yaml cannot handle string enum.
         return json.loads(json.dumps(construct_tools))
 
@@ -62,6 +64,7 @@ class ToolOperations:
         tool_type = getattr(f, "__type") or ToolType.PYTHON
         tool_name = getattr(f, "__name")
         description = getattr(f, "__description")
+        extra_info = getattr(f, "__extra_info")
         if getattr(f, "__tool", None) and isinstance(f.__tool, Tool):
             return getattr(f, "__tool")
         if hasattr(f, "__original_function"):
@@ -74,7 +77,7 @@ class ToolOperations:
         if "." in f.__qualname__:
             class_name = f.__qualname__.replace(f".{f.__name__}", "")
         # Construct the Tool structure
-        return Tool(
+        tool = Tool(
             name=tool_name or f.__qualname__,
             description=description or inspect.getdoc(f),
             inputs=inputs,
@@ -83,6 +86,52 @@ class ToolOperations:
             function=f.__name__,
             module=f.__module__,
         )
+        return tool, extra_info
+
+    def _serialize_tool(self, tool_func, initialize_inputs=None):
+        """
+        Serialize tool obj to dict.
+
+        :param tool_func: Package tool function
+        :type tool_func: callable
+        :param initialize_inputs: Initialize inputs of package tool
+        :type initialize_inputs: Dict[str, obj]
+        :return: package tool name, serialized tool
+        :rtype: str, Dict[str, str]
+        """
+        tool, extra_info = self._parse_tool_from_function(tool_func, initialize_inputs)
+        tool_name = (
+            f"{tool.module}.{tool.class_name}.{tool.function}"
+            if tool.class_name is not None
+            else f"{tool.module}.{tool.function}"
+        )
+        construct_tool = asdict(tool, dict_factory=lambda x: {k: v for (k, v) in x if v})
+        if extra_info:
+            if "icon" in extra_info:
+                if not Path(extra_info["icon"]).exists():
+                    raise UserErrorException(f"Cannot find the icon path {extra_info['icon']}.")
+                extra_info["icon"] = self._serialize_image_data(extra_info["icon"])
+            construct_tool.update(extra_info)
+        return tool_name, construct_tool
+
+    @staticmethod
+    def _serialize_image_data(image_path):
+        """Serialize image to base64."""
+        from PIL import Image as PIL_Image
+
+        with open(image_path, "rb") as image_file:
+            # Create a BytesIO object from the image file
+            image_data = io.BytesIO(image_file.read())
+
+        # Open the image and resize it
+        img = PIL_Image.open(image_data)
+        if img.size != (16, 16):
+            img = img.resize((16, 16), PIL_Image.Resampling.LANCZOS)
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        icon_image = Image(buffered.getvalue(), mime_type="image/png")
+        image_url = convert_multimedia_data_to_base64(icon_image, with_type=True)
+        return image_url
 
     def list(
         self,
