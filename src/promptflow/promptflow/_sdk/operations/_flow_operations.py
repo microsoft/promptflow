@@ -425,7 +425,6 @@ class FlowOperations:
             subprocess.run(["pyinstaller", "app.spec"], check=True)
             print("PyInstaller command executed successfully.")
 
-
     @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
         self,

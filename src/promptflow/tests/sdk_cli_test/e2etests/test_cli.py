@@ -1156,7 +1156,6 @@ class TestCli:
                     process.terminate()
                     process.wait()  # Ensure the process is fully terminated
 
-
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
         [
