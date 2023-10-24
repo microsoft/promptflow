@@ -23,8 +23,9 @@ nodes:
     type: package
     tool: my_tool_package.tools.whisper.whisper
   inputs:
-    connection: gega-west-eup
+    connection: gega-new-openai
     endpoint: transcription
-    file: ..\..\..\..\..\..\..\Users\gega\Downloads\audio.wav
+    file: audio.wav
     prompt: ${inputs.prompt}
     response_format: text
+    deployment_name: openai-whisper

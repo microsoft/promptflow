@@ -6,8 +6,7 @@ my_tool_package.tools.whisper.whisper:
   function: whisper
   inputs:
     connection:
-      type:
-      - AzureOpenAIConnection
+      type: [AzureOpenAIConnection, OpenAIConnection]
     endpoint:
       type:
       - string
