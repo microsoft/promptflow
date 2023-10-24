@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { ICanvasNode } from "react-dag-editor";
-import { IPromptFlowCanvasData, IPromptFlowCanvasEdge, IPromptFlowCanvasNode } from "../types/react-dag-editor";
-import { getRefValueFromRaw } from "./getRefValueFromRaw";
+import { FlowNode, FlowNodeVariant, FlowSnapshot, IPromptFlowCanvasData, IPromptFlowCanvasEdge, IPromptFlowCanvasNode } from "./types";
 
 export const CENTER_DUMMY_ANCHOR = "center-dummy-port";
 export const FLOW_INPUT_NODE_ID = "flow-input-node";
@@ -18,6 +17,12 @@ export const FlowInputNodeWidth = 60;
 export const FlowNodeWidth = 220;
 export const FlowNodeBaseHeight = 50;
 
+const revValueRegex = /^\$\{(\S+)\}$/;
+export const getRefValueFromRaw = (raw: string | number | object | void): string | undefined => {
+  return `${raw ?? ""}`?.match(revValueRegex)?.[1];
+};
+
+
 export const isFlowInput = (variableName: string): boolean => {
   return [FLOW_INPUT_REF_NAME_FLOW, FLOW_INPUT_REF_NAME_INPUT].includes(variableName);
 };
@@ -26,7 +31,7 @@ export const isFlowOutput = (variableName: string): boolean => {
   return FLOW_OUTPUT_NODE_NAME === variableName;
 };
 
-export const fromDagNodeToCanvasNode = (dagNode: Node | FlowNode): IPromptFlowCanvasNode => {
+export const fromDagNodeToCanvasNode = (dagNode: FlowNode): IPromptFlowCanvasNode => {
   const canvasNode: IPromptFlowCanvasNode = {
     id: dagNode.name ?? "",
     name: dagNode.name,
@@ -57,7 +62,7 @@ export const fromDagNodeToCanvasNode = (dagNode: Node | FlowNode): IPromptFlowCa
 };
 
 // tslint:disable-next-line:export-name
-export const fromDagToCanvasDataUnlayouted = (dag: FlowGraph): IPromptFlowCanvasData => {
+export const fromDagToCanvasDataUnlayouted = (dag: FlowSnapshot): IPromptFlowCanvasData => {
   const flowInputNode: IPromptFlowCanvasNode = {
     id: FLOW_INPUT_NODE_ID,
     name: FLOW_INPUT_NODE_NAME,
@@ -84,7 +89,7 @@ export const fromDagToCanvasDataUnlayouted = (dag: FlowGraph): IPromptFlowCanvas
         name: "input",
         isInputDisabled: false,
         isOutputDisabled: true,
-        position: isHorizontal ? [0, 0.5] : [0.5, 0]
+        position: [0.5, 0]
       }
     ]
   };
@@ -145,9 +150,7 @@ export const fromDagToCanvasDataUnlayouted = (dag: FlowGraph): IPromptFlowCanvas
       const inputValue = dagNode.inputs?.[inputKey];
       addEdgeByInputValue(inputValue);
     });
-    addEdgeByInputValue((dagNode as Node)?.skip?.when);
-    addEdgeByInputValue((dagNode as Node)?.skip?.return);
-    addEdgeByInputValue((dagNode as Node)?.activate?.when);
+    addEdgeByInputValue(dagNode?.activate?.when);
 
     canvasNodes.push(fromDagNodeToCanvasNode(dagNode));
   });
