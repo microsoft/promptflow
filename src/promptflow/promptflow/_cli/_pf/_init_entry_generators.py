@@ -6,6 +6,7 @@ import inspect
 import logging
 import shutil
 from abc import ABC, abstractmethod
+from ast import literal_eval
 from enum import Enum
 from pathlib import Path
 
@@ -305,8 +306,23 @@ def copy_extra_files(flow_path, extra_files):
 
 
 class ToolPackageGenerator(BaseGenerator):
-    def __init__(self, tool_name):
+    def __init__(self, tool_name, icon=None, extra_info=None):
         self.tool_name = tool_name
+        self._extra_info = extra_info
+        self.icon = icon
+
+    @property
+    def extra_info(self):
+        if self._extra_info:
+            extra_info = {}
+            for k, v in self._extra_info.items():
+                try:
+                    extra_info[k] = literal_eval(v)
+                except Exception:
+                    extra_info[k] = repr(v)
+            return extra_info
+        else:
+            return {}
 
     @property
     def tpl_file(self):
@@ -314,7 +330,20 @@ class ToolPackageGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["tool_name"]
+        return ["tool_name", "extra_info", "icon"]
+
+
+class ManifestGenerator(BaseGenerator):
+    def __init__(self, package_name):
+        self.package_name = package_name
+
+    @property
+    def tpl_file(self):
+        return TOOL_TEMPLATE_PATH / "MANIFEST.in.jinja2"
+
+    @property
+    def entry_template_keys(self):
+        return ["package_name"]
 
 
 class SetupGenerator(BaseGenerator):
