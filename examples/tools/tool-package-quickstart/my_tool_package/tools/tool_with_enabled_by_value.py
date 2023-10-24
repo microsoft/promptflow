@@ -9,7 +9,7 @@ class UserType(str, Enum):
 
 
 @tool
-def my_tool(user_type: Enum, student_id: str, teacher_id: str) -> str:
+def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
     """This is a dummy function to support enabled by feature.
 
     :param user_type: user type, student or teacher.
