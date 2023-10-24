@@ -231,11 +231,11 @@ class StreamlitFileGenerator(BaseGenerator):
         executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
-        return {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
+        return {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items() if flow_input != "chat_history"}
 
     @property
     def flow_inputs_params(self):
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items()]
+        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in self.flow_inputs.items() if flow_input != "chat_history"]
         return ",".join(flow_inputs_params)
 
     @property

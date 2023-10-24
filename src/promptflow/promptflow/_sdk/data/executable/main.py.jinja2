@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
-from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
+from promptflow._utils.multimedia_utils import _is_multimedia_dict, MIME_PATTERN
 
 invoker = None
 {% set indent_level = 4 %}
@@ -84,7 +84,7 @@ def start():
                 st.markdown(f"`{json_dumps(message_items)},`")
 
         def dict_iter_render_message(message_items):
-            if is_multimedia_dict(message_items):
+            if _is_multimedia_dict(message_items):
                 key = list(message_items.keys())[0]
                 value = message_items[key]
                 show_image(value, key)
@@ -209,7 +209,6 @@ def start():
                     os.environ[environment_variable] = secret_input
 
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if flow_input != "chat_history" %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
@@ -217,7 +216,6 @@ def start():
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
 {% else %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-{% endif %}
 {% endif %}
 {% endfor %}
 
