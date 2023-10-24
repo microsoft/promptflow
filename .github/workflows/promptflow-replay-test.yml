@@ -107,36 +107,4 @@ jobs:
         $env:PYTHONPATH=""
         az account show
         echo '{}' > ${{ github.workspace }}/src/promptflow/connections.json
-        python "../../scripts/building/run_coverage_tests.py" `
-          -p promptflow `
-          -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test `
-          -l eastus `
-          -m "unittest or e2etest" `
-          --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v3
-      with:
-        name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
-        path: |
-          ${{ env.testWorkingDirectory }}/*.xml
-          ${{ env.testWorkingDirectory }}/htmlcov/
-  publish-test-results:
-    name: "Publish Tests Results"
-    needs: sdk_cli_tests
-    runs-on: ubuntu-latest
-    permissions: write-all
-    if: always()
-    steps:
-    - name: checkout
-      uses: actions/checkout@v3
-    - name: Publish Test Results
-      uses: "./.github/actions/step_publish_test_results"
-      with:
-        testActionFileName: promptflow-sdk-cli-test.yml
-        testResultTitle: SDK CLI Test Result
-        osVersion: ubuntu-latest
-        pythonVersion: 3.9
-        coverageThreshold: 40
-        token: ${{ secrets.GITHUB_TOKEN }}
-        context: test/sdk_cli
+        pytest ./tests/sdk_cli_test -n auto
