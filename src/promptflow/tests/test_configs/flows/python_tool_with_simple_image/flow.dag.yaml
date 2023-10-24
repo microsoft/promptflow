@@ -11,13 +11,15 @@ nodes:
   type: python
   source:
     type: code
-    path: python_with_image.py
+    path: pick_an_image.py
   inputs:
-    image: ${inputs.image}
+    image_1: ${inputs.image}
+    image_2: logo_2.png
 - name: python_node_2
   type: python
   source:
     type: code
-    path: python_with_image.py
+    path: pick_an_image.py
   inputs:
-    image: ${python_node.output}
+    image_1: ${python_node.output}
+    image_2: logo_2.png

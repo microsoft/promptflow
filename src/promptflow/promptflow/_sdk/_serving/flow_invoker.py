@@ -18,6 +18,7 @@ from promptflow._sdk._utils import (
     update_environment_variables_with_connections,
 )
 from promptflow._sdk.entities._connection import _Connection
+from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.executor import FlowExecutor
@@ -30,8 +31,8 @@ class FlowInvoker:
     """
     The invoker of a flow.
 
-    :param flow: The path of the flow.
-    :type flow: str
+    :param flow: The path of the flow, or the flow loaded by load_flow().
+    :type flow: [str, ~promptflow._sdk.entities._flow.Flow]
     :param connection_provider: The connection provider, defaults to None
     :type connection_provider: [str, Callable], optional
     :param streaming: The function or bool to determine enable streaming or not, defaults to lambda: False
@@ -40,13 +41,12 @@ class FlowInvoker:
 
     def __init__(
         self,
-        flow: str,
+        flow: [str, Flow],
         connection_provider: [str, Callable] = None,
         streaming: Union[Callable[[], bool], bool] = False,
         **kwargs,
     ):
-        self.flow_dir = flow
-        self.flow_entity = load_flow(self.flow_dir)
+        self.flow_entity = flow if isinstance(flow, Flow) else load_flow(source=flow)
         self.streaming = streaming if isinstance(streaming, Callable) else lambda: streaming
         # Pass dump_to path to dump flow result for extension.
         self._dump_to = kwargs.get("dump_to", None)
