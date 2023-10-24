@@ -32,6 +32,7 @@ from ruamel.yaml import YAML
 import promptflow
 from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
+from promptflow._core.tools_manager import gen_dynamic_list
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
@@ -60,6 +61,7 @@ from promptflow._sdk._errors import (
 )
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
+from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.tool import ToolType
 
 
@@ -623,6 +625,28 @@ def _generate_tool_meta(
     return res
 
 
+def _gen_dynamic_list(function_config: Dict) -> List:
+    """Generate dynamic list for a tool input.
+
+    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
+    :return: a list of tool input dynamic enums.
+    """
+    func_path = function_config.get("func_path", "")
+    func_kwargs = function_config.get("func_kwargs", {})
+    # May call azure control plane api in the custom function to list Azure resources.
+    # which may need Azure workspace triple.
+    # TODO: move this method to a common place.
+    from promptflow._cli._utils import get_workspace_triad_from_local
+
+    workspace_triad = get_workspace_triad_from_local()
+    if (workspace_triad.subscription_id and workspace_triad.resource_group_name
+            and workspace_triad.workspace_name):
+        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
+    # if no workspace triple available, just skip.
+    else:
+        return gen_dynamic_list(func_path, func_kwargs)
+
+
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
     import imp
 
@@ -778,19 +802,17 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
             )
 
 
-def get_local_connections_from_executable(executable):
+def get_local_connections_from_executable(executable, client):
     """Get local connections from executable.
 
     Please avoid using this function anymore, and we should remove this function once all references are removed.
     """
-    from promptflow._sdk._pf_client import PFClient
 
     connection_names = executable.get_connection_names()
-    local_client = PFClient()
     result = {}
     for n in connection_names:
         try:
-            conn = local_client.connections.get(name=n, with_secrets=True)
+            conn = client.connections.get(name=n, with_secrets=True)
             result[n] = conn._to_execution_connection_dict()
         except ConnectionNotFoundError:
             # ignore when connection not found since it can be configured with env var.
@@ -838,3 +860,40 @@ def refresh_connections_dir(connection_spec_files, connection_template_yamls):
                 file_name = connection_name + ".template.yaml"
                 with open(connections_dir / file_name, "w", encoding=DEFAULT_ENCODING) as f:
                     yaml.dump(yaml_data, f)
+
+
+def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
+    """Dump flow result for extension.
+
+    :param flow_folder: The flow folder.
+    :param prefix: The file prefix.
+    :param flow_result: The flow result returned by exec_line.
+    :param node_result: The node result when test node returned by load_and_exec_node.
+    """
+    if flow_result:
+        flow_serialize_result = {
+            "flow_runs": [serialize(flow_result.run_info)],
+            "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
+        }
+    else:
+        flow_serialize_result = {
+            "flow_runs": [],
+            "node_runs": [serialize(node_result)],
+        }
+    dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
+    dump_folder.mkdir(parents=True, exist_ok=True)
+
+    with open(dump_folder / f"{prefix}.detail.json", "w") as f:
+        json.dump(flow_serialize_result, f, indent=2)
+    if node_result:
+        metrics = flow_serialize_result["node_runs"][0]["metrics"]
+        output = flow_serialize_result["node_runs"][0]["output"]
+    else:
+        metrics = flow_serialize_result["flow_runs"][0]["metrics"]
+        output = flow_serialize_result["flow_runs"][0]["output"]
+    if metrics:
+        with open(dump_folder / f"{prefix}.metrics.json", "w") as f:
+            json.dump(metrics, f, indent=2)
+    if output:
+        with open(dump_folder / f"{prefix}.output.json", "w") as f:
+            json.dump(output, f, indent=2)

@@ -4,7 +4,7 @@
 This is an experimental feature, and may change at any time. Learn [more](faq.md#stable-vs-experimental).
 :::
 
-To better understand this part, please read [Quick start](./quick-start.md) and [Run and evaluate a flow](./run-and-evaluate-a-flow.md) first.
+To better understand this part, please read [Quick start](./quick-start.md) and [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md) first.
 
 ## What is variant and why should we care
 
@@ -71,7 +71,7 @@ Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/
 Note we pass `--variant` to specify which variant of the node should be running.
 
 ```sh
-pf run create --flow web-classification --data web-classification/data.jsonl --variant '${summarize_text_content.variant_1}' --stream --name my_first_variant_run
+pf run create --flow web-classification --data web-classification/data.jsonl --variant '${summarize_text_content.variant_1}' --column-mapping url='${data.url}' --stream --name my_first_variant_run
 ```
 
 :::
@@ -91,6 +91,7 @@ variant_run = pf.run(
     flow=flow,
     data=data,
     variant="${summarize_text_content.variant_1}",  # use variant 1.
+    column_mapping={"url": "${data.url}"},
 )
 
 pf.stream(variant_run)
@@ -110,6 +111,6 @@ After the variant run is created, you can evaluate the variant run with a evalua
 ## Next steps
 
 Learn more about:
-- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+- [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md)
 - [Deploy a flow](./deploy-a-flow/index.md)
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md)

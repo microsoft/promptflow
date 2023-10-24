@@ -4,11 +4,12 @@ from pathlib import Path
 import pydash
 import pytest
 import yaml
-from azure.ai.ml import Input, dsl
-from azure.ai.ml.constants import AssetTypes
-from azure.ai.ml.entities import Component, PipelineJob
+from azure.ai.ml import load_component
+from azure.ai.ml.entities import Component
 
 from promptflow.connections import AzureOpenAIConnection
+
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -59,10 +60,12 @@ def update_saved_spec(component: Component, saved_spec_path: str):
         current_spec_text = saved_spec_path.read_text()
         if current_spec_text == yaml_text:
             return
+    saved_spec_path.parent.mkdir(parents=True, exist_ok=True)
     saved_spec_path.write_text(yaml_text)
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestFlowInAzureML:
     @pytest.mark.parametrize(
@@ -70,42 +73,19 @@ class TestFlowInAzureML:
         [
             pytest.param(
                 {
-                    "component_type": "parallel",
-                    "columns_mapping": {
-                        "groundtruth": "1",
-                        "prediction": "${{batch_run.outputs.category}}",
-                    },
+                    "name": "web_classification_4",
+                    "version": "1.0.0",
+                    "description": "Create flows that use large language models to "
+                    "classify URLs into multiple categories.",
                     "environment_variables": {
                         "verbose": "true",
                     },
                 },
                 {
-                    "type": "parallel",
-                },
-                id="parallel_anonymous",
-            ),
-            pytest.param(
-                {
-                    "name": "web_classification_0",
-                    "version": "1.0.0",
-                    "component_type": "parallel",
-                    "description": "Create flows that use large language models to "
-                    "classify URLs into multiple categories.",
-                    "columns_mapping": {
-                        "groundtruth": "1",
-                        "prediction": "${{batch_run.outputs.category}}",
-                    },
-                    "environment_variables": {
-                        "verbose": "true",
-                    },
-                },
-                {
-                    "name": "web_classification_0",
+                    "name": "web_classification_4",
                     "version": "1.0.0",
                     "description": "Create flows that use large language models to "
                     "classify URLs into multiple categories.",
-                    "inputs.groundtruth.default": "1",
-                    "inputs.prediction.default": "${{batch_run.outputs.category}}",
                     "type": "parallel",
                 },
                 id="parallel",
@@ -116,62 +96,26 @@ class TestFlowInAzureML:
         self,
         azure_open_ai_connection: AzureOpenAIConnection,
         temp_output_dir,
-        pf,
+        ml_client,
         load_params: dict,
         expected_spec_attrs: dict,
         request,
     ) -> None:
+        # keep the simplest test here, more tests are in azure-ai-ml
 
         flows_dir = "./tests/test_configs/flows"
 
-        flow_func: Component = pf.load_as_component(
-            f"{flows_dir}/web_classification",
-            **load_params,
+        flow_func: Component = load_component(
+            f"{flows_dir}/web_classification/flow.dag.yaml", params_override=[load_params]
         )
 
-        update_saved_spec(flow_func, f"./tests/test_configs/flows/saved_component_spec/{request.node.callspec.id}.yaml")
+        # TODO: snapshot of flow component changed every time?
+        created_component = ml_client.components.create_or_update(flow_func, is_anonymous=True)
 
-        component_dict = flow_func._to_dict()
+        update_saved_spec(
+            created_component, f"./tests/test_configs/flows/saved_component_spec/{request.node.callspec.id}.yaml"
+        )
+
+        component_dict = created_component._to_dict()
         slimmed_created_component_attrs = {key: pydash.get(component_dict, key) for key in expected_spec_attrs.keys()}
         assert slimmed_created_component_attrs == expected_spec_attrs
-
-    def test_flow_as_component_in_dsl_pipeline(
-        self, azure_open_ai_connection: AzureOpenAIConnection, temp_output_dir, pf
-    ) -> None:
-
-        flows_dir = "./tests/test_configs/flows"
-
-        flow_func: Component = pf.load_as_component(
-            f"{flows_dir}/web_classification",
-            component_type="parallel",
-            columns_mapping={
-                "groundtruth": "${data.answer}",
-                "url": "${data.url}",
-            },
-            environment_variables={
-                "verbose": "true",
-            },
-        )
-
-        @dsl.pipeline
-        def pipeline_with_flow(input_data):
-            flow_node = flow_func(
-                data=input_data,
-                connections={
-                    "summarize_text_content": {
-                        "deployment_name": "test_deployment_name",
-                    }
-                },
-            )
-            flow_node.logging_level = "DEBUG"
-            return flow_node.outputs
-
-        pipeline: PipelineJob = pipeline_with_flow(
-            input_data=Input(path=f"{flows_dir}/web_classification_input_dir", type=AssetTypes.URI_FOLDER),
-        )
-        # compute cluster doesn't have access to azurecr for now, so the submitted job will fail in building image stage
-        pipeline.settings.default_compute = "cpu-cluster"
-
-        created_job: PipelineJob = pf.ml_client.jobs.create_or_update(pipeline)
-        assert created_job.id
-        assert created_job.jobs["flow_node"].logging_level == "DEBUG"

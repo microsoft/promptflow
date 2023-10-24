@@ -11,13 +11,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from promptflow._sdk._constants import RunStatus
-from promptflow._sdk._errors import InvalidRunError, RunNotFoundError, RunOperationParameterError
+from promptflow._sdk._errors import InvalidRunError, RunNotFoundError
 from promptflow._sdk._load_functions import load_run
 from promptflow._sdk.entities import Run
 from promptflow._utils.flow_utils import get_flow_lineage_id
 from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException, FlowServiceCaller
 from promptflow.azure.operations import RunOperations
+
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -30,6 +32,7 @@ DATAS_DIR = "./tests/test_configs/datas"
 
 
 # TODO(2528577): we should run these test with recording mode.
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestFlowRun:
     def test_run_bulk(self, remote_client, pf, runtime):
@@ -255,6 +258,51 @@ class TestFlowRun:
         assert run.status == "Failed"
         # error info will store in run dict
         assert "error" in run._to_dict()
+
+    def test_archive_and_restore_run(self, remote_client):
+        from promptflow._sdk._constants import RunHistoryKeys
+
+        run_meta_data = RunHistoryKeys.RunMetaData
+        hidden = RunHistoryKeys.HIDDEN
+
+        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+
+        # test archive
+        remote_client.runs.archive(run=run_id)
+        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is True
+
+        # test restore
+        remote_client.runs.restore(run=run_id)
+        run_data = remote_client.runs._get_run_from_run_history(run_id, original_form=True)[run_meta_data]
+        assert run_data[hidden] is False
+
+    def test_update_run(self, remote_client):
+        run_id = "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74"
+        test_mark = str(uuid.uuid4())
+
+        new_display_name = f"test_display_name_{test_mark}"
+        new_description = f"test_description_{test_mark}"
+        new_tags = {"test_tag": test_mark}
+
+        run = remote_client.runs.update(
+            run=run_id,
+            display_name=new_display_name,
+            description=new_description,
+            tags=new_tags,
+        )
+        assert run.display_name == new_display_name
+        assert run.description == new_description
+        assert run.tags["test_tag"] == test_mark
+
+        # test wrong type of parameters won't raise error, just log warnings and got ignored
+        run = remote_client.runs.update(
+            run=run_id,
+            tags={"test_tag": {"a": 1}},
+        )
+        assert run.display_name == new_display_name
+        assert run.description == new_description
+        assert run.tags["test_tag"] == test_mark
 
     def test_run_with_additional_includes(self, remote_client, pf, runtime):
         run = pf.run(
@@ -619,48 +667,6 @@ class TestFlowRun:
             assert "customized error message" in str(e.value)
             # request id should be included in FlowRequestException
             assert f"request id: {remote_client.runs._service_caller._request_id}" in str(e.value)
-
-    def test_input_output_portal_url_parser(self, remote_client):
-        runs_op = remote_client.runs
-
-        # test input with datastore path
-        input_datastore_path = (
-            "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl"
-        )
-        expected_input_portal_url = (
-            f"https://ml.azure.com/data/datastore/workspaceblobstore/edit?wsid={runs_op._common_azure_url_pattern}"
-            f"&activeFilePath=LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl#browseTab"
-        )
-        assert runs_op._get_input_portal_url_from_input_uri(input_datastore_path) == expected_input_portal_url
-
-        # test input with asset id
-        input_asset_id = (
-            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data/hod-qa-sample/versions/1"
-        )
-        expected_input_portal_url = (
-            f"https://ml.azure.com/data/hod-qa-sample/1/details?wsid={runs_op._common_azure_url_pattern}"
-        )
-        assert runs_op._get_input_portal_url_from_input_uri(input_asset_id) == expected_input_portal_url
-
-        # test output with asset id
-        output_asset_id = (
-            "azureml://locations/eastus/workspaces/f40fcfba-ed15-4c0c-a522-6798d8d89094/data"
-            "/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/versions/1"
-        )
-        expected_output_portal_url = (
-            "https://ml.azure.com/data/azureml_d360affb-c01f-460f-beca-db9a8b88b625_output_data_flow_outputs/1/details"
-            f"?wsid={runs_op._common_azure_url_pattern}"
-        )
-        assert runs_op._get_portal_url_from_asset_id(output_asset_id) == expected_output_portal_url
-
-    def test_wrong_client_parameters(self):
-        # test wrong client parameters
-        with pytest.raises(RunOperationParameterError, match="You have passed in the wrong parameter name"):
-            PFClient(
-                subscription_id="fake_subscription_id",
-                resource_group="fake_resource_group",
-                workspace_name="fake_workspace_name",
-            )
 
     def test_get_detail_against_partial_fail_run(self, remote_client, pf, runtime) -> None:
         run = pf.run(
