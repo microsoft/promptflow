@@ -214,8 +214,10 @@ def start():
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
 {% elif value_type == "image" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
-{% else %}
+{% elif value_type == "string" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
+{% else %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder={{default_value}})
 {% endif %}
 {% endfor %}
 

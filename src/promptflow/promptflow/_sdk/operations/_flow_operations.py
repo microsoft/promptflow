@@ -400,8 +400,10 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items() if flow_input != "chat_history"}
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items() if flow_input != "chat_history"]
+        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()
+                       if flow_input != "chat_history"}
+        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()
+                              if flow_input != "chat_history"]
         flow_inputs_params = ",".join(flow_inputs_params)
 
         copy_tree_respect_template_and_ignore_file(
@@ -416,9 +418,9 @@ class FlowOperations:
                 "flow_path": None,
             },
         )
-        self.run_pyinstaller(output_dir)
+        self._run_pyinstaller(output_dir)
 
-    def run_pyinstaller(self, output_dir):
+    def _run_pyinstaller(self, output_dir):
         with _change_working_dir(output_dir, mkdir=False):
             subprocess.run(["pyinstaller", "app.spec"], check=True)
             print("PyInstaller command executed successfully.")

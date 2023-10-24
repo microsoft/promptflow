@@ -13,7 +13,6 @@ import tempfile
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
-import time
 from unittest.mock import patch
 
 import mock
@@ -1122,9 +1121,8 @@ class TestCli:
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     def test_flow_build_executable(self):
-        source = r"D:\repro\microsoft\promptflow\src\promptflow\tests\test_configs\flows\chat_flow_with_image\flow.dag.yaml"
-
-        target = "promptflow._sdk.operations._flow_operations.FlowOperations.run_pyinstaller"
+        source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
+        target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
         with mock.patch(target) as mocked:
             mocked.return_value = None
 
@@ -1157,7 +1155,6 @@ class TestCli:
                     # Kill the process
                     process.terminate()
                     process.wait()  # Ensure the process is fully terminated
-
 
 
     @pytest.mark.parametrize(
