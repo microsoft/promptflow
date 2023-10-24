@@ -12,9 +12,11 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from ..utils import FLOW_ROOT, get_yaml_file, get_yaml_working_dir
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
-SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / "python_tool_with_simple_image"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
-COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / "python_tool_with_composite_image"
+CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
+SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / SIMPLE_IMAGE_FLOW
+COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / COMPOSITE_IMAGE_FLOW
+CHAT_FLOW_WITH_IMAGE_PATH = FLOW_ROOT / CHAT_FLOW_WITH_IMAGE
 IMAGE_URL = (
     "https://github.com/microsoft/promptflow/blob/93776a0631abf991896ab07d294f62082d5df3f3/src"
     "/promptflow/tests/test_configs/datas/test_image.jpg?raw=true"
@@ -116,6 +118,21 @@ class TestExecutorWithImage:
         flow_result = executor.exec_line(inputs)
         assert isinstance(flow_result.output, dict)
         assert_contain_image_object(flow_result.output)
+        assert flow_result.run_info.status == Status.Completed
+        assert_contain_image_reference(flow_result.run_info)
+        for _, node_run_info in flow_result.node_run_infos.items():
+            assert node_run_info.status == Status.Completed
+            assert_contain_image_reference(node_run_info)
+
+    def test_executor_exec_line_with_chat_flow(self, dev_connections):
+        flow_folder = CHAT_FLOW_WITH_IMAGE
+        working_dir = get_yaml_working_dir(flow_folder)
+        os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
+        flow_result = executor.exec_line({})
+        assert isinstance(flow_result.output, dict)
+        assert flow_result.output["output"] == "Fake answer"
         assert flow_result.run_info.status == Status.Completed
         assert_contain_image_reference(flow_result.run_info)
         for _, node_run_info in flow_result.node_run_infos.items():
