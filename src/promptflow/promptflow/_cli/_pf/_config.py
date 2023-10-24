@@ -19,11 +19,11 @@ def add_config_set(subparsers):
     """  # noqa: E501
     activate_action(
         name="set",
-        description="Set promptflow configs for current user.",
+        description="Set prompt flow configs for current user.",
         epilog=epilog,
         add_params=[add_param_set_positional] + logging_params,
         subparsers=subparsers,
-        help_message="Set promptflow configs for current user, configs will be stored at ~/.promptflow/pf.yaml.",
+        help_message="Set prompt flow configs for current user, configs will be stored at ~/.promptflow/pf.yaml.",
         action_param_name="sub_action",
     )
 
@@ -48,7 +48,7 @@ def add_config_show(subparsers):
 
 def add_config_parser(subparsers):
     config_parser = subparsers.add_parser(
-        "config", description="A CLI tool to set promptflow configs for current user.", help="pf config"
+        "config", description="A CLI tool to set prompt flow configs for current user.", help="pf config"
     )
     subparsers = config_parser.add_subparsers()
     add_config_set(subparsers)

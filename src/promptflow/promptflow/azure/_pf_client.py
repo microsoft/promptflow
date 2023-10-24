@@ -4,7 +4,7 @@
 import os
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, AnyStr, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from azure.ai.ml import MLClient
 from azure.core.credentials import TokenCredential
@@ -14,7 +14,6 @@ from promptflow._sdk._constants import MAX_SHOW_DETAILS_RESULTS
 from promptflow._sdk._errors import RunOperationParameterError
 from promptflow._sdk._user_agent import USER_AGENT
 from promptflow._sdk.entities import Run
-from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.service_caller_factory import _FlowServiceCallerFactory
 from promptflow.azure._utils.gerneral import is_remote_uri
 from promptflow.azure.operations import RunOperations
@@ -299,63 +298,6 @@ class PFClient:
         :type run: Union[str, ~promptflow.sdk.entities.Run]
         """
         self.runs.visualize(runs)
-
-    def load_as_component(
-        self,
-        source: Union[str, PathLike, IO[AnyStr]],
-        *,
-        component_type: str,
-        columns_mapping: Dict[str, Union[str, float, int, bool]] = None,
-        variant: str = None,
-        environment_variables: Dict[str, Any] = None,
-        is_deterministic: bool = True,
-        **kwargs,
-    ) -> "Component":
-        """
-        Load a flow as a component.
-
-        :param source: Source of the flow. Should be a path to a flow dag yaml file or a flow directory.
-        :type source: Union[str, PathLike, IO[AnyStr]]
-        :param component_type: Type of the loaded component, support parallel only for now.
-        :type component_type: str
-        :param variant: Node variant used for the flow.
-        :type variant: str
-        :param environment_variables: Environment variables to set for the flow.
-        :type environment_variables: dict
-        :param columns_mapping: Inputs mapping for the flow.
-        :type columns_mapping: dict
-        :param is_deterministic: Whether the loaded component is deterministic.
-        :type is_deterministic: bool
-        """
-        name = kwargs.pop("name", None)
-        version = kwargs.pop("version", None)
-        description = kwargs.pop("description", None)
-        display_name = kwargs.pop("display_name", None)
-        tags = kwargs.pop("tags", None)
-
-        flow = load_flow(
-            source=source,
-            relative_origin=kwargs.pop("relative_origin", None),
-            **kwargs,
-        )
-
-        if component_type != "parallel":
-            raise NotImplementedError(f"Component type {component_type} is not supported yet.")
-
-        # TODO: confirm if we should keep flow operations
-        component = self._flows.load_as_component(
-            flow=flow,
-            columns_mapping=columns_mapping,
-            variant=variant,
-            environment_variables=environment_variables,
-            name=name,
-            version=version,
-            description=description,
-            is_deterministic=is_deterministic,
-            display_name=display_name,
-            tags=tags,
-        )
-        return component
 
     def _add_user_agent(self, kwargs) -> None:
         user_agent = kwargs.pop("user_agent", None)

@@ -27,6 +27,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
 from promptflow._sdk.operations._test_submitter import TestSubmitter
+from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow.exceptions import UserErrorException
 
@@ -37,6 +38,7 @@ class FlowOperations:
     def __init__(self):
         pass
 
+    @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
         self,
         flow: Union[str, PathLike],
@@ -45,6 +47,7 @@ class FlowOperations:
         variant: str = None,
         node: str = None,
         environment_variables: dict = None,
+        **kwargs,
     ) -> dict:
         """Test flow or node.
 
@@ -66,7 +69,7 @@ class FlowOperations:
         :rtype: dict
         """
         result = self._test(
-            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables
+            flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
         )
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
@@ -81,6 +84,7 @@ class FlowOperations:
         environment_variables: dict = None,
         stream_log: bool = True,
         allow_generator_output: bool = True,
+        **kwargs,
     ):
         """Test flow or node.
 
@@ -100,7 +104,8 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        with TestSubmitter(flow=flow, variant=variant).init() as submitter:
+        config = kwargs.get("config", None)
+        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
                 node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
@@ -173,7 +178,8 @@ class FlowOperations:
         from promptflow._sdk._load_functions import load_flow
 
         flow = load_flow(flow)
-        with TestSubmitter(flow=flow, variant=variant).init() as submitter:
+        config = kwargs.get("config", None)
+        with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
@@ -368,8 +374,11 @@ class FlowOperations:
         try:
             import PyInstaller  # noqa: F401
             import streamlit
+            import streamlit_quill  # noqa: F401
         except ImportError as ex:
-            raise UserErrorException(f"Please install PyInstaller and streamlit for building executable, {ex.msg}.")
+            raise UserErrorException(
+                f"Please install PyInstaller, streamlit and streamlit_quill for building " f"executable, {ex.msg}."
+            )
 
         from promptflow.contracts.flow import Flow as ExecutableFlow
 
@@ -391,7 +400,7 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: value.default for flow_input, value in executable.inputs.items()}
+        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
@@ -404,6 +413,7 @@ class FlowOperations:
                 "runtime_interpreter_path": runtime_interpreter_path,
                 "flow_inputs": flow_inputs,
                 "flow_inputs_params": flow_inputs_params,
+                "flow_path": None,
             },
         )
         try:
@@ -416,6 +426,7 @@ class FlowOperations:
         finally:
             os.chdir(current_directory)
 
+    @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
         self,
         flow: Union[str, PathLike],
@@ -502,6 +513,7 @@ class FlowOperations:
         else:
             yield flow_dag_path
 
+    @monitor_operation(activity_name="pf.flows.validate", activity_type=ActivityType.PUBLICAPI)
     def validate(self, flow: Union[str, PathLike], *, raise_error: bool = False, **kwargs) -> ValidationResult:
         """
         Validate flow.

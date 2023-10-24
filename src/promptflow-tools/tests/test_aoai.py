@@ -48,8 +48,15 @@ class TestAOAI:
         )
         assert "Product X".lower() in result.lower()
 
+    @pytest.mark.parametrize(
+        "function_call",
+        [
+            "auto",
+            {"name": "get_current_weather"},
+        ],
+    )
     def test_aoai_chat_with_function(
-            self, azure_open_ai_connection, example_prompt_template, chat_history, functions):
+            self, azure_open_ai_connection, example_prompt_template, chat_history, functions, function_call):
         result = chat(
             connection=azure_open_ai_connection,
             prompt=example_prompt_template,
@@ -59,7 +66,7 @@ class TestAOAI:
             user_input="What is the weather in Boston?",
             chat_history=chat_history,
             functions=functions,
-            function_call="auto"
+            function_call=function_call
         )
         assert "function_call" in result
         assert result["function_call"]["name"] == "get_current_weather"
