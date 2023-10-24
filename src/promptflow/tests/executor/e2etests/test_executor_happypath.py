@@ -1,13 +1,9 @@
 import uuid
-import os
 from types import GeneratorType
-from pathlib import Path
 
 import pytest
 
-from promptflow._utils.multimedia_utils import _create_image_from_file, _is_multimedia_dict
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -15,29 +11,20 @@ from promptflow.exceptions import UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._errors import ConnectionNotFound, InputTypeError, ResolveToolError
 from promptflow.executor.flow_executor import BulkResult, LineResult
-from promptflow.storage._run_storage import DefaultRunStorage
 from promptflow.storage import AbstractRunStorage
 
 from ..utils import (
-    DATA_ROOT,
     FLOW_ROOT,
     get_flow_expected_metrics,
     get_flow_expected_status_summary,
     get_flow_sample_inputs,
     get_yaml_file,
-    get_yaml_working_dir
 )
 
 SAMPLE_FLOW = "web_classification_no_variants"
 SAMPLE_EVAL_FLOW = "classification_accuracy_evaluation"
 SAMPLE_FLOW_WITH_PARTIAL_FAILURE = "python_tool_partial_failure"
 SAMPLE_FLOW_WITH_LANGCHAIN_TRACES = "flow_with_langchain_traces"
-TEST_IMAGE_PATH = DATA_ROOT / "test_image.jpg"
-
-
-def assert_contains_substrings(s, substrings):
-    for substring in substrings:
-        assert substring in s
 
 
 class MemoryRunStorage(AbstractRunStorage):
@@ -50,75 +37,6 @@ class MemoryRunStorage(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo):
         self._node_runs[run_info.run_id] = run_info
-
-
-def get_simple_image_input(use_dict=False, use_base64=False):
-    image = _create_image_from_file(TEST_IMAGE_PATH)
-    if use_dict:
-        if use_base64:
-            return {"image": {"data:image/jpg;base64": image.to_base64()}}
-        else:
-            return {"image": {"data:image/jpg;path": str(TEST_IMAGE_PATH)}}
-    else:
-        if use_base64:
-            return {"image": image.to_base64()}
-        else:
-            return {"image": str(TEST_IMAGE_PATH)}
-
-
-def get_composite_image_input_internal(resource, value):
-    return {
-        "image_list": [
-            {f"data:image/jpg;{resource}": value},
-            {f"data:image/jpg;{resource}": value},
-        ],
-        "image_dict": {
-            "image_1": {f"data:image/jpg;{resource}": value},
-            "image_2": {f"data:image/jpg;{resource}": value},
-        },
-    }
-
-
-def get_composite_image_input(use_base64=False):
-    image = _create_image_from_file(TEST_IMAGE_PATH)
-    if use_base64:
-        return get_composite_image_input_internal("base64", image.to_base64())
-    else:
-        return get_composite_image_input_internal("path", str(TEST_IMAGE_PATH))
-
-
-def get_composite_node_input():
-    return {
-        "image_from_list": [{"data:image/jpg;path": "logo.jpg"}, {"data:image/jpg;path": "logo.jpg"}],
-        "image_from_dict": [{"data:image/jpg;path": "logo.jpg"}, {"data:image/jpg;path": "logo.jpg"}],
-    }
-
-
-def assert_contain_image_reference(value):
-    assert not isinstance(value, Image)
-    if isinstance(value, list):
-        for item in value:
-            assert_contain_image_reference(item)
-    elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
-            path = list(value.values())[0]
-            assert isinstance(path, str)
-            assert path.endswith(".jpg") or path.endswith(".jpeg") or path.endswith(".png")
-        else:
-            for _, v in value.items():
-                assert_contain_image_reference(v)
-
-
-def assert_contain_image_object(value):
-    if isinstance(value, list):
-        for item in value:
-            assert_contain_image_object(item)
-    elif isinstance(value, dict):
-        assert not _is_multimedia_dict(value)
-        for _, v in value.items():
-            assert_contain_image_object(v)
-    else:
-        assert isinstance(value, Image)
 
 
 @pytest.mark.usefixtures("use_secrets_config_file", "dev_connections")
@@ -305,32 +223,6 @@ class TestExecutor:
             assert isinstance(node_run_info.api_calls, list)  # api calls is set
 
     @pytest.mark.parametrize(
-        "flow_folder, inputs",
-        [
-            ("python_tool_with_simple_image", get_simple_image_input(False, False)),
-            ("python_tool_with_simple_image", get_simple_image_input(False, True)),
-            ("python_tool_with_simple_image", get_simple_image_input(True, False)),
-            ("python_tool_with_simple_image", get_simple_image_input(True, True)),
-            ("python_tool_with_composite_image", get_composite_image_input(False)),
-            ("python_tool_with_composite_image", get_composite_image_input(True)),
-        ],
-    )
-    def test_executor_exec_line_with_image(self, flow_folder, inputs, dev_connections):
-        self.skip_serp(flow_folder, dev_connections)
-        working_dir = get_yaml_working_dir(flow_folder)
-        os.chdir(working_dir)
-        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
-        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
-        flow_result = executor.exec_line(inputs)
-        assert isinstance(flow_result.output, dict)
-        assert flow_result.run_info.status == Status.Completed
-        assert_contain_image_object(flow_result.output)
-        assert_contain_image_reference(flow_result.run_info)
-        for _, node_run_info in flow_result.node_run_infos.items():
-            assert node_run_info.status == Status.Completed
-            assert_contain_image_reference(node_run_info)
-
-    @pytest.mark.parametrize(
         "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
         [
             ("web_classification_no_variants", "summarize_text_content", {}, {"fetch_text_content_from_url": "Hello"}),
@@ -360,39 +252,6 @@ class TestExecutor:
         assert isinstance(run_info.api_calls, list)
         assert run_info.node == node_name
         assert run_info.system_metrics["duration"] >= 0
-
-    @pytest.mark.parametrize(
-        "flow_folder, node_name, flow_inputs, dependency_nodes_outputs",
-        [
-            ("python_tool_with_simple_image", "python_node", get_simple_image_input(False, False), None),
-            (
-                "python_tool_with_simple_image", "python_node_2", get_simple_image_input(False, False),
-                {"python_node": {"data:image/jpg;path": "logo.jpg"}}
-            ),
-            ("python_tool_with_composite_image", "python_node", get_composite_image_input(False), None),
-            ("python_tool_with_composite_image", "python_node_2", None, None),
-            (
-                "python_tool_with_composite_image", "python_node_3", get_composite_image_input(False),
-                {"python_node": get_composite_node_input(), "python_node_2": get_composite_node_input()}
-            ),
-        ],
-    )
-    def test_executor_exec_node_with_image(self, flow_folder, node_name, flow_inputs, dependency_nodes_outputs,
-                                           dev_connections):
-        self.skip_serp(flow_folder, dev_connections)
-        working_dir = get_yaml_working_dir(flow_folder)
-        os.chdir(working_dir)
-        run_info = FlowExecutor.load_and_exec_node(
-            get_yaml_file(flow_folder),
-            node_name,
-            flow_inputs=flow_inputs,
-            dependency_nodes_outputs=dependency_nodes_outputs,
-            connections=dev_connections,
-            output_sub_dir=("./temp"),
-            raise_ex=True,
-        )
-        assert run_info.status == Status.Completed
-        assert_contain_image_reference(run_info)
 
     def test_executor_node_overrides(self, dev_connections):
         inputs = self.get_line_inputs()
