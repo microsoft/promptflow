@@ -45,19 +45,15 @@ class BatchEngine:
         :return: The result of this batch run
         :rtype: ~promptflow.executor._result.BulkResult
         """
-        input_dicts = self._get_input_dicts(input_dirs, inputs_mapping)
+        # resolve input data from input dirs and apply inputs mapping
+        input_dicts = self._resolve_data(input_dirs)
+        mapped_inputs = self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
+        # run flow in batch mode
         output_dir = self._resolve_dir(output_dir)
-        batch_result = self.flow_executor.exec_bulk(input_dicts, run_id, output_dir=output_dir)
+        batch_result = self.flow_executor.exec_bulk(mapped_inputs, run_id, output_dir=output_dir)
+        # persist outputs to output dir
         self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
-
-    def _get_input_dicts(self, input_dirs: Dict[str, str], inputs_mapping: Dict[str, str]):
-        """Resolve input data from input dirs and apply inputs mapping
-
-        TODO: After SDK/CLI can resolve input data from input dirs, this method can be removed.
-        """
-        input_dicts = self._resolve_data(input_dirs)
-        return self.flow_executor.validate_and_apply_inputs_mapping(input_dicts, inputs_mapping)
 
     def _resolve_data(self, input_dirs: Dict[str, str]):
         """Resolve input data from input dirs"""
