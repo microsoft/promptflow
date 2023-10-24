@@ -4,10 +4,11 @@ runs:
   steps:
   - name: Merge main to current branch
     working-directory: ${{ github.workspace }}
-    shell: pwsh
     run: |
+      pwd
       git status
       git rev-parse HEAD
       git config --global user.name 'prompt flow fundamental'
       git config --global user.email 'aml-pt-eng@microsoft.com'
       git pull --no-ff origin main --allow-unrelated-histories
+    shell: bash -el {0}
