@@ -212,24 +212,6 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 
 ::::
 
-## How to log metrics
-
-Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
-
-```python
-from promptflow import log_metric, tool
-
-@tool
-def example_log_metrics():
-  metric_key = "accuracy"
-  metric_value = 1.0
-  log_metric(metric_key, metric_value)
-```
-
-After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.
-
-![img](../../media/how-to-guides/run_show_metrics.png)
-
 ## Next steps
 
 Learn more about:
