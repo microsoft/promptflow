@@ -18,18 +18,77 @@
     - [**Optimization**: Compilers can optimize the code by removing dead code and other unnecessary parts of the code](https://stackoverflow.com/questions/67231389/why-we-need-webpack-in-2021)
   - Popular compiler options: Webpack, Rollup, Esbuild, Vite, etc. They are not compatible with each other.
 - Design considerations:
-  - Packing, distributing or deployment is not the priority for JavaScript supports. To make a clear statement: "If you believes you need deploy or distribute your flow separately from your app, rethink your decision to use the JavaScript support. Why not use the Prompt flow (python)?"
+  - Packing, distributing or deployment is not the priority for JavaScript supports for local PF. In local, user code can make JS/TS function calls to a flow instance as usual code, with TypeScript support.
+  - For AZ attached PF experience, a PF flow can be built (export) as a NPM package.  NPM meta infos:
+    - "type": "module". 
+    - "main": "dist/index.cjs". It is a CJS bundle could be consumed in Node.Js env.
+    - "module": "dist/index.mjs",  It is a ESM bundle for browser.
+    - "source": N/A. The package contains NO source code.
+    - "dependencies": pf packages + az core packages + auth packages + arm packages (for rp calls) + custom dependencies.
   - In-code call experience should be a priority. 
-    - In current Prompt flow for Python, there is no function call support to consume a flow instance in user code. 
+    - In current Prompt flow for Python, there is no function call support to consume a flow instance in user code.
+    - How to avoid api key leaking?
     - Should be adapters for popular JavaScript frameworks. Like what XState does: [Packages | Stately](https://stately.ai/docs/category/xstate-packages)
     - Should be caching to save customer LLM calls.
 
+## A typical user story
+
+To make a LLM powered copilot VSCode extension with chat inputs and VSCode workspace as inputs.
+
+![image-20231023172528285](/Users/yucongj/github/promptflow/src/promptflow-js/assets/image-20231023172528285.png)
+
+- With Prompt flow (python)
+  - Create a new flow with PF authoring experience.
+  - Prepare a dataset with tune and evaluate flow with PF features.
+  - When user feels the flow is good enough, deploy it as an endpoint.
+  - Init a new git repo to for the copilot extension.
+  - Implement the chat inputs and answer ui.
+  - Writes code to call the button in the chat button click handler.
+  - Do integration testing and distribute the copilot extension.
+- With Prompt flow (python) (option 2)
+  - Create a new flow with PF authoring experience.
+  - Prepare a dataset with tune and evaluate flow with PF features.
+  - When user feels the flow is good enough, deploy it as a Streamlit app.
+  - Init a new git repo for copilot extension.
+  - Write glue code to embed the Streamlit app into the extension UI container.
+  - Do integration testing and distribute the copilot extension.
+- With Promt flow with JavaScript support.
+  - Init a TypeScript repo following the VS Code extension develop guideline as the extension codebase.
+  - Implement the chat inputs and answer ui.
+  - Add prompt flow js sdk libs as the dependencies or dev dependencies to the repo.
+  - Author a flow with js code experience in the repo.
+  - Integrate prompt flow build step into the existing build toolchain.
+  - Do code integration between ui chat button and the flow instance.
+  - Debug the flow and debug the app at the same time.
+  - Integrate evaluation into the app CI/CD pipelines.
+
+## Design directions
+
+### Connections
+
+- With AZ attaching approach, connections are stored in RP. Should user consume RP apis for their production code?
+- For local development, we cannot enforce to use workspace RP or local db to store user connections. It will introduce extra dependencies to user codebase. Needs to specify the pure code approach for connections.
+
+### Tools
+
+- Script tools:
+  - Local: separated code files. Specify the entry path in the flow.dag.yaml.
+  - Portal UI: Flatten view inline code.
+- Package tools:
+  - Local: 3rd parth NPM packages. User can use .npmrc (.yarnrc) to specify different npm registry as normal JavaScript repos.
+  - Portal UI: a UI form to add 3rd party libraries from different registries.
+
+
+
+## Flow Authoring/Debug/Test experience.
+
+todo
+
+## Flow consuming experience
+
+Todo
+
 ## Browser experience
-
-### values to use the web browser experience
-
-1. User does not have to get runtime ready or set up local environment first. Just to install a web browser.
-2. Easy to share link of a flow to another person. Open and run.
 
 ### A basic sample 
 
