@@ -4,7 +4,7 @@ PACKAGE_NAME = "gega-tools-package"
 
 setup(
     name=PACKAGE_NAME,
-    version="1.0.1",
+    version="2.0.2",
     description="This is my tools package",
     packages=find_packages(),
     entry_points={

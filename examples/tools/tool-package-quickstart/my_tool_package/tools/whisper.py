@@ -2,6 +2,7 @@ from enum import Enum
 from promptflow.contracts.types import FilePath
 
 import openai
+import requests
 
 from promptflow.connections import AzureOpenAIConnection
 # Avoid circular dependencies: Use import 'from promptflow._internal' instead of 'from promptflow'
@@ -24,25 +25,19 @@ class ResponseFormat(str, Enum):
 
 @tool
 @handle_openai_error()
-def whisper(connection: AzureOpenAIConnection, file: FilePath, endpoint: WhisperEndpoint, prompt: str, response_format: ResponseFormat):
-    connection_dict = dict(connection)
+def whisper(connection: AzureOpenAIConnection, file: FilePath, endpoint: WhisperEndpoint, deployment_name: str, prompt: str, response_format: ResponseFormat):
     audio_file = open(file, 'rb')
+    payload = {'file': audio_file}
     if endpoint == WhisperEndpoint.Transcription:
-        return openai.Audio.transcribe(
-            model="whisper",
-            file=audio_file,
-            prompt = prompt,
-            response_format = response_format,
-            **connection_dict
-        )
-    elif endpoint == WhisperEndpoint.Translation:
-        return openai.Audio.translate(
-            model="whisper",
-            file=audio_file,
-            prompt = prompt,
-            response_format = response_format,
-            **connection_dict
-        )
+            # Request URL
+        api_url = f"{connection.api_case}/openai/deployments/{deployment_name}/audio/transcriptions?api-version={connection.api_version}"
+        headers =  {"api-key": connection.api_key,
+                    "Content-Type": "multipart/form-data"}
+        response = requests.post(api_url, data=payload, headers=headers)
+
+        print("response json: ", response)
+
+        return response
     else:
         error_message = f"Not Support endpoint '{endpoint}' for whisper api. " \
                         f"Endpoint should be in [Transcription, Translation]."

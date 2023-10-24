@@ -28,3 +28,6 @@ my_tool_package.tools.whisper.whisper:
       - srt
       - vtt
       - verbose_json
+    deployment_name:
+      type:
+      - string
