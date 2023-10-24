@@ -7,7 +7,7 @@ class MyCustomConnection(CustomStrongTypeConnection):
     """My custom strong type connection.
 
     :param api_key: The api key get from "https://xxx.com".
-    :type api_key: String
+    :type api_key: Secret
     :param api_base: The api base.
     :type api_base: String
     """
