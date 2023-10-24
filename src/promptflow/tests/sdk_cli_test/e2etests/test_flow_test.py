@@ -34,6 +34,10 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in record mode, TODO, no strong type conneciton support.",
+    )
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
@@ -92,9 +96,11 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs={"input_param": "Hello World!"}, node="my_script_tool")
         assert result == "connection_value is MyCustomConnection: True"
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in record mode, TODO, record should support streaming output.",
+    )
     def test_pf_test_with_streaming_output(self):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in record mode, TODO, record should support streaming output.")
         # Cannot handle generator type in replay mode
         flow_path = Path(f"{FLOWS_DIR}/chat_flow_with_stream_output")
         result = _client.test(flow=flow_path)
@@ -140,9 +146,11 @@ class TestFlowTest:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in record mode, TODO, replay should support symbolic.",
+    )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, TODO, replay should support symbolic.")
         inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)
         assert all([key in FLOW_RESULT_KEYS for key in result])
@@ -151,10 +159,12 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification", inputs=inputs, node="convert_to_dict")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, TODO, replay should support exceptions.",
+    )
     def test_pf_flow_test_with_exception(self, capsys):
         # Test flow with exception
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, TODO, replay should support exceptions.")
         inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
         flow_path = Path(f"{FLOWS_DIR}/web_classification_with_exception").absolute()
 
@@ -170,9 +180,11 @@ class TestFlowTest:
         assert "convert_to_dict.py" in output.out
         assert "mock exception" in str(exception.value)
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in record mode, TODO, record should support single node.",
+    )
     def test_node_test_with_connection_input(self):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in record mode, TODO, record should support single node.")
         flow_path = Path(f"{FLOWS_DIR}/basic-with-connection").absolute()
         inputs = {
             "connection": "azure_open_ai_connection",

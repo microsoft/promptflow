@@ -92,10 +92,6 @@ jobs:
         gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install "$($_.FullName)[azure]"}}
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
     - name: Get number of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
@@ -107,4 +103,4 @@ jobs:
         $env:PYTHONPATH=""
         az account show
         echo '{}' > ${{ github.workspace }}/src/promptflow/connections.json
-        pytest ./tests/sdk_cli_test -n auto
+        pytest ./tests/sdk_cli_test -n auto --dist loadfile

@@ -180,9 +180,11 @@ class TestCli:
         outputs = local_client.runs._get_outputs(run=run_id)
         assert outputs["output"][0] == local_aoai_connection.api_base
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, TODO, replay should support local_alt_aoai_connection.",
+    )
     def test_connection_overwrite(self, local_alt_aoai_connection):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, TODO, replay should support local_alt_aoai_connection.")
         with pytest.raises(Exception) as e:
             run_pf_command(
                 "run",
@@ -481,9 +483,11 @@ class TestCli:
             "--debug",
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, replay should support additional includes.",
+    )
     def test_pf_flow_test_with_additional_includes(self):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, TODO, replay should support additional includes.")
         run_pf_command(
             "flow",
             "test",
@@ -512,6 +516,10 @@ class TestCli:
             node_name,
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, TODO, replay should support symbolic.",
+    )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
         run_pf_command(
             "flow",
@@ -593,9 +601,11 @@ class TestCli:
         assert flow_dict.get("environment", {}).get("python_requirements_txt", None)
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, Cannot test exceptions.",
+    )
     def test_flow_with_exception(self, capsys):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, Cannot test exceptions.")
         with pytest.raises(SystemExit):
             run_pf_command(
                 "flow",
@@ -650,9 +660,11 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, temp dir included.",
+    )
     def test_init_chat_flow(self):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, temp dir included.")
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
             flow_name = "chat_flow"
@@ -680,9 +692,11 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, temp dir included.",
+    )
     def test_flow_init(self, capsys):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, temp dir included.")
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
             flow_name = "standard_flow"
@@ -871,9 +885,11 @@ class TestCli:
                 assert not (flow_folder / "azure_openai.yaml").exists()
                 assert not (flow_folder / "openai.yaml").exists()
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in record mode, TODO, record should support chat.",
+    )
     def test_flow_chat(self, monkeypatch, capsys):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in record mode, TODO, record should support chat.")
         chat_list = ["hi", "what is chat gpt?"]
 
         def mock_input(*args, **kwargs):
@@ -977,9 +993,11 @@ class TestCli:
         ]
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in record mode, TODO, record should support chat.",
+    )
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in record mode, TODO, record should support chat.")
         chat_list = ["hi", "what is chat gpt?"]
 
         def mock_input(*args, **kwargs):
@@ -1014,9 +1032,11 @@ class TestCli:
         outerr = capsys.readouterr()
         assert "chat_history is required in the inputs of chat flow" in outerr.out
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, Cannot test inputs in fake inputs.",
+    )
     def test_flow_test_inputs(self, capsys, caplog):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, Cannot test inputs in fake inputs.")
         # Flow test missing required inputs
         with pytest.raises(SystemExit):
             run_pf_command(

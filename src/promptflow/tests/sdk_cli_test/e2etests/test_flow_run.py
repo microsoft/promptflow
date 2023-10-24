@@ -247,6 +247,10 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        reason="Skip this test in replay mode, no strong type conneciton support.",
+    )
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
         self, install_custom_tool_pkg, local_client, pf
     ):
@@ -281,10 +285,9 @@ class TestFlowRun:
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
 
+    @pytest.mark.skipif(os.environ.get("PF_RECORDING_MODE", None) == "replay", reason="Skip this test in replay mode")
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode")
         with pytest.raises(Exception) as e:
             pf.run(
                 flow=f"{FLOWS_DIR}/web_classification",
@@ -355,9 +358,10 @@ class TestFlowRun:
         run = local_client.runs.get(name=run.name)
         assert run.status == "Completed"
 
+    @pytest.mark.skipif(
+        os.environ.get("PF_RECORDING_MODE", None) == "replay", reason="Skip this test in replay mode, expected"
+    )
     def test_resolve_connection(self, local_client, local_aoai_connection):
-        if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-            pytest.skip("Skip this test in replay mode, expected")
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow, local_client)
         assert local_aoai_connection.name in connections
