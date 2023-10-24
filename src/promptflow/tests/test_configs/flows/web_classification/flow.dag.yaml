@@ -73,7 +73,7 @@ node_variants:
             deployment_name: gpt-35-turbo
             suffix: ''
             max_tokens: '128'
-            temperature: '0.2'
+            temperature: 0.2
             top_p: '1.0'
             logprobs: ''
             echo: 'False'
@@ -97,7 +97,7 @@ node_variants:
             deployment_name: gpt-35-turbo
             suffix: ''
             max_tokens: '256'
-            temperature: '0.3'
+            temperature: 0.3
             top_p: '1.0'
             logprobs: ''
             echo: 'False'
