@@ -64,7 +64,7 @@ def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
     **kwargs,
 ):
-    """Load flow from local.
+    """Load flow from YAML file.
 
     :param source: The local yaml source of a flow. Must be either a path to a local file.
         If the source is a path, it will be open and read.
@@ -81,7 +81,7 @@ def load_run(
     params_override: Optional[list] = None,
     **kwargs,
 ):
-    """Load run from local.
+    """Load run from YAML file.
 
     :param source: The local yaml source of a run. Must be either a path to a local file.
         If the source is a path, it will be open and read.
