@@ -1,3 +1,2 @@
 promptflow
-promptflow-tools
 my-tools-package
