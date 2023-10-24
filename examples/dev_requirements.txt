@@ -8,3 +8,13 @@ pypandoc # for markdown reader
 pypandoc_binary # pypandoc pandoc backend
 panflute # for pandoc filters
 jinja2 # for readme generations
+certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
+ipython>=7.16.3 # not directly required, pinned by Snyk to avoid a vulnerability
+jupyter-core>=4.11.2 # not directly required, pinned by Snyk to avoid a vulnerability
+mistune>=2.0.3 # not directly required, pinned by Snyk to avoid a vulnerability
+nbconvert>=6.3.0b0 # not directly required, pinned by Snyk to avoid a vulnerability
+pygments>=2.15.0 # not directly required, pinned by Snyk to avoid a vulnerability
+requests>=2.31.0 # not directly required, pinned by Snyk to avoid a vulnerability
+setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
+tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
+wheel>=0.38.0 # not directly required, pinned by Snyk to avoid a vulnerability
