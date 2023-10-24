@@ -7,6 +7,7 @@
 - [SDK/CLI] Support `pfazure run archive/restore/update`.
 - [SDK/CLI] Support custom strong type connection.
 - [SDK/CLI] Enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
+- [SDK/CLI] Exposed function `from promptflow import load_run` to load run object from local YAML file.
 
 ### Bugs Fixed
 - **pf config set**:
