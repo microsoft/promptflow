@@ -2,7 +2,7 @@ import pytest
 import unittest
 
 from promptflow.connections import CustomConnection
-from my_tool_package.tools.custom_llm_tool_showcase import my_tool
+from my_tool_package.tools.tool_with_custom_llm_type import my_tool
 
 
 @pytest.fixture
@@ -17,8 +17,8 @@ def my_custom_connection() -> CustomConnection:
     return my_custom_connection
 
 
-class TestToolWithPromptTemplateInput:
-    def test_custom_llm_tool_showcase(self, my_custom_connection):
+class TestToolWithCustomLLMType:
+    def test_tool_with_custom_llm_type(self, my_custom_connection):
         result = my_tool(my_custom_connection, "Hello {{text}}", text="Microsoft")
         assert result == "Hello Microsoft"
 

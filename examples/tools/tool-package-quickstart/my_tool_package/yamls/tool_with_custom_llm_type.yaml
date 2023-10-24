@@ -1,8 +1,8 @@
-my_tool_package.tools.custom_llm_tool_showcase.my_tool:
+my_tool_package.tools.tool_with_custom_llm_type.my_tool:
   name: Custom LLM Tool
   description: This is a tool to demonstrate the custom_llm tool type
   type: custom_llm
-  module: my_tool_package.tools.custom_llm_tool_showcase
+  module: my_tool_package.tools.tool_with_custom_llm_type
   function: my_tool
   inputs:
     connection:
