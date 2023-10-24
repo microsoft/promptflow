@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
 import contextlib
-import json
 import logging
 import re
 import time
@@ -12,12 +11,11 @@ from types import GeneratorType
 from typing import Any, Mapping
 
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import parse_variant
+from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
 from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -204,6 +202,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
+                output_sub_dir=".promptflow/intermediate",
             )
             return result
 
@@ -333,38 +332,7 @@ class TestSubmitter:
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
-            self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
-
-    @staticmethod
-    def _dump_result(flow_folder, prefix, flow_result=None, node_result=None):
-
-        if flow_result:
-            flow_serialize_result = {
-                "flow_runs": [serialize(flow_result.run_info)],
-                "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
-            }
-        else:
-            flow_serialize_result = {
-                "flow_runs": [],
-                "node_runs": [serialize(node_result)],
-            }
-        dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
-        dump_folder.mkdir(parents=True, exist_ok=True)
-
-        with open(dump_folder / f"{prefix}.detail.json", "w") as f:
-            json.dump(flow_serialize_result, f, indent=2)
-        if node_result:
-            metrics = flow_serialize_result["node_runs"][0]["metrics"]
-            output = flow_serialize_result["node_runs"][0]["output"]
-        else:
-            metrics = flow_serialize_result["flow_runs"][0]["metrics"]
-            output = flow_serialize_result["flow_runs"][0]["output"]
-        if metrics:
-            with open(dump_folder / f"{prefix}.metrics.json", "w") as f:
-                json.dump(metrics, f, indent=2)
-        if output:
-            with open(dump_folder / f"{prefix}.output.json", "w") as f:
-                json.dump(output, f, indent=2)
+            dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 
     @staticmethod
     def _raise_error_when_test_failed(test_result, show_trace=False):
