@@ -11,7 +11,9 @@ from urllib.parse import urlparse
 import requests
 
 from promptflow.contracts._errors import InvalidImageInput
+from promptflow.contracts.flow import FlowInputDefinition
 from promptflow.contracts.multimedia import Image, PFBytes
+from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import ErrorTarget
 
 MIME_PATTERN = re.compile(r"^data:image/(.*);(path|base64|url)$")
@@ -178,8 +180,11 @@ def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_date_to_base64(value: Any):
-    to_base64_funcs = {PFBytes: PFBytes.to_base64}
+def convert_multimedia_data_to_base64(value: Any, with_type=False):
+    func = (
+        lambda x: f"data:{x._mime_type};base64," + PFBytes.to_base64(x) if with_type else PFBytes.to_base64
+    )  # noqa: E731
+    to_base64_funcs = {PFBytes: func}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
@@ -194,3 +199,36 @@ def recursive_process(value: Any, process_funcs: Dict[type, Callable] = None) ->
     if isinstance(value, dict):
         return {k: recursive_process(v, process_funcs) for k, v in value.items()}
     return value
+
+
+def load_multimedia_data(inputs: Dict[str, FlowInputDefinition], line_inputs: dict):
+    updated_inputs = dict(line_inputs or {})
+    for key, value in inputs.items():
+        if value.type == ValueType.IMAGE:
+            updated_inputs[key] = create_image(updated_inputs[key])
+        elif value.type == ValueType.LIST or value.type == ValueType.OBJECT:
+            updated_inputs[key] = load_multimedia_data_recursively(updated_inputs[key])
+    return updated_inputs
+
+
+def load_multimedia_data_recursively(value: Any):
+    if isinstance(value, list):
+        return [load_multimedia_data_recursively(item) for item in value]
+    elif isinstance(value, dict):
+        if _is_multimedia_dict(value):
+            return _create_image_from_dict(value)
+        else:
+            return {k: load_multimedia_data_recursively(v) for k, v in value.items()}
+    else:
+        return value
+
+
+def resolve_image_path(input_dir: Path, image_dict: dict):
+    """Resolve image path to absolute path in image dict"""
+    input_dir = input_dir.parent if input_dir.is_file() else input_dir
+    if _is_multimedia_dict(image_dict):
+        for key in image_dict:
+            _, resource = _get_multimedia_info(key)
+            if resource == "path":
+                image_dict[key] = str(input_dir / image_dict[key])
+    return image_dict
