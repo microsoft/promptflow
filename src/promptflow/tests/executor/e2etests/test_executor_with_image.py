@@ -132,7 +132,7 @@ class TestExecutorWithImage:
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
         flow_result = executor.exec_line({})
         assert isinstance(flow_result.output, dict)
-        assert flow_result.output["output"] == "Fake answer"
+        assert_contain_image_object(flow_result.output)
         assert flow_result.run_info.status == Status.Completed
         assert_contain_image_reference(flow_result.run_info)
         for _, node_run_info in flow_result.node_run_infos.items():
