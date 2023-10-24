@@ -15,6 +15,7 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.thread_local_singleton import ThreadLocalSingleton
 from promptflow._core.tool import STREAMING_OPTION_PARAMETER_ATTR
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._utils.logger_utils import logger
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
@@ -59,10 +60,7 @@ class ToolResolver(ThreadLocalSingleton):
 
     @classmethod
     def start_resolver(
-        cls,
-        working_dir: Path,
-        connections: Optional[dict] = None,
-        package_tool_keys: Optional[List[str]] = None
+        cls, working_dir: Path, connections: Optional[dict] = None, package_tool_keys: Optional[List[str]] = None
     ):
         resolver = cls(working_dir, connections, package_tool_keys)
         resolver._activate_in_context(force=True)
@@ -126,27 +124,29 @@ class ToolResolver(ThreadLocalSingleton):
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             elif isinstance(value_type, ValueType):
                 try:
-                    updated_inputs[k].value = value_type.parse(v.value)
-                except Exception as e:
-                    raise NodeInputValidationError(
-                        message_format="Input '{key}' for node '{node_name}' of value '{value}' is not "
-                        "type {value_type}.",
-                        key=k, node_name=node.name, value=v.value, value_type=value_type.value,
-                        target=ErrorTarget.EXECUTOR
-                    ) from e
-                try:
+                    updated_inputs[k].value = v.value
+                    # Log a warning if the actual type is not the same as the expected type.
+                    if not isinstance(updated_inputs[k].value, value_type._get_python_type()):
+                        logger.warning(
+                            (
+                                f"Literal node input {k} is not type {value_type}, "
+                                f"received type is {type(updated_inputs[k].value)}."
+                            )
+                        )
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
                 except Exception as e:
                     error_type_and_message = f"({e.__class__.__name__}) {e}"
                     raise NodeInputValidationError(
                         message_format="Failed to load image for input '{key}': {error_type_and_message}",
-                        key=k, error_type_and_message=error_type_and_message,
-                        target=ErrorTarget.EXECUTOR
+                        key=k,
+                        error_type_and_message=error_type_and_message,
+                        target=ErrorTarget.EXECUTOR,
                     ) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.

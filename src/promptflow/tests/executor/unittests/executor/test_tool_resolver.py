@@ -207,11 +207,9 @@ class TestToolResolver:
             inputs={"int_input": InputAssignment(value="invalid", value_type=InputValueType.LITERAL)},
         )
         connections = {}
-        with pytest.raises(NodeInputValidationError) as e:
-            tool_resolver = ToolResolver(working_dir=None, connections=connections)
-            tool_resolver._convert_node_literal_input_types(node, tool)
-        message = "value 'invalid' is not type int"
-        assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
+        tool_resolver = ToolResolver(working_dir=None, connections=connections)
+        updated_node = tool_resolver._convert_node_literal_input_types(node, tool)
+        assert updated_node.inputs["int_input"].value == "invalid", "Don't convert literal value by defination."
 
         # Case 4: Unresolved value, like newly added type not in old version ValueType enum
         tool = Tool(name="mock", type="python", inputs={"int_input": InputDefinition(type=["A_good_type"])})

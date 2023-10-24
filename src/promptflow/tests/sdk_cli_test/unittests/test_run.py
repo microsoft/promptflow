@@ -36,7 +36,7 @@ class TestRun:
                 flow_dag = yaml.safe_load(f)
             node_name_2_node = {node["name"]: node for node in flow_dag[NODES]}
             node = node_name_2_node["summarize_text_content"]
-            assert node["inputs"]["temperature"] == "0.2"
+            assert node["inputs"]["temperature"] == 0.2
 
     def test_overwrite_connections(self):
         with variant_overwrite_context(

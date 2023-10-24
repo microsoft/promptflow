@@ -136,6 +136,23 @@ class ValueType(str, Enum):
         # TODO: parse other types
         return v
 
+    # This method is used to get the expect python class for input.
+    # When the actual input and expectation is not matched, we log a warning.
+    def _get_python_type(self):
+        if self == ValueType.INT:
+            return int
+        if self == ValueType.DOUBLE:
+            return float
+        if self == ValueType.BOOL:
+            return bool
+        if self == ValueType.STRING:
+            return str
+        if self == ValueType.LIST:
+            return list
+        if self == ValueType.OBJECT:
+            return dict
+        return None
+
 
 class ConnectionType:
     """This class provides methods to interact with connection types."""
