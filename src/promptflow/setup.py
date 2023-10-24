@@ -47,7 +47,7 @@ REQUIRES = [
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
     "ruamel.yaml>=0.17.35,<0.18.0",  # used to generate connection templates with preserved comments
     "pyarrow>=13.0.0,<14.0.0",  # used to read parquet file with pandas.read_parquet
-    "pillow",  # used to generate icon data URI for package tool
+    "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
 ]
 
 setup(
