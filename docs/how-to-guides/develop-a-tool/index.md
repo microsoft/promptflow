@@ -8,4 +8,5 @@ We provide guides on how to develop a tool and use it.
 create-and-use-tool-package
 add-a-tool-icon
 add-category-and-tags-for-tool
+how-to-use-enabled-by-value
 ```
