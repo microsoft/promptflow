@@ -356,6 +356,56 @@ def _update_gen2_metadata(name, version, indicator_file, storage_client) -> None
 T = TypeVar("T", bound=Artifact)
 
 
+def _check_and_upload_path(
+    artifact: T,
+    asset_operations: Union["DataOperations", "ModelOperations", "CodeOperations", "FeatureSetOperations"],
+    artifact_type: str,
+    datastore_name: Optional[str] = None,
+    sas_uri: Optional[str] = None,
+    show_progress: bool = True,
+):
+    """Checks whether `artifact` is a path or a uri and uploads it to the datastore if necessary.
+    param T artifact: artifact to check and upload param
+    Union["DataOperations", "ModelOperations", "CodeOperations"]
+    asset_operations:     the asset operations to use for uploading
+    param str datastore_name: the name of the datastore to upload to
+    param str sas_uri: the sas uri to use for uploading
+    """
+    from azure.ai.ml._utils.utils import is_mlflow_uri, is_url
+
+    datastore_name = artifact.datastore
+    if (
+        hasattr(artifact, "local_path")
+        and artifact.local_path is not None
+        or (
+            hasattr(artifact, "path")
+            and artifact.path is not None
+            and not (is_url(artifact.path) or is_mlflow_uri(artifact.path))
+        )
+    ):
+        path = (
+            Path(artifact.path)
+            if hasattr(artifact, "path") and artifact.path is not None
+            else Path(artifact.local_path)
+        )
+        if not path.is_absolute():
+            path = Path(artifact.base_path, path).resolve()
+        uploaded_artifact = _upload_to_datastore(
+            asset_operations._operation_scope,
+            asset_operations._datastore_operation,
+            path,
+            datastore_name=datastore_name,
+            asset_name=artifact.name,
+            asset_version=str(artifact.version),
+            asset_hash=artifact._upload_hash if hasattr(artifact, "_upload_hash") else None,
+            sas_uri=sas_uri,
+            artifact_type=artifact_type,
+            show_progress=show_progress,
+            ignore_file=getattr(artifact, "_ignore_file", None),
+        )
+    return uploaded_artifact
+
+
 def _check_and_upload_env_build_context(
     environment: Environment,
     operations: "EnvironmentOperations",
