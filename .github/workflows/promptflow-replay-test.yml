@@ -89,7 +89,7 @@ jobs:
         python -m pip install --upgrade wheel
         python -m pip install --upgrade keyrings.alt
         python -m pip install --upgrade beautifulsoup4==4.12.2
-        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
+        gci ./promptflow -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}[azure]
         gci ./promptflow-tools -Recurse | % {if ($_.Name.Contains('.whl')) {python -m pip install $_.FullName}}
         pip freeze
     - name: Azure Login
