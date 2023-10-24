@@ -19,5 +19,5 @@ my_tool_package.tools.tool_with_enabled_by_value.my_tool:
       enabled_by_value: [teacher]
   module: my_tool_package.tools.tool_with_enabled_by_value
   name: My Tool with Enabled By Value
-  description: This is my tool with enabled by value chesi
+  description: This is my tool with enabled by value
   type: python
