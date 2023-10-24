@@ -263,7 +263,7 @@ class TestCLIUtils:
     def test_calculate_column_widths(self) -> None:
         data = [
             {
-                "inputs.url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "inputs.url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
                 "inputs.answer": "Channel",
                 "inputs.evidence": "Url",
                 "outputs.category": "Channel",

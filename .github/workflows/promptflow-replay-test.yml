@@ -101,6 +101,5 @@ jobs:
       run: |
         gci env:* | sort-object name
         $env:PYTHONPATH=""
-        az account show
         echo '{}' > ${{ github.workspace }}/src/promptflow/connections.json
-        pytest ./tests/sdk_cli_test -n auto --dist loadfile
+        pytest ./tests/sdk_cli_test/ -n auto --dist loadfile

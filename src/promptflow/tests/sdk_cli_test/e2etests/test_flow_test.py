@@ -25,7 +25,11 @@ _client = PFClient()
 @pytest.mark.e2etest
 class TestFlowTest:
     def test_pf_test_flow(self):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
 
         result = _client.test(flow=flow_path, inputs=inputs)
@@ -121,7 +125,11 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     def test_pf_test_flow_with_variant(self):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
 
         result = _client.test(
             flow=f"{FLOWS_DIR}/web_classification", inputs=inputs, variant="${summarize_text_content.variant_1}"
@@ -131,7 +139,11 @@ class TestFlowTest:
     @pytest.mark.skip("TODO this test case failed in windows and Mac")
     def test_pf_test_with_additional_includes(self, caplog):
         with caplog.at_level(level=logging.WARNING, logger=LOGGER_NAME):
-            inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+            inputs = {
+                "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
+                "answer": "Channel",
+                "evidence": "Url",
+            }
             result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)
         duplicate_file_content = "Found duplicate file in additional includes"
         assert any([duplicate_file_content in record.message for record in caplog.records])
@@ -151,7 +163,11 @@ class TestFlowTest:
         reason="Skip this test in record mode, TODO, replay should support symbolic.",
     )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification_with_additional_include", inputs=inputs)
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
@@ -165,7 +181,11 @@ class TestFlowTest:
     )
     def test_pf_flow_test_with_exception(self, capsys):
         # Test flow with exception
-        inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}
+        inputs = {
+            "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
+            "answer": "Channel",
+            "evidence": "Url",
+        }
         flow_path = Path(f"{FLOWS_DIR}/web_classification_with_exception").absolute()
 
         with pytest.raises(UserErrorException) as exception:

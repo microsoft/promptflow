@@ -276,7 +276,7 @@ class TestCli:
             "--flow",
             f"{FLOWS_DIR}/web_classification",
             "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
             "answer=Channel",
             "evidence=Url",
         )
@@ -320,7 +320,7 @@ class TestCli:
                 "--flow",
                 temp_dir,
                 "--inputs",
-                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
                 "answer=Channel",
                 "evidence=Url",
             )
@@ -333,7 +333,7 @@ class TestCli:
                 "--flow",
                 temp_dir,
                 "--inputs",
-                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
                 "answer=Channel",
                 "evidence=Url",
                 "--variant",
@@ -358,7 +358,7 @@ class TestCli:
                     "--flow",
                     temp_dir,
                     "--inputs",
-                    "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                    "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
                     "answer=Channel",
                     "evidence=Url",
                     "--variant",
@@ -494,7 +494,7 @@ class TestCli:
             "--flow",
             f"{FLOWS_DIR}/web_classification_with_additional_include",
             "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
             "answer=Channel",
             "evidence=Url",
         )
@@ -527,7 +527,7 @@ class TestCli:
             "--flow",
             f"{FLOWS_DIR}/web_classification_with_symbolic",
             "--inputs",
-            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
             "answer=Channel",
             "evidence=Url",
         )
@@ -1081,7 +1081,7 @@ class TestCli:
                 "--flow",
                 f"{FLOWS_DIR}/web_classification",
                 "--inputs",
-                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
                 "answer=Channel",
                 "evidence=Url",
             )
@@ -1093,7 +1093,7 @@ class TestCli:
 
             flow_input_log = caplog.records[1]
             expect_inputs = {
-                "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+                "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
                 "answer": "Channel",
                 "evidence": "Url",
             }
