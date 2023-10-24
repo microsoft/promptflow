@@ -14,75 +14,43 @@ Create a new conda environment using python 3.9 or 3.10. Run below command to in
 ```
 pip install promptflow
 ```
-Install Pytest packages for running tests:
-```
-pip install pytest pytest-mock
-```
-Clone the PromptFlow repository from GitHub using the following command:
-```
-git clone https://github.com/microsoft/promptflow.git
-```
 
 ### Create custom tool package
-Run below command under the root folder to create your tool project quickly:
+Run below command to initialize a package tool in current folder:
 ```
-python <path-to-scripts>\tool\generate_tool_package_template.py --destination <your-tool-project> --package-name <your-package-name> --tool-name <your-tool-name> --function-name <your-tool-function-name>
+pf tool init --package <your-package-name> --tool <your-tool-name>
 ```
 For example:
 ```
-python D:\proj\github\promptflow\scripts\tool\generate_tool_package_template.py --destination hello-world-proj --package-name hello-world --tool-name hello_world_tool --function-name get_greeting_message
+pf tool init --package hello_world --tool hello_world_tool
 ```
 This auto-generated script will create one tool for you. The parameters _destination_ and _package-name_ are mandatory. The parameters _tool-name_ and _function-name_ are optional. If left unfilled, the _tool-name_ will default to _hello_world_tool_, and the _function-name_ will default to _tool-name_.
 
 The command will generate the tool project as follows with one tool `hello_world_tool.py` in it:
 
 ```
-hello-world-proj/    
-│    
-├── hello_world/    
-│   ├── tools/    
-│   │   ├── __init__.py    
-│   │   ├── hello_world_tool.py    
-│   │   └── utils.py    
-│   ├── yamls/    
-│   │   └── hello_world_tool.yaml    
-│   └── __init__.py    
-│    
-├── tests/     
-│   ├── __init__.py    
-│   └── test_hello_world_tool.py    
-│    
-├── MANIFEST.in    
-│    
-└── setup.py  
+hello_world/
+│   MANIFEST.in
+│   README.md
+│   setup.py
+│
+└───hello_world/
+        hello_world_tool.py
+        utils.py
+        __init__.py
 ```
 
 ```The points outlined below explain the purpose of each folder/file in the package. If your aim is to develop multiple tools within your package, please make sure to closely examine point 2 and 5.```
 
-1. **hello-world-proj**: This is the source directory. All of your project's source code should be placed in this directory.
-2. **hello-world/tools**: This directory contains the individual tools for your project. Your tool package can contain either one tool or many tools. When adding a new tool, you should create another *_tool.py under the `tools` folder.
-3. **hello-world/tools/hello_world_tool.py**: Develop your tool within the def function. Use the `@tool` decorator to identify the function as a tool.
+1. **hello_world**: This is the source directory. All of your project's source code should be placed in this directory.
+2. **hello_world/hello_world**: This directory contains the individual tools for your project. Your tool package can contain either one tool or many tools. When adding a new tool, you should create another *.py under this folder.
+3. **hello-world/hello_world/hello_world_tool.py**: Develop your tool within the def function. Use the `@tool` decorator to identify the function as a tool.
     > [!Note] There are two ways to write a tool. The default and recommended way is the function implemented way. You can also use the class implementation way, referring to [my_tool_2.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/my_tool_2.py) as an example.
-4. **hello-world/tools/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
+4. **hello-world/hello_world/utils.py**: This file implements the tool list method, which collects all the tools defined. It is required to have this tool list method, as it allows the User Interface (UI) to retrieve your tools and display them within the UI.
     > [!Note] There's no need to create your own list method if you maintain the existing folder structure. You can simply use the auto-generated list method provided in the `utils.py` file.
-5. **hello_world/yamls/hello_world_tool.yaml**: Tool YAMLs defines the metadata of the tool. The tool list method, as outlined in the `utils.py`, fetches these tool YAMLs.
-
-    > [!Note] If you create a new tool, don't forget to also create the corresponding tool YAML. You can run below command under your tool project to auto generate your tool YAML. You may want to specify `-n` for `name` and `-d` for `description`, which would be displayed as the tool name and tooltip in prompt flow UI. 
-    ```
-    python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> -n <tool_name> -d <tool_description>
-    ```
-    For example:
-    ```
-    python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m hello_world.tools.hello_world_tool -o hello_world\yamls\hello_world_tool.yaml -n "Hello World Tool" -d "This is my hello world tool."
-    ```
-    To populate your tool module, adhere to the pattern \<package_name\>.tools.\<tool_name\>, which represents the folder path to your tool within the package.
-6. **tests**: This directory contains all your tests, though they are not required for creating your custom tool package. When adding a new tool, you can also create corresponding tests and place them in this directory. Run below command under your tool project:
-    ```
-    pytest tests
-    ```
-7. **MANIFEST.in**: This file is used to determine which files to include in the distribution of the project. Tool YAML files should be included in MANIFEST.in so that your tool YAMLs would be packaged and your tools can show in the UI.
+7. **MANIFEST.in**: This file is used to determine which files to include in the distribution of the project.
     > [!Note] There's no need to update this file if you maintain the existing folder structure.
-8. **setup.py**: This file contains metadata about your project like the name, version, author, and more. Additionally, the entry point is automatically configured for you in the `generate_tool_package_template.py` script. In Python, configuring the entry point in `setup.py` helps establish the primary execution point for a package, streamlining its integration with other software. 
+8. **setup.py**: This file contains metadata about your project like the name, version, author, and more. Additionally, the entry point is automatically configured for you by `pf tool init`. In Python, configuring the entry point in `setup.py` helps establish the primary execution point for a package, streamlining its integration with other software. 
 
     The `package_tools` entry point together with the tool list method are used to retrieve all the tools and display them in the UI.
     ```python

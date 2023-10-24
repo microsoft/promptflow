@@ -11,38 +11,50 @@ Previously, all tools were listed at the top level. It would be challenging for 
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or later.
 
 ## How to add category and tags for a tool
-Run the command below in your tool project directory to automatically generate your tool YAML, use _-c_ or _--category_ to add category, and use _--tags_ to add tags for your tool:
 
-```
-python <path-to-scripts>\tool\generate_package_tool_meta.py -m <tool_module> -o <tool_yaml_path> --category <tool_category> --tags <tool_tags>
+### Initialize a package tool with category and tags
+
+Run the command below to initialize a package tool with category and tags:
+```python
+pf tool init --package <package-name> --tool <tool-name> --set --category=<tool_category> --tags=<tool_tags>
 ```
 
-Here, we use [an existing tool](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/my_tool_1.yaml) as an example. If you wish to create your own tool, please refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) guide. 
+Here, we use an example to show the categories and tags of the tool after initialization. Assume that the user executes this command:
+```python
+pf tool init --package package_name --tool tool_name --set --category="test_tool" --tags="{'tag1':'value1','tag2':'value2'}"
 ```
-cd D:\proj\github\promptflow\examples\tools\tool-package-quickstart
+The generated tool script is as follows, where category and tags have been configured on the tool:
+```python
+from promptflow import tool
+from promptflow.connections import CustomConnection
 
-python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.my_tool_1 -o my_tool_package\yamls\my_tool_1.yaml --category "test_tool" --tags "{'tag1':'value1','tag2':'value2'}"
+
+@tool(
+    name="tool_name",
+    description="This is tool_name tool",
+    category='test_tool',
+    tags={'tag1': 'value1', 'tag2': 'value2'},
+)
+def tool_name(connection: CustomConnection, input_text: str) -> str:
+    # Replace with your tool code.
+    # Usually connection contains configs to connect to an API.
+    # Use CustomConnection is a dict. You can use it like: connection.api_key, connection.api_base
+    # Not all tools need a connection. You can remove it if you don't need it.
+    return "Hello " + input_text
 ```
-In the auto-generated tool YAML file, the category and tags are shown as below:
-```yaml
-my_tool_package.tools.my_tool_1.my_tool:
-  function: my_tool
-  inputs:
-    connection:
-      type:
-      - CustomConnection
-    input_text:
-      type:
-      - string
-  module: my_tool_package.tools.my_tool_1
-  name: My First Tool
-  description: This is my first tool
-  type: python
-  # Category and tags are shown as below.
-  category: test_tool
-  tags:
-    tag1: value1
-    tag2: value2
+
+### Configure category and tags on an existing package tool
+Customer can configure category and tags directly on the tool script, as shown in the following code:
+```python
+@tool(
+    name="tool_name",
+    description="This is tool_name tool",
+    category=<tool-category>,
+    tags=<dict-of-the-tool-tags>,
+)
+def tool_name(input_text: str) -> str:
+    # tool logic
+    pass
 ```
 
 ## Tool with category and tags experience in VS Code extension
