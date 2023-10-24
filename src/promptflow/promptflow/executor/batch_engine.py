@@ -46,7 +46,8 @@ class BatchEngine:
         :rtype: ~promptflow.executor._result.BulkResult
         """
         input_dicts = self._get_input_dicts(input_dirs, inputs_mapping)
-        batch_result = self.flow_executor.exec_bulk(input_dicts, run_id)
+        output_dir = self._resolve_dir(output_dir)
+        batch_result = self.flow_executor.exec_bulk(input_dicts, run_id, output_dir=output_dir)
         batch_result.outputs = self._persist_outputs(batch_result.outputs, output_dir)
         return batch_result
 
@@ -89,7 +90,6 @@ class BatchEngine:
 
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to output directory"""
-        output_dir = self._resolve_dir(output_dir)
         # persist images to output directory
         outputs = [persist_multimedia_data(output, output_dir) for output in outputs]
         # persist outputs to json line file

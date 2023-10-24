@@ -443,7 +443,7 @@ class FlowExecutor:
             logger.error(failed_msg)
 
     def _exec_batch_with_threads(
-        self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, variant_id: str = ""
+        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
         line_number = [
@@ -468,6 +468,7 @@ class FlowExecutor:
             run_id,
             variant_id,
             validate_inputs,
+            output_dir,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
 
@@ -738,6 +739,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
+        output_dir: Path = None,
     ) -> BulkResult:
         """The entry points for bulk run execution
 
@@ -765,7 +767,7 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_threads(inputs, run_id, validate_inputs=validate_inputs)
+            line_results = self._exec_batch_with_threads(inputs, run_id, output_dir, validate_inputs=validate_inputs)
             self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
             self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)

@@ -1,22 +1,19 @@
-import pytest
-
-from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool, _exec_line
-from promptflow._utils.logger_utils import LogContext
-from promptflow.executor.flow_executor import LineResult
-from promptflow.contracts.run_info import Status
-from pytest_mock import MockFixture
+import sys
+import uuid
 from multiprocessing import Queue
 from pathlib import Path
-from promptflow.executor import FlowExecutor
 from tempfile import mkdtemp
-from ...utils import (
-    get_flow_sample_inputs,
-    get_yaml_file,
-    FLOW_ROOT
-)
 
-import uuid
-import sys
+import pytest
+from pytest_mock import MockFixture
+
+from promptflow._utils.logger_utils import LogContext
+from promptflow.contracts.run_info import Status
+from promptflow.executor import FlowExecutor
+from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool, _exec_line
+from promptflow.executor.flow_executor import LineResult
+
+from ...utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -70,6 +67,7 @@ class TestLineExecutionProcessPool:
                 run_id,
                 "",
                 False,
+                None,
             ) as pool:
                 result_list = pool.run(zip(range(nlines), bulk_inputs))
             assert len(result_list) == nlines
@@ -98,6 +96,7 @@ class TestLineExecutionProcessPool:
             run_id,
             "",
             False,
+            None,
         ) as pool:
             result_list = pool.run(zip(range(nlines), bulk_inputs))
             result_list = sorted(result_list, key=lambda r: r.run_info.index)

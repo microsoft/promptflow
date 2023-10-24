@@ -15,6 +15,8 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
+
+# from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.run_info import FlowRunInfo
@@ -124,6 +126,7 @@ class LineExecutionProcessPool:
         run_id,
         variant_id,
         validate_inputs,
+        output_dir,
     ):
         self._nlines = nlines
         self._run_id = run_id
@@ -156,6 +159,7 @@ class LineExecutionProcessPool:
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
         self._line_timeout_sec = flow_executor._line_timeout_sec
+        self._output_dir = output_dir
 
     def __enter__(self):
         manager = Manager()
@@ -210,6 +214,7 @@ class LineExecutionProcessPool:
                     message = healthy_ensured_process.get()
                     if isinstance(message, LineResult):
                         completed = True
+                        message = self._persist_multimedia_in_line_result(message)
                         result_list.append(message)
                         break
                     elif isinstance(message, FlowRunInfo):
@@ -241,6 +246,12 @@ class LineExecutionProcessPool:
                 total_count=self._nlines,
                 formatter="Finished {count} / {total_count} lines.",
             )
+
+    def _persist_multimedia_in_line_result(self, result: LineResult) -> LineResult:
+        if not self._output_dir:
+            return result
+        # result.output = persist_multimedia_data(result.output, self._output_dir)
+        return result
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
