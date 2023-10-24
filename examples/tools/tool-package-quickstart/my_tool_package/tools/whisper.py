@@ -28,7 +28,7 @@ class ResponseFormat(str, Enum):
 @handle_openai_error()
 def whisper(connection: Union[AzureOpenAIConnection, OpenAIConnection], file: FilePath, endpoint: WhisperEndpoint, deployment_name: str, prompt: str, response_format: ResponseFormat):
     audio_file = open(file, 'rb')
-    payload = {'file': audio_file}
+    files = {"file": "@./audio.wav"}
     connection_dict = dict(connection)
     if isinstance(connection, AzureOpenAIConnection):
             # Request URL
@@ -36,7 +36,7 @@ def whisper(connection: Union[AzureOpenAIConnection, OpenAIConnection], file: Fi
         print("api_url: ",api_url)
         headers =  {"api-key": connection.api_key,
                     "Content-Type": "multipart/form-data"}
-        response = requests.post(api_url, data=payload, headers=headers)
+        response = requests.post(api_url, headers=headers, data=files)
 
         print("response json: ", response.json())
 
