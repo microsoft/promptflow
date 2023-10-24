@@ -1,0 +1,17 @@
+inputs:
+  key:
+    type: string
+    default: text
+outputs:
+  output:
+    type: string
+    reference: ${print_secret.output}
+nodes:
+- name: print_secret
+  type: python
+  source:
+    type: code
+    path: print_secret.py
+  inputs:
+    connection: custom_connection
+    text: ${inputs.key}

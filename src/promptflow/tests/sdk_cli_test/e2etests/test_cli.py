@@ -1407,3 +1407,45 @@ class TestCli:
         assert output_path.exists()
         image_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "intermediate"
         assert image_path.exists()
+
+    def test_data_scrubbing(self):
+        # Prepare connection
+        run_pf_command(
+            "connection",
+            "create",
+            "--file",
+            f"{CONNECTIONS_DIR}/custom_connection.yaml",
+            "--name",
+            "custom_connection")
+        # Test flow run
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/print_secret_flow",
+        )
+        output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+            assert "**data_scrubbed**" in log_content
+
+        # Test node run
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/print_secret_flow",
+            "--node",
+            "print_secret",
+            "--inputs",
+            "conn=custom_connection",
+            "inputs.topic=atom"
+        )
+        output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow-print_secret.node.detail.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "print_secret.node.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert "**data_scrubbed**" in log_content
