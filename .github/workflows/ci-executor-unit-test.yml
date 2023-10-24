@@ -1,4 +1,4 @@
-name: promptflow-executor-unit-test
+name: executor-unit-test
 on:
   schedule:
     - cron: "40 19 * * *" # Every day starting at 3:40 BJT
@@ -6,7 +6,7 @@ on:
     paths:
       - src/promptflow/**
       - scripts/**
-      - '**promptflow-executor-unit-test.yml'
+      - '**ci-executor-unit-test.yml'
   workflow_dispatch:
 env:
   packageSetupType: promptflow_with_extra
