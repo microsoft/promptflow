@@ -38,6 +38,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
@@ -241,7 +242,14 @@ class LocalStorageOperations(AbstractRunStorage):
             flow_dag = yaml.safe_load(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
-    def dump_inputs(self, inputs: RunInputs) -> None:
+    def dump_inputs(self, line_results: List[LineResult]) -> None:
+        inputs = []
+        for line_result in line_results:
+            try:
+                inputs.append(line_result.run_info.inputs)
+            except Exception:
+                # ignore when single line doesn't have inputs
+                pass
         df = pd.DataFrame(inputs)
         with open(self._inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=203588
@@ -397,6 +405,7 @@ class LocalStorageOperations(AbstractRunStorage):
             return
         # The executor will persist outputs to output directory, so only dump metrics here for the time being.
         self.dump_metrics(result.metrics)
+        self.dump_inputs(result.line_results)
 
     def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):
         if run_info.inputs:

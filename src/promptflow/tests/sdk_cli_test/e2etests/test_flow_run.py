@@ -746,6 +746,36 @@ class TestFlowRun:
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
 
+    def test_run_get_inputs(self, pf):
+        # inputs should be persisted when defaults are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/default_input",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+
+        # inputs should be persisted when data value are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=f"{DATAS_DIR}/dictInput1.jsonl",
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {"key": [{"key": "value in data"}], "line_number": [0]}
+
+        # inputs should be persisted when column-mapping are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"key": {"value": "value in column-mapping"}, "url": "${data.url}"},
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {
+            "key": [{"value": "value in column-mapping"}],
+            "line_number": [0],
+            "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
+        }
+
     # test image
     def test_basic_image_flow_bulk_run(self, pf, local_client) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_image_input_and_output"

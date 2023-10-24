@@ -191,9 +191,9 @@ class TestToolsManager:
             package: test-custom-tools
             package_version: 0.0.2
             configs:
-              api_url: "This is a fake api url."  # String, The api url.
+              api_url: "This is a fake api url."  # String type. The api url.
             secrets:      # must-have
-              api_key: "to_replace_with_api_key"  # String, The api key.
+              api_key: "to_replace_with_api_key"  # String type. The api key.
             """
 
         content = templates["my_tool_package.tools.my_tool_with_custom_strong_type_connection.MyCustomConnection"]
