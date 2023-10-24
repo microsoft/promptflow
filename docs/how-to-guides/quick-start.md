@@ -126,6 +126,9 @@ We need to set up the connection if we haven't added it before. Once created, th
 Firstly we need a connection yaml file `connection.yaml`:
 
 If you are using Azure Open AI, prepare your resource follow with this [instruction](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal) and get your `api_key` if you don't have one.
+
+> **_NOTE:_**  If you are using Azure OpenAI Service, you need to change the deployment_name in flow.dag.yaml in the classify_with_llm node and variants. The deployement name can be found in Azure OpenAI Studio under "Deployments". You will also need to provide a version number for the endpoint. You can follow this link to learn more about [endpoints](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference). As of the time of this writing "2023-05-15" is a supported version. 
+
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/promptflow/latest/AzureOpenAIConnection.schema.json
 name: open_ai_connection
