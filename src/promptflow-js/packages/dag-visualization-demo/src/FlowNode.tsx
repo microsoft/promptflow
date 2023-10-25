@@ -10,7 +10,7 @@ interface IFlowNodeProps {
 export const FlowNode: React.FC<IFlowNodeProps> = ({ node, width, height }) => {
   return (
     <g>
-      <rect x1={node.x} x2={node.x + width} y1={node.y} y2={node.y + height} stroke="blue"></rect>
+      <rect x={node.x} width={width} y={node.y} height={height} stroke="blue" strokeWidth={1} fill="none"></rect>
       <text x={node.x} y={node.y} height={height} width={width} textAnchor="center">{node.id}</text>
     </g>
   );
