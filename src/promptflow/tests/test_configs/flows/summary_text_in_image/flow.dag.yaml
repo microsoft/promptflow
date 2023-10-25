@@ -1,0 +1,42 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  image:
+    type: image
+    default: langchain_doc.png
+outputs:
+  summary_result:
+    type: string
+    reference: ${summary_image.output}
+nodes:
+- name: detect_text_in_image
+  type: python
+  source:
+    type: code
+    path: detect_text_in_image.py
+  inputs:
+    image: ${inputs.image}
+- name: summary_image
+  type: llm
+  source:
+    type: code
+    path: summary_image.jinja2
+  inputs:
+    deployment_name: text-davinci-003
+    suffix: ''
+    max_tokens: '128'
+    temperature: '0.1'
+    top_p: '1.0'
+    logprobs: ''
+    echo: 'False'
+    stop: ''
+    presence_penalty: '0'
+    frequency_penalty: '0'
+    best_of: '1'
+    logit_bias: ''
+    text: ${detect_text_in_image.output}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: completion
+  module: promptflow.tools.aoai
+environment:
+  python_requirements_txt: requirements.txt
