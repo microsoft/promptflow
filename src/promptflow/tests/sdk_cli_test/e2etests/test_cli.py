@@ -1139,8 +1139,7 @@ class TestCli:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(['python', app_file])
-
+                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
                 try:
                     # Wait for a specified time (in seconds)
                     wait_time = 5
@@ -1148,7 +1147,7 @@ class TestCli:
                     if process.returncode == 0:
                         pass
                     else:
-                        raise Exception(f"Process terminated with exit code {process.returncode}")
+                        raise Exception(f"Process terminated with exit code {process.returncode}, {process.stderr.read().decode('utf-8')}")
                 except (subprocess.TimeoutExpired, KeyboardInterrupt):
                     pass
                 finally:
