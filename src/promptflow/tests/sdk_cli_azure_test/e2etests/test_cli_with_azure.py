@@ -11,18 +11,17 @@ from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+RUNS_DIR = "./tests/test_configs/runs"
 
 
 # TODO: move this to a shared utility module
-def run_pf_command(*args, pf, runtime, cwd=None):
+def run_pf_command(*args, pf, runtime=None, cwd=None):
     origin_argv, origin_cwd = sys.argv, os.path.abspath(os.curdir)
     try:
         sys.argv = (
             ["pfazure"]
             + list(args)
             + [
-                "--runtime",
-                runtime,
                 "--subscription",
                 pf._ml_client.subscription_id,
                 "--resource-group",
@@ -31,6 +30,8 @@ def run_pf_command(*args, pf, runtime, cwd=None):
                 pf._ml_client.workspace_name,
             ]
         )
+        if runtime:
+            sys.argv += ["--runtime", runtime]
         if cwd:
             os.chdir(cwd)
         main()
@@ -113,3 +114,20 @@ class TestCliWithAzure:
         )
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
+
+    def test_run_file_with_set(self, pf, runtime) -> None:
+        name = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"runtime={runtime}",
+            "--name",
+            name,
+            pf=pf,
+        )
+        run = pf.runs.get(run=name)
+        assert isinstance(run, Run)
+        assert run.properties["azureml.promptflow.runtime_name"] == runtime

@@ -21,6 +21,7 @@ import yaml
 
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -1491,3 +1492,37 @@ class TestCli:
         assert output_path.exists()
         image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
+
+    def test_run_file_with_set(self, pf) -> None:
+        name = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"name={name}",
+        )
+        # run exists
+        pf.runs.get(name=name)
+
+    def test_run_file_with_set_priority(self, pf) -> None:
+        # --name has higher priority than --set
+        name1 = str(uuid.uuid4())
+        name2 = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"name={name1}",
+            "--name",
+            name2,
+        )
+        # run exists
+        try:
+            pf.runs.get(name=name1)
+        except RunNotFoundError:
+            pass
+        pf.runs.get(name=name2)
