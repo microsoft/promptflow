@@ -1249,28 +1249,27 @@ class TestCli:
                     name,
                 )
 
-    def test_pf_run_with_stream_log(self):
-        f = io.StringIO()
-        # with --stream will show logs in stdout
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/flow_with_user_output",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--column-mapping",
-                "key=value",
-                "extra=${data.url}",
-                "--stream",
-            )
-        logs = f.getvalue()
+    def test_pf_run_with_stream_log(self, capfd):
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/flow_with_user_output",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--column-mapping",
+            "key=value",
+            "extra=${data.url}",
+            "--stream",
+        )
+        out, _ = capfd.readouterr()
         # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
         existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
-        assert all([keyword in logs for keyword in existing_keywords])
         non_existing_keywords = ["execution.flow", "user log"]
-        assert all([keyword not in logs for keyword in non_existing_keywords])
+        for keyword in existing_keywords:
+            assert keyword in out
+        for keyword in non_existing_keywords:
+            assert keyword not in out
 
     def test_pf_run_no_stream_log(self):
         f = io.StringIO()
@@ -1387,7 +1386,7 @@ class TestCli:
             package_folder = Path(temp_dir) / package_name
             icon_path = Path(DATAS_DIR) / "logo.jpg"
             category = "test_category"
-            tags = {'tag1': 'value1', 'tag2': 'value2'}
+            tags = {"tag1": "value1", "tag2": "value2"}
             run_pf_command(
                 "tool",
                 "init",
@@ -1399,10 +1398,11 @@ class TestCli:
                 f"icon={icon_path.absolute()}",
                 f"category={category}",
                 f"tags={tags}",
-                cwd=temp_dir
+                cwd=temp_dir,
             )
             spec = importlib.util.spec_from_file_location(
-                f"{package_name}.utils", package_folder / package_name / "utils.py")
+                f"{package_name}.utils", package_folder / package_name / "utils.py"
+            )
             utils = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(utils)
 
@@ -1424,7 +1424,7 @@ class TestCli:
                     func_name,
                     "--set",
                     "icon=invalid_icon_path",
-                    cwd=temp_dir
+                    cwd=temp_dir,
                 )
             outerr = capsys.readouterr()
             assert "Cannot find the icon path" in outerr.out
