@@ -8,17 +8,10 @@ pytest-xdist
 pytest-timeout
 pytest-mock
 pytest-nunit
-pytest-sugar
 pytest
 pydash
 wheel
-setuptools
-twine==4.0.0
-portalocker~=1.2
-setuptools_rust
 azure-mgmt-storage==21.0.0
-azure-keyvault
-azure-identity
 # Note: This is possibly-insecure, do not add this to setup.
 keyrings.alt
 
