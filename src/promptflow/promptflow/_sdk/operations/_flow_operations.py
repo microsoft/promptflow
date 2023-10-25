@@ -402,11 +402,11 @@ class FlowOperations:
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
         flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()
-                       if flow_input != "chat_history"}
-        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()
-                              if flow_input != "chat_history"]
+                       if not value.is_chat_history}
+        flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
+        is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
@@ -417,6 +417,8 @@ class FlowOperations:
                 "flow_inputs": flow_inputs,
                 "flow_inputs_params": flow_inputs_params,
                 "flow_path": None,
+                "is_chat_flow": is_chat_flow,
+                "chat_history_input_name": chat_history_input_name
             },
         )
         self._run_pyinstaller(output_dir)
