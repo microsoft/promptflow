@@ -16,12 +16,12 @@ Previously, all tools were listed at the top level. It would be challenging for 
 
 Run the command below to initialize a package tool with category and tags:
 ```python
-pf tool init --package <package-name> --tool <tool-name> --set --category=<tool_category> --tags=<tool_tags>
+pf tool init --package <package-name> --tool <tool-name> --set category=<tool_category> tags=<tool_tags>
 ```
 
 Here, we use an example to show the categories and tags of the tool after initialization. Assume that the user executes this command:
 ```python
-pf tool init --package package_name --tool tool_name --set --category="test_tool" --tags="{'tag1':'value1','tag2':'value2'}"
+pf tool init --package package_name --tool tool_name --set category="test_tool" tags="{'tag1':'value1','tag2':'value2'}"
 ```
 The generated tool script is as follows, where category and tags have been configured on the tool:
 ```python
