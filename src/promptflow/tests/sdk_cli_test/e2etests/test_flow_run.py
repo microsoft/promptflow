@@ -788,5 +788,6 @@ class TestFlowRun:
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
         # below texts are printed by executor before the batch run executed
-        assert "total memory in use:" in logs
-        assert "available max worker count:" in logs
+        # the warning message results from we do not use column mapping
+        # so it is expected to be printed here
+        assert "Starting run without column mapping may lead to unexpected results." in logs
