@@ -1,52 +1,40 @@
 from promptflow import tool
 
+def string_to_number(raw_string: str, processed_result: int) -> list:
+    ''' Try to parse the prediction string and groundtruth string to float number. 
+    Support parse int, float, fraction and recognize non-numeric string with wrong format.
+    For example: '3/5', '6/10', '0.5', 'the answer is \box{2/3}', '4/7//8'
+    '''
+    float_number = 0.0
+    try:
+        float_number = float(raw_string) 
+    except Exception:
+        if '/' in raw_string: 
+            split_list = raw_string.split('/') 
+            if len(split_list) == 2: 
+                numerator, denominator = split_list
+                try:
+                    float_number = float(numerator) / float(denominator) 
+                except Exception:
+                    processed_result = -1
+            else:
+                processed_result = -1 
+        else:
+            processed_result = -1
+    return [float_number, processed_result]
 
 @tool
 def line_process(groundtruth: str, prediction: str) -> int:
-
     processed_result = 0
-
     # process prediction
-    try:
-        pred_float = float(prediction) # if the prediction string is a float number, convert it into float type.
-    except Exception:
-        if '/' in prediction: # if the prediction string is a fraction, try to parse it and convert it into float type.
-            split_list = prediction.split('/') 
-            if len(split_list) == 2: # if it is a fraction with right format
-                numerator, denominator = split_list
-                try:
-                    pred_float = float(numerator) / float(denominator) 
-                except Exception:
-                    # for the wrong format with non-numeric numerator or zero denominator
-                    processed_result = -1
-            else:
-                # for the wrong format with multiple '/'
-                processed_result = -1 
-        else:
-            # for the wrong format without '/'
-            processed_result = -1
-
+    pred_float, processed_result = string_to_number(prediction, processed_result)
     # process groundtruth
-    try:
-        gt_float = float(groundtruth) # if the groundtruth string is a float number, convert it into float type.
-    except Exception:
-        if '/' in groundtruth: # if the prediction string is a fraction, try to parse it and convert it into float type.
-            numerator, denominator = groundtruth.split('/')
-            try:
-                gt_float = float(numerator) / float(denominator)
-            except Exception:
-                # for the wrong format with non-numeric numerator or zero denominator
-                processed_result = -1
-        else:
-            # for the wrong format without '/'
-            processed_result = -1
+    gt_float, processed_result = string_to_number(groundtruth, processed_result)
 
     if processed_result == 0:
-        if round(pred_float, 10) == round(gt_float, 10): # avoid misjudgment caused by precision
-            # for the correct answer
+        if round(pred_float, 10) == round(gt_float, 10): 
             processed_result = 1 
         else:
-            # for the wrong answer
             processed_result = -1
 
     return processed_result
