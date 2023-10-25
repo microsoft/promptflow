@@ -39,7 +39,7 @@ properties:
 Properties released to UI display of this flow:
 1. `is-promptflow`: value should always be `true`. This property distinguishes it from other models, enabling promptflow service to filter it out.
 2. `azureml.promptflow.section`: value should always be `gallery`. This property indicates UI that this flow needs to be shown in the Flow Gallery.
-3. `azureml.promptflow.type`: value can be `chat`, `standard` or `evaluate`. This property identifies the type of your flow, and the UI will display different types of flows under different tabs accordingly.
+3. `azureml.promptflow.type`: value can be `chat`, `standard` or `evaluate`. This property identifies the type of your flow, and UI will display flows with  `evaluate` value under the 'Evaluation' tab, and display flows with other values under the 'Flow' tab.
 4. `azureml.promptflow.name`: the name of the flow which will be shown as the flow name in the Flow Gallery.
 5. `azureml.promptflow.description`: the description of the flow which will be shown as flow description in the Flow Gallery.
 
@@ -61,12 +61,10 @@ properties:
 
 ### Register the model in an organization registry
 
- Run the command below to register the flow as a model to an organization registry:
+ Run the command below to register the flow as a model to an organization registry. More details about [registry creation](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-registries?view=azureml-api-2&tabs=studio#create-a-registry) and [model creation](https://learn.microsoft.com/en-us/cli/azure/ml/model?view=azure-cli-latest#az-ml-model-create):
 ```
 az ml model create -f model.yml --registry-name <organization-registry-name>
 ```
-
-> [!Note] More details about [registry creation](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-manage-registries?view=azureml-api-2&tabs=studio#create-a-registry) and [model creation](https://learn.microsoft.com/en-us/cli/azure/ml/model?view=azure-cli-latest#az-ml-model-create)
 
 ## Locate the flow in the Flow Gallery
 
