@@ -152,7 +152,7 @@ def start():
 {{ ' ' * indent_level * 3 }}dump_path = Path('{{flow_path}}').parent
 {% else %}
 {{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
-{{ ' ' * indent_level * 3 }}dump_path = flow.parent
+{{ ' ' * indent_level * 3 }}dump_path = None
 {% endif %}
             if flow.is_dir():
                 os.chdir(flow)
