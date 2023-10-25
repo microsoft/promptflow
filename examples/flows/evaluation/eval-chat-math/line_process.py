@@ -1,9 +1,9 @@
 from promptflow import tool
 
-def string_to_number(raw_string: str, processed_result: int) -> list:
+def string_to_number(raw_string: str) -> float:
     ''' Try to parse the prediction string and groundtruth string to float number. 
     Support parse int, float, fraction and recognize non-numeric string with wrong format.
-    For example: '3/5', '6/10', '0.5', 'the answer is \box{2/3}', '4/7//8'
+    Wrong format cases: 'the answer is \box{2/3}', '4/7//8'
     '''
     float_number = 0.0
     try:
@@ -16,28 +16,29 @@ def string_to_number(raw_string: str, processed_result: int) -> list:
                 try:
                     float_number = float(numerator) / float(denominator) 
                 except Exception:
-                    processed_result = -1
+                    return None
             else:
-                processed_result = -1 
+                return None 
         else:
-            processed_result = -1
-    return [float_number, processed_result]
+            return None
+    return float_number
 
 @tool
 def line_process(groundtruth: str, prediction: str) -> int:
-    processed_result = 0
-    # process prediction
-    pred_float, processed_result = string_to_number(prediction, processed_result)
-    # process groundtruth
-    gt_float, processed_result = string_to_number(groundtruth, processed_result)
-
-    if processed_result == 0:
-        if round(pred_float, 10) == round(gt_float, 10): 
-            processed_result = 1 
-        else:
-            processed_result = -1
-
-    return processed_result
+    pred_float = string_to_number(prediction)
+    '''Early stop'''
+    if (pred_float is None):
+        return -1
+    
+    gt_float = string_to_number(groundtruth)
+    if (gt_float is None):
+        return -1
+    
+    ''' both pred_float and gt_float are valid'''
+    if round(pred_float, 10) == round(gt_float, 10):
+        return 1
+    else:
+        return -1
 
 
 if __name__ == "__main__":
