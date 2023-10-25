@@ -79,7 +79,7 @@ When it comes to an `aggregation node`, there are two key distinctions that set 
     path: calculate_accuracy.py
   inputs:
     grades: ${grade.output}
-  aggregation: true
+  aggregation: true  # Add this attribute to make it an aggregation node
 ```
 
 2. Its source code accepts a `List` type parameter which is a collection of the previous regular node's outputs.
@@ -102,7 +102,7 @@ def calculate_accuracy(grades: List[str]):
     return result
 ```
 
-The parameter `grades` in above function, contains all results that are produced by the regular node `grade`. Assuming the referred stantdard flow run has 3 outputs:
+The parameter `grades` in above function, contains all results that are produced by the regular node `grade`. Assuming the referred standard flow run has 3 outputs:
 
 ```json
 {"prediction": "App"}

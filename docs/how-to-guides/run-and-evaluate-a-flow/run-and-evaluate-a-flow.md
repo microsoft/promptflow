@@ -216,4 +216,5 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 
 Learn more about:
 - [Tune prompts with variants](../tune-prompts-with-variants.md)
+- [Develop evaluation flow](../develop-a-flow/develop-evaluation-flow.md)
 - [Deploy a flow](../deploy-a-flow/index.md)
