@@ -514,7 +514,8 @@ class FlowServiceCaller(RequestTelemetryMixin):
         # InProgress is only known non-terminal status for now.
         while status in [None, "InProgress"]:
             if time_run + sleep_period > timeout_seconds:
-                message = f"Polling timeout for session {session_id} {action} for {AUTOMATIC_RUNTIME}.\n" \
+                message = f"Polling timeout for session {session_id} {action} " \
+                          f"for {AUTOMATIC_RUNTIME} after {timeout_seconds} seconds.\n" \
                           f"To proceed the {action} for {AUTOMATIC_RUNTIME}, you can retry using the same flow, " \
                           "and we will continue polling status of previous session. \n"
                 raise Exception(message)
