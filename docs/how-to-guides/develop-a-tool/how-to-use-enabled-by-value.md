@@ -48,8 +48,7 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
         raise Exception("Invalid user.")
 ```
 
-2. Generate a tool yaml for your tool, referring to [tool_with_enabled_by_value.yaml]((https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_enabled_by_value.yaml)
-) as an example. The "enabled_by_value" in one input means that this input is enabled by the value of the input referred to in the "enabled_by" attribute.
+2. Generate a tool yaml for your tool, referring to [tool_with_enabled_by_value.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_enabled_by_value.yaml) as an example. The "enabled_by_value" in one input means that this input is enabled by the value of the input referred to in the "enabled_by" attribute.
 
 ```yaml
 my_tool_package.tools.tool_with_enabled_by_value.my_tool:
