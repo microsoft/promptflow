@@ -18,7 +18,7 @@ Adding a custom tool icon is optional. If you do not provide one, the system use
 ## Add tool icon with _icon_ parameter
 
 ### Initialize a package tool with icon
-Run the command below to initialize a package tool with icon:
+You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init) to initialize a package tool with icon:
 ```bash
 pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path>
 ```

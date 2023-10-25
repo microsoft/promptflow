@@ -14,7 +14,7 @@ Previously, all tools were listed at the top level. It would be challenging for 
 
 ### Initialize a package tool with category and tags
 
-Run the command below to initialize a package tool with category and tags:
+You can use [pf tool init](../../reference/pf-command-reference.md#pf-tool-init) to initialize a package tool with category and tags:
 ```python
 pf tool init --package <package-name> --tool <tool-name> --set category=<tool_category> tags=<tool_tags>
 ```
