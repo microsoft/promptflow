@@ -124,4 +124,4 @@ class FlowInvoker:
                 result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
-        return resolved_outputs
+        return resolved_outputs, result.output

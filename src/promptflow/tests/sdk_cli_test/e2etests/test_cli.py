@@ -1122,7 +1122,7 @@ class TestCli:
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     def test_flow_build_executable(self):
-        source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
+        source = f"{FLOWS_DIR}/python_tool_with_simple_image/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
         with mock.patch(target) as mocked:
             mocked.return_value = None
@@ -1143,7 +1143,7 @@ class TestCli:
                 process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
                 try:
                     # Wait for a specified time (in seconds)
-                    wait_time = 5
+                    wait_time = 10
                     process.wait(timeout=wait_time)
                     if process.returncode == 0:
                         pass
@@ -1491,6 +1491,18 @@ class TestCli:
         output_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "output"
         assert output_path.exists()
         image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
+        assert image_path.exists()
+
+    def test_flow_test_with_composite_image(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_composite_image",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
 
     def test_run_file_with_set(self, pf) -> None:
