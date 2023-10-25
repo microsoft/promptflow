@@ -410,7 +410,7 @@ class TestToolResolver:
             (["MyFirstCSTConnection", "MySecondCSTConnection"], MyFirstCSTConnection),
         ],
     )
-    def test_convert_to_custom_strong_type_connection_value(self, conn_types: list[str], expected_type, mocker):
+    def test_convert_to_custom_strong_type_connection_value(self, conn_types: List[str], expected_type, mocker):
         connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
 
