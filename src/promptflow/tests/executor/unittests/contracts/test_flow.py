@@ -29,7 +29,7 @@ class TestFlowContract:
         "flow_folder, expected_connection_names",
         [
             ("web_classification", {"azure_open_ai_connection"}),
-            ("web_classification_no_connection", {"azure_open_ai_connection"}),
+            ("basic-with-connection", {"azure_open_ai_connection"}),
             ("flow_with_dict_input_with_variant", {"mock_custom_connection"}),
         ],
     )
