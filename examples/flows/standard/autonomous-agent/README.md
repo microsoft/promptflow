@@ -56,8 +56,11 @@ pf flow test --flow .
 
 ```bash
 # create run using command line args
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping name='${data.name}' role='${data.role}' goals='${data.goals}' --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
 
 ## Disclaimer
 LLM systems are susceptible to prompt injection, and you can gain a deeper understanding of this issue in the [technical blog](https://developer.nvidia.com/blog/securing-llm-systems-against-prompt-injection/). As an illustration, the PythonREPL function might execute harmful code if provided with a malicious prompt within the provided sample. Furthermore, we cannot guarantee that implementing AST validations solely within the PythonREPL function will reliably elevate the sample's security to an enterprise level. We kindly remind you to refrain from utilizing this in a production environment.
