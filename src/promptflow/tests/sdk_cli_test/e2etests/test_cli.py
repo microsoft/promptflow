@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import os.path
+import subprocess
 import shutil
 import sys
 import tempfile
@@ -20,6 +21,7 @@ import yaml
 
 from promptflow._cli._pf.entry import main
 from promptflow._sdk._constants import LOGGER_NAME, SCRUBBED_VALUE
+from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
@@ -1163,6 +1165,42 @@ class TestCli:
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
+    def test_flow_build_executable(self):
+        source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
+        target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
+        with mock.patch(target) as mocked:
+            mocked.return_value = None
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                run_pf_command(
+                    "flow",
+                    "build",
+                    "--source",
+                    source,
+                    "--output",
+                    temp_dir,
+                    "--format",
+                    "executable",
+                )
+                # Start the Python script as a subprocess
+                app_file = Path(temp_dir, "app.py").as_posix()
+                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
+                try:
+                    # Wait for a specified time (in seconds)
+                    wait_time = 5
+                    process.wait(timeout=wait_time)
+                    if process.returncode == 0:
+                        pass
+                    else:
+                        raise Exception(f"Process terminated with exit code {process.returncode}, "
+                                        f"{process.stderr.read().decode('utf-8')}")
+                except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                    pass
+                finally:
+                    # Kill the process
+                    process.terminate()
+                    process.wait()  # Ensure the process is fully terminated
+
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
         [
@@ -1256,28 +1294,27 @@ class TestCli:
                     name,
                 )
 
-    def test_pf_run_with_stream_log(self):
-        f = io.StringIO()
-        # with --stream will show logs in stdout
-        with contextlib.redirect_stdout(f):
-            run_pf_command(
-                "run",
-                "create",
-                "--flow",
-                f"{FLOWS_DIR}/flow_with_user_output",
-                "--data",
-                f"{DATAS_DIR}/webClassification3.jsonl",
-                "--column-mapping",
-                "key=value",
-                "extra=${data.url}",
-                "--stream",
-            )
-        logs = f.getvalue()
+    def test_pf_run_with_stream_log(self, capfd):
+        run_pf_command(
+            "run",
+            "create",
+            "--flow",
+            f"{FLOWS_DIR}/flow_with_user_output",
+            "--data",
+            f"{DATAS_DIR}/webClassification3.jsonl",
+            "--column-mapping",
+            "key=value",
+            "extra=${data.url}",
+            "--stream",
+        )
+        out, _ = capfd.readouterr()
         # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
         existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
-        assert all([keyword in logs for keyword in existing_keywords])
         non_existing_keywords = ["execution.flow", "user log"]
-        assert all([keyword not in logs for keyword in non_existing_keywords])
+        for keyword in existing_keywords:
+            assert keyword in out
+        for keyword in non_existing_keywords:
+            assert keyword not in out
 
     def test_pf_run_no_stream_log(self):
         f = io.StringIO()
@@ -1389,6 +1426,54 @@ class TestCli:
             outerr = capsys.readouterr()
             assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
 
+            # Test init package tool with extra info
+            package_name = "tool_with_extra_info"
+            package_folder = Path(temp_dir) / package_name
+            icon_path = Path(DATAS_DIR) / "logo.jpg"
+            category = "test_category"
+            tags = {"tag1": "value1", "tag2": "value2"}
+            run_pf_command(
+                "tool",
+                "init",
+                "--package",
+                package_name,
+                "--tool",
+                func_name,
+                "--set",
+                f"icon={icon_path.absolute()}",
+                f"category={category}",
+                f"tags={tags}",
+                cwd=temp_dir,
+            )
+            spec = importlib.util.spec_from_file_location(
+                f"{package_name}.utils", package_folder / package_name / "utils.py"
+            )
+            utils = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(utils)
+
+            assert hasattr(utils, "list_package_tools")
+            tools_meta = utils.list_package_tools()
+            meta = tools_meta[f"{package_name}.{func_name}.{func_name}"]
+            assert meta["category"] == category
+            assert meta["tags"] == tags
+            assert meta["icon"].startswith("data:image")
+
+            # icon doesn't exist
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "tool",
+                    "init",
+                    "--package",
+                    package_name,
+                    "--tool",
+                    func_name,
+                    "--set",
+                    "icon=invalid_icon_path",
+                    cwd=temp_dir,
+                )
+            outerr = capsys.readouterr()
+            assert "Cannot find the icon path" in outerr.out
+
     def test_tool_list(self, capsys):
         # List package tools in environment
         run_pf_command("tool", "list")
@@ -1445,9 +1530,43 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/python_tool_with_image_input_and_output",
+            f"{FLOWS_DIR}/python_tool_with_simple_image",
         )
-        output_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "output"
+        output_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "output"
         assert output_path.exists()
-        image_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "intermediate"
+        image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
+
+    def test_run_file_with_set(self, pf) -> None:
+        name = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"name={name}",
+        )
+        # run exists
+        pf.runs.get(name=name)
+
+    def test_run_file_with_set_priority(self, pf) -> None:
+        # --name has higher priority than --set
+        name1 = str(uuid.uuid4())
+        name2 = str(uuid.uuid4())
+        run_pf_command(
+            "run",
+            "create",
+            "--file",
+            f"{RUNS_DIR}/run_with_env.yaml",
+            "--set",
+            f"name={name1}",
+            "--name",
+            name2,
+        )
+        # run exists
+        try:
+            pf.runs.get(name=name1)
+        except RunNotFoundError:
+            pass
+        pf.runs.get(name=name2)

@@ -36,7 +36,7 @@ runs:
       pip list
       python ./setup.py bdist_wheel
       $package = Get-ChildItem ./dist | ? { $_.Name.Contains('.whl')}
-      pip install $($package.FullName + "[azure]")
+      pip install $($package.FullName + "[azure,executable]")
       echo "########### pip freeze (After) ###########"
       pip freeze
     working-directory: ${{ inputs.scriptPath }}

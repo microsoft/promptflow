@@ -1,0 +1,100 @@
+name: promptflow-sdk-cli-azure-e2e-test
+
+on:
+  pull_request:
+    paths:
+      - src/promptflow/**
+      - scripts/**
+      - '**promptflow-sdk-cli-azure-e2e-test.yml'
+  workflow_dispatch:
+
+env:
+  packageSetupType: promptflow_with_extra
+  testWorkingDirectory: ${{ github.workspace }}/src/promptflow
+  PYTHONPATH: ${{ github.workspace }}/src/promptflow
+  IS_IN_CI_PIPELINE: "true"
+  PROMPT_FLOW_TEST_RUN_LIVE: "false"
+  PROMPT_FLOW_SKIP_LIVE_RECORDING: "false"
+
+jobs:
+  sdk_cli_azure_e2e_test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      
+      - name: Display and Set Environment Variables
+        run: |
+          if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
+            export pyVersion="3.9";
+          elif [ "macos-latest" == "${{ matrix.os }}" ]; then
+            export pyVersion="3.10";
+          else
+            echo "Unsupported OS: ${{ matrix.os }}";
+            exit 1;
+          fi
+          env | sort >> $GITHUB_OUTPUT
+        id: display_env
+        shell: bash -el {0}
+
+      - name: Python Setup - ${{ matrix.os }} - Python Version ${{ steps.display_env.outputs.pyVersion }}
+        uses: "./.github/actions/step_create_python_environment"
+        with:
+          pythonVersion: ${{ steps.display_env.outputs.pyVersion }}
+
+      - name: Build wheel
+        uses: "./.github/actions/step_sdk_setup"
+        with:
+          setupType: ${{ env.packageSetupType }}
+          scriptPath: ${{ env.testWorkingDirectory }}
+
+      - name: Get number of CPU cores
+        uses: SimenB/github-actions-cpu-cores@v1
+        id: cpu-cores
+
+      - name: Run Test
+        shell: pwsh
+        working-directory: ${{ env.testWorkingDirectory }}
+        run: |
+          gci env:* | sort-object name
+          python "../../scripts/building/run_coverage_tests.py" `
+            -p promptflow `
+            -t ${{ github.workspace }}/src/promptflow/tests/sdk_cli_azure_test/e2etests `
+            -l eastus `
+            -m "e2etest" `
+            -n ${{ steps.cpu-cores.outputs.count }} `
+            --coverage-config ${{ github.workspace }}/src/promptflow/tests/sdk_cli_test/.coveragerc
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Test Results (Python ${{ steps.display_env.outputs.pyVersion }}) (OS ${{ matrix.os }})
+          path: |
+            ${{ env.testWorkingDirectory }}/*.xml
+            ${{ env.testWorkingDirectory }}/htmlcov/
+
+  publish-test-results:
+    name: "Publish Tests Results"
+    needs: sdk_cli_azure_e2e_test
+    runs-on: ubuntu-latest
+    permissions: write-all
+    if: always()
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: Publish Test Results
+      uses: "./.github/actions/step_publish_test_results"
+      with:
+        testActionFileName: promptflow-sdk-cli-azure-e2e-test.yml
+        testResultTitle: promptflow SDK CLI Azure E2E Test Result
+        osVersion: ubuntu-latest
+        pythonVersion: 3.9
+        coverageThreshold: 40
+        token: ${{ secrets.GITHUB_TOKEN }}
+        context: test/sdk_cli
