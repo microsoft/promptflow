@@ -238,12 +238,15 @@ class BuiltinsManager:
         )
 
     @staticmethod
+    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs):
+        module = importlib.import_module(module_name)
+        return BuiltinsManager._load_tool_from_module(module, tool_name, class_name, method_name, node_inputs)
+
+    @staticmethod
     def _load_tool_from_module(
-        tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment], module=None
+        module, tool_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]
     ):
         """Load tool from given module with node inputs."""
-        if not module:
-            module = importlib.import_module(module_name)
         if class_name is None:
             return getattr(module, method_name), {}
         provider_class = getattr(module, class_name)
