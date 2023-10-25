@@ -3,7 +3,7 @@ from promptflow import tool
 def string_to_number(raw_string: str) -> float:
     ''' Try to parse the prediction string and groundtruth string to float number. 
     Support parse int, float, fraction and recognize non-numeric string with wrong format.
-    Wrong format cases: 'the answer is \box{2/3}', '4/7//8'
+    Wrong format cases: 'the answer is \box{2/3}', '0, 5, or any number greater than 11', '4/7//9'
     '''
     float_number = 0.0
     try:
