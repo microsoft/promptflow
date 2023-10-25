@@ -41,6 +41,15 @@ class FlowBase(abc.ABC):
         return cls, "flow"
 
 
+class FlowContext:
+    def __init__(self, connections=None, connection_provider=None, variant=None):
+        # TODO: make this a context manager
+        # TODO: support other configs to inject when executing flow?
+        self.connections = connections
+        self.connection_provider = connection_provider
+        self.variant = variant
+
+
 class Flow(FlowBase):
     """This class is used to represent a flow."""
 
@@ -52,8 +61,7 @@ class Flow(FlowBase):
         self._code = Path(code)
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
-        # TODO: store here or in FlowExecutor?
-        self.connections = kwargs.pop("connections", None) or {}
+        self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(**kwargs)
 
@@ -74,6 +82,10 @@ class Flow(FlowBase):
                 target=ErrorTarget.CONTROL_PLANE_SDK,
             )
         return flow_file
+
+    @property
+    def context(self) -> FlowContext:
+        return self._context
 
     @classmethod
     def load(
@@ -203,7 +215,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
         client = PFClient()
-        # TODO: gap: variants, environment_variables
+        # TODO: put flow context related code
         result = client.flows._test_flow(flow=self, inputs=kwargs, variant=self.variant)
         TestSubmitter._raise_error_when_test_failed(result, show_trace=False)
         return result.output

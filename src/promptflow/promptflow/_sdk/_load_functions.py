@@ -74,7 +74,10 @@ def load_flow(
     :param kwargs:
     :return:
     """
-    return ProtectedFlow.load(source, connections=connections, variant=variant, **kwargs)
+    flow = ProtectedFlow.load(source, **kwargs)
+    flow.context.connections = connections
+    flow.context.variant = variant
+    return flow
 
 
 def load_run(
