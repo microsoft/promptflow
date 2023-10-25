@@ -32,7 +32,6 @@ from ruamel.yaml import YAML
 import promptflow
 from promptflow._constants import EXTENSION_UA
 from promptflow._core.tool_meta_generator import generate_tool_meta_dict_by_file
-from promptflow._core.tools_manager import gen_dynamic_list
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
     DEFAULT_ENCODING,
@@ -51,7 +50,6 @@ from promptflow._sdk._constants import (
     USE_VARIANTS,
     VARIANTS,
     CommonYamlFields,
-    ConnectionType,
 )
 from promptflow._sdk._errors import (
     ConnectionNotFoundError,
@@ -63,28 +61,7 @@ from promptflow._sdk._errors import (
 from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_files_from_folder
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
-from promptflow._utils.tool_utils import get_inputs_for_prompt_template
-from promptflow._utils.utils import RecordStorage
-from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.tool import ToolType
-
-
-def record_node_run(run_info: NodeRunInfo, flow_folder: Path) -> None:
-    """Persist node run record to local storage."""
-    if os.environ.get("PF_RECORDING_MODE", None) == "record":
-        for api_call in run_info.api_calls:
-            hashDict = {}
-            if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
-                prompt_tpl = api_call["inputs"]["prompt"]
-                prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-
-                for keyword in prompt_tpl_inputs:
-                    if keyword in api_call["inputs"]:
-                        hashDict[keyword] = api_call["inputs"][keyword]
-                hashDict["prompt"] = prompt_tpl
-                hashDict = collections.OrderedDict(sorted(hashDict.items()))
-                item = serialize(run_info)
-                RecordStorage.set_record(flow_folder, hashDict, str(item["output"]))
 
 
 def snake_to_camel(name):
@@ -647,27 +624,6 @@ def _generate_tool_meta(
     return res
 
 
-def _gen_dynamic_list(function_config: Dict) -> List:
-    """Generate dynamic list for a tool input.
-
-    :param function_config: function config in tool meta. Should contain'func_path' and 'func_kwargs'.
-    :return: a list of tool input dynamic enums.
-    """
-    func_path = function_config.get("func_path", "")
-    func_kwargs = function_config.get("func_kwargs", {})
-    # May call azure control plane api in the custom function to list Azure resources.
-    # which may need Azure workspace triple.
-    # TODO: move this method to a common place.
-    from promptflow._cli._utils import get_workspace_triad_from_local
-
-    workspace_triad = get_workspace_triad_from_local()
-    if workspace_triad.subscription_id and workspace_triad.resource_group_name and workspace_triad.workspace_name:
-        return gen_dynamic_list(func_path, func_kwargs, workspace_triad._asdict())
-    # if no workspace triple available, just skip.
-    else:
-        return gen_dynamic_list(func_path, func_kwargs)
-
-
 def _generate_package_tools(keys: Optional[List[str]] = None) -> dict:
     import imp
 
@@ -834,13 +790,8 @@ def get_local_connections_from_executable(executable, client):
     for n in connection_names:
         try:
             conn = client.connections.get(name=n, with_secrets=True)
-            if conn is not None and conn.TYPE == ConnectionType.AZURE_OPEN_AI and conn.api_base == "dummy_base":
-                if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-                    return {}
             result[n] = conn._to_execution_connection_dict()
         except ConnectionNotFoundError:
-            if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-                return result
             # ignore when connection not found since it can be configured with env var.
             raise Exception(f"Connection {n!r} required for flow {executable.name!r} is not found.")
     return result

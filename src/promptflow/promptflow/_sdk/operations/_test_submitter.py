@@ -11,7 +11,7 @@ from types import GeneratorType
 from typing import Any, Mapping
 
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import dump_flow_result, parse_variant, record_node_run
+from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
@@ -177,7 +177,6 @@ class TestSubmitter:
                 generator_outputs = self._get_generator_outputs(line_result.output)
                 if generator_outputs:
                     logger.info(f"Some streaming outputs in the result, {generator_outputs.keys()}")
-            record_node_run(line_result.run_info, self._origin_flow.code)
             return line_result
 
     def node_test(
@@ -203,9 +202,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
-                output_sub_dir=".promptflow/intermediate",
             )
-            record_node_run(result, self._origin_flow.code)
             return result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):

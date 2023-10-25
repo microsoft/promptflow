@@ -5,11 +5,9 @@
 """This is a common util file.
 !!!Please do not include any project related import.!!!
 """
-import base64
 import contextlib
 import contextvars
 import functools
-import hashlib
 import importlib
 import json
 import logging
@@ -19,7 +17,7 @@ import time
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, Iterator, List, Optional, OrderedDict, TypeVar, Union
+from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 T = TypeVar("T")
 
@@ -32,84 +30,6 @@ class AttrDict(dict):
         if item in self:
             return self.__getitem__(item)
         return super().__getattribute__(item)
-
-
-class RecordStorage:
-    """
-    RecordStorage static class to manage recording file storage_record.json
-    """
-
-    runItems: Dict[str, Dict[str, str]] = {}
-
-    @staticmethod
-    def write_file(flow_directory: Path) -> None:
-
-        path_hash = hashlib.sha1(str(flow_directory.parts[-4:-1]).encode("utf-8")).hexdigest()
-        file_content = RecordStorage.runItems.get(path_hash, None)
-        if file_content is not None:
-            with open(flow_directory / "storage_record.json", "w+") as fp:
-                json.dump(RecordStorage.runItems[path_hash], fp, indent=4)
-
-    @staticmethod
-    def load_file(flow_directory: Path) -> None:
-        path_hash = hashlib.sha1(str(flow_directory.parts[-4:-1]).encode("utf-8")).hexdigest()
-        local_content = RecordStorage.runItems.get(path_hash, None)
-        if not local_content:
-            if not os.path.exists(flow_directory / "storage_record.json"):
-                return
-            with open(flow_directory / "storage_record.json", "r", encoding="utf-8") as fp:
-                RecordStorage.runItems[path_hash] = json.load(fp)
-
-    @staticmethod
-    def get_record(flow_directory: Path, hashDict: OrderedDict) -> str:
-        # special deal remove text_content, because it is not stable.
-        if "text_content" in hashDict:
-            hashDict.pop("text_content")
-
-        hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
-        path_hash: str = hashlib.sha1(str(flow_directory.parts[-4:-1]).encode("utf-8")).hexdigest()
-        file_item: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
-        if file_item is None:
-            RecordStorage.load_file(flow_directory)
-            file_item = RecordStorage.runItems.get(path_hash, None)
-        if file_item is not None:
-            item = file_item.get(hash_value, None)
-            if item is not None:
-                real_item = base64.b64decode(bytes(item, "utf-8")).decode()
-                return real_item
-            else:
-                raise BaseException(
-                    f"Record item not found in folder {flow_directory}.\n"
-                    f"Path hash {path_hash}\nHash value: {hash_value}\n"
-                    f"Hash dict: {hashDict}\nHashed values: {json.dumps(hashDict)}\n"
-                )
-        else:
-            raise BaseException(f"Record file not found in folder {flow_directory}.")
-
-    @staticmethod
-    def set_record(flow_directory: Path, hashDict: OrderedDict, output: object) -> None:
-        # special deal remove text_content, because it is not stable.
-        if "text_content" in hashDict:
-            hashDict.pop("text_content")
-        hash_value: str = hashlib.sha1(str(hashDict).encode("utf-8")).hexdigest()
-        path_hash: str = hashlib.sha1(str(flow_directory.parts[-4:-1]).encode("utf-8")).hexdigest()
-        output_base64: str = base64.b64encode(bytes(output, "utf-8")).decode(encoding="utf-8")
-        current_saved_record: Dict[str, str] = RecordStorage.runItems.get(path_hash, None)
-        if current_saved_record is None:
-            RecordStorage.load_file(flow_directory)
-            if RecordStorage.runItems is None:
-                RecordStorage.runItems = {}
-            if (RecordStorage.runItems.get(path_hash, None)) is None:
-                RecordStorage.runItems[path_hash] = {}
-            RecordStorage.runItems[path_hash][hash_value] = output_base64
-            RecordStorage.write_file(flow_directory)
-        else:
-            saved_output = current_saved_record.get(hash_value, None)
-            if saved_output is not None and saved_output == output_base64:
-                return
-            else:
-                current_saved_record[hash_value] = output_base64
-                RecordStorage.write_file(flow_directory)
 
 
 def camel_to_snake(text: str) -> Optional[str]:

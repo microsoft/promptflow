@@ -67,7 +67,13 @@ class TestFlowRun:
         # TODO: check details
         # df = pf.show_details(baseline, v1, v2)
 
-    def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+    def test_basic_run_bulk(
+        self,
+        azure_open_ai_connection: AzureOpenAIConnection,
+        local_client,
+        pf,
+        mock_run_tracker_update_flow_run_info_with_node_runs,
+    ):
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",

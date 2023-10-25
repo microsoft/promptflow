@@ -4,7 +4,6 @@
 
 import copy
 import inspect
-import os
 import types
 from dataclasses import dataclass
 from functools import partial
@@ -12,7 +11,6 @@ from pathlib import Path
 from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
-from promptflow._core.tool_record import just_return
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
@@ -22,7 +20,6 @@ from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
-    EmptyLLMApiMapping,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     InvalidSource,
@@ -137,11 +134,6 @@ class ToolResolver:
             elif node.type is ToolType.PROMPT:
                 return self._resolve_prompt_node(node)
             elif node.type is ToolType.LLM:
-                if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-                    resolved_tool = self._resolve_replay_node(node, convert_input_types=convert_input_types)
-                    if resolved_tool is None:
-                        resolved_tool = self._resolve_llm_node(node, convert_input_types=convert_input_types)
-                    return resolved_tool
                 return self._resolve_llm_node(node, convert_input_types=convert_input_types)
             elif node.type is ToolType.CUSTOM_LLM:
                 if node.source.type == ToolSourceType.PackageWithPrompt:
@@ -220,8 +212,6 @@ class ToolResolver:
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection = self._get_node_connection(node)
         if not node.provider:
-            if not connection_type_to_api_mapping:
-                raise EmptyLLMApiMapping()
             # If provider is not specified, try to resolve it from connection type
             node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
         tool: Tool = self._tool_loader.load_tool_for_llm_node(node)
@@ -246,20 +236,6 @@ class ToolResolver:
         prompt_tpl_param_name = get_prompt_param_name_from_func(api_func)
         api_func = partial(api_func, **{prompt_tpl_param_name: prompt_tpl}) if prompt_tpl_param_name else api_func
         return ResolvedTool(updated_node, tool, api_func, init_args)
-
-    def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        # in replay mode, replace original tool with just_return tool
-        # the tool itself just return saved record from storage_record.json
-        # processing no logic.
-        if (node.api == "completion" or node.api == "chat") and (
-            node.connection == "azure_open_ai_connection" or node.provider == "AzureOpenAI"
-        ):
-            prompt_tpl = self._load_source_content(node)
-            prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, self._working_dir)
-            return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
-        else:
-            return None
 
     def _resolve_llm_connection_to_inputs(self, node: Node, tool: Tool) -> Node:
         connection = self._get_node_connection(node)
