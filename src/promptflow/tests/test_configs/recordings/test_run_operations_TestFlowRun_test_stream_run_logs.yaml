@@ -1,0 +1,599 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3519'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.035'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.072'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "selectRunMetadata":
+      true, "selectRunDefinition": true, "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1687749782, "rootRunId": "9bafbd52-da0f-44ca-b40c-b0ce912f083c",
+        "createdUtc": "2023-06-26T03:23:02.3017884+00:00", "createdBy": {"userObjectId":
+        "8471f65f-aa0e-4cde-b219-0ba7a1c148bf", "userPuId": "100320007E5EB49B", "userIdp":
+        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Zhen
+        Ruan", "upn": null}, "userId": "8471f65f-aa0e-4cde-b219-0ba7a1c148bf", "token":
+        null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
+        96, "statusRevision": 2, "runUuid": "fab99b4a-07c2-4c77-8ee3-3d3a47102b4a",
+        "parentRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395", "rootRunUuid": "1b1db1ed-46ed-4106-bf87-52e3c423b395",
+        "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:41.1688602",
+        "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "4e60fbf3-0338-41a8-bed5-fc341be556f8",
+        "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "4cbd0e2e-aae4-4099-b4ba-94d3a4910587",
+        "upn": null}, "lastModifiedUtc": "2023-10-18T09:13:00.6007617+00:00", "duration":
+        "00:00:41.1688602", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74", "parentRunId": "9bafbd52-da0f-44ca-b40c-b0ce912f083c",
+        "experimentId": "ad8dde3a-73f1-49bc-ae71-c7c9b2dc1b9f", "status": "Completed",
+        "startTimeUtc": "2023-06-26T03:23:05.7657269+00:00", "endTimeUtc": "2023-06-26T03:23:46.9345871+00:00",
+        "scheduleId": null, "displayName": "test_display_name_8f5e92cd-3249-463a-9e51-3b4c6dd5d6ee",
+        "name": null, "dataContainerId": "dcid.4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+        "description": "test_description_8f5e92cd-3249-463a-9e51-3b4c6dd5d6ee", "hidden":
+        false, "runType": "azureml.promptflow.EvaluationRun", "runTypeV2": {"orchestrator":
+        null, "traits": [], "attribution": null, "computeType": "MIR_v2"}, "properties":
+        {"azureml.promptflow.flow_id": "QnARelevanceEvaluation", "azureml.promptflow.flow_name":
+        "QnA Relevance Evaluation", "azureml.promptflow.flow_type": "Evaluation",
+        "azureml.promptflow.source_flow_id": "42f7ee16-2243-475b-af21-e8fabd4abd15",
+        "azureml.promptflow.baseline_variant_run_id": "4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74",
+        "azureml.promptflow.variant_ids": "", "azureml.promptflow.bulk_test_id": "9bafbd52-da0f-44ca-b40c-b0ce912f083c",
+        "azureml.promptflow.flow_experiment_id": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5",
+        "azureml.promptflow.runtime_name": "demo-mir", "azureml.promptflow.runtime_version":
+        "20230614.v1", "azureml.promptflow.total_tokens": "26680"}, "parameters":
+        {}, "actionUris": {}, "scriptName": null, "target": null, "uniqueChildRunComputeTargets":
+        [], "tags": {"test_tag": "8f5e92cd-3249-463a-9e51-3b4c6dd5d6ee", "hod": "1"},
+        "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets": [],
+        "runDefinition": null, "jobSpecification": null, "primaryMetricName": null,
+        "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        null, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
+        {"Nodes": [{"Name": "relevance_score", "Tool": "compute_relevance_score",
+        "Comment": null, "Inputs": {"question": "${flow.question}", "context": "${flow.context}",
+        "answer": "${flow.answer}", "max_tokens": "256", "deployment_name": "gpt-35-turbo",
+        "temperature": "0.0"}, "Api": "chat", "Provider": "AzureOpenAI", "Connection":
+        "azure_open_ai_connection", "Module": "promptflow.tools.aoai", "Reduce": false},
+        {"Name": "concat_scores", "Tool": "concat_results", "Comment": null, "Inputs":
+        {"relevance_score": "${relevance_score.output}"}, "Api": null, "Provider":
+        null, "Connection": null, "Module": null, "Reduce": false}, {"Name": "aggregate_variants_results",
+        "Tool": "aggregate_variants_results", "Comment": null, "Inputs": {"results":
+        "${concat_scores.output}", "line_number": "${flow.line_number}", "variant_id":
+        "${flow.variant_id}"}, "Api": null, "Provider": null, "Connection": null,
+        "Module": null, "Reduce": true}], "Tools": [{"Name": "compute_relevance_score",
+        "Type": "llm", "Inputs": {"context": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "model_list": null}, "question": {"Name": null, "Type": ["string"],
+        "Default": null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "model_list": null}, "answer": {"Name": null, "Type": ["string"], "Default":
+        null, "Description": null, "Enum": null, "enabled_by": null, "enabled_by_type":
+        null, "model_list": null}}, "Outputs": null, "Description": "This is a llm
+        tool", "connection_type": null, "Module": null, "class_name": null, "Source":
+        "compute_relevance_score.jinja2", "LkgCode": null, "Code": "System:\nYou are
+        an AI assistant. You will be given the definition of an evaluation metric
+        for assessing the quality of an answer in a question-answering task. Your
+        job is to compute an accurate evaluation score using the provided evaluation
+        metric.\n\nUser:\nRelevance measures how well the answer addresses the main
+        aspects of the question, based on the context. Consider whether all and only
+        the important aspects are contained in the answer when evaluating relevance.
+        Given the context and question, score the relevance of the answer between
+        one to five stars using the following rating scale:\nOne star: the answer
+        completely lacks relevance\nTwo stars: the answer mostly lacks relevance\nThree
+        stars: the answer is partially relevant\nFour stars: the answer is mostly
+        relevant\nFive stars: the answer has perfect relevance\n\nThis rating value
+        should always be an integer between 1 and 5. So the rating produced should
+        be 1 or 2 or 3 or 4 or 5.\n\ncontext: Marie Curie was a Polish-born physicist
+        and chemist who pioneered research on radioactivity and was the first woman
+        to win a Nobel Prize.\nquestion: What field did Marie Curie excel in?\nanswer:
+        Marie Curie was a renowned painter who focused mainly on impressionist styles
+        and techniques.\nstars: 1\n\ncontext: The Beatles were an English rock band
+        formed in Liverpool in 1960, and they are widely regarded as the most influential
+        music band in history.\nquestion: Where were The Beatles formed?\nanswer:
+        The band The Beatles began their journey in London, England, and they changed
+        the history of music.\nstars: 2\n\ncontext: The recent Mars rover, Perseverance,
+        was launched in 2020 with the main goal of searching for signs of ancient
+        life on Mars. The rover also carries an experiment called MOXIE, which aims
+        to generate oxygen from the Martian atmosphere.\nquestion: What are the main
+        goals of Perseverance Mars rover mission?\nanswer: The Perseverance Mars rover
+        mission focuses on searching for signs of ancient life on Mars.\nstars: 3\n\ncontext:
+        The Mediterranean diet is a commonly recommended dietary plan that emphasizes
+        fruits, vegetables, whole grains, legumes, lean proteins, and healthy fats.
+        Studies have shown that it offers numerous health benefits, including a reduced
+        risk of heart disease and improved cognitive health.\nquestion: What are the
+        main components of the Mediterranean diet?\nanswer: The Mediterranean diet
+        primarily consists of fruits, vegetables, whole grains, and legumes.\nstars:
+        4\n\ncontext: The Queen''s Royal Castle is a well-known tourist attraction
+        in the United Kingdom. It spans over 500 acres and contains extensive gardens
+        and parks. The castle was built in the 15th century and has been home to generations
+        of royalty.\nquestion: What are the main attractions of the Queen''s Royal
+        Castle?\nanswer: The main attractions of the Queen''s Royal Castle are its
+        expansive 500-acre grounds, extensive gardens, parks, and the historical castle
+        itself, which dates back to the 15th century and has housed generations of
+        royalty.\nstars: 5\n\ncontext: {{context}}\nquestion: {{question}}\nanswer:
+        {{answer}}\nstars:", "Function": null, "action_type": null, "provider_config":
+        null, "function_config": null, "is_builtin": false, "package": null, "package_version":
+        null}, {"Name": "concat_results", "Type": "python", "Inputs": {"relevance_score":
+        {"Name": null, "Type": ["string"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "model_list": null}}, "Outputs":
+        null, "Description": null, "connection_type": null, "Module": null, "class_name":
+        null, "Source": "concat_results.py", "LkgCode": null, "Code": "from promptflow
+        import tool\nimport numpy as np\nimport re\n\n\n@tool\ndef concat_results(relevance_score:
+        str):\n\n    load_list = [{''name'': ''gpt_relevance'', ''score'': relevance_score}]\n    score_list
+        = []\n    errors = []\n    for item in load_list:\n        try:\n            score
+        = item[\"score\"]\n            match = re.search(r''\\d'', score)\n            if
+        match:\n                score = match.group()\n            score = float(score)\n        except
+        Exception as e:\n            score = np.nan\n            errors.append({\"name\":
+        item[\"name\"], \"msg\":   str(e), \"data\": item[\"score\"]})\n        score_list.append({\"name\":
+        item[\"name\"], \"score\": score})\n\n    variant_level_result = {}\n    for
+        item in score_list:\n        item_name = str(item[\"name\"])\n        variant_level_result[item_name]
+        = item[\"score\"]\n        variant_level_result[item_name + ''_pass_rate'']
+        = 1 if item[\"score\"] > 3 else 0\n    return variant_level_result\n", "Function":
+        "concat_results", "action_type": null, "provider_config": null, "function_config":
+        null, "is_builtin": false, "package": null, "package_version": null}, {"Name":
+        "aggregate_variants_results", "Type": "python", "Inputs": {"variant_id": {"Name":
+        null, "Type": ["object"], "Default": null, "Description": null, "Enum": null,
+        "enabled_by": null, "enabled_by_type": null, "model_list": null}, "line_number":
+        {"Name": null, "Type": ["object"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "model_list": null}, "results":
+        {"Name": null, "Type": ["object"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "model_list": null}}, "Outputs":
+        null, "Description": null, "connection_type": null, "Module": null, "class_name":
+        null, "Source": "aggregate_variants_results.py", "LkgCode": null, "Code":
+        "from typing import List\nfrom promptflow import tool, log_metric\nimport
+        numpy as np\n\n\n@tool\ndef aggregate_variants_results(variant_id: List[int],
+        line_number: List[int], results: List[dict]):\n    aggregate_results = {}\n    for
+        index in range(len(line_number)):\n        result = results[index]\n        variant
+        = variant_id[index]\n        if variant not in aggregate_results.keys():\n            aggregate_results[variant]
+        = {}\n        item_result = aggregate_results[variant]\n        for name,
+        value in result.items():\n            if name not in item_result.keys():\n                item_result[name]
+        = []\n            try:\n                float_val = float(value)\n            except
+        Exception:\n                float_val = np.nan\n            item_result[name].append(float_val)\n\n    for
+        name, value in aggregate_results.items():\n        variant_id = name\n        aggr_item
+        = aggregate_results[name]\n        for name, value in aggr_item.items():\n            metric_name
+        = name\n            aggr_item[name] = np.nanmean(value)\n            if ''pass_rate''
+        in metric_name:\n                metric_name = metric_name + \"(%)\"\n                aggr_item[name]
+        = aggr_item[name] * 100.0\n            aggr_item[name] = round(aggr_item[name],
+        2)\n            log_metric(metric_name, aggr_item[name], variant_id=variant_id)\n\n    return
+        aggregate_results\n", "Function": "aggregate_variants_results", "action_type":
+        null, "provider_config": null, "function_config": null, "is_builtin": false,
+        "package": null, "package_version": null}], "Codes": {"compute_relevance_score.jinja2":
+        "System:\nYou are an AI assistant. You will be given the definition of an
+        evaluation metric for assessing the quality of an answer in a question-answering
+        task. Your job is to compute an accurate evaluation score using the provided
+        evaluation metric.\n\nUser:\nRelevance measures how well the answer addresses
+        the main aspects of the question, based on the context. Consider whether all
+        and only the important aspects are contained in the answer when evaluating
+        relevance. Given the context and question, score the relevance of the answer
+        between one to five stars using the following rating scale:\nOne star: the
+        answer completely lacks relevance\nTwo stars: the answer mostly lacks relevance\nThree
+        stars: the answer is partially relevant\nFour stars: the answer is mostly
+        relevant\nFive stars: the answer has perfect relevance\n\nThis rating value
+        should always be an integer between 1 and 5. So the rating produced should
+        be 1 or 2 or 3 or 4 or 5.\n\ncontext: Marie Curie was a Polish-born physicist
+        and chemist who pioneered research on radioactivity and was the first woman
+        to win a Nobel Prize.\nquestion: What field did Marie Curie excel in?\nanswer:
+        Marie Curie was a renowned painter who focused mainly on impressionist styles
+        and techniques.\nstars: 1\n\ncontext: The Beatles were an English rock band
+        formed in Liverpool in 1960, and they are widely regarded as the most influential
+        music band in history.\nquestion: Where were The Beatles formed?\nanswer:
+        The band The Beatles began their journey in London, England, and they changed
+        the history of music.\nstars: 2\n\ncontext: The recent Mars rover, Perseverance,
+        was launched in 2020 with the main goal of searching for signs of ancient
+        life on Mars. The rover also carries an experiment called MOXIE, which aims
+        to generate oxygen from the Martian atmosphere.\nquestion: What are the main
+        goals of Perseverance Mars rover mission?\nanswer: The Perseverance Mars rover
+        mission focuses on searching for signs of ancient life on Mars.\nstars: 3\n\ncontext:
+        The Mediterranean diet is a commonly recommended dietary plan that emphasizes
+        fruits, vegetables, whole grains, legumes, lean proteins, and healthy fats.
+        Studies have shown that it offers numerous health benefits, including a reduced
+        risk of heart disease and improved cognitive health.\nquestion: What are the
+        main components of the Mediterranean diet?\nanswer: The Mediterranean diet
+        primarily consists of fruits, vegetables, whole grains, and legumes.\nstars:
+        4\n\ncontext: The Queen''s Royal Castle is a well-known tourist attraction
+        in the United Kingdom. It spans over 500 acres and contains extensive gardens
+        and parks. The castle was built in the 15th century and has been home to generations
+        of royalty.\nquestion: What are the main attractions of the Queen''s Royal
+        Castle?\nanswer: The main attractions of the Queen''s Royal Castle are its
+        expansive 500-acre grounds, extensive gardens, parks, and the historical castle
+        itself, which dates back to the 15th century and has housed generations of
+        royalty.\nstars: 5\n\ncontext: {{context}}\nquestion: {{question}}\nanswer:
+        {{answer}}\nstars:", "concat_results.py": "from promptflow import tool\nimport
+        numpy as np\nimport re\n\n\n@tool\ndef concat_results(relevance_score: str):\n\n    load_list
+        = [{''name'': ''gpt_relevance'', ''score'': relevance_score}]\n    score_list
+        = []\n    errors = []\n    for item in load_list:\n        try:\n            score
+        = item[\"score\"]\n            match = re.search(r''\\d'', score)\n            if
+        match:\n                score = match.group()\n            score = float(score)\n        except
+        Exception as e:\n            score = np.nan\n            errors.append({\"name\":
+        item[\"name\"], \"msg\":   str(e), \"data\": item[\"score\"]})\n        score_list.append({\"name\":
+        item[\"name\"], \"score\": score})\n\n    variant_level_result = {}\n    for
+        item in score_list:\n        item_name = str(item[\"name\"])\n        variant_level_result[item_name]
+        = item[\"score\"]\n        variant_level_result[item_name + ''_pass_rate'']
+        = 1 if item[\"score\"] > 3 else 0\n    return variant_level_result\n", "aggregate_variants_results.py":
+        "from typing import List\nfrom promptflow import tool, log_metric\nimport
+        numpy as np\n\n\n@tool\ndef aggregate_variants_results(variant_id: List[int],
+        line_number: List[int], results: List[dict]):\n    aggregate_results = {}\n    for
+        index in range(len(line_number)):\n        result = results[index]\n        variant
+        = variant_id[index]\n        if variant not in aggregate_results.keys():\n            aggregate_results[variant]
+        = {}\n        item_result = aggregate_results[variant]\n        for name,
+        value in result.items():\n            if name not in item_result.keys():\n                item_result[name]
+        = []\n            try:\n                float_val = float(value)\n            except
+        Exception:\n                float_val = np.nan\n            item_result[name].append(float_val)\n\n    for
+        name, value in aggregate_results.items():\n        variant_id = name\n        aggr_item
+        = aggregate_results[name]\n        for name, value in aggr_item.items():\n            metric_name
+        = name\n            aggr_item[name] = np.nanmean(value)\n            if ''pass_rate''
+        in metric_name:\n                metric_name = metric_name + \"(%)\"\n                aggr_item[name]
+        = aggr_item[name] * 100.0\n            aggr_item[name] = round(aggr_item[name],
+        2)\n            log_metric(metric_name, aggr_item[name], variant_id=variant_id)\n\n    return
+        aggregate_results\n"}, "Inputs": {"question": {"Name": null, "Type": "string",
+        "Default": null, "Description": null, "is_chat_input": false}, "context":
+        {"Name": null, "Type": "string", "Default": null, "Description": null, "is_chat_input":
+        false}, "answer": {"Name": null, "Type": "string", "Default": null, "Description":
+        null, "is_chat_input": false}, "line_number": {"Name": null, "Type": "int",
+        "Default": null, "Description": null, "is_chat_input": false}, "variant_id":
+        {"Name": null, "Type": "string", "Default": null, "Description": null, "is_chat_input":
+        false}}, "Outputs": {"gpt_relevance": {"Name": null, "Type": "object", "Description":
+        null, "Reference": "${concat_scores.output.gpt_relevance}", "evaluation_only":
+        false, "is_chat_output": false}}}, "jobSpecification": null, "systemSettings":
+        null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '21284'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.044'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74/logContent
+  response:
+    body:
+      string: '"2023-06-26 03:23:03 +0000     126 promptflow-runtime INFO     [4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74]
+        Receiving flow request 1a7fc96a-f497-44fc-beea-9347a1bb4c95: {\"flow_id\":
+        \"42f7ee16-2243-475b-af21-e8fabd4abd15\", \"flow_run_id\": \"4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74\",
+        \"submission_data\": {\"flow\": {\"id\": \"42f7ee16-2243-475b-af21-e8fabd4abd15\",
+        \"name\": \"QnA Relevance Evaluation\", \"nodes\": [{\"name\": \"relevance_score\",
+        \"tool\": \"compute_relevance_score\", \"inputs\": {\"question\": {\"value\":
+        \"question\", \"value_type\": \"FlowInput\", \"prefix\": \"flow.\"}, \"context\":
+        {\"value\": \"context\", \"value_type\": \"FlowInput\", \"prefix\": \"flow.\"},
+        \"answer\": {\"value\": \"answer\", \"value_type\": \"FlowInput\", \"prefix\":
+        \"flow.\"}, \"max_tokens\": {\"value\": \"256\", \"value_type\": \"Literal\"},
+        \"deployment_name\": {\"value\": \"gpt-35-turbo\", \"value_type\": \"Literal\"},
+        \"temperature\": {\"value\": \"0.0\", \"value_type\": \"Literal\"}}, \"api\":
+        \"chat\", \"provider\": \"AzureOpenAI\", \"module\": \"promptflow.tools.aoai\",
+        \"connection\": \"azure_open_ai_connection\"}, {\"name\": \"concat_scores\",
+        \"tool\": \"concat_results\", \"inputs\": {\"relevance_score\": {\"value\":
+        \"relevance_score\", \"value_type\": \"NodeReference\", \"section\": \"output\"}}},
+        {\"name\": \"aggregate_variants_results\", \"tool\": \"aggregate_variants_results\",
+        \"inputs\": {\"results\": {\"value\": \"concat_scores\", \"value_type\": \"NodeReference\",
+        \"section\": \"output\"}, \"line_number\": {\"value\": \"line_number\", \"value_type\":
+        \"FlowInput\", \"prefix\": \"flow.\"}, \"variant_id\": {\"value\": \"variant_id\",
+        \"value_type\": \"FlowInput\", \"prefix\": \"flow.\"}}, \"reduce\": true}],
+        \"inputs\": {\"question\": {\"type\": \"string\"}, \"context\": {\"type\":
+        \"string\"}, \"answer\": {\"type\": \"string\"}, \"line_number\": {\"type\":
+        \"int\"}, \"variant_id\": {\"type\": \"string\"}}, \"outputs\": {\"gpt_relevance\":
+        {\"type\": \"object\", \"reference\": {\"value\": \"concat_scores\", \"value_type\":
+        \"NodeReference\", \"section\": \"output\", \"property\": \"gpt_relevance\"}}},
+        \"tools\": [{\"name\": \"compute_relevance_score\", \"type\": \"llm\", \"inputs\":
+        {\"context\": {\"type\": [\"string\"]}, \"question\": {\"type\": [\"string\"]},
+        \"answer\": {\"type\": [\"string\"]}}, \"description\": \"This is a llm tool\",
+        \"source\": \"compute_relevance_score.jinja2\", \"code\": \"System:\\nYou
+        are an AI assistant. You will be given the definition of an evaluation metric
+        for assessing the quality of an answer in a question-answering task. Your
+        job is to compute an accurate evaluation score using the provided evaluation
+        metric.\\n\\nUser:\\nRelevance measures how well the answer addresses the
+        main aspects of the question, based on the context. Consider whether all and
+        only the important aspects are contained in the answer when evaluating relevance.
+        Given the context and question, score the relevance of the answer between
+        one to five stars using the following rating scale:\\nOne star: the answer
+        completely lacks relevance\\nTwo stars: the answer mostly lacks relevance\\nThree
+        stars: the answer is partially relevant\\nFour stars: the answer is mostly
+        relevant\\nFive stars: the answer has perfect relevance\\n\\nThis rating value
+        should always be an integer between 1 and 5. So the rating produced should
+        be 1 or 2 or 3 or 4 or 5.\\n\\ncontext: Marie Curie was a Polish-born physicist
+        and chemist who pioneered research on radioactivity and was the first woman
+        to win a Nobel Prize.\\nquestion: What field did Marie Curie excel in?\\nanswer:
+        Marie Curie was a renowned painter who focused mainly on impressionist styles
+        and techniques.\\nstars: 1\\n\\ncontext: The Beatles were an English rock
+        band formed in Liverpool in 1960, and they are widely regarded as the most
+        influential music band in history.\\nquestion: Where were The Beatles formed?\\nanswer:
+        The band The Beatles began their journey in London, England, and they changed
+        the history of music.\\nstars: 2\\n\\ncontext: The recent Mars rover, Perseverance,
+        was launched in 2020 with the main goal of searching for signs of ancient
+        life on Mars. The rover also carries an experiment called MOXIE, which aims
+        to generate oxygen from the Martian atmosphere.\\nquestion: What are the main
+        goals of Perseverance Mars rover mission?\\nanswer: The Perseverance Mars
+        rover mission focuses on searching for signs of ancient life on Mars.\\nstars:
+        3\\n\\ncontext: The Mediterranean diet is a commonly recommended dietary plan
+        that emphasizes fruits, vegetables, whole grains, legumes, lean proteins,
+        and healthy fats. Studies have shown that it offers numerous health benefits,
+        including a reduced risk of heart disease and improved cognitive health.\\nquestion:
+        What are the main components of the Mediterranean diet?\\nanswer: The Mediterranean
+        diet primarily consists of fruits, vegetables, whole grains, and legumes.\\nstars:
+        4\\n\\ncontext: The Queen''s Royal Castle is a well-known tourist attraction
+        in the United Kingdom. It spans over 500 acres and contains extensive gardens
+        and parks. The castle was built in the 15th century and has been home to generations
+        of royalty.\\nquestion: What are the main attractions of the Queen''s Royal
+        Castle?\\nanswer: The main attractions of the Queen''s Royal Castle are its
+        expansive 500-acre grounds, extensive gardens, parks, and the historical castle
+        itself, which dates back to the 15th century and has housed generations of
+        royalty.\\nstars: 5\\n\\ncontext: {{context}}\\nquestion: {{question}}\\nanswer:
+        {{answer}}\\nstars:\"}, {\"name\": \"concat_results\", \"type\": \"python\",
+        \"inputs\": {\"relevance_score\": {\"type\": [\"string\"]}}, \"source\": \"concat_results.py\",
+        \"code\": \"from promptflow import tool\\nimport numpy as np\\nimport re\\n\\n\\n@tool\\ndef
+        concat_results(relevance_score: str):\\n\\n    load_list = [{''name'': ''gpt_relevance'',
+        ''score'': relevance_score}]\\n    score_list = []\\n    errors = []\\n    for
+        item in load_list:\\n        try:\\n            score = item[\\\"score\\\"]\\n            match
+        = re.search(r''\\\\d'', score)\\n            if match:\\n                score
+        = match.group()\\n            score = float(score)\\n        except Exception
+        as e:\\n            score = np.nan\\n            errors.append({\\\"name\\\":
+        item[\\\"name\\\"], \\\"msg\\\":   str(e), \\\"data\\\": item[\\\"score\\\"]})\\n        score_list.append({\\\"name\\\":
+        item[\\\"name\\\"], \\\"score\\\": score})\\n\\n    variant_level_result =
+        {}\\n    for item in score_list:\\n        item_name = str(item[\\\"name\\\"])\\n        variant_level_result[item_name]
+        = item[\\\"score\\\"]\\n        variant_level_result[item_name + ''_pass_rate'']
+        = 1 if item[\\\"score\\\"] > 3 else 0\\n    return variant_level_result\\n\",
+        \"function\": \"concat_results\"}, {\"name\": \"aggregate_variants_results\",
+        \"type\": \"python\", \"inputs\": {\"variant_id\": {\"type\": [\"object\"]},
+        \"line_number\": {\"type\": [\"object\"]}, \"results\": {\"type\": [\"object\"]}},
+        \"source\": \"aggregate_variants_results.py\", \"code\": \"from typing import
+        List\\nfrom promptflow import tool, log_metric\\nimport numpy as np\\n\\n\\n@tool\\ndef
+        aggregate_variants_results(variant_id: List[int], line_number: List[int],
+        results: List[dict]):\\n    aggregate_results = {}\\n    for index in range(len(line_number)):\\n        result
+        = results[index]\\n        variant = variant_id[index]\\n        if variant
+        not in aggregate_results.keys():\\n            aggregate_results[variant]
+        = {}\\n        item_result = aggregate_results[variant]\\n        for name,
+        value in result.items():\\n            if name not in item_result.keys():\\n                item_result[name]
+        = []\\n            try:\\n                float_val = float(value)\\n            except
+        Exception:\\n                float_val = np.nan\\n            item_result[name].append(float_val)\\n\\n    for
+        name, value in aggregate_results.items():\\n        variant_id = name\\n        aggr_item
+        = aggregate_results[name]\\n        for name, value in aggr_item.items():\\n            metric_name
+        = name\\n            aggr_item[name] = np.nanmean(value)\\n            if
+        ''pass_rate'' in metric_name:\\n                metric_name = metric_name
+        + \\\"(%)\\\"\\n                aggr_item[name] = aggr_item[name] * 100.0\\n            aggr_item[name]
+        = round(aggr_item[name], 2)\\n            log_metric(metric_name, aggr_item[name],
+        variant_id=variant_id)\\n\\n    return aggregate_results\\n\", \"function\":
+        \"aggregate_variants_results\"}]}, \"connections\": \"**data_scrubbed**\",
+        \"bulk_test_flow_run_ids\": [\"8a20d76d-0488-4deb-aae2-c4d99d30a1ed\", \"8a20d76d-0488-4deb-aae2-c4d99d30a1ed_9bafbd52-da0f-44ca-b40c-b0ce912f083c_variant_0\"],
+        \"bulk_test_flow_id\": \"42f7ee16-2243-475b-af21-e8fabd4abd15\", \"bulk_test_id\":
+        \"9bafbd52-da0f-44ca-b40c-b0ce912f083c\", \"inputs_mapping\": {\"question\":
+        \"data.url\", \"answer\": \"data.answer\", \"context\": \"data.evidence\"}},
+        \"run_mode\": 4, \"created_by\": {\"user_object_id\": \"8471f65f-aa0e-4cde-b219-0ba7a1c148bf\",
+        \"user_tenant_id\": \"00000000-0000-0000-0000-000000000000\", \"user_name\":
+        \"Zhen Ruan\"}, \"bulk_test_data_input\": {\"data_uri\": \"azureml:/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/ae8b5183-dea9-4487-98a4-f8ed4fb934e7/versions/1.0.0\"},
+        \"run_id_to_log_path\": {\"4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74\": \"https://promptfloweast4063704120.blob.core.windows.net/flowrun-logs/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/42f7ee16-2243-475b-af21-e8fabd4abd15/9bafbd52-da0f-44ca-b40c-b0ce912f083c/evaluationRuns/4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74.txt?skoid=55b92eba-d7c7-4afd-ab76-7bb1cd345283&sktid=00000000-0000-0000-0000-000000000000&skt=2023-06-26T03%3A23%3A01Z&ske=2023-07-03T03%3A23%3A01Z&sks=b&skv=2021-10-04&sv=2021-10-04&se=2023-07-03T03%3A23%3A01Z&sr=b&sp=rw&sig=**data_scrubbed**\n2023-06-26
+        03:23:03 +0000     126 promptflow-runtime INFO     Setup logger context.\n2023-06-26
+        03:23:03 +0000     126 promptflow-runtime INFO     Init from request using
+        default credential\n2023-06-26 03:23:03 +0000     126 promptflow-runtime INFO     Initializing
+        mlclient from request finished in 0.02641195198521018 seconds\n2023-06-26
+        03:23:03 +0000     126 promptflow-runtime INFO     Getting storage account
+        key finished in 0.06218615802936256 seconds\n2023-06-26 03:23:03 +0000     126
+        promptflow-runtime WARNING  Failed to get storage account key: (AuthorizationFailed)
+        The client ''74013e41-d17e-462a-8db6-5c0e26c0368c'' with object id ''74013e41-d17e-462a-8db6-5c0e26c0368c''
+        does not have authorization to perform action ''Microsoft.MachineLearningServices/workspaces/00000/action''
+        over scope ''/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''
+        or the scope is invalid. If access was recently granted, please refresh your
+        credentials.\nCode: AuthorizationFailed\nMessage: The client ''74013e41-d17e-462a-8db6-5c0e26c0368c''
+        with object id ''74013e41-d17e-462a-8db6-5c0e26c0368c'' does not have authorization
+        to perform action ''Microsoft.MachineLearningServices/workspaces/00000/action''
+        over scope ''/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''
+        or the scope is invalid. If access was recently granted, please refresh your
+        credentials.\n2023-06-26 03:23:03 +0000     126 promptflow-runtime INFO     Starting
+        to check process 5498 status\n2023-06-26 03:23:03 +0000     126 promptflow-runtime
+        INFO     Start checking run status for bulk run 9bafbd52-da0f-44ca-b40c-b0ce912f083c\n2023-06-26
+        03:23:03 +0000    5498 promptflow-runtime INFO     [126--5498] Start processing
+        flow......\n2023-06-26 03:23:03 +0000     126 promptflow-runtime INFO     Running
+        <function start_thread_to_monitor_request_handler_process.<locals>.get_storage_from_config_with_retry
+        at 0x7f5b35a7f670>, 3 more tries to go.\n2023-06-26 03:23:03 +0000    5498
+        promptflow-runtime INFO     Using AzureMLRunStorage with compute identity.\n2023-06-26
+        03:23:03 +0000    5498 promptflow-runtime INFO     [diagnostic] Token expire
+        on: 2023-06-27 02:48:23, oid: 74013e41-d17e-462a-8db6-5c0e26c0368c, scp: None\n2023-06-26
+        03:23:03 +0000     126 promptflow-runtime INFO     Start checking run status
+        for run 9bafbd52-da0f-44ca-b40c-b0ce912f083c\n2023-06-26 03:23:03 +0000    5498
+        promptflow-runtime INFO     [diagnostic] Token expire on: 2023-06-27 02:48:24,
+        oid: 74013e41-d17e-462a-8db6-5c0e26c0368c, scp: None\n2023-06-26 03:23:03
+        +0000    5498 promptflow-runtime INFO     Set token diagnostic finished in
+        0.04067643382586539 seconds\n2023-06-26 03:23:03 +0000    5498 promptflow-runtime
+        INFO     Setting mlflow tracking uri...\n2023-06-26 03:23:03 +0000    5498
+        promptflow-runtime INFO     Validating ''AzureML Data Scientist'' user authentication...\n2023-06-26
+        03:23:04 +0000    5498 promptflow-runtime INFO     Successfully validated
+        ''AzureML Data Scientist'' user authentication.\n2023-06-26 03:23:04 +0000    5498
+        execution.bulk     INFO     Initialized table client for AzureMLRunTracker.\n2023-06-26
+        03:23:04 +0000    5498 execution.bulk     INFO     Initialized blob service
+        client for AzureMLRunTracker.\n2023-06-26 03:23:04 +0000    5498 execution.bulk     INFO     Setting
+        mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-06-26
+        03:23:05 +0000    5498 promptflow-runtime INFO     Resolved 20 lines of data
+        from uri: azureml:/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/ae8b5183-dea9-4487-98a4-f8ed4fb934e7/versions/1.0.0\n2023-06-26
+        03:23:05 +0000    5498 promptflow-runtime INFO     Resolve data from url finished
+        in 0.6863185481633991 seconds\n2023-06-26 03:23:05 +0000    5498 promptflow-runtime
+        INFO     Start execute request: 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 in dir
+        requests/4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74...\n2023-06-26 03:23:05 +0000    5498
+        execution.bulk     INFO     Starting the aml run ''4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74''...\n2023-06-26
+        03:23:06 +0000    5498 execution.bulk     INFO     Finished 4 / 40 lines.\n2023-06-26
+        03:23:06 +0000    5498 execution.bulk     INFO     Finished 8 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 12 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 16 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 20 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 24 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 28 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 32 / 40 lines.\n2023-06-26
+        03:23:07 +0000    5498 execution.bulk     INFO     Finished 36 / 40 lines.\n2023-06-26
+        03:23:23 +0000     126 promptflow-runtime INFO     Running <function start_thread_to_monitor_request_handler_process.<locals>.get_run_status_with_retry
+        at 0x7f5b35b9f9d0>, 3 more tries to go.\n2023-06-26 03:23:36 +0000    5498
+        execution.bulk     WARNING  [relevance_score in line 12] stderr> Exception
+        occurs: Timeout: Request timed out: HTTPSConnectionPool(host=''gpt-test-eus.openai.azure.com'',
+        port=443): Read timed out. (read timeout=30)\n2023-06-26 03:23:36 +0000    5498
+        execution.bulk     WARNING  [relevance_score in line 12] stderr> Timeout #0,
+        but no Retry-After header, Back off 8.0 seconds for retry.\n2023-06-26 03:23:36
+        +0000     126 promptflow-runtime WARNING  <class ''TimeoutError''>, Retrying
+        in 6 seconds...\n2023-06-26 03:23:36 +0000     126 promptflow-runtime INFO     Running
+        <function start_thread_to_monitor_request_handler_process.<locals>.get_run_status_with_retry
+        at 0x7f5b35b9f9d0>, 2 more tries to go.\n2023-06-26 03:23:44 +0000    5498
+        execution.bulk     INFO     Finished 40 / 40 lines.\n2023-06-26 03:23:44 +0000    5498
+        execution.bulk     INFO     Executing reduce nodes...\n2023-06-26 03:23:44
+        +0000    5498 execution.bulk     INFO     Finish executing reduce nodes.\n2023-06-26
+        03:23:44 +0000    5498 execution.bulk     INFO     Aggregating child run errors
+        for root run ''4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74'' if child run has error...\n2023-06-26
+        03:23:46 +0000    5498 execution.bulk     INFO     Upload metrics for run
+        4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 finished in 1.8221911741420627 seconds\n2023-06-26
+        03:23:46 +0000    5498 execution.bulk     INFO     Successfully write run
+        properties {\"azureml.promptflow.total_tokens\": 26680} with run id ''4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74''\n2023-06-26
+        03:23:46 +0000    5498 execution.bulk     INFO     Upload RH properties for
+        run 4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74 finished in 0.0726369780022651 seconds\n2023-06-26
+        03:23:46 +0000    5498 execution.bulk     INFO     Ending the aml run ''4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74''
+        with status ''Completed''...\n2023-06-26 03:23:47 +0000     126 promptflow-runtime
+        INFO     Process 5498 finished\n2023-06-26 03:23:47 +0000     126 promptflow-runtime
+        INFO     [126] Child process finished!\n2023-06-26 03:23:47 +0000     126
+        promptflow-runtime INFO     [4cf2d5e9-c78f-4ab8-a3ee-57675f92fb74] End processing
+        flow\n2023-06-26 03:23:52 +0000     126 promptflow-runtime WARNING  <class
+        ''TimeoutError''>, Retrying in 12 seconds...\n"'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '17743'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.604'
+    status:
+      code: 200
+      message: OK
+version: 1

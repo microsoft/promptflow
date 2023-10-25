@@ -256,7 +256,7 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        m, f, tool = self._tool_loader.load_tool_for_script_node(node)
+        m, tool = self._tool_loader.load_tool_for_script_node(node)
         # We only want to load script tool module once.
         # Reloading the same module changes the ID of the class, which can cause issues with isinstance() checks.
         # This is important when working with connection class checks. For instance, in user tool script it writes:
@@ -267,7 +267,11 @@ class ToolResolver:
         # To avoid reloading, pass the loaded module to _convert_node_literal_input_types as an arg.
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool, m)
-        return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
+        callable, init_args = BuiltinsManager._load_tool_from_module(
+            m, tool.name, tool.module, tool.class_name, tool.function, node.inputs
+        )
+        self._remove_init_args(node.inputs, init_args)
+        return ResolvedTool(node=node, definition=tool, callable=callable, init_args=init_args)
 
     def _resolve_package_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         tool: Tool = self._tool_loader.load_tool_for_package_node(node)

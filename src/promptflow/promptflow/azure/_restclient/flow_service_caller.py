@@ -14,7 +14,7 @@ from azure.core.exceptions import HttpResponseError, ResourceExistsError
 from azure.core.pipeline.policies import RetryPolicy
 
 from promptflow._telemetry.telemetry import TelemetryMixin
-from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME
+from promptflow.azure._constants._flow import AUTOMATIC_RUNTIME, SESSION_CREATION_TIMEOUT_ENV_VAR
 from promptflow.azure._restclient.flow import AzureMachineLearningDesignerServiceClient
 from promptflow.exceptions import ValidationException, UserErrorException, PromptflowException
 
@@ -500,11 +500,24 @@ class FlowServiceCaller(RequestTelemetryMixin):
         sleep_period = 5
         status = None
         timeout_seconds = SESSION_CREATION_TIMEOUT_SECONDS
+        # polling timeout, if user set SESSION_CREATION_TIMEOUT_SECONDS in environment var, use it
+        if os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR):
+            try:
+                timeout_seconds = float(os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR))
+            except ValueError:
+                raise UserErrorException(
+                    "Environment variable {} with value {} set but failed to parse. "
+                    "Please reset the value to a number.".format(
+                        SESSION_CREATION_TIMEOUT_ENV_VAR, os.environ.get(SESSION_CREATION_TIMEOUT_ENV_VAR)
+                    )
+                )
         # InProgress is only known non-terminal status for now.
         while status in [None, "InProgress"]:
             if time_run + sleep_period > timeout_seconds:
-                message = f"Timeout for session {action} {session_id} for {AUTOMATIC_RUNTIME}.\n" \
-                          "Please resubmit the flow later."
+                message = f"Polling timeout for session {session_id} {action} " \
+                          f"for {AUTOMATIC_RUNTIME} after {timeout_seconds} seconds.\n" \
+                          f"To proceed the {action} for {AUTOMATIC_RUNTIME}, you can retry using the same flow, " \
+                          "and we will continue polling status of previous session. \n"
                 raise Exception(message)
             time_run += sleep_period
             time.sleep(sleep_period)

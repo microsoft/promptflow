@@ -377,7 +377,8 @@ class FlowOperations:
             import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
-                f"Please install PyInstaller, streamlit and streamlit_quill for building " f"executable, {ex.msg}."
+                f"Please install PyInstaller, streamlit and streamlit_quill for building " f"executable, {ex.msg}. "
+                f"You can try 'pip install promptflow[executable]' to install them."
             )
 
         from promptflow.contracts.flow import Flow as ExecutableFlow
@@ -400,10 +401,12 @@ class FlowOperations:
         runtime_interpreter_path = (Path(streamlit.__file__).parent / "runtime").as_posix()
 
         executable = ExecutableFlow.from_yaml(flow_file=Path(flow_dag_path.name), working_dir=flow_dag_path.parent)
-        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
+        flow_inputs = {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()
+                       if not value.is_chat_history}
         flow_inputs_params = ["=".join([flow_input, flow_input]) for flow_input, _ in flow_inputs.items()]
         flow_inputs_params = ",".join(flow_inputs_params)
 
+        is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
@@ -414,17 +417,16 @@ class FlowOperations:
                 "flow_inputs": flow_inputs,
                 "flow_inputs_params": flow_inputs_params,
                 "flow_path": None,
+                "is_chat_flow": is_chat_flow,
+                "chat_history_input_name": chat_history_input_name
             },
         )
-        try:
-            current_directory = os.getcwd()
-            os.chdir(output_dir.as_posix())
+        self._run_pyinstaller(output_dir)
+
+    def _run_pyinstaller(self, output_dir):
+        with _change_working_dir(output_dir, mkdir=False):
             subprocess.run(["pyinstaller", "app.spec"], check=True)
             print("PyInstaller command executed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error running PyInstaller: {e}")
-        finally:
-            os.chdir(current_directory)
 
     @monitor_operation(activity_name="pf.flows.build", activity_type=ActivityType.PUBLICAPI)
     def build(
