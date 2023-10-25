@@ -249,10 +249,10 @@ class StreamlitFileGenerator(BaseGenerator):
     def flow_path(self):
         return self.flow_dag_path.as_posix()
 
-
     @property
     def entry_template_keys(self):
-        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow", "chat_history_input_name"]
+        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow",
+                "chat_history_input_name"]
 
 
 class ChatFlowDAGGenerator(BaseGenerator):
