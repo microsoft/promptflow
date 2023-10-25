@@ -4,7 +4,7 @@ import os
 import re
 import streamlit as st
 from pathlib import Path
-from streamlit_quill import st_quill
+from streamlit_quill import st_quill  # noqa: F401
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._utils import print_yellow_warning
@@ -29,7 +29,6 @@ def start():
             return json.dumps(value)
         except Exception:
             return value
-
 
     def is_list_contains_rich_text(rich_text):
         result = False
@@ -164,7 +163,6 @@ def start():
                     result.extend(extract_content(child))
                 return result
         return []
-
 
     def parse_html_content(html_content):
         soup = BeautifulSoup(html_content, 'html.parser')
