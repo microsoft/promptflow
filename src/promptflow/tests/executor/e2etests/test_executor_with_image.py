@@ -130,7 +130,7 @@ class TestExecutorWithImage:
 
     def test_executor_exec_line_with_chat_flow(self, dev_connections):
         flow_folder = CHAT_FLOW_WITH_IMAGE
-        working_dir = get_yaml_working_dir(flow_folder)
+        working_dir = get_flow_folder(flow_folder)
         os.chdir(working_dir)
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
