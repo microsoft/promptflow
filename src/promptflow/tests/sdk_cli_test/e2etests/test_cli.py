@@ -1345,6 +1345,53 @@ class TestCli:
             outerr = capsys.readouterr()
             assert f"The tool name {invalid_tool_name} is a invalid identifier." in outerr.out
 
+            # Test init package tool with extra info
+            package_name = "tool_with_extra_info"
+            package_folder = Path(temp_dir) / package_name
+            icon_path = Path(DATAS_DIR) / "logo.jpg"
+            category = "test_category"
+            tags = {'tag1': 'value1', 'tag2': 'value2'}
+            run_pf_command(
+                "tool",
+                "init",
+                "--package",
+                package_name,
+                "--tool",
+                func_name,
+                "--set",
+                f"icon={icon_path.absolute()}",
+                f"category={category}",
+                f"tags={tags}",
+                cwd=temp_dir
+            )
+            spec = importlib.util.spec_from_file_location(
+                f"{package_name}.utils", package_folder / package_name / "utils.py")
+            utils = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(utils)
+
+            assert hasattr(utils, "list_package_tools")
+            tools_meta = utils.list_package_tools()
+            meta = tools_meta[f"{package_name}.{func_name}.{func_name}"]
+            assert meta["category"] == category
+            assert meta["tags"] == tags
+            assert meta["icon"].startswith("data:image")
+
+            # icon doesn't exist
+            with pytest.raises(SystemExit):
+                run_pf_command(
+                    "tool",
+                    "init",
+                    "--package",
+                    package_name,
+                    "--tool",
+                    func_name,
+                    "--set",
+                    "icon=invalid_icon_path",
+                    cwd=temp_dir
+                )
+            outerr = capsys.readouterr()
+            assert "Cannot find the icon path" in outerr.out
+
     def test_tool_list(self, capsys):
         # List package tools in environment
         run_pf_command("tool", "list")
@@ -1401,9 +1448,9 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/python_tool_with_image_input_and_output",
+            f"{FLOWS_DIR}/python_tool_with_simple_image",
         )
-        output_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "output"
+        output_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "output"
         assert output_path.exists()
-        image_path = Path(FLOWS_DIR) / "python_tool_with_image_input_and_output" / ".promptflow" / "intermediate"
+        image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
