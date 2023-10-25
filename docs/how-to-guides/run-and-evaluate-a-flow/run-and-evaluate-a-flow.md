@@ -103,7 +103,7 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ## Evaluate your flow
 
-You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score.
+You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score. Please refer to [Develop evaluation flow](../develop-a-flow/develop-evaluation-flow.md) to learn how to develop an evaluation flow.
 
 In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
 
@@ -211,24 +211,6 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 :::
 
 ::::
-
-## How to log metrics
-
-Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
-
-```python
-from promptflow import log_metric, tool
-
-@tool
-def example_log_metrics():
-  metric_key = "accuracy"
-  metric_value = 1.0
-  log_metric(metric_key, metric_value)
-```
-
-After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.
-
-![img](../../media/how-to-guides/run_show_metrics.png)
 
 ## Next steps
 

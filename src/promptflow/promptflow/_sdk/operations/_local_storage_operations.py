@@ -79,15 +79,18 @@ class LoggerOperations(LogContext):
     def __enter__(self):
         log_path = Path(self.log_path)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        if log_path.exists():
-            # Clean up previous log content
-            try:
-                with open(log_path, mode="w", encoding=DEFAULT_ENCODING) as file:
-                    file.truncate(0)
-            except Exception as e:
-                logger.warning(f"Failed to clean up the previous log content because {e}")
-        else:
+        if self.run_mode == RunMode.Batch:
             log_path.touch(exist_ok=True)
+        else:
+            if log_path.exists():
+                # for non batch run, clean up previous log content
+                try:
+                    with open(log_path, mode="w", encoding=DEFAULT_ENCODING) as file:
+                        file.truncate(0)
+                except Exception as e:
+                    logger.warning(f"Failed to clean up the previous log content because {e}")
+            else:
+                log_path.touch()
 
         for _logger in self._get_execute_loggers_list():
             for handler in _logger.handlers:

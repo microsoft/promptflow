@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._utils.multimedia_utils import _create_image_from_file, _is_multimedia_dict
+from promptflow._utils.multimedia_utils import _create_image_from_file, is_multimedia_dict
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
 from promptflow.executor import BatchEngine, FlowExecutor
@@ -14,9 +14,11 @@ from promptflow.storage._run_storage import DefaultRunStorage
 from ..utils import FLOW_ROOT, get_flow_folder, get_yaml_file, is_image_file, is_jsonl_file
 
 SIMPLE_IMAGE_FLOW = "python_tool_with_simple_image"
-SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / "python_tool_with_simple_image"
 COMPOSITE_IMAGE_FLOW = "python_tool_with_composite_image"
-COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / "python_tool_with_composite_image"
+CHAT_FLOW_WITH_IMAGE = "chat_flow_with_image"
+SIMPLE_IMAGE_FLOW_PATH = FLOW_ROOT / SIMPLE_IMAGE_FLOW
+COMPOSITE_IMAGE_FLOW_PATH = FLOW_ROOT / COMPOSITE_IMAGE_FLOW
+CHAT_FLOW_WITH_IMAGE_PATH = FLOW_ROOT / CHAT_FLOW_WITH_IMAGE
 IMAGE_URL = (
     "https://github.com/microsoft/promptflow/blob/93776a0631abf991896ab07d294f62082d5df3f3/src"
     "/promptflow/tests/test_configs/datas/test_image.jpg?raw=true"
@@ -85,7 +87,7 @@ def assert_contain_image_reference(value):
         for item in value:
             assert_contain_image_reference(item)
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             path = list(value.values())[0]
             assert isinstance(path, str)
             assert path.endswith(".jpg") or path.endswith(".jpeg") or path.endswith(".png")
@@ -99,7 +101,7 @@ def assert_contain_image_object(value):
         for item in value:
             assert_contain_image_object(item)
     elif isinstance(value, dict):
-        assert not _is_multimedia_dict(value)
+        assert not is_multimedia_dict(value)
         for _, v in value.items():
             assert_contain_image_object(v)
     else:
@@ -118,6 +120,21 @@ class TestExecutorWithImage:
         storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
         flow_result = executor.exec_line(inputs)
+        assert isinstance(flow_result.output, dict)
+        assert_contain_image_object(flow_result.output)
+        assert flow_result.run_info.status == Status.Completed
+        assert_contain_image_reference(flow_result.run_info)
+        for _, node_run_info in flow_result.node_run_infos.items():
+            assert node_run_info.status == Status.Completed
+            assert_contain_image_reference(node_run_info)
+
+    def test_executor_exec_line_with_chat_flow(self, dev_connections):
+        flow_folder = CHAT_FLOW_WITH_IMAGE
+        working_dir = get_yaml_working_dir(flow_folder)
+        os.chdir(working_dir)
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path("./temp"))
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, storage=storage)
+        flow_result = executor.exec_line({})
         assert isinstance(flow_result.output, dict)
         assert_contain_image_object(flow_result.output)
         assert flow_result.run_info.status == Status.Completed
