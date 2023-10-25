@@ -6,8 +6,8 @@ import json
 import logging
 import os
 import os.path
-import subprocess
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -1140,7 +1140,7 @@ class TestCli:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
+                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE)
                 try:
                     # Wait for a specified time (in seconds)
                     wait_time = 5
@@ -1148,8 +1148,10 @@ class TestCli:
                     if process.returncode == 0:
                         pass
                     else:
-                        raise Exception(f"Process terminated with exit code {process.returncode}, "
-                                        f"{process.stderr.read().decode('utf-8')}")
+                        raise Exception(
+                            f"Process terminated with exit code {process.returncode}, "
+                            f"{process.stderr.read().decode('utf-8')}"
+                        )
                 except (subprocess.TimeoutExpired, KeyboardInterrupt):
                     pass
                 finally:
@@ -1530,13 +1532,9 @@ class TestCli:
     def test_data_scrubbing(self):
         # Prepare connection
         run_pf_command(
-            "connection",
-            "create",
-            "--file",
-            f"{CONNECTIONS_DIR}/custom_connection.yaml",
-            "--name",
-            "custom_connection")
-        
+            "connection", "create", "--file", f"{CONNECTIONS_DIR}/custom_connection.yaml", "--name", "custom_connection"
+        )
+
         # Test flow run
         run_pf_command(
             "flow",
@@ -1561,7 +1559,7 @@ class TestCli:
             "print_secret",
             "--inputs",
             "conn=custom_connection",
-            "inputs.topic=atom"
+            "inputs.topic=atom",
         )
         output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow-print_secret.node.detail.json"
         assert output_path.exists()
