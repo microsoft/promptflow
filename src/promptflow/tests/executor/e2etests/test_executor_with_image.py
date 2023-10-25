@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from promptflow._utils.multimedia_utils import _create_image_from_file, is_multimedia_dict
+from promptflow._utils.multimedia_utils import MIME_PATTERN, _create_image_from_file, is_multimedia_dict
 from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import Status
 from promptflow.executor import BatchEngine, FlowExecutor
@@ -163,10 +163,23 @@ class TestExecutorWithImage:
         assert run_info.status == Status.Completed
         assert_contain_image_reference(run_info)
 
-    def test_executor_batch_engine_with_image(self):
-        executor = FlowExecutor.create(get_yaml_file(SIMPLE_IMAGE_FLOW), {})
-        input_dirs = {"data": "image_inputs/inputs.jsonl"}
-        inputs_mapping = {"image": "${data.image}"}
+    @pytest.mark.parametrize(
+        "flow_folder, input_dirs, inputs_mapping",
+        [
+            (
+                SIMPLE_IMAGE_FLOW,
+                {"data": "image_inputs/inputs.jsonl"},
+                {"image": "${data.image}"},
+            ),
+            (
+                COMPOSITE_IMAGE_FLOW,
+                {"data": "inputs.jsonl"},
+                {"image_list": "${data.image_list}", "image_dict": "${data.image_dict}"},
+            ),
+        ],
+    )
+    def test_executor_batch_engine_with_image(self, flow_folder, input_dirs, inputs_mapping):
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), {})
         output_dir = Path("outputs")
         bulk_result = BatchEngine(executor).run(input_dirs, inputs_mapping, output_dir)
 
@@ -175,11 +188,12 @@ class TestExecutorWithImage:
             assert isinstance(output, dict)
             assert "line_number" in output, f"line_number is not in {i}th output {output}"
             assert output["line_number"] == i, f"line_number is not correct in {i}th output {output}"
-            assert "data:image/png;path" in output["output"], f"image is not in {i}th output {output}"
+            result = output["output"][0] if isinstance(output["output"], list) else output["output"]
+            assert all(MIME_PATTERN.search(key) for key in result), f"image is not in {i}th output {output}"
         for i, line_result in enumerate(bulk_result.line_results):
             assert isinstance(line_result, LineResult)
             assert line_result.run_info.status == Status.Completed, f"{i}th line got {line_result.run_info.status}"
 
-        output_dir = get_flow_folder(SIMPLE_IMAGE_FLOW) / output_dir
+        output_dir = get_flow_folder(flow_folder) / output_dir
         assert all(is_jsonl_file(output_file) or is_image_file(output_file) for output_file in output_dir.iterdir())
         shutil.rmtree(output_dir)

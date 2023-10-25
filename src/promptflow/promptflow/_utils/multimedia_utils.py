@@ -220,10 +220,22 @@ def load_multimedia_data_recursively(value: Any):
         return value
 
 
+def resolve_multimedia_data_recursively(input_dir: Path, value: Any):
+    if isinstance(value, list):
+        return [resolve_multimedia_data_recursively(input_dir, item) for item in value]
+    elif isinstance(value, dict):
+        if is_multimedia_dict(value):
+            return resolve_image_path(input_dir, value)
+        else:
+            return {k: resolve_multimedia_data_recursively(input_dir, v) for k, v in value.items()}
+    else:
+        return value
+
+
 def resolve_image_path(input_dir: Path, image_dict: dict):
     """Resolve image path to absolute path in image dict"""
     input_dir = input_dir.parent if input_dir.is_file() else input_dir
-    if _is_multimedia_dict(image_dict):
+    if is_multimedia_dict(image_dict):
         for key in image_dict:
             _, resource = _get_multimedia_info(key)
             if resource == "path":

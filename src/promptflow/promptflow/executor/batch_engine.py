@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Union
 
 from promptflow._utils.load_data import load_data
-from promptflow._utils.multimedia_utils import resolve_image_path
+from promptflow._utils.multimedia_utils import resolve_multimedia_data_recursively
 from promptflow._utils.utils import dump_list_to_jsonl
 from promptflow.executor._result import BulkResult
 from promptflow.executor.flow_executor import FlowExecutor
@@ -61,8 +61,7 @@ class BatchEngine:
         for input_key, input_dir in input_dirs.items():
             input_dir = self._resolve_dir(input_dir)
             file_data = load_data(input_dir)
-            for each_line in file_data:
-                self._resolve_image(input_dir, each_line)
+            resolve_multimedia_data_recursively(input_dir, file_data)
             result[input_key] = file_data
         return result
 
@@ -72,17 +71,6 @@ class BatchEngine:
         if not path.is_absolute():
             path = self.flow_executor._working_dir / path
         return path
-
-    def _resolve_image(self, input_dir: Path, one_line_data: dict):
-        """Resolve image path to absolute path in one line data"""
-        for key, value in one_line_data.items():
-            if isinstance(value, list):
-                for item in value:
-                    item = resolve_image_path(input_dir, item)
-                one_line_data[key] = value
-            elif isinstance(value, dict):
-                one_line_data[key] = resolve_image_path(input_dir, value)
-        return one_line_data
 
     def _persist_outputs(self, outputs: List[Mapping[str, Any]], output_dir: Path):
         """Persist outputs to json line file in output directory"""
