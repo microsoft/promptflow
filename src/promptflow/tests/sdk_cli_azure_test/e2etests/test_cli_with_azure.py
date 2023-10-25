@@ -130,8 +130,8 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
 
-    def test_run_file_with_set(self, pf, runtime) -> None:
-        name = str(uuid.uuid4())
+    def test_run_file_with_set(self, pf: PFClient, runtime: str, randstr: Callable[[str], str]) -> None:
+        name = randstr("name")
         run_pf_command(
             "run",
             "create",
