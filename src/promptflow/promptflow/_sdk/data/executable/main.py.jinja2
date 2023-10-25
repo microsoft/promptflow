@@ -209,15 +209,15 @@ def start():
                     os.environ[environment_variable] = secret_input
 
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if flow_input != "chat_history" %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
 {% elif value_type == "image" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
-{% else %}
+{% elif value_type == "string" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-{% endif %}
+{% else %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder={{default_value}})
 {% endif %}
 {% endfor %}
 

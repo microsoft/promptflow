@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import os.path
+import subprocess
 import shutil
 import sys
 import tempfile
@@ -1118,6 +1119,42 @@ class TestCli:
                 == flow_dag["node_variants"]["summarize_text_content"]["variants"]["variant_0"]["node"]
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
+
+    def test_flow_build_executable(self):
+        source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
+        target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
+        with mock.patch(target) as mocked:
+            mocked.return_value = None
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                run_pf_command(
+                    "flow",
+                    "build",
+                    "--source",
+                    source,
+                    "--output",
+                    temp_dir,
+                    "--format",
+                    "executable",
+                )
+                # Start the Python script as a subprocess
+                app_file = Path(temp_dir, "app.py").as_posix()
+                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
+                try:
+                    # Wait for a specified time (in seconds)
+                    wait_time = 5
+                    process.wait(timeout=wait_time)
+                    if process.returncode == 0:
+                        pass
+                    else:
+                        raise Exception(f"Process terminated with exit code {process.returncode}, "
+                                        f"{process.stderr.read().decode('utf-8')}")
+                except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                    pass
+                finally:
+                    # Kill the process
+                    process.terminate()
+                    process.wait()  # Ensure the process is fully terminated
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
