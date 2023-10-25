@@ -787,7 +787,7 @@ class TestFlowRun:
         run = create_run_against_multi_line_data_without_llm(pf)
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
-        # below texts are printed by executor before the batch run executed
+        # below warning is printed by executor before the batch run executed
         # the warning message results from we do not use column mapping
         # so it is expected to be printed here
         assert "Starting run without column mapping may lead to unexpected results." in logs
