@@ -233,18 +233,20 @@ class BuiltinsManager:
         tool: Tool,
         node_inputs: Optional[dict] = None,
     ) -> Tuple[Callable, dict]:
-        return BuiltinsManager._load_tool_from_module(
+        return BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, node_inputs
         )
 
     @staticmethod
     def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs):
         module = importlib.import_module(module_name)
-        return BuiltinsManager._load_tool_from_module(module, tool_name, class_name, method_name, node_inputs)
+        return BuiltinsManager._load_tool_from_module(
+            module, tool_name, module_name, class_name, method_name, node_inputs
+        )
 
     @staticmethod
     def _load_tool_from_module(
-        module, tool_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]
+        module, tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]
     ):
         """Load tool from given module with node inputs."""
         if class_name is None:

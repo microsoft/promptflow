@@ -283,7 +283,7 @@ class TestToolResolver:
         mocker.patch.object(tool_loader, "load_tool_for_llm_node", return_value=tool)
 
         mocker.patch(
-            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
+            "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
             return_value=(mock_llm_api_func, {"conn": AzureOpenAIConnection}),
         )
 
@@ -356,7 +356,7 @@ class TestToolResolver:
         mocker.patch.object(tool_loader, "load_tool_for_package_node", return_value=tool)
 
         mocker.patch(
-            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
+            "promptflow._core.tools_manager.BuiltinsManager._load_package_tool",
             return_value=(mock_package_func, {"conn": AzureOpenAIConnection}),
         )
 

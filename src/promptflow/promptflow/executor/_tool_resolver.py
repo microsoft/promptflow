@@ -232,7 +232,7 @@ class ToolResolver:
         )
         self._validate_duplicated_inputs(prompt_tpl_inputs_mapping.keys(), tool.inputs.keys(), msg)
         updated_node.inputs = self._load_images_for_prompt_tpl(prompt_tpl_inputs_mapping, updated_node.inputs)
-        api_func, init_args = BuiltinsManager._load_tool_from_module(
+        api_func, init_args = BuiltinsManager._load_package_tool(
             tool.name, tool.module, tool.class_name, tool.function, updated_node.inputs
         )
         self._remove_init_args(updated_node.inputs, init_args)
@@ -268,7 +268,7 @@ class ToolResolver:
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool, m)
         callable, init_args = BuiltinsManager._load_tool_from_module(
-            m, tool.name, tool.class_name, tool.function, node.inputs
+            m, tool.name, tool.module, tool.class_name, tool.function, node.inputs
         )
         self._remove_init_args(node.inputs, init_args)
         return ResolvedTool(node=node, definition=tool, callable=callable, init_args=init_args)
