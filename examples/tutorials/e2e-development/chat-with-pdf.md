@@ -26,10 +26,11 @@ To go through this tutorial you should:
 
 2. Install and configure [Prompt flow for VS Code extension](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) follow [Quick Start Guide](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html). (_This extension is optional but highly recommended for flow development and debugging._)
 
+3. Deploy an OpenAI or Azure OpenAI chat model (e.g. gpt4 or gpt-35-turbo-16k), and an Embedding model (text-embedding-ada-002).  Follow the [how-to](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal) for an Azure OpenAI example.
 
 ## Console chatbot chat_with_pdf
-A typical RAG application has two steps:
-- **Retrieval**: Retrieve context information from external systems (database, search engine, files, etc.)
+A typical RAG process consists of two steps:
+- **Retrieval**: Retrieve contextual information from external systems (database, search engine, files, etc.)
 - **Generation**: Construct the prompt with the retrieved context and get response from LLMs.
 
 The retrieval step, being more of a search problem, can be quite complex. A widely used, simple yet effective approach is vector search, which requires an index building process. Suppose you have one or more documents containing the contextual information, the index building process would look something like this:
@@ -37,13 +38,13 @@ The retrieval step, being more of a search problem, can be quite complex. A wide
 2. **Embedding**: Each text chunk is then processed by an embedding model to convert it into an array of floating-point numbers, also known as embedding or vector.
 3. **Indexing**: These vectors are then stored in an index or a database that supports vector search. This allows for the retrieval of the top K relevant or similar vectors from the index or database.
 
-Once the index is built, the **Retrieval** step simply involves converting the quesion into embedding/vector and perform a vector search on the index to obtain the most relevant context for the question.
+Once the index is built, the **Retrieval** step simply involves converting the question into an embedding/vector and performing a vector search on the index to obtain the most relevant context for the question.
 
 OK now back to the chatbot we want to build, a simplified design could be:
 
 <img src="../../flows/chat/chat-with-pdf/assets/chat_with_pdf_simple.png" width="300" alt="chat with pdf simple design"/>
 
-A more robust or practical application might consider using an external vector database to store the vectors. For this simple example we've opted to use [FAISS](https://github.com/facebookresearch/faiss) index, which can be saved as a file. To prevent repetitive downloading and index building for same PDF file, we will add a check that if the PDF file already exists then we won't download, same for index building.
+A more robust or practical application might consider using an external vector database to store the vectors. For this simple example we're using a [FAISS](https://github.com/facebookresearch/faiss) index, which can be saved as a file. However, a more robust or practical application should consider using an external vector database with advanced management capabilities to store the vectors.  With this sample's FAISS index, to prevent repetitive downloading and index building for same PDF file, we will add a check that if the PDF file already exists then we won't download, same for index building.  
 
 This design is quite effective for question and answering, but it may fall short when it comes to multi-turn conversations with the chatbot. Consider a scenario like this:
 
@@ -64,15 +65,15 @@ A "rewrite_question" step is performed before feeding the question to "find_cont
 ### Configurations
 Despite being a minimalistic LLM application, there are several aspects we may want to adjust or experiment with in the future. We'll store these in environment variables for ease of access and modification. In the subsequent sections, we'll guide you on how to experiment with these configurations to enhance your chat application's quality.
 
-Create a .env file in the chat_with_pdf directory (same directory with the main.py) and populate it with the following content. We can use the load_dotenv() function to import these into our environment variables later on. We'll delve into what these variables represent when discussing how each step of the process is implemented.
+Create a .env file in the second chat_with_pdf directory (same directory with the main.py) and populate it with the following content. We can use the load_dotenv() function (from the python-dotenv package) to import these into our environment variables later on. We'll delve into what these variables represent when discussing how each step of the process is implemented.
 
 Rename the .env.example file in chat_with_pdf directory and modify per your need.
 
 > If you're using Open AI, your .env should look like:
 ```ini
 OPENAI_API_KEY=<open_ai_key>
-EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
-CHAT_MODEL_DEPLOYMENT_NAME=gpt-4
+EMBEDDING_MODEL_DEPLOYMENT_NAME=<text-embedding-ada-002>
+CHAT_MODEL_DEPLOYMENT_NAME=<gpt-4> 
 PROMPT_TOKEN_LIMIT=3000
 MAX_COMPLETION_TOKENS=1024
 CHUNK_SIZE=256
@@ -87,15 +88,15 @@ OPENAI_API_TYPE=azure
 OPENAI_API_BASE=<AOAI_endpoint>
 OPENAI_API_KEY=<AOAI_key>
 OPENAI_API_VERSION=2023-05-15
-EMBEDDING_MODEL_DEPLOYMENT_NAME=text-embedding-ada-002
-CHAT_MODEL_DEPLOYMENT_NAME=gpt-4
+EMBEDDING_MODEL_DEPLOYMENT_NAME=<text-embedding-ada-002>
+CHAT_MODEL_DEPLOYMENT_NAME=<gpt-4>
 PROMPT_TOKEN_LIMIT=3000
 MAX_COMPLETION_TOKENS=1024
 CHUNK_SIZE=256
 CHUNK_OVERLAP=64
 VERBOSE=False
 ```
-Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4
+Note: CHAT_MODEL_DEPLOYMENT_NAME should point to a chat model like gpt-3.5-turbo or gpt-4, OPENAI_API_KEY should use the deployment key, and EMBEDDING_MODEL_DEPLOYMENT_NAME should point to a text embedding model like text-embedding-ada-002.
 
 ### Take a look at the chatbot in action!
 You should be able to run the console app by:
@@ -169,6 +170,8 @@ def build_index_tool(pdf_path: str) -> str:
 The setup_env node requires some explanation: you might recall that we use environment variables to manage different configurations, including OpenAI API key in the console chatbot, in prompt flow we use [Connection](https://microsoft.github.io/promptflow/concepts/concept-connections.html) to manage access to external services like OpenAI and support passing configuration object into flow so that you can do experimentation easier. The setup_env node is to write the properties from connection and configuration object into environment variables. This allows the core code of the chatbot remain unchanged.
 
 We're using Azure OpenAI in this example, below is the shell command to do so:
+
+**CLI**
 ```bash
 # create connection needed by flow
 if pf connection list | grep open_ai_connection; then
@@ -199,7 +202,9 @@ Now the prompt flow for chat_with_pdf is created, you might have already run/deb
 
 A small dataset can be found here: [bert-paper-qna.jsonl](../../flows/chat/chat-with-pdf/data/bert-paper-qna.jsonl) which contains around 10 questions for the BERT paper.
 
-You can do a batch run with the test dataset and manual review the output. This can be done through the Visual Studio Code extension, or CLI or Python SDK.
+Evaluations are executed through 'batch runs'.  Conceptually, they are a batch run of an evaluation flow which uses the previous run as input.
+
+Here is an example of how to create a batch run for the chat_with_pdf flow using the test dataset and manually reviewing the output. This can be done through the Visual Studio Code extension, or CLI or Python SDK.
 
 **batch_run.yaml**
 ```yaml
@@ -250,7 +255,7 @@ And we developed two evaluation flows one for "[groundedness](../../flows/evalua
 - [groundedness prompt](../../flows/evaluation/eval-groundedness/gpt_groundedness.md)
 - [perceived intelligence prompt](../../flows/evaluation/eval-perceived-intelligence/gpt_perceived_intelligence.md)
 
-Conceptually evaluation is also a batch run - batch run of evaluation flow with the previous run as input.
+The following example creates an evaluation flow.  
 
 **eval_run.yaml:**
 ```yaml
@@ -282,9 +287,10 @@ We have now explored how to conduct tests and evaluations for prompt flow. Addit
 
 There are several aspects we can experiment with, including but not limited to:
 
-Varying prompts for the rewrite_question and/or QnA steps.
-Adjusting the chunk size or chunk overlap during index building.
-Modifying the context limit.
+* Varying prompts for the rewrite_question and/or QnA steps.
+* Adjusting the chunk size or chunk overlap during index building.
+* Modifying the context limit.
+
 These elements can be managed through the "config" object in the flow inputs. If you wish to experiment with the first point (varying prompts), you can add properties to the config object to control this behavior - simply by directing it to different prompt files.
 
 Take a look at how we experiment with #3 in below test: [test_eval in tests/chat_with_pdf_test.py](../../flows/chat/chat-with-pdf/tests/azure_chat_with_pdf_test.py). This test will create 6 runs in total:
