@@ -25,8 +25,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
-        uses: actions/checkout@v3
-      
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+          fetch-depth: 0
+
+      - name: merge main to current branch
+        uses: "./.github/actions/step_merge_main"
+
       - name: Display and Set Environment Variables
         run: |
           if [ "ubuntu-latest" == "${{ matrix.os }}" ]; then
