@@ -103,7 +103,7 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ## Evaluate your flow
 
-You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score.
+You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score. You can refer to [Develop evaluation flow](../develop-a-flow/develop-evaluation-flow.md) to learn how to develop an evaluation flow.
 
 In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
 
@@ -216,5 +216,4 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 
 Learn more about:
 - [Tune prompts with variants](../tune-prompts-with-variants.md)
-- [Develop evaluation flow](../develop-a-flow/develop-evaluation-flow.md)
 - [Deploy a flow](../deploy-a-flow/index.md)

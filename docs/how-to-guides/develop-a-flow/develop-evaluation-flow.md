@@ -6,7 +6,7 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 
 The evaluation flow is a flow to test/evaluate the quality of your LLM application (standard/chat flow). It usually runs on the outputs of standard/chat flow, and compute key metrics that can be used to determine whether the standard/chat flow performs well. See [Flows](../../concepts/concept-flows.md) for more information.
 
-Before proceeding with this document, it is important to have a good understanding of the standard flow. Please make sure you have read [Develop standard flow](./develop-standard-flow.md), since they share many common features and these features won't be repeat in this doc, such as:
+Before proceeding with this document, it is important to have a good understanding of the standard flow. Please make sure you have read [Develop standard flow](./develop-standard-flow.md), since they share many common features and these features won't be repeated in this doc, such as:
 - `Inputs/Outputs definition`
 - `Nodes`
 - `Chain nodes in a flow`
