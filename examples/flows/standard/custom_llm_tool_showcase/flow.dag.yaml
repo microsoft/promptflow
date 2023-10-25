@@ -1,18 +1,14 @@
-inputs:
-  text:
-    type: string
-    default: Microsoft
+inputs: {}
 outputs:
   output:
     type: string
-    reference: ${cumstome_llm_tool.output}
+    reference: ${my_custom_llm_tool.output}
 nodes:
-- name: cumstome_llm_tool
+- name: my_custom_llm_tool
   type: custom_llm
   source:
     type: package_with_prompt
     tool: my_tool_package.tools.tool_with_custom_llm_type.my_tool
     path: prompt_template.jinja2
   inputs:
-    connection: open_ai_connection
-    text: ${inputs.text}
+    connection: basic_custom_connection
