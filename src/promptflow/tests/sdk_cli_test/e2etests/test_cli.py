@@ -10,7 +10,6 @@ import subprocess
 import shutil
 import sys
 import tempfile
-import time
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
