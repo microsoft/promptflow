@@ -8,5 +8,5 @@ We provide guides on how to develop a tool and use it.
 create-and-use-tool-package
 add-a-tool-icon
 add-category-and-tags-for-tool
-implementing-cascading-settings-for-tool-inputs
+use-cascading-inputs-in-tool
 ```

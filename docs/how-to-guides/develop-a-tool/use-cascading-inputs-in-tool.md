@@ -1,4 +1,4 @@
-# Implementing Cascading Settings for Tool Inputs
+# Use Cascading Inputs in Tool
 
 Cascading settings between inputs are frequently used in situations where the selection in one input field determines what subsequent inputs should be shown.
 This approach help in creating a more efficient, user-friendly, and error-free input process.
@@ -8,7 +8,7 @@ This article will guide you through the process of implementing cascading settin
 * Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
 * It's crucial for you to understand the process of creating your own tool package. For thorough insights and instructions, please refer to [Create and Use Tool Package](create-and-use-tool-package.md).
 
-## Create tool with cascading settings
+## Create tool with cascading inputs
 We will provide a hands-on tool example to showcase the implementation of cascading settings between inputs within a tool. 
 The availability of "student_id" and "teacher_id" inputs is determined by the value of the "user_type" input in this tool .
 Below shows how to support this cascading setting in both tool code and tool yaml.
