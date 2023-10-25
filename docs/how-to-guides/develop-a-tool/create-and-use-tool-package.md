@@ -164,4 +164,4 @@ Alternatively, you can test your tool package using the script below to ensure t
 ## Advanced features
 [Customize your tool icon](add-a-tool-icon.md)  
 [Add category and tags for tool](add-category-and-tags-for-tool.md)  
-[Use "enabled_by_value" to Support Cascading Settings between Inputs for Tool](how-to-use-enabled-by-value.md)
+[Implementing Cascading Settings for Tool Inputs](how-to-use-enabled-by-value.md)
