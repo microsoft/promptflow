@@ -115,7 +115,7 @@ class TestCliWithAzure:
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
 
-    def test_basic_flow_run_bulk_with_set(self, pf, runtime) -> None:
+    def test_run_file_with_set(self, pf, runtime) -> None:
         name = str(uuid.uuid4())
         run_pf_command(
             "run",
@@ -124,8 +124,10 @@ class TestCliWithAzure:
             f"{RUNS_DIR}/run_with_env.yaml",
             "--set",
             f"runtime={runtime}",
+            "--name",
+            name,
             pf=pf,
         )
         run = pf.runs.get(run=name)
         assert isinstance(run, Run)
-        assert run.properties["runtime"] == runtime
+        assert run.properties["azureml.promptflow.runtime_name"] == runtime
