@@ -5,10 +5,10 @@ This approach help in creating a more efficient, user-friendly, and error-free i
 This article will guide you through the process of implementing cascading settings for tool inputs.
 
 ## Prerequisites
-* Please ensure that your Prompt flow for VS Code is updated to version 1.2.0 or later.
+* Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
 * It's crucial for you to understand the process of creating your own tool package. For thorough insights and instructions, please refer to [Create and Use Tool Package](create-and-use-tool-package.md).
 
-## Create custom tool package with cascading settings
+## Create tool with cascading settings
 We will provide a hands-on tool example to showcase the implementation of cascading settings between inputs within a tool. 
 The availability of "student_id" and "teacher_id" inputs is determined by the value of the "user_type" input in this tool .
 Below shows how to support this cascading setting in both tool code and tool yaml.
@@ -87,7 +87,9 @@ Before you select the "user_type" input, both "student_id" and "teacher_id" inpu
 ![before_user_type_selected.png](../../media/how-to-guides/develop-a-tool/before_user_type_selected.png)
 
 However, after you select the "user_type" input, the corresponding input is enabled and shown.
-![after_user_type_selected.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected.png)
+![after_user_type_selected_with_student.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected_with_student.png)
+![after_user_type_selected_with_teacher.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected_with_teacher.png)
+
 
 
 ## FAQ
