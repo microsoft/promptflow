@@ -1147,7 +1147,8 @@ class TestCli:
                     if process.returncode == 0:
                         pass
                     else:
-                        raise Exception(f"Process terminated with exit code {process.returncode}, {process.stderr.read().decode('utf-8')}")
+                        raise Exception(f"Process terminated with exit code {process.returncode}, "
+                                        f"{process.stderr.read().decode('utf-8')}")
                 except (subprocess.TimeoutExpired, KeyboardInterrupt):
                     pass
                 finally:
