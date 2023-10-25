@@ -10,6 +10,7 @@ import subprocess
 import shutil
 import sys
 import tempfile
+import time
 import uuid
 from pathlib import Path
 from tempfile import mkdtemp
@@ -1140,22 +1141,29 @@ class TestCli:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
+                proc = subprocess.Popen(['python', app_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
                 try:
-                    # Wait for a specified time (in seconds)
-                    wait_time = 10
-                    process.wait(timeout=wait_time)
-                    if process.returncode == 0:
-                        pass
-                    else:
-                        raise Exception(f"Process terminated with exit code {process.returncode}, "
-                                        f"{process.stderr.read().decode('utf-8')}")
-                except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                    out, err = proc.communicate(timeout=10)
+                    retcode = proc.poll()
+                    if retcode:
+                        try:
+                            err = err.decode('utf-8')
+                            raise Exception(f"Process terminated with exit code {retcode}, {err}")
+                        except UnicodeDecodeError as e:
+                            # The sub-process used a different encoding, provide more information to ease debugging.
+                            print('--' * 20, file=sys.stderr)
+                            print(str(e), file=sys.stderr)
+                            print('These are the bytes around the offending byte:', file=sys.stderr)
+                            print('--' * 20, file=sys.stderr)
+                            raise
+                except subprocess.TimeoutExpired:
                     pass
                 finally:
                     # Kill the process
-                    process.terminate()
-                    process.wait()  # Ensure the process is fully terminated
+                    proc.terminate()
+                    proc.kill()
+                    proc.wait()
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
