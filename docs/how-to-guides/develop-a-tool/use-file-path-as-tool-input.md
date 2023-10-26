@@ -64,7 +64,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
 
 Follow steps to [build and install your tool package](create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](create-and-use-tool-package.md#use-your-tool-from-vscode-extension).
 
-Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/filepath-input-tool-showcase/flow.dag.yaml) in VS Code extension:
+Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/tools/use-cases/filepath-input-tool-showcase/flow.dag.yaml) in VS Code extension:
 
 - There is a node named "Tool_with_FilePath_Input" with a `file_path` type input called `input_file`.
 - Click the picker icon to open the UI for selecting an existing file or creating a new file to use as input.
@@ -93,7 +93,7 @@ We can also utilize the `FilePath` input type directly in a script tool, elimina
         return new_module.hello(input_text)   
     ```
 
-3. Return to the flow Visual Editor page, click the picker icon to launch the UI for selecting an existing file or creating a new file to use as input, here we select [this file](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/filepath-input-tool-showcase/hello_method.py) as an example.
+3. Return to the flow Visual Editor page, click the picker icon to launch the UI for selecting an existing file or creating a new file to use as input, here we select [this file](https://github.com/microsoft/promptflow/blob/main/examples/tools/use-cases/filepath-input-tool-showcase/hello_method.py) as an example.
    
     ![use file path in script tool](../../media/how-to-guides/develop-a-tool/use_file_path_in_script_tool.png)
 
