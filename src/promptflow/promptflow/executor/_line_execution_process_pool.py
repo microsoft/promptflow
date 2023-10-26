@@ -349,17 +349,12 @@ def _exec_line(
         return line_result
     except Exception as e:
         logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
-        if executor._run_tracker.flow_run_list:
-            logger.info(f"Line {index}, Process {os.getpid()} have been added to flow run list.")
-            run_info = executor._run_tracker.flow_run_list[0]
-        else:
-            flow_id = executor._flow_id
-            line_run_id = run_id if index is None else f"{run_id}_{index}"
-            # If line execution failed before start, there is no flow information in the run_tracker.
-            # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
-            executor._run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
-            logger.info(f"Line {index}, Process {os.getpid()} have not been added to flow run list.")
-            run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
+        flow_id = executor._flow_id
+        line_run_id = run_id if index is None else f"{run_id}_{index}"
+        # If line execution failed before start, there is no flow information in the run_tracker.
+        # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
+        executor._run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
+        run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(
             output={},
