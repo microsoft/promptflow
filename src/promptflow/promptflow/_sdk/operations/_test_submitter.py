@@ -144,7 +144,7 @@ class TestSubmitter:
         stream_log: bool = True,
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
-        stream_output: bool = False,
+        stream_output: bool = True,
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
