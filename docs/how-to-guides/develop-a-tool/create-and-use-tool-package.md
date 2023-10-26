@@ -4,7 +4,7 @@ In this document, we will guide you through the process of developing your own t
 The custom tool is the prompt flow tool developed by yourself. If you find it useful, you can follow this guidance to make it a tool package. This will enable you to conveniently reuse it, share it with your team, or distribute it to anyone in the world.
 
 After successful installation of the package, your custom "tool" will show up in VSCode extension as below: 
-![custom-tool-list](../../media/contributing/custom-tool-list-in-extension.png)
+![custom-tool-list](../../media/how-to-guides/develop-a-tool//custom-tool-list-in-extension.png)
 
 ## Create your own tool package
 Your tool package should be a python package. To try it quickly, just use [my-tools-package 0.0.1](https://pypi.org/project/my-tools-package/) and skip this section.
@@ -115,7 +115,7 @@ hello-world-proj/
    ``` 
 
 * Step3: Go to the extension and open one flow folder. Click 'flow.dag.yaml' and preview the flow. Next, click `+` button and you will see your tools. You may need to reload the windows to clean previous cache if you don't see your tool in the list.
-![auto-list-tool-in-extension](../../media/contributing/auto-list-tool-in-extension.png)
+![auto-list-tool-in-extension](../../media/how-to-guides/develop-a-tool/auto-list-tool-in-extension.png)
 
 
 ## FAQ
@@ -162,4 +162,5 @@ Alternatively, you can test your tool package using the script below to ensure t
 * If you encounter a `403 Forbidden Error`, it's likely due to a naming conflict with an existing package. You will need to choose a different name. Package names must be unique on PyPI to avoid confusion and conflicts among users. Before creating a new package, it's recommended to search PyPI (https://pypi.org/) to verify that your chosen name is not already taken. If the name you want is unavailable, consider selecting an alternative name or a variation that clearly differentiates your package from the existing one.
 
 ## Advanced features
-[Customize your tool icon](add-a-tool-icon.md)
+[Customize your tool icon](add-a-tool-icon.md)  
+[Add category and tags for tool](add-category-and-tags-for-tool.md)  

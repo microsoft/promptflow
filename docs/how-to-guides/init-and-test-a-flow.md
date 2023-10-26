@@ -46,8 +46,8 @@ Alternatively, you can use the "Create new flow" action on the Prompt flow pane 
 
 Structure of flow folder:
 - **flow.dag.yaml**: The flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
-- **.promptflow/flow.tools.json**: It contains all package tools meta that references in `flow.dag.yaml`.
-- **Source code files (.py, .jinja2)**: User managed, the code scripts that references by tools.
+- **.promptflow/flow.tools.json**: It contains tools meta referenced in `flow.dag.yaml`.
+- **Source code files (.py, .jinja2)**: User managed, the code scripts referenced by tools.
 - **requirements.txt**: Python package dependencies for this flow.
 
 ![init_flow_folder](../media/how-to-guides/init-and-test-a-flow/flow_folder.png)
@@ -72,7 +72,7 @@ In this case, promptflow CLI generates `flow.dag.json`, `.promptflow/tools.json`
 ## Test a flow
 
 :::{admonition} Note
-Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md)
 :::
 
 Promptflow also provides ways to test the initialized flow or flow node. It will help you quickly test your flow.

@@ -24,12 +24,11 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
@@ -49,7 +48,7 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -243,6 +242,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
         connections: Optional[dict] = None,
@@ -295,8 +295,10 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -321,7 +323,9 @@ class FlowExecutor:
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
         # TODO: Simplify the logic here
-        run_tracker = RunTracker(DummyRunStorage())
+        sub_dir = "." if output_sub_dir is None else output_sub_dir
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             ToolInvoker.activate(DefaultToolInvoker())
 
@@ -675,7 +679,6 @@ class FlowExecutor:
         validate_inputs: bool = True,
         node_concurrency=DEFAULT_CONCURRENCY_FLOW,
         allow_generator_output: bool = False,
-        input_dir: Optional[Path] = None,
     ) -> LineResult:
         """Execute a single line of the flow.
 
@@ -698,7 +701,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = self._process_images_from_inputs(self._flow.inputs, inputs_with_default_value, input_dir)
+        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -786,32 +789,6 @@ class FlowExecutor:
                 updated_inputs[key] = value.default
         return updated_inputs
 
-    def _process_images_from_inputs(
-        self, inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping, input_dir: Path = None
-    ) -> Dict[str, Any]:
-        updated_inputs = dict(line_inputs or {})
-        if not input_dir:
-            input_dir = self._working_dir
-        elif not input_dir.is_absolute():
-            input_dir = self._working_dir / input_dir
-        for key, value in inputs.items():
-            if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(Path.joinpath(input_dir, updated_inputs[key]))
-        return updated_inputs
-
-    def _persist_images_from_output(self, output: dict, output_dir: Path = None):
-        if output_dir.is_absolute():
-            folder_path = output_dir
-            relative_path = None
-        else:
-            folder_path = self._working_dir
-            relative_path = output_dir
-        for key, value in output.items():
-            if isinstance(value, Image):
-                file_name = f"{key}_{uuid.uuid4()}"
-                output[key] = value.save_to_file(file_name, folder_path, relative_path)
-        return output
-
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
 
@@ -826,8 +803,7 @@ class FlowExecutor:
             logger.warning(
                 msg=(
                     "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
                 )
             )
 
@@ -1082,8 +1058,7 @@ class FlowExecutor:
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
                 ),
                 invalid_relations=invalid_relations,
             )

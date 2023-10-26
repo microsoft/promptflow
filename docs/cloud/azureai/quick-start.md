@@ -126,7 +126,7 @@ pf = PFClient(
 # load flow
 flow = "web-classification"
 data = "web-classification/data.jsonl"
-runtime = "demo-mir" # assume you have existing runtime with this name provisioned
+runtime = "example-runtime-ci" # assume you have existing runtime with this name provisioned
 # runtime = None # un-comment use automatic runtime
 
 # create run

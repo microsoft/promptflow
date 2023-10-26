@@ -20,8 +20,9 @@ Manage promptflow flow flows.
 | --- | --- |
 | [pf flow init](#pf-flow-init) | Initialize a prompt flow directory. |
 | [pf flow test](#pf-flow-test) | Test the prompt flow or flow node. |
+| [pf flow validate](#pf-flow-validate) | Validate a flow and generate `flow.tools.json` for it. |
 | [pf flow build](#pf-flow-build) | Build a flow for further sharing or deployment. |
-| [pf flow serve](#pf-flow-serve) | Serving a flow as an endpoint. |
+| [pf flow serve](#pf-flow-serve) | Serve a flow as an endpoint. |
 
 ### pf flow init
 
@@ -166,6 +167,30 @@ Start a interactive chat session for chat flow.
 `--verbose`
 
 Displays the output for each step in the chat flow.
+
+### pf flow validate
+
+Validate the prompt flow and generate a `flow.tools.json` under `.promptflow`. This file is required when using flow as a component in a Azure ML pipeline.
+
+```bash
+pf flow validate --source
+                 [--debug]
+                 [--verbose]
+```
+
+#### Examples
+
+Validate the flow.
+
+```bash
+pf flow validate --source <path-to-flow>
+```
+
+#### Required Parameter
+
+`--source`
+
+The flow source to validate.
 
 ### pf flow build
 
@@ -655,3 +680,90 @@ pf run restore --name
 `--name -n`
 
 Name of the run.
+
+## pf tool
+
+Manage promptflow tools.
+
+| Command | Description |
+| --- | --- |
+| [pf tool init](#pf-tool-init) | Initialize a tool directory. |
+| [pf tool list](#pf-tool-list) | List all tools in the environment. |
+
+### pf tool init
+
+Initialize a tool directory.
+
+```bash
+pf tool init [--package]
+             [--tool]
+             [--set]
+```
+
+#### Examples
+
+Creating a package tool from scratch.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name>
+```
+
+Creating a package tool with extra info.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path> category=<tool-category> tags="{'<key>': '<value>'}"
+```
+
+Creating a package tool from scratch.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name>
+```
+
+Creating a python tool from scratch.
+
+```bash
+pf tool init --tool <tool-name>
+```
+
+#### Optional Parameters
+
+`--package`
+
+The package name to create.
+
+`--tool`
+
+The tool name to create.
+
+`--set`
+
+Set extra information about the tool, like category, icon and tags. Example: --set <key>=<value>.
+
+### pf tool list
+
+List all tools in the environment.
+
+```bash
+pf tool list [--flow]
+```
+
+#### Examples
+
+List all package tool in the environment.
+
+```bash
+pf tool list
+```
+
+List all package tool and code tool in the flow.
+
+```bash
+pf tool list --flow <path-to-flow-direcotry>
+```
+
+#### Optional Parameters
+
+`--flow`
+
+The flow directory.

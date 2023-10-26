@@ -139,7 +139,9 @@
     "gunicorn",
     "pkill",
     "pgrep",
-    "Hwfoxydrg"
+    "Hwfoxydrg",
+    "llms",
+    "vcrpy"
   ],
   "allowCompoundWords": true
 }

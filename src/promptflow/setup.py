@@ -31,7 +31,7 @@ REQUIRES = [
     "pandas>=1.5.3,<3.0.0",  # load data requirements
     "python-dotenv>=1.0.0,<2.0.0",  # control plane sdk requirements, to load .env file
     "keyring>=24.2.0,<25.0.0",  # control plane sdk requirements, to access system keyring service
-    "pydash>=5.1.2,<6.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
+    "pydash>=6.0.0,<7.0.0",  # control plane sdk requirements, to support parameter overrides in schema.
     # vulnerability: https://github.com/advisories/GHSA-5cpq-8wj7-hf2v
     "cryptography>=41.0.3,<42.0.0",  # control plane sdk requirements to support connection encryption
     "colorama>=0.4.6,<0.5.0",  # producing colored terminal text for testing chat flow
@@ -47,6 +47,7 @@ REQUIRES = [
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
     "ruamel.yaml>=0.17.35,<0.18.0",  # used to generate connection templates with preserved comments
     "pyarrow>=13.0.0,<14.0.0",  # used to read parquet file with pandas.read_parquet
+    "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
 ]
 
 setup(
@@ -77,13 +78,10 @@ setup(
             "azure-core>=1.26.4,<2.0.0",
             "azure-storage-blob>=12.13.0,<13.0.0",
             "azure-identity>=1.12.0,<2.0.0",
-            "azure-ai-ml>=1.9.0,<2.0.0",
+            "azure-ai-ml>=1.11.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
-        "executable": [
-            "pyinstaller",
-            "streamlit",
-        ],
+        "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0"],
     },
     packages=find_packages(),
     entry_points={

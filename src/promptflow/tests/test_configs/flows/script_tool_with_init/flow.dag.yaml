@@ -1,0 +1,17 @@
+inputs:
+  input:
+    type: string
+    default: World
+outputs:
+  output:
+    type: string
+    reference: ${script_tool_with_init.output}
+nodes:
+- name: script_tool_with_init
+  type: python
+  source:
+    type: code
+    path: script_tool_with_init.py
+  inputs:
+    init_input: Hello
+    input: ${inputs.input}

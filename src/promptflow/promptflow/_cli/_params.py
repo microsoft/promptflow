@@ -119,6 +119,16 @@ def add_param_columns_mapping(parser):
     )
 
 
+def add_param_set_tool_extra_info(parser):
+    parser.add_argument(
+        "--set",
+        dest="extra_info",
+        action=AppendToDictAction,
+        help="Set extra information about the tool. Example: --set <key>=<value>.",
+        nargs="+",
+    )
+
+
 def add_param_inputs(parser):
     parser.add_argument(
         "--inputs",
@@ -303,6 +313,15 @@ def add_param_verbose(parser):
         "--verbose",
         action="store_true",
         help="Increase logging verbosity. Use --debug for full debug logs.",
+    )
+
+
+def add_param_config(parser):
+    parser.add_argument(
+        "--config",
+        nargs="+",
+        action=AppendToDictAction,
+        help=argparse.SUPPRESS,
     )
 
 

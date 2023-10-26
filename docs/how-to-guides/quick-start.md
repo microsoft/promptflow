@@ -36,7 +36,7 @@ pf -v
 
 ## Understand what's a flow
 
-A flow, represented as a YAML file, is a DAG of functions, which connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
+A flow, represented as a YAML file, is a DAG of functions, which is connected via input/output dependencies, and executed based on the topology by Prompt flow executor. See [Flows](../../concepts/concept-flows.md) for more details.
 
 ### Get the flow sample
 
@@ -55,8 +55,8 @@ cd promptflow/examples/flows/standard/web-classification
 
 A flow directory is a directory that contains all contents of a flow. Structure of flow folder:
 - **flow.dag.yaml**: The flow definition with inputs/outputs, nodes, tools and variants for authoring purpose.
-- **.promptflow/flow.tools.json**: It contains all package tools meta that references in `flow.dag.yaml`.
-- **Source code files (.py, .jinja2)**: User managed, the code scripts that references by tools.
+- **.promptflow/flow.tools.json**: It contains tools meta referenced in `flow.dag.yaml`.
+- **Source code files (.py, .jinja2)**: User managed, the code scripts referenced by tools.
 - **requirements.txt**: Python package dependencies for this flow.
 
 
@@ -69,7 +69,7 @@ pip install -r requirements.txt
 ```
 
 ### Understand the flow yaml
-The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. The flow dag of this sample likes below:
+The entry file of a flow directory is [`flow.dag.yaml`](https://github.com/microsoft/promptflow/blob/main/examples/flows/standard/web-classification/flow.dag.yaml) which describes the `DAG(Directed Acyclic Graph)` of a flow. Below is a sample of flow DAG:
 
 ![flow_dag](../media/how-to-guides/quick-start/flow_dag.png)
 
@@ -220,7 +220,7 @@ Learn more on more actions like delete connection in: [Manage connections](./man
 ### Test the flow
 
 :::{admonition} Note
-Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+Testing flow will NOT create a batch run record, therefore it's unable to use commands like `pf run show-details` to get the run information. If you want to persist the run record, see [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md)
 :::
 
 
@@ -291,7 +291,7 @@ Learn more on how to:
 - [Develop a flow](./develop-a-flow/index.md): details on how to develop a flow by writing a flow yaml from scratch.
 - [Initialize and test a flow](./init-and-test-a-flow.md): details on how develop a flow from scratch or existing code.
 - [Add conditional control to a flow](./add-conditional-control-to-a-flow.md): how to use activate config to add conditional control to a flow.
-- [Run and evaluate a flow](./run-and-evaluate-a-flow.md): run and evaluate the flow using multi line data file.
+- [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md): run and evaluate the flow using multi line data file.
 - [Deploy a flow](./deploy-a-flow/index.md): how to deploy the flow as a web app.
 - [Manage connections](./manage-connections.md): how to manage the endpoints/secrets information to access external services including LLMs.
 - [Prompt flow in Azure AI](../cloud/azureai/quick-start.md): run and evaluate flow in Azure AI where you can collaborate with team better.
