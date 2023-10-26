@@ -2,23 +2,19 @@
 
 Users sometimes need to reference local files within a tool to implement specific logic. To simplify this, we've introduced the `FilePath` input type. This input type enables users to either select an existing file or create a new one, then pass it to a tool, allowing the tool to access the file's content.
 
-In this guide, we will provide a detailed walkthrough on how to use `FilePath` as a tool input. We will also demostrate the user experience when utilizing this type of tool within a flow.
+In this guide, we will provide a detailed walkthrough on how to use `FilePath` as a tool input. We will also demonstrate the user experience when utilizing this type of tool within a flow.
 
 ## Prerequisites
 
-1. As file path is currently in its preview phase, it is necessary for you to install the test version of the PromptFlow package:
+- Please install promptflow package and ensure that its version is 0.1.0b8 or higher.
 
-    ```bash
-    pip install "promptflow==0.1.0b8.dev2" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
-    ```
-
-2. Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or a more recent version.
+- Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or higher.
 
 ## Using File Path as Package Tool Input
 
 ### How to create a package tool with file path input
 
-Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your owner tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package).
+Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package).
 
 1. Add a `FilePath` input for your tool, like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_file_path_input.py).
 
