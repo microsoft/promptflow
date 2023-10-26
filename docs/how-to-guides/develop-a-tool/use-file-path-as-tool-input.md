@@ -8,7 +8,7 @@ In this guide, we will provide a detailed walkthrough on how to use `FilePath` a
 
 - Please install promptflow package and ensure that its version is 0.1.0b8 or later.
   ```
-  pip install promptflow
+  pip install promptflow>=0.1.0b8
   ```
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.0 or later.
 
