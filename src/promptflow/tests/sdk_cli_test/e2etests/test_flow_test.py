@@ -27,6 +27,7 @@ _client = PFClient()
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
     def test_pf_test_flow(self):
         inputs = {
             "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
@@ -41,6 +42,9 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
+    @pytest.mark.skipif(
+        pf_recording_mode() == "replay", reason="TODO, record should support custom_strong_type_connection."
+    )
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
@@ -123,6 +127,7 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs=inputs, node="convert_to_dict")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
     def test_pf_test_flow_with_variant(self):
         inputs = {
             "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
@@ -157,6 +162,10 @@ class TestFlowTest:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
+    @pytest.mark.skipif(
+        pf_recording_mode() == "replay",
+        reason="Instable in replay mode.",
+    )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
         inputs = {
             "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",

@@ -121,6 +121,7 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
     def test_submit_run_with_yaml(self):
         run_id = str(uuid.uuid4())
         f = io.StringIO()
@@ -233,6 +234,7 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
         display_name = "test_run"
@@ -276,6 +278,7 @@ class TestCli:
         assert run.tags == {"key": "val"}
         assert run.description == description
 
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
     def test_pf_flow_test(self):
         run_pf_command(
             "flow",
@@ -307,6 +310,7 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "web_classification").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
