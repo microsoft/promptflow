@@ -97,6 +97,10 @@ class TestFlowRun:
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
+    @pytest.mark.skipif(
+        pf_recording_mode() == "replay",
+        reason="Instable in replay mode.",
+    )
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -359,6 +363,10 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=run_name)
 
+    @pytest.mark.skipif(
+        pf_recording_mode() == "replay",
+        reason="Instable in replay mode.",
+    )
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
             source=f"{RUNS_DIR}/run_with_connections.yaml",
