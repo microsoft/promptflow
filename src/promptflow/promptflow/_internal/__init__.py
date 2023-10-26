@@ -83,6 +83,7 @@ from promptflow._utils.logger_utils import (
     logger,
     update_log_path,
 )
+from promptflow._utils.multimedia_utils import _create_image_from_file, is_multimedia_dict
 from promptflow._utils.utils import (
     AttrDict,
     camel_to_snake,

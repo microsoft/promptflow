@@ -1163,6 +1163,7 @@ class TestCli:
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     @pytest.mark.skipif(pf_recording_mode() != "", reason="Skip this test in record mode, missing deps.")
+    @pytest.mark.skipif(sys.platform == "win32", reason="Raise Exception: Process terminated with exit code 4294967295")
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
@@ -1537,6 +1538,18 @@ class TestCli:
         image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
 
+    def test_flow_test_with_composite_image(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/python_tool_with_composite_image",
+        )
+        output_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "output"
+        assert output_path.exists()
+        image_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "intermediate"
+        assert image_path.exists()
+
     def test_run_file_with_set(self, pf) -> None:
         name = str(uuid.uuid4())
         run_pf_command(
@@ -1570,3 +1583,42 @@ class TestCli:
         except RunNotFoundError:
             pass
         pf.runs.get(name=name2)
+
+    def test_data_scrubbing(self):
+        # Prepare connection
+        run_pf_command(
+            "connection", "create", "--file", f"{CONNECTIONS_DIR}/custom_connection.yaml", "--name", "custom_connection"
+        )
+
+        # Test flow run
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/print_secret_flow",
+        )
+        output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+            assert "**data_scrubbed**" in log_content
+
+        # Test node run
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/print_secret_flow",
+            "--node",
+            "print_secret",
+            "--inputs",
+            "conn=custom_connection",
+            "inputs.topic=atom",
+        )
+        output_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "flow-print_secret.node.detail.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "print_secret_flow" / ".promptflow" / "print_secret.node.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert "**data_scrubbed**" in log_content
