@@ -147,7 +147,7 @@ def _save_image_to_file(
     file_name = f"{file_name}.{ext}" if ext else file_name
     image_path = str(relative_path / file_name) if relative_path else file_name
     if use_absolute_path:
-        image_path = str(folder_path / image_path)
+        image_path = str(Path(folder_path / image_path).resolve())
     image_reference = {f"data:{image._mime_type};path": image_path}
     path = folder_path / relative_path if relative_path else folder_path
     os.makedirs(path, exist_ok=True)
@@ -161,6 +161,7 @@ def get_file_reference_encoder(folder_path: Path, relative_path: Path = None, *,
         """Dumps PFBytes to a file and returns its reference."""
         if isinstance(obj, PFBytes):
             file_name = str(uuid.uuid4())
+            # If use_absolute_path is True, the image file path in image dictionary will be absolute path.
             return _save_image_to_file(obj, file_name, folder_path, relative_path, use_absolute_path)
         raise TypeError(f"Not supported to dump type '{type(obj).__name__}'.")
 
