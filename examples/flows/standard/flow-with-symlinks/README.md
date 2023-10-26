@@ -65,18 +65,21 @@ pf flow test --flow . --node convert_to_dict --inputs classify_with_llm.output='
 
 ```bash
 # create run using command line args
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream
 # create run using yaml file
 pf run create --file run.yml --stream
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
 
 
 #### Submit run to cloud
 
 ``` bash
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime example-runtime-ci --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
-# pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
+pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream --runtime example-runtime-ci --subscription <your_subscription_id> -g <your_resource_group_name> -w <your_workspace_name>
+# pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream # automatic runtime
 
 # set default workspace
 az account set -s <your_subscription_id>

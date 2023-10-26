@@ -40,6 +40,7 @@ from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inje
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import dump_flow_result
+from promptflow.exceptions import UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
@@ -383,8 +384,14 @@ def test_flow(args):
 
     if args.multi_modal:
         with tempfile.TemporaryDirectory() as temp_dir:
-            from streamlit.web import cli as st_cli
-
+            try:
+                from streamlit.web import cli as st_cli
+                import streamlit_quill  # noqa: F401
+            except ImportError as ex:
+                raise UserErrorException(
+                    f"Please install streamlit and streamlit_quill for multi_modal, {ex.msg}. "
+                    f"You can try 'pip install promptflow[executable]' to install them."
+                )
             flow = load_flow(args.flow)
             script_path = os.path.join(temp_dir, "main.py")
             StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)

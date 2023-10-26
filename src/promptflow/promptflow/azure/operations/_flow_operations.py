@@ -179,3 +179,52 @@ class FlowOperations(_ScopeDependentOperations):
                 else:
                     raise
             flow._code_uploaded = True
+
+    # region deprecated but keep for runtime test dependencies
+    def _resolve_arm_id_or_upload_dependencies_to_file_share(self, flow: Flow) -> None:
+        ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
+        # resolve flow's code
+        self._try_resolve_code_for_flow_to_file_share(flow=flow, ops=ops)
+
+    @classmethod
+    def _try_resolve_code_for_flow_to_file_share(cls, flow: Flow, ops: OperationOrchestrator) -> None:
+        from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
+
+        from promptflow.azure._constants._flow import DEFAULT_STORAGE
+
+        from ._artifact_utilities import _check_and_upload_path
+
+        if flow.path:
+            if flow.path.startswith("azureml://datastores"):
+                # remote path
+
+                path_uri = AzureMLDatastorePathUri(flow.path)
+                if path_uri.datastore != DEFAULT_STORAGE:
+                    raise ValueError(f"Only {DEFAULT_STORAGE} is supported as remote storage for now.")
+                flow.path = path_uri.path
+                flow._code_uploaded = True
+                return
+        else:
+            raise ValueError("Path is required for flow.")
+
+        with flow._build_code() as code:
+            if code is None:
+                return
+            if flow._code_uploaded:
+                return
+            code.datastore = DEFAULT_STORAGE
+            uploaded_code_asset = _check_and_upload_path(
+                artifact=code,
+                asset_operations=ops._code_assets,
+                artifact_type="Code",
+                show_progress=False,
+            )
+            if "remote_path" in uploaded_code_asset:
+                path = uploaded_code_asset["remote_path"]
+            elif "remote path" in uploaded_code_asset:
+                path = uploaded_code_asset["remote path"]
+            flow.code = path
+            flow.path = (Path(path) / flow.path).as_posix()
+            flow._code_uploaded = True
+
+    # endregion

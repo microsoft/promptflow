@@ -17,6 +17,7 @@ from promptflow._telemetry.logging_handler import (
 from promptflow._utils.utils import environment_variable_overwrite
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+from ..recording_utilities import is_live
 
 
 @contextlib.contextmanager
@@ -43,6 +44,7 @@ def cli_eu_config_overwrite():
         config.set_config(Configuration.EU_USER, False)
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="telemetry tests, only run in live mode.")
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 class TestTelemetry:

@@ -572,7 +572,6 @@ def create_run(create_func: Callable, args):
 
     params_override = params_override or []
     if file:
-        params_override = []
         for param_key, param in {
             "name": name,
             "flow": flow,
