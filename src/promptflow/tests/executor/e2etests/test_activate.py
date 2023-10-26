@@ -1,5 +1,5 @@
 import pytest
-
+import math
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import OutputReferenceBypassed
 from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
@@ -83,3 +83,29 @@ class TestExecutorActivate:
         bypassed_nodes_run_infos = [result.node_run_infos[i] for i in expected_bypassed_nodes]
         assert all([node.status == Status.Bypassed for node in bypassed_nodes_run_infos])
         assert all([node.output is None for node in bypassed_nodes_run_infos])
+
+    def test_aggregate_bypassed_nodes(self, dev_connections):
+        flow_folder = "conditional_flow_with_aggregate_bypassed"
+        executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
+        results = executor.exec_line({})
+
+        # Validate the flow status
+        assert results.run_info.status == Status.Completed
+
+        # Validate bypassed nodes
+        expected_bypassed = ['perceived_intelligence',
+                             'parse_perceived_intelligence',
+                             'groundedness',
+                             'parse_groundedness']
+        for node in expected_bypassed:
+            assert results.node_run_infos[node].status == Status.Bypassed
+
+        # Validate the input of aggregation node
+        assert results.aggregation_inputs['${parse_perceived_intelligence.output}'] is None
+        assert results.aggregation_inputs['${parse_groundedness.output}'] is None
+        assert results.aggregation_inputs['${parse_accuracy.output}'] is not None
+
+        # Validate the output of aggregation node
+        assert math.isnan(results.output['result']['perceived_intelligence'])
+        assert math.isnan(results.output['result']['groundedness'])
+        assert not math.isnan(results.output['result']['accuracy'])
