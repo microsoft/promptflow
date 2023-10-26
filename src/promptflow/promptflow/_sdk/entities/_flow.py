@@ -42,12 +42,34 @@ class FlowBase(abc.ABC):
 
 
 class FlowContext:
-    def __init__(self, connections=None, connection_provider=None, variant=None):
+    def __init__(
+        self,
+        flow: Path,
+        *,
+        connections=None,
+        variant=None,
+        environment_variables=None,
+        overrides=None,
+        streaming=None,
+        connection_provider=None,
+    ):
         # TODO: make this a context manager
-        # TODO: support other configs to inject when executing flow?
-        self.connections = connections
-        self.connection_provider = connection_provider
+        self.flow = flow
+        self.connections = connections or {}
         self.variant = variant
+        self.environment_variables = environment_variables or {}
+        self.overrides = overrides or {}
+        self.streaming = streaming
+        # self.connection_provider = connection_provider
+
+    def __enter__(self):
+        from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+
+        with variant_overwrite_context(self.flow, variant=self.variant, connections=self.connections) as flow:
+            yield flow
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 class Flow(FlowBase):
@@ -61,7 +83,7 @@ class Flow(FlowBase):
         self._code = Path(code)
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
-        self._context = FlowContext()
+        self._context = FlowContext(flow=self.code)
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(**kwargs)
 
@@ -209,13 +231,20 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     def __call__(self, *args, **kwargs):
         # run flow test here
         # TODO: cache the submitter?
-        from promptflow import PFClient
+        # from promptflow import PFClient
         from promptflow._sdk.operations._test_submitter import TestSubmitter
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
-        client = PFClient()
+        # client = PFClient()
         # TODO: put flow context related code
-        result = client.flows._test_flow(flow=self, inputs=kwargs, variant=self.variant)
+        with TestSubmitter(flow=self, variant=self.context.variant).init() as submitter:
+            # validate inputs
+            flow_inputs, _ = submitter._resolve_data(inputs=kwargs)
+            result = submitter.flow_test(
+                inputs=flow_inputs,
+                environment_variables=self.context.environment_variables,
+                stream_log=self.context.streaming,
+            )
         TestSubmitter._raise_error_when_test_failed(result, show_trace=False)
         return result.output

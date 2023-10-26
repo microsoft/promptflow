@@ -49,7 +49,9 @@ class TestSubmitter:
         else:
             tuning_node, node_variant = None, None
         with variant_overwrite_context(
-            self._origin_flow.code, tuning_node, node_variant, connections=self.flow.connections
+            self._origin_flow.code,
+            tuning_node,
+            node_variant,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
@@ -208,6 +210,18 @@ class TestSubmitter:
                 output_sub_dir=".promptflow/intermediate",
             )
             return result
+
+    def exec(self, inputs, connections, allow_generator_output=False, stream_output=True):
+
+        from promptflow.executor.flow_executor import FlowExecutor
+
+        flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
+        flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
+        line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+        line_result.output = persist_multimedia_data(
+            line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+        )
+        return line_result
 
     def _chat_flow(self, inputs, chat_history_name, environment_variables: dict = None, show_step_output=False):
         """

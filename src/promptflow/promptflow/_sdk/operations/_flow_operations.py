@@ -108,28 +108,6 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
-        self._test_flow(
-            flow=flow,
-            variant=variant,
-            node=node,
-            inputs=inputs,
-            environment_variables=environment_variables,
-            stream_log=stream_log,
-            allow_generator_output=allow_generator_output,
-            **kwargs,
-        )
-
-    def _test_flow(
-        self,
-        flow,
-        variant=None,
-        node=None,
-        inputs=None,
-        environment_variables=None,
-        stream_log=True,
-        allow_generator_output: bool = True,
-        **kwargs,
-    ):
         config = kwargs.get("config", None)
 
         with TestSubmitter(flow=flow, variant=variant, config=config).init() as submitter:
