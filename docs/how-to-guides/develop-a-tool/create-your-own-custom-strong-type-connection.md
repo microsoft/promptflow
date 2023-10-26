@@ -9,11 +9,9 @@ For other connections types, please refer to [Connections](https://microsoft.git
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.1.2 or a more recent version.
-- Install promptflow package.
-
+- Install promptflow package, ensuring it is updated to at least version 0.1.0b8.
   ```bash
-  # Eventually only need to pip install promptflow==0.1.0b8
-  pip install "promptflow==0.0.108377202" --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
+  pip install promptflow
   ```
 
 ## Create your own custom strong type connection
@@ -28,7 +26,7 @@ class MyCustomConnection(CustomStrongTypeConnection):
     """My custom strong type connection.
 
     :param api_key: The api key.
-    :type api_key: String
+    :type api_key: Secret
     :param api_base: The api base.
     :type api_base: String
     """
@@ -48,7 +46,7 @@ Make sure that you adhere to the following guidelines:
   """My custom strong type connection.
 
   :param api_key: The api key get from "https://xxx.com".
-  :type api_key: String
+  :type api_key: Secret
   :param api_base: The api base.
   :type api_base: String
   """
@@ -64,9 +62,9 @@ Make sure that you adhere to the following guidelines:
   package: test-custom-tools
   package_version: 0.0.2
   configs:
-    api_base: "This is a fake api base." # String, The api base.
+    api_base: "This is a fake api base." # String type. The api base.
   secrets:
-    api_key: <user-input> #  String, The api key get from "https://xxx.com". Don't replace the '<user-input>' placeholder. The application will prompt you to enter a value when it runs.
+    api_key: <user-input> #  Secret type. The api key get from "https://xxx.com". Don't replace the '<user-input>' placeholder. The application will prompt you to enter a value when it runs.
   ```
 
 ## Develop a flow with a package tool with custom strong type connection
