@@ -964,6 +964,8 @@ class FlowExecutor:
         outputs = {}
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
+        for node in bypassed_nodes.keys():
+            nodes_outputs[node] = None
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):
