@@ -264,7 +264,7 @@ class LineExecutionProcessPool:
         if run_info.output:
             serialized_output = self._persist_images(run_info.output)
             run_info.output = serialized_output
-            run_info.result = serialized_output
+            run_info.result = None
         if run_info.api_calls:
             run_info.api_calls = self._persist_images(run_info.api_calls)
 
@@ -274,7 +274,7 @@ class LineExecutionProcessPool:
         if run_info.output:
             serialized_output = self._persist_images(run_info.output)
             run_info.output = serialized_output
-            run_info.result = serialized_output
+            run_info.result = None
         if run_info.api_calls:
             run_info.api_calls = self._persist_images(run_info.api_calls)
         return run_info
