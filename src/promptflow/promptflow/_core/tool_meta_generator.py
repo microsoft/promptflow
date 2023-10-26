@@ -209,6 +209,23 @@ def load_python_module(content, source=None):
         ) from e
 
 
+def load_function_from_function_path(func_path: str):
+    """Load a function from a function path.
+
+    The function path should be in the format of "module_name.function_name".
+    """
+    try:
+        module_name, func_name = func_path.rsplit(".", 1)
+        module = importlib.import_module(module_name)
+        f = getattr(module, func_name)
+        if callable(f):
+            return f
+        else:
+            raise FunctionPathValidationError(f"'{f}' is not callable.")
+    except Exception as e:
+        raise FunctionPathValidationError(f"Failed to parse function from function path: '{func_path}' with error: {e}")
+
+
 def collect_tool_function_in_module(m):
     tool_functions = collect_tool_functions_in_module(m)
     tool_methods = collect_tool_methods_with_init_inputs_in_module(m)
@@ -305,6 +322,13 @@ def generate_tool_meta_dict_by_file(path: str, tool_type: ToolType):
             tool_type=tool_type,
             supported_tool_types=",".join([ToolType.PYTHON, ToolType.LLM, ToolType.PROMPT]),
         )
+
+
+class FunctionPathValidationError(UserErrorException):
+    """Base exception raised when failed to validate a function path."""
+
+    def __init__(self, **kwargs):
+        super().__init__(target=ErrorTarget.FUNCTION_PATH, **kwargs)
 
 
 class ToolValidationError(UserErrorException):
