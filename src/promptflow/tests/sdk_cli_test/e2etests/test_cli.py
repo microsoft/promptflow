@@ -1122,7 +1122,7 @@ class TestCli:
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     def test_flow_build_executable(self):
-        source = f"{FLOWS_DIR}/python_tool_with_simple_image/flow.dag.yaml"
+        source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
         with mock.patch(target) as mocked:
             mocked.return_value = None
@@ -1140,29 +1140,22 @@ class TestCli:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
-                proc = subprocess.Popen(['python', app_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
                 try:
-                    out, err = proc.communicate(timeout=10)
-                    retcode = proc.poll()
-                    if retcode:
-                        try:
-                            err = err.decode('utf-8')
-                            raise Exception(f"Process terminated with exit code {retcode}, {err}")
-                        except UnicodeDecodeError as e:
-                            # The sub-process used a different encoding, provide more information to ease debugging.
-                            print('--' * 20, file=sys.stderr)
-                            print(str(e), file=sys.stderr)
-                            print('These are the bytes around the offending byte:', file=sys.stderr)
-                            print('--' * 20, file=sys.stderr)
-                            raise
-                except subprocess.TimeoutExpired:
+                    # Wait for a specified time (in seconds)
+                    wait_time = 5
+                    process.wait(timeout=wait_time)
+                    if process.returncode == 0:
+                        pass
+                    else:
+                        raise Exception(f"Process terminated with exit code {process.returncode}, "
+                                        f"{process.stderr.read().decode('utf-8')}")
+                except (subprocess.TimeoutExpired, KeyboardInterrupt):
                     pass
                 finally:
                     # Kill the process
-                    proc.terminate()
-                    proc.kill()
-                    proc.wait()
+                    process.terminate()
+                    process.wait()  # Ensure the process is fully terminated
 
     @pytest.mark.parametrize(
         "file_name, expected, update_item",
