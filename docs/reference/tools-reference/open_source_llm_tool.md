@@ -43,7 +43,7 @@ In order for Prompt flow to use your deployed model, you will need to setup a Co
         - This value can be found at the previously created Inferencing endpoint.
     3. **model_family**
         - Supported values: LLAMA, DOLLY, GPT2, or FALCON
-        - This value is dependent on the type of deployment you are targetting.
+        - This value is dependent on the type of deployment you are targeting.
 
 ## Running the Tool: Inputs
 
