@@ -16,6 +16,7 @@ from promptflow._sdk._utils import (
     override_connection_config_with_environment_variable,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
+    print_yellow_warning,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
@@ -124,4 +125,5 @@ class FlowInvoker:
                 result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
-        return resolved_outputs, result.output
+        print_yellow_warning(f"Result: {result.output}")
+        return resolved_outputs

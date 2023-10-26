@@ -108,7 +108,7 @@ def score():
         logger.info(f"Start loading request data '{raw_data}'.")
         data = load_request_data(app.flow, raw_data, logger)
 
-    result_output, _ = app.flow_invoker.invoke(data)
+    result_output = app.flow_invoker.invoke(data)
     # remove evaluation only fields
     result_output = {k: v for k, v in result_output.items() if k not in app.response_fields_to_remove}
 

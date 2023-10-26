@@ -7,7 +7,6 @@ from pathlib import Path
 from streamlit_quill import st_quill
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
 
@@ -159,8 +158,7 @@ def start():
             else:
                 os.chdir(flow.parent)
             invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
-        result, result_output = invoker.invoke(data)
-        print_yellow_warning(f"Result: {result_output}")
+        result = invoker.invoke(data)
         return result
 
 
