@@ -4,11 +4,5 @@ from promptflow import tool
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
 @tool
-def my_python_tool(
-  accuracy: float=float('nan'), 
-  perceived_intelligence: float=float('nan'), 
-  groundedness: float=float('nan')) -> str:
-  return {
-    'accuracy': accuracy, 
-    'perceived_intelligence': perceived_intelligence,
-    'groundedness': groundedness}
+def my_python_tool(input1: str="", input2: str="") -> str:
+  return 'hello ' + input1 + input2

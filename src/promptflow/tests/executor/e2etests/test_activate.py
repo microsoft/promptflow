@@ -1,5 +1,5 @@
 import pytest
-import math
+
 from promptflow.contracts.run_info import Status
 from promptflow.executor._errors import OutputReferenceBypassed
 from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
@@ -87,25 +87,18 @@ class TestExecutorActivate:
     def test_aggregate_bypassed_nodes(self, dev_connections):
         flow_folder = "conditional_flow_with_aggregate_bypassed"
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        results = executor.exec_line({})
+        results = executor.exec_line(get_flow_inputs(flow_folder))
 
         # Validate the flow status
         assert results.run_info.status == Status.Completed
 
-        # Validate bypassed nodes
-        expected_bypassed = ['perceived_intelligence',
-                             'parse_perceived_intelligence',
-                             'groundedness',
-                             'parse_groundedness']
-        for node in expected_bypassed:
-            assert results.node_run_infos[node].status == Status.Bypassed
+        # Validate the node status
+        assert results.node_run_infos["switch_case_A"].status == Status.Completed
+        assert results.node_run_infos["switch_case_B"].status == Status.Bypassed
 
         # Validate the input of aggregation node
-        assert results.aggregation_inputs['${parse_perceived_intelligence.output}'] is None
-        assert results.aggregation_inputs['${parse_groundedness.output}'] is None
-        assert results.aggregation_inputs['${parse_accuracy.output}'] is not None
+        assert results.aggregation_inputs["${switch_case_A.output}"] is not None
+        assert results.aggregation_inputs["${switch_case_B.output}"] is None
 
         # Validate the output of aggregation node
-        assert math.isnan(results.output['result']['perceived_intelligence'])
-        assert math.isnan(results.output['result']['groundedness'])
-        assert not math.isnan(results.output['result']['accuracy'])
+        assert results.output["output"] == "hello A"
