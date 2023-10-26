@@ -377,7 +377,7 @@ class FlowOperations:
             import streamlit_quill  # noqa: F401
         except ImportError as ex:
             raise UserErrorException(
-                f"Please install PyInstaller, bs4, streamlit and streamlit_quill for building " f"executable, {ex.msg}. "
+                f"Please install PyInstaller, bs4, streamlit and streamlit_quill for building executable, {ex.msg}. "
                 f"You can try 'pip install promptflow[executable]' to install them."
             )
 
