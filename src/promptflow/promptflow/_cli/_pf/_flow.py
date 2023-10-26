@@ -416,6 +416,7 @@ def test_flow(args):
                 node=args.node,
                 allow_generator_output=False,
                 config=config,
+                stream_output=False,
             )
             # Dump flow/node test info
             flow = load_flow(args.flow)

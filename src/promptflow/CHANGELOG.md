@@ -18,6 +18,7 @@
 - [Executor] Fix the bug can't read file containing "Private Use" unicode character.
 - [SDK/CLI] Fix string type data will be converted to integer/float.
 - [SDK/CLI] Remove the max rows limitation of loading data.
+- [SDK/CLI] Fix the bug --set not taking effect when creating run from file.
 
 ### Improvements
 
