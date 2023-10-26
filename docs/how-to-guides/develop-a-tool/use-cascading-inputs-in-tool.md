@@ -5,8 +5,8 @@ This approach help in creating a more efficient, user-friendly, and error-free i
 This article will guide you through the process of implementing cascading settings for tool inputs.
 
 ## Prerequisites
-* Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
-* It's crucial for you to understand the process of creating your own tool package. For thorough insights and instructions, please refer to [Create and Use Tool Package](create-and-use-tool-package.md).
+Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
+
 
 ## Create tool with cascading inputs
 We will provide a hands-on tool example to showcase the implementation of cascading settings between inputs within a tool. 
@@ -48,7 +48,9 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
         raise Exception("Invalid user.")
 ```
 
-2. Generate a tool yaml for your tool, referring to [tool_with_enabled_by_value.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_enabled_by_value.yaml) as an example. The "enabled_by_value" in one input means that this input is enabled by the value of the input referred to in the "enabled_by" attribute.
+2. * Following the guide [Create and Use Tool Package](create-and-use-tool-package.md) to generate a tool yaml for your tool, then you need to modify this tool yaml to transition from common inputs to cascading inputs.
+
+Referring to the [tool_with_enabled_by_value.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_enabled_by_value.yaml) as an example, You need incorporate two configurations for cascading inputs: "enabled_by" and "enabled_by_value". The "enabled_by_value" in one input means that this input is enabled and displayed by the value of the input referred to in the "enabled_by" attribute.
 
 ```yaml
 my_tool_package.tools.tool_with_enabled_by_value.my_tool:
@@ -93,3 +95,45 @@ However, after you select the "user_type" input, the corresponding input is enab
 
 
 ## FAQ
+### How to use multi-layer cascading inputs in tool?
+If you are dealing with multiple levels of cascading inputs, you can effectively manage the dependencies between them by using the "enabled_by" and "enabled_by_value" attributes. Here's a hypothetical YAML example.
+```yaml
+my_tool_package.tools.tool_with_multi_layer_cascading_inputs.my_tool:
+  function: my_tool
+  inputs:
+    event_type:
+      type:
+      - string
+      enum:
+        - corporate
+        - private
+    corporate_theme:
+      type:
+      - string
+      # This input is enabled by the input "event_type".
+      enabled_by: event_type
+      # This input is enabled when "event_type" is "corporate".
+      enabled_by_value: [corporate]
+      enum:
+        - seminar
+        - team_building
+    seminar_location:
+      type:
+      - string
+      # This input is enabled by the input "corporate_theme".
+      enabled_by: corporate_theme
+      # This input is enabled when "corporate_theme" is "seminar".
+      enabled_by_value: [seminar]
+    private_theme:
+      type:
+        - string
+      # This input is enabled by the input "event_type".
+      enabled_by: event_type
+      # This input is enabled when "event_type" is "private".
+      enabled_by_value: [private]
+  module: my_tool_package.tools.tool_with_multi_layer_cascading_inputs
+  name: My Tool with Multi-Layer Cascading Inputs
+  description: This is my tool with multi-layer cascading inputs
+  type: python
+```
+When the tool is run, the inputs will be displayed in a cascading manner. As each input is filled out, any inputs that are dependent on it and have their "enabled_by_value" condition met will be enabled.
