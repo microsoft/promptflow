@@ -52,6 +52,27 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs={"input_text": "Hello World!"}, node="My_Second_Tool_usi3")
         assert result == "Hello World!This is my first custom connection."
 
+    def test_pf_test_flow_with_package_tool_with_custom_connection_as_input_value(self, install_custom_tool_pkg):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
+        # Prepare custom connection
+        from promptflow.connections import CustomConnection
+
+        conn = CustomConnection(name="custom_connection_3", secrets={"api_key": "test"}, configs={"api_base": "test"})
+        _client.connections.create_or_update(conn)
+
+        inputs = {"text": "Hello World!"}
+        flow_path = Path(f"{FLOWS_DIR}/flow_with_package_tool_with_custom_connection").absolute()
+
+        # Test that connection would be custom strong type in flow
+        result = _client.test(flow=flow_path, inputs=inputs)
+        assert result == {"out": "connection_value is MyFirstConnection: True"}
+
     def test_pf_test_flow_with_script_tool_with_custom_strong_type_connection(self):
         # Prepare custom connection
         from promptflow.connections import CustomConnection

@@ -39,8 +39,7 @@ class TestConfig:
 
     def test_get_workspace_from_config(self):
         # New instance instead of get_instance() to avoid side effect
-        conf = Configuration()
-        conf.set_config("connection.provider", "azureml")
+        conf = Configuration(overrides={"connection.provider": "azureml"})
         # Test config within flow folder
         target_folder = CONFIG_DATA_ROOT / "mock_flow1"
         with _change_working_dir(target_folder):

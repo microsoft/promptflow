@@ -1,25 +1,45 @@
 promptflow.tools.open_source_llm.OpenSourceLLM.call:
   name: Open Source LLM
   description: Use an Open Source model from the Azure Model catalog, deployed to an AzureML Online Endpoint for LLM Chat or Completion API calls.
+  icon: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAQAAAC1+jfqAAABYUlEQVR4nIWRsUtbcRRGz70v5BmHiLSh7pJu0oJDHUrf1kVwlCIRHMTN/yDasd0imCkgZGibFlrd5DmFNDSiksADsdAhk3TIZmj6kCa/65BERCie6Rsu93LPByPeajUxztWEKXcxzwTg/VQz18y9mwYwMQ9AxkNHLzI5nfvT9lwqa1H3c9AAwRATob7qLw8mLTz/tHEJxZnnK/4i/+Ivr8oGUNtqho1gdCz5yx+mRtAK63kAooPSAhwVTor7TwE+Zs+K4Q6UFqIDSIDG02nTb7tTa7N7xxFMPuvVrsumX9MaQwJM+wNxtNne9Fc/iJZfF2KAysAUbv81rzqxe939cfW9EFcnhi8CKIjz1BSjjyQfJR8j9DFTT8UNN6Q6XXFIRo3eRe/CyCgirtN1KQDq+VZ4GnCPRtAKa3nuiEq5w5+V9d+w82T+TXJJR6Luqf7b9pyftahXeXk8VP1gWbf8r+4bvICY0FkMumIAAAAASUVORK5CYII=
   type: custom_llm
   module: promptflow.tools.open_source_llm
   class_name: OpenSourceLLM
   function: call
   inputs:
+    endpoint_name:
+      default: "-- please enter an endpoint name --"
+      type:
+      - string
     connection:
+      default: null
       type:
-        - CustomConnection
-    api:
-      enum:
-        - chat
-        - completion
-      type:
-        - string
+      - CustomConnection
     deployment_name:
       default: null
       type:
-        - string
+      - string
+    api:
+      enum:
+      - chat
+      - completion
+      type:
+      - string
+    temperature:
+      default: 1.0
+      type:
+      - double
+    max_new_tokens:
+      default: 500
+      type:
+      - int
+    top_p:
+      default: 1.0
+      advanced: true
+      type:
+      - double
     model_kwargs:
       default: "{}"
+      advanced: true
       type:
-        - object
+      - object

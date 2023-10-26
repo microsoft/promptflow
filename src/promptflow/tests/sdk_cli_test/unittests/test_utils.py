@@ -173,7 +173,9 @@ class TestUtils:
 
         # Create and start threads
         for _ in range(concurrent_count):
-            thread = threading.Thread(target=refresh_connections_dir, args={None, None})
+            thread = threading.Thread(
+                target=lambda: refresh_connections_dir(connection_spec_files=[], connection_template_yamls=[])
+            )
             thread.start()
             threads.append(thread)
 

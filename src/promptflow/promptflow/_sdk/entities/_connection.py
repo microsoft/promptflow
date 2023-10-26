@@ -4,6 +4,7 @@
 import abc
 import importlib
 import json
+import types
 from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Union
@@ -933,28 +934,39 @@ class CustomConnection(_Connection):
             and self.configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
         )
 
-    def _convert_to_custom_strong_type(self, to_class) -> CustomStrongTypeConnection:
+    def _convert_to_custom_strong_type(self, module=None, to_class=None) -> CustomStrongTypeConnection:
         # There are two scenarios to convert a custom connection to custom strong type connection:
         # 1. The connection is created from a custom strong type connection template file.
         #    Custom type and module name are present in the configs.
         # 2. The connection is created through SDK PFClient or a custom connection template file.
         #    Custom type and module name are not present in the configs. Module and class must be passed for conversion.
-        if to_class and not isinstance(to_class, type):
-            raise TypeError(f"The converted type {to_class} must be a class type.")
-
-        if not to_class:
-            module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
-            import importlib
-
-            module = importlib.import_module(module_name)
-            custom_type_class_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
-            custom_defined_connection_class = getattr(module, custom_type_class_name)
-
-        if to_class and issubclass(to_class, CustomConnection):
+        if to_class == self.__class__.__name__:
             # No need to convert.
             return self
 
-        custom_defined_connection_class = to_class or custom_defined_connection_class
+        import importlib
+
+        if (
+            CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY in self.configs
+            and CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in self.configs
+        ):
+            module_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_MODULE_KEY)
+            module = importlib.import_module(module_name)
+            custom_conn_name = self.configs.get(CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY)
+        elif isinstance(module, str) and isinstance(to_class, str):
+            module_name = module
+            module = importlib.import_module(module_name)
+            custom_conn_name = to_class
+        elif isinstance(module, types.ModuleType) and isinstance(to_class, str):
+            custom_conn_name = to_class
+        else:
+            raise ValueError(
+                f"Failed to convert to custom strong type connection because of "
+                f"invalid module or class: {module}, {to_class}"
+            )
+
+        custom_defined_connection_class = getattr(module, custom_conn_name)
+
         connection_instance = custom_defined_connection_class(configs=self.configs, secrets=self.secrets)
 
         return connection_instance

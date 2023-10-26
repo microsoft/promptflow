@@ -9,8 +9,10 @@ from opencensus.ext.azure.log_exporter import AzureEventHandler
 from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._configuration import Configuration
 
-# TODO: replace with prod app insights
-INSTRUMENTATION_KEY = "b4ff2b60-2f72-4a5f-b7a6-571318b50ab2"
+# promptflow-sdk in east us
+INSTRUMENTATION_KEY = "8b52b368-4c91-4226-b7f7-be52822f0509"
+# promptflow-sdk-eu in west europe
+EU_INSTRUMENTATION_KEY = "6e81b826-60de-411c-964a-e7af287f6d3c"
 
 
 # cspell:ignore overriden
@@ -22,9 +24,12 @@ def get_appinsights_log_handler():
     from promptflow._telemetry.telemetry import is_telemetry_enabled
 
     try:
-        # TODO: use different instrumentation key for Europe
-        instrumentation_key = INSTRUMENTATION_KEY
+
         config = Configuration.get_instance()
+        if config.is_eu_user():
+            instrumentation_key = EU_INSTRUMENTATION_KEY
+        else:
+            instrumentation_key = INSTRUMENTATION_KEY
         user_agent = setup_user_agent_to_operation_context(USER_AGENT)
         custom_properties = {
             "python_version": platform.python_version(),
@@ -36,6 +41,7 @@ def get_appinsights_log_handler():
             connection_string=f"InstrumentationKey={instrumentation_key}",
             custom_properties=custom_properties,
             enable_telemetry=is_telemetry_enabled(),
+            eu_user=config.is_eu_user(),
         )
         return handler
     except Exception:  # pylint: disable=broad-except
@@ -47,11 +53,12 @@ def get_appinsights_log_handler():
 class PromptFlowSDKLogHandler(AzureEventHandler):
     """Customized AzureLogHandler for PromptFlow SDK"""
 
-    def __init__(self, custom_properties, enable_telemetry, **kwargs):
+    def __init__(self, custom_properties, enable_telemetry, eu_user, **kwargs):
         super().__init__(**kwargs)
 
         self._is_telemetry_enabled = enable_telemetry
         self._custom_dimensions = custom_properties
+        self.eu_user = eu_user
 
     def emit(self, record):
         # skip logging if telemetry is disabled
@@ -69,11 +76,16 @@ class PromptFlowSDKLogHandler(AzureEventHandler):
             return
 
     def log_record_to_envelope(self, record):
+        from promptflow._utils.utils import is_in_ci_pipeline
+
         # skip logging if telemetry is disabled
+
         if not self._is_telemetry_enabled:
             return
         custom_dimensions = {
             "level": record.levelname,
+            # add to distinguish if the log is from ci pipeline
+            "from_ci": is_in_ci_pipeline(),
         }
         custom_dimensions.update(self._custom_dimensions)
         if hasattr(record, "custom_dimensions") and isinstance(record.custom_dimensions, dict):

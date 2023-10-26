@@ -81,4 +81,4 @@ Let's illustrate how to use activate config with practical examples.
 
 ## Next steps
 
-- [Run and evaluate a flow](./run-and-evaluate-a-flow.md)
+- [Run and evaluate a flow](./run-and-evaluate-a-flow/index.md)

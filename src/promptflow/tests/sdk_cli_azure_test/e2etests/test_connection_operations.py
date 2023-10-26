@@ -1,24 +1,28 @@
 # ---------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
+
 import pydash
 import pytest
 
 from promptflow._sdk.entities._connection import _Connection
+from promptflow.azure import PFClient
 from promptflow.azure._restclient.flow_service_caller import FlowRequestException
+from promptflow.azure.operations._connection_operations import ConnectionOperations
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.types import Secret
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 
 @pytest.fixture
-def connection_ops(ml_client):
-    from promptflow.azure import PFClient
-
-    pf = PFClient(ml_client=ml_client)
-    yield pf._connections
+def connection_ops(pf: PFClient) -> ConnectionOperations:
+    return pf._connections
 
 
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
+@pytest.mark.usefixtures("vcr_recording")
 class TestConnectionOperations:
     @pytest.mark.skip(reason="Skip to avoid flooded connections in workspace.")
     def test_connection_get_create_delete(self, connection_ops):
@@ -65,7 +69,7 @@ class TestConnectionOperations:
         # soft delete
         connection_ops.delete(name=connection.name)
 
-    def test_list_connection_spec(self, connection_ops):
+    def test_list_connection_spec(self, connection_ops: ConnectionOperations):
         result = {v.connection_type: v._to_dict() for v in connection_ops.list_connection_specs()}
         # Assert custom keys type
         assert "Custom" in result
@@ -102,7 +106,7 @@ class TestConnectionOperations:
         for spec in expected_config_specs:
             assert spec in result["AzureOpenAI"]["config_specs"]
 
-    def test_get_connection(self, connection_ops):
+    def test_get_connection(self, connection_ops: ConnectionOperations):
         # Note: No secrets will be returned by MT api
         result = connection_ops.get(name="azure_open_ai_connection")
         assert (

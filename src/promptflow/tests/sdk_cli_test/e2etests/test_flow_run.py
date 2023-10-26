@@ -37,6 +37,13 @@ def create_run_against_multi_line_data(client) -> Run:
     )
 
 
+def create_run_against_multi_line_data_without_llm(client: PFClient) -> Run:
+    return client.run(
+        flow=f"{FLOWS_DIR}/print_env_var",
+        data=f"{DATAS_DIR}/env_var_names.jsonl",
+    )
+
+
 def create_run_against_run(client, run: Run) -> Run:
     return client.run(
         flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
@@ -355,7 +362,7 @@ class TestFlowRun:
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
-        connections = SubmitterHelper.resolve_connections(flow)
+        connections = SubmitterHelper.resolve_connections(flow, local_client)
         assert local_aoai_connection.name in connections
 
     def test_run_with_env_overwrite(self, local_client, local_aoai_connection):
@@ -745,3 +752,42 @@ class TestFlowRun:
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
+
+    def test_run_get_inputs(self, pf):
+        # inputs should be persisted when defaults are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/default_input",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+
+        # inputs should be persisted when data value are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=f"{DATAS_DIR}/dictInput1.jsonl",
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {"key": [{"key": "value in data"}], "line_number": [0]}
+
+        # inputs should be persisted when column-mapping are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"key": {"value": "value in column-mapping"}, "url": "${data.url}"},
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {
+            "key": [{"value": "value in column-mapping"}],
+            "line_number": [0],
+            "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
+        }
+
+    def test_executor_logs_in_batch_run_logs(self, pf: PFClient) -> None:
+        run = create_run_against_multi_line_data_without_llm(pf)
+        local_storage = LocalStorageOperations(run=run)
+        logs = local_storage.logger.get_logs()
+        # below warning is printed by executor before the batch run executed
+        # the warning message results from we do not use column mapping
+        # so it is expected to be printed here
+        assert "Starting run without column mapping may lead to unexpected results." in logs

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Union
 
 TEST_ROOT = Path(__file__).parent.parent
+DATA_ROOT = TEST_ROOT / "test_configs/datas"
 FLOW_ROOT = TEST_ROOT / "test_configs/flows"
 WRONG_FLOW_ROOT = TEST_ROOT / "test_configs/wrong_flows"
 
@@ -11,6 +12,11 @@ def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag
     flow_folder_path = Path(root) / folder_name
     yaml_file = flow_folder_path / file_name
     return yaml_file
+
+
+def get_yaml_working_dir(folder_name, root: str = FLOW_ROOT):
+    flow_folder_path = Path(root) / folder_name
+    return flow_folder_path
 
 
 def get_flow_inputs(folder_name, root: str = FLOW_ROOT):

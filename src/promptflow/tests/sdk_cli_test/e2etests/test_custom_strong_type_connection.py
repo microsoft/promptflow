@@ -129,7 +129,9 @@ class TestCustomStrongTypeConnection:
         assert conn.configs["api_base"] == "test"
 
         result = _client.connections.create_or_update(conn)
-        converted_conn = result._convert_to_custom_strong_type(MyCustomConnection)
+        converted_conn = result._convert_to_custom_strong_type(
+            module=__class__.__module__, to_class="MyCustomConnection"
+        )
 
         assert isinstance(converted_conn, MyCustomConnection)
         assert converted_conn.api_base == "test"

@@ -1,5 +1,7 @@
+import re
 import sys
 from pathlib import Path
+from typing import List
 
 import pytest
 
@@ -20,7 +22,7 @@ from promptflow.executor._errors import (
 )
 from promptflow.executor._tool_resolver import ResolvedTool, ToolResolver
 
-from ...utils import FLOW_ROOT
+from ...utils import DATA_ROOT, FLOW_ROOT
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 REQUESTS_PATH = TEST_ROOT / "test_configs/executor_api_requests"
@@ -289,7 +291,7 @@ class TestToolResolver:
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
         tool_resolver._tool_loader = tool_loader
-        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}")
+        mocker.patch.object(tool_resolver, "_load_source_content", return_value="{{text}}![image]({{image}})")
 
         node = Node(
             name="mock",
@@ -297,25 +299,32 @@ class TestToolResolver:
             inputs={
                 "conn": InputAssignment(value="conn_name", value_type=InputValueType.LITERAL),
                 "text": InputAssignment(value="Hello World!", value_type=InputValueType.LITERAL),
+                "image": InputAssignment(value=str(DATA_ROOT / "test_image.jpg"), value_type=InputValueType.LITERAL),
             },
             connection="conn_name",
             provider="mock",
         )
         resolved_tool = tool_resolver._resolve_llm_node(node, convert_input_types=True)
-        assert len(resolved_tool.node.inputs) == 1
+        assert len(resolved_tool.node.inputs) == 2
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
-        assert resolved_tool.callable(**kwargs) == "Hello World!"
+        pattern = re.compile(r"^Hello World!!\[image\]\(Image\([a-z0-9]{8}\)\)$")
+        prompt = resolved_tool.callable(**kwargs)
+        assert re.match(pattern, prompt)
 
     def test_resolve_script_node(self, mocker):
-        def mock_python_func(conn: AzureOpenAIConnection, prompt: PromptTemplate, **kwargs):
+        def mock_python_func(prompt: PromptTemplate, **kwargs):
             from promptflow.tools.template_rendering import render_template_jinja2
 
-            assert isinstance(conn, AzureOpenAIConnection)
             return render_template_jinja2(prompt, **kwargs)
 
         tool_loader = ToolLoader(working_dir=None)
         tool = Tool(name="mock", type=ToolType.PYTHON, inputs={"conn": InputDefinition(type=["AzureOpenAIConnection"])})
-        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, mock_python_func, tool))
+        mocker.patch.object(tool_loader, "load_tool_for_script_node", return_value=(None, tool))
+
+        mocker.patch(
+            "promptflow._core.tools_manager.BuiltinsManager._load_tool_from_module",
+            return_value=(mock_python_func, {"conn": AzureOpenAIConnection}),
+        )
 
         connections = {"conn_name": {"type": "AzureOpenAIConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
@@ -333,6 +342,7 @@ class TestToolResolver:
             provider="mock",
         )
         resolved_tool = tool_resolver._resolve_script_node(node, convert_input_types=True)
+        assert len(resolved_tool.node.inputs) == 2
         kwargs = {k: v.value for k, v in resolved_tool.node.inputs.items()}
         assert resolved_tool.callable(**kwargs) == "Hello World!"
 
@@ -406,16 +416,19 @@ class TestToolResolver:
             (["MyFirstCSTConnection", "MySecondCSTConnection"], MyFirstCSTConnection),
         ],
     )
-    def test_convert_to_custom_strong_type_connection_value(self, conn_types: list[str], expected_type, mocker):
+    def test_convert_to_custom_strong_type_connection_value(self, conn_types: List[str], expected_type, mocker):
         connections = {"conn_name": {"type": "CustomConnection", "value": {"api_key": "mock", "api_base": "mock"}}}
         tool_resolver = ToolResolver(working_dir=None, connections=connections)
 
         node = mocker.Mock(name="node", tool=None, inputs={})
         node.type = ToolType.PYTHON
         node.source = mocker.Mock(type=ToolSourceType.Code)
+        tool = Tool(name="tool", type="python", inputs={"conn": InputDefinition(type=["CustomConnection"])})
         m = sys.modules[__name__]
         v = InputAssignment(value="conn_name", value_type=InputValueType.LITERAL)
-        actual = tool_resolver._convert_to_custom_strong_type_connection_value("conn_name", v, node, conn_types, m)
+        actual = tool_resolver._convert_to_custom_strong_type_connection_value(
+            "conn_name", v, node, tool, conn_types, m
+        )
         assert isinstance(actual, expected_type)
         assert actual.api_base == "mock"
 
