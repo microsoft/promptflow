@@ -661,14 +661,15 @@ class FlowExecutor:
         self._completed_idx[line_number] = thread_name
         return results
 
-    def _extract_aggregation_inputs(self, nodes_outputs: dict):
-        return {
-            prop: self._extract_aggregation_input(nodes_outputs, prop) for prop in self._aggregation_inputs_references
-        }
-
-    def _extract_aggregation_input(self, nodes_outputs: dict, aggregation_input_property: str):
-        assign = InputAssignment.deserialize(aggregation_input_property)
-        return _input_assignment_parser.parse_value(assign, nodes_outputs, {})
+    def _extract_aggregation_inputs(self, nodes_outputs: dict, bypassed_nodes: dict):
+        aggregation_inputs = {}
+        for prop in self._aggregation_inputs_references:
+            aggregation_input = InputAssignment.deserialize(prop)
+            if aggregation_input.value in bypassed_nodes:
+                aggregation_inputs[prop] = None
+            else:
+                aggregation_inputs[prop] = _input_assignment_parser.parse_value(aggregation_input, nodes_outputs, {})
+        return aggregation_inputs
 
     def exec_line(
         self,
@@ -880,7 +881,7 @@ class FlowExecutor:
                 inputs = FlowValidator.ensure_flow_inputs_type(flow=self._flow, inputs=inputs, idx=line_number)
                 # Make sure the run_info with converted inputs results rather than original inputs
                 run_info.inputs = inputs
-            output, nodes_outputs = self._traverse_nodes(inputs, context)
+            output, nodes_outputs, bypassed_nodes = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
             # Persist the node runs for the nodes that have a generator output
             generator_output_nodes = [
@@ -889,7 +890,7 @@ class FlowExecutor:
             run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
-            aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
+            aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs, bypassed_nodes)
         except Exception as e:
             run_tracker.end_run(line_run_id, ex=e)
             if self._raise_ex:
@@ -964,7 +965,7 @@ class FlowExecutor:
         outputs = {}
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
-        return outputs, nodes_outputs
+        return outputs, nodes_outputs, bypassed_nodes
 
     def _stringify_generator_output(self, outputs: dict):
         for k, v in outputs.items():
