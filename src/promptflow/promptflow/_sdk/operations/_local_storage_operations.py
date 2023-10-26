@@ -318,6 +318,7 @@ class LocalStorageOperations(AbstractRunStorage):
             if not errors:
                 return
 
+        # SystemError will be raised above and users can see it, so we don't need to dump it.
         if exception is None or not isinstance(exception, UserErrorException):
             # use first line run error message as exception message if no exception raised
             error = errors[0]
