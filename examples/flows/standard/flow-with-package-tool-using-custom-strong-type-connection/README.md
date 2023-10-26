@@ -70,17 +70,3 @@ Run flow with newly created connection.
 ```bash
 pf run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream
 ```
-
-<!-- ### Run in cloud with connection override
-
-Ensure you have created `my_custom_connection` connection in cloud. Reference [this notebook](../../../tutorials/get-started/quickstart-azure.ipynb) on how to create connections in cloud with UI.
-
-Run flow with connection `my_custom_connection`.
-
-```bash
-# set default workspace
-az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
-
-pfazure run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream --runtime demo-mir
-``` -->
