@@ -387,10 +387,10 @@ def test_flow(args):
             try:
                 from streamlit.web import cli as st_cli
                 import streamlit_quill  # noqa: F401
+                import bs4  # noqa: F401
             except ImportError as ex:
                 raise UserErrorException(
-                    f"Please install streamlit and streamlit_quill for multi_modal, {ex.msg}. "
-                    f"You can try 'pip install promptflow[executable]' to install them."
+                    f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
                 )
             flow = load_flow(args.flow)
             script_path = os.path.join(temp_dir, "main.py")

@@ -1,5 +1,5 @@
-# Flow with enabled_by_value
-A standard flow using "enabled_by_value" python tool. 
+# Basic flow with cascading inputs tool
+A basic flow with cascading inputs tool.
 
 Tools used in this flow：
 - `python` Tool

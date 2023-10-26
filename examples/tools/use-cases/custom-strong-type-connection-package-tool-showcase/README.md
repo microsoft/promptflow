@@ -1,8 +1,8 @@
-# Basic flow with script tool using custom strong type connection
-A basic standard flow with script tool that using custom strong type connection.
+# Basic flow with package tool using custom strong type connection
+A basic flow with package tool that using custom strong type connection.
 
 Tools used in this flow：
-- custom `python` tool
+- custom package tool
 
 Connections used in this flow:
 - custom strong type connection
@@ -18,12 +18,12 @@ pip install -r requirements.txt
 Create connection if you haven't done that.
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create -f custom.yml --set secrets.api_key='<your_api_key>' configs.api_base='<your_api_base>'
+pf connection create -f my_custom_connection.yml --set secrets.api_key='<your_api_key>' configs.api_base='<your_api_base>'
 ```
 
-Ensure you have created `normal_custom_connection` connection.
+Ensure you have created `my_custom_connection` connection.
 ```bash
-pf connection show -n normal_custom_connection
+pf connection show -n my_custom_connection
 ```
 
 ## Run flow
@@ -68,5 +68,5 @@ pf run visualize --name $name
 Run flow with newly created connection.
 
 ```bash
-pf run create --flow . --data ./data.jsonl --connections my_script_tool.connection=normal_custom_connection --stream
+pf run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream
 ```
