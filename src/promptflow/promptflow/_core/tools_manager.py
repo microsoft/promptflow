@@ -233,15 +233,25 @@ class BuiltinsManager:
         tool: Tool,
         node_inputs: Optional[dict] = None,
     ) -> Tuple[Callable, dict]:
-        return BuiltinsManager._load_package_tool(tool.name, tool.module, tool.class_name, tool.function, node_inputs)
+        return BuiltinsManager._load_package_tool(
+            tool.name, tool.module, tool.class_name, tool.function, node_inputs
+        )
 
     @staticmethod
-    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]):
-        """Load package in tool with given import path and node inputs."""
-        m = importlib.import_module(module_name)
+    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs):
+        module = importlib.import_module(module_name)
+        return BuiltinsManager._load_tool_from_module(
+            module, tool_name, module_name, class_name, method_name, node_inputs
+        )
+
+    @staticmethod
+    def _load_tool_from_module(
+        module, tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]
+    ):
+        """Load tool from given module with node inputs."""
         if class_name is None:
-            return getattr(m, method_name), {}
-        provider_class = getattr(m, class_name)
+            return getattr(module, method_name), {}
+        provider_class = getattr(module, class_name)
         # Note: v -- type is InputAssignment
         init_inputs = provider_class.get_initialize_inputs()
         init_inputs_values = {}
@@ -392,7 +402,7 @@ class ToolLoader:
             if node.source.type == ToolSourceType.Package:
                 return self.load_tool_for_package_node(node)
             elif node.source.type == ToolSourceType.Code:
-                _, _, tool = self.load_tool_for_script_node(node)
+                _, tool = self.load_tool_for_script_node(node)
                 return tool
             raise NotImplementedError(f"Tool source type {node.source.type} for python tool is not supported yet.")
         elif node.type == ToolType.CUSTOM_LLM:
@@ -418,8 +428,8 @@ class ToolLoader:
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f = collect_tool_function_in_module(m)
-        return m, f, _parse_tool_from_function(f, gen_custom_type_conn=True)
+        f, init_inputs = collect_tool_function_in_module(m)
+        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"

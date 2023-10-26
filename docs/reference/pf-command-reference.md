@@ -697,9 +697,22 @@ Initialize a tool directory.
 ```bash
 pf tool init [--package]
              [--tool]
+             [--set]
 ```
 
 #### Examples
+
+Creating a package tool from scratch.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name>
+```
+
+Creating a package tool with extra info.
+
+```bash
+pf tool init --package <package-name> --tool <tool-name> --set icon=<icon-path> category=<tool-category> tags="{'<key>': '<value>'}"
+```
 
 Creating a package tool from scratch.
 
@@ -722,6 +735,10 @@ The package name to create.
 `--tool`
 
 The tool name to create.
+
+`--set`
+
+Set extra information about the tool, like category, icon and tags. Example: --set <key>=<value>.
 
 ### pf tool list
 

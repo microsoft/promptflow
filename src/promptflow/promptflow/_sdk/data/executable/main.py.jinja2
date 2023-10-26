@@ -7,7 +7,6 @@ from pathlib import Path
 from streamlit_quill import st_quill
 from bs4 import BeautifulSoup, NavigableString, Tag
 
-from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
 
@@ -127,13 +126,19 @@ def start():
 
     def submit(**kwargs) -> None:
         st.session_state.messages.append(("user", kwargs))
-        st.session_state.history.append({"input": kwargs})
+        session_state_history = dict()
+        session_state_history.update({"inputs": kwargs})
         with container:
             render_message("user", kwargs)
         # Force append chat history to kwargs
-        response = run_flow({"chat_history": get_chat_history_from_session(), **kwargs})
+{% if is_chat_flow %}
+{{ ' ' * indent_level * 2 }}response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
+{% else %}
+{{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
+{% endif %}
         st.session_state.messages.append(("assistant", response))
-        st.session_state.history.append({"output": kwargs})
+        session_state_history.update({"outputs": response})
+        st.session_state.history.append(session_state_history)
         with container:
             render_message("assistant", response)
 
@@ -146,7 +151,7 @@ def start():
 {{ ' ' * indent_level * 3 }}dump_path = Path('{{flow_path}}').parent
 {% else %}
 {{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
-{{ ' ' * indent_level * 3 }}dump_path = None
+{{ ' ' * indent_level * 3 }}dump_path = flow.parent
 {% endif %}
             if flow.is_dir():
                 os.chdir(flow)
@@ -154,7 +159,6 @@ def start():
                 os.chdir(flow.parent)
             invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
         result = invoker.invoke(data)
-        print_yellow_warning(f"Result: {result}")
         return result
 
 
@@ -209,15 +213,15 @@ def start():
                     os.environ[environment_variable] = secret_input
 
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if flow_input != "chat_history" %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
 {% elif value_type == "image" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
-{% else %}
+{% elif value_type == "string" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-{% endif %}
+{% else %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder={{default_value}})
 {% endif %}
 {% endfor %}
 

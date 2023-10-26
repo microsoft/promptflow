@@ -1,5 +1,5 @@
 from promptflow import tool
-from typing import Generator
+from typing import Generator, List
 
 
 def stream(question: str) -> Generator[str, None, None]:
@@ -8,5 +8,5 @@ def stream(question: str) -> Generator[str, None, None]:
 
 
 @tool
-def my_python_tool(chat_history: list[dict], question: str) -> dict:
+def my_python_tool(chat_history: List[dict], question: str) -> dict:
     return {"answer": stream(question)}

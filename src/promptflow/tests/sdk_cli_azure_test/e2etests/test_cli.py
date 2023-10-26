@@ -7,6 +7,8 @@ import pytest
 
 from promptflow._cli._pf.entry import main
 
+from ..recording_utilities import is_live
+
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
 CONNECTIONS_DIR = "./tests/test_configs/connections"
@@ -31,6 +33,7 @@ def run_pf_command(*args, cwd=None):
         os.chdir(origin_cwd)
 
 
+@pytest.mark.skipif(condition=not is_live(), reason="CLI tests, only run in live mode.")
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:

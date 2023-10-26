@@ -7,6 +7,8 @@
 - [SDK/CLI] Support `pfazure run archive/restore/update`.
 - [SDK/CLI] Support custom strong type connection.
 - [SDK/CLI] Enable telemetry and won't collect by default, use `pf config set cli.telemetry_enabled=true` to opt in.
+- [SDK/CLI] Exposed function `from promptflow import load_run` to load run object from local YAML file.
+- [Executor] Support `ToolProvider` for script tools.
 
 ### Bugs Fixed
 - **pf config set**:
@@ -16,6 +18,7 @@
 - [Executor] Fix the bug can't read file containing "Private Use" unicode character.
 - [SDK/CLI] Fix string type data will be converted to integer/float.
 - [SDK/CLI] Remove the max rows limitation of loading data.
+- [SDK/CLI] Fix the bug --set not taking effect when creating run from file.
 
 ### Improvements
 
