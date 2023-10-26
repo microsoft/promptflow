@@ -71,6 +71,8 @@ if __name__ == "__main__":
     pytest_command += [
         "-n",
         args.n,
+        "--dist",
+        "loadfile",
         "--log-level=info",
         "--log-format=%(asctime)s %(levelname)s %(message)s",
         "--log-date-format=[%Y-%m-%d %H:%M:%S]",
