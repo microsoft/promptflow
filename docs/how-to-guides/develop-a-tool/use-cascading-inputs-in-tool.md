@@ -49,7 +49,6 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
 ```
 
 2. Following the guide [Create and Use Tool Package](create-and-use-tool-package.md) to generate a tool yaml for your tool, then you need to update this tool yaml manually to transition from common inputs to cascading inputs.
-
 Referring to the [tool_with_enabled_by_value.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_enabled_by_value.yaml) as an example, You need incorporate two configurations for cascading inputs: "enabled_by" and "enabled_by_value". The "enabled_by_value" in one input means that this input is enabled and displayed by the value of the input referred to in the "enabled_by" attribute.
 
 ```yaml
