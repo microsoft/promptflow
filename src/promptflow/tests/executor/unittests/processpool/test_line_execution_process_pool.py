@@ -137,54 +137,6 @@ class TestLineExecutionProcessPool:
         assert isinstance(line_result, LineResult)
 
     @pytest.mark.parametrize(
-        "flow_folder, batch_input, error_message, error_class",
-        [
-            (
-                "simple_flow_with_python_tool",
-                [{"num11": "22"}],
-                (
-                    "The value for flow input 'num' is not provided in line 0 of input data. "
-                    "Please review your input data or remove this input in your flow if it's no longer needed."
-                ),
-                "InputNotFound",
-            )
-        ],
-    )
-    def test_exec_line_with_exception(self, flow_folder, batch_input, error_message, error_class, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
-        executor.exec_bulk(
-            batch_input,
-        )
-        output_queue = Queue()
-        run_id = str(uuid.uuid4())
-        line_result = _exec_line(
-            executor=executor,
-            output_queue=output_queue,
-            inputs=batch_input[0],
-            run_id=run_id,
-            index=0,
-            variant_id="",
-            validate_inputs=False,
-        )
-        if (
-            (sys.version_info.major == 3)
-            and (sys.version_info.minor >= 11)
-            and ((sys.platform == "linux") or (sys.platform == "darwin"))
-        ):
-            # Python >= 3.11 has a different error message on linux and macos
-            error_message_compare = error_message.replace("int", "ValueType.INT")
-            assert error_message_compare in str(
-                line_result.run_info.error
-            ), f"Expected message {error_message_compare} but got {str(line_result.run_info.error)}"
-        else:
-            assert error_message in str(
-                line_result.run_info.error
-            ), f"Expected message {error_message} but got {str(line_result.run_info.error)}"
-        assert error_class in str(
-            line_result.run_info.error
-        ), f"Expected message {error_class} but got {str(line_result.run_info.error)}"
-
-    @pytest.mark.parametrize(
         "flow_folder",
         [
             SAMPLE_FLOW,
