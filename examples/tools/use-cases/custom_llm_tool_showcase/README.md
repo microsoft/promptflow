@@ -1,5 +1,5 @@
 # Flow with custom_llm tool
-A flow to demonstrate the usage of the `custom_llm` tool. 
+This is a flow demonstrating how to use a `custom_llm` tool, `custom_llm` tool allows users to connect to a customized large language model which is fine-tuned by tool developer. 
 
 Tools used in this flow:
 - `custom_llm` Tool

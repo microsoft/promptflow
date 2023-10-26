@@ -78,7 +78,7 @@
 
 | path | status | description |
 ------|--------|-------------
-| [custom_llm_tool_showcase](tools/use-cases/custom_llm_tool_showcase/README.md) | [![samples_tools_use_cases_custom_llm_tool_showcase](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_custom_llm_tool_showcase.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_custom_llm_tool_showcase.yml) |  A flow to demonstrate the usage of the `custom_llm` tool |
+| [custom_llm_tool_showcase](tools/use-cases/custom_llm_tool_showcase/README.md) | [![samples_tools_use_cases_custom_llm_tool_showcase](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_custom_llm_tool_showcase.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_custom_llm_tool_showcase.yml) |  This is a flow demonstrating how to use a `custom_llm` tool, `custom_llm` tool allows users to connect to a customized large language model which is fine-tuned by tool developer |
 | [flow-with-enabled-by-value](tools/use-cases/flow-with-enabled-by-value/README.md) | [![samples_tools_use_cases_flow_with_enabled_by_value](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_flow_with_enabled_by_value.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_flow_with_enabled_by_value.yml) |  A standard flow using "enabled_by_value" python tool |
 
 
