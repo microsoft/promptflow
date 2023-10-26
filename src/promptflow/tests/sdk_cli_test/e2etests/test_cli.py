@@ -1121,6 +1121,7 @@ class TestCli:
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
+    @pytest.mark.skip("Raise Exception: Process terminated with exit code 4294967295 in windows CI")
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
