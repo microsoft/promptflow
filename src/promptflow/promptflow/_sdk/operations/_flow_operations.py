@@ -83,6 +83,7 @@ class FlowOperations:
         node: str = None,
         environment_variables: dict = None,
         stream_log: bool = True,
+        stream_output: bool = True,
         allow_generator_output: bool = True,
         **kwargs,
     ):
@@ -97,7 +98,10 @@ class FlowOperations:
            Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
            The value reference to connection keys will be resolved to the actual value,
            and all environment variables specified will be set into os.environ.
-        : param allow_generator_output: Whether return streaming output when flow has streaming output.
+        :param stream_log: Whether streaming the log.
+        :param stream_output: Whether streaming the outputs.
+        :param allow_generator_output: Whether return streaming output when flow has streaming output.
+
         :return: Executor result
         """
         from promptflow._sdk._load_functions import load_flow
@@ -124,6 +128,7 @@ class FlowOperations:
                     inputs=flow_inputs,
                     environment_variables=environment_variables,
                     stream_log=stream_log,
+                    stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
 
