@@ -1491,3 +1491,19 @@ class TestCli:
         assert output_path.exists()
         image_path = Path(FLOWS_DIR) / "python_tool_with_simple_image" / ".promptflow" / "intermediate"
         assert image_path.exists()
+
+    def test_aggregate_bypassed_nodes(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/flow_with_switch_case",
+        )
+        output_path = Path(FLOWS_DIR) / "flow_with_switch_case" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "flow_with_switch_case" / ".promptflow" / "flow.log"
+        assert log_path.exists()
+        with open(output_path, "r") as f:
+            file_content = f.read()
+            assert '"perceived_intelligence": NaN' in file_content
+            assert '"groundedness": NaN' in file_content

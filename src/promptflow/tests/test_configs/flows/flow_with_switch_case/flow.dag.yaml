@@ -1,0 +1,274 @@
+environment:
+  python_requirements_txt: requirements.txt
+inputs:
+  question:
+    type: string
+    default: What is Azure compute instance?
+    is_chat_input: false
+  answer:
+    type: string
+    default: "An Azure Machine Learning compute instance is a fully managed
+      cloud-based workstation designed for data scientists. It serves as a fully
+      configured and managed development environment in the cloud for machine
+      learning. It can also be used as a compute target for training and
+      inferencing for development and testing purposes. Each compute instance
+      has only one owner, but files can be shared between multiple compute
+      instances. For its Jupyter functionality to work, web socket communication
+      should not be disabled, and your network should allow websocket
+      connections to *.instances.azureml.net and *.instances.azureml.ms (Source:
+      https://github.com/prakharg-msft/azureml-tutorials/blob/main//concept-com\
+      pute-instance.md)."
+    is_chat_input: false
+  groundtruth:
+    type: string
+    default: "An Azure Machine Learning compute instance is a fully managed
+      cloud-based workstation designed for data scientists. It serves as a fully
+      configured and managed development environment in the cloud for machine
+      learning. It can also be used as a compute target for training and
+      inferencing for development and testing purposes. Each compute instance
+      has only one owner, but files can be shared between multiple compute
+      instances. For its Jupyter functionality to work, web socket communication
+      should not be disabled, and your network should allow websocket
+      connections to *.instances.azureml.net and *.instances.azureml.ms (Source:
+      https://github.com/prakharg-msft/azureml-tutorials/blob/main//concept-com\
+      pute-instance.md)."
+    is_chat_input: false
+  context:
+    type: string
+    default: "\"Content: title: 'What is an Azure Machine Learning compute
+      instance?'\\ntitleSuffix: Azure Machine Learning\\ndescription: Learn
+      about the Azure Machine Learning compute instance, a fully managed
+      cloud-based workstation.\\nservices: machine-learning\\nms.service:
+      machine-learning\\nms.subservice: core\\nms.custom:
+      event-tier1-build-2022\\nms.topic: conceptual\\nms.author:
+      jcioffi\\nauthor: jesscioffi\\nms.reviewer: sgilley\\nms.date:
+      10/19/2022\\n\\n## Create\\n\\nFollow the steps in the [Quickstart: Create
+      workspace resources you need to get started with Azure Machine
+      Learning](quickstart-create-resources.md) to create a basic compute
+      instance.  \\n\\nFor more options, see [create a new compute
+      instance](how-to-create-manage-compute-instance.md?tabs=azure-studio#crea\
+      te).\\n\\nAs an administrator, you can **[create a compute instance for
+      others in the workspace
+      (preview)](how-to-create-manage-compute-instance.md#create-on-behalf-of-p\
+      review)**.\\n\\nYou can also **[use a setup script
+      (preview)](how-to-customize-compute-instance.md)** for an automated way to
+      customize and configure the compute instance.\\n\\nOther ways to create a
+      compute instance:\\n* Directly from the integrated notebooks
+      experience.\\n* From Azure Resource Manager template. For an example
+      template, see the [create an Azure Machine Learning compute instance
+      template](https://github.com/Azure/azure-quickstart-templates/tree/master\
+      /quickstarts/microsoft.machinelearningservices/machine-learning-compute-c\
+      reate-computeinstance).\\n* With [Azure Machine Learning
+      SDK](how-to-create-manage-compute-instance.md?tabs=python#create)\\n* From
+      the [CLI extension for Azure Machine
+      Learning](how-to-create-manage-compute-instance.md?tabs=azure-cli#create)\
+      \\n\\nThe dedicated cores per region per VM family quota and total
+      regional quota, which applies to compute instance creation, is unified and
+      shared with Azure Machine Learning training compute cluster quota.
+      Stopping the compute instance doesn't release quota to ensure you'll be
+      able to restart the compute instance. Don't stop the compute instance
+      through the OS terminal by doing a sudo shutdown.\\n\\nCompute instance
+      comes with P10 OS disk. Temp disk type depends on the VM size chosen.
+      Currently, it isn't possible to change the OS disk
+      type.\\n\\n\\n\\nSource:
+      https://github.com/prakharg-msft/azureml-tutorials/blob/main//concept-com\
+      pute-instance.md\\n\\nContent: title: 'What is an Azure Machine Learning
+      compute instance?'\\ntitleSuffix: Azure Machine Learning\\ndescription:
+      Learn about the Azure Machine Learning compute instance, a fully managed
+      cloud-based workstation.\\nservices: machine-learning\\nms.service:
+      machine-learning\\nms.subservice: core\\nms.custom:
+      event-tier1-build-2022\\nms.topic: conceptual\\nms.author:
+      jcioffi\\nauthor: jesscioffi\\nms.reviewer: sgilley\\nms.date:
+      10/19/2022\\n\\n## Compute target\\n\\nCompute instances can be used as a
+      [training compute
+      target](concept-compute-target.md#training-compute-targets) similar to
+      Azure Machine Learning [compute training
+      clusters](how-to-create-attach-compute-cluster.md).  But a compute
+      instance has only a single node, while a compute cluster can have more
+      nodes.\\n\\nA compute instance:\\n\\n* Has a job queue.\\n* Runs jobs
+      securely in a virtual network environment, without requiring enterprises
+      to open up SSH port. The job executes in a containerized environment and
+      packages your model dependencies in a Docker container.\\n* Can run
+      multiple small jobs in parallel (preview).  One job per core can run in
+      parallel while the rest of the jobs are queued.\\n* Supports single-node
+      multi-GPU [distributed training](how-to-train-distributed-gpu.md)
+      jobs\\n\\nYou can use compute instance as a local inferencing deployment
+      target for test/debug scenarios.\\n\\n> [!TIP]\\n> The compute instance
+      has 120GB OS disk. If you run out of disk space and get into an unusable
+      state, please clear at least 5 GB disk space on OS disk (mounted on /)
+      through the compute instance terminal by removing files/folders and then
+      do `sudo reboot`. Temporary disk will be freed after restart; you do not
+      need to clear space on temp disk manually. To access the terminal go to
+      compute list page or compute instance details page and click on
+      **Terminal** link. You can check available disk space by running `df -h`
+      on the terminal. Clear at least 5 GB space before doing `sudo reboot`.
+      Please do not stop or restart the compute instance through the Studio
+      until 5 GB disk space has been cleared. Auto shutdowns, including
+      scheduled start or stop as well as idle shutdowns(preview), will not work
+      if the CI disk is full.\\n\\n\\nSource:
+      https://github.com/prakharg-msft/azureml-tutorials/blob/main//concept-com\
+      pute-instance.md\""
+    is_chat_input: false
+  metric_list:
+    type: list
+    default:
+    - accuracy
+    is_chat_input: false
+outputs:
+  result:
+    type: string
+    reference: ${collect_output.output}
+    evaluation_only: false
+    is_chat_output: false
+nodes:
+- name: parse_accuracy
+  type: python
+  source:
+    type: code
+    path: parse_score1.py
+  inputs:
+    gpt_score: ${accuracy.output}
+  aggregation: false
+- name: parse_groundedness
+  type: python
+  source:
+    type: code
+    path: parse_score1.py
+  inputs:
+    gpt_score: ${groundedness.output}
+  aggregation: false
+- name: is_groundedness_required
+  type: python
+  source:
+    type: code
+    path: is_groundedness_required.py
+  inputs:
+    metric_list: ${inputs.metric_list}
+  aggregation: false
+- name: perceived_intelligence
+  type: llm
+  source:
+    type: code
+    path: perceived_intelligence.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 1
+    top_p: 1
+    max_tokens: 0
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+  activate:
+    when: ${is_perceived_intelligence_required.output}
+    is: true
+  module: promptflow.tools.aoai
+  aggregation: false
+- name: aggregate_perceived_intelligence
+  type: python
+  source:
+    type: code
+    path: aggregate.py
+  inputs:
+    perceived_intelligence_score: ${parse_perceived_intelligence.output}
+  aggregation: true
+- name: collect_output
+  type: python
+  source:
+    type: code
+    path: collect_output.py
+  inputs:
+    accuracy: ${parse_accuracy.output}
+    groundedness: ${parse_groundedness.output}
+    perceived_intelligence: ${parse_perceived_intelligence.output}
+  aggregation: false
+- name: is_perceived_intelligence_required
+  type: python
+  source:
+    type: code
+    path: is_perceived_intelligence_required.py
+  inputs:
+    metric_list: ${inputs.metric_list}
+  aggregation: false
+- name: accuracy
+  type: llm
+  source:
+    type: code
+    path: accuracy.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 1
+    top_p: 1
+    max_tokens: 0
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    groundtruth: ${inputs.groundtruth}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+  activate:
+    when: ${is_accuray_required.output}
+    is: true
+  module: promptflow.tools.aoai
+  aggregation: false
+- name: aggregate_accuracy
+  type: python
+  source:
+    type: code
+    path: aggregate_accuracy.py
+  inputs:
+    accuracy_scores: ${parse_accuracy.output}
+  aggregation: true
+- name: is_accuray_required
+  type: python
+  source:
+    type: code
+    path: is_accuray_required.py
+  inputs:
+    metric_list: ${inputs.metric_list}
+  aggregation: false
+- name: aggregate_groundedness
+  type: python
+  source:
+    type: code
+    path: aggregate_groundedness.py
+  inputs:
+    groundedness_scores: ${parse_groundedness.output}
+  aggregation: true
+- name: groundedness
+  type: llm
+  source:
+    type: code
+    path: groundedness.jinja2
+  inputs:
+    deployment_name: gpt-4
+    temperature: 1
+    top_p: 1
+    max_tokens: 0
+    presence_penalty: 0
+    frequency_penalty: 0
+    answer: ${inputs.answer}
+    context: ${inputs.context}
+    question: ${inputs.question}
+  provider: AzureOpenAI
+  connection: azure_open_ai_connection
+  api: chat
+  activate:
+    when: ${is_groundedness_required.output}
+    is: true
+  module: promptflow.tools.aoai
+  aggregation: false
+- name: parse_perceived_intelligence
+  type: python
+  source:
+    type: code
+    path: parse_score1.py
+  inputs:
+    gpt_score: ${perceived_intelligence.output}
+  aggregation: false
