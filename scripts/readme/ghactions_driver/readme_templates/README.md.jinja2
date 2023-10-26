@@ -51,6 +51,13 @@
 {% for chat in chats.readmes %}| [{{ chat.name }}]({{ chat.path }}) | [![{{chat.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{chat.yaml_name}}) | {{ chat.description }} |
 {% endfor %}
 
+### Tool Use Cases ([Tool Use Cases](tools/use-cases))
+
+| path | status | description |
+------|--------|-------------
+{% for toolusecase in toolusecases.readmes %}| [{{ toolusecase.name }}]({{ toolusecase.path }}) | [![{{toolusecase.pipeline_name}}](https://github.com/microsoft/promptflow/actions/workflows/{{toolusecase.yaml_name}}/badge.svg?branch={{branch}})](https://github.com/microsoft/promptflow/actions/workflows/{{toolusecase.yaml_name}}) | {{ toolusecase.description }} |
+{% endfor %}
+
 ### Connections ([connections](connections))
 
 | path | status | description |
