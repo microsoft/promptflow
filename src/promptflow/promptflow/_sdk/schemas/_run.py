@@ -62,6 +62,16 @@ class RunSchema(YamlFileSchema):
     # endregion: common fields
 
     flow = LocalPathField(required=True)
+    # inputs field
+    data = UnionField([LocalPathField(), RemotePathStr()])
+    column_mapping = fields.Dict(keys=fields.Str)
+    # runtime field, only available for cloud run
+    runtime = fields.Str()
+    resources = NestedField(ResourcesSchema)
+    run = fields.Str()
+
+    # region: context
+    variant = fields.Str()
     environment_variables = UnionField(
         [
             fields.Dict(keys=fields.Str(), values=fields.Str()),
@@ -70,14 +80,7 @@ class RunSchema(YamlFileSchema):
         ]
     )
     connections = fields.Dict(keys=fields.Str(), values=fields.Dict(keys=fields.Str()))
-    # inputs field
-    data = UnionField([LocalPathField(), RemotePathStr()])
-    column_mapping = fields.Dict(keys=fields.Str)
-    # runtime field, only available for cloud run
-    runtime = fields.Str()
-    resources = NestedField(ResourcesSchema)
-    variant = fields.Str()
-    run = fields.Str()
+    # endregion: context
 
     @post_load
     def resolve_dot_env_file(self, data, **kwargs):
