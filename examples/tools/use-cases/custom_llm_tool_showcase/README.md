@@ -1,5 +1,5 @@
 # Flow with custom_llm tool
-A standard flow using `custom_llm` tool. 
+A flow to demonstrate the usage of the `custom_llm` tool. 
 
 Tools used in this flow:
 - `custom_llm` Tool
