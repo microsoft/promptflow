@@ -30,7 +30,7 @@ After above setup process is finished. You can use `pytest` command to run test,
 
 ### Run tests in VSCode
 
-1. Set up your python interperter
+1. Set up your python interpreter
 
 - Open the Command Palette (Ctrl+Shift+P) and select `Python: Select Interpreter`.
 
