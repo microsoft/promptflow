@@ -144,6 +144,7 @@ class TestSubmitter:
         stream_log: bool = True,
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = False,
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
@@ -159,7 +160,7 @@ class TestSubmitter:
             flow_executor = FlowExecutor.create(
                 self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
             )
-            flow_executor.enable_streaming_for_llm_flow(lambda: True)
+            flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
@@ -322,6 +323,7 @@ class TestSubmitter:
                 stream_log=False,
                 allow_generator_output=True,
                 connections=connections,
+                stream_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output)
