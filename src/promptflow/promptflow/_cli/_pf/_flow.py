@@ -389,7 +389,7 @@ def test_flow(args):
                 import streamlit_quill  # noqa: F401
             except ImportError as ex:
                 raise UserErrorException(
-                    f"Please install streamlit and streamlit_quill for multi_modal, {ex.msg}. "
+                    f"Please install bs4, streamlit and streamlit_quill for multi_modal, {ex.msg}. "
                     f"You can try 'pip install promptflow[executable]' to install them."
                 )
             flow = load_flow(args.flow)
