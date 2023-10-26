@@ -1,5 +1,5 @@
-# Basic flow with cascading inputs tool
-A basic flow with cascading inputs tool.
+# Basic flow with package tool using cascading inputs
+A basic flow with package tool that using cascading inputs.
 
 Tools used in this flow：
 - `python` Tool
