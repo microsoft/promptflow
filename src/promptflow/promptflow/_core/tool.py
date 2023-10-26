@@ -4,10 +4,12 @@
 
 import functools
 import inspect
+import importlib
 import logging
 from abc import ABC
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable, Optional, List, Dict, Union, get_args, get_origin
+from dataclasses import dataclass, InitVar, field
 
 module_logger = logging.getLogger(__name__)
 
@@ -45,6 +47,7 @@ def tool(
     name: str = None,
     description: str = None,
     type: str = None,
+    input_settings = None,
     **kwargs,
 ) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.
@@ -55,6 +58,8 @@ def tool(
     :type description: str
     :param type: The tool type.
     :type type: str
+    :param type: Input setting.
+    :type type: promptflow.InputSettings
     :return: The decorated function.
     :rtype: Callable
     """
@@ -74,6 +79,7 @@ def tool(
         new_f.__name = name
         new_f.__description = description
         new_f.__type = type
+        new_f.__input_settings = input_settings
         new_f.__extra_info = kwargs
         return new_f
 
@@ -127,3 +133,55 @@ class ToolProvider(ABC):
                 if k != "self" and v.default is inspect.Parameter.empty
             }
         return cls._required_initialize_inputs
+
+
+@dataclass
+class DynamicList:
+    function: Union[str, Callable]
+    func_kwargs: List = field(init=False)
+    input_mapping: InitVar[Dict] = None
+
+    def __post_init__(self, input_mapping):
+        from promptflow.exceptions import UserErrorException
+
+        # Validate function exist
+        if isinstance(self.function, str):
+            func = importlib.import_module(tool["module"])
+            func_name = self.function
+        elif isinstance(self.function, Callable):
+            func = self.function
+            func_name = f"{self.function.__module__}.{self.function.__name__}"
+        else:
+            raise UserErrorException(
+                "Function has invalid type, please provide callable or function name for function.")
+        self.function = func_name
+        self._func_obj = func
+
+        # Get function input info
+        self.func_kwargs = []
+        inputs = inspect.signature(self._func_obj).parameters
+        for name, value in inputs.items():
+            if value.kind != value.VAR_KEYWORD and value.kind != value.VAR_POSITIONAL:
+                input_info = {"name": name}
+                if not value.annotation is inspect.Parameter.empty:
+                    # TODO type mapping
+                    if get_origin(value.annotation):
+                        input_info["type"] = [annotation.__name__ for annotation in get_args(value.annotation)]
+                    else:
+                        input_info["type"] = [value.annotation.__name__]
+                if name in input_mapping:
+                    input_info["reference"] = f"${{inputs.{input_mapping[name]}}}"
+                input_info["optional"] = value.default is not inspect.Parameter.empty
+                if input_info["optional"]:
+                    input_info["default"] = value.default
+                input_info["type"] = []
+                self.func_kwargs.append(input_info)
+
+
+@dataclass
+class InputSettings:
+    is_multi_select: bool = None
+    allow_manual_entry: bool = None
+    enabled_by: str = None
+    enabled_by_value: List = None
+    dynamic_list: DynamicList = None

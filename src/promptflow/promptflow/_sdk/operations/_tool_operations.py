@@ -7,14 +7,12 @@ import json
 from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Union, Callable
 
-from promptflow._core.tool_meta_generator import is_tool
+from promptflow._core.tool_meta_generator import is_tool, _parse_tool_from_function, asdict_without_none
 from promptflow._core.tools_manager import collect_package_tools
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
-from promptflow._utils.tool_utils import function_to_interface
 from promptflow.contracts.multimedia import Image
-from promptflow.contracts.tool import Tool, ToolType
 from promptflow.exceptions import UserErrorException
 
 
@@ -48,7 +46,7 @@ class ToolOperations:
 
     @staticmethod
     def _collect_tool_class_methods_in_module(tool_module):
-        from promptflow import ToolProvider
+        from promptflow._core.tool import ToolProvider
 
         tools = []
         for _, obj in inspect.getmembers(tool_module):
@@ -58,35 +56,6 @@ class ToolOperations:
                         initialize_inputs = obj.get_initialize_inputs()
                         tools.append((method, initialize_inputs))
         return tools
-
-    @staticmethod
-    def _parse_tool_from_function(f, initialize_inputs=None):
-        tool_type = getattr(f, "__type") or ToolType.PYTHON
-        tool_name = getattr(f, "__name")
-        description = getattr(f, "__description")
-        extra_info = getattr(f, "__extra_info")
-        if getattr(f, "__tool", None) and isinstance(f.__tool, Tool):
-            return getattr(f, "__tool")
-        if hasattr(f, "__original_function"):
-            f = getattr(f, "__original_function")
-        try:
-            inputs, _, _ = function_to_interface(f, initialize_inputs=initialize_inputs)
-        except Exception as e:
-            raise UserErrorException(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
-        class_name = None
-        if "." in f.__qualname__:
-            class_name = f.__qualname__.replace(f".{f.__name__}", "")
-        # Construct the Tool structure
-        tool = Tool(
-            name=tool_name or f.__qualname__,
-            description=description or inspect.getdoc(f),
-            inputs=inputs,
-            type=tool_type,
-            class_name=class_name,
-            function=f.__name__,
-            module=f.__module__,
-        )
-        return tool, extra_info
 
     def _serialize_tool(self, tool_func, initialize_inputs=None):
         """
@@ -99,7 +68,8 @@ class ToolOperations:
         :return: package tool name, serialized tool
         :rtype: str, Dict[str, str]
         """
-        tool, extra_info = self._parse_tool_from_function(tool_func, initialize_inputs)
+        tool = _parse_tool_from_function(tool_func, initialize_inputs=initialize_inputs, gen_custom_type_conn=True)
+        extra_info = getattr(tool_func, "__extra_info")
         tool_name = (
             f"{tool.module}.{tool.class_name}.{tool.function}"
             if tool.class_name is not None
@@ -112,6 +82,25 @@ class ToolOperations:
                     raise UserErrorException(f"Cannot find the icon path {extra_info['icon']}.")
                 extra_info["icon"] = self._serialize_image_data(extra_info["icon"])
             construct_tool.update(extra_info)
+
+        # Update tool input settings
+        input_settings = getattr(tool_func, "__input_settings")
+        if input_settings:
+            tool_inputs = construct_tool.get("inputs", {})
+            for input_name, settings in input_settings.items():
+                if input_name not in tool_inputs:
+                    raise UserErrorException(f"Cannot find {input_name} in tool inputs.")
+                if settings.enabled_by and settings.enabled_by not in tool_inputs:
+                    raise UserErrorException(f"Cannot find {settings.enabled_by} for the enabled_by of {input_name}.")
+                if settings.dynamic_list and settings.dynamic_list.input_mapping:
+                    # Validate input mapping in dynamic_list
+                    dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
+                    for func_input, reference_input in settings.dynamic_list.input_mapping.items():
+                        if func_input not in dynamic_func_inputs:
+                            raise UserErrorException(f"Cannot find {func_input} in the inputs of dynamic_list func {settings.dynamic_list.function}")
+                        if reference_input not in tool_inputs:
+                            raise UserErrorException(f"Cannot find {reference_input} in the tool inputs.")
+                tool_inputs[input_name].update(asdict_without_none(settings))
         return tool_name, construct_tool
 
     @staticmethod
