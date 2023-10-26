@@ -1,0 +1,406 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3519'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.021'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.076'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "3dfd077a-f071-443e-9c4e-d41531710950", "selectRunMetadata":
+      true, "selectRunDefinition": true, "selectJobSpecification": true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '137'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1689673888, "rootRunId": "fd68a549-2027-4f0f-9f21-adc39cc86c94",
+        "createdUtc": "2023-07-18T09:51:28.1405441+00:00", "createdBy": {"userObjectId":
+        "c05e0746-e125-4cb3-9213-a8b535eacd79", "userPuId": "10032000324F7449", "userIdp":
+        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Honglin
+        Du", "upn": null}, "userId": "c05e0746-e125-4cb3-9213-a8b535eacd79", "token":
+        null, "tokenExpiryTimeUtc": null, "error": {"error": {"code": "UserError",
+        "severity": null, "message": "Input ''question'' in line 0 is not provided
+        for flow ''Simple_mock_answer''.", "messageFormat": "", "messageParameters":
+        {}, "referenceCode": "Executor", "detailsUri": null, "target": null, "details":
+        [], "innerError": {"code": "ValidationError", "innerError": {"code": "InvalidFlowRequest",
+        "innerError": {"code": "InputNotFound", "innerError": null}}}, "debugInfo":
+        {"type": "InputNotFound", "message": null, "stackTrace": "Traceback (most
+        recent call last):\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 243, in exec_request_raw\n    return self._route_request_raw(raw_request,
+        raise_ex=raise_ex)\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 316, in _route_request_raw\n    return self._exec_batch_request(\n  File
+        \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 393, in _exec_batch_request\n    run_infos = self._exec_batch_request_inner(\n  File
+        \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 654, in _exec_batch_request_inner\n    batch_inputs = FlowRequestValidator.ensure_batch_inputs_type(batch_request.flow,
+        batch_request.batch_inputs)\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/flow_request_validator.py\",
+        line 99, in ensure_batch_inputs_type\n    return [cls.ensure_flow_inputs_type(flow,
+        inputs, idx) for idx, inputs in enumerate(batch_inputs)]\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/flow_request_validator.py\",
+        line 99, in <listcomp>\n    return [cls.ensure_flow_inputs_type(flow, inputs,
+        idx) for idx, inputs in enumerate(batch_inputs)]\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/flow_request_validator.py\",
+        line 192, in ensure_flow_inputs_type\n    raise InputNotFound(\npromptflow.executor.flow_request_validator.InputNotFound:
+        Input ''question'' in line 0 is not provided for flow ''Simple_mock_answer''.\n",
+        "innerException": null, "data": null, "errorResponse": null}, "additionalInfo":
+        null}, "correlation": null, "environment": null, "location": null, "time":
+        "2023-07-18T09:51:31.441881+00:00", "componentName": "promptflow/20230710.v2"},
+        "warnings": null, "revision": 4, "statusRevision": 2, "runUuid": "555c524f-0fa8-47d7-bf0b-cc6db82ab734",
+        "parentRunUuid": "01cdc8fe-2bfd-40be-817c-7ae28282e7a7", "rootRunUuid": "01cdc8fe-2bfd-40be-817c-7ae28282e7a7",
+        "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:00.4131767",
+        "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "c05e0746-e125-4cb3-9213-a8b535eacd79",
+        "userPuId": "10032000324F7449", "userIdp": null, "userAltSecId": null, "userIss":
+        "https://sts.windows.net/00000000-0000-0000-0000-000000000000/", "userTenantId":
+        "00000000-0000-0000-0000-000000000000", "userName": "Honglin Du", "upn": null},
+        "lastModifiedUtc": "2023-07-18T09:51:28.1405441+00:00", "duration": "00:00:00.4131767",
+        "cancelationReason": null, "currentAttemptId": 1, "runId": "3dfd077a-f071-443e-9c4e-d41531710950",
+        "parentRunId": "fd68a549-2027-4f0f-9f21-adc39cc86c94", "experimentId": "64956f20-fc4f-4b13-aa32-8c52f722b94f",
+        "status": "Failed", "startTimeUtc": "2023-07-18T09:51:31.2748721+00:00", "endTimeUtc":
+        "2023-07-18T09:51:31.6880488+00:00", "scheduleId": null, "displayName": "Simple_mock_answer-bulktest-variant_0-fd68a549-2027-4f0f-9f21-adc39cc86c94",
+        "name": null, "dataContainerId": "dcid.3dfd077a-f071-443e-9c4e-d41531710950",
+        "description": "", "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": null, "computeType":
+        "MIR_v2"}, "properties": {"azureml.promptflow.flow_id": "6f0d05fd-2cc1-495a-be6d-c60c3f3b1f14",
+        "azureml.promptflow.flow_type": "Default", "azureml.promptflow.variant_id":
+        "variant_0", "azureml.promptflow.baseline_variant_run_id": "3dfd077a-f071-443e-9c4e-d41531710950",
+        "azureml.promptflow.bulk_test_id": "fd68a549-2027-4f0f-9f21-adc39cc86c94",
+        "azureml.promptflow.flow_experiment_id": "3e123da1-f9a5-4c91-9234-8d9ffbb39ff5",
+        "azureml.promptflow.runtime_name": "demo-mir", "azureml.promptflow.runtime_version":
+        "20230710.v2"}, "parameters": {}, "actionUris": {}, "scriptName": null, "target":
+        null, "uniqueChildRunComputeTargets": [], "tags": {}, "settings": {}, "services":
+        {}, "inputDatasets": [], "outputDatasets": [], "runDefinition": null, "jobSpecification":
+        null, "primaryMetricName": null, "createdFrom": null, "cancelUri": null, "completeUri":
+        null, "diagnosticsUri": null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        null, "queueingInfo": null, "inputs": null, "outputs": null}, "runDefinition":
+        {"Nodes": [{"Name": "hello_prompt", "Tool": "hello_prompt", "Comment": null,
+        "Inputs": {}, "Api": null, "Provider": null, "Connection": null, "Module":
+        null, "Reduce": false}, {"Name": "echo_my_prompt", "Tool": "echo_my_prompt",
+        "Comment": null, "Inputs": {"input1": "${hello_prompt.output}"}, "Api": null,
+        "Provider": null, "Connection": null, "Module": null, "Reduce": false}], "Tools":
+        [{"Name": "hello_prompt", "Type": "prompt", "Inputs": {"question": {"Name":
+        null, "Type": ["string"], "Default": null, "Description": null, "Enum": null,
+        "enabled_by": null, "enabled_by_type": null, "model_list": null, "Capabilities":
+        null}}, "Outputs": null, "Description": null, "connection_type": null, "Module":
+        null, "class_name": null, "Source": null, "LkgCode": "Q: {{question}}", "Code":
+        "Q: {{question}}", "Function": null, "action_type": null, "provider_config":
+        null, "function_config": null, "is_builtin": false, "package": null, "package_version":
+        null}, {"Name": "echo_my_prompt", "Type": "python", "Inputs": {"input1": {"Name":
+        "input1", "Type": ["string"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "model_list": null, "Capabilities":
+        null}}, "Outputs": null, "Description": null, "connection_type": null, "Module":
+        null, "class_name": null, "Source": null, "LkgCode": "from promptflow import
+        tool\nimport time\nimport sys\n# The inputs section will change based on the
+        arguments of the tool function, after you save the code\n# Adding type to
+        arguments and return value will help the system show the types properly\n#
+        Please update the function name/signature per need\n\n\n@tool\ndef my_python_tool(input1:
+        str) -> str:\n    print(f\"@@@ My input data is {input1}...\")\n    sys.stderr.write(f\"###
+        This is an error message {input1}\")  \n    return \"Prompt: \" + input1\n",
+        "Code": "from promptflow import tool\nimport time\nimport sys\n# The inputs
+        section will change based on the arguments of the tool function, after you
+        save the code\n# Adding type to arguments and return value will help the system
+        show the types properly\n# Please update the function name/signature per need\n\n\n@tool\ndef
+        my_python_tool(input1: str) -> str:\n    print(f\"@@@ My input data is {input1}...\")\n    sys.stderr.write(f\"###
+        This is an error message {input1}\")  \n    return \"Prompt: \" + input1\n",
+        "Function": "my_python_tool", "action_type": null, "provider_config": null,
+        "function_config": null, "is_builtin": false, "package": null, "package_version":
+        null}], "Codes": null, "Inputs": {"question": {"Name": null, "Type": "string",
+        "Default": null, "Description": null, "is_chat_input": false}}, "Outputs":
+        {"output_prompt": {"Name": null, "Type": "string", "Description": null, "Reference":
+        "${echo_my_prompt.output}", "evaluation_only": false, "is_chat_output": false}}},
+        "jobSpecification": null, "systemSettings": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '10114'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.045'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - promptflow-sdk/0.0.1 azsdk-python-azuremachinelearningdesignerserviceclient/unknown
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://eastus.api.azureml.ms/flow/api/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/BulkRuns/3dfd077a-f071-443e-9c4e-d41531710950/logContent
+  response:
+    body:
+      string: '"2023-07-18 09:51:28 +0000   12930 promptflow-runtime INFO     [3dfd077a-f071-443e-9c4e-d41531710950]
+        Receiving submit flow request b8f430bb-726a-40cf-a346-22cc0e420e7a: {\"flow_id\":
+        \"6f0d05fd-2cc1-495a-be6d-c60c3f3b1f14\", \"flow_run_id\": \"3dfd077a-f071-443e-9c4e-d41531710950\",
+        \"submission_data\": {\"flow\": {\"id\": \"6f0d05fd-2cc1-495a-be6d-c60c3f3b1f14\",
+        \"name\": \"Simple_mock_answer\", \"nodes\": [{\"name\": \"hello_prompt\",
+        \"tool\": \"hello_prompt\"}, {\"name\": \"echo_my_prompt\", \"tool\": \"echo_my_prompt\",
+        \"inputs\": {\"input1\": {\"value\": \"hello_prompt\", \"value_type\": \"NodeReference\",
+        \"section\": \"output\"}}}], \"inputs\": {\"question\": {\"type\": \"string\"}},
+        \"outputs\": {\"output_prompt\": {\"type\": \"string\", \"reference\": {\"value\":
+        \"echo_my_prompt\", \"value_type\": \"NodeReference\", \"section\": \"output\"}}},
+        \"tools\": [{\"name\": \"hello_prompt\", \"type\": \"prompt\", \"inputs\":
+        {\"question\": {\"type\": [\"string\"]}}, \"code\": \"Q: {{question}}\"},
+        {\"name\": \"echo_my_prompt\", \"type\": \"python\", \"inputs\": {\"input1\":
+        {\"type\": [\"string\"]}}, \"code\": \"from promptflow import tool\\nimport
+        time\\nimport sys\\n# The inputs section will change based on the arguments
+        of the tool function, after you save the code\\n# Adding type to arguments
+        and return value will help the system show the types properly\\n# Please update
+        the function name/signature per need\\n\\n\\n@tool\\ndef my_python_tool(input1:
+        str) -> str:\\n    print(f\\\"@@@ My input data is {input1}...\\\")\\n    sys.stderr.write(f\\\"###
+        This is an error message {input1}\\\")  \\n    return \\\"Prompt: \\\" + input1\\n\",
+        \"function\": \"my_python_tool\"}]}, \"name\": \"Simple_mock_answer-bulktest\",
+        \"baseline_variant_id\": \"variant_0\", \"bulk_test_id\": \"fd68a549-2027-4f0f-9f21-adc39cc86c94\"},
+        \"run_mode\": 3, \"created_by\": {\"user_object_id\": \"c05e0746-e125-4cb3-9213-a8b535eacd79\",
+        \"user_tenant_id\": \"00000000-0000-0000-0000-000000000000\", \"user_name\":
+        \"Honglin Du\"}, \"batch_data_input\": {\"data_uri\": \"azureml:/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/web_classification_data/versions/1\"},
+        \"run_id_to_log_path\": {\"fd68a549-2027-4f0f-9f21-adc39cc86c94\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/PromptflowLogs/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/6f0d05fd-2cc1-495a-be6d-c60c3f3b1f14/fd68a549-2027-4f0f-9f21-adc39cc86c94/fd68a549-2027-4f0f-9f21-adc39cc86c94.txt?sv=2021-10-04&se=2023-07-25T09%3A51%3A27Z&sr=b&sp=rw&sig=**data_scrubbed**
+        \"3dfd077a-f071-443e-9c4e-d41531710950\": \"https://promptfloweast4063704120.blob.core.windows.net/azureml/PromptflowLogs/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/6f0d05fd-2cc1-495a-be6d-c60c3f3b1f14/fd68a549-2027-4f0f-9f21-adc39cc86c94/flowRuns/3dfd077a-f071-443e-9c4e-d41531710950.txt?sv=2021-10-04&se=2023-07-25T09%3A51%3A27Z&sr=b&sp=rw&sig=**data_scrubbed**
+        \"app_insights_instrumentation_key\": \"InstrumentationKey=**data_scrubbed**;IngestionEndpoint=https://eastus-6.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/\"}\n2023-07-18
+        09:51:28 +0000   12930 promptflow-runtime INFO     Init from request using
+        default credential\n2023-07-18 09:51:28 +0000   12930 promptflow-runtime INFO     Initializing
+        mlclient from request finished in 0.02988982805982232 seconds\n2023-07-18
+        09:51:28 +0000   12930 promptflow-runtime INFO     Getting storage account
+        key finished in 0.09090099297463894 seconds\n2023-07-18 09:51:28 +0000   12930
+        promptflow-runtime WARNING  Failed to get storage account key: (AuthorizationFailed)
+        The client ''74013e41-d17e-462a-8db6-5c0e26c0368c'' with object id ''74013e41-d17e-462a-8db6-5c0e26c0368c''
+        does not have authorization to perform action ''Microsoft.MachineLearningServices/workspaces/00000/action''
+        over scope ''/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''
+        or the scope is invalid. If access was recently granted, please refresh your
+        credentials.\nCode: AuthorizationFailed\nMessage: The client ''74013e41-d17e-462a-8db6-5c0e26c0368c''
+        with object id ''74013e41-d17e-462a-8db6-5c0e26c0368c'' does not have authorization
+        to perform action ''Microsoft.MachineLearningServices/workspaces/00000/action''
+        over scope ''/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''
+        or the scope is invalid. If access was recently granted, please refresh your
+        credentials.\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime INFO     Workspace
+        config from mlclient: {''storage_account'': ''promptfloweast4063704120'',
+        ''mt_service_endpoint'': ''https://eastus.api.azureml.ms'', ''resource_group'':
+        ''promptflow'', ''subscription_id'': ''96aede12-2f73-41cb-b983-6d11a904839b'',
+        ''workspace_name'': ''promptflow-eastus'', ''workspace_id'': ''3e123da1-f9a5-4c91-9234-8d9ffbb39ff5''}\n2023-07-18
+        09:51:29 +0000   12930 promptflow-runtime INFO     Getting workspace id finished
+        in 0.26978495717048645 seconds\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime
+        INFO     Starting to check process 15853 status\n2023-07-18 09:51:29 +0000   12930
+        promptflow-runtime INFO     Start checking run status for bulk run 3dfd077a-f071-443e-9c4e-d41531710950\n2023-07-18
+        09:51:29 +0000   15853 promptflow-runtime INFO     [12930--15853] Start processing
+        flow......\n2023-07-18 09:51:29 +0000   15853 promptflow-runtime INFO     Using
+        AzureMLRunStorage with compute identity.\n2023-07-18 09:51:29 +0000   12930
+        promptflow-runtime INFO     Running <function start_thread_to_monitor_request_handler_process.<locals>.get_storage_from_config_with_retry
+        at 0x7fdbcdefd790>, 3 more tries to go.\n2023-07-18 09:51:29 +0000   15853
+        promptflow-runtime INFO     [diagnostic] Token expire on: 2023-07-19 03:02:30,
+        oid: 74013e41-d17e-462a-8db6-5c0e26c0368c, scp: None\n2023-07-18 09:51:29
+        +0000   15853 promptflow-runtime INFO     [diagnostic] Token expire on: 2023-07-19
+        08:42:04, oid: 74013e41-d17e-462a-8db6-5c0e26c0368c, scp: None\n2023-07-18
+        09:51:29 +0000   12930 promptflow-runtime INFO     Using AzureMLRunStorage
+        with compute identity.\n2023-07-18 09:51:29 +0000   15853 promptflow-runtime
+        INFO     Set token diagnostic finished in 0.02079575788229704 seconds\n2023-07-18
+        09:51:29 +0000   12930 promptflow-runtime INFO     [diagnostic] Token expire
+        on: 2023-07-19 03:02:30, oid: 74013e41-d17e-462a-8db6-5c0e26c0368c, scp: None\n2023-07-18
+        09:51:29 +0000   15853 promptflow-runtime INFO     Setting mlflow tracking
+        uri...\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime INFO     [diagnostic]
+        Token expire on: 2023-07-19 08:42:04, oid: 74013e41-d17e-462a-8db6-5c0e26c0368c,
+        scp: None\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime INFO     Set
+        token diagnostic finished in 0.022056567948311567 seconds\n2023-07-18 09:51:29
+        +0000   12930 promptflow-runtime INFO     Setting mlflow tracking uri...\n2023-07-18
+        09:51:29 +0000   15853 promptflow-runtime INFO     Validating ''AzureML Data
+        Scientist'' user authentication...\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime
+        INFO     Validating ''AzureML Data Scientist'' user authentication...\n2023-07-18
+        09:51:29 +0000   12930 promptflow-runtime INFO     Successfully validated
+        ''AzureML Data Scientist'' user authentication.\n2023-07-18 09:51:29 +0000   15853
+        promptflow-runtime INFO     Successfully validated ''AzureML Data Scientist''
+        user authentication.\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime
+        INFO     Initialized table client for AzureMLRunTracker.\n2023-07-18 09:51:29
+        +0000   12930 promptflow-runtime INFO     Initialized blob service client
+        for AzureMLRunTracker.\n2023-07-18 09:51:29 +0000   12930 promptflow-runtime
+        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-07-18
+        09:51:29 +0000   12930 promptflow-runtime INFO     Start checking run status
+        for run 3dfd077a-f071-443e-9c4e-d41531710950\n2023-07-18 09:51:29 +0000   15853
+        promptflow-runtime INFO     Initialized table client for AzureMLRunTracker.\n2023-07-18
+        09:51:30 +0000   15853 promptflow-runtime INFO     Initialized blob service
+        client for AzureMLRunTracker.\n2023-07-18 09:51:30 +0000   15853 promptflow-runtime
+        INFO     Setting mlflow tracking uri to ''azureml://eastus.api.azureml.ms/mlflow/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/promptflow-eastus''\n2023-07-18
+        09:51:30 +0000   15853 promptflow-runtime INFO     Resolved 3 lines of data
+        from uri: azureml:/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/3e123da1-f9a5-4c91-9234-8d9ffbb39ff5/web_classification_data/versions/1\n2023-07-18
+        09:51:30 +0000   15853 promptflow-runtime INFO     Resolve data from url finished
+        in 0.8368151811882854 seconds\n2023-07-18 09:51:30 +0000   15853 promptflow-runtime
+        INFO     Start execute request: 3dfd077a-f071-443e-9c4e-d41531710950 in dir
+        requests/3dfd077a-f071-443e-9c4e-d41531710950...\n2023-07-18 09:51:30 +0000   15853
+        execution          ERROR    Submission request failed. Exception: Input ''question''
+        in line 0 is not provided for flow ''Simple_mock_answer''.\nTraceback (most
+        recent call last):\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 243, in exec_request_raw\n    return self._route_request_raw(raw_request,
+        raise_ex=raise_ex)\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 316, in _route_request_raw\n    return self._exec_batch_request(\n  File
+        \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 393, in _exec_batch_request\n    run_infos = self._exec_batch_request_inner(\n  File
+        \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/executor.py\",
+        line 654, in _exec_batch_request_inner\n    batch_inputs = FlowRequestValidator.ensure_batch_inputs_type(batch_request.flow,
+        batch_request.batch_inputs)\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/flow_request_validator.py\",
+        line 99, in ensure_batch_inputs_type\n    return [cls.ensure_flow_inputs_type(flow,
+        inputs, idx) for idx, inputs in enumerate(batch_inputs)]\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/flow_request_validator.py\",
+        line 99, in <listcomp>\n    return [cls.ensure_flow_inputs_type(flow, inputs,
+        idx) for idx, inputs in enumerate(batch_inputs)]\n  File \"/azureml-envs/prompt-flow/runtime/lib/python3.9/site-packages/promptflow/executor/flow_request_validator.py\",
+        line 192, in ensure_flow_inputs_type\n    raise InputNotFound(\npromptflow.executor.flow_request_validator.InputNotFound:
+        Input ''question'' in line 0 is not provided for flow ''Simple_mock_answer''.\n2023-07-18
+        09:51:30 +0000   15853 execution          INFO     Updated run ''3dfd077a-f071-443e-9c4e-d41531710950''
+        as failed in run info.\n2023-07-18 09:51:31 +0000   15853 promptflow-runtime
+        INFO     Starting the aml run ''3dfd077a-f071-443e-9c4e-d41531710950''...\n2023-07-18
+        09:51:31 +0000   15853 promptflow-runtime INFO     Ending the aml run ''3dfd077a-f071-443e-9c4e-d41531710950''
+        with status ''Failed''...\n2023-07-18 09:51:31 +0000   15853 execution          INFO     Updated
+        run ''3dfd077a-f071-443e-9c4e-d41531710950'' as failed in run history.\n2023-07-18
+        09:51:31 +0000   15853 promptflow-runtime INFO     Starting the aml run ''fd68a549-2027-4f0f-9f21-adc39cc86c94''...\n2023-07-18
+        09:51:32 +0000   15853 promptflow-runtime INFO     Ending the aml run ''fd68a549-2027-4f0f-9f21-adc39cc86c94''
+        with status ''Completed''...\n2023-07-18 09:51:32 +0000   15853 execution          INFO     Updated
+        bulk test run ''fd68a549-2027-4f0f-9f21-adc39cc86c94'' as Completed in run
+        history.\n2023-07-18 09:51:32 +0000   12930 promptflow-runtime INFO     Process
+        15853 finished\n2023-07-18 09:51:32 +0000   12930 promptflow-runtime WARNING  Hit
+        exception when execute request: \n{''message'': \"Input ''question'' in line
+        0 is not provided for flow ''Simple_mock_answer''.\", ''messageFormat'': '''',
+        ''messageParameters'': {}, ''referenceCode'': ''Executor'', ''code'': ''UserError'',
+        ''innerError'': {''code'': ''ValidationError'', ''innerError'': {''code'':
+        ''InvalidFlowRequest'', ''innerError'': {''code'': ''InputNotFound'', ''innerError'':
+        None}}}}\n2023-07-18 09:51:32 +0000   12930 promptflow-runtime ERROR    Submit
+        flow request failed Code: 400 Exception type: <class ''promptflow.exceptions.JsonSerializedPromptflowException''>
+        InnerException type: InputNotFound Exception type hierarchy: UserError/ValidationError/InvalidFlowRequest/InputNotFound\n2023-07-18
+        09:51:49 +0000   12930 promptflow-runtime INFO     Running <function start_thread_to_monitor_request_handler_process.<locals>.get_run_status_with_retry
+        at 0x7fdbcdefd940>, 3 more tries to go.\n2023-07-18 09:51:49 +0000   12930
+        promptflow-runtime INFO     Run 3dfd077a-f071-443e-9c4e-d41531710950 is in
+        progress, Execution status: Failed\n"'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '13452'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.525'
+    status:
+      code: 200
+      message: OK
+version: 1
