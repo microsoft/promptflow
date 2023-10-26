@@ -1,9 +1,11 @@
 import pytest
 
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool, _exec_line
+from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow._utils.logger_utils import LogContext
 from promptflow.executor.flow_executor import LineResult
 from promptflow.contracts.run_info import Status
+from unittest.mock import patch
 from pytest_mock import MockFixture
 from multiprocessing import Queue
 from pathlib import Path
@@ -181,3 +183,36 @@ class TestLineExecutionProcessPool:
         assert error_class in str(
             line_result.run_info.error
         ), f"Expected message {error_class} but got {str(line_result.run_info.error)}"
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_exec_line_failed_when_line_execution_not_start(self, flow_folder, dev_connections, mocker: MockFixture):
+        output_queue = Queue()
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            line_timeout_sec=1,
+        )
+        test_error_msg = "Test user error"
+        with patch("promptflow.executor.flow_executor.FlowExecutor.exec_line", autouse=True) as mock_exec_line:
+            mock_exec_line.side_effect = UserErrorException(
+                message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE)
+            run_id = str(uuid.uuid4())
+            line_inputs = self.get_line_inputs()
+            line_result = _exec_line(
+                executor=executor,
+                output_queue=output_queue,
+                inputs=line_inputs,
+                run_id=run_id,
+                index=0,
+                variant_id="",
+                validate_inputs=False,
+            )
+            assert isinstance(line_result, LineResult)
+            assert line_result.run_info.error["message"] == test_error_msg
+            assert line_result.run_info.error["code"] == "UserError"
+            assert line_result.run_info.status == Status.Failed
