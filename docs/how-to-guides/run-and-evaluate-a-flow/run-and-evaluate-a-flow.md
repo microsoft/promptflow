@@ -7,7 +7,6 @@ This is an experimental feature, and may change at any time. Learn [more](../faq
 After you have developed and tested the flow in [init and test a flow](../init-and-test-a-flow.md), this guide will help you learn how to run a flow with a larger dataset and then evaluate the flow you have created.
 
 
-
 ## Create a batch run
 
 Since you have run your flow successfully with a small set of data, you might want to test if it performs well in large set of data, you can run a batch test and check the outputs.
@@ -16,7 +15,9 @@ A bulk test allows you to run your flow with a large dataset and generate output
 
 Let's create a run with flow [web-classification](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/web-classification). It is a flow demonstrating multi-class classification with LLM. Given an url, it will classify the url into one web category with just a few shots, simple summarization and classification prompts.
 
-To begin with the guide, git clone the sample repository(above flow link) and set the working directory to `<path-to-the-sample-repo>/examples/flows/`.
+To begin with the guide, you need:
+- Git clone the sample repository(above flow link) and set the working directory to `<path-to-the-sample-repo>/examples/flows/`.
+- Make sure you have already created the necessary connection following [Create necessary connections](../quick-start.md#create-necessary-connections).
 
 ::::{tab-set}
 
@@ -57,6 +58,11 @@ More details can be found with `pf run --help`
 :sync: SDK
 
 ```python
+from promptflow import PFClient
+
+# PFClient can help manage your runs and connections.
+pf = PFClient()
+
 # Set flow path and run input data
 flow = "standard/web-classification" # set the flow directory
 data= "standard/web-classification/data.jsonl" # set the data file
@@ -164,6 +170,11 @@ After the run is finished, you can evaluate the run with below command, compared
 More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```python
+from promptflow import PFClient
+
+# PFClient can help manage your runs and connections.
+pf = PFClient()
+
 # set eval flow path
 eval_flow = "evaluation/eval-classification-accuracy"
 data= "standard/web-classification/data.jsonl"
