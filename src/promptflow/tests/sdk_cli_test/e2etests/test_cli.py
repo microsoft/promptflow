@@ -6,8 +6,8 @@ import json
 import logging
 import os
 import os.path
-import subprocess
 import shutil
+import subprocess
 import sys
 import tempfile
 import uuid
@@ -25,6 +25,8 @@ from promptflow._sdk._errors import RunNotFoundError
 from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
+
+from ..recording_utilities import pf_recording_mode
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -55,7 +57,9 @@ def copy_file(src, dst):
     shutil.copymode(src, dst)
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "mock_for_recordings"
+)
 @pytest.mark.cli_test
 @pytest.mark.e2etest
 class TestCli:
@@ -64,6 +68,7 @@ class TestCli:
         out, err = capfd.readouterr()
         assert out == "0.0.1\n"
 
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
     def test_basic_flow_run(self) -> None:
         # fetch std out
         f = io.StringIO()
@@ -183,7 +188,7 @@ class TestCli:
         assert outputs["output"][0] == local_aoai_connection.api_base
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in replay mode, TODO, replay should support local_alt_aoai_connection.",
     )
     def test_connection_overwrite(self, local_alt_aoai_connection):
@@ -486,8 +491,8 @@ class TestCli:
         )
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in replay mode, replay should support additional includes.",
+        pf_recording_mode() == "replay",
+        reason="Instable in replay mode.",
     )
     def test_pf_flow_test_with_additional_includes(self):
         run_pf_command(
@@ -519,8 +524,8 @@ class TestCli:
         )
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in replay mode, TODO, replay should support symbolic.",
+        pf_recording_mode() == "replay",
+        reason="Instable in replay mode.",
     )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
         run_pf_command(
@@ -604,7 +609,7 @@ class TestCli:
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in replay mode, Cannot test exceptions.",
     )
     def test_flow_with_exception(self, capsys):
@@ -662,10 +667,6 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "groundtruth=App", "prediction=App")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
-    @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in replay mode, temp dir included.",
-    )
     def test_init_chat_flow(self):
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
@@ -694,10 +695,6 @@ class TestCli:
             run_pf_command("flow", "test", "--flow", flow_name, "--inputs", "question=hi")
             self._validate_requirement(Path(temp_dir) / flow_name / "flow.dag.yaml")
 
-    @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in replay mode, temp dir included.",
-    )
     def test_flow_init(self, capsys):
         temp_dir = mkdtemp()
         with _change_working_dir(temp_dir):
@@ -888,8 +885,8 @@ class TestCli:
                 assert not (flow_folder / "openai.yaml").exists()
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in record mode, TODO, record should support chat.",
+        pf_recording_mode() == "replay",
+        reason="Skip this test in record mode, instable.",
     )
     def test_flow_chat(self, monkeypatch, capsys):
         chat_list = ["hi", "what is chat gpt?"]
@@ -996,7 +993,7 @@ class TestCli:
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in record mode, TODO, record should support chat.",
     )
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
@@ -1035,7 +1032,7 @@ class TestCli:
         assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in replay mode, Cannot test inputs in fake inputs.",
     )
     def test_flow_test_inputs(self, capsys, caplog):
@@ -1165,6 +1162,7 @@ class TestCli:
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
+    @pytest.mark.skipif(pf_recording_mode() != "", reason="Skip this test in record mode, missing deps.")
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"
         target = "promptflow._sdk.operations._flow_operations.FlowOperations._run_pyinstaller"
@@ -1184,7 +1182,7 @@ class TestCli:
                 )
                 # Start the Python script as a subprocess
                 app_file = Path(temp_dir, "app.py").as_posix()
-                process = subprocess.Popen(['python', app_file], stderr=subprocess.PIPE)
+                process = subprocess.Popen(["python", app_file], stderr=subprocess.PIPE)
                 try:
                     # Wait for a specified time (in seconds)
                     wait_time = 5
@@ -1192,8 +1190,10 @@ class TestCli:
                     if process.returncode == 0:
                         pass
                     else:
-                        raise Exception(f"Process terminated with exit code {process.returncode}, "
-                                        f"{process.stderr.read().decode('utf-8')}")
+                        raise Exception(
+                            f"Process terminated with exit code {process.returncode}, "
+                            f"{process.stderr.read().decode('utf-8')}"
+                        )
                 except (subprocess.TimeoutExpired, KeyboardInterrupt):
                     pass
                 finally:

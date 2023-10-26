@@ -79,7 +79,7 @@ def setup_connections(azure_open_ai_connection: AzureOpenAIConnection):
     )
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_connections")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_connections", "mock_for_recordings")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowLocalOperations:

@@ -19,6 +19,8 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 from promptflow.executor.flow_executor import InputMappingError
 
+from ..recording_utilities import pf_recording_mode
+
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
 TEST_ROOT = Path(__file__).parent.parent.parent
@@ -57,7 +59,9 @@ def create_run_against_run(client, run: Run) -> Run:
     )
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "mock_for_recordings"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowRun:
@@ -74,13 +78,7 @@ class TestFlowRun:
         # TODO: check details
         # df = pf.show_details(baseline, v1, v2)
 
-    def test_basic_run_bulk(
-        self,
-        azure_open_ai_connection: AzureOpenAIConnection,
-        local_client,
-        pf,
-        mock_run_tracker_update_flow_run_info_with_node_runs,
-    ):
+    def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
             data=f"{DATAS_DIR}/webClassification1.jsonl",
@@ -261,7 +259,7 @@ class TestFlowRun:
         assert "Connection with name new_connection not found" in str(e.value)
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in replay mode, no strong type conneciton support.",
     )
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
@@ -298,7 +296,7 @@ class TestFlowRun:
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
 
-    @pytest.mark.skipif(os.environ.get("PF_RECORDING_MODE", None) == "replay", reason="Skip this test in replay mode")
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Skip this test in replay mode")
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
         with pytest.raises(Exception) as e:
@@ -371,9 +369,7 @@ class TestFlowRun:
         run = local_client.runs.get(name=run.name)
         assert run.status == "Completed"
 
-    @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay", reason="Skip this test in replay mode, expected"
-    )
+    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Skip this test in replay mode, expected")
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow, local_client)
@@ -767,6 +763,7 @@ class TestFlowRun:
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
 
+    @pytest.mark.skipif(pf_recording_mode() != "", "recording and replay cannot provide input")
     def test_run_get_inputs(self, pf):
         # inputs should be persisted when defaults are used
         run = pf.run(

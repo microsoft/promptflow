@@ -30,6 +30,7 @@ def run_name() -> str:
     return name
 
 
+@pytest.mark.usefixtures("mock_for_recordings")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestRunInfo:

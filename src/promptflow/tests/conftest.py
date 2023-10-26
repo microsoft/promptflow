@@ -9,6 +9,7 @@ from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
 from filelock import FileLock
 from pytest_mock import MockerFixture
+from sdk_cli_test.recording_utilities import pf_recording_mode
 
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
@@ -65,7 +66,7 @@ def env_with_secrets_config_file():
 
 @pytest.fixture
 def azure_open_ai_connection() -> AzureOpenAIConnection:
-    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+    if pf_recording_mode() == "replay":
         return AzureOpenAIConnection(
             api_key="dummy_key",
             api_base="dummy_base",

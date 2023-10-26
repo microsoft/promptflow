@@ -8,12 +8,20 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Dict, OrderedDict
+from typing import Any, Dict, OrderedDict
 
 from promptflow._internal import ToolProvider, tool
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
+
+from .constants import PF_RECORDING_MODE
+
+PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
+
+
+def pf_recording_mode() -> str:
+    return os.getenv(PF_RECORDING_MODE, "")
 
 
 class RecordStorage:
@@ -123,19 +131,26 @@ def just_return(toolType: str, *args, **kwargs) -> str:
     return ToolRecord().completion(toolType, *args, **kwargs)
 
 
-def record_node_run(run_info: NodeRunInfo, flow_folder: Path) -> None:
-    """Persist node run record to local storage."""
-    if os.environ.get("PF_RECORDING_MODE", None) == "record":
-        for api_call in run_info.api_calls:
-            hashDict = {}
-            if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
-                prompt_tpl = api_call["inputs"]["prompt"]
-                prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
+def _record_node_run(run_info: NodeRunInfo, flow_folder: Path, api_call: Dict[str, Any]) -> None:
+    hashDict = {}
+    if "name" in api_call and api_call["name"].startswith("AzureOpenAI"):
+        prompt_tpl = api_call["inputs"]["prompt"]
+        prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
 
-                for keyword in prompt_tpl_inputs:
-                    if keyword in api_call["inputs"]:
-                        hashDict[keyword] = api_call["inputs"][keyword]
-                hashDict["prompt"] = prompt_tpl
-                hashDict = collections.OrderedDict(sorted(hashDict.items()))
-                item = serialize(run_info)
-                RecordStorage.set_record(flow_folder, hashDict, str(item["output"]))
+        for keyword in prompt_tpl_inputs:
+            if keyword in api_call["inputs"]:
+                hashDict[keyword] = api_call["inputs"][keyword]
+        hashDict["prompt"] = prompt_tpl
+        hashDict = collections.OrderedDict(sorted(hashDict.items()))
+        item = serialize(run_info)
+        RecordStorage.set_record(flow_folder, hashDict, str(item["output"]))
+
+
+def record_node_run(run_info: Any, flow_folder: Path) -> None:
+    """Persist node run record to local storage."""
+    if isinstance(run_info, dict):
+        for api_call in run_info["api_calls"]:
+            _record_node_run(run_info, flow_folder, api_call)
+    else:
+        for api_call in run_info.api_calls:
+            _record_node_run(run_info, flow_folder, api_call)

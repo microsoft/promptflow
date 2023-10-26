@@ -5,6 +5,8 @@ import pytest
 
 from promptflow._core.operation_context import OperationContext
 
+from ..recording_utilities import pf_recording_mode
+
 
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
 @pytest.mark.e2etest
@@ -55,7 +57,7 @@ def test_swagger(flow_serving_client):
     }
 
 
-@pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
+@pytest.mark.usefixtures("flow_serving_client", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.e2etest
 def test_user_agent(flow_serving_client):
     operation_context = OperationContext.get_instance()
@@ -64,7 +66,7 @@ def test_user_agent(flow_serving_client):
 
 
 @pytest.mark.skipif(
-    os.environ.get("PF_RECORDING_MODE", None) == "replay",
+    pf_recording_mode() == "replay",
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
@@ -82,7 +84,7 @@ def test_serving_api(flow_serving_client):
 
 
 @pytest.mark.skipif(
-    os.environ.get("PF_RECORDING_MODE", None) == "replay",
+    pf_recording_mode() == "replay",
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.usefixtures("evaluation_flow_serving_client", "setup_local_connection")
@@ -96,7 +98,7 @@ def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
 
 
 @pytest.mark.skipif(
-    os.environ.get("PF_RECORDING_MODE", None) == "replay",
+    pf_recording_mode() == "replay",
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest
@@ -110,7 +112,7 @@ def test_unknown_api(flow_serving_client):
 
 
 @pytest.mark.skipif(
-    os.environ.get("PF_RECORDING_MODE", None) == "replay",
+    pf_recording_mode() == "replay",
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest
@@ -160,7 +162,7 @@ def test_stream_llm_chat(
 
 
 @pytest.mark.skipif(
-    os.environ.get("PF_RECORDING_MODE", None) == "replay",
+    pf_recording_mode() == "replay",
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest
@@ -225,7 +227,7 @@ def test_stream_python_stream_tools(
 
 
 @pytest.mark.skipif(
-    os.environ.get("PF_RECORDING_MODE", None) == "replay",
+    pf_recording_mode() == "replay",
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest

@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 from types import GeneratorType
 
@@ -8,6 +7,8 @@ import pytest
 from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
+
+from ..recording_utilities import pf_recording_mode
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -20,7 +21,9 @@ FLOW_RESULT_KEYS = ["category", "evidence"]
 _client = PFClient()
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
+@pytest.mark.usefixtures(
+    "use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg", "mock_for_recordings"
+)
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
@@ -38,10 +41,6 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in record mode, TODO, no strong type conneciton support.",
-    )
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
@@ -101,7 +100,7 @@ class TestFlowTest:
         assert result == "connection_value is MyCustomConnection: True"
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in record mode, TODO, record should support streaming output.",
     )
     def test_pf_test_with_streaming_output(self):
@@ -158,10 +157,6 @@ class TestFlowTest:
             _client.test(flow=f"{FLOWS_DIR}/web_classification_with_invalid_additional_include")
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
-    @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
-        reason="Skip this test in record mode, TODO, replay should support symbolic.",
-    )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
         inputs = {
             "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
@@ -176,7 +171,7 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in replay mode, TODO, replay should support exceptions.",
     )
     def test_pf_flow_test_with_exception(self, capsys):
@@ -201,7 +196,7 @@ class TestFlowTest:
         assert "mock exception" in str(exception.value)
 
     @pytest.mark.skipif(
-        os.environ.get("PF_RECORDING_MODE", None) == "replay",
+        pf_recording_mode() == "replay",
         reason="Skip this test in record mode, TODO, record should support single node.",
     )
     def test_node_test_with_connection_input(self):

@@ -1,7 +1,7 @@
 import json
 import os
 from functools import partial
-from pathlib import Path, PathLike
+from pathlib import Path
 from typing import Union
 
 import pytest
@@ -11,7 +11,6 @@ from promptflow import PFClient
 from promptflow._sdk._constants import ConnectionType
 from promptflow._sdk._errors import ConnectionNotFoundError
 from promptflow._sdk._serving.app import create_app as create_serving_app
-from promptflow._sdk._utils import record_node_run
 from promptflow._sdk.entities import AzureOpenAIConnection as AzureOpenAIConnectionEntity
 from promptflow._sdk.entities._connection import CustomConnection, _Connection
 from promptflow._sdk.operations._local_storage_operations import NodeRunRecord
@@ -26,10 +25,11 @@ from promptflow.executor._errors import ResolveToolError
 from promptflow.executor._tool_resolver import ResolvedTool, ToolType
 from promptflow.executor.flow_executor import LineResult
 
-from .tool_record import just_return
+from .recording_utilities import just_return, pf_recording_mode, record_node_run
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 
@@ -86,7 +86,7 @@ _connection_setup = False
 @pytest.fixture
 def setup_local_connection(local_client):
     global _connection_setup
-    if os.environ.get("PF_RECORDING_MODE", None) == "replay":
+    if pf_recording_mode() == "replay":
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     for name, _dct in connection_dict.items():
@@ -155,8 +155,11 @@ def serving_client_python_stream_tools(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) -> None:
-    # dummy_tracker = RunTracker.init_dummy()
+def mock_for_recordings(request: pytest.FixtureRequest, mocker: MockerFixture) -> None:
+    recording_folder: Path = RECORDINGS_TEST_CONFIGS_ROOT / request.cls.__name__
+    if pf_recording_mode() == "record":
+        recording_folder.mkdir(parents=True, exist_ok=True)
+
     def mock_update_run_func(self, run_info):
         run_id = run_info.run_id
         run_info.api_calls = self._collect_traces_from_nodes(run_id)
@@ -165,7 +168,10 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
         run_info.system_metrics.update(self.collect_metrics(child_run_infos, self.OPENAI_AGGREGATE_METRICS))
         run_info.system_metrics["total_tokens"] = 0
 
-    mocker.patch("promptflow._core.run_tracker.RunTracker._update_flow_run_info_with_node_runs", mock_update_run_func)
+    if pf_recording_mode() == "replay":
+        mocker.patch(
+            "promptflow._core.run_tracker.RunTracker._update_flow_run_info_with_node_runs", mock_update_run_func
+        )
 
     def mock_persist_node_run(self, run_info: NodeRunInfo) -> None:
         node_run_record = NodeRunRecord.from_run_info(run_info)
@@ -175,16 +181,17 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
-        record_node_run(node_run_record.run_info, Path("./storage_record"))
+        record_node_run(node_run_record.run_info, recording_folder)
 
-    mocker.patch(
-        "promptflow._sdk.operations._local_storage_operations.LocalStorageOperations.persist_node_run",
-        mock_persist_node_run,
-    )
+    if pf_recording_mode() == "record":
+        mocker.patch(
+            "promptflow._sdk.operations._local_storage_operations.LocalStorageOperations.persist_node_run",
+            mock_persist_node_run,
+        )
 
     def mock_flowoperations_test(
         self,
-        flow: Union[str, PathLike],
+        flow: Union[str, os.PathLike],
         *,
         inputs: dict = None,
         variant: str = None,
@@ -199,12 +206,12 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
         :param flow: path to flow directory to test
         :param inputs: Input data for the flow test
         :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
-           if not specified.
+        if not specified.
         :param node: If specified it will only test this node, else it will test the flow.
         :param environment_variables: Environment variables to set by specifying a property path and value.
-           Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
-           The value reference to connection keys will be resolved to the actual value,
-           and all environment variables specified will be set into os.environ.
+        Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
+        The value reference to connection keys will be resolved to the actual value,
+        and all environment variables specified will be set into os.environ.
         : param allow_generator_output: Whether return streaming output when flow has streaming output.
         :return: Executor result
         """
@@ -227,7 +234,8 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
                     environment_variables=environment_variables,
                     stream=True,
                 )
-                record_node_run(result, Path("./storage_record"))
+                record_node_run(result, recording_folder)
+                return result
             else:
                 result_flow_test: LineResult = submitter.flow_test(
                     inputs=flow_inputs,
@@ -235,16 +243,19 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
                     stream_log=stream_log,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
-                record_node_run(result_flow_test.run_info, Path("./storage_record"))
+                record_node_run(result_flow_test.run_info, recording_folder)
+                return result_flow_test
 
-    mocker.mock("promptflow.azure.operations._flow_operations.FlowOperations._test", mock_flowoperations_test)
+    if pf_recording_mode() == "record":
+        mocker.patch("promptflow._sdk.operations._flow_operations.FlowOperations._test", mock_flowoperations_test)
 
-    def mock_bulkresult_get_openai_metrics():
+    def mock_bulkresult_get_openai_metrics(self):
         # Some tests request the metrics in replay mode.
         total_metrics = {"total_tokens": 0, "duration": 0}
         return total_metrics
 
-    mocker.mock("promptflow.executor._result.BulkResult.get_openai_metrics", mock_bulkresult_get_openai_metrics)
+    if pf_recording_mode() == "replay":
+        mocker.patch("promptflow.executor._result.BulkResult.get_openai_metrics", mock_bulkresult_get_openai_metrics)
 
     def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         # in replay mode, replace original tool with just_return tool
@@ -255,7 +266,7 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
         ):
             prompt_tpl = self._load_source_content(node)
             prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, self._working_dir)
+            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, recording_folder)
             return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
         else:
             return None
@@ -274,12 +285,10 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
             elif node.type is ToolType.PROMPT:
                 return self._resolve_prompt_node(node)
             elif node.type is ToolType.LLM:
-                if os.environ.get("PF_RECORDING_MODE", None) == "replay":
-                    resolved_tool = _resolve_replay_node(self, node, convert_input_types=convert_input_types)
-                    if resolved_tool is None:
-                        resolved_tool = self._resolve_llm_node(node, convert_input_types=convert_input_types)
-                    return resolved_tool
-                return self._resolve_llm_node(node, convert_input_types=convert_input_types)
+                resolved_tool = _resolve_replay_node(self, node, convert_input_types=convert_input_types)
+                if resolved_tool is None:
+                    resolved_tool = self._resolve_llm_node(node, convert_input_types=convert_input_types)
+                return resolved_tool
             elif node.type is ToolType.CUSTOM_LLM:
                 if node.source.type == ToolSourceType.PackageWithPrompt:
                     resolved_tool = self._resolve_package_node(node, convert_input_types=convert_input_types)
@@ -294,9 +303,11 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
                 raise ResolveToolError(node_name=node.name, target=e.target, module=e.module) from e
             raise ResolveToolError(node_name=node.name) from e
 
-    mocker.mock(
-        "promptflow.executor._tool_resolver.ToolResolver.resolve_tool_by_node", mock_toolresolver_resolve_tool_by_node
-    )
+    if pf_recording_mode() == "replay":
+        mocker.patch(
+            "promptflow.executor._tool_resolver.ToolResolver.resolve_tool_by_node",
+            mock_toolresolver_resolve_tool_by_node,
+        )
 
     def mock_get_local_connections_from_executable(executable, client):
         connection_names = executable.get_connection_names()
@@ -311,6 +322,7 @@ def mock_run_tracker_update_flow_run_info_with_node_runs(mocker: MockerFixture) 
                 return {}
         return result
 
-    mocker.mock(
-        "promptflow._sdk._utils.get_local_connections_from_executable", mock_get_local_connections_from_executable
-    )
+    if pf_recording_mode() == "replay":
+        mocker.patch(
+            "promptflow._sdk._utils.get_local_connections_from_executable", mock_get_local_connections_from_executable
+        )
