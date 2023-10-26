@@ -359,6 +359,8 @@ class LocalStorageOperations(AbstractRunStorage):
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+                # In addition to the output jsonl files, there may be multimedia files in the output folder,
+                # so we should skip them.
                 if line_run_record_file.suffix.lower() != ".jsonl":
                     continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
