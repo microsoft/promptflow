@@ -37,6 +37,13 @@ def create_run_against_multi_line_data(client) -> Run:
     )
 
 
+def create_run_against_multi_line_data_without_llm(client: PFClient) -> Run:
+    return client.run(
+        flow=f"{FLOWS_DIR}/print_env_var",
+        data=f"{DATAS_DIR}/env_var_names.jsonl",
+    )
+
+
 def create_run_against_run(client, run: Run) -> Run:
     return client.run(
         flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
@@ -775,3 +782,12 @@ class TestFlowRun:
             "line_number": [0],
             "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
         }
+
+    def test_executor_logs_in_batch_run_logs(self, pf: PFClient) -> None:
+        run = create_run_against_multi_line_data_without_llm(pf)
+        local_storage = LocalStorageOperations(run=run)
+        logs = local_storage.logger.get_logs()
+        # below warning is printed by executor before the batch run executed
+        # the warning message results from we do not use column mapping
+        # so it is expected to be printed here
+        assert "Starting run without column mapping may lead to unexpected results." in logs

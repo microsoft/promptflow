@@ -52,7 +52,8 @@ pf flow test --flow . --inputs text='The phone number (321) 654-0987 is no longe
 
 - create run
 ```bash
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping entity_type='${data.entity_type}' text='${data.text}' --stream
 ```
 
-
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.

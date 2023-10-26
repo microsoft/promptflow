@@ -1,0 +1,38 @@
+inputs:
+  chat_history:
+    type: list
+    default:
+    - inputs:
+        outputs:
+          answer: answer to the first question
+        question:
+        - the first question
+        - data:image/jpg;path: logo.jpg
+    - inputs:
+        outputs:
+          answer: answer to the second question
+        question:
+        - the second question
+        - data:image/png;path: logo_2.png
+    is_chat_history: true
+  question:
+    type: list
+    default:
+    - the third question
+    - data:image/jpg;path: logo.jpg
+    - data:image/png;path: logo_2.png
+    is_chat_input: true
+outputs:
+  output:
+    type: string
+    reference: ${mock_chat_node.output}
+    is_chat_output: true
+nodes:
+- name: mock_chat_node
+  type: python
+  source:
+    type: code
+    path: mock_chat.py
+  inputs:
+    chat_history: ${inputs.chat_history}
+    question: ${inputs.question}

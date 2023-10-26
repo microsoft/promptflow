@@ -64,7 +64,7 @@ Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${ru
 
 `--run`
 
-Referenced flow run name. For example, you can run an evaluation flow against an existing run. For example, "pfazure run create --flow evaluation_flow_dir --run existing_bulk_run".
+Referenced flow run name. For example, you can run an evaluation flow against an existing run. For example, "pfazure run create --flow evaluation_flow_dir --run existing_bulk_run --column-mapping url='${data.url}'".
 
 `--variant`
 

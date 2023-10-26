@@ -13,6 +13,8 @@ from pathlib import Path
 from jinja2 import Environment, Template, meta
 
 from promptflow._sdk._constants import LOGGER_NAME
+from promptflow.contracts.flow import Flow as ExecutableFlow
+from promptflow._sdk.operations._flow_operations import FlowOperations
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
@@ -224,15 +226,15 @@ class StreamlitFileGenerator(BaseGenerator):
     def __init__(self, flow_name, flow_dag_path):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
+        self.executable = ExecutableFlow.from_yaml(
+            flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
+        )
+        self.is_chat_flow, self.chat_history_input_name, _ = FlowOperations._is_chat_flow(self.executable)
 
     @property
     def flow_inputs(self):
-        from promptflow.contracts.flow import Flow as ExecutableFlow
-
-        executable = ExecutableFlow.from_yaml(
-            flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
-        )
-        return {flow_input: (value.default, value.type.value) for flow_input, value in executable.inputs.items()}
+        return {flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
+                if not value.is_chat_history}
 
     @property
     def flow_inputs_params(self):
@@ -249,7 +251,8 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path"]
+        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow",
+                "chat_history_input_name"]
 
 
 class ChatFlowDAGGenerator(BaseGenerator):
