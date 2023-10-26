@@ -94,15 +94,15 @@ Example: `--set property1.property2=<value>`.
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
 
 ### pfazure run list
 
@@ -136,15 +136,15 @@ default value: 50
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
 
 ### pfazure run show
 
@@ -165,15 +165,15 @@ Name of the run.
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
 
 ### pfazure run stream
 
@@ -194,15 +194,15 @@ Name of the run.
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
 
 ### pfazure run show-details
 
@@ -223,15 +223,15 @@ Name of the run.
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
 
 ### pfazure run show-metrics
 
@@ -252,15 +252,15 @@ Name of the run.
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
 
 ### pfazure run visualize
 
@@ -281,12 +281,115 @@ Name of the run.
 
 `--subscription`
 
-Subscription id, required when pass run id.
+Subscription id, required when there is no default value from `az configure`.
 
 `--resource-group -g`
 
-Resource group name, required when pass run id.
+Resource group name, required when there is no default value from `az configure`.
 
 `--workspace-name -w`
 
-Workspace name, required when pass run id.
+Workspace name, required when there is no default value from `az configure`.
+
+### pfazure run archive
+
+Archive a run.
+
+```bash
+pfazure run archive --name
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Parameters
+
+`--name -n`
+
+Name of the run.
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
+
+
+### pfazure run restore
+
+Restore a run.
+
+```bash
+pfazure run restore --name
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Parameters
+
+`--name -n`
+
+Name of the run.
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
+
+
+### pfazure run update
+
+Update a run's metadata, such as `display name`, `description` and `tags`.
+
+```bash
+pfazure run update --name
+                    [--set display_name="<value>" description="<value>" tags.key="<value>"]
+                    [--subscription]
+                    [--resource-group]
+                    [--workspace-name]
+```
+
+#### Examples
+
+Set `display name`, `description` and `tags`:
+
+```bash
+pfazure run update --name <run_name> --set display_name="<value>" description="<value>" tags.key="<value>"
+```
+
+
+#### Parameters
+
+`--name -n`
+
+Name of the run.
+
+`--set`
+
+Set meta information of the run, like `display_name`, `description` or `tags`. Example: --set <key>=<value>.
+
+`--subscription`
+
+Subscription id, required when there is no default value from `az configure`.
+
+`--resource-group -g`
+
+Resource group name, required when there is no default value from `az configure`.
+
+`--workspace-name -w`
+
+Workspace name, required when there is no default value from `az configure`.
