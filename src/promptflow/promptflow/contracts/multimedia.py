@@ -21,9 +21,10 @@ class PFBytes(bytes):
         self._hash = hashlib.sha1(data).hexdigest()[:8]
         self._mime_type = mime_type.lower()
 
-    def to_base64(self):
+    def to_base64(self, with_type: bool = False):
         """Returns the base64 representation of the PFBytes."""
-
+        if with_type:
+            return f"data:{self._mime_type};base64," + base64.b64encode(self).decode("utf-8")
         return base64.b64encode(self).decode("utf-8")
 
 

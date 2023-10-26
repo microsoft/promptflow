@@ -31,7 +31,7 @@ def _get_extension_from_mime_type(mime_type: str):
     return ext
 
 
-def _is_multimedia_dict(multimedia_dict: dict):
+def is_multimedia_dict(multimedia_dict: dict):
     if len(multimedia_dict) != 1:
         return False
     key = list(multimedia_dict.keys())[0]
@@ -96,7 +96,7 @@ def _create_image_from_dict(image_dict: dict):
     for k, v in image_dict.items():
         format, resource = _get_multimedia_info(k)
         if resource == "path":
-            return _create_image_from_file(v, mime_type=f"image/{format}")
+            return _create_image_from_file(Path(v), mime_type=f"image/{format}")
         elif resource == "base64":
             return _create_image_from_base64(v, mime_type=f"image/{format}")
         elif resource == "url":
@@ -122,7 +122,7 @@ def create_image(value: any):
     if isinstance(value, PFBytes):
         return value
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             return _create_image_from_dict(value)
         else:
             raise InvalidImageInput(
@@ -175,8 +175,8 @@ def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_data_to_base64(value: Any):
-    to_base64_funcs = {PFBytes: PFBytes.to_base64}
+def convert_multimedia_data_to_base64(value: Any, with_type=False):
+    to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type})}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
@@ -207,7 +207,7 @@ def load_multimedia_data_recursively(value: Any):
     if isinstance(value, list):
         return [load_multimedia_data_recursively(item) for item in value]
     elif isinstance(value, dict):
-        if _is_multimedia_dict(value):
+        if is_multimedia_dict(value):
             return _create_image_from_dict(value)
         else:
             return {k: load_multimedia_data_recursively(v) for k, v in value.items()}

@@ -47,6 +47,7 @@ REQUIRES = [
     "opencensus-ext-azure<2.0.0",  # configure opencensus to send telemetry to azure monitor
     "ruamel.yaml>=0.17.35,<0.18.0",  # used to generate connection templates with preserved comments
     "pyarrow>=13.0.0,<14.0.0",  # used to read parquet file with pandas.read_parquet
+    "pillow>=10.1.0,<11.0.0",  # used to generate icon data URI for package tool
 ]
 
 setup(
@@ -80,10 +81,7 @@ setup(
             "azure-ai-ml>=1.11.0,<2.0.0",
             "pyjwt>=2.4.0,<3.0.0",  # requirement of control plane SDK
         ],
-        "executable": [
-            "pyinstaller",
-            "streamlit",
-        ],
+        "executable": ["pyinstaller>=5.13.2", "streamlit>=1.26.0", "streamlit-quill<0.1.0"],
     },
     packages=find_packages(),
     entry_points={

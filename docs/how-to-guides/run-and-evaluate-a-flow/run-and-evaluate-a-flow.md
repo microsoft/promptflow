@@ -28,7 +28,7 @@ Create the run with flow and data, can add `--stream` to stream the run.
 pf run create --flow standard/web-classification --data standard/web-classification/data.jsonl --column-mapping url='${data.url}' --stream 
 ```
 
-Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](./use-column-mapping.md).
+Note `column-mapping` is a mapping from flow input name to specified values, see more details in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 You can also name the run by specifying `--name my_first_run` in above command, otherwise the run name will be generated in a certain pattern which has timestamp inside.
 
@@ -103,7 +103,7 @@ Click the bulk test button on the top of the visual editor to trigger flow test.
 
 ## Evaluate your flow
 
-You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score.
+You can use an evaluation method to evaluate your flow. The evaluation methods are also flows which use Python or LLM etc., to calculate metrics like accuracy, relevance score. Please refer to [Develop evaluation flow](../develop-a-flow/develop-evaluation-flow.md) to learn how to develop an evaluation flow.
 
 In this guide, we use [eval-classification-accuracy](https://github.com/microsoft/promptflow/tree/main/examples/flows/evaluation/eval-classification-accuracy) flow to evaluate. This is a flow illustrating how to evaluate the performance of a classification system. It involves comparing each prediction to the groundtruth and assigns a `Correct` or `Incorrect` grade, and aggregating the results to produce metrics such as `accuracy`, which reflects how good the system is at classifying the data.
 
@@ -118,10 +118,10 @@ In this guide, we use [eval-classification-accuracy](https://github.com/microsof
 
 After the run is finished, you can evaluate the run with below command, compared with the normal run create command, note there are two extra arguments:
 
-- `column-mapping`: A mapping from flow input name to specified data values. Reference [here](./use-column-mapping.md) for detailed information.
+- `column-mapping`: A mapping from flow input name to specified data values. Reference [here](https://aka.ms/pf/column-mapping) for detailed information.
 - `run`: The run name of the flow run to be evaluated.
 
-More details can be found in [Use column mapping](./use-column-mapping.md).
+More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```sh
 pf run create --flow evaluation/eval-classification-accuracy --data standard/web-classification/data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run my_first_run --stream
@@ -161,7 +161,7 @@ After the run is finished, you can evaluate the run with below command, compared
   - If the data column is from your flow output, then it is specified as `${run.outputs.<output_name>}`.
 - `run`: The run name or run instance of the flow run to be evaluated.
 
-More details can be found in [Use column mapping](./use-column-mapping.md).
+More details can be found in [Use column mapping](https://aka.ms/pf/column-mapping).
 
 ```python
 # set eval flow path
@@ -211,24 +211,6 @@ There are actions to trigger local batch runs. To perform an evaluation you can 
 :::
 
 ::::
-
-## How to log metrics
-
-Promptflow supports logging and tracking experiments using `log_metric` function. A metric is a key-value pair that records a single float measure. In a python node, you can log a metric with below code: 
-
-```python
-from promptflow import log_metric, tool
-
-@tool
-def example_log_metrics():
-  metric_key = "accuracy"
-  metric_value = 1.0
-  log_metric(metric_key, metric_value)
-```
-
-After the run is completed, you can run `pf run show-metrics -n <run_name>` to see the metrics.
-
-![img](../../media/how-to-guides/run_show_metrics.png)
 
 ## Next steps
 

@@ -37,6 +37,7 @@ def generate_custom_strong_type_connection_spec(cls, package, package_version):
 
 def generate_custom_strong_type_connection_template(cls, connection_spec, package, package_version):
     connection_template_str = """
+    $schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json
     name: "to_replace_with_connection_name"
     type: custom
     custom_type: {{ custom_type }}
@@ -115,9 +116,9 @@ def extract_comments_mapping(keys, doc):
             type_pattern = rf":type {key}: (.*)"
             key_type = " ".join(re.findall(type_pattern, doc)).rstrip(".")
             if key_type and key_description:
-                comments_map[key] = ", ".join([key_type, key_description])
+                comments_map[key] = " ".join([key_type + " type.", key_description])
             elif key_type:
-                comments_map[key] = key_type
+                comments_map[key] = key_type + " type."
             elif key_description:
                 comments_map[key] = key_description
         except re.error:
