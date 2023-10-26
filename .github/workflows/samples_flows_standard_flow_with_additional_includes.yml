@@ -12,6 +12,9 @@ on:
     paths: [ examples/flows/standard/flow-with-additional-includes/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_flow_with_additional_includes.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest
