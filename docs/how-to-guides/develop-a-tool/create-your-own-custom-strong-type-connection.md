@@ -68,7 +68,7 @@ Make sure that you adhere to the following guidelines:
   ```
 
 ## Develop a flow using package tools with custom strong type connections
-To develop a flow with package tools with custom strong type connections, follow these steps:
+To develop a flow using package tools with custom strong type connections, follow these steps:
 * Step1: Refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package in your local environment.
   > [!Note] Once the new tool package is installed in your local environment, a window reload is necessary. This action ensures that the new tools and custom strong type connections become visible and accessible.
 
@@ -89,7 +89,7 @@ To develop a flow with package tools with custom strong type connections, follow
   ![use_custom_strong_type_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_strong_type_connection_in_flow.png)
 
 ## Develop a flow using script tools with custom strong type connections
-To develop a flow with script tools with custom strong type connections, follow these steps:
+To develop a flow using script tools with custom strong type connections, follow these steps:
 * Step1: Develop a flow with python script tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-script-tool-showcase) as an example.
 * Step2: Using a custom strong type connection in a script tool is slightly different from using it in a package tool. When creating the connection, you will create a `CustomConnection`. Fill in the `keys` and `values` in the connection template.
   ![custom](../../media/how-to-guides/develop-a-tool/custom_connection_template.png)
