@@ -91,7 +91,6 @@ def start():
             """
         }
     )
-    st.set_page_config(layout="wide", page_title="Promptflow App", page_icon=image)
     st.config.set_option("theme.primaryColor", "#0F6CBD")
     st.title("{{flow_name}}")
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
