@@ -62,12 +62,12 @@ class TestConnectionUtils:
             (
                 MyCustomConnectionWithInvalidComments,
                 [
-                    'api_base: "to_replace_with_api_base"  # String, The api base.\n',
-                    'api_key: "to_replace_with_api_key"  # String, The api key.\n',
+                    'api_base: "to_replace_with_api_base"  # String type. The api base.\n',
+                    'api_key: "to_replace_with_api_key"  # String type. The api key.\n',
                 ],
             ),
             (MyCustomConnectionMissingTypeComments, ['api_key: "to_replace_with_api_key"  # The api key.']),
-            (MyCustomConnectionMissingParamComments, ['api_key: "to_replace_with_api_key"  # String']),
+            (MyCustomConnectionMissingParamComments, ['api_key: "to_replace_with_api_key"  # String type.']),
         ],
     )
     def test_generate_custom_strong_type_connection_template_with_comments(self, cls, expected_str_in_template):

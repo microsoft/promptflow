@@ -14,6 +14,11 @@ def get_yaml_file(folder_name, root: str = FLOW_ROOT, file_name: str = "flow.dag
     return yaml_file
 
 
+def get_yaml_working_dir(folder_name, root: str = FLOW_ROOT):
+    flow_folder_path = Path(root) / folder_name
+    return flow_folder_path
+
+
 def get_flow_inputs(folder_name, root: str = FLOW_ROOT):
     flow_folder_path = Path(root) / folder_name
     inputs = load_json(flow_folder_path / "inputs.json")

@@ -13,7 +13,7 @@ pf config set <config_name>=<config_value>
 ```
 For example:
 ```shell
-pf config set connection.provider="azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+pf config set connection.provider="azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
 ```
 
 ## Show config
@@ -25,7 +25,7 @@ After running the above config set command, show command will return the followi
 ```json
 {
   "connection": {
-    "provider": "azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
+    "provider": "azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>"
   }
 }
 ```
@@ -40,7 +40,7 @@ Connections will be saved locally. `PFClient`(or `pf connection` commands) will 
 #### full azure machine learning workspace resource id
 Set connection provider to a specific workspace with:
 ```
-connection.provider=azureml:/subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>
+connection.provider=azureml://subscriptions/<your-subscription>/resourceGroups/<your-resourcegroup>/providers/Microsoft.MachineLearningServices/workspaces/<your-workspace>
 ```
 
 When `get` or `list` connections, `PFClient`(or `pf connection` commands) will return workspace connections, and flow will be executed using these workspace connections.

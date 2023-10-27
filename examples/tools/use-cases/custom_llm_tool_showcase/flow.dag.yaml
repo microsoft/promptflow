@@ -1,0 +1,14 @@
+inputs: {}
+outputs:
+  output:
+    type: string
+    reference: ${my_custom_llm_tool.output}
+nodes:
+- name: my_custom_llm_tool
+  type: custom_llm
+  source:
+    type: package_with_prompt
+    tool: my_tool_package.tools.tool_with_custom_llm_type.my_tool
+    path: prompt_template.jinja2
+  inputs:
+    connection: basic_custom_connection

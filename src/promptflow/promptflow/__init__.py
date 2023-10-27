@@ -9,6 +9,8 @@ from promptflow._core.metric_logger import log_metric
 from promptflow._core.tool import ToolProvider, tool
 
 # control plane sdk functions
+from promptflow._sdk._load_functions import load_flow, load_run
+
 from ._sdk._pf_client import PFClient
 from ._version import VERSION
 
@@ -19,6 +21,8 @@ __version__ = VERSION
 
 __all__ = [
     "PFClient",
+    "load_flow",
+    "load_run",
     "log_metric",
     "ToolProvider",
     "tool",

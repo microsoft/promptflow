@@ -71,7 +71,7 @@ Assuming you are in working directory `<path-to-the-sample-repo>/examples/flows/
 Note we pass `--variant` to specify which variant of the node should be running.
 
 ```sh
-pf run create --flow web-classification --data web-classification/data.jsonl --variant '${summarize_text_content.variant_1}' --stream --name my_first_variant_run
+pf run create --flow web-classification --data web-classification/data.jsonl --variant '${summarize_text_content.variant_1}' --column-mapping url='${data.url}' --stream --name my_first_variant_run
 ```
 
 :::
@@ -91,6 +91,7 @@ variant_run = pf.run(
     flow=flow,
     data=data,
     variant="${summarize_text_content.variant_1}",  # use variant 1.
+    column_mapping={"url": "${data.url}"},
 )
 
 pf.stream(variant_run)

@@ -330,8 +330,7 @@ class RunSubmitter:
             # persist snapshot and result
             # snapshot: flow directory and (mapped) inputs
             local_storage.dump_snapshot(flow)
-            local_storage.dump_inputs(mapped_inputs)
-            # result: outputs and metrics
+            # persist inputs, outputs and metrics
             local_storage.persist_result(bulk_result)
             # exceptions
             local_storage.dump_exception(exception=exception, bulk_results=bulk_result)

@@ -24,7 +24,7 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
-from promptflow._utils.multimedia_utils import load_multimedia_data
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
 from promptflow.contracts.run_info import FlowRunInfo, Status
@@ -48,7 +48,7 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DefaultRunStorage, DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -242,6 +242,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
         connections: Optional[dict] = None,
@@ -294,8 +295,10 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -320,7 +323,9 @@ class FlowExecutor:
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
         # TODO: Simplify the logic here
-        run_tracker = RunTracker(DummyRunStorage())
+        sub_dir = "." if output_sub_dir is None else output_sub_dir
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             ToolInvoker.activate(DefaultToolInvoker())
 
@@ -437,7 +442,7 @@ class FlowExecutor:
             )
             logger.error(failed_msg)
 
-    def _exec_batch_with_threads(
+    def _exec_batch_with_process_pool(
         self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
@@ -696,7 +701,7 @@ class FlowExecutor:
         """
         self._node_concurrency = node_concurrency
         inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
-        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value, self._working_dir)
+        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -760,7 +765,7 @@ class FlowExecutor:
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_threads(inputs, run_id, validate_inputs=validate_inputs)
+            line_results = self._exec_batch_with_process_pool(inputs, run_id, validate_inputs=validate_inputs)
             self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
             self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)

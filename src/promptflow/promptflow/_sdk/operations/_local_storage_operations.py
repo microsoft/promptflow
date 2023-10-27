@@ -36,6 +36,7 @@ from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
 
@@ -75,15 +76,18 @@ class LoggerOperations(LogContext):
     def __enter__(self):
         log_path = Path(self.log_path)
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        if log_path.exists():
-            # Clean up previous log content
-            try:
-                with open(log_path, mode="w", encoding=DEFAULT_ENCODING) as file:
-                    file.truncate(0)
-            except Exception as e:
-                logger.warning(f"Failed to clean up the previous log content because {e}")
-        else:
+        if self.run_mode == RunMode.Batch:
             log_path.touch(exist_ok=True)
+        else:
+            if log_path.exists():
+                # for non batch run, clean up previous log content
+                try:
+                    with open(log_path, mode="w", encoding=DEFAULT_ENCODING) as file:
+                        file.truncate(0)
+                except Exception as e:
+                    logger.warning(f"Failed to clean up the previous log content because {e}")
+            else:
+                log_path.touch()
 
         for _logger in self._get_execute_loggers_list():
             for handler in _logger.handlers:
@@ -239,7 +243,14 @@ class LocalStorageOperations(AbstractRunStorage):
             flow_dag = yaml.safe_load(f)
         return flow_dag["inputs"], flow_dag["outputs"]
 
-    def dump_inputs(self, inputs: RunInputs) -> None:
+    def dump_inputs(self, line_results: List[LineResult]) -> None:
+        inputs = []
+        for line_result in line_results:
+            try:
+                inputs.append(line_result.run_info.inputs)
+            except Exception:
+                # ignore when single line doesn't have inputs
+                pass
         df = pd.DataFrame(inputs)
         with open(self._inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=203588
@@ -389,6 +400,7 @@ class LocalStorageOperations(AbstractRunStorage):
             return
         self.dump_outputs(result.outputs)
         self.dump_metrics(result.metrics)
+        self.dump_inputs(result.line_results)
 
     @staticmethod
     def _prepare_folder(path: Union[str, Path]) -> Path:

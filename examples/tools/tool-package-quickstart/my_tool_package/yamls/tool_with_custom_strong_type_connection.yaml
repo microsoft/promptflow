@@ -1,0 +1,15 @@
+my_tool_package.tools.tool_with_custom_strong_type_connection.my_tool:
+  description: This is my tool with custom strong type connection.
+  function: my_tool
+  inputs:
+    connection:
+      custom_type:
+      - MyCustomConnection
+      type:
+      - CustomConnection
+    input_text:
+      type:
+      - string
+  module: my_tool_package.tools.tool_with_custom_strong_type_connection
+  name: Tool With Custom Strong Type Connection
+  type: python
