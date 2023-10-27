@@ -1,8 +1,8 @@
-# Basic flow with package tool using custom strong type connection
-A basic standard flow with package tool that using custom strong type connection.
+# Basic flow with script tool using custom strong type connection
+This is a flow demonstrating the use of a script tool with custom string type connection which provides a secure way to manage credentials for external APIs and data sources, and it offers an improved user-friendly and intellisense experience compared to custom connections.
 
 Tools used in this flow：
-- custom package tool
+- custom `python` tool
 
 Connections used in this flow:
 - custom strong type connection
@@ -18,12 +18,12 @@ pip install -r requirements.txt
 Create connection if you haven't done that.
 ```bash
 # Override keys with --set to avoid yaml file changes
-pf connection create -f my_custom_connection.yml --set secrets.api_key='<your_api_key>' configs.api_base='<your_api_base>'
+pf connection create -f custom.yml --set secrets.api_key='<your_api_key>' configs.api_base='<your_api_base>'
 ```
 
-Ensure you have created `my_custom_connection` connection.
+Ensure you have created `normal_custom_connection` connection.
 ```bash
-pf connection show -n my_custom_connection
+pf connection show -n normal_custom_connection
 ```
 
 ## Run flow
@@ -68,19 +68,5 @@ pf run visualize --name $name
 Run flow with newly created connection.
 
 ```bash
-pf run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream
+pf run create --flow . --data ./data.jsonl --connections my_script_tool.connection=normal_custom_connection --stream
 ```
-
-<!-- ### Run in cloud with connection override
-
-Ensure you have created `my_custom_connection` connection in cloud. Reference [this notebook](../../../tutorials/get-started/quickstart-azure.ipynb) on how to create connections in cloud with UI.
-
-Run flow with connection `my_custom_connection`.
-
-```bash
-# set default workspace
-az account set -s <your_subscription_id>
-az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
-
-pfazure run create --flow . --data ./data.jsonl --connections my_package_tool.connection=my_custom_connection --stream --runtime demo-mir
-``` -->

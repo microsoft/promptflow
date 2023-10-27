@@ -13,7 +13,7 @@ class TestEmbedding:
             deployment_name="text-embedding-ada-002")
         assert len(result) == 1536
 
-    @pytest.mark.skip_if_no_key("open_ai_connection")
+    @pytest.mark.skip_if_no_api_key("open_ai_connection")
     def test_embedding_conn_oai(self, open_ai_connection):
         result = embedding(
             connection=open_ai_connection,
