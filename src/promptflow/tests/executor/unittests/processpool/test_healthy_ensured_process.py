@@ -1,7 +1,7 @@
 import pytest
 
 from multiprocessing import Queue
-from promptflow.executor._line_execution_process_pool import HealthyEnsuredProcess, get_multiprocessing_context
+from promptflow.executor._line_execution_process_pool import HealthyEnsuredProcess
 
 from unittest.mock import patch
 import time
