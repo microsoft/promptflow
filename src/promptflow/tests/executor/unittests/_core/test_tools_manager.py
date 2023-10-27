@@ -1,4 +1,3 @@
-import inspect
 import textwrap
 from pathlib import Path
 from unittest.mock import patch
@@ -7,14 +6,10 @@ import pytest
 from ruamel.yaml import YAML
 
 from promptflow import tool
-from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._core._errors import NotSupported, PackageToolNotFoundError
 from promptflow._core.tools_manager import (
-    ListFunctionResponseError,
     NodeSourcePathEmpty,
     ToolLoader,
-    _append_workspace_triple_to_func_input_params,
-    _validate_response_type,
     collect_package_tools,
     collect_package_tools_and_connections,
     gen_tool_by_source,
@@ -104,41 +99,6 @@ class TestToolLoader:
 @tool
 def sample_tool(input: str):
     return input
-
-
-def mock_func1():
-    pass
-
-
-def mock_func2(input1):
-    pass
-
-
-def mock_func3(input1, input2):
-    pass
-
-
-def mock_func4(input1, input2, **kwargs):
-    pass
-
-
-def mock_func5(input1, input2, subscription_id):
-    pass
-
-
-def mock_func6(input1, input2, subscription_id, resource_group_name, workspace_name):
-    pass
-
-
-def mock_func7(input1, input2, subscription_id, **kwargs):
-    pass
-
-
-def mock_func8(input1, input2, subscription_id, resource_group_name, workspace_name, **kwargs):
-    pass
-
-
-mocked_ws_triple = AzureMLWorkspaceTriad("mock_subscription_id", "mock_resource_group", "mock_workspace_name")
 
 
 @pytest.mark.unittest
@@ -241,201 +201,15 @@ class TestToolsManager:
         expected_template_str = textwrap.dedent(expected_template)
         assert expected_template_str in content
 
-    # TODO: enable this test after new my_tool_package is released
-    @pytest.mark.skip("Will enable this test after new my_tool_package is released")
-    def test_gen_dynamic_list(self):
+    def test_gen_dynamic_list(self, mocked_ws_triple, mock_module_with_list_func):
         from promptflow._sdk._utils import _gen_dynamic_list
 
         func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
         func_kwargs = {"prefix": "My"}
         result = _gen_dynamic_list({"func_path": func_path, "func_kwargs": func_kwargs})
-        assert len(result) == 10
+        assert len(result) == 2
 
         # test gen_dynamic_list with ws_triple.
-        with patch(
-            "promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple
-        ) as mock_method:
+        with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
             result = _gen_dynamic_list({"func_path": func_path, "func_kwargs": func_kwargs})
-            mock_method.assert_called_once()
-            assert len(result) == 10
-
-    @pytest.mark.parametrize(
-        "func, func_input_params_dict, ws_triple_dict, expected_res",
-        [
-            (mock_func1, None, None, {}),
-            (mock_func2, {"input1": "value1"}, None, {"input1": "value1"}),
-            (mock_func3, {"input1": "value1", "input2": "value2"}, None, {"input1": "value1", "input2": "value2"}),
-            (mock_func3, {"input1": "value1"}, None, {"input1": "value1"}),
-            (mock_func3, {"input1": "value1"}, mocked_ws_triple._asdict(), {"input1": "value1"}),
-            (
-                mock_func4,
-                {"input1": "value1"},
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "subscription_id": "mock_subscription_id",
-                    "resource_group_name": "mock_resource_group",
-                    "workspace_name": "mock_workspace_name",
-                },
-            ),
-            (
-                mock_func5,
-                {"input1": "value1"},
-                mocked_ws_triple._asdict(),
-                {"input1": "value1", "subscription_id": "mock_subscription_id"},
-            ),
-            (
-                mock_func5,
-                {"input1": "value1", "subscription_id": "input_subscription_id"},
-                mocked_ws_triple._asdict(),
-                {"input1": "value1", "subscription_id": "input_subscription_id"},
-            ),
-            (
-                mock_func6,
-                {"input1": "value1"},
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "subscription_id": "mock_subscription_id",
-                    "resource_group_name": "mock_resource_group",
-                    "workspace_name": "mock_workspace_name",
-                },
-            ),
-            (
-                mock_func6,
-                {
-                    "input1": "value1",
-                    "workspace_name": "input_workspace_name",
-                },
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "workspace_name": "input_workspace_name",
-                    "subscription_id": "mock_subscription_id",
-                    "resource_group_name": "mock_resource_group",
-                },
-            ),
-            (
-                mock_func7,
-                {"input1": "value1"},
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "subscription_id": "mock_subscription_id",
-                    "resource_group_name": "mock_resource_group",
-                    "workspace_name": "mock_workspace_name",
-                },
-            ),
-            (
-                mock_func7,
-                {"input1": "value1", "subscription_id": "input_subscription_id"},
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "subscription_id": "input_subscription_id",
-                    "resource_group_name": "mock_resource_group",
-                    "workspace_name": "mock_workspace_name",
-                },
-            ),
-            (
-                mock_func8,
-                {"input1": "value1"},
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "subscription_id": "mock_subscription_id",
-                    "resource_group_name": "mock_resource_group",
-                    "workspace_name": "mock_workspace_name",
-                },
-            ),
-            (
-                mock_func8,
-                {
-                    "input1": "value1",
-                    "subscription_id": "input_subscription_id",
-                    "resource_group_name": "input_resource_group",
-                    "workspace_name": "input_workspace_name",
-                },
-                mocked_ws_triple._asdict(),
-                {
-                    "input1": "value1",
-                    "subscription_id": "input_subscription_id",
-                    "resource_group_name": "input_resource_group",
-                    "workspace_name": "input_workspace_name",
-                },
-            ),
-        ],
-    )
-    def test_append_workspace_triple_to_func_input_params(
-        self, func, func_input_params_dict, ws_triple_dict, expected_res
-    ):
-        func_sig_params = inspect.signature(func).parameters
-        actual_combined_inputs = _append_workspace_triple_to_func_input_params(
-            func_sig_params=func_sig_params,
-            func_input_params_dict=func_input_params_dict,
-            ws_triple_dict=ws_triple_dict,
-        )
-        assert actual_combined_inputs == expected_res
-
-    @pytest.mark.parametrize(
-        "res",
-        [
-            (
-                [
-                    {
-                        "value": "fig0",
-                        "display_value": "My_fig0",
-                        "hyperlink": "https://www.google.com/search?q=fig0",
-                        "description": "this is 0 item",
-                    },
-                    {
-                        "value": "kiwi1",
-                        "display_value": "My_kiwi1",
-                        "hyperlink": "https://www.google.com/search?q=kiwi1",
-                        "description": "this is 1 item",
-                    },
-                ]
-            ),
-            ([{"value": "fig0"}, {"value": "kiwi1"}]),
-            ([{"value": "fig0", "display_value": "My_fig0"}, {"value": "kiwi1", "display_value": "My_kiwi1"}]),
-            (
-                [
-                    {"value": "fig0", "display_value": "My_fig0", "hyperlink": "https://www.google.com/search?q=fig0"},
-                    {
-                        "value": "kiwi1",
-                        "display_value": "My_kiwi1",
-                        "hyperlink": "https://www.google.com/search?q=kiwi1",
-                    },
-                ]
-            ),
-            ([{"value": "fig0", "hyperlink": "https://www.google.com/search?q=fig0"}]),
-            (
-                [
-                    {"value": "fig0", "display_value": "My_fig0", "description": "this is 0 item"},
-                    {
-                        "value": "kiwi1",
-                        "display_value": "My_kiwi1",
-                        "hyperlink": "https://www.google.com/search?q=kiwi1",
-                        "description": "this is 1 item",
-                    },
-                ]
-            ),
-        ],
-    )
-    def test_validate_response_type(self, res):
-        _validate_response_type(response=res, f="mock_func")
-
-    @pytest.mark.parametrize(
-        "res, err_msg",
-        [
-            (None, "mock_func response can not be empty."),
-            ([], "mock_func response can not be empty."),
-            (["a", "b"], "mock_func response must be a list of dict. a is not a dict."),
-            ({"a": "b"}, "mock_func response must be a list."),
-            ([{"a": "b"}], "mock_func response dict must have 'value' key."),
-            ([{"value": 1 + 2j}], "mock_func response dict value \\(1\\+2j\\) is not json serializable."),
-        ],
-    )
-    def test_validate_response_type_error(self, res, err_msg):
-        with pytest.raises(ListFunctionResponseError, match=err_msg):
-            _validate_response_type(response=res, f="mock_func")
+            assert len(result) == 2

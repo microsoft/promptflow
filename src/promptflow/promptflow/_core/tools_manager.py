@@ -10,7 +10,7 @@ import traceback
 import types
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import pkg_resources
 import yaml
@@ -21,15 +21,20 @@ from promptflow._core.tool_meta_generator import (
     collect_tool_function_in_module,
     generate_prompt_tool,
     generate_python_tool,
-    load_function_from_function_path,
     load_python_module_from_file,
 )
 from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_spec,
     generate_custom_strong_type_connection_template,
 )
-from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
-from promptflow._utils.utils import is_json_serializable
+from promptflow._utils.tool_utils import (
+    DynamicListError,
+    append_workspace_triple_to_func_input_params,
+    function_to_tool_definition,
+    get_prompt_param_name_from_func,
+    load_function_from_function_path,
+    validate_dynamic_list_func_response_type,
+)
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -172,64 +177,6 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             )
 
 
-def _append_workspace_triple_to_func_input_params(
-    func_sig_params: Dict, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str]
-):
-    """Append workspace triple to func input params.
-
-    :param func_sig_params: function signature parameters, full params.
-    :param func_input_params_dict: user input param key-values for dynamic list function.
-    :param ws_triple_dict: workspace triple dict, including subscription_id, resource_group_name, workspace_name.
-    :return: combined func input params.
-    """
-    # append workspace triple to func input params if any below condition are met:
-    # 1. func signature has kwargs param.
-    # 2. func signature has param named 'subscription_id','resource_group_name','workspace_name'.
-    ws_triple_dict = ws_triple_dict if ws_triple_dict is not None else {}
-    func_input_params_dict = func_input_params_dict if func_input_params_dict is not None else {}
-    has_kwargs_param = any([param.kind == inspect.Parameter.VAR_KEYWORD for _, param in func_sig_params.items()])
-    if has_kwargs_param is False:
-        # keep only params that are in func signature. Or run into error when calling func.
-        avail_ws_info_dict = {k: v for k, v in ws_triple_dict.items() if k in set(func_sig_params.keys())}
-    else:
-        avail_ws_info_dict = ws_triple_dict
-
-    # if ws triple key is in func input params, it means user has provided value for it,
-    # do not expect implicit override.
-    combined_func_input_params = dict(avail_ws_info_dict, **func_input_params_dict)
-    return combined_func_input_params
-
-
-def _validate_response_type(response: Any, f: str):
-    """Verify response type is correct.
-
-    The response is a list of items. Each item is a dict with the following keys:
-        - value: for backend use. Required.
-        - display_value: for UI display. Optional.
-        - hyperlink: external link. Optional.
-        - description: information icon tip. Optional.
-    The response can not be empty.
-    """
-    if not response:
-        raise ListFunctionResponseError(f"{f} response can not be empty.")
-    if not isinstance(response, List):
-        raise ListFunctionResponseError(f"{f} response must be a list.")
-    for item in response:
-        if not isinstance(item, Dict):
-            raise ListFunctionResponseError(f"{f} response must be a list of dict. {item} is not a dict.")
-        if "value" not in item:
-            raise ListFunctionResponseError(f"{f} response dict must have 'value' key.")
-        for key, value in item.items():
-            if not isinstance(key, str):
-                raise ListFunctionResponseError(f"{f} response dict key must be a string. {key} is not a string.")
-            if not is_json_serializable(value):
-                raise ListFunctionResponseError(f"{f} response dict value {value} is not json serializable.")
-            if not isinstance(value, (str, int, float, list, Dict)):
-                raise ListFunctionResponseError(
-                    f"{f} response dict value must be a string, int, float, list or dict. {value} is not supported."
-                )
-
-
 def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
     func = load_function_from_function_path(func_path)
     # get param names from func signature.
@@ -238,7 +185,7 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
     for input_param in func_input_params_dict:
         if input_param not in func_sig_params:
             raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
-    combined_func_input_params = _append_workspace_triple_to_func_input_params(
+    combined_func_input_params = append_workspace_triple_to_func_input_params(
         func_sig_params, func_input_params_dict, ws_triple_dict
     )
     try:
@@ -246,7 +193,7 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
     except Exception as e:
         raise DynamicListError(f"Error when calling function {func_path}: {e}")
     # validate response is of required format. Throw correct message if response is empty.
-    _validate_response_type(result, func.__name__)
+    validate_dynamic_list_func_response_type(result, func.__name__)
 
     return result
 
@@ -540,17 +487,6 @@ def register_api_method(provider_method):
 def register_connections(connection_classes: Union[type, List[type]]):
     connection_classes = [connection_classes] if not isinstance(connection_classes, list) else connection_classes
     connections.update({cls.__name__: cls for cls in connection_classes})
-
-
-class DynamicListError(UserErrorException):
-    """Base exception raised when failed to validate dynamic list function."""
-
-    def __init__(self, message):
-        super().__init__(message, target=ErrorTarget.FUNCTION_PATH)
-
-
-class ListFunctionResponseError(DynamicListError):
-    pass
 
 
 class CustomToolSourceLoadError(SystemErrorException):
