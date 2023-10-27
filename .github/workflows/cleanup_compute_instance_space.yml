@@ -24,8 +24,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-      - name: Generate config.json
-        run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
         working-directory: examples
         run: |
@@ -45,4 +43,6 @@ jobs:
       - name: Delete folders
         working-directory: ${{ github.workspace }}/src/promptflow/tests/test_configs/flows/delete_folder
         run: |
+          az account set -s $test_workspace_sub_id
+          az configure --defaults group=$test_workspace_rg workspace=$test_workspace_name
           pfazure run create --flow . --data ./data.jsonl --runtime example-runtime-ci
