@@ -6,6 +6,12 @@ steps:
     uses: jlumbroso/free-disk-space@main
     with:
       tool-cache: false
+      android: true
+      dotnet: false
+      haskell: true
+      large-packages: false
+      docker-images: true
+      swap-storage: true
   - name: Checkout repository
     uses: actions/checkout@v3
   - name: Generate config.json
