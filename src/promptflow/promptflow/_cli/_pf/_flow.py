@@ -39,7 +39,7 @@ from promptflow._cli._pf._run import exception_handler
 from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inject_sys_path, list_of_dict_to_dict
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
-from promptflow._sdk._utils import dump_flow_result
+from promptflow._sdk._utils import dump_flow_result, copy_tree_respect_template_and_ignore_file
 from promptflow.exceptions import UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
@@ -218,6 +218,9 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
+    add_param_ui = lambda parser: parser.add_argument(  # noqa: E731
+        "--ui", action="store_true", help=argparse.SUPPRESS
+    )
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
     add_params = [
@@ -229,6 +232,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
         add_param_inputs,
         add_param_environment_variables,
         add_param_multi_modal,
+        add_param_ui,
         add_param_config,
     ] + logging_params
     activate_action(
@@ -382,7 +386,7 @@ def test_flow(args):
     if args.inputs:
         inputs.update(list_of_dict_to_dict(args.inputs))
 
-    if args.multi_modal:
+    if args.multi_modal or args.ui:
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
                 from streamlit.web import cli as st_cli
@@ -394,10 +398,13 @@ def test_flow(args):
                 )
             flow = load_flow(args.flow)
 
-            script_path = [os.path.join(temp_dir, "main.py"), os.path.join(temp_dir, "utils.py")]
-            for target in script_path:
-                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path,
-                                       target=target).generate_to_file(target)
+            script_path = os.path.join(temp_dir, "main.py")
+            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
+            copy_tree_respect_template_and_ignore_file(flow.flow_dag_path.parent / "utils.py",
+                                                       Path(os.path.join(temp_dir, "utils.py")))
+            copy_tree_respect_template_and_ignore_file(flow.flow_dag_path.parent / "logo.png",
+                                                       Path(os.path.join(temp_dir, "logo.png")))
+
             sys.argv = ["streamlit", "run", os.path.join(temp_dir, "main.py"), "--global.developmentMode=false",
                         "--client.toolbarMode=viewer", "--browser.gatherUsageStats=false"]
             st_cli.main()

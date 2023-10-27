@@ -75,7 +75,7 @@ def start():
     image = Image.open(Path(__file__).parent / "logo.png")
     st.set_page_config(
         layout="wide",
-        page_title="Promptflow App",
+        page_title="{{flow_name}} - Promptflow App",
         page_icon=image,
         menu_items={
             'About': """
@@ -85,6 +85,7 @@ def start():
             """
         }
     )
+    # Set primary button color here since button color of the same form need to be identical in streamlit, but we only need Run/Chat button to be blue.
     st.config.set_option("theme.primaryColor", "#0F6CBD")
     st.title("{{flow_name}}")
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
@@ -117,12 +118,7 @@ def start():
 {% endfor %}
 
         cols = st.columns(7)
-
-{% if is_chat_flow %}
-{{ ' ' * indent_level * 2 }}submit_bt = cols[0].form_submit_button(label='Chat', type='primary')
-{% else %}
-{{ ' ' * indent_level * 2 }}submit_bt = cols[0].form_submit_button(label='Run', type='primary')
-{% endif %}
+        submit_bt = cols[0].form_submit_button(label='{{label}}', type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
         if submit_bt:

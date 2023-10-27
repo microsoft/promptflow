@@ -223,14 +223,13 @@ class FlowMetaYamlGenerator(BaseGenerator):
 
 
 class StreamlitFileGenerator(BaseGenerator):
-    def __init__(self, flow_name, flow_dag_path, target):
+    def __init__(self, flow_name, flow_dag_path):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
         self.is_chat_flow, self.chat_history_input_name, _ = FlowOperations._is_chat_flow(self.executable)
-        self.target = Path(target)
 
     @property
     def flow_inputs(self):
@@ -244,16 +243,20 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def tpl_file(self):
-        return SERVE_TEMPLATE_PATH / (self.target.name + ".jinja2")
+        return SERVE_TEMPLATE_PATH / "main.py.jinja2"
 
     @property
     def flow_path(self):
         return self.flow_dag_path.as_posix()
 
     @property
+    def label(self):
+        return "Chat" if self.is_chat_flow else "Run"
+
+    @property
     def entry_template_keys(self):
         return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow",
-                "chat_history_input_name"]
+                "chat_history_input_name", "label"]
 
 
 class ChatFlowDAGGenerator(BaseGenerator):
