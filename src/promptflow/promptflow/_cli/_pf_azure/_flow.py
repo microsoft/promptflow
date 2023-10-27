@@ -154,11 +154,13 @@ def download_flow(
 
 
 def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
-    result = {}
+    result, tags = {}, {}
     for param in params:
-        result.update(param)
         for k, v in param.items():
             if k.startswith("tags."):
-                k = k.replace("tags.", "")
+                tag_key = k.replace("tags.", "")
+                tags[tag_key] = v
+                continue
             result[k] = v
+    result["tags"] = tags
     return result
