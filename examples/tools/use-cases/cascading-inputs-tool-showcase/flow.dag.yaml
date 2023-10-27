@@ -4,13 +4,13 @@ inputs: {}
 outputs:
   user_id:
     type: string
-    reference: ${Tool_with_Enabled_By_Value.output}
+    reference: ${Tool_with_Cascading_Inputs.output}
 nodes:
-- name: Tool_with_Enabled_By_Value
+- name: Tool_with_Cascading_Inputs
   type: python
   source:
     type: package
     tool: my_tool_package.tools.tool_with_enabled_by_value.my_tool
   inputs:
     user_type: student
-    student_id: "123"
+    student_id: "student_id"
