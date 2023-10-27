@@ -82,14 +82,14 @@ You are a AI which helps Customers answer questions.
 user:
 """ + completion_prompt
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_completion(self, gpt2_provider):
         response = gpt2_provider.call(
             self.completion_prompt,
             API.COMPLETION)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_completion_with_deploy(self, gpt2_provider):
         response = gpt2_provider.call(
             self.completion_prompt,
@@ -132,7 +132,7 @@ user:
 Required keys are: endpoint_url,model_family."""
         assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.secrets['endpoint_api_key']
