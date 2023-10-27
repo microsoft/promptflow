@@ -13,7 +13,7 @@ We will provide a hands-on tool example to showcase the implementation of cascad
 The availability of "student_id" and "teacher_id" inputs is determined by the value of the "user_type" input in this tool .
 Below shows how to support this cascading setting in both tool code and tool yaml.
 
-1. Develop your tool within the def function, referring to [tool_with_enabled_by_value.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_enabled_by_value.py) as an example. You need to pay attention to some key points:
+1. Develop your tool within the def function, referring to [tool_with_cascading_inputs.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_cascading_inputs.py) as an example. You need to pay attention to some key points:
     * Use the @tool decorator to identify the function as a tool.
     * When an input should only take on a certain set of fixed values, an Enum class such as "UserType" as shown in the following example can be created.
     * Within the tool's logic, various inputs may be used depending on the value of input "user_type".
@@ -31,7 +31,7 @@ class UserType(str, Enum):
 
 @tool
 def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
-    """This is a dummy function to support enabled by feature.
+    """This is a dummy function to support cascading inputs.
 
     :param user_type: user type, student or teacher.
     :param student_id: student id.
@@ -49,10 +49,10 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
 ```
 
 2. Following the guide [Create and Use Tool Package](create-and-use-tool-package.md) to generate a tool yaml for your tool, then you need to update this tool yaml manually to transition from common inputs to cascading inputs.
-Referring to the [tool_with_enabled_by_value.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_enabled_by_value.yaml) as an example, You need incorporate two configurations for cascading inputs: "enabled_by" and "enabled_by_value". The "enabled_by_value" in one input means that this input is enabled and displayed by the value of the input referred to in the "enabled_by" attribute.
+Referring to the [tool_with_cascading_inputs.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) as an example, You need incorporate two configurations for cascading inputs: "enabled_by" and "enabled_by_value". The "enabled_by_value" in one input means that this input is enabled and displayed by the value of the input referred to in the "enabled_by" attribute.
 
 ```yaml
-my_tool_package.tools.tool_with_enabled_by_value.my_tool:
+my_tool_package.tools.tool_with_cascading_inputs.my_tool:
   function: my_tool
   inputs:
     user_type:
@@ -73,9 +73,9 @@ my_tool_package.tools.tool_with_enabled_by_value.my_tool:
         - string
       enabled_by: user_type
       enabled_by_value: [teacher]
-  module: my_tool_package.tools.tool_with_enabled_by_value
-  name: My Tool with Enabled By Value
-  description: This is my tool with enabled by value
+  module: my_tool_package.tools.tool_with_cascading_inputs
+  name: My Tool with Cascading Inputs
+  description: This is my tool with cascading inputs
   type: python
 ```
 > Note: The "enabled_by_value" in the tool yaml is of list type, implying that a single input can be enabled by multiple values from the dependent input.
