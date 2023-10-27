@@ -29,5 +29,5 @@ if __name__ == "__main__":
         start()
     else:
         main_script = os.path.join(os.path.dirname(__file__), "main.py")
-        sys.argv = ["streamlit", "run", main_script, "--global.developmentMode=false", "--client.toolbarMode=viewer"]
+        sys.argv = ["streamlit", "run", main_script, "--global.developmentMode=false", "--client.toolbarMode=viewer", "browser.gatherUsageStats=false"]
         st_cli.main(prog_name="streamlit")
