@@ -1,22 +1,20 @@
 # Use Cascading Inputs in Tool
 
-Cascading settings between inputs are frequently used in situations where the selection in one input field determines what subsequent inputs should be shown.
-This approach help in creating a more efficient, user-friendly, and error-free input process.
-This article will guide you through the process of implementing cascading settings for tool inputs.
+Cascading settings between inputs are frequently used in situations where a selection in one input field determines what subsequent inputs should be shown. This approach helps create a more efficient, user-friendly, and error-free input process. This article will guide you through the process of implementing cascading settings for tool inputs.
 
 ## Prerequisites
 Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
 
 
 ## Create tool with cascading inputs
-We will provide a hands-on tool example to showcase the implementation of cascading settings between inputs within a tool. 
-The availability of "student_id" and "teacher_id" inputs is determined by the value of the "user_type" input in this tool .
+We will provide a hands-on tool example to demonstrate the implementation of cascading settings between inputs within a tool. 
+In this tool, the availability of 'student_id' and 'teacher_id' inputs is determined by the value of the 'user_type' input. 
 Below shows how to support this cascading setting in both tool code and tool yaml.
 
 1. Develop your tool within the def function, referring to [tool_with_cascading_inputs.py](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_cascading_inputs.py) as an example. You need to pay attention to some key points:
-    * Use the @tool decorator to identify the function as a tool.
-    * When an input should only take on a certain set of fixed values, an Enum class such as "UserType" as shown in the following example can be created.
-    * Within the tool's logic, various inputs may be used depending on the value of input "user_type".
+    * Use the `@tool` decorator to identify the function as a tool.
+    * When an input should only take on a certain set of fixed values, an Enum class such as `UserType` as shown in the following example can be created.
+    * Within the tool's logic, various inputs may be used depending on the value of the `user_type` input.
 
 ```python
 from enum import Enum
@@ -48,8 +46,8 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
         raise Exception("Invalid user.")
 ```
 
-2. Following the guide [Create and Use Tool Package](create-and-use-tool-package.md) to generate a tool yaml for your tool, then you need to update this tool yaml manually to transition from common inputs to cascading inputs.
-Referring to the [tool_with_cascading_inputs.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) as an example, You need incorporate two configurations for cascading inputs: "enabled_by" and "enabled_by_value". The "enabled_by_value" in one input means that this input is enabled and displayed by the value of the input referred to in the "enabled_by" attribute.
+2. Follow the guide [Create and Use Tool Package](create-and-use-tool-package.md) to generate a tool yaml for your tool. Afterwards, manually update this tool yaml to transition from common inputs to cascading inputs.
+Referring to the [tool_with_cascading_inputs.yaml](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) as an example, You need incorporate two configurations for cascading inputs: `enabled_by` and `enabled_by_value`. The `enabled_by_value` in one input means that this input is enabled and displayed by the value of the input referred to in the `enabled_by` attribute.
 
 ```yaml
 my_tool_package.tools.tool_with_cascading_inputs.my_tool:
@@ -78,16 +76,16 @@ my_tool_package.tools.tool_with_cascading_inputs.my_tool:
   description: This is my tool with cascading inputs
   type: python
 ```
-> Note: The "enabled_by_value" in the tool yaml is of list type, implying that a single input can be enabled by multiple values from the dependent input.
+> Note: The `enabled_by_value` in the tool yaml is of list type, implying that a single input can be enabled by multiple values from the dependent input.
 
 ## Use your tool from VSCode Extension
-After you build and share the tool package, you can use your tool from VSCode Extension according to [Create and Use Tool Package](create-and-use-tool-package.md).
-Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/cascading-inputs-tool-showcase) in VS Code extension. 
+Once you've built and shared your tool, you can use your tool from VSCode Extension according to [Create and Use Tool Package](create-and-use-tool-package.md).
+Here we use [an existing flow](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/cascading-inputs-tool-showcase) to demonstrate the experience.
 
-Before you select the "user_type" input, both "student_id" and "teacher_id" inputs are disabled and hidden.
+Before you select the `user_type` input, both `student_id` and `teacher_id` inputs are disabled and hidden.
 ![before_user_type_selected.png](../../media/how-to-guides/develop-a-tool/before_user_type_selected.png)
 
-However, after you select the "user_type" input, the corresponding input is enabled and shown.
+However, once you select the `user_type` input, the corresponding input will be enabled and displayed.
 ![after_user_type_selected_with_student.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected_with_student.png)
 ![after_user_type_selected_with_teacher.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected_with_teacher.png)
 
@@ -95,7 +93,7 @@ However, after you select the "user_type" input, the corresponding input is enab
 
 ## FAQ
 ### How to use multi-layer cascading inputs in tool?
-If you are dealing with multiple levels of cascading inputs, you can effectively manage the dependencies between them by using the "enabled_by" and "enabled_by_value" attributes. Here's a hypothetical YAML example.
+If you are dealing with multiple levels of cascading inputs, you can effectively manage the dependencies between them by using the `enabled_by` and `enabled_by_value` attributes. Here's a hypothetical YAML example.
 ```yaml
 my_tool_package.tools.tool_with_multi_layer_cascading_inputs.my_tool:
   function: my_tool
@@ -135,4 +133,4 @@ my_tool_package.tools.tool_with_multi_layer_cascading_inputs.my_tool:
   description: This is my tool with multi-layer cascading inputs
   type: python
 ```
-When the tool is run, the inputs will be displayed in a cascading manner. As each input is filled out, any inputs that are dependent on it and have their "enabled_by_value" condition met will be enabled.
+When the tool is run, the inputs will be displayed in a cascading manner. As each input is filled out, any inputs that are dependent on it and have their `enabled_by_value` condition met will be enabled.
