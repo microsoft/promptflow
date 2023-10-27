@@ -12,6 +12,9 @@ on:
     paths: [ examples/flows/standard/web-classification/**, examples/*requirements.txt, examples/flows/standard/flow-with-additional-includes/**, examples/flows/standard/flow-with-symlinks/** ,.github/workflows/samples_flows_standard_web_classification.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest
