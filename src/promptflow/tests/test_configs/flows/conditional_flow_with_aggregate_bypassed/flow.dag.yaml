@@ -1,8 +1,11 @@
 inputs:
-  text:
+  case:
     type: string
-    default: A
+    default: double
     is_chat_input: false
+  value:
+    type: int
+    default: 1
 outputs:
   output:
     type: string
@@ -10,36 +13,43 @@ outputs:
     evaluation_only: false
     is_chat_output: false
 nodes:
-- name: switch_case_A
+- name: double
   type: python
   source:
     type: code
-    path: switch_case_A.py
+    path: double.py
   inputs:
-    input: ${inputs.text}
+    input: ${inputs.value}
   activate:
-    when: ${inputs.text}
-    is: A
+    when: ${inputs.case}
+    is: double
   aggregation: false
-- name: switch_case_B
+- name: square
   type: python
   source:
     type: code
-    path: switch_case_B.py
+    path: square.py
   inputs:
-    input: ${inputs.text}
+    input: ${inputs.value}
   activate:
-    when: ${inputs.text}
-    is: B
+    when: ${inputs.case}
+    is: square
   aggregation: false
-- name: aggregation_node
+- name: aggregation_double
   type: python
   source:
     type: code
     path: aggregation_node.py
   inputs:
-    input1: ${switch_case_A.output}
-    input2: ${switch_case_B.output}
+    input: ${double.output}
+  aggregation: true
+- name: aggregation_square
+  type: python
+  source:
+    type: code
+    path: aggregation_node.py
+  inputs:
+    input: ${square.output}
   aggregation: true
 - name: collect_node
   type: python
@@ -47,6 +57,6 @@ nodes:
     type: code
     path: collect_node.py
   inputs:
-    input1: ${switch_case_A.output}
-    input2: ${switch_case_B.output}
+    input1: ${double.output}
+    input2: ${square.output}
   aggregation: false

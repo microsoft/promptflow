@@ -87,18 +87,11 @@ class TestExecutorActivate:
     def test_aggregate_bypassed_nodes(self, dev_connections):
         flow_folder = "conditional_flow_with_aggregate_bypassed"
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections)
-        results = executor.exec_line(get_flow_inputs(flow_folder))
+        results = executor.exec_bulk(get_bulk_inputs(flow_folder))
+        expected_result = get_flow_expected_result(flow_folder)
+        expected_status_summary = get_flow_expected_status_summary(flow_folder)
+        self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
 
-        # Validate the flow status
-        assert results.run_info.status == Status.Completed
-
-        # Validate the node status
-        assert results.node_run_infos["switch_case_A"].status == Status.Completed
-        assert results.node_run_infos["switch_case_B"].status == Status.Bypassed
-
-        # Validate the input of aggregation node
-        assert results.aggregation_inputs["${switch_case_A.output}"] is not None
-        assert results.aggregation_inputs["${switch_case_B.output}"] is None
-
-        # Validate the output of aggregation node
-        assert results.output["output"] == "hello A"
+        # Validate the aggregate result
+        assert results.aggr_results.node_run_infos["aggregation_double"].output == 3
+        assert results.aggr_results.node_run_infos["aggregation_square"].output == 12.5

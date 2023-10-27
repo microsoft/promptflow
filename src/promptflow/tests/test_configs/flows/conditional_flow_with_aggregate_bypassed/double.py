@@ -4,5 +4,5 @@ from promptflow import tool
 # Adding type to arguments and return value will help the system show the types properly
 # Please update the function name/signature per need
 @tool
-def my_python_tool(input: str) -> str:
-  return input
+def double(input: int) -> int:
+  return 2*input
