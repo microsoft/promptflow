@@ -16,7 +16,7 @@ class FlowJobType:
 
 # Use this storage since it's the storage used by notebook
 DEFAULT_STORAGE = "workspaceworkingdirectory"
-PROMPTFLOW_FILE_SHARE_DIR = "Promptflows"
+PROMPTFLOW_FILE_SHARE_DIR = "promptflow"
 
 CLOUD_RUNS_PAGE_SIZE = 25  # align with UX
 

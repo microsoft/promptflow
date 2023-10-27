@@ -3,6 +3,7 @@
 # ---------------------------------------------------------
 import os
 from collections import defaultdict
+from functools import cached_property
 from multiprocessing import Lock
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -49,6 +50,10 @@ class FlowFileStorageClient(FileStorageClient):
                 self.directory_client.create_directory()
             except ResourceExistsError:
                 pass
+
+    @cached_property
+    def file_share_prefix(self) -> str:
+        return f"Users/{self._user_alias}/{PROMPTFLOW_FILE_SHARE_DIR}"
 
     def upload(
         self,
@@ -193,6 +198,10 @@ class FlowFileStorageClient(FileStorageClient):
                     subdirectory_client=subdir,
                     show_progress=show_progress,
                 )
+
+    def _check_file_share_directory_exist(self, dest) -> bool:
+        """Check if the file share directory exists."""
+        return self.directory_client.get_subdirectory_client(dest).exists()
 
     def _delete_file_share_directory(self, dir_client) -> None:
         """Recursively delete a directory with content in the file share."""

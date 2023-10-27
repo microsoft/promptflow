@@ -6,12 +6,12 @@ import os.path
 from contextlib import contextmanager
 from os import PathLike
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from promptflow._sdk._constants import DAG_FILE_NAME
 from promptflow.azure._ml import AdditionalIncludesMixin, Code
 
-from ..._sdk._utils import PromptflowIgnoreFile
+from ..._sdk._utils import PromptflowIgnoreFile, load_yaml
 from .._constants._flow import DEFAULT_STORAGE
 
 # pylint: disable=redefined-builtin, unused-argument, f-string-without-interpolation
@@ -26,15 +26,36 @@ class Flow(AdditionalIncludesMixin):
         path: Union[str, PathLike],
         **kwargs,
     ):
-        absolute_path = Path(path).resolve().absolute()
+        absolute_path = self._validate_flow_from_source(path)
+        # flow snapshot folder
+        self.code = absolute_path.parent
+        self._code_uploaded = False
+        self.path = absolute_path.name
+        self._flow_dict = self._load_flow_yaml(absolute_path)
+        self.name = self.code.name
+        self.description = self._flow_dict.get("description", None)
+        self.tags = self._flow_dict.get("tags", None)
+
+    def _validate_flow_from_source(self, source: Union[str, PathLike]) -> Path:
+        """Validate flow from source.
+
+        :param source: The source of the flow.
+        :type source: Union[str, PathLike]
+        """
+        absolute_path = Path(source).resolve().absolute()
         if absolute_path.is_dir():
             absolute_path = absolute_path / DAG_FILE_NAME
         if not absolute_path.exists():
             raise ValueError(f"Flow file {absolute_path.as_posix()} does not exist.")
-        # flow snapshot folder
-        self.code = absolute_path.parent.as_posix()
-        self._code_uploaded = False
-        self.path = absolute_path.name
+        return absolute_path
+
+    def _load_flow_yaml(self, path: Union[str, Path]) -> Dict:
+        """Load flow yaml file.
+
+        :param path: The path of the flow yaml file.
+        :type path: str
+        """
+        return load_yaml(path)
 
     # region AdditionalIncludesMixin
     @contextmanager
