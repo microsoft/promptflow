@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+import traceback
 from pathlib import Path
 from PIL import Image
 import streamlit as st
@@ -33,6 +35,10 @@ def start():
         if "history" in st.session_state:
             return st.session_state.history
         return []
+
+
+    def click_button():
+        st.session_state.clicked = True
 
 
     def submit(**kwargs) -> None:
@@ -106,26 +112,44 @@ def start():
 {% endfor %}
 
         cols = st.columns(7)
+        if "clicked" not in st.session_state:
+            st.session_state.clicked = False
+
+        if "error_message" in st.session_state:
+            st.error(st.session_state.error_message)
+
 {% if is_chat_flow %}
-{{ ' ' * indent_level * 2 }}submit_bt = cols[0].form_submit_button(label='Chat', type='primary')
+{{ ' ' * indent_level * 2 }}submit_bt = cols[0].form_submit_button(label='Chat', type='primary', on_click=click_button, disabled=st.session_state.clicked)
 {% else %}
-{{ ' ' * indent_level * 2 }}submit_bt = cols[0].form_submit_button(label='Run', type='primary')
+{{ ' ' * indent_level * 2 }}submit_bt = cols[0].form_submit_button(label='Run', type='primary', on_click=click_button, disabled=st.session_state.clicked)
 {% endif %}
-        clear_bt = cols[1].form_submit_button(label='Clear')
+        clear_bt = cols[1].form_submit_button(label='Clear', on_click=click_button, disabled=st.session_state.clicked)
 
         if submit_bt:
             with st.spinner("Loading..."):
+                try:
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_html_content({{flow_input}})
+{{ ' ' * indent_level * 5 }}{{flow_input}} = parse_html_content({{flow_input}})
 {% elif value_type == "image" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
+{{ ' ' * indent_level * 5 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
 {% endif %}
 {% endfor %}
-
-                submit({{flow_inputs_params}})
+                    submit({{flow_inputs_params}})
+                    if "error_message" in st.session_state:
+                        st.session_state.pop("error_message")
+                except Exception:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    traceback.print_exception(exc_type, exc_value, exc_traceback, file=sys.stdout)
+                    traceback_info = traceback.format_exc()
+                    st.session_state.error_message = f"{traceback_info}"
+                finally:
+                    st.session_state.clicked = False
+                    st.rerun()
         if clear_bt:
             clear_chat()
+            st.session_state.clicked = False
+            st.rerun()
 
 if __name__ == "__main__":
     start()
