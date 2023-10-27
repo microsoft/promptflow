@@ -206,7 +206,6 @@ class TestLineExecutionProcessPool:
         ],
     )
     def test_process_set_environment_variable_failed(self, flow_folder, dev_connections):
-
         with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
             mock_logger.warning.return_value = None
             os.environ["PF_BATCH_METHOD"] = "test"
