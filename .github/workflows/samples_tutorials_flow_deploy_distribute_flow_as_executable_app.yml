@@ -6,11 +6,14 @@
 name: samples_tutorials_flow_deploy_distribute_flow_as_executable_app
 on:
   schedule:
-    - cron: "10 19 * * *" # Every day starting at 3:10 BJT
+    - cron: "59 21 * * *" # Every day starting at 5:59 BJT
   pull_request:
     branches: [ main ]
     paths: [ examples/**, .github/workflows/samples_tutorials_flow_deploy_distribute_flow_as_executable_app.yml ]
   workflow_dispatch:
+
+env:
+  IS_IN_CI_PIPELINE: "true"
 
 jobs:
   samples_readme_ci:
@@ -23,7 +26,7 @@ jobs:
         with:
           python-version: "3.9"
       - name: Generate config.json
-        run: echo ${{ secrets.TEST_WORKSPACE_CONFIG_JSON }} > ${{ github.workspace }}/examples/config.json
+        run: echo '${{ secrets.TEST_WORKSPACE_CONFIG_JSON_CANARY }}' > ${{ github.workspace }}/examples/config.json
       - name: Prepare requirements
         working-directory: examples
         run: |
@@ -74,7 +77,7 @@ jobs:
           export aoai_api_endpoint=${{ secrets.AOAI_API_ENDPOINT_TEST }}
           export test_workspace_sub_id=${{ secrets.TEST_WORKSPACE_SUB_ID }}
           export test_workspace_rg=${{ secrets.TEST_WORKSPACE_RG }}
-          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME }}
+          export test_workspace_name=${{ secrets.TEST_WORKSPACE_NAME_CANARY }}
           bash bash_script.sh
       - name: Pip List for Debug
         if : ${{ always() }}

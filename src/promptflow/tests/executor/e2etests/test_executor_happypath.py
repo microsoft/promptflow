@@ -391,3 +391,9 @@ class TestExecutor:
             validate_inputs=validate_inputs,
         )
         assert type(bulk_result.line_results[0].run_info.inputs["text"]) is expected_type
+
+    def test_executor_for_script_tool_with_init(self, dev_connections):
+        executor = FlowExecutor.create(get_yaml_file("script_tool_with_init"), dev_connections)
+        flow_result = executor.exec_line({"input": "World"})
+        assert flow_result.run_info.status == Status.Completed
+        assert flow_result.output["output"] == "Hello World"
