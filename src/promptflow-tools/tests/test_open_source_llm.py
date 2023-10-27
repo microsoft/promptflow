@@ -97,14 +97,14 @@ user:
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_chat(self, gpt2_provider):
         response = gpt2_provider.call(
             self.chat_prompt,
             API.CHAT)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_chat_with_deploy(self, gpt2_provider):
         response = gpt2_provider.call(
             self.chat_prompt,
@@ -112,7 +112,7 @@ user:
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_chat_with_max_length(self, gpt2_provider):
         response = gpt2_provider.call(
             self.chat_prompt,
@@ -121,7 +121,7 @@ user:
         # GPT-2 doesn't take this parameter
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['endpoint_url']
@@ -145,7 +145,7 @@ Required keys are: endpoint_url,model_family."""
 Required keys are: endpoint_api_key.""")
         assert exc_info.value.error_codes == "UserError/ToolValidationError/OpenSourceLLMKeyValidationError".split("/")
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['model_family']
@@ -209,7 +209,7 @@ user:
             + "gallery that contain 'Chat' in the name.")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMUserError".split("/")
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_llama_endpoint_miss(self, gpt2_custom_connection):
         tmp = copy.deepcopy(gpt2_custom_connection)
         tmp.configs['endpoint_url'] += 'completely/real/endpoint'
@@ -223,7 +223,7 @@ user:
             + "HTTPError: HTTP Error 424: Failed Dependency")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
 
-    @pytest.mark.skip_if_no_key("gpt2_custom_connection")
+    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_llama_deployment_miss(self, gpt2_provider):
         with pytest.raises(OpenSourceLLMOnlineEndpointError) as exc_info:
             gpt2_provider.call(self.completion_prompt,
@@ -234,14 +234,14 @@ user:
             + "HTTPError: HTTP Error 404: Not Found")
         assert exc_info.value.error_codes == "UserError/OpenSourceLLMOnlineEndpointError".split("/")
 
-    @pytest.mark.skip_if_no_key("open_source_llm_ws_service_connection")
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             response = os_llm.call(self.chat_prompt, API.CHAT)
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("open_source_llm_ws_service_connection")
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_chat_endpoint_name_with_deployment(self, chat_endpoints_provider):
         for endpoint_name in chat_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
@@ -249,14 +249,14 @@ user:
                 response = os_llm.call(self.chat_prompt, API.CHAT, deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("open_source_llm_ws_service_connection")
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
             response = os_llm.call(self.completion_prompt, API.COMPLETION)
             assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("open_source_llm_ws_service_connection")
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_endpoint_name_with_deployment(self, completion_endpoints_provider):
         for endpoint_name in completion_endpoints_provider:
             os_llm = OpenSourceLLM(endpoint_name=endpoint_name)
@@ -264,12 +264,12 @@ user:
                 response = os_llm.call(self.completion_prompt, API.COMPLETION, deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
+    @pytest.mark.skip_if_no_api_key("llama_chat_custom_connection")
     def test_open_source_llm_llama_chat(self, llama_chat_provider):
         response = llama_chat_provider.call(self.chat_prompt, API.CHAT)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_key("llama_chat_custom_connection")
+    @pytest.mark.skip_if_no_api_key("llama_chat_custom_connection")
     def test_open_source_llm_llama_chat_history(self, llama_chat_provider):
         chat_history_prompt = """user:
 * Given the following conversation history and the users next question, answer the next question.
