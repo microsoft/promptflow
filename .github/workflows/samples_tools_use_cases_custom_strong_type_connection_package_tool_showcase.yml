@@ -12,6 +12,9 @@ on:
     paths: [ examples/tools/use-cases/custom-strong-type-connection-package-tool-showcase/**, examples/*requirements.txt, .github/workflows/samples_tools_use_cases_custom_strong_type_connection_package_tool_showcase.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest
