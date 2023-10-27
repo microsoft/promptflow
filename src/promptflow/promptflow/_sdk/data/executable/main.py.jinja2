@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from PIL import Image
 import streamlit as st
 from streamlit_quill import st_quill
 
@@ -71,8 +72,8 @@ def start():
         result = invoker.invoke(data)
         return result
 
-
-    st.set_page_config(layout="wide")
+    image = Image.open(Path(__file__).parent / "logo.png")
+    st.set_page_config(layout="wide", page_title="Promptflow App", page_icon=image)
     st.config.set_option("theme.primaryColor", "#0F6CBD")
     st.title("{{flow_name}}")
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
