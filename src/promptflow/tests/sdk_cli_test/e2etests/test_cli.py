@@ -26,7 +26,7 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_operations import RunOperations
 from promptflow._utils.context_utils import _change_working_dir
 
-from ..recording_utilities import pf_recording_mode
+from ..recording_utilities import is_replaying, recording_or_replaying
 
 FLOWS_DIR = "./tests/test_configs/flows"
 RUNS_DIR = "./tests/test_configs/runs"
@@ -68,7 +68,7 @@ class TestCli:
         out, err = capfd.readouterr()
         assert out == "0.0.1\n"
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode.")
     def test_basic_flow_run(self) -> None:
         # fetch std out
         f = io.StringIO()
@@ -121,7 +121,7 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode.")
     def test_submit_run_with_yaml(self):
         run_id = str(uuid.uuid4())
         f = io.StringIO()
@@ -189,7 +189,7 @@ class TestCli:
         assert outputs["output"][0] == local_aoai_connection.api_base
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in replay mode, TODO, replay should support local_alt_aoai_connection.",
     )
     def test_connection_overwrite(self, local_alt_aoai_connection):
@@ -234,7 +234,7 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode.")
     def test_create_with_set(self, local_client):
         run_id = str(uuid.uuid4())
         display_name = "test_run"
@@ -278,7 +278,7 @@ class TestCli:
         assert run.tags == {"key": "val"}
         assert run.description == description
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode.")
     def test_pf_flow_test(self):
         run_pf_command(
             "flow",
@@ -310,7 +310,7 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode.")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode.")
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "web_classification").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
@@ -377,9 +377,6 @@ class TestCli:
                 )
             outerr = capsys.readouterr()
             assert f"Cannot find the variant invalid_variant for {node_name}." in outerr.out
-            copy_file(
-                Path(temp_dir) / "storage_record.json", Path(FLOWS_DIR) / "web_classification" / "storage_record.json"
-            )
 
     def test_pf_flow_test_single_node(self):
         node_name = "fetch_text_content_from_url"
@@ -495,7 +492,7 @@ class TestCli:
         )
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_pf_flow_test_with_additional_includes(self):
@@ -528,7 +525,7 @@ class TestCli:
         )
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
@@ -613,7 +610,7 @@ class TestCli:
         assert (flow_path.parent / flow_dict["environment"]["python_requirements_txt"]).exists()
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in replay mode, Cannot test exceptions.",
     )
     def test_flow_with_exception(self, capsys):
@@ -889,7 +886,7 @@ class TestCli:
                 assert not (flow_folder / "openai.yaml").exists()
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in record mode, instable.",
     )
     def test_flow_chat(self, monkeypatch, capsys):
@@ -997,7 +994,7 @@ class TestCli:
         assert details["flow_runs"][0]["inputs"]["chat_history"] == expect_chat_history
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in record mode, TODO, record should support chat.",
     )
     def test_flow_test_with_user_defined_chat_history(self, monkeypatch, capsys):
@@ -1036,7 +1033,7 @@ class TestCli:
         assert "chat_history is required in the inputs of chat flow" in outerr.out
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in replay mode, Cannot test inputs in fake inputs.",
     )
     def test_flow_test_inputs(self, capsys, caplog):
@@ -1166,7 +1163,9 @@ class TestCli:
             )
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
-    @pytest.mark.skipif(pf_recording_mode() != "", reason="Skip this test in record mode, missing deps.")
+    @pytest.mark.skipif(
+        recording_or_replaying(), reason="Skip this test in record replay, missing deps as sdk_cli test."
+    )
     @pytest.mark.skipif(sys.platform == "win32", reason="Raise Exception: Process terminated with exit code 4294967295")
     def test_flow_build_executable(self):
         source = f"{FLOWS_DIR}/web_classification/flow.dag.yaml"

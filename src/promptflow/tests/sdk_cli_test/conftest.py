@@ -13,13 +13,14 @@ from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
 from promptflow._utils.utils import environment_variable_overwrite
 
 from .recording_utilities import (
+    is_recording,
+    is_replaying,
     mock_bulkresult_get_openai_metrics,
     mock_flowoperations_test,
     mock_get_local_connections_from_executable,
     mock_persist_node_run,
     mock_toolresolver_resolve_tool_by_node,
     mock_update_run_func,
-    pf_recording_mode,
 )
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
@@ -81,7 +82,7 @@ _connection_setup = False
 @pytest.fixture
 def setup_local_connection(local_client):
     global _connection_setup
-    if pf_recording_mode() == "replay":
+    if is_replaying():
         return
     connection_dict = json.loads(open(CONNECTION_FILE, "r").read())
     for name, _dct in connection_dict.items():
@@ -152,7 +153,7 @@ def serving_client_python_stream_tools(mocker: MockerFixture):
 @pytest.fixture
 def mock_for_recordings(request: pytest.FixtureRequest, mocker: MockerFixture) -> None:
     recording_folder: Path = RECORDINGS_TEST_CONFIGS_ROOT / request.cls.__name__
-    if pf_recording_mode() == "record":
+    if is_recording():
         recording_folder.mkdir(parents=True, exist_ok=True)
         mocker.patch(
             "promptflow._sdk.operations._local_storage_operations.LocalStorageOperations.persist_node_run",
@@ -163,7 +164,7 @@ def mock_for_recordings(request: pytest.FixtureRequest, mocker: MockerFixture) -
             mock_flowoperations_test(recording_folder),
         )
 
-    if pf_recording_mode() == "replay":
+    if is_replaying():
         mocker.patch(
             "promptflow._core.run_tracker.RunTracker._update_flow_run_info_with_node_runs", mock_update_run_func
         )

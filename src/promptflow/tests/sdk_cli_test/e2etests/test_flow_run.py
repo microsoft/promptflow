@@ -19,7 +19,7 @@ from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
 from promptflow.executor.flow_executor import InputMappingError
 
-from ..recording_utilities import pf_recording_mode
+from ..recording_utilities import is_replaying, recording_or_replaying
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -78,7 +78,7 @@ class TestFlowRun:
         # TODO: check details
         # df = pf.show_details(baseline, v1, v2)
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode")
     def test_basic_run_bulk(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",
@@ -98,7 +98,7 @@ class TestFlowRun:
         assert ".promptflow" in run.properties["output_path"]
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
@@ -159,7 +159,7 @@ class TestFlowRun:
             )
         assert "Invalid variant format: v, variant should be in format of ${TUNING_NODE.VARIANT}" in str(e.value)
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode")
     def test_basic_evaluation(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
 
@@ -208,7 +208,7 @@ class TestFlowRun:
                 column_mapping=column_mapping,
             )
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode")
     def test_submit_run_from_yaml(self, local_client, pf):
         run_id = str(uuid.uuid4())
         run = create_yaml_run(source=f"{RUNS_DIR}/sample_bulk_run.yaml", params_override=[{"name": run_id}])
@@ -221,7 +221,7 @@ class TestFlowRun:
         )
         assert local_client.runs.get(eval_run.name).status == "Completed"
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode")
     def test_run_with_connection(self, local_client, local_aoai_connection, pf):
         # remove connection file to test connection resolving
         os.environ.pop(PROMPTFLOW_CONNECTIONS)
@@ -267,7 +267,7 @@ class TestFlowRun:
         assert "Connection with name new_connection not found" in str(e.value)
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in replay mode, no strong type conneciton support.",
     )
     def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
@@ -304,7 +304,7 @@ class TestFlowRun:
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Skip this test in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Skip this test in replay mode")
     def test_run_with_connection_overwrite_non_exist(self, local_client, local_aoai_connection, pf):
         # overwrite non_exist connection
         with pytest.raises(Exception) as e:
@@ -364,7 +364,7 @@ class TestFlowRun:
             pf.runs.get(name=run_name)
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
@@ -375,7 +375,7 @@ class TestFlowRun:
         assert run.status == "Completed"
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_connection_overwrite_model(self, local_client, local_aoai_connection):
@@ -385,7 +385,7 @@ class TestFlowRun:
         run = local_client.runs.get(name=run.name)
         assert run.status == "Completed"
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Skip this test in replay mode, expected")
+    @pytest.mark.skipif(is_replaying(), reason="Skip this test in replay mode, expected")
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
         connections = SubmitterHelper.resolve_connections(flow, local_client)
@@ -541,7 +541,7 @@ class TestFlowRun:
         assert "at least one of data or run must be provided" in str(e)
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_get_details(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
@@ -562,7 +562,7 @@ class TestFlowRun:
         assert "line_number" in outputs and "line_number" not in details
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_visualize_run(self, azure_open_ai_connection: AzureOpenAIConnection, pf) -> None:
@@ -673,7 +673,7 @@ class TestFlowRun:
         assert not os.path.exists(run._output_path / LocalStorageFilenames.EXCEPTION)
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_run_local_storage_structure(self, local_client, pf) -> None:
@@ -690,7 +690,7 @@ class TestFlowRun:
         assert len([_ for _ in (Path(run_output_path) / "node_artifacts").iterdir()]) == 5
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_run_snapshot_with_flow_tools_json(self, local_client, pf) -> None:
@@ -700,7 +700,7 @@ class TestFlowRun:
         assert (local_storage._snapshot_folder_path / ".promptflow" / "flow.tools.json").is_file()
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_get_metrics_format(self, local_client, pf) -> None:
@@ -710,7 +710,7 @@ class TestFlowRun:
         assert local_client.runs.get_metrics(run2.name).keys() == {"accuracy"}
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_get_detail_format(self, local_client, pf) -> None:
@@ -798,7 +798,7 @@ class TestFlowRun:
         assert run_dict["error"] == exception
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_system_metrics_in_properties(self, pf) -> None:
@@ -807,7 +807,7 @@ class TestFlowRun:
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
 
-    @pytest.mark.skipif(pf_recording_mode() != "", reason="recording and replay cannot provide input")
+    @pytest.mark.skipif(recording_or_replaying(), reason="recording and replay cannot provide input")
     def test_run_get_inputs(self, pf):
         # inputs should be persisted when defaults are used
         run = pf.run(

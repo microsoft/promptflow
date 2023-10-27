@@ -5,7 +5,7 @@ import pytest
 
 from promptflow._core.operation_context import OperationContext
 
-from ..recording_utilities import pf_recording_mode
+from ..recording_utilities import is_replaying
 
 
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
@@ -66,7 +66,7 @@ def test_user_agent(flow_serving_client):
 
 
 @pytest.mark.skipif(
-    pf_recording_mode() == "replay",
+    is_replaying(),
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.usefixtures("flow_serving_client", "setup_local_connection")
@@ -84,7 +84,7 @@ def test_serving_api(flow_serving_client):
 
 
 @pytest.mark.skipif(
-    pf_recording_mode() == "replay",
+    is_replaying(),
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.usefixtures("evaluation_flow_serving_client", "setup_local_connection")
@@ -98,7 +98,7 @@ def test_evaluation_flow_serving_api(evaluation_flow_serving_client):
 
 
 @pytest.mark.skipif(
-    pf_recording_mode() == "replay",
+    is_replaying(),
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest
@@ -112,7 +112,7 @@ def test_unknown_api(flow_serving_client):
 
 
 @pytest.mark.skipif(
-    pf_recording_mode() == "replay",
+    is_replaying(),
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest
@@ -162,7 +162,7 @@ def test_stream_llm_chat(
 
 
 @pytest.mark.skipif(
-    pf_recording_mode() == "replay",
+    is_replaying(),
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest
@@ -227,7 +227,7 @@ def test_stream_python_stream_tools(
 
 
 @pytest.mark.skipif(
-    pf_recording_mode() == "replay",
+    is_replaying(),
     reason="Skip this test in replay mode, TODO, cannot get flow folder in serve mode",
 )
 @pytest.mark.e2etest

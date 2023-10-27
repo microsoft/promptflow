@@ -8,7 +8,7 @@ from promptflow._sdk._constants import LOGGER_NAME
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
 
-from ..recording_utilities import pf_recording_mode
+from ..recording_utilities import is_replaying
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -27,7 +27,7 @@ _client = PFClient()
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowTest:
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode")
     def test_pf_test_flow(self):
         inputs = {
             "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
@@ -42,9 +42,7 @@ class TestFlowTest:
         result = _client.test(flow=f"{FLOWS_DIR}/web_classification")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    @pytest.mark.skipif(
-        pf_recording_mode() == "replay", reason="TODO, record should support custom_strong_type_connection."
-    )
+    @pytest.mark.skipif(is_replaying(), reason="TODO, record should support custom_strong_type_connection.")
     def test_pf_test_flow_with_package_tool_with_custom_strong_type_connection(self, install_custom_tool_pkg):
         # Need to reload pkg_resources to get the latest installed tools
         import importlib
@@ -104,7 +102,7 @@ class TestFlowTest:
         assert result == "connection_value is MyCustomConnection: True"
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in record mode, TODO, record should support streaming output.",
     )
     def test_pf_test_with_streaming_output(self):
@@ -127,7 +125,7 @@ class TestFlowTest:
         result = _client.test(flow=flow_path, inputs=inputs, node="convert_to_dict")
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
-    @pytest.mark.skipif(pf_recording_mode() == "replay", reason="Instable in replay mode")
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode")
     def test_pf_test_flow_with_variant(self):
         inputs = {
             "url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1",
@@ -163,7 +161,7 @@ class TestFlowTest:
         assert "Unable to find additional include ../invalid/file/path" in str(e.value)
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Instable in replay mode.",
     )
     def test_pf_flow_test_with_symbolic(self, prepare_symbolic_flow):
@@ -180,7 +178,7 @@ class TestFlowTest:
         assert all([key in FLOW_RESULT_KEYS for key in result])
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in replay mode, TODO, replay should support exceptions.",
     )
     def test_pf_flow_test_with_exception(self, capsys):
@@ -205,7 +203,7 @@ class TestFlowTest:
         assert "mock exception" in str(exception.value)
 
     @pytest.mark.skipif(
-        pf_recording_mode() == "replay",
+        is_replaying(),
         reason="Skip this test in record mode, TODO, record should support single node.",
     )
     def test_node_test_with_connection_input(self):

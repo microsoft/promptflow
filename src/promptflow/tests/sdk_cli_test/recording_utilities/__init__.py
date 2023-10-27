@@ -10,13 +10,15 @@ from .mocked_functions import (
     mock_toolresolver_resolve_tool_by_node,
     mock_update_run_func,
 )
-from .tool_record import RecordStorage, just_return, pf_recording_mode, record_node_run
+from .tool_record import RecordStorage, is_recording, is_replaying, just_return, record_node_run, recording_or_replaying
 
 __all__ = [
+    "is_recording",
+    "is_replaying",
+    "recording_or_replaying",
     "just_return",
     "record_node_run",
     "RecordStorage",
-    "pf_recording_mode",
     "mock_update_run_func",
     "mock_persist_node_run",
     "mock_flowoperations_test",

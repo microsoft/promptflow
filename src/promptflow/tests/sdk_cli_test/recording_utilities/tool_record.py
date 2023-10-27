@@ -20,8 +20,16 @@ from .constants import PF_RECORDING_MODE
 PROMOTFLOW_ROOT = Path(__file__).parent.parent.parent.parent
 
 
-def pf_recording_mode() -> str:
-    return os.getenv(PF_RECORDING_MODE, "")
+def is_recording() -> bool:
+    return os.getenv(PF_RECORDING_MODE, "") == "record"
+
+
+def is_replaying() -> bool:
+    return os.getenv(PF_RECORDING_MODE, "") == "replay"
+
+
+def recording_or_replaying() -> bool:
+    return is_recording() or is_replaying()
 
 
 class RecordStorage:
