@@ -32,10 +32,13 @@ from promptflow._sdk.entities._flow import Flow
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import PromptflowExceptionPresenter
 from promptflow._utils.logger_utils import LogContext
+from promptflow._utils.multimedia_utils import get_file_reference_encoder
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
 from promptflow.contracts.run_mode import RunMode
+from promptflow.exceptions import UserErrorException
 from promptflow.executor._result import LineResult
 from promptflow.executor.flow_executor import BulkResult
 from promptflow.storage import AbstractRunStorage
@@ -199,8 +202,8 @@ class LocalStorageOperations(AbstractRunStorage):
         # for line run records, store per line
         # for normal node run records, store per node per line;
         # for reduce node run records, store centralized in 000000000.jsonl per node
-        outputs_folder = self._prepare_folder(self.path / "flow_outputs")
-        self._outputs_path = outputs_folder / "output.jsonl"
+        self.outputs_folder = self._prepare_folder(self.path / "flow_outputs")
+        self._outputs_path = self.outputs_folder / "output.jsonl"
         self._node_infos_folder = self._prepare_folder(self.path / "node_artifacts")
         self._run_infos_folder = self._prepare_folder(self.path / "flow_artifacts")
         self._data_path = Path(run.data) if run.data is not None else None
@@ -297,24 +300,26 @@ class LocalStorageOperations(AbstractRunStorage):
         """
         # extract line run errors
         errors, line_runs = [], []
-        try:
-            for line_result in bulk_results.line_results:
-                if line_result.run_info.error is not None:
-                    errors.append(
-                        {
-                            "line number": line_result.run_info.index,
-                            "error": line_result.run_info.error,
-                        }
-                    )
-                line_runs.append(line_result)
-        except Exception:
-            pass
+        if bulk_results:
+            try:
+                for line_result in bulk_results.line_results:
+                    if line_result.run_info.error is not None:
+                        errors.append(
+                            {
+                                "line number": line_result.run_info.index,
+                                "error": line_result.run_info.error,
+                            }
+                        )
+                    line_runs.append(line_result)
+            except Exception:
+                pass
 
-        # won't dump exception if errors not found in bulk_results
-        if not errors:
-            return
+            # won't dump exception if errors not found in bulk_results
+            if not errors:
+                return
 
-        if exception is None:
+        # SystemError will be raised above and users can see it, so we don't need to dump it.
+        if exception is None or not isinstance(exception, UserErrorException):
             # use first line run error message as exception message if no exception raised
             error = errors[0]
             try:
@@ -355,10 +360,16 @@ class LocalStorageOperations(AbstractRunStorage):
             # collect from local files and concat in the memory
             flow_runs, node_runs = [], []
             for line_run_record_file in sorted(self._run_infos_folder.iterdir()):
+                # In addition to the output jsonl files, there may be multimedia files in the output folder,
+                # so we should skip them.
+                if line_run_record_file.suffix.lower() != ".jsonl":
+                    continue
                 with open(line_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
                     flow_runs.append(json.load(f)["run_info"])
             for node_folder in sorted(self._node_infos_folder.iterdir()):
                 for node_run_record_file in sorted(node_folder.iterdir()):
+                    if node_run_record_file.suffix.lower() != ".jsonl":
+                        continue
                     with open(node_run_record_file, mode="r", encoding=DEFAULT_ENCODING) as f:
                         node_runs.append(json.load(f)["run_info"])
             return {"flow_runs": flow_runs, "node_runs": node_runs}
@@ -370,8 +381,9 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def persist_node_run(self, run_info: NodeRunInfo) -> None:
         """Persist node run record to local storage."""
+        node_folder = self._prepare_folder(self._node_infos_folder / run_info.node)
+        self._persist_run_multimedia(run_info, node_folder)
         node_run_record = NodeRunRecord.from_run_info(run_info)
-        node_folder = self._prepare_folder(self._node_infos_folder / node_run_record.NodeName)
         # for reduce nodes, the line_number is None, store the info in the 000000000.jsonl
         # align with AzureMLRunStorageV2, which is a storage contract with PFS
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
@@ -383,6 +395,7 @@ class LocalStorageOperations(AbstractRunStorage):
         if not Status.is_terminated(run_info.status):
             logger.info("Line run is not terminated, skip persisting line run record.")
             return
+        self._persist_run_multimedia(run_info, self._run_infos_folder)
         line_run_record = LineRunRecord.from_flow_run_info(run_info)
         # calculate filename according to the batch size
         # note that if batch_size > 1, need to well handle concurrent write scenario
@@ -395,12 +408,26 @@ class LocalStorageOperations(AbstractRunStorage):
         line_run_record.dump(self._run_infos_folder / filename)
 
     def persist_result(self, result: Optional[BulkResult]) -> None:
-        """Persist outputs and metrics from return of executor."""
+        """Persist metrics from return of executor."""
         if result is None:
             return
-        self.dump_outputs(result.outputs)
+        # The executor will persist outputs to output directory, so only dump metrics here for the time being.
         self.dump_metrics(result.metrics)
         self.dump_inputs(result.line_results)
+
+    def _persist_run_multimedia(self, run_info: Union[FlowRunInfo, NodeRunInfo], folder_path: Path):
+        if run_info.inputs:
+            run_info.inputs = self._serialize_multimedia(run_info.inputs, folder_path)
+        if run_info.output:
+            run_info.output = self._serialize_multimedia(run_info.output, folder_path)
+            run_info.result = None
+        if run_info.api_calls:
+            run_info.api_calls = self._serialize_multimedia(run_info.api_calls, folder_path)
+
+    def _serialize_multimedia(self, value, folder_path: Path, relative_path: Path = None):
+        pfbytes_file_reference_encoder = get_file_reference_encoder(folder_path, relative_path, use_absolute_path=True)
+        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": pfbytes_file_reference_encoder})}
+        return serialize(value, serialization_funcs=serialization_funcs)
 
     @staticmethod
     def _prepare_folder(path: Union[str, Path]) -> Path:
