@@ -78,7 +78,7 @@
 
 | path | status | description |
 ------|--------|-------------
-| [filepath-input-tool-showcase](tools/use-cases/filepath-input-tool-showcase/README.md) | [![samples_tools_use_cases_filepath_input_tool_showcase](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_filepath_input_tool_showcase.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_filepath_input_tool_showcase.yml) |  A case that shows how to use tool with FilePath as input |
+| [filepath-input-tool-showcase](tools/use-cases/filepath-input-tool-showcase/README.md) | [![samples_tools_use_cases_filepath_input_tool_showcase](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_filepath_input_tool_showcase.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_filepath_input_tool_showcase.yml) |  This is a flow demonstrating how to use a tool with `FilePath` input, `FilePath` input allows users to select an existing file or create a new one, then pass it to the tool, enabling the tool to access the file's content |
 | [flow-with-enabled-by-value](tools/use-cases/flow-with-enabled-by-value/README.md) | [![samples_tools_use_cases_flow_with_enabled_by_value](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_flow_with_enabled_by_value.yml/badge.svg?branch=main)](https://github.com/microsoft/promptflow/actions/workflows/samples_tools_use_cases_flow_with_enabled_by_value.yml) |  A standard flow using "enabled_by_value" python tool |
 
 

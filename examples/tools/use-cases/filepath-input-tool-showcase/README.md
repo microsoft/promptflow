@@ -1,6 +1,6 @@
 # FilePath input tool showcase
 
-A case that shows how to use tool with FilePath as input.
+This is a flow demonstrating how to use a tool with `FilePath` input, `FilePath` input allows users to select an existing file or create a new one, then pass it to the tool, enabling the tool to access the file's content.
 
 ## Prerequisites
 
