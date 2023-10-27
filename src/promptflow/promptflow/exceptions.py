@@ -22,6 +22,7 @@ class ErrorTarget(str, Enum):
     CONTROL_PLANE_SDK = "ControlPlaneSDK"
     SERVING_APP = "ServingApp"
     FLOW_INVOKER = "FlowInvoker"
+    FUNCTION_PATH = "FunctionPath"
 
 
 class PromptflowException(Exception):

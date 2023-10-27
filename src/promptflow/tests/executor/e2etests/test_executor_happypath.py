@@ -100,13 +100,7 @@ class TestExecutor:
 
     @pytest.mark.parametrize(
         "flow_folder",
-        [
-            SAMPLE_FLOW,
-            "prompt_tools",
-            "script_with___file__",
-            "connection_as_input",
-            "sample_flow_with_functions"
-        ],
+        [SAMPLE_FLOW, "prompt_tools", "script_with___file__", "connection_as_input", "sample_flow_with_functions"],
     )
     def test_executor_exec_bulk(self, flow_folder, dev_connections):
         executor = FlowExecutor.create(get_yaml_file(flow_folder), dev_connections, raise_ex=True)
