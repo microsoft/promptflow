@@ -137,6 +137,8 @@ class FlowOperations(_ScopeDependentOperations):
         # if no flow name specified, use "flow name + timestamp"
         if not flow_name:
             flow_name = f"{flow.name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
+        elif not isinstance(flow_name, str):
+            raise FlowOperationError(f"Flow name must be a string, got {type(flow_name)!r}: {flow_name!r}.")
 
         # if no flow type specified, use default flow type "standard"
         supported_flow_types = FlowType.get_all_values()
@@ -153,7 +155,7 @@ class FlowOperations(_ScopeDependentOperations):
         if isinstance(description, str):
             kwargs["description"] = description
         elif description is not None:
-            logger.warning(f"Description must be a string, got {type(description)!r}: {description!r}.")
+            raise FlowOperationError(f"Description must be a string, got {type(description)!r}: {description!r}.")
 
         # check if the tags type is Dict[str, str]
         tags = kwargs.get("tags", None) or flow.tags
@@ -162,7 +164,9 @@ class FlowOperations(_ScopeDependentOperations):
         ):
             kwargs["tags"] = tags
         elif tags is not None:
-            logger.warning(f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}.")
+            raise FlowOperationError(
+                f"Tags type must be 'Dict[str, str]', got non-dict or non-string key/value in tags: {tags}."
+            )
 
         return flow, flow_name, flow_type, kwargs
 
