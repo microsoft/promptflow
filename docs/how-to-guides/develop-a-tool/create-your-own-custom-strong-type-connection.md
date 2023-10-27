@@ -2,8 +2,8 @@
 Connections serve as a secure method for managing credentials for external APIs and data sources. This document provides a step-by-step guide on how to create and use a custom strong type connection. The advantages of using a custom strong type connection are as follows:
 
 * Enhanced user-friendly experience: Custom strong type connections offer an enhanced user-friendly experience compared to custom connections, as they eliminate the need to fill in connection keys.
-* Improved intellisense experience: By using a custom strong type connection, you can benefit from an enhanced intellisense experience, receiving real-time suggestions and auto-completion for available keys.
-* Centralized information: A custom strong type connection provides a centralized location to access and view all available keys and value types, making it easier to explore and create the connection.
+* Improved intellisense experience: Custom strong type connections enhance the intellisense experience, offering real-time suggestions and auto-completion for available keys.
+* Centralized information: Custom strong type connections provide a central location to access and view all available keys and value types. This centralization makes it easier to explore and create the connection.
 
 For other connections types, please refer to [Connections](https://microsoft.github.io/promptflow/concepts/concept-connections.html).
 
@@ -37,11 +37,11 @@ class MyCustomConnection(CustomStrongTypeConnection):
 
 Make sure that you adhere to the following guidelines:
 
-* You can define your own custom connection using any desired name, ut ensure that it inherits the class `CustomStrongTypeConnection`.
+* You can define your own custom connection using any desired name, but make sure it inherits from the `CustomStrongTypeConnection` class.
   > [!Note] Please avoid using the `CustomStrongTypeConnection` class directly.
-* Please use the `Secret` type to indicate that the key should be treated as a secret. Secret keys will be scrubbed to enhance security.
-* You can either have your custom connection class within your custom tool or separate it into a distinct Python file.
-* Document your custom strong type connection using docstrings. This will improve clarity and understanding for users when they create a custom strong type connection. Use `param` and `type` to provide explanations for each key, as demonstrated in the following example:
+* Use the `Secret` type to denote that a key should be treated as a secret. This enhances security by scrubbing secret keys.
+* You have the option to either include your custom connection class within your custom tool or separate it into a distinct Python file.
+* Improve clarity for users by documenting your custom strong type connection using docstrings. Use `param` and `type` to provide explanations for each key, as shown in the following example:
   
   ```python
   """My custom strong type connection.
@@ -75,11 +75,11 @@ To develop a flow using package tools with custom strong type connections, follo
 * Step2: Develop a flow with custom tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-package-tool-showcase) as an example.
 
 * Step3: Create a custom strong type connection using one of the following methods:
-  - If the connection type hasn't been created previously, click 'Add connection' button to create the connection.
+  - If the connection type hasn't been created previously, click the 'Add connection' button to create the connection.
     ![create_custom_strong_type_connection_in_node_interface](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_node_interface.png)
-  - Click 'Create connection' add sign in the CONNECTIONS section.
+  - Click the 'Create connection' plus sign in the CONNECTIONS section.
     ![create_custom_strong_type_connection_add_sign](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_add_sign.png)
-  - Click 'Create connection' add sign in the Custom category.
+  - Click 'Create connection' plus sign in the Custom category.
     ![create_custom_strong_type_connection_in_custom_category](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_custom_category.png)
 
   Fill in the `values` starting with `to-replace-with` in the connection template.
