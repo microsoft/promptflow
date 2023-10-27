@@ -1,7 +1,7 @@
 import pytest
 
 from multiprocessing import Queue
-from promptflow.executor._line_execution_process_pool import HealthyEnsuredProcess
+from promptflow.executor._line_execution_process_pool import HealthyEnsuredProcess, get_multiprocessing_context
 
 from unittest.mock import patch
 import time
@@ -77,27 +77,3 @@ class TestHealthyEnsuredProcess:
             f"Process name: {process_name}, Process id: {process_pid}, Line number: {line_number} completed."
         )
         mock_logger_info.assert_called_once_with(exexpected_log_message)
-
-    def test_process_set_environment_variable(self):
-        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, "spawn")
-        assert healthy_ensured_process.is_ready is False
-        task_queue = Queue()
-        healthy_ensured_process.start_new(task_queue)
-        assert healthy_ensured_process.process.is_alive()
-        assert healthy_ensured_process.is_ready is True
-        assert healthy_ensured_process.get_start_method() == "spawn"
-        end_process(healthy_ensured_process)
-        assert healthy_ensured_process.process.is_alive() is False
-
-    def test_process_set_environment_variable_failed(self):
-        with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
-            mock_logger.warning.return_value = None
-            healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, "test")
-            assert healthy_ensured_process.is_ready is False
-            task_queue = Queue()
-            healthy_ensured_process.start_new(task_queue)
-            exexpected_log_message = "Failed to set start method to test, error: cannot find context for 'test'"
-            mock_logger.warning.assert_called_once_with(exexpected_log_message)
-            assert healthy_ensured_process.is_ready is True
-            end_process(healthy_ensured_process)
-            assert healthy_ensured_process.process.is_alive() is False

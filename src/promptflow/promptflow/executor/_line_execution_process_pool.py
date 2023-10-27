@@ -44,18 +44,17 @@ class QueueRunStorage(AbstractRunStorage):
 
 
 class HealthyEnsuredProcess:
-    def __init__(self, executor_creation_func, batch_run_start_method=None):
+    def __init__(self, executor_creation_func, context=None):
         self.process = None
         self.input_queue = None
         self.output_queue = None
         self.is_ready = False
         self._executor_creation_func = executor_creation_func
-        self.batch_run_start_method = batch_run_start_method
+        self.context = context
 
     def start_new(self, task_queue: Queue):
-        mp = self.get_multiprocessing_context()
-        input_queue = mp.Queue()
-        output_queue = mp.Queue()
+        input_queue = self.context.Queue()
+        output_queue = self.context.Queue()
         self.input_queue = input_queue
         self.output_queue = output_queue
 
@@ -64,7 +63,7 @@ class HealthyEnsuredProcess:
         input_queue.put("start")
 
         current_log_context = LogContext.get_current()
-        process = mp.Process(
+        process = self.context.Process(
             target=_process_wrapper,
             args=(
                 self._executor_creation_func,
@@ -119,19 +118,6 @@ class HealthyEnsuredProcess:
 
         return f"Process name({process_name})-Process id({process_pid})-Line number({line_number})"
 
-    def get_multiprocessing_context(self):
-        if self.batch_run_start_method is not None:
-            try:
-                return multiprocessing.get_context(self.batch_run_start_method)
-            except Exception as e:
-                logger.warning(f"Failed to set start method to {self.batch_run_start_method}, error: {e}")
-                return multiprocessing.get_context()
-        else:
-            return multiprocessing.get_context()
-
-    def get_start_method(self):
-        return self.get_multiprocessing_context().get_start_method()
-
 
 class LineExecutionProcessPool:
     def __init__(
@@ -148,8 +134,9 @@ class LineExecutionProcessPool:
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
-        self.batch_run_start_method = os.environ.get("PF_BATCH_METHOD")
-        use_fork = multiprocessing.get_start_method() == "fork"
+        self.multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        self.context = get_multiprocessing_context(self.multiprocessing_start_method)
+        use_fork = self.context.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
         if use_fork:
@@ -203,7 +190,7 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
-        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.batch_run_start_method)
+        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
         healthy_ensured_process.start_new(task_queue)
 
         if not healthy_ensured_process.process.is_alive():
@@ -530,3 +517,19 @@ def get_available_max_worker_count():
         available memory: {available_memory}, available max worker count: {available_max_worker_count}"""
     )
     return available_max_worker_count
+
+
+def get_multiprocessing_context(multiprocessing_start_method=None):
+    if multiprocessing_start_method is not None:
+        try:
+            context = multiprocessing.get_context(multiprocessing_start_method)
+            logger.info(f"Set start method to {multiprocessing_start_method}.")
+            return context
+        except Exception as e:
+            logger.warning(f"Failed to set start method to {multiprocessing_start_method}, error: {e}")
+            context = multiprocessing.get_context()
+            logger.info(f"Set start method to default {context.get_start_method()}.")
+            return context
+    else:
+        context = multiprocessing.get_context()
+        return context

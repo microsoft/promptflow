@@ -1,4 +1,6 @@
 import uuid
+import os
+import multiprocessing
 from multiprocessing import Queue
 from pathlib import Path
 from tempfile import mkdtemp
@@ -11,7 +13,9 @@ from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
-from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool, _exec_line
+from promptflow.executor._line_execution_process_pool import (
+    LineExecutionProcessPool, _exec_line, get_multiprocessing_context
+)
 from promptflow.executor.flow_executor import LineResult
 
 from ...utils import get_flow_sample_inputs, get_yaml_file
@@ -167,3 +171,73 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["message"] == test_error_msg
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_process_set_environment_variable(self, flow_folder, dev_connections):
+        os.environ["PF_BATCH_METHOD"] = "spawn"
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            line_timeout_sec=1,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        line_execution_process_pool = LineExecutionProcessPool(
+            executor,
+            nlines,
+            run_id,
+            "",
+            False,
+            None,
+        )
+        use_fork = line_execution_process_pool._use_fork
+        assert use_fork is False
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_environment_variable_failed(self, flow_folder, dev_connections):
+
+        with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+            mock_logger.warning.return_value = None
+            os.environ["PF_BATCH_METHOD"] = "test"
+            executor = FlowExecutor.create(
+                get_yaml_file(flow_folder),
+                dev_connections,
+                line_timeout_sec=1,
+            )
+            run_id = str(uuid.uuid4())
+            bulk_inputs = self.get_bulk_inputs()
+            nlines = len(bulk_inputs)
+            line_execution_process_pool = LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                "",
+                False,
+                None,
+            )
+            use_fork = line_execution_process_pool._use_fork
+            exexpected_log_message = "Failed to set start method to test, error: cannot find context for 'test'"
+            assert use_fork is False
+            mock_logger.warning.assert_called_once_with(exexpected_log_message)
+
+    def test_get_multiprocessing_context(self):
+        # Set default start method to spawn
+        context = get_multiprocessing_context("spawn")
+        assert context.get_start_method() == "spawn"
+        # Set start method which is not supported
+        context = get_multiprocessing_context("test")
+        assert context.get_start_method() == multiprocessing.get_start_method()
+        # Not set start method
+        context = get_multiprocessing_context()
+        assert context.get_start_method() == multiprocessing.get_start_method()
