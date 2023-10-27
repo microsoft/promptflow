@@ -46,6 +46,14 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
+def is_json_serializable(value: Any) -> bool:
+    try:
+        json.dumps(value)
+        return True
+    except TypeError:
+        return False
+
+
 def load_json(file_path: Union[str, Path]) -> dict:
     with open(file_path, "r") as f:
         return json.load(f)
