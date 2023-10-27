@@ -1,7 +1,7 @@
 # Create Custom LLM Tool
 In this document, we will guide you through the process of developing a tool with `custom_llm` type which can connect to a customized large language model with prompt.
 
-Custom LLM is a large language model fine-tuned by yourself. If you find it has good performance and is useful, then you can follow this guidance to make it a tool so that it can be shared with other people to have more impact.
+A Custom LLM is a large language model fine-tuned by yourself. If you find it has good performance and is useful, then you can follow this guidance to make it a tool so that it can be shared with others to increase its impact.
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
@@ -9,9 +9,9 @@ Custom LLM is a large language model fine-tuned by yourself. If you find it has 
 ## How to create a custom LLM tool
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md).  
 
-1. Develop tool code like in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_llm_type.py).
-- Add a `CustomConnection` input to the tool, it is used for authenticating and establishing a connection to the customized large language model.
-- Add a `PromptTemplate` input to the tool, it is used to pass into the customized large language model as an argument.
+1. Develop the tool code as in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_llm_type.py).
+- Add a `CustomConnection` input to the tool, which is used to authenticate and establish a connection to the customized large language model.
+- Add a `PromptTemplate` input to the tool, which serves as an argument to be passed into the customized large language model.
 
     ```python
     from jinja2 import Template
