@@ -1,5 +1,7 @@
 # Basic flow with package tool using cascading inputs
-A basic flow with package tool that using cascading inputs.
+This is a flow demonstrating the use of a tool with cascading inputs. 
+Cascading inputs are frequently used in situations where the selection in one input field determines what subsequent inputs should be shown. 
+It helps in creating a more efficient, user-friendly, and error-free input process.
 
 Tools used in this flow：
 - `python` Tool

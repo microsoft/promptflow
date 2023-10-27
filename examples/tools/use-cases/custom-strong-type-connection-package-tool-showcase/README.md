@@ -1,5 +1,5 @@
 # Basic flow with package tool using custom strong type connection
-A basic flow with package tool that using custom strong type connection.
+A basic flow with package tool that using custom strong type connection. Custom strong type connections offer an enhanced user-friendly experience compared to custom connections.
 
 Tools used in this flow：
 - custom package tool

@@ -1,5 +1,5 @@
 # Basic flow with script tool using custom strong type connection
-A basic flow with script tool that using custom strong type connection.
+A basic flow with script tool that using custom strong type connection. Custom strong type connections offer an enhanced user-friendly experience compared to custom connections.
 
 Tools used in this flow：
 - custom `python` tool
