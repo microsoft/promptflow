@@ -192,6 +192,7 @@ class TestLineExecutionProcessPool:
             run_id,
             "",
             False,
+            None,
         )
         use_fork = line_execution_process_pool._use_fork
         assert use_fork is False
@@ -222,6 +223,7 @@ class TestLineExecutionProcessPool:
                 run_id,
                 "",
                 False,
+                None,
             )
             use_fork = line_execution_process_pool._use_fork
             exexpected_log_message = "Failed to set start method to test, error: cannot find context for 'test'"
