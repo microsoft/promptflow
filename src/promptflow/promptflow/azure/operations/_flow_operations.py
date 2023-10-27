@@ -104,6 +104,10 @@ class FlowOperations(_ScopeDependentOperations):
         :param flow_type: The type of the flow to create. One of ["standard", evaluation", "chat"].
             Default to be "standard" if not specified.
         :type flow_type: str
+        :param description: The description of the flow to create. Default to be the description in flow yaml file.
+        :type description: str
+        :param tags: The tags of the flow to create. Default to be the tags in flow yaml file.
+        :type tags: Dict[str, str]
         """
         # validate the parameters
         azure_flow, flow_name, flow_type, kwargs = self._validate_flow_creation_parameters(
