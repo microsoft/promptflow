@@ -195,3 +195,35 @@ class TestLineExecutionProcessPool:
         )
         use_fork = line_execution_process_pool._use_fork
         assert use_fork is False
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_environment_variable_failed(self, flow_folder, dev_connections):
+        os.environ["PF_BATCH_METHOD"] = "spawn"
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            line_timeout_sec=1,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+
+        with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
+            mock_logger.warning.return_value = None
+            os.environ["PF_BATCH_METHOD"] = "test"
+            line_execution_process_pool = LineExecutionProcessPool(
+                executor,
+                nlines,
+                run_id,
+                "",
+                False,
+            )
+            use_fork = line_execution_process_pool._use_fork
+            exexpected_log_message = "Failed to set start method to test, error: cannot find context for 'test'"
+            assert use_fork is False
+            mock_logger.warning.assert_called_once_with(exexpected_log_message)
