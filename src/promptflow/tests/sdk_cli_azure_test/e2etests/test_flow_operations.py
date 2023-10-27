@@ -19,18 +19,18 @@ data_dir = tests_root_dir / "test_configs/datas"
 # TODO: enable the following tests after test CI can access test workspace
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
-@pytest.mark.usefixtures(
-    "mock_set_headers_with_user_aml_token",
-    "single_worker_thread_pool",
-    "vcr_recording",
-)
-@pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
+# @pytest.mark.usefixtures(
+#     "mock_set_headers_with_user_aml_token",
+#     "single_worker_thread_pool",
+#     "vcr_recording",
+# )
+# @pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
 class TestFlow:
     def test_create_flow(self, remote_client, capfd):
         flow_source = flow_test_dir / "web_classification/"
         flow_name = f"{flow_source.name}_{uuid.uuid4()}"
         remote_client.flows.create_or_update(
-            source=flow_source, flow_name=flow_name, flow_type=FlowType.STANDARD, tags={"owner": "hod"}
+            flow=flow_source, name=flow_name, type=FlowType.STANDARD, tags={"owner": "hod"}
         )
         out, err = capfd.readouterr()
         assert "Flow created successfully" in out

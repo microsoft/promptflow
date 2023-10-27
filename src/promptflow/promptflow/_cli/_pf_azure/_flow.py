@@ -36,13 +36,13 @@ Use "--set" to set flow properties like:
 
 Examples:
 # Create a flow to azure portal with local flow folder.
-pfazure flow create --source <flow-folder-path> --set name=<flow-name> type=<flow-type>
+pfazure flow create --flow <flow-folder-path> --set name=<flow-name> type=<flow-type>
 
 # Create a flow with more properties
-pfazure flow create --source <flow-folder-path> --set name=<flow-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
+pfazure flow create --flow <flow-folder-path> --set name=<flow-name> type=<flow-type> description=<flow-description> tags.key1=value1 tags.key2=value2
 """  # noqa: E501
     add_param_source = lambda parser: parser.add_argument(  # noqa: E731
-        "--source", type=str, help="Source folder of the flow to create."
+        "--flow", type=str, help="Source folder of the flow."
     )
     add_params = [
         _set_workspace_argument_for_subparsers,
@@ -52,11 +52,11 @@ pfazure flow create --source <flow-folder-path> --set name=<flow-name> type=<flo
 
     activate_action(
         name="create",
-        description="A CLI tool to create a flow to remote.",
+        description="A CLI tool to create a flow to Azure.",
         epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
-        help_message="Create a flow to remote with local flow folder.",
+        help_message="Create a flow to Azure with local flow folder.",
         action_param_name="sub_action",
     )
 
@@ -116,9 +116,9 @@ def create_flow(args: argparse.Namespace):
     pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name)
     params = _parse_flow_metadata_args(args.params_override)
     pf.flows.create_or_update(
-        source=args.source,
-        flow_name=params.get("name", None),
-        flow_type=params.get("type", None),
+        flow=args.flow,
+        name=params.get("name", None),
+        type=params.get("type", None),
         description=params.get("description", None),
         tags=params.get("tags", None),
     )

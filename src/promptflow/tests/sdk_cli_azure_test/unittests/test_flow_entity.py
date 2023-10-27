@@ -139,7 +139,7 @@ class TestFlow:
                 assert file in flow_files
 
     def test_flow_with_ignore_file(self):
-        flow_folder = FLOWS_DIR / "web_classification_with_ignore_file"
+        flow_folder = FLOWS_DIR / "flow_with_ignore_file"
         flow = load_flow(source=flow_folder)
 
         with flow._build_code() as code:

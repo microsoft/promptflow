@@ -37,8 +37,8 @@ from promptflow._sdk._utils import PromptflowIgnoreFile, generate_flow_tools_jso
 from promptflow._sdk._vendor._asset_utils import traverse_directory
 from promptflow._telemetry.activity import ActivityType, monitor_operation
 from promptflow.azure._constants._flow import DEFAULT_STORAGE
-from promptflow.azure._entities._flow import Flow as AzureFlow
-from promptflow.azure._load_functions import load_flow as load_azure_flow
+from promptflow.azure._entities._flow import Flow
+from promptflow.azure._load_functions import load_flow
 from promptflow.azure._restclient.flow_service_caller import FlowServiceCaller
 from promptflow.azure.operations._artifact_utilities import _get_datastore_name, get_datastore_info
 from promptflow.azure.operations._fileshare_storeage_helper import FlowFileStorageClient
@@ -93,11 +93,11 @@ class FlowOperations(_ScopeDependentOperations):
         return url
 
     @monitor_operation(activity_name="pfazure.flows.create_or_update", activity_type=ActivityType.PUBLICAPI)
-    def create_or_update(self, source: Union[str, Path], flow_name=None, flow_type=None, **kwargs) -> AzureFlow:
+    def create_or_update(self, flow: Union[str, Path], name=None, type=None, **kwargs) -> Flow:
         """Create a flow to remote from local source.
 
-        :param source: The source of the flow to create.
-        :type source: Union[str, Path]
+        :param flow: The source of the flow to create.
+        :type flow: Union[str, Path]
         :param flow_name: The name of the flow to create. Default to be flow folder name + timestamp if not specified.
             e.g. "web-classification-10-27-2023-14-19-10"
         :type flow_name: str
@@ -110,9 +110,7 @@ class FlowOperations(_ScopeDependentOperations):
         :type tags: Dict[str, str]
         """
         # validate the parameters
-        azure_flow, flow_name, flow_type, kwargs = self._validate_flow_creation_parameters(
-            source, flow_name, flow_type, **kwargs
-        )
+        azure_flow, flow_name, flow_type, kwargs = self._validate_flow_creation_parameters(flow, name, type, **kwargs)
         # upload to file share
         file_share_flow_path = self._resolve_flow_code_and_upload_to_file_share(flow=azure_flow, flow_name=flow_name)
         if not file_share_flow_path:
@@ -133,7 +131,7 @@ class FlowOperations(_ScopeDependentOperations):
 
     def _validate_flow_creation_parameters(self, source, flow_name, flow_type, **kwargs):
         """Validate the parameters for flow creation operation."""
-        flow = load_azure_flow(source)
+        flow = load_flow(source)
         # if no flow name specified, use "flow name + timestamp"
         if not flow_name:
             flow_name = f"{flow.name}-{datetime.now().strftime('%m-%d-%Y-%H-%M-%S')}"
@@ -170,9 +168,7 @@ class FlowOperations(_ScopeDependentOperations):
 
         return flow, flow_name, flow_type, kwargs
 
-    def _resolve_flow_code_and_upload_to_file_share(
-        self, flow: AzureFlow, flow_name: str, ignore_tools_json=True
-    ) -> str:
+    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, flow_name: str, ignore_tools_json=True) -> str:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 
@@ -272,7 +268,7 @@ class FlowOperations(_ScopeDependentOperations):
             workspace_name=self._operation_scope.workspace_name,
         )
         # note that the service may return flow rest obj with no flow name
-        flows = [AzureFlow._from_rest_object(rest_flow) for rest_flow in rest_flow_result if rest_flow.flow_name]
+        flows = [Flow._from_rest_object(rest_flow) for rest_flow in rest_flow_result if rest_flow.flow_name]
         flows = sorted(flows, key=lambda x: x.name)
         return flows
 
@@ -280,13 +276,13 @@ class FlowOperations(_ScopeDependentOperations):
         # TODO: support download flow
         raise NotImplementedError("Not implemented yet")
 
-    def _resolve_arm_id_or_upload_dependencies(self, flow: AzureFlow, ignore_tools_json=False) -> None:
+    def _resolve_arm_id_or_upload_dependencies(self, flow: Flow, ignore_tools_json=False) -> None:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         # resolve flow's code
         self._try_resolve_code_for_flow(flow=flow, ops=ops, ignore_tools_json=ignore_tools_json)
 
     @classmethod
-    def _try_resolve_code_for_flow(cls, flow: AzureFlow, ops: OperationOrchestrator, ignore_tools_json=False) -> None:
+    def _try_resolve_code_for_flow(cls, flow: Flow, ops: OperationOrchestrator, ignore_tools_json=False) -> None:
         if flow.path:
             # remote path
             if flow.path.startswith("azureml://datastores"):
@@ -372,13 +368,13 @@ class FlowOperations(_ScopeDependentOperations):
             flow._code_uploaded = True
 
     # region deprecated but keep for runtime test dependencies
-    def _resolve_arm_id_or_upload_dependencies_to_file_share(self, flow: AzureFlow) -> None:
+    def _resolve_arm_id_or_upload_dependencies_to_file_share(self, flow: Flow) -> None:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         # resolve flow's code
         self._try_resolve_code_for_flow_to_file_share(flow=flow, ops=ops)
 
     @classmethod
-    def _try_resolve_code_for_flow_to_file_share(cls, flow: AzureFlow, ops: OperationOrchestrator) -> None:
+    def _try_resolve_code_for_flow_to_file_share(cls, flow: Flow, ops: OperationOrchestrator) -> None:
         from azure.ai.ml._utils._storage_utils import AzureMLDatastorePathUri
 
         from ._artifact_utilities import _check_and_upload_path

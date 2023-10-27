@@ -8,6 +8,7 @@ from promptflow import tool
 def fetch_text_content_from_url(url: str):
     # Send a request to the URL
     try:
+        # time.sleep(130)
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
             "Chrome/113.0.0.0 Safari/537.36 Edg/113.0.1774.35"
