@@ -27,6 +27,8 @@ def pf_recording_mode() -> str:
 class RecordStorage:
     """
     RecordStorage static class to manage recording file storage_record.json
+    and cache the content in memory.
+    Each change of runItems will trigger write_file to storage_record.json
     """
 
     runItems: Dict[str, Dict[str, str]] = {}
@@ -128,6 +130,7 @@ class ToolRecord(ToolProvider):
 
 @tool
 def just_return(toolType: str, *args, **kwargs) -> str:
+    # Replay: Promptflow internal test tool, get all input and return recorded output
     return ToolRecord().completion(toolType, *args, **kwargs)
 
 
@@ -147,7 +150,7 @@ def _record_node_run(run_info: NodeRunInfo, flow_folder: Path, api_call: Dict[st
 
 
 def record_node_run(run_info: Any, flow_folder: Path) -> None:
-    """Persist node run record to local storage."""
+    """Recording: Persist node run record to local storage."""
     if isinstance(run_info, dict):
         for api_call in run_info["api_calls"]:
             _record_node_run(run_info, flow_folder, api_call)
