@@ -10,9 +10,9 @@ from promptflow._cli._user_agent import USER_AGENT
 from promptflow._sdk._configuration import Configuration
 
 # promptflow-sdk in east us
-INSTRUMENTATION_KEY = "e46ea0b2-ab2e-4c5e-aa20-95977d802d01"
+INSTRUMENTATION_KEY = "8b52b368-4c91-4226-b7f7-be52822f0509"
 # promptflow-sdk-eu in west europe
-EU_INSTRUMENTATION_KEY = "f2ff886e-8b36-4de3-88da-7ec84fd437e3"
+EU_INSTRUMENTATION_KEY = "6e81b826-60de-411c-964a-e7af287f6d3c"
 
 
 # cspell:ignore overriden
