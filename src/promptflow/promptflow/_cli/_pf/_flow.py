@@ -393,9 +393,15 @@ def test_flow(args):
                     f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
                 )
             flow = load_flow(args.flow)
-            script_path = os.path.join(temp_dir, "main.py")
-            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
-            sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
+
+            main_path = os.path.join(temp_dir, "main.py")
+            util_path =os.path.join(temp_dir, "utils.py")
+
+            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path,
+                                   target=main_path).generate_to_file(main_path)
+            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path,
+                                   target=util_path).generate_to_file(util_path)
+            sys.argv = ["streamlit", "run", os.path.join(temp_dir, "main.py"), "--global.developmentMode=false"]
             st_cli.main()
     else:
         if args.interactive:
