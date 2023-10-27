@@ -3,10 +3,8 @@
 # Any manual changes to this file may cause incorrect behavior.
 # Any manual changes will be overwritten if the code is regenerated.
 
-name: samples_flows_standard_basic
+name: cleanup_compute_instance_space
 on:
-  schedule:
-    - cron: "41 21 * * *" # Every day starting at 5:41 BJT
   pull_request:
   push:
     branches:
