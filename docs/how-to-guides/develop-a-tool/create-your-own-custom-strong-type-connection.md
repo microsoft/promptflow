@@ -69,7 +69,7 @@ Make sure that you adhere to the following guidelines:
 
 ## Develop a flow using package tools with custom strong type connections
 To develop a flow using package tools with custom strong type connections, follow these steps:
-* Step1: Refer to the [create and use tool package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package in your local environment.
+* Step1: Refer to the [Create and Use Tool Package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package in your local environment.
   > [!Note] Once the new tool package is installed in your local environment, a window reload is necessary. This action ensures that the new tools and custom strong type connections become visible and accessible.
 
 * Step2: Develop a flow with custom tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-package-tool-showcase) as an example.
