@@ -205,7 +205,7 @@ class SubmitterHelper:
             load_dotenv(environment_variables)
 
     @staticmethod
-    def resolve_connections(flow: Flow, client=None):
+    def resolve_connections(flow: Flow, client=None, connections_to_ignore=None):
         from .._pf_client import PFClient
 
         client = client or PFClient()
@@ -213,7 +213,9 @@ class SubmitterHelper:
             executable = ExecutableFlow.from_yaml(flow_file=flow.path, working_dir=flow.code)
         executable.name = str(Path(flow.code).stem)
 
-        return get_local_connections_from_executable(executable=executable, client=client)
+        return get_local_connections_from_executable(
+            executable=executable, client=client, connections_to_ignore=connections_to_ignore
+        )
 
     @classmethod
     def resolve_environment_variables(cls, environment_variables: dict, client=None):

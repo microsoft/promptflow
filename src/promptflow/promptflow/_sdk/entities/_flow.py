@@ -21,6 +21,7 @@ from promptflow._sdk._constants import (
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .._constants import DAG_FILE_NAME
+from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -53,23 +54,30 @@ class FlowContext:
         streaming=None,
         connection_provider=None,
     ):
-        # TODO: make this a context manager
+        # TODO: make this read only
         self.flow = flow
-        self.connections = connections or {}
+        self.connections, self.connection_objs = connections or {}, {}
         self.variant = variant
         self.environment_variables = environment_variables or {}
         self.overrides = overrides or {}
         self.streaming = streaming
         # self.connection_provider = connection_provider
 
-    def __enter__(self):
-        from promptflow._sdk.operations._run_submitter import variant_overwrite_context
+    def resolve_connections(self):
+        # resolve connections and create placeholder for connection objects
+        for _, v in self.connections.items():
+            if isinstance(v, dict):
+                for k, conn in v.items():
+                    if isinstance(conn, _Connection):
+                        name = self._get_connection_obj_name(conn)
+                        v[k] = name
+                        self.connection_objs[name] = conn
 
-        with variant_overwrite_context(self.flow, variant=self.variant, connections=self.connections) as flow:
-            yield flow
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+    @classmethod
+    def _get_connection_obj_name(cls, connection):
+        # create a unique connection name for connection obj
+        connection_name = f"connection_{id(connection)}"
+        return connection_name
 
 
 class Flow(FlowBase):
@@ -229,22 +237,14 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     # endregion
 
     def __call__(self, *args, **kwargs):
-        # run flow test here
-        # TODO: cache the submitter?
-        # from promptflow import PFClient
         from promptflow._sdk.operations._test_submitter import TestSubmitter
 
         if args:
             raise UserErrorException("Flow can only be called with keyword arguments.")
-        # client = PFClient()
-        # TODO: put flow context related code
-        with TestSubmitter(flow=self, variant=self.context.variant).init() as submitter:
+        with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
             # validate inputs
-            flow_inputs, _ = submitter._resolve_data(inputs=kwargs)
-            result = submitter.flow_test(
+            flow_inputs, _ = submitter.resolve_data(inputs=kwargs)
+            result = submitter.exec_with_inputs(
                 inputs=flow_inputs,
-                environment_variables=self.context.environment_variables,
-                stream_log=self.context.streaming,
             )
-        TestSubmitter._raise_error_when_test_failed(result, show_trace=False)
         return result.output

@@ -62,7 +62,6 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-    **kwargs,
 ):
     """Load flow from YAML file.
 
@@ -74,7 +73,7 @@ def load_flow(
     :rtype: Flow
     """
     # TODO: decide whether to support setting context in here
-    return ProtectedFlow.load(source, **kwargs)
+    return ProtectedFlow.load(source)
 
 
 def load_run(
