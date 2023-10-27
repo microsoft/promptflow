@@ -835,7 +835,7 @@ class TestFlowRun:
         assert inputs == {
             "key": [{"value": "value in column-mapping"}],
             "line_number": [0],
-            "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
+            "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g&hl=de&persist_hl=1"],
         }
 
     def test_executor_logs_in_batch_run_logs(self, pf: PFClient) -> None:
