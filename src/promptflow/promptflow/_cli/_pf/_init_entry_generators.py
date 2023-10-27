@@ -258,6 +258,14 @@ class StreamlitFileGenerator(BaseGenerator):
         return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow",
                 "chat_history_input_name", "label"]
 
+    def generate_to_file(self, target):
+        if target.endswith(".jinja2"):
+            super().generate_to_file(target=target)
+        else:
+            shutil.copy(SERVE_TEMPLATE_PATH / Path(target).name, target)
+
+
+
 
 class ChatFlowDAGGenerator(BaseGenerator):
     def __init__(self, connection, deployment):
