@@ -178,7 +178,7 @@ class TestLineExecutionProcessPool:
             SAMPLE_FLOW,
         ],
     )
-    def test_process_set_environment_variable(self, flow_folder, dev_connections):
+    def test_process_set_environment_variable_successed(self, flow_folder, dev_connections):
         os.environ["PF_BATCH_METHOD"] = "spawn"
         executor = FlowExecutor.create(
             get_yaml_file(flow_folder),
@@ -205,7 +205,7 @@ class TestLineExecutionProcessPool:
             SAMPLE_FLOW,
         ],
     )
-    def test_environment_variable_failed(self, flow_folder, dev_connections):
+    def test_process_set_environment_variable_failed(self, flow_folder, dev_connections):
 
         with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
             mock_logger.warning.return_value = None
