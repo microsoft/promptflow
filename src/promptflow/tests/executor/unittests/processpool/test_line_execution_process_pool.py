@@ -1,5 +1,4 @@
 import uuid
-
 from multiprocessing import Queue
 from pathlib import Path
 from tempfile import mkdtemp
