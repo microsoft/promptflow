@@ -1,5 +1,4 @@
 import uuid
-import os
 
 from multiprocessing import Queue
 from pathlib import Path
