@@ -10,7 +10,7 @@ class UserType(str, Enum):
 
 @tool
 def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
-    """This is a dummy function to support enabled by feature.
+    """This is a dummy function to support cascading inputs.
 
     :param user_type: user type, student or teacher.
     :param student_id: student id.
