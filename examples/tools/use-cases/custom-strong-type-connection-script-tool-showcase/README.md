@@ -1,5 +1,5 @@
 # Basic flow with script tool using custom strong type connection
-A basic flow with script tool that using custom strong type connection. Custom strong type connections offer an enhanced user-friendly experience compared to custom connections.
+This is a flow demonstrating the use of a script tool with custom string type connection which provides a secure way to manage credentials for external APIs and data sources, and it offers an improved user-friendly and intellisense experience compared to custom connections.
 
 Tools used in this flow：
 - custom `python` tool
