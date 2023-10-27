@@ -395,7 +395,7 @@ def test_flow(args):
             flow = load_flow(args.flow)
 
             main_path = os.path.join(temp_dir, "main.py")
-            util_path =os.path.join(temp_dir, "utils.py")
+            util_path = os.path.join(temp_dir, "utils.py")
 
             StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path,
                                    target=main_path).generate_to_file(main_path)
