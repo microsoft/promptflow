@@ -1,19 +1,20 @@
-import sys
 import uuid
 from multiprocessing import Queue
 from pathlib import Path
 from tempfile import mkdtemp
+from unittest.mock import patch
 
 import pytest
 from pytest_mock import MockFixture
 
 from promptflow._utils.logger_utils import LogContext
 from promptflow.contracts.run_info import Status
+from promptflow.exceptions import ErrorTarget, UserErrorException
 from promptflow.executor import FlowExecutor
 from promptflow.executor._line_execution_process_pool import LineExecutionProcessPool, _exec_line
 from promptflow.executor.flow_executor import LineResult
 
-from ...utils import FLOW_ROOT, get_flow_sample_inputs, get_yaml_file
+from ...utils import get_flow_sample_inputs, get_yaml_file
 
 SAMPLE_FLOW = "web_classification_no_variants"
 
@@ -134,49 +135,35 @@ class TestLineExecutionProcessPool:
         assert isinstance(line_result, LineResult)
 
     @pytest.mark.parametrize(
-        "flow_folder, batch_input, error_message, error_class",
+        "flow_folder",
         [
-            (
-                "simple_flow_with_python_tool",
-                [{"num11": "22"}],
-                (
-                    "The value for flow input 'num' is not provided in line 0 of input data. "
-                    "Please review your input data or remove this input in your flow if it's no longer needed."
-                ),
-                "InputNotFound",
-            )
+            SAMPLE_FLOW,
         ],
     )
-    def test_exec_line_with_exception(self, flow_folder, batch_input, error_message, error_class, dev_connections):
-        executor = FlowExecutor.create(get_yaml_file(flow_folder, FLOW_ROOT), dev_connections)
-        executor.exec_bulk(
-            batch_input,
-        )
+    def test_exec_line_failed_when_line_execution_not_start(self, flow_folder, dev_connections, mocker: MockFixture):
         output_queue = Queue()
-        run_id = str(uuid.uuid4())
-        line_result = _exec_line(
-            executor=executor,
-            output_queue=output_queue,
-            inputs=batch_input[0],
-            run_id=run_id,
-            index=0,
-            variant_id="",
-            validate_inputs=False,
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            line_timeout_sec=1,
         )
-        if (
-            (sys.version_info.major == 3)
-            and (sys.version_info.minor >= 11)
-            and ((sys.platform == "linux") or (sys.platform == "darwin"))
-        ):
-            # Python >= 3.11 has a different error message on linux and macos
-            error_message_compare = error_message.replace("int", "ValueType.INT")
-            assert error_message_compare in str(
-                line_result.run_info.error
-            ), f"Expected message {error_message_compare} but got {str(line_result.run_info.error)}"
-        else:
-            assert error_message in str(
-                line_result.run_info.error
-            ), f"Expected message {error_message} but got {str(line_result.run_info.error)}"
-        assert error_class in str(
-            line_result.run_info.error
-        ), f"Expected message {error_class} but got {str(line_result.run_info.error)}"
+        test_error_msg = "Test user error"
+        with patch("promptflow.executor.flow_executor.FlowExecutor.exec_line", autouse=True) as mock_exec_line:
+            mock_exec_line.side_effect = UserErrorException(
+                message=test_error_msg, target=ErrorTarget.AZURE_RUN_STORAGE
+            )
+            run_id = str(uuid.uuid4())
+            line_inputs = self.get_line_inputs()
+            line_result = _exec_line(
+                executor=executor,
+                output_queue=output_queue,
+                inputs=line_inputs,
+                run_id=run_id,
+                index=0,
+                variant_id="",
+                validate_inputs=False,
+            )
+            assert isinstance(line_result, LineResult)
+            assert line_result.run_info.error["message"] == test_error_msg
+            assert line_result.run_info.error["code"] == "UserError"
+            assert line_result.run_info.status == Status.Failed
