@@ -394,11 +394,12 @@ def test_flow(args):
                 )
             flow = load_flow(args.flow)
 
-            script_path = [ os.path.join(temp_dir, "main.py"), os.path.join(temp_dir, "utils.py")]
+            script_path = [os.path.join(temp_dir, "main.py"), os.path.join(temp_dir, "utils.py")]
             for target in script_path:
                 StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path,
                                        target=target).generate_to_file(target)
-            sys.argv = ["streamlit", "run", os.path.join(temp_dir, "main.py"), "--global.developmentMode=false", "--client.toolbarMode=viewer", "--browser.gatherUsageStats=false"]
+            sys.argv = ["streamlit", "run", os.path.join(temp_dir, "main.py"), "--global.developmentMode=false",
+                        "--client.toolbarMode=viewer", "--browser.gatherUsageStats=false"]
             st_cli.main()
     else:
         if args.interactive:
