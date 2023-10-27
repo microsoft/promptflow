@@ -251,19 +251,19 @@ The return value of `test` function is the flow/node outputs.
 ```python
 from promptflow import PFClient
 
-pf_client = PFClient()
+pf = PFClient()
 
 flow_path = "web-classification"  # "web-classification" is the directory name
 
 # Test flow
 flow_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g", "answer": "Channel", "evidence": "Url"}  # The inputs of the flow.
-flow_result = pf_client.test(flow=flow_path, inputs=inputs)
+flow_result = pf.test(flow=flow_path, inputs=inputs)
 print(f"Flow outputs: {flow_result}")
 
 # Test node in the flow
 node_name = "fetch_text_content_from_url"  # The node name in the flow.
 node_inputs = {"url": "https://www.youtube.com/watch?v=o5ZQyXaAv1g"}  # The inputs of the node.
-node_result = pf_client.test(flow=flow_path, inputs=node_inputs, node=node_name)
+node_result = pf.test(flow=flow_path, inputs=node_inputs, node=node_name)
 print(f"Node outputs: {node_result}")
 ```
 
