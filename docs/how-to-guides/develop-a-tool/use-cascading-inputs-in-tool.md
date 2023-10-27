@@ -82,7 +82,7 @@ my_tool_package.tools.tool_with_cascading_inputs.my_tool:
 
 ## Use your tool from VSCode Extension
 After you build and share the tool package, you can use your tool from VSCode Extension according to [Create and Use Tool Package](create-and-use-tool-package.md).
-Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/tree/main/examples/flows/standard/flow-with-enabled-by-value) in VS Code extension. 
+Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/cascading-inputs-tool-showcase) in VS Code extension. 
 
 Before you select the "user_type" input, both "student_id" and "teacher_id" inputs are disabled and hidden.
 ![before_user_type_selected.png](../../media/how-to-guides/develop-a-tool/before_user_type_selected.png)
