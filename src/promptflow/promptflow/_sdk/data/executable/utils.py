@@ -13,11 +13,13 @@ def show_image(image, key=None):
     else:
         st.image(image)
 
+
 def json_dumps(value):
     try:
         return json.dumps(value)
     except Exception:
         return value
+
 
 def is_list_contains_rich_text(rich_text):
     result = False
@@ -31,6 +33,7 @@ def is_list_contains_rich_text(rich_text):
                 result = True
     return result
 
+
 def is_dict_contains_rich_text(rich_text):
     result = False
     for rich_text_key, rich_text_value in rich_text.items():
@@ -38,9 +41,11 @@ def is_dict_contains_rich_text(rich_text):
             result |= is_list_contains_rich_text(rich_text_value)
         elif isinstance(rich_text_value, dict):
             result |= is_dict_contains_rich_text(rich_text_value)
-        elif re.match(MIME_PATTERN, rich_text_key) or (isinstance(rich_text_value, str) and rich_text_value.startswith("data:image")):
+        elif re.match(MIME_PATTERN, rich_text_key) or (isinstance(rich_text_value, str) and
+                                                       rich_text_value.startswith("data:image")):
             result = True
     return result
+
 
 def item_render_message(value, key=None):
     if key and re.match(MIME_PATTERN, key):
@@ -52,6 +57,7 @@ def item_render_message(value, key=None):
             st.markdown(f"`{json_dumps(value)},`")
         else:
             st.markdown(f"`{key}: {json_dumps(value)},`")
+
 
 def list_iter_render_message(message_items):
     if is_list_contains_rich_text(message_items):
@@ -66,6 +72,7 @@ def list_iter_render_message(message_items):
         st.markdown("`], `")
     else:
         st.markdown(f"`{json_dumps(message_items)},`")
+
 
 def dict_iter_render_message(message_items):
     if is_multimedia_dict(message_items):
@@ -90,6 +97,7 @@ def dict_iter_render_message(message_items):
     else:
         st.markdown(f"`{json_dumps(message_items)},`")
 
+
 def extract_content(node):
     if isinstance(node, NavigableString):
         text = node.strip()
@@ -106,12 +114,14 @@ def extract_content(node):
             return result
     return []
 
+
 def parse_html_content(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     result = []
     for p in soup.find_all('p'):
         result.extend(extract_content(p))
     return result
+
 
 def parse_image_content(image_content, image_type):
     if image_content is not None:
