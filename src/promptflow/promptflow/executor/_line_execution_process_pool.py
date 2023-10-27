@@ -133,6 +133,9 @@ class LineExecutionProcessPool:
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
+        batch_run_start_method = os.environ.get("PF_BATCH_METHOD")
+        if batch_run_start_method is not None:
+            multiprocessing.set_start_method(batch_run_start_method)
         use_fork = multiprocessing.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
