@@ -1,4 +1,6 @@
 import uuid
+import os
+
 from multiprocessing import Queue
 from pathlib import Path
 from tempfile import mkdtemp
@@ -167,3 +169,29 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["message"] == test_error_msg
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
+
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_environment_variable(self, flow_folder, dev_connections):
+        os.environ["PF_BATCH_METHOD"] = "spawn"
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            line_timeout_sec=1,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        line_execution_process_pool = LineExecutionProcessPool(
+            executor,
+            nlines,
+            run_id,
+            "",
+            False,
+        )
+        use_fork = line_execution_process_pool._use_fork
+        assert use_fork is False
