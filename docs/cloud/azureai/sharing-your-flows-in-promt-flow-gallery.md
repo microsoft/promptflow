@@ -1,25 +1,28 @@
-# Flow Example Sharing in Organization
+# Sharing Your Flows in Prompt Flow Gallery
 
 :::{admonition} Experimental feature
 This is an experimental feature, and may change at any time. Learn [more](../../how-to-guides/faq.md#stable-vs-experimental).
 :::
 
-In this document, we will walk you through the steps to share your flow in an organization scope. This needs to register your flow as a model with some specific properties in an organization registry. Once completed, the model will be shown as a flow example in workspace portal.
+In this document, we will walk you through the steps to share your flows in Prompt Flow Gallery. This needs to register your flow as a model with specific flow metadata in an organization registry. Once completed, the model will be shown as a flow example in Prompt Flow Gallery on the workspace portal page.
 
-## Share flow as a model in an organization registry
+## Registering your flow in AzureML Registry
 
-### Prepare a `readme.md` file for the flow
+### Creating a `README.md` file for your flow
 
-To make the flow easily understand, it is better to include an `readme.md` file for the flow in the flow folder. Here we'll use [this existing readme](https://github.com/microsoft/promptflow/blob/main/examples/flows/chat/chat-with-wikipedia/README.md) as an example, the readme file may include following sections:
-- The purpose of the flow.
-- The tools utilized in the flow.
-- The prerequisites required to execute the flow.
-- What knowledge can be gained from this flow.
-- Any other information you wish to share about your flow.
+To make the flow easily understandable, include a `README.md` file in the flow folder explaining how to use it. The README may contain the following sections:
+1. The purpose of the flow.
+2. The tools utilized in the flow.
+3. The prerequisites required to execute the flow.
+4. The knowledge that can be acquired from this flow.
+5. The execution process of the flow.
+6. Any additional information about your flow.
 
-### Prepare a model yaml for the flow
+See this [example README](https://github.com/microsoft/promptflow/blob/main/examples/flows/chat/chat-with-wikipedia/README.md) with sections addressing points 1 to 5. A well-written README improves discoverability and enables collaboration.
 
-In this section, we will focus on the model properties related to the UI display of this flow. For details on other model fields, please refer to [model yaml schema](https://learn.microsoft.com/en-us/azure/machine-learning/reference-yaml-model?view=azureml-api-2). Below is a `model.yml` template for flow:
+### Preparing flow metadata for gallery display
+
+To registry the flow as a model in registry, we need to prepare a model yaml file with some flow metadata. Here, we will primarily focus on the properties related to the UI display of this flow. For more details on other model fields, please refer to [model yaml schema](https://learn.microsoft.com/en-us/azure/machine-learning/reference-yaml-model?view=azureml-api-2). Below is a `model.yml` template for the flow:
 
 ```yaml
 $schema: https://azuremlschemas.azureedge.net/latest/model.schema.json
@@ -36,8 +39,8 @@ properties:
   azureml.promptflow.description: <flow_description>
 ```
 
-Properties released to UI display of this flow:
-1. `is-promptflow`: value should always be `true`. This property distinguishes it from other models, enabling promptflow service to filter it out.
+Properties related to the UI display of this flow include:
+1. `is-promptflow`: value should always be `true`. This property differentiates it from other models, enabling promptflow service to filter it out.
 2. `azureml.promptflow.section`: value should always be `gallery`. This property indicates UI that this flow needs to be shown in the Flow Gallery.
 3. `azureml.promptflow.type`: value can be `chat`, `standard` or `evaluate`. This property identifies the type of your flow, and UI will display flows with  `evaluate` value under the 'Evaluation' tab, and display flows with other values under the 'Flow' tab.
 4. `azureml.promptflow.name`: the name of the flow which will be shown as the flow name in the Flow Gallery.
