@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from promptflow.exceptions import ErrorTarget
-from .._sdk._constants import DEFAULT_ENCODING
 
+from .._sdk._constants import DEFAULT_ENCODING
 from .._utils.dataclass_serializer import serialize
 from .._utils.utils import try_import
 from ._errors import FailedToImportModule, NodeConditionConflict
@@ -36,7 +36,17 @@ FLOW_INPUT_PREFIXES = [FLOW_INPUT_PREFIX, "inputs."]  # Use a list for backward 
 
 @dataclass
 class InputAssignment:
-    """This class represents the assignment of an input value."""
+    """This class represents the assignment of an input value.
+
+    :param value: The value of the input assignment.
+    :type value: Any
+    :param value_type: The type of the input assignment.
+    :type value_type: ~promptflow.contracts.flow.InputValueType
+    :param section: The section of the input assignment, usually the output.
+    :type section: str
+    :param property: The property of the input assignment that exists in the section.
+    :type property: str
+    """
 
     value: Any
     value_type: InputValueType = InputValueType.LITERAL
@@ -107,7 +117,11 @@ class InputAssignment:
 
 @dataclass
 class FlowInputAssignment(InputAssignment):
-    """This class represents the assignment of a flow input value."""
+    """This class represents the assignment of a flow input value.
+
+    :param prefix: The prefix of the flow input.
+    :type prefix: str
+    """
 
     prefix: str = FLOW_INPUT_PREFIX
 
@@ -152,7 +166,15 @@ class ToolSourceType(str, Enum):
 
 @dataclass
 class ToolSource:
-    """This class represents the source of a tool."""
+    """This class represents the source of a tool.
+
+    :param type: The type of the tool source.
+    :type type: ~promptflow.contracts.flow.ToolSourceType
+    :param tool: The tool of the tool source.
+    :type tool: str
+    :param path: The path of the tool source.
+    :type path: str
+    """
 
     type: ToolSourceType = ToolSourceType.Code
     tool: Optional[str] = None
@@ -177,7 +199,13 @@ class ToolSource:
 
 @dataclass
 class ActivateCondition:
-    """This class represents the activate condition of a node."""
+    """This class represents the activate condition of a node.
+
+    :param condition: The condition of the activate condition.
+    :type condition: ~promptflow.contracts.flow.InputAssignment
+    :param condition_value: The value of the condition.
+    :type condition_value: Any
+    """
 
     condition: InputAssignment
     condition_value: Any
@@ -200,7 +228,15 @@ class ActivateCondition:
 
 @dataclass
 class SkipCondition:
-    """This class represents the skip condition of a node."""
+    """This class represents the skip condition of a node.
+
+    :param condition: The condition of the skip condition.
+    :type condition: ~promptflow.contracts.flow.InputAssignment
+    :param condition_value: The value of the condition.
+    :type condition_value: Any
+    :param return_value: The return value when skip condition is met.
+    :type return_value: ~promptflow.contracts.flow.InputAssignment
+    """
 
     condition: InputAssignment
     condition_value: Any
@@ -225,7 +261,39 @@ class SkipCondition:
 
 @dataclass
 class Node:
-    """This class represents a node in a flow."""
+    """This class represents a node in a flow.
+
+    :param name: The name of the node.
+    :type name: str
+    :param tool: The tool of the node.
+    :type tool: str
+    :param inputs: The inputs of the node.
+    :type inputs: Dict[str, InputAssignment]
+    :param comment: The comment of the node.
+    :type comment: str
+    :param api: The api of the node.
+    :type api: str
+    :param provider: The provider of the node.
+    :type provider: str
+    :param module: The module of the node.
+    :type module: str
+    :param connection: The connection of the node.
+    :type connection: str
+    :param aggregation: Whether the node is an aggregation node.
+    :type aggregation: bool
+    :param enable_cache: Whether the node enable cache.
+    :type enable_cache: bool
+    :param use_variants: Whether the node use variants.
+    :type use_variants: bool
+    :param source: The source of the node.
+    :type source: ~promptflow.contracts.flow.ToolSource
+    :param type: The tool type of the node.
+    :type type: ~promptflow.contracts.tool.ToolType
+    :param skip: The skip condition of the node.
+    :type skip: ~promptflow.contracts.flow.SkipCondition
+    :param activate: The activate condition of the node.
+    :type activate: ~promptflow.contracts.flow.ActivateCondition
+    """
 
     name: str
     tool: str
@@ -295,7 +363,21 @@ class Node:
 
 @dataclass
 class FlowInputDefinition:
-    """This class represents the definition of a flow input."""
+    """This class represents the definition of a flow input.
+
+    :param type: The type of the flow input.
+    :type type: ~promptflow.contracts.tool.ValueType
+    :param default: The default value of the flow input.
+    :type default: str
+    :param description: The description of the flow input.
+    :type description: str
+    :param enum: The enum of the flow input.
+    :type enum: List[str]
+    :param is_chat_input: Whether the flow input is a chat input.
+    :type is_chat_input: bool
+    :param is_chat_history: Whether the flow input is a chat history.
+    :type is_chat_history: bool
+    """
 
     type: ValueType
     default: str = None
@@ -305,6 +387,11 @@ class FlowInputDefinition:
     is_chat_history: bool = None
 
     def serialize(self):
+        """Serialize the flow input definition to a dict.
+
+        :return: The dict of the flow input definition.
+        :rtype: dict
+        """
         data = {}
         data["type"] = self.type.value
         if self.default:
@@ -340,7 +427,19 @@ class FlowInputDefinition:
 
 @dataclass
 class FlowOutputDefinition:
-    """This class represents the definition of a flow output."""
+    """This class represents the definition of a flow output.
+
+    :param type: The type of the flow output.
+    :type type: ~promptflow.contracts.tool.ValueType
+    :param reference: The reference of the flow output.
+    :type reference: ~promptflow.contracts.flow.InputAssignment
+    :param description: The description of the flow output.
+    :type description: str
+    :param evaluation_only: Whether the flow output is for evaluation only.
+    :type evaluation_only: bool
+    :param is_chat_output: Whether the flow output is a chat output.
+    :type is_chat_output: bool
+    """
 
     type: ValueType
     reference: InputAssignment
@@ -349,7 +448,11 @@ class FlowOutputDefinition:
     is_chat_output: bool = False
 
     def serialize(self):
-        """Serialize the flow output definition to a dict."""
+        """Serialize the flow output definition to a dict.
+
+        :return: The dict of the flow output definition.
+        :rtype: dict
+        """
         data = {}
         data["type"] = self.type.value
         if self.reference:
@@ -382,7 +485,13 @@ class FlowOutputDefinition:
 
 @dataclass
 class NodeVariant:
-    """This class represents a node variant."""
+    """This class represents a node variant.
+
+    :param node: The node of the node variant.
+    :type node: ~promptflow.contracts.flow.Node
+    :param description: The description of the node variant.
+    :type description: str
+    """
 
     node: Node
     description: str = ""
@@ -404,7 +513,13 @@ class NodeVariant:
 
 @dataclass
 class NodeVariants:
-    """This class represents the variants of a node."""
+    """This class represents the variants of a node.
+
+    :param default_variant_id: The default variant id of the node.
+    :type default_variant_id: str
+    :param variants: The variants of the node.
+    :type variants: Dict[str, NodeVariant]
+    """
 
     default_variant_id: str  # The default variant id of the node
     variants: Dict[str, NodeVariant]  # The variants of the node
@@ -426,7 +541,23 @@ class NodeVariants:
 
 @dataclass
 class Flow:
-    """This class represents a flow."""
+    """This class represents a flow.
+
+    :param id: The id of the flow.
+    :type id: str
+    :param name: The name of the flow.
+    :type name: str
+    :param nodes: The nodes of the flow.
+    :type nodes: List[Node]
+    :param inputs: The inputs of the flow.
+    :type inputs: Dict[str, FlowInputDefinition]
+    :param outputs: The outputs of the flow.
+    :type outputs: Dict[str, FlowOutputDefinition]
+    :param tools: The tools of the flow.
+    :type tools: List[Tool]
+    :param node_variants: The node variants of the flow.
+    :type node_variants: Dict[str, NodeVariants]
+    """
 
     id: str
     name: str
@@ -437,7 +568,11 @@ class Flow:
     node_variants: Dict[str, NodeVariants] = None
 
     def serialize(self):
-        """Serialize the flow to a dict."""
+        """Serialize the flow to a dict.
+
+        :return: The dict of the flow.
+        :rtype: dict
+        """
         data = {
             "id": self.id,
             "name": self.name,
