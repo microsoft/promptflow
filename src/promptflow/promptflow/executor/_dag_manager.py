@@ -92,6 +92,9 @@ class DAGManager:
     def _is_node_bypassable(self, node: Node) -> bool:
         """Returns True if the node should be bypassed."""
         # Bypass node if the skip condition is met
+        if self._is_condition_met(node.activate.condition, node.activate.condition_value):
+            return False
+
         if self._is_skip_condition_met(node):
             if self._is_node_dependency_bypassed(node.skip.return_value):
                 raise ReferenceNodeBypassed(
@@ -110,10 +113,7 @@ class DAGManager:
             return True
 
         # Bypass node if the activate condition is not met
-        if node.activate and (
-            self._is_node_dependency_bypassed(node.activate.condition)
-            or not self._is_condition_met(node.activate.condition, node.activate.condition_value)
-        ):
+        if node.activate and self._is_node_dependency_bypassed(node.activate.condition):
             return True
 
         # Bypass node if all of its node reference dependencies are bypassed
