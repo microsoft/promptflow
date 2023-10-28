@@ -12,6 +12,9 @@ on:
     paths: [ examples/flows/standard/named-entity-recognition/**, examples/*requirements.txt, .github/workflows/samples_flows_standard_named_entity_recognition.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest

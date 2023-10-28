@@ -1,0 +1,27 @@
+system:
+Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.
+
+{% for item in chat_history %}
+user:
+{{item.inputs.question}}
+
+{% if 'function_call' in item.outputs.llm_output %}
+assistant:
+Function generation requested, function = {{item.outputs.llm_output.function_call.name}}, args = {{item.outputs.llm_output.function_call.arguments}}
+
+function:
+name:
+{{item.outputs.llm_output.function_call.name}}
+content:
+{{item.outputs.answer}}
+
+{% else %}
+assistant:
+{{item.outputs.llm_output}}}}
+
+{% endif %}}
+
+{% endfor %}
+
+user:
+{{question}}

@@ -426,3 +426,14 @@ def get_secret_input(prompt, mask="*"):
             sys.stdout.write(mask)
             sys.stdout.flush()
             secret_input.append(char)
+
+
+def _copy_to_flow(flow_path, source_file):
+    target = flow_path / source_file.name
+    action = "Overwriting" if target.exists() else "Creating"
+    if source_file.is_file():
+        print(f"{action} {source_file.name}...")
+        shutil.copy2(source_file, target)
+    else:
+        print(f"{action} {source_file.name} folder...")
+        shutil.copytree(source_file, target, dirs_exist_ok=True)

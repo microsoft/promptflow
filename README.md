@@ -93,7 +93,7 @@ We also offer a VS Code extension (a flow designer) for an interactive flow deve
 
 You can install it from the <a href="https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow">visualstudio marketplace</a>.
 
-#### Deep dive into flow development
+#### Deep delve into flow development
 
 [Getting Started with Prompt Flow](https://microsoft.github.io/promptflow/how-to-guides/quick-start.html): A step by step guidance to invoke your first flow run.
 

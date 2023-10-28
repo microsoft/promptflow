@@ -7,7 +7,7 @@ import tests.utils as utils
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
-@pytest.mark.skip_if_no_key("serp_connection")
+@pytest.mark.skip_if_no_api_key("serp_connection")
 class TestSerpAPI:
     def test_engine(self, serp_connection):
         query = "cute cats"

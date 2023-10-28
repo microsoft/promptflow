@@ -54,8 +54,9 @@ pf flow test --flow . --inputs source="./azure_open_ai.py"
 
 ```bash
 # run flow with batch data
-pf run create --flow . --data ./data.jsonl --name auto_generate_docstring
+pf run create --flow . --data ./data.jsonl --name auto_generate_docstring --column-mapping source='${data.source}'
 ```
 Output the code after add the docstring.
 
-
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.

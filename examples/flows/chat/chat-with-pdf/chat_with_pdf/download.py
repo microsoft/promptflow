@@ -4,11 +4,12 @@ import re
 
 from utils.lock import acquire_lock
 from utils.logging import log
+from constants import PDF_DIR
 
 
 # Download a pdf file from a url and return the path to the file
 def download(url: str) -> str:
-    path = ".pdfs/" + normalize_filename(url) + ".pdf"
+    path = os.path.join(PDF_DIR, normalize_filename(url) + ".pdf")
     lock_path = path + ".lock"
 
     with acquire_lock(lock_path):

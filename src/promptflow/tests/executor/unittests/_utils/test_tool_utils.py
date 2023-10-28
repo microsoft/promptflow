@@ -3,9 +3,50 @@ from typing import Union
 
 import pytest
 
-from promptflow._utils.tool_utils import function_to_interface, param_to_definition
+from promptflow._utils.tool_utils import (
+    DynamicListError,
+    ListFunctionResponseError,
+    append_workspace_triple_to_func_input_params,
+    function_to_interface,
+    load_function_from_function_path,
+    param_to_definition,
+    validate_dynamic_list_func_response_type,
+)
 from promptflow.connections import AzureOpenAIConnection, CustomConnection
 from promptflow.contracts.tool import ValueType
+
+
+# mock functions for dynamic list function testing
+def mock_dynamic_list_func1():
+    pass
+
+
+def mock_dynamic_list_func2(input1):
+    pass
+
+
+def mock_dynamic_list_func3(input1, input2):
+    pass
+
+
+def mock_dynamic_list_func4(input1, input2, **kwargs):
+    pass
+
+
+def mock_dynamic_list_func5(input1, input2, subscription_id):
+    pass
+
+
+def mock_dynamic_list_func6(input1, input2, subscription_id, resource_group_name, workspace_name):
+    pass
+
+
+def mock_dynamic_list_func7(input1, input2, subscription_id, **kwargs):
+    pass
+
+
+def mock_dynamic_list_func8(input1, input2, subscription_id, resource_group_name, workspace_name, **kwargs):
+    pass
 
 
 @pytest.mark.unittest
@@ -80,3 +121,229 @@ class TestToolUtils:
         input_def, _ = param_to_definition(sig.parameters.get("conn7"), gen_custom_type_conn=True)
         assert input_def.type == [ValueType.OBJECT]
         assert input_def.custom_type is None
+
+    @pytest.mark.parametrize(
+        "func, func_input_params_dict, use_ws_triple, expected_res",
+        [
+            (mock_dynamic_list_func1, None, False, {}),
+            (mock_dynamic_list_func2, {"input1": "value1"}, False, {"input1": "value1"}),
+            (
+                mock_dynamic_list_func3,
+                {"input1": "value1", "input2": "value2"},
+                False,
+                {"input1": "value1", "input2": "value2"},
+            ),
+            (mock_dynamic_list_func3, {"input1": "value1"}, False, {"input1": "value1"}),
+            (mock_dynamic_list_func3, {"input1": "value1"}, True, {"input1": "value1"}),
+            (
+                mock_dynamic_list_func4,
+                {"input1": "value1"},
+                True,
+                {
+                    "input1": "value1",
+                    "subscription_id": "mock_subscription_id",
+                    "resource_group_name": "mock_resource_group",
+                    "workspace_name": "mock_workspace_name",
+                },
+            ),
+            (
+                mock_dynamic_list_func5,
+                {"input1": "value1"},
+                True,
+                {"input1": "value1", "subscription_id": "mock_subscription_id"},
+            ),
+            (
+                mock_dynamic_list_func5,
+                {"input1": "value1", "subscription_id": "input_subscription_id"},
+                True,
+                {"input1": "value1", "subscription_id": "input_subscription_id"},
+            ),
+            (
+                mock_dynamic_list_func6,
+                {"input1": "value1"},
+                True,
+                {
+                    "input1": "value1",
+                    "subscription_id": "mock_subscription_id",
+                    "resource_group_name": "mock_resource_group",
+                    "workspace_name": "mock_workspace_name",
+                },
+            ),
+            (
+                mock_dynamic_list_func6,
+                {
+                    "input1": "value1",
+                    "workspace_name": "input_workspace_name",
+                },
+                True,
+                {
+                    "input1": "value1",
+                    "workspace_name": "input_workspace_name",
+                    "subscription_id": "mock_subscription_id",
+                    "resource_group_name": "mock_resource_group",
+                },
+            ),
+            (
+                mock_dynamic_list_func7,
+                {"input1": "value1"},
+                True,
+                {
+                    "input1": "value1",
+                    "subscription_id": "mock_subscription_id",
+                    "resource_group_name": "mock_resource_group",
+                    "workspace_name": "mock_workspace_name",
+                },
+            ),
+            (
+                mock_dynamic_list_func7,
+                {"input1": "value1", "subscription_id": "input_subscription_id"},
+                True,
+                {
+                    "input1": "value1",
+                    "subscription_id": "input_subscription_id",
+                    "resource_group_name": "mock_resource_group",
+                    "workspace_name": "mock_workspace_name",
+                },
+            ),
+            (
+                mock_dynamic_list_func8,
+                {"input1": "value1"},
+                True,
+                {
+                    "input1": "value1",
+                    "subscription_id": "mock_subscription_id",
+                    "resource_group_name": "mock_resource_group",
+                    "workspace_name": "mock_workspace_name",
+                },
+            ),
+            (
+                mock_dynamic_list_func8,
+                {
+                    "input1": "value1",
+                    "subscription_id": "input_subscription_id",
+                    "resource_group_name": "input_resource_group",
+                    "workspace_name": "input_workspace_name",
+                },
+                True,
+                {
+                    "input1": "value1",
+                    "subscription_id": "input_subscription_id",
+                    "resource_group_name": "input_resource_group",
+                    "workspace_name": "input_workspace_name",
+                },
+            ),
+        ],
+    )
+    def test_append_workspace_triple_to_func_input_params(
+        self, func, func_input_params_dict, use_ws_triple, expected_res, mocked_ws_triple
+    ):
+        ws_triple_dict = mocked_ws_triple._asdict() if use_ws_triple else None
+        func_sig_params = inspect.signature(func).parameters
+        actual_combined_inputs = append_workspace_triple_to_func_input_params(
+            func_sig_params=func_sig_params,
+            func_input_params_dict=func_input_params_dict,
+            ws_triple_dict=ws_triple_dict,
+        )
+        assert actual_combined_inputs == expected_res
+
+    @pytest.mark.parametrize(
+        "res",
+        [
+            (
+                [
+                    {
+                        "value": "fig0",
+                        "display_value": "My_fig0",
+                        "hyperlink": "https://www.bing.com/search?q=fig0",
+                        "description": "this is 0 item",
+                    },
+                    {
+                        "value": "kiwi1",
+                        "display_value": "My_kiwi1",
+                        "hyperlink": "https://www.bing.com/search?q=kiwi1",
+                        "description": "this is 1 item",
+                    },
+                ]
+            ),
+            ([{"value": "fig0"}, {"value": "kiwi1"}]),
+            ([{"value": "fig0", "display_value": "My_fig0"}, {"value": "kiwi1", "display_value": "My_kiwi1"}]),
+            (
+                [
+                    {"value": "fig0", "display_value": "My_fig0", "hyperlink": "https://www.bing.com/search?q=fig0"},
+                    {
+                        "value": "kiwi1",
+                        "display_value": "My_kiwi1",
+                        "hyperlink": "https://www.bing.com/search?q=kiwi1",
+                    },
+                ]
+            ),
+            ([{"value": "fig0", "hyperlink": "https://www.bing.com/search?q=fig0"}]),
+            (
+                [
+                    {"value": "fig0", "display_value": "My_fig0", "description": "this is 0 item"},
+                    {
+                        "value": "kiwi1",
+                        "display_value": "My_kiwi1",
+                        "hyperlink": "https://www.bing.com/search?q=kiwi1",
+                        "description": "this is 1 item",
+                    },
+                ]
+            ),
+        ],
+    )
+    def test_validate_dynamic_list_func_response_type(self, res):
+        validate_dynamic_list_func_response_type(response=res, f="mock_func")
+
+    @pytest.mark.parametrize(
+        "res, err_msg",
+        [
+            (None, "mock_func response can not be empty."),
+            ([], "mock_func response can not be empty."),
+            (["a", "b"], "mock_func response must be a list of dict. a is not a dict."),
+            ({"a": "b"}, "mock_func response must be a list."),
+            ([{"a": "b"}], "mock_func response dict must have 'value' key."),
+            ([{"value": 1 + 2j}], "mock_func response dict value \\(1\\+2j\\) is not json serializable."),
+        ],
+    )
+    def test_validate_dynamic_list_func_response_type_with_error(self, res, err_msg):
+        error_message = (
+            f"Unable to display list of items due to '{err_msg}'. \nPlease contact the tool "
+            f"author/support team for troubleshooting assistance."
+        )
+        with pytest.raises(ListFunctionResponseError, match=error_message):
+            validate_dynamic_list_func_response_type(response=res, f="mock_func")
+
+    def test_load_function_from_function_path(self, mock_module_with_list_func):
+        func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
+        load_function_from_function_path(func_path)
+
+    def test_load_function_from_function_path_with_error(self, mock_module_with_list_func):
+        func_path = "mock_func_path"
+        with pytest.raises(
+            DynamicListError,
+            match="Unable to display list of items due to 'Failed to parse function from function path: "
+            "'mock_func_path'. Expected format: format 'my_module.my_func'. Detailed error: not enough "
+            "values to unpack \\(expected 2, got 1\\)'. \nPlease contact the tool author/support team for "
+            "troubleshooting assistance.",
+        ):
+            load_function_from_function_path(func_path)
+
+        func_path = "fake_tool_pkg.tools.tool_with_dynamic_list_input.my_list_func"
+        with pytest.raises(
+            DynamicListError,
+            match="Unable to display list of items due to 'Failed to parse function from function path: "
+            "'fake_tool_pkg.tools.tool_with_dynamic_list_input.my_list_func'. Expected format: format "
+            "'my_module.my_func'. Detailed error: No module named 'fake_tool_pkg''. \nPlease contact the tool "
+            "author/support team for troubleshooting assistance.",
+        ):
+            load_function_from_function_path(func_path)
+
+        func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_field"
+        with pytest.raises(
+            DynamicListError,
+            match="Unable to display list of items due to 'Failed to parse function from function path: "
+            "'my_tool_package.tools.tool_with_dynamic_list_input.my_field'. Expected format: "
+            "format 'my_module.my_func'. Detailed error: Unable to display list of items due to ''1' "
+            "is not callable.'. \nPlease contact the tool author/support team for troubleshooting assistance.",
+        ):
+            load_function_from_function_path(func_path)

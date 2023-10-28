@@ -119,6 +119,16 @@ def add_param_columns_mapping(parser):
     )
 
 
+def add_param_set_tool_extra_info(parser):
+    parser.add_argument(
+        "--set",
+        dest="extra_info",
+        action=AppendToDictAction,
+        help="Set extra information about the tool. Example: --set <key>=<value>.",
+        nargs="+",
+    )
+
+
 def add_param_inputs(parser):
     parser.add_argument(
         "--inputs",
