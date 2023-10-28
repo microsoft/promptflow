@@ -24,12 +24,11 @@ from promptflow._core.tool import ToolInvoker
 from promptflow._core.tools_manager import ToolsManager
 from promptflow._utils.context_utils import _change_working_dir
 from promptflow._utils.logger_utils import logger
+from promptflow._utils.multimedia_utils import load_multimedia_data, load_multimedia_data_recursively
 from promptflow._utils.utils import transpose
 from promptflow.contracts.flow import Flow, FlowInputDefinition, InputAssignment, InputValueType, Node
-from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo, Status
 from promptflow.contracts.run_mode import RunMode
-from promptflow.contracts.tool import ValueType
 from promptflow.exceptions import PromptflowException
 from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
@@ -49,7 +48,7 @@ from promptflow.executor._tool_invoker import DefaultToolInvoker
 from promptflow.executor._tool_resolver import ToolResolver
 from promptflow.executor.flow_validator import FlowValidator
 from promptflow.storage import AbstractRunStorage
-from promptflow.storage._run_storage import DummyRunStorage
+from promptflow.storage._run_storage import DefaultRunStorage
 
 LINE_NUMBER_KEY = "line_number"  # Using the same key with portal.
 LINE_TIMEOUT_SEC = 600
@@ -218,7 +217,7 @@ class FlowExecutor:
         flow.outputs = FlowValidator._ensure_outputs_valid(flow)
 
         if storage is None:
-            storage = DummyRunStorage()
+            storage = DefaultRunStorage()
         run_tracker = RunTracker(storage)
 
         cache_manager = AbstractCacheManager.init_from_env()
@@ -243,6 +242,7 @@ class FlowExecutor:
         flow_file: Path,
         node_name: str,
         *,
+        output_sub_dir: Optional[str] = None,
         flow_inputs: Optional[Mapping[str, Any]] = None,
         dependency_nodes_outputs: Optional[Mapping[str, Any]] = None,
         connections: Optional[dict] = None,
@@ -295,8 +295,10 @@ class FlowExecutor:
                 flow_file=flow_file,
             )
 
-        flow_inputs = FlowExecutor._process_input_values(flow.inputs, flow_inputs)
-        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, flow_inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(flow.inputs, flow_inputs)
+        inputs = load_multimedia_data(flow.inputs, inputs_with_default_value)
+        dependency_nodes_outputs = load_multimedia_data_recursively(dependency_nodes_outputs)
+        converted_flow_inputs_for_node = FlowValidator.convert_flow_inputs_for_node(flow, node, inputs)
         package_tool_keys = [node.source.tool] if node.source and node.source.tool else []
         tool_resolver = ToolResolver(working_dir, connections, package_tool_keys)
         resolved_node = tool_resolver.resolve_tool_by_node(node)
@@ -321,7 +323,9 @@ class FlowExecutor:
         resolved_inputs = {k: v for k, v in resolved_inputs.items() if k not in resolved_node.init_args}
 
         # TODO: Simplify the logic here
-        run_tracker = RunTracker(DummyRunStorage())
+        sub_dir = "." if output_sub_dir is None else output_sub_dir
+        storage = DefaultRunStorage(base_dir=working_dir, sub_dir=Path(sub_dir))
+        run_tracker = RunTracker(storage)
         with run_tracker.node_log_manager:
             ToolInvoker.activate(DefaultToolInvoker())
 
@@ -438,8 +442,8 @@ class FlowExecutor:
             )
             logger.error(failed_msg)
 
-    def _exec_batch_with_threads(
-        self, batch_inputs: List[dict], run_id, validate_inputs: bool = True, variant_id: str = ""
+    def _exec_batch_with_process_pool(
+        self, batch_inputs: List[dict], run_id, output_dir: Path, validate_inputs: bool = True, variant_id: str = ""
     ) -> List[LineResult]:
         nlines = len(batch_inputs)
         line_number = [
@@ -464,6 +468,7 @@ class FlowExecutor:
             run_id,
             variant_id,
             validate_inputs,
+            output_dir,
         ) as pool:
             result_list = pool.run(zip(line_number, batch_inputs))
 
@@ -638,7 +643,7 @@ class FlowExecutor:
         :rtype: dict
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
+        inputs = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
         result = self._exec(inputs)
         #  TODO: remove this line once serving directly calling self.exec_line
         self._add_line_results([result])
@@ -696,7 +701,8 @@ class FlowExecutor:
         :rtype: ~promptflow.executor._result.LineResult
         """
         self._node_concurrency = node_concurrency
-        inputs = FlowExecutor._process_input_values(self._flow.inputs, inputs)
+        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(self._flow.inputs, inputs)
+        inputs = load_multimedia_data(self._flow.inputs, inputs_with_default_value)
         # For flow run, validate inputs as default
         with self._run_tracker.node_log_manager:
             # exec_line interface may be called by exec_bulk, so we only set run_mode as flow run when
@@ -711,7 +717,6 @@ class FlowExecutor:
                 validate_inputs=validate_inputs,
                 allow_generator_output=allow_generator_output,
             )
-        self._save_image_from_output(line_result.output, self._working_dir)
         #  Return line result with index
         if index is not None and isinstance(line_result.output, dict):
             line_result.output[LINE_NUMBER_KEY] = index
@@ -734,6 +739,7 @@ class FlowExecutor:
         validate_inputs: bool = True,
         raise_on_line_failure: bool = False,
         node_concurrency=DEFAULT_CONCURRENCY_BULK,
+        output_dir: Path = None,
     ) -> BulkResult:
         """The entry points for bulk run execution
 
@@ -754,11 +760,16 @@ class FlowExecutor:
 
         self._node_concurrency = node_concurrency
         # Apply default value in early stage, so we can use it both in line execution and aggregation nodes execution.
-        inputs = [FlowExecutor._process_input_values(self._flow.inputs, each_line_input) for each_line_input in inputs]
+        inputs = [
+            FlowExecutor._apply_default_value_for_input(self._flow.inputs, each_line_input)
+            for each_line_input in inputs
+        ]
         run_id = run_id or str(uuid.uuid4())
         with self._run_tracker.node_log_manager:
             OperationContext.get_instance().run_mode = RunMode.Batch.name
-            line_results = self._exec_batch_with_threads(inputs, run_id, validate_inputs=validate_inputs)
+            line_results = self._exec_batch_with_process_pool(
+                inputs, run_id, output_dir, validate_inputs=validate_inputs
+            )
             self._add_line_results(line_results)  # For bulk run, currently we need to add line results to run_tracker
             self._handle_line_failures([r.run_info for r in line_results], raise_on_line_failure)
             aggr_results = self._exec_aggregation_with_bulk_results(inputs, line_results, run_id)
@@ -775,31 +786,12 @@ class FlowExecutor:
         )
 
     @staticmethod
-    def _process_input_values(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
-        inputs_with_default_value = FlowExecutor._apply_default_value_for_input(inputs, line_inputs)
-        return FlowExecutor._convert_image_to_bytes(inputs, inputs_with_default_value)
-
-    @staticmethod
     def _apply_default_value_for_input(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
         updated_inputs = dict(line_inputs or {})
         for key, value in inputs.items():
             if key not in updated_inputs and (value and value.default):
                 updated_inputs[key] = value.default
         return updated_inputs
-
-    @staticmethod
-    def _convert_image_to_bytes(inputs: Dict[str, FlowInputDefinition], line_inputs: Mapping) -> Dict[str, Any]:
-        updated_inputs = dict(line_inputs or {})
-        for key, value in inputs.items():
-            if value.type == ValueType.IMAGE:
-                updated_inputs[key] = Image.from_file(updated_inputs[key])
-        return updated_inputs
-
-    def _save_image_from_output(self, output: dict, output_dir: str):
-        # TODO: The output directory should be configurable.
-        for key, value in output.items():
-            if isinstance(value, Image):
-                output[key] = value.save_to(key, output_dir)
 
     def validate_and_apply_inputs_mapping(self, inputs, inputs_mapping) -> List[Dict[str, Any]]:
         """Validate and apply inputs mapping for all lines in the flow.
@@ -815,8 +807,7 @@ class FlowExecutor:
             logger.warning(
                 msg=(
                     "Starting run without column mapping may lead to unexpected results. "
-                    "Please consult the following documentation for more information: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "Please consult the following documentation for more information: https://aka.ms/pf/column-mapping"
                 )
             )
 
@@ -895,6 +886,11 @@ class FlowExecutor:
                 run_info.inputs = inputs
             output, nodes_outputs = self._traverse_nodes(inputs, context)
             output = self._stringify_generator_output(output) if not allow_generator_output else output
+            # Persist the node runs for the nodes that have a generator output
+            generator_output_nodes = [
+                nodename for nodename, output in nodes_outputs.items() if isinstance(output, GeneratorType)
+            ]
+            run_tracker.persist_selected_node_runs(run_info, generator_output_nodes)
             run_tracker.allow_generator_types = allow_generator_output
             run_tracker.end_run(line_run_id, result=output)
             aggregation_inputs = self._extract_aggregation_inputs(nodes_outputs)
@@ -972,6 +968,8 @@ class FlowExecutor:
         outputs = {}
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
+        for node in bypassed_nodes.keys():
+            nodes_outputs[node] = None
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):
@@ -990,7 +988,7 @@ class FlowExecutor:
                 ),
                 current_value=self._node_concurrency,
             )
-        return FlowNodesScheduler(self._tools_manager).execute(context, inputs, nodes, self._node_concurrency)
+        return FlowNodesScheduler(self._tools_manager, inputs, nodes, self._node_concurrency, context).execute()
 
     @staticmethod
     def apply_inputs_mapping(
@@ -1066,8 +1064,7 @@ class FlowExecutor:
                 message_format=(
                     "The input for batch run is incorrect. Couldn't find these mapping relations: {invalid_relations}. "
                     "Please make sure your input mapping keys and values match your YAML input section and input data. "
-                    "For more information, refer to the following documentation: "
-                    "https://microsoft.github.io/promptflow/how-to-guides/column-mapping.html."
+                    "For more information, refer to the following documentation: https://aka.ms/pf/column-mapping"
                 ),
                 invalid_relations=invalid_relations,
             )

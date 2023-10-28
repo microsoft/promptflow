@@ -1,0 +1,25 @@
+{
+	"name": "Promptflow-Python39",
+	// "context" is the path that the Codespaces docker build command should be run from, relative to devcontainer.json
+	"context": ".",
+	"dockerFile": "Dockerfile",
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash"
+	},
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"ms-python.python",
+		"ms-toolsai.vscode-ai",
+		"ms-toolsai.jupyter",
+		"redhat.vscode-yaml",
+		"prompt-flow.prompt-flow"
+	],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "pip install -r ${containerWorkspaceFolder}/src/promptflow-tools/requirements.txt --force-reinstall;pip install -r ${containerWorkspaceFolder}/src/promptflow/dev_requirements.txt --force-reinstall;pip install -e ${containerWorkspaceFolder}/src/promptflow-tools;pip install -e ${containerWorkspaceFolder}/src/promptflow",
+
+	"runArgs": ["-v", "/var/run/docker.sock:/var/run/docker.sock"]
+}

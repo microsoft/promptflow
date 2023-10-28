@@ -1,3 +1,5 @@
+import signal
+
 from azure.identity import AzureCliCredential, DefaultAzureCredential
 
 
@@ -14,3 +16,7 @@ def get_cred():
 
     assert token is not None
     return credential
+
+
+PYTEST_TIMEOUT_METHOD = "signal" if hasattr(signal, "SIGALRM") else "thread"  # use signal when os support SIGALRM
+DEFAULT_TEST_TIMEOUT = 10 * 60  # 10mins

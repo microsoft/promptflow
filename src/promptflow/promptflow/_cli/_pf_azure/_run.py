@@ -6,7 +6,7 @@ import argparse
 import functools
 import json
 import logging
-from typing import Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -14,10 +14,11 @@ from promptflow._cli._params import (
     add_param_all_results,
     add_param_debug,
     add_param_run_name,
+    add_param_set,
     add_param_verbose,
     logging_params,
 )
-from promptflow._cli._pf._run import add_run_create_common, create_run
+from promptflow._cli._pf._run import _parse_metadata_args, add_run_create_common, create_run
 from promptflow._cli._pf_azure._utils import _get_azure_pf_client
 from promptflow._cli._utils import (
     _set_workspace_argument_for_subparsers,
@@ -52,9 +53,9 @@ def add_parser_run(subparsers):
     add_parser_run_show_metrics(subparsers)
     # add_parser_run_cancel(subparsers)
     add_parser_run_visualize(subparsers)
-    # add_parser_run_archive(subparsers)
-    # add_parser_run_restore(subparsers)
-    # add_parser_run_update(subparsers)
+    add_parser_run_archive(subparsers)
+    add_parser_run_restore(subparsers)
+    add_parser_run_update(subparsers)
     run_parser.set_defaults(action="run")
 
 
@@ -310,6 +311,12 @@ pfazure run visualize --names "<name1>, <name2>"
 
 def add_parser_run_archive(subparsers):
     """Add run archive parser to the pfazure subparsers."""
+    epilog = """
+Examples:
+
+# Archive a run:
+pfazure run archive -n <name>
+"""
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
@@ -318,7 +325,7 @@ def add_parser_run_archive(subparsers):
     activate_action(
         name="archive",
         description="A CLI tool to archive a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Archive a run.",
@@ -328,6 +335,12 @@ def add_parser_run_archive(subparsers):
 
 def add_parser_run_restore(subparsers):
     """Add run restore parser to the pfazure subparsers."""
+    epilog = """
+Examples:
+
+# Restore an archived run:
+pfazure run restore -n <name>
+"""
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
@@ -336,7 +349,7 @@ def add_parser_run_restore(subparsers):
     activate_action(
         name="restore",
         description="A CLI tool to restore a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Restore a run.",
@@ -346,15 +359,22 @@ def add_parser_run_restore(subparsers):
 
 def add_parser_run_update(subparsers):
     """Add run update parser to the pfazure subparsers."""
+    epilog = """
+Example:
+
+# Update a run metadata:
+pf run update --name <name> --set display_name="<display-name>" description="<description>" tags.key="<value>"
+"""
     add_params = [
         _set_workspace_argument_for_subparsers,
         add_param_run_name,
+        add_param_set,
     ] + logging_params
 
     activate_action(
         name="update",
         description="A CLI tool to update a run.",
-        epilog=None,
+        epilog=epilog,
         add_params=add_params,
         subparsers=subparsers,
         help_message="Update a run.",
@@ -406,6 +426,12 @@ def dispatch_run_commands(args: argparse.Namespace):
             args.html_path,
             args.debug,
         )
+    elif args.sub_action == "archive":
+        archive_run(args.subscription, args.resource_group, args.workspace_name, args.name)
+    elif args.sub_action == "restore":
+        restore_run(args.subscription, args.resource_group, args.workspace_name, args.name)
+    elif args.sub_action == "update":
+        update_run(args.subscription, args.resource_group, args.workspace_name, args.name, params=args.params_override)
 
 
 @exception_handler("List runs")
@@ -451,37 +477,35 @@ def list_runs(
 
 
 @exception_handler("Show run")
-def show_run(subscription_id, resource_group, workspace_name, flow_run_id):
+def show_run(subscription_id, resource_group, workspace_name, run_name):
     """Show a run from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
-    run = pf.runs.get(run=flow_run_id)
+    run = pf.runs.get(run=run_name)
     print(json.dumps(run._to_dict(), indent=4))
 
 
 @exception_handler("Show run details")
-def show_run_details(
-    subscription_id, resource_group, workspace_name, flow_run_id, max_results, all_results, debug=False
-):
+def show_run_details(subscription_id, resource_group, workspace_name, run_name, max_results, all_results, debug=False):
     """Show a run details from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
-    details = pf.runs.get_details(run=flow_run_id, max_results=max_results, all_results=all_results)
+    details = pf.runs.get_details(run=run_name, max_results=max_results, all_results=all_results)
     details.fillna(value="(Failed)", inplace=True)  # replace nan with explicit prompt
     pretty_print_dataframe_as_table(details)
 
 
 @exception_handler("Show run metrics")
-def show_metrics(subscription_id, resource_group, workspace_name, flow_run_id):
+def show_metrics(subscription_id, resource_group, workspace_name, run_name):
     """Show run metrics from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
-    metrics = pf.runs.get_metrics(run=flow_run_id)
+    metrics = pf.runs.get_metrics(run=run_name)
     print(json.dumps(metrics, indent=4))
 
 
 @exception_handler("Stream run")
-def stream_run(subscription_id, resource_group, workspace_name, flow_run_id, debug=False):
+def stream_run(subscription_id, resource_group, workspace_name, run_name, debug=False):
     """Stream run logs from cloud."""
     pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name, debug=debug)
-    run = pf.runs.stream(flow_run_id)
+    run = pf.runs.stream(run_name)
     print("\n")
     print(json.dumps(run._to_dict(), indent=4))
 
@@ -505,3 +529,44 @@ def visualize(
     except InvalidRunStatusError as e:
         error_message = f"Visualize failed: {str(e)}"
         print_red_error(error_message)
+
+
+@exception_handler("Archive run")
+def archive_run(
+    subscription_id: str,
+    resource_group: str,
+    workspace_name: str,
+    run_name: str,
+):
+    pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
+    run = pf.runs.archive(run=run_name)
+    print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Restore run")
+def restore_run(
+    subscription_id: str,
+    resource_group: str,
+    workspace_name: str,
+    run_name: str,
+):
+    pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
+    run = pf.runs.restore(run=run_name)
+    print(json.dumps(run._to_dict(), indent=4))
+
+
+@exception_handler("Update run")
+def update_run(
+    subscription_id: str,
+    resource_group: str,
+    workspace_name: str,
+    run_name: str,
+    params: List[Dict[str, str]],
+):
+    # params_override can have multiple items when user specifies with
+    # `--set key1=value1 key2=value`
+    # so we need to merge them first.
+    display_name, description, tags = _parse_metadata_args(params)
+    pf = _get_azure_pf_client(subscription_id, resource_group, workspace_name)
+    run = pf.runs.update(run=run_name, display_name=display_name, description=description, tags=tags)
+    print(json.dumps(run._to_dict(), indent=4))

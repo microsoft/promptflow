@@ -20,7 +20,7 @@ class TestGlobalConfig:
 
     def test_connection_operations(self, pf):
         connections = pf.connections.list()
-        assert len(connections) > 0
+        assert len(connections) > 0, f"No connection found. Provider: {pf._connection_provider}"
         # Assert create/update/delete not supported.
         with pytest.raises(NotImplementedError):
             pf.connections.create_or_update(connection=connections[0])

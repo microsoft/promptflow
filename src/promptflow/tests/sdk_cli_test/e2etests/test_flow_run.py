@@ -17,7 +17,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import InputMappingError
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -34,6 +33,13 @@ def create_run_against_multi_line_data(client) -> Run:
         flow=f"{FLOWS_DIR}/web_classification",
         data=f"{DATAS_DIR}/webClassification3.jsonl",
         column_mapping={"url": "${data.url}"},
+    )
+
+
+def create_run_against_multi_line_data_without_llm(client: PFClient) -> Run:
+    return client.run(
+        flow=f"{FLOWS_DIR}/print_env_var",
+        data=f"{DATAS_DIR}/env_var_names.jsonl",
     )
 
 
@@ -247,12 +253,36 @@ class TestFlowRun:
             )
         assert "Connection with name new_connection not found" in str(e.value)
 
-    @pytest.mark.skip("TODO: need to fix random pacakge not found error")
-    def test_custom_strong_type_connection_basic_flow(self, install_custom_tool_pkg, local_client, pf):
+    def test_basic_flow_with_package_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
+        # Need to reload pkg_resources to get the latest installed tools
+        import importlib
+
+        import pkg_resources
+
+        importlib.reload(pkg_resources)
+
         result = pf.run(
-            flow=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow",
-            data=f"{FLOWS_DIR}/custom_strong_type_connection_basic_flow/data.jsonl",
+            flow=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_package_tool_with_custom_strong_type_connection/data.jsonl",
             connections={"My_First_Tool_00f8": {"connection": "custom_strong_type_connection"}},
+        )
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+
+    def test_basic_flow_with_script_tool_with_custom_strong_type_connection(
+        self, install_custom_tool_pkg, local_client, pf
+    ):
+        # Prepare custom connection
+        from promptflow.connections import CustomConnection
+
+        conn = CustomConnection(name="custom_connection_2", secrets={"api_key": "test"}, configs={"api_url": "test"})
+        local_client.connections.create_or_update(conn)
+
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection",
+            data=f"{FLOWS_DIR}/flow_with_script_tool_with_custom_strong_type_connection/data.jsonl",
         )
         run = local_client.runs.get(name=result.name)
         assert run.status == "Completed"
@@ -302,18 +332,19 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(InputMappingError) as e:
-            pf.run(
-                name=run_name,
-                run=failed_run,
-                flow=f"{FLOWS_DIR}/failed_flow",
-                column_mapping={"text": "${run.outputs.text}"},
-            )
-        assert "Couldn't find these mapping relations: ${run.outputs.text}." in str(e.value)
+        run = pf.run(
+            name=run_name,
+            run=failed_run,
+            flow=f"{FLOWS_DIR}/failed_flow",
+            column_mapping={"text": "${run.outputs.text}"},
+        )
 
-        # run should not be created
-        with pytest.raises(RunNotFoundError):
-            pf.runs.get(name=run_name)
+        local_storage = LocalStorageOperations(run)
+        assert os.path.exists(local_storage._exception_path)
+
+        exception = local_storage.load_exception()
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
+        assert exception["code"] == "BulkRunException"
 
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
@@ -331,7 +362,7 @@ class TestFlowRun:
 
     def test_resolve_connection(self, local_client, local_aoai_connection):
         flow = load_flow(f"{FLOWS_DIR}/web_classification_no_variants")
-        connections = SubmitterHelper.resolve_connections(flow)
+        connections = SubmitterHelper.resolve_connections(flow, local_client)
         assert local_aoai_connection.name in connections
 
     def test_run_with_env_overwrite(self, local_client, local_aoai_connection):
@@ -561,17 +592,19 @@ class TestFlowRun:
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(InputMappingError):
-            pf.run(
-                flow=f"{FLOWS_DIR}/web_classification",
-                data=data_path,
-                column_mapping={"not_exist": "${data.not_exist_key}"},
-                name=name,
-            )
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=data_path,
+            column_mapping={"not_exist": "${data.not_exist_key}"},
+            name=name,
+        )
 
-        # run should not be created
-        with pytest.raises(RunNotFoundError):
-            pf.runs.get(name=name)
+        local_storage = LocalStorageOperations(run)
+        assert os.path.exists(local_storage._exception_path)
+
+        exception = local_storage.load_exception()
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
+        assert exception["code"] == "BulkRunException"
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -661,13 +694,11 @@ class TestFlowRun:
         )
         local_storage = LocalStorageOperations(run=run)
         logs = local_storage.logger.get_logs()
-        assert "user log" in logs
-        # error logs can be stored
-        assert "error log" in logs
-        # flow logs can be stored
-        assert "Executing node print_val. node run id:" in logs
-        # executor logs can be stored
-        assert "Node print_val completes." in logs
+        # For Batch run, the executor uses bulk logger to print logs, and only prints the error log of the nodes.
+        existing_keywords = ["execution", "execution.bulk", "WARNING", "error log"]
+        assert all([keyword in logs for keyword in existing_keywords])
+        non_existing_keywords = ["execution.flow", "user log"]
+        assert all([keyword not in logs for keyword in non_existing_keywords])
 
     def test_get_detail_against_partial_fail_run(self, pf: PFClient) -> None:
         run = pf.run(
@@ -708,7 +739,7 @@ class TestFlowRun:
 
         assert os.path.exists(local_storage._exception_path)
         exception = local_storage.load_exception()
-        assert "Failed to run 1/1 lines: First error message is" in exception["message"]
+        assert "Failed to run 1/1 lines. First error message is" in exception["message"]
         # line run failures will be stored in additionalInfo
         assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
 
@@ -723,3 +754,50 @@ class TestFlowRun:
         assert FlowRunProperties.SYSTEM_METRICS in run.properties
         assert isinstance(run.properties[FlowRunProperties.SYSTEM_METRICS], dict)
         assert "total_tokens" in run.properties[FlowRunProperties.SYSTEM_METRICS]
+
+    def test_run_get_inputs(self, pf):
+        # inputs should be persisted when defaults are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/default_input",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {"line_number": [0], "question": ["input value from default"]}
+
+        # inputs should be persisted when data value are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=f"{DATAS_DIR}/dictInput1.jsonl",
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {"key": [{"key": "value in data"}], "line_number": [0]}
+
+        # inputs should be persisted when column-mapping are used
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/flow_with_dict_input",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"key": {"value": "value in column-mapping"}, "url": "${data.url}"},
+        )
+        inputs = pf.runs._get_inputs(run=run)
+        assert inputs == {
+            "key": [{"value": "value in column-mapping"}],
+            "line_number": [0],
+            "url": ["https://www.youtube.com/watch?v=o5ZQyXaAv1g"],
+        }
+
+    def test_executor_logs_in_batch_run_logs(self, pf: PFClient) -> None:
+        run = create_run_against_multi_line_data_without_llm(pf)
+        local_storage = LocalStorageOperations(run=run)
+        logs = local_storage.logger.get_logs()
+        # below warning is printed by executor before the batch run executed
+        # the warning message results from we do not use column mapping
+        # so it is expected to be printed here
+        assert "Starting run without column mapping may lead to unexpected results." in logs
+
+    def test_basic_image_flow_bulk_run(self, pf, local_client) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
+        data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
+
+        result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"

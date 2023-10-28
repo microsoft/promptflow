@@ -3,7 +3,6 @@
 # ---------------------------------------------------------
 # this file is a middle layer between the local SDK and executor.
 import contextlib
-import json
 import logging
 import re
 import time
@@ -11,27 +10,32 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Mapping
 
+from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
-from promptflow._sdk._utils import parse_variant
+from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._local_storage_operations import LoggerOperations
 from promptflow._sdk.operations._run_submitter import SubmitterHelper, variant_overwrite_context
 from promptflow._utils.context_utils import _change_working_dir
-from promptflow._utils.dataclass_serializer import serialize
 from promptflow._utils.exception_utils import ErrorResponse
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow.contracts.run_info import Status
 from promptflow.exceptions import UserErrorException
+from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None):
+    def __init__(self, flow: Flow, variant=None, config=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
         self._variant = variant
+        from .._pf_client import PFClient
+
+        self._client = PFClient(config=config)
 
     @property
     def dataplane_flow(self):
@@ -57,7 +61,7 @@ class TestSubmitter:
                 self._tuning_node = None
                 self._node_variant = None
 
-    def _resolve_data(self, node_name: str = None, inputs: dict = None):
+    def _resolve_data(self, node_name: str = None, inputs: dict = None, chat_history_name: str = None):
         """
         Resolve input to flow/node test inputs.
         Raise user error when missing required inputs. And log warning when unknown inputs appeared.
@@ -66,6 +70,8 @@ class TestSubmitter:
         :type node_name: str
         :param inputs: Inputs of flow/node test.
         :type inputs: dict
+        :param chat_history_name: Chat history name.
+        :type chat_history_name: str
         :return: Dict of flow inputs, Dict of reference node output.
         :rtype: dict, dict
         """
@@ -114,7 +120,11 @@ class TestSubmitter:
                     merged_inputs[name] = flow_inputs[name]
                 else:
                     if value.default is None:
-                        missing_inputs.append(name)
+                        # When the flow is a chat flow and chat_history has no default value, set an empty list for it
+                        if chat_history_name and name == chat_history_name:
+                            flow_inputs[name] = []
+                        else:
+                            missing_inputs.append(name)
                     else:
                         flow_inputs[name] = value.default
                         merged_inputs[name] = flow_inputs[name]
@@ -134,19 +144,31 @@ class TestSubmitter:
         environment_variables: dict = None,
         stream_log: bool = True,
         allow_generator_output: bool = False,
+        connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = True,
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        if not connections:
+            connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+        credential_list = ConnectionManager(connections).get_secret_list()
+
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
-            flow_executor = FlowExecutor.create(self.flow.path, connections, self.flow.code, raise_ex=False)
-            flow_executor.enable_streaming_for_llm_flow(lambda: True)
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+                              stream=stream_log, credential_list=credential_list):
+            storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
+            flow_executor = FlowExecutor.create(
+                self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
+            )
+            flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
+            line_result.output = persist_multimedia_data(
+                line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
+            )
             if line_result.aggregation_inputs:
                 # Convert inputs of aggregation to list type
                 flow_inputs = {k: [v] for k, v in inputs.items()}
@@ -172,12 +194,15 @@ class TestSubmitter:
     ):
         from promptflow.executor import FlowExecutor
 
-        connections = SubmitterHelper.resolve_connections(flow=self.flow)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+        credential_list = ConnectionManager(connections).get_secret_list()
+
         # resolve environment variables
-        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables)
+        SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
+        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+                              stream=stream, credential_list=credential_list):
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -185,6 +210,7 @@ class TestSubmitter:
                 dependency_nodes_outputs=dependency_nodes_outputs,
                 connections=connections,
                 working_dir=self.flow.code,
+                output_sub_dir=".promptflow/intermediate",
             )
             return result
 
@@ -209,11 +235,12 @@ class TestSubmitter:
             for node_name, node_result in node_run_infos.items():
                 # Prefix of node stdout is "%Y-%m-%dT%H:%M:%S%z"
                 pattern = r"\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{4}\] "
-                node_logs = re.sub(pattern, "", node_result.logs["stdout"])
-                if node_logs:
-                    for log in node_logs.rstrip("\n").split("\n"):
-                        print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
-                        print(log)
+                if node_result.logs:
+                    node_logs = re.sub(pattern, "", node_result.logs["stdout"])
+                    if node_logs:
+                        for log in node_logs.rstrip("\n").split("\n"):
+                            print(f"{Fore.LIGHTBLUE_EX}[{node_name}]:", end=" ")
+                            print(log)
                 if show_node_output:
                     print(f"{Fore.CYAN}{node_name}: ", end="")
                     # TODO executor return a type string of generator
@@ -280,6 +307,8 @@ class TestSubmitter:
             )
         )
 
+        # Pass connections to avoid duplicate calculation (especially http call)
+        connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
         while True:
             try:
                 print(f"{Fore.GREEN}User: ", end="")
@@ -300,6 +329,8 @@ class TestSubmitter:
                 environment_variables=environment_variables,
                 stream_log=False,
                 allow_generator_output=True,
+                connections=connections,
+                stream_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output)
@@ -310,38 +341,7 @@ class TestSubmitter:
             flow_outputs = {k: v for k, v in flow_result.output.items()}
             history = {"inputs": {input_name: input_value}, "outputs": flow_outputs}
             chat_history.append(history)
-            self._dump_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
-
-    @staticmethod
-    def _dump_result(flow_folder, prefix, flow_result=None, node_result=None):
-
-        if flow_result:
-            flow_serialize_result = {
-                "flow_runs": [serialize(flow_result.run_info)],
-                "node_runs": [serialize(run) for run in flow_result.node_run_infos.values()],
-            }
-        else:
-            flow_serialize_result = {
-                "flow_runs": [],
-                "node_runs": [serialize(node_result)],
-            }
-        dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
-        dump_folder.mkdir(parents=True, exist_ok=True)
-
-        with open(dump_folder / f"{prefix}.detail.json", "w") as f:
-            json.dump(flow_serialize_result, f, indent=2)
-        if node_result:
-            metrics = flow_serialize_result["node_runs"][0]["metrics"]
-            output = flow_serialize_result["node_runs"][0]["output"]
-        else:
-            metrics = flow_serialize_result["flow_runs"][0]["metrics"]
-            output = flow_serialize_result["flow_runs"][0]["output"]
-        if metrics:
-            with open(dump_folder / f"{prefix}.metrics.json", "w") as f:
-                json.dump(metrics, f, indent=2)
-        if output:
-            with open(dump_folder / f"{prefix}.output.json", "w") as f:
-                json.dump(output, f, indent=2)
+            dump_flow_result(flow_folder=self._origin_flow.code, flow_result=flow_result, prefix="chat")
 
     @staticmethod
     def _raise_error_when_test_failed(test_result, show_trace=False):

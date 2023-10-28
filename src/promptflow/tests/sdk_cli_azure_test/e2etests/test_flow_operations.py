@@ -8,6 +8,8 @@ import pytest
 from promptflow._cli._pf_azure._flow import create_flow, list_flows
 from promptflow.azure._load_functions import load_flow
 
+from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
+
 tests_root_dir = Path(__file__).parent.parent.parent
 flow_test_dir = tests_root_dir / "test_configs/flows"
 data_dir = tests_root_dir / "test_configs/datas"
@@ -19,6 +21,7 @@ def client(remote_client):
 
 
 # TODO: enable the following tests after test CI can access test workspace
+@pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.skip(reason="This test is not ready yet.")
 class TestFlow:

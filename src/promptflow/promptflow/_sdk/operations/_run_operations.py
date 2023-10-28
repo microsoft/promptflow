@@ -15,6 +15,7 @@ from promptflow._sdk._constants import (
     LOGGER_NAME,
     MAX_RUN_LIST_RESULTS,
     MAX_SHOW_DETAILS_RESULTS,
+    FlowRunProperties,
     ListViewType,
     RunStatus,
 )
@@ -268,6 +269,8 @@ class RunOperations(TelemetryMixin):
                 name=run.name,
                 display_name=run.display_name,
                 create_time=run.created_on,
+                flow_path=run.properties[FlowRunProperties.FLOW_PATH],
+                output_path=run.properties[FlowRunProperties.OUTPUT_PATH],
                 tags=run.tags,
                 lineage=run.run,
                 metrics=self.get_metrics(name=run.name),
@@ -305,14 +308,26 @@ class RunOperations(TelemetryMixin):
 
     def _get_outputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
-        if isinstance(run, str):
-            run = self.get(name=run)
-        local_storage = LocalStorageOperations(run)
+        local_storage = self._get_local_storage(run)
         return local_storage.load_outputs()
 
     def _get_inputs(self, run: Union[str, Run]) -> List[Dict[str, Any]]:
         """Get the outputs of the run, load from local storage."""
+        local_storage = self._get_local_storage(run)
+        return local_storage.load_inputs()
+
+    def _get_outputs_path(self, run: Union[str, Run]) -> str:
+        """Get the outputs file path of the run."""
+        local_storage = self._get_local_storage(run)
+        return local_storage._outputs_path if local_storage.load_outputs() else None
+
+    def _get_inputs_path(self, run: Union[str, Run]) -> str:
+        """Get the outputs file path of the run."""
+        local_storage = self._get_local_storage(run)
+        return local_storage._inputs_path if local_storage.load_inputs() else None
+
+    def _get_local_storage(self, run: Union[str, Run]) -> LocalStorageOperations:
+        """Get the local storage of the run."""
         if isinstance(run, str):
             run = self.get(name=run)
-        local_storage = LocalStorageOperations(run)
-        return local_storage.load_inputs()
+        return LocalStorageOperations(run)

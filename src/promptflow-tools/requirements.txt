@@ -1,3 +1,2 @@
 google-search-results==2.4.1
-# TODO: remove version pinning. This is a temporary workaround for a bug in the latest version of promptflow
-promptflow==0.1.0b6
+promptflow

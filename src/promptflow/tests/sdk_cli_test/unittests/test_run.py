@@ -15,6 +15,7 @@ from promptflow._sdk._load_functions import load_run
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._run_functions import create_yaml_run
 from promptflow._sdk.entities import Run
+from promptflow._sdk.operations._local_storage_operations import LocalStorageOperations
 from promptflow._sdk.operations._run_submitter import RunSubmitter, overwrite_variant, variant_overwrite_context
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
@@ -177,3 +178,11 @@ node_variants:
 
         # Check if Run.update method was called
         mock_update.assert_called_once()
+
+    def test_flow_run_with_non_english_inputs(self, pf):
+        flow_path = f"{FLOWS_DIR}/flow_with_non_english_input"
+        data = f"{FLOWS_DIR}/flow_with_non_english_input/data.jsonl"
+        run = pf.run(flow=flow_path, data=data, column_mapping={"text": "${data.text}"})
+        local_storage = LocalStorageOperations(run=run)
+        outputs = local_storage.load_outputs()
+        assert outputs == {"output": ["Hello 123 日本語", "World 123 日本語"]}

@@ -7,9 +7,10 @@ import importlib.util
 import inspect
 import logging
 import traceback
+import types
 from functools import partial
 from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Tuple, Union
+from typing import Callable, Dict, List, Mapping, Optional, Tuple, Union
 
 import pkg_resources
 import yaml
@@ -26,7 +27,14 @@ from promptflow._utils.connection_utils import (
     generate_custom_strong_type_connection_spec,
     generate_custom_strong_type_connection_template,
 )
-from promptflow._utils.tool_utils import function_to_tool_definition, get_prompt_param_name_from_func
+from promptflow._utils.tool_utils import (
+    DynamicListError,
+    append_workspace_triple_to_func_input_params,
+    function_to_tool_definition,
+    get_prompt_param_name_from_func,
+    load_function_from_function_path,
+    validate_dynamic_list_func_response_type,
+)
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSource, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType
 from promptflow.exceptions import ErrorTarget, SystemErrorException, UserErrorException, ValidationException
@@ -97,7 +105,9 @@ def collect_package_tools_and_connections(keys: Optional[List[str]] = None) -> d
                 custom_strong_type_connections_classes = [
                     obj
                     for name, obj in inspect.getmembers(module)
-                    if inspect.isclass(obj) and ConnectionType.is_custom_strong_type(obj)
+                    if inspect.isclass(obj)
+                    and ConnectionType.is_custom_strong_type(obj)
+                    and (not ConnectionType.is_connection_class_name(name))
                 ]
 
                 if custom_strong_type_connections_classes:
@@ -167,6 +177,27 @@ def gen_tool_by_source(name, source: ToolSource, tool_type: ToolType, working_di
             )
 
 
+def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dict: Dict[str, str] = {}):
+    func = load_function_from_function_path(func_path)
+    # get param names from func signature.
+    func_sig_params = inspect.signature(func).parameters
+    # Validate if func input params are all in func signature params.
+    for input_param in func_input_params_dict:
+        if input_param not in func_sig_params:
+            raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
+    combined_func_input_params = append_workspace_triple_to_func_input_params(
+        func_sig_params, func_input_params_dict, ws_triple_dict
+    )
+    try:
+        result = func(**combined_func_input_params)
+    except Exception as e:
+        raise DynamicListError(f"Error when calling function {func_path}: {e}")
+    # validate response is of required format. Throw correct message if response is empty.
+    validate_dynamic_list_func_response_type(result, func.__name__)
+
+    return result
+
+
 class BuiltinsManager:
     def __init__(self) -> None:
         pass
@@ -189,12 +220,20 @@ class BuiltinsManager:
         return BuiltinsManager._load_package_tool(tool.name, tool.module, tool.class_name, tool.function, node_inputs)
 
     @staticmethod
-    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]):
-        """Load package in tool with given import path and node inputs."""
-        m = importlib.import_module(module_name)
+    def _load_package_tool(tool_name, module_name, class_name, method_name, node_inputs):
+        module = importlib.import_module(module_name)
+        return BuiltinsManager._load_tool_from_module(
+            module, tool_name, module_name, class_name, method_name, node_inputs
+        )
+
+    @staticmethod
+    def _load_tool_from_module(
+        module, tool_name, module_name, class_name, method_name, node_inputs: Mapping[str, InputAssignment]
+    ):
+        """Load tool from given module with node inputs."""
         if class_name is None:
-            return getattr(m, method_name), {}
-        provider_class = getattr(m, class_name)
+            return getattr(module, method_name), {}
+        provider_class = getattr(module, class_name)
         # Note: v -- type is InputAssignment
         init_inputs = provider_class.get_initialize_inputs()
         init_inputs_values = {}
@@ -364,15 +403,15 @@ class ToolLoader:
             target=ErrorTarget.EXECUTOR,
         )
 
-    def load_tool_for_script_node(self, node: Node) -> Tuple[Callable, Tool]:
+    def load_tool_for_script_node(self, node: Node) -> Tuple[types.ModuleType, Callable, Tool]:
         if node.source.path is None:
             raise UserErrorException(f"Node {node.name} does not have source path defined.")
         path = node.source.path
         m = load_python_module_from_file(self._working_dir / path)
         if m is None:
             raise CustomToolSourceLoadError(f"Cannot load module from {path}.")
-        f = collect_tool_function_in_module(m)
-        return f, _parse_tool_from_function(f)
+        f, init_inputs = collect_tool_function_in_module(m)
+        return m, _parse_tool_from_function(f, init_inputs, gen_custom_type_conn=True)
 
     def load_tool_for_llm_node(self, node: Node) -> Tool:
         api_name = f"{node.provider}.{node.api}"

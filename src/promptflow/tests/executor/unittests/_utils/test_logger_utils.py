@@ -18,6 +18,7 @@ from promptflow._utils.logger_utils import (
     bulk_logger,
     scrub_credentials,
     update_log_path,
+    update_single_log_path,
 )
 from promptflow.contracts.run_mode import RunMode
 
@@ -212,6 +213,36 @@ class TestLogContext:
             log = load_content(log_path)
             keywords = ["test update log", "test update input log", "execution.bulk", "input_logger", "INFO", "WARNING"]
             assert all(keyword in log for keyword in keywords)
+
+    def test_update_single_log_path(self):
+        log_handler = FileHandlerConcurrentWrapper()
+        input_logger = logging.getLogger("input_logger")
+        input_logger.addHandler(log_handler)
+
+        folder_path = Path(mkdtemp())
+        original_log_path = str(folder_path / "original_log.log")
+        with LogContext(original_log_path, input_logger=input_logger, run_mode=RunMode.Batch):
+            bulk_logger.info("test log")
+            input_logger.warning("test input log")
+            original_log = load_content(original_log_path)
+            keywords = ["test log", "test input log", "execution.bulk", "input_logger", "INFO", "WARNING"]
+            assert all(keyword in original_log for keyword in keywords)
+
+            # Update log path
+            bulk_log_path = str(folder_path / "update_bulk_log.log")
+            update_single_log_path(bulk_log_path, bulk_logger)
+            input_log_path = str(folder_path / "update_input_log.log")
+            update_single_log_path(input_log_path, input_logger)
+            bulk_logger.info("test update log")
+            input_logger.warning("test update input log")
+            bulk_log = load_content(bulk_log_path)
+            input_log = load_content(input_log_path)
+            bulk_keywords = ["test update log", "execution.bulk", "INFO"]
+            input_keywords = ["test update input log", "input_logger", "WARNING"]
+            assert all(keyword in bulk_log for keyword in bulk_keywords)
+            assert all(keyword not in bulk_log for keyword in input_keywords)
+            assert all(keyword in input_log for keyword in input_keywords)
+            assert all(keyword not in input_log for keyword in bulk_keywords)
 
     def test_scrub_credentials(self):
         log_content = "sig=signature&key=accountkey"

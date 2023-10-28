@@ -6,6 +6,31 @@
       "type": [
         "string"
       ]
+    },
+    "image1": {
+      "type": [
+        "image"
+      ]
+    },
+    "image2": {
+      "type": [
+        "image"
+      ]
+    },
+    "image3": {
+      "type": [
+        "image"
+      ]
+    },
+    "image4": {
+      "type": [
+        "image"
+      ]
+    },
+    "video1": {
+      "type": [
+        "string"
+      ]
     }
   },
   "source": "summarize_text_content_prompt.jinja2"

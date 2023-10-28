@@ -7,15 +7,14 @@ Simple and short articles grouped by topics, each introduces a core feature of p
 
 develop-a-flow/index
 init-and-test-a-flow
-run-and-evaluate-a-flow
+add-conditional-control-to-a-flow
+run-and-evaluate-a-flow/index
 tune-prompts-with-variants
 deploy-a-flow/index
 enable-streaming-mode
 manage-connections
 manage-runs
-column-mapping
+set-global-configs
 develop-a-tool/index
 faq
-
 ```
-

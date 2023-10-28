@@ -33,6 +33,9 @@ fi
 
 #### Run flow
 
+**Note**: this sample uses [predownloaded PDFs](./chat_with_pdf/.pdfs/) and [prebuilt FAISS Index](./chat_with_pdf/.index/) to speed up execution time.
+You can remove the folders to start a fresh run.
+
 ```bash
 # test with default input value in flow.dag.yaml
 pf flow test --flow .
@@ -44,7 +47,7 @@ pf flow test --flow . --inputs question="What is the name of the new language re
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # run with multiline data, --name is optional
-pf run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config='{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }' --name $run_name
+pf run create --file batch_run.yaml --name $run_name
 
 # visualize run output details
 pf run visualize --name $run_name
@@ -62,8 +65,8 @@ az configure --defaults group=<your_resource_group_name> workspace=<your_workspa
 
 ``` bash
 # create run
-pfazure run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config='{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }' --name $run_name --runtime chat_with_pdf_runtime
-# pfazure run create --flow . --data ./data/bert-paper-qna-3-line.jsonl --stream --column-mapping question='${data.question}' pdf_url='${data.pdf_url}' chat_history='${data.chat_history}' config='{ \"EMBEDDING_MODEL_DEPLOYMENT_NAME\": \"text-embedding-ada-002\", \"CHAT_MODEL_DEPLOYMENT_NAME\": \"gpt-35-turbo\", \"PROMPT_TOKEN_LIMIT\": \"2000\", \"MAX_COMPLETION_TOKENS\": \"256\", \"VERBOSE\": \"True\", \"CHUNK_SIZE\": \"256\", \"CHUNK_OVERLAP\": \"32\" }' --name $run_name # automatic runtime
+pfazure run create --file batch_run.yaml --name $run_name --runtime example-runtime-ci
+# pfazure run create --file batch_run.yaml --name $run_name # automatic runtime
 ```
 
 Note: Click portal_url of the run to view the final snapshot.

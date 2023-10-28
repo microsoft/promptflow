@@ -1,0 +1,17 @@
+$schema: https://azuremlschemas.azureedge.net/promptflow/latest/Flow.schema.json
+inputs:
+  text:
+    type: string
+    default: Hello 日本語
+outputs:
+  output:
+    type: string
+    reference: ${hello_prompt.output}
+nodes:
+- name: hello_prompt
+  type: prompt
+  source:
+    type: code
+    path: hello.jinja2
+  inputs:
+    text: ${inputs.text}

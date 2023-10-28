@@ -1,14 +1,18 @@
+import importlib
 import json
 import os
 import tempfile
 from multiprocessing import Lock
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 from _constants import CONNECTION_FILE, ENV_FILE
 from _pytest.monkeypatch import MonkeyPatch
+from filelock import FileLock
 from pytest_mock import MockerFixture
 
+from promptflow._cli._utils import AzureMLWorkspaceTriad
 from promptflow._constants import PROMPTFLOW_CONNECTIONS
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.openai_injector import inject_openai_api
@@ -109,13 +113,62 @@ def prepare_symbolic_flow() -> str:
 
 @pytest.fixture(scope="session")
 def install_custom_tool_pkg():
-    # Leave the pkg installed since multiple tests rely on it and the tests may run concurrently
-    try:
-        import my_tool_package  # noqa: F401
+    # The tests could be running in parallel. Use a lock to prevent race conditions.
+    lock = FileLock("custom_tool_pkg_installation.lock")
+    with lock:
+        try:
+            import my_tool_package  # noqa: F401
 
-    except ImportError:
-        import subprocess
-        import sys
+        except ImportError:
+            import subprocess
+            import sys
 
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.1"])
-    yield
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "test-custom-tools==0.0.2"])
+
+
+@pytest.fixture
+def mocked_ws_triple() -> AzureMLWorkspaceTriad:
+    return AzureMLWorkspaceTriad("mock_subscription_id", "mock_resource_group", "mock_workspace_name")
+
+
+@pytest.fixture(scope="session")
+def mock_list_func():
+    """Mock function object for dynamic list testing."""
+
+    def my_list_func(prefix: str = "", size: int = 10, **kwargs):
+        return [
+            {
+                "value": "fig0",
+                "display_value": "My_fig0",
+                "hyperlink": "https://www.bing.com/search?q=fig0",
+                "description": "this is 0 item",
+            },
+            {
+                "value": "kiwi1",
+                "display_value": "My_kiwi1",
+                "hyperlink": "https://www.bing.com/search?q=kiwi1",
+                "description": "this is 1 item",
+            },
+        ]
+
+    return my_list_func
+
+
+@pytest.fixture(scope="session")
+def mock_module_with_list_func(mock_list_func):
+    """Mock module object for dynamic list testing."""
+    mock_module = MagicMock()
+    mock_module.my_list_func = mock_list_func
+    mock_module.my_field = 1
+    original_import_module = importlib.import_module  # Save this to prevent recursion
+
+    with patch.object(importlib, "import_module") as mock_import:
+
+        def side_effect(module_name):
+            if module_name == "my_tool_package.tools.tool_with_dynamic_list_input":
+                return mock_module
+            else:
+                return original_import_module(module_name)
+
+        mock_import.side_effect = side_effect
+        yield

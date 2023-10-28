@@ -30,6 +30,7 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
     promptflow-tools && \
 {% endif %}
     conda run -n {{env.conda_env_name}} pip install keyrings.alt && \
+    conda run -n {{env.conda_env_name}} pip install gunicorn==20.1.0 && \
     conda run -n {{env.conda_env_name}} pip cache purge && \
     conda clean -a -y
 
@@ -37,8 +38,17 @@ RUN conda create -n {{env.conda_env_name}} python=3.9.16 pip=23.0.1 -q -y && \
 RUN conda run -n {{env.conda_env_name}} sh /flow/{{ env.setup_sh }}
 {% endif %}
 
+RUN apt-get update && apt-get install -y runit
+
 EXPOSE 8080
 
 COPY ./connections/* /connections/
+
+# reset runsvdir
+RUN rm -rf /var/runit
+COPY ./runit /var/runit
+# grant permission
+RUN chmod -R +x /var/runit
+
 COPY ./start.sh /
 CMD ["bash", "./start.sh"]

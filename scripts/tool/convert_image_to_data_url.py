@@ -5,6 +5,9 @@ import io
 from PIL import Image
 
 
+SUPPORT_IMAGE_TYPES = ["png", "jpg", "jpeg", "bmp"]
+
+
 def get_image_size(image_path):
     with Image.open(image_path) as img:
         width, height = img.size
@@ -43,6 +46,17 @@ def create_html_file(data_uri, output_path):
         file.write(html_content)
 
 
+def check_image_type(image_path):
+    file_extension = image_path.lower().split('.')[-1]
+    if file_extension not in SUPPORT_IMAGE_TYPES:
+        raise ValueError("Only png, jpg or bmp image types are supported.")
+
+
+def check_image_type_and_generate_data_url(image_path):
+    check_image_type(image_path)
+    return image_to_data_url(image_path)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -59,6 +73,6 @@ if __name__ == "__main__":
         help="Your image output path",
     )
     args = parser.parse_args()
-    data_url = image_to_data_url(args.image_path)
+    data_url = check_image_type_and_generate_data_url(args.image_path)
     print("Your image data uri: \n{}".format(data_url))
     create_html_file(data_url, args.output)

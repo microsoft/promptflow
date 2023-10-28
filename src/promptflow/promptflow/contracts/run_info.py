@@ -77,6 +77,7 @@ class RunInfo:
     :param result: Result of the run
     :type result: Optional[object]
     """
+
     node: str
     flow_run_id: str
     run_id: str
@@ -147,6 +148,7 @@ class FlowRunInfo:
     :param upload_metrics: Flag indicating whether to upload metrics for the flow run
     :type upload_metrics: Optional[bool]
     """
+
     run_id: str
     status: Status
     error: object

@@ -1,0 +1,15 @@
+inputs:
+  text:
+    type: string
+outputs:
+  answer:
+    type: string
+    reference: ${echo_generator.output}
+nodes:
+- name: echo_generator
+  type: python
+  source:
+    type: code
+    path: echo.py
+  inputs:
+    text: ${inputs.text}

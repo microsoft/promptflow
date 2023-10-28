@@ -18,6 +18,12 @@ def asdict_without_none(obj):
     return asdict(obj, dict_factory=lambda x: {k: v for (k, v) in x if v})
 
 
+def asdict_with_advanced_features_without_none(obj, **advanced_features):
+    dict_without_none = asdict_without_none(obj)
+    dict_without_none.update({k: v for k, v in advanced_features.items() if v})
+    return dict_without_none
+
+
 def is_tool(f):
     if not isinstance(f, types.FunctionType):
         return False
@@ -82,9 +88,9 @@ def generate_python_tools_in_module(module, name, description):
     ]
 
 
-def generate_python_tools_in_module_as_dict(module, name=None, description=None):
+def generate_python_tools_in_module_as_dict(module, name=None, description=None, **advanced_features):
     tools = generate_python_tools_in_module(module, name, description)
-    return _construct_tool_dict(tools)
+    return _construct_tool_dict(tools, **advanced_features)
 
 
 def generate_custom_llm_tools_in_module(module, name, description):
@@ -101,16 +107,16 @@ def generate_custom_llm_tools_in_module(module, name, description):
     ]
 
 
-def generate_custom_llm_tools_in_module_as_dict(module, name=None, description=None):
+def generate_custom_llm_tools_in_module_as_dict(module, name=None, description=None, **advanced_features):
     tools = generate_custom_llm_tools_in_module(module, name, description)
-    return _construct_tool_dict(tools)
+    return _construct_tool_dict(tools, **advanced_features)
 
 
-def _construct_tool_dict(tools):
+def _construct_tool_dict(tools, **advanced_features):
     return {
         f"{t.module}.{t.class_name}.{t.function}"
         if t.class_name is not None
-        else f"{t.module}.{t.function}": asdict_without_none(t)
+        else f"{t.module}.{t.function}": asdict_with_advanced_features_without_none(t, **advanced_features)
         for t in tools
     }
 

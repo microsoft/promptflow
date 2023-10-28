@@ -81,7 +81,10 @@ class TestExecutorLogs:
             executor.exec_bulk(bulk_inputs)
             log_content = load_content(bulk_run_log_path)
             loggers_name_list = ["execution", "execution.bulk"]
+            # bulk logger will print the average execution time and estimated time
+            bulk_logs_keywords = ["Average execution time for completed lines", "Estimated time for incomplete lines"]
             assert all(logger in log_content for logger in loggers_name_list)
+            assert all(keyword in log_content for keyword in bulk_logs_keywords)
 
     @pytest.mark.parametrize(
         "folder_name",

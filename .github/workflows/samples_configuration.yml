@@ -12,6 +12,9 @@ on:
     paths: [ examples/**, examples/*requirements.txt, .github/workflows/samples_configuration.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_notebook_ci:
     runs-on: ubuntu-latest
