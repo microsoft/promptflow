@@ -72,7 +72,7 @@ class InputAssignment:
         :param value: The string to be deserialized.
         :type value: str
         :return: The input assignment constructed from the string.
-        :rtype: InputAssignment
+        :rtype: ~promptflow.contracts.flow.InputAssignment
         """
         literal_value = InputAssignment(value, InputValueType.LITERAL)
         if isinstance(value, str) and value.startswith("$") and len(value) > 2:
@@ -90,7 +90,7 @@ class InputAssignment:
         :param value: The string to be deserialized.
         :type value: str
         :return: The input assignment of reference types.
-        :rtype: InputAssignment
+        :rtype: ~promptflow.contracts.flow.InputAssignment
         """
         if FlowInputAssignment.is_flow_input(value):
             return FlowInputAssignment.deserialize(value)
@@ -103,7 +103,7 @@ class InputAssignment:
         :param data: The string to be deserialized.
         :type data: str
         :return: Input assignment of node reference type.
-        :rtype: InputAssignment
+        :rtype: ~promptflow.contracts.flow.InputAssignment
         """
         value_type = InputValueType.NODE_REFERENCE
         if "." not in data:
@@ -146,7 +146,7 @@ class FlowInputAssignment(InputAssignment):
         :param value: The string to be deserialized.
         :type value: str
         :return: The flow input assignment constructed from the string.
-        :rtype: FlowInputAssignment
+        :rtype: ~promptflow.contracts.flow.FlowInputAssignment
         """
         for prefix in FLOW_INPUT_PREFIXES:
             if value.startswith(prefix):
@@ -187,7 +187,7 @@ class ToolSource:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The tool source constructed from the dict.
-        :rtype: ToolSource
+        :rtype: ~promptflow.contracts.flow.ToolSource
         """
         result = ToolSource(data.get("type", ToolSourceType.Code.value))
         if "tool" in data:
@@ -217,7 +217,7 @@ class ActivateCondition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The activate condition constructed from the dict.
-        :rtype: ActivateCondition
+        :rtype: ~promptflow.contracts.flow.ActivateCondition
         """
         result = ActivateCondition(
             condition=InputAssignment.deserialize(data["when"]),
@@ -249,7 +249,7 @@ class SkipCondition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The skip condition constructed from the dict.
-        :rtype: SkipCondition
+        :rtype: ~promptflow.contracts.flow.SkipCondition
         """
         result = SkipCondition(
             condition=InputAssignment.deserialize(data["when"]),
@@ -332,7 +332,7 @@ class Node:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The node constructed from the dict.
-        :rtype: Node
+        :rtype: ~promptflow.contracts.flow.Node
         """
         node = Node(
             name=data.get("name"),
@@ -413,7 +413,7 @@ class FlowInputDefinition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The flow input definition constructed from the dict.
-        :rtype: FlowInputDefinition
+        :rtype: ~promptflow.contracts.flow.FlowInputDefinition
         """
         return FlowInputDefinition(
             ValueType(data["type"]),
@@ -472,7 +472,7 @@ class FlowOutputDefinition:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The flow output definition constructed from the dict.
-        :rtype: FlowOutputDefinition
+        :rtype: ~promptflow.contracts.flow.FlowOutputDefinition
         """
         return FlowOutputDefinition(
             ValueType(data["type"]),
@@ -503,7 +503,7 @@ class NodeVariant:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The node variant constructed from the dict.
-        :rtype: NodeVariant
+        :rtype: ~promptflow.contracts.flow.NodeVariant
         """
         return NodeVariant(
             Node.deserialize(data["node"]),
@@ -531,7 +531,7 @@ class NodeVariants:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The node variants constructed from the dict.
-        :rtype: NodeVariants
+        :rtype: ~promptflow.contracts.flow.NodeVariants
         """
         variants = {}
         for variant_id, node in data["variants"].items():
@@ -608,7 +608,7 @@ class Flow:
         :param data: The dict to be deserialized.
         :type data: dict
         :return: The flow constructed from the dict.
-        :rtype: Flow
+        :rtype: ~promptflow.contracts.flow.Flow
         """
         tools = [Tool.deserialize(t) for t in data.get("tools") or []]
         nodes = [Node.deserialize(n) for n in data.get("nodes") or []]
