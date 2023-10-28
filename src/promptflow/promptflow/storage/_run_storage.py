@@ -97,7 +97,8 @@ class DefaultRunStorage(AbstractRunStorage):
         """
         if self._base_dir:
             pfbytes_file_reference_encoder = get_file_reference_encoder(
-                folder_path=self._base_dir, relative_path=self._sub_dir
+                folder_path=self._base_dir,
+                relative_path=self._sub_dir,
             )
         else:
             pfbytes_file_reference_encoder = None
