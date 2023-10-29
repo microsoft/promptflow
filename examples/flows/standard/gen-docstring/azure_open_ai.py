@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 import uuid
+from typing import List
 import openai
 import os
 from abc import ABC, abstractmethod
@@ -207,7 +208,7 @@ class ChatLLM(AOAI):
         if type(conversation_id) is str:
             self.conversation[conversation_id] = [{"role": "system", "content": system_prompt}]
 
-    def get_tokens_count(self, messages: list[dict]) -> int:
+    def get_tokens_count(self, messages: List[dict]) -> int:
         """
         Get token count
         """
@@ -223,7 +224,7 @@ class ChatLLM(AOAI):
         num_tokens += 5  # every reply is primed with <im_start>assistant
         return num_tokens
 
-    def validate_tokens(self, messages: list[dict]) -> None:
+    def validate_tokens(self, messages: List[dict]) -> None:
         total_tokens = self.get_tokens_count(messages)
         if total_tokens > self.tokens_limit:
             message = f"token count {total_tokens} exceeds limit {self.tokens_limit}"

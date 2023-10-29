@@ -1,4 +1,4 @@
-my_tool_package.tools.tool_with_enabled_by_value.my_tool:
+my_tool_package.tools.tool_with_cascading_inputs.my_tool:
   function: my_tool
   inputs:
     user_type:
@@ -17,7 +17,7 @@ my_tool_package.tools.tool_with_enabled_by_value.my_tool:
         - string
       enabled_by: user_type
       enabled_by_value: [teacher]
-  module: my_tool_package.tools.tool_with_enabled_by_value
-  name: My Tool with Enabled By Value
-  description: This is my tool with enabled by value
+  module: my_tool_package.tools.tool_with_cascading_inputs
+  name: My Tool with Cascading Inputs
+  description: This is my tool with cascading inputs
   type: python
