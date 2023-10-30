@@ -107,7 +107,7 @@ def start():
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
 {% elif value_type == "image" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
 {% elif value_type == "string" %}
@@ -133,7 +133,9 @@ def start():
                 submit({{flow_inputs_params}})
 
         if clear_bt:
-            clear_chat()
+            with st.spinner("Cleaning..."):
+                clear_chat()
+                st.rerun()
 
 if __name__ == "__main__":
     start()
