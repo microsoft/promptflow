@@ -4,11 +4,10 @@
 import os
 from functools import partial
 from pathlib import Path
-from typing import Any, Union
+from typing import Union
 
 from promptflow._sdk._constants import ConnectionType
 from promptflow._sdk._errors import ConnectionNotFoundError
-from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._local_storage_operations import NodeRunRecord
 from promptflow._sdk.operations._test_submitter import TestSubmitter
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
@@ -152,7 +151,7 @@ def mock_toolresolver_resolve_tool_by_node(recording_folder: Path):
     return _mock_toolresolver_resolve_tool_by_node
 
 
-def mock_get_local_connections_from_executable(executable: Flow, client: Any | PFClient):
+def mock_get_local_connections_from_executable(executable: Flow, client):
     # Mock of get_connections, it should not return any connection in replay mode.
     connection_names = executable.get_connection_names()
     result = {}
