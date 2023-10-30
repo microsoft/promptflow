@@ -31,7 +31,7 @@ def mock_update_run_func(self, run_info: NodeRunInfo):
     run_info.system_metrics["total_tokens"] = 0
 
 
-def mock_persist_node_run(recording_folder: Path):
+def mock_persist_node_run(recording_file: Path):
     # Mock of LocalStorageOperations. persist_node_run, it will record the batch node run info in recording mode.
     def _mock_persist_node_run(self, run_info: NodeRunInfo) -> None:
         node_run_record = NodeRunRecord.from_run_info(run_info)
@@ -41,12 +41,12 @@ def mock_persist_node_run(recording_folder: Path):
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
-        record_node_run(node_run_record.run_info, recording_folder)
+        record_node_run(node_run_record.run_info, recording_file)
 
     return _mock_persist_node_run
 
 
-def mock_flowoperations_test(recording_folder: Path):
+def mock_flowoperations_test(recording_file: Path):
     def _mock_flowoperations_test(
         self,
         flow: Union[str, os.PathLike],
@@ -79,7 +79,7 @@ def mock_flowoperations_test(recording_folder: Path):
                     environment_variables=environment_variables,
                     stream=True,
                 )
-                record_node_run(result, recording_folder)
+                record_node_run(result, recording_file)
                 return result
             else:
                 result_flow_test: LineResult = submitter.flow_test(
@@ -88,7 +88,7 @@ def mock_flowoperations_test(recording_folder: Path):
                     stream_log=stream_log,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
-                record_node_run(result_flow_test.run_info, recording_folder)
+                record_node_run(result_flow_test.run_info, recording_file)
                 return result_flow_test
 
     return _mock_flowoperations_test
@@ -100,7 +100,7 @@ def mock_bulkresult_get_openai_metrics(self):
     return total_metrics
 
 
-def mock_toolresolver_resolve_tool_by_node(recording_folder: Path):
+def mock_toolresolver_resolve_tool_by_node(recording_file: Path):
     # Mock for _tool_resolver.py, currently llm nodes will be resolved with recording utils just_return.
     def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         # in replay mode, replace original tool with just_return tool
@@ -111,7 +111,7 @@ def mock_toolresolver_resolve_tool_by_node(recording_folder: Path):
         ):
             prompt_tpl = self._load_source_content(node)
             prompt_tpl_inputs = get_inputs_for_prompt_template(prompt_tpl)
-            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, recording_folder)
+            callable = partial(just_return, "AzureOpenAI", prompt_tpl, prompt_tpl_inputs, recording_file)
             return ResolvedTool(node=node, definition=None, callable=callable, init_args={})
         else:
             return None

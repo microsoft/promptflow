@@ -85,6 +85,7 @@ class TestCli:
             )
         assert "Completed" in f.getvalue()
 
+    @pytest.mark.skipif(is_replaying(), reason="Instable in replay mode.")
     def test_basic_flow_run_batch_and_eval(self) -> None:
         run_id = str(uuid.uuid4())
         f = io.StringIO()

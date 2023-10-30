@@ -93,15 +93,6 @@ def setup_local_connection(local_client):
 
 
 @pytest.fixture
-def remove_local_connection(local_client):
-    local_client.connections.delete("azure_open_ai_connection")
-    local_client.connections.delete("serp_connection")
-    local_client.connections.delete("custom_connection")
-    local_client.connections.delete("gpt2_connection")
-    local_client.connections.delete("open_ai_connection")
-
-
-@pytest.fixture
 def flow_serving_client(mocker: MockerFixture):
     model_path = (Path(MODEL_ROOT) / "basic-with-connection").resolve().absolute().as_posix()
     mocker.patch.dict(os.environ, {"PROMPTFLOW_PROJECT_PATH": model_path})
@@ -152,16 +143,26 @@ def serving_client_python_stream_tools(mocker: MockerFixture):
 
 @pytest.fixture
 def mock_for_recordings(request: pytest.FixtureRequest, mocker: MockerFixture) -> None:
-    recording_folder: Path = RECORDINGS_TEST_CONFIGS_ROOT / request.cls.__name__
+    """
+    mock_for_recordings This is the entrance method of recording/replaying mode.
+    environment variables: PF_RECORDING_MODE is the key env var to control this test feature.
+    Record: is_recording() will return True, is_replaying() will return False.
+        Get node run info (currently llm node), and save the info in the following key value pair
+        Key: Ordered dict of all inputs => sha1 hash value
+        Value: base64 of output value.
+    Replay: is_recording() will return False, is_replaying() will return True.
+        hijack all llm nodes with customized tool, it calculate the hash of inputs, and get outputs.
+    """
+    recording_file: Path = RECORDINGS_TEST_CONFIGS_ROOT / f"{str(request.cls.__name__).lower()}_storage_record.json"
     if is_recording():
-        recording_folder.mkdir(parents=True, exist_ok=True)
+        RECORDINGS_TEST_CONFIGS_ROOT.mkdir(parents=True, exist_ok=True)
         mocker.patch(
             "promptflow._sdk.operations._local_storage_operations.LocalStorageOperations.persist_node_run",
-            mock_persist_node_run(recording_folder),
+            mock_persist_node_run(recording_file),
         )
         mocker.patch(
             "promptflow._sdk.operations._flow_operations.FlowOperations._test",
-            mock_flowoperations_test(recording_folder),
+            mock_flowoperations_test(recording_file),
         )
 
     if is_replaying():
@@ -172,7 +173,7 @@ def mock_for_recordings(request: pytest.FixtureRequest, mocker: MockerFixture) -
 
         mocker.patch(
             "promptflow.executor._tool_resolver.ToolResolver.resolve_tool_by_node",
-            mock_toolresolver_resolve_tool_by_node(recording_folder),
+            mock_toolresolver_resolve_tool_by_node(recording_file),
         )
         mocker.patch(
             "promptflow._sdk._utils.get_local_connections_from_executable", mock_get_local_connections_from_executable

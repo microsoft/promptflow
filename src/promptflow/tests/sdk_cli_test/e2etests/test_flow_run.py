@@ -849,6 +849,7 @@ class TestFlowRun:
         # so it is expected to be printed here
         assert "Starting run without column mapping may lead to unexpected results." in logs
 
+    @pytest.mark.skipif(is_replaying(), reason="Recording and replaying cannot support image input")
     def test_basic_image_flow_bulk_run(self, pf, local_client) -> None:
         image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
         data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
