@@ -1,0 +1,74 @@
+import sys
+from flask import Flask, request, jsonify
+import logging
+import json
+
+from promptflow import load_flow
+from promptflow.entities import FlowContext
+from promptflow.exceptions import UserErrorException, SystemErrorException
+from promptflow._sdk._serving.response_creator import ResponseCreator
+
+class SimpleScoreApp(Flask):
+    pass
+
+
+app = SimpleScoreApp(__name__)
+logger = logging.getLogger(__name__)
+
+
+@app.errorhandler(Exception)
+def handle_error(e):
+    if isinstance(e, UserErrorException):
+        return jsonify({"message": e.message}), 400
+    elif isinstance(e, SystemErrorException):
+        return jsonify({"message": e.message}), 500
+    else:
+        from promptflow._internal import ErrorResponse, ExceptionPresenter
+        # handle other unexpected errors, can use internal class to format them
+        # but interface may change in the future
+        presenter = ExceptionPresenter.create(e)
+        resp = ErrorResponse(presenter.to_dict())
+        response_code = resp.response_code
+        return jsonify(resp.to_simplified_dict()), response_code
+
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    """Check if the runtime is alive."""
+    return {"status": "Healthy"}
+
+
+@app.route("/score", methods=["POST"])
+def score():
+    """process a flow request in the runtime."""
+    raw_data = request.get_data()
+    logger.info(f"Start loading request data '{raw_data}'.")
+    data = json.loads(raw_data)
+
+    # load flow as a function
+    f = load_flow("../../flows/standard/web-classification")
+    # configure flow contexts
+    f.context = FlowContext(
+        # override flow connections, the overrides may come from the request
+        # connections={"classify_with_llm.connection": "another_ai_connection"},
+        # override the flow nodes' inputs or other flow configs, the overrides may come from the request
+        # **Note**: after this change, node "fetch_text_content_from_url" will take inputs from the following command instead of from flow input
+        overrides={"nodes.fetch_text_content_from_url.inputs.url": data["url"]},
+    )
+    result_output = f(url="not used")
+
+    response_creator = ResponseCreator(
+        flow_run_result=result_output,
+        accept_mimetypes=request.accept_mimetypes,
+    )
+    return response_creator.create_response()
+
+
+def create_app(**kwargs):
+    return app
+
+
+if __name__ == "__main__":
+    # test this with curl -X POST http://127.0.0.1:5000/score --header "Content-Type: application/json" --data '{\"url\": \"https://www.youtube.com/watch?v=o5ZQyXaAv1g\"}'
+    create_app().run()
