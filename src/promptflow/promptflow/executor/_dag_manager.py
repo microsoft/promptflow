@@ -48,15 +48,15 @@ class DAGManager:
     def get_node_valid_inputs(self, node: Node, f: Callable) -> Mapping[str, Any]:
         """Returns the valid inputs for the node, including the flow inputs, literal values and
         the outputs of completed nodes."""
-        result = {}
+        results = {}
         signature = inspect.signature(f).parameters
         for name, i in (node.inputs or {}).items():
-            if signature.get(name) is None or (self._get_node_dependency_value(i) is None and \
-                                               signature[name].default is not inspect.Parameter.empty):
+            if self._is_node_dependency_bypassed(i) and signature.get(name) is not None and \
+                    signature[name].default is not inspect.Parameter.empty:
                 continue
             else:
-                result[name] = self._get_node_dependency_value(i)
-        return result
+                results[name] = self._get_node_dependency_value(i)
+        return results
 
     def get_bypassed_node_outputs(self, node: Node):
         """Returns the outputs of the bypassed node."""

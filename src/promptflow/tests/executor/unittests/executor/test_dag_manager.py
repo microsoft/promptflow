@@ -110,7 +110,7 @@ class TestDAGManager:
             create_test_node("node1", input="value1"),
             create_test_node("node2", input="${node1.output}"),
         ]
-        
+
         def f(input):
             return input
         flow_inputs = {}
