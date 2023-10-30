@@ -88,6 +88,7 @@ def start():
     # Set primary button color here since button color of the same form need to be identical in streamlit, but we only need Run/Chat button to be blue.
     st.config.set_option("theme.primaryColor", "#0F6CBD")
     st.title("{{flow_name}}")
+    st.divider()
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
     container = st.container()
     with container:
