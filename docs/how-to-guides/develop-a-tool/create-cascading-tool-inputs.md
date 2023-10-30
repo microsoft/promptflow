@@ -86,8 +86,6 @@ Once you package and share your tool, you can use it in VS Code per the [tool pa
 
 Before selecting a `user_type`, the `student_id` and `teacher_id` inputs are hidden. Once you pick the `user_type`, the corresponding input appears.
 ![before_user_type_selected.png](../../media/how-to-guides/develop-a-tool/before_user_type_selected.png)
-
-However, once you select the `user_type` input, the corresponding input will be enabled and displayed.
 ![after_user_type_selected_with_student.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected_with_student.png)
 ![after_user_type_selected_with_teacher.png](../../media/how-to-guides/develop-a-tool/after_user_type_selected_with_teacher.png)
 
@@ -135,4 +133,4 @@ my_tool_package.tools.tool_with_multi_layer_cascading_inputs.my_tool:
   description: This is my tool with multi-layer cascading inputs
   type: python
 ```
-Inputs will enable in a cascading way based on selections.
+Inputs will be enabled in a cascading way based on selections.
