@@ -17,7 +17,6 @@ from promptflow._sdk.operations._local_storage_operations import LocalStorageOpe
 from promptflow._sdk.operations._run_submitter import SubmitterHelper
 from promptflow.connections import AzureOpenAIConnection
 from promptflow.exceptions import UserErrorException
-from promptflow.executor.flow_executor import InputMappingError
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../../.."
 
@@ -333,18 +332,19 @@ class TestFlowRun:
         )
 
         run_name = str(uuid.uuid4())
-        with pytest.raises(InputMappingError) as e:
-            pf.run(
-                name=run_name,
-                run=failed_run,
-                flow=f"{FLOWS_DIR}/failed_flow",
-                column_mapping={"text": "${run.outputs.text}"},
-            )
-        assert "Couldn't find these mapping relations: ${run.outputs.text}." in str(e.value)
+        run = pf.run(
+            name=run_name,
+            run=failed_run,
+            flow=f"{FLOWS_DIR}/failed_flow",
+            column_mapping={"text": "${run.outputs.text}"},
+        )
 
-        # run should not be created
-        with pytest.raises(RunNotFoundError):
-            pf.runs.get(name=run_name)
+        local_storage = LocalStorageOperations(run)
+        assert os.path.exists(local_storage._exception_path)
+
+        exception = local_storage.load_exception()
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
+        assert exception["code"] == "BulkRunException"
 
     def test_connection_overwrite_file(self, local_client, local_aoai_connection):
         run = create_yaml_run(
@@ -592,17 +592,19 @@ class TestFlowRun:
         # input_mapping source not found error won't create run
         name = str(uuid.uuid4())
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
-        with pytest.raises(InputMappingError):
-            pf.run(
-                flow=f"{FLOWS_DIR}/web_classification",
-                data=data_path,
-                column_mapping={"not_exist": "${data.not_exist_key}"},
-                name=name,
-            )
+        run = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=data_path,
+            column_mapping={"not_exist": "${data.not_exist_key}"},
+            name=name,
+        )
 
-        # run should not be created
-        with pytest.raises(RunNotFoundError):
-            pf.runs.get(name=name)
+        local_storage = LocalStorageOperations(run)
+        assert os.path.exists(local_storage._exception_path)
+
+        exception = local_storage.load_exception()
+        assert "The input for batch run is incorrect. Couldn't find these mapping relations" in exception["message"]
+        assert exception["code"] == "BulkRunException"
 
     def test_input_mapping_with_dict(self, azure_open_ai_connection: AzureOpenAIConnection, pf):
         data_path = f"{DATAS_DIR}/webClassification3.jsonl"
@@ -737,7 +739,7 @@ class TestFlowRun:
 
         assert os.path.exists(local_storage._exception_path)
         exception = local_storage.load_exception()
-        assert "Failed to run 1/1 lines: First error message is" in exception["message"]
+        assert "Failed to run 1/1 lines. First error message is" in exception["message"]
         # line run failures will be stored in additionalInfo
         assert len(exception["additionalInfo"][0]["info"]["errors"]) == 1
 
@@ -791,3 +793,11 @@ class TestFlowRun:
         # the warning message results from we do not use column mapping
         # so it is expected to be printed here
         assert "Starting run without column mapping may lead to unexpected results." in logs
+
+    def test_basic_image_flow_bulk_run(self, pf, local_client) -> None:
+        image_flow_path = f"{FLOWS_DIR}/python_tool_with_simple_image"
+        data_path = f"{image_flow_path}/image_inputs/inputs.jsonl"
+
+        result = pf.run(flow=image_flow_path, data=data_path, column_mapping={"image": "${data.image}"})
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"

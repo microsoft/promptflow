@@ -1,2 +1,0 @@
-promptflow
-my-tools-package

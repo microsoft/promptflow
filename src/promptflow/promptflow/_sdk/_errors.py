@@ -68,14 +68,16 @@ class GenerateFlowToolsJsonError(PromptflowException):
 class BulkRunException(PromptflowException):
     """Exception raised when bulk run failed."""
 
-    def __init__(self, *, message="", failed_lines: int, total_lines: int, line_errors, module: str = None, **kwargs):
+    def __init__(self, *, message="", failed_lines, total_lines, line_errors, module: str = None, **kwargs):
         self.failed_lines = failed_lines
         self.total_lines = total_lines
         self._additional_info = {
             BULK_RUN_LINE_ERRORS: line_errors,
         }
 
-        message = f"Failed to run {failed_lines}/{total_lines} lines: First error message is: {message}"
+        message = f"First error message is: {message}"
+        if isinstance(failed_lines, int) and isinstance(total_lines, int):
+            message = f"Failed to run {failed_lines}/{total_lines} lines. " + message
         super().__init__(message=message, target=ErrorTarget.RUNTIME, module=module, **kwargs)
 
     @property

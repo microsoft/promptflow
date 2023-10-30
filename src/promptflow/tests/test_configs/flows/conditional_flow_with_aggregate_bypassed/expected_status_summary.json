@@ -1,0 +1,11 @@
+{
+    "__pf__.nodes.square.bypassed": 2,
+    "__pf__.nodes.double.completed": 2,
+    "__pf__.nodes.collect_node.completed": 4,
+    "__pf__.nodes.double.bypassed": 2,
+    "__pf__.nodes.square.completed": 2,
+    "__pf__.nodes.aggregation_double.completed": 1,
+    "__pf__.nodes.aggregation_square.completed": 1,
+    "__pf__.lines.completed": 4,
+    "__pf__.lines.failed": 0
+}
