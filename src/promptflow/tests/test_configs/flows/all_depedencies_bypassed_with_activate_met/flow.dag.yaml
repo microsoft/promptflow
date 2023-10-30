@@ -1,0 +1,29 @@
+inputs:
+  text:
+    type: string
+    default: hi
+outputs:
+  output:
+    type: string
+    reference: ${nodeB.output}
+nodes:
+- name: nodeA
+  type: python
+  source:
+    type: code
+    path: pass_through.py
+  inputs:
+    input1: ${inputs.text}
+  activate:
+    when: ${inputs.text}
+    is: world
+- name: nodeB
+  type: python
+  source:
+    type: code
+    path: pass_through.py
+  inputs:
+    input1: ${nodeA.output}
+  activate:
+    when: ${inputs.text}
+    is: hi

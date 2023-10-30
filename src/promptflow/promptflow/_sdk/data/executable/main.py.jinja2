@@ -1,14 +1,12 @@
-import base64
 import json
 import os
-import re
-import streamlit as st
 from pathlib import Path
+from PIL import Image
+import streamlit as st
 from streamlit_quill import st_quill
-from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, is_multimedia_dict, MIME_PATTERN
+
 
 invoker = None
 {% set indent_level = 4 %}
@@ -17,97 +15,9 @@ def start():
     def clear_chat() -> None:
         st.session_state.messages = []
 
-    def show_image(image, key=None):
-        if not image.startswith("data:image"):
-            st.image(key + ',' + image)
-        else:
-            st.image(image)
-
-    def json_dumps(value):
-        try:
-            return json.dumps(value)
-        except Exception:
-            return value
-
-
-    def is_list_contains_rich_text(rich_text):
-        result = False
-        for item in rich_text:
-            if isinstance(item, list):
-                result |= is_list_contains_rich_text(item)
-            elif isinstance(item, dict):
-                result |= is_dict_contains_rich_text(item)
-            else:
-                if isinstance(item, str) and item.startswith("data:image"):
-                    result = True
-        return result
-
-
-    def is_dict_contains_rich_text(rich_text):
-        result = False
-        for rich_text_key, rich_text_value in rich_text.items():
-            if isinstance(rich_text_value, list):
-                result |= is_list_contains_rich_text(rich_text_value)
-            elif isinstance(rich_text_value, dict):
-                result |= is_dict_contains_rich_text(rich_text_value)
-            elif re.match(MIME_PATTERN, rich_text_key) or (isinstance(rich_text_value, str) and rich_text_value.startswith("data:image")):
-                result = True
-        return result
-
-
     def render_message(role, message_items):
-        {% raw %}
-        def item_render_message(value, key=None):
-            if key and re.match(MIME_PATTERN, key):
-                show_image(value, key)
-            elif isinstance(value, str) and value.startswith("data:image"):
-                show_image(value)
-            else:
-                if key is None:
-                    st.markdown(f"`{json_dumps(value)},`")
-                else:
-                    st.markdown(f"`{key}: {json_dumps(value)},`")
-
-        def list_iter_render_message(message_items):
-            if is_list_contains_rich_text(message_items):
-                st.markdown("`[ `")
-                for item in message_items:
-                    if isinstance(item, list):
-                        list_iter_render_message(item)
-                    if isinstance(item, dict):
-                        dict_iter_render_message(item)
-                    else:
-                        item_render_message(item)
-                st.markdown("`], `")
-            else:
-                st.markdown(f"`{json_dumps(message_items)},`")
-
-        def dict_iter_render_message(message_items):
-            if is_multimedia_dict(message_items):
-                key = list(message_items.keys())[0]
-                value = message_items[key]
-                show_image(value, key)
-            elif is_dict_contains_rich_text(message_items):
-                st.markdown("`{ `")
-                for key, value in message_items.items():
-                    if re.match(MIME_PATTERN, key):
-                        show_image(value, key)
-                    else:
-                        if isinstance(value, list):
-                            st.markdown(f"`{key}: `")
-                            list_iter_render_message(value)
-                        elif isinstance(value, dict):
-                            st.markdown(f"`{key}: `")
-                            dict_iter_render_message(value)
-                        else:
-                            item_render_message(value, key)
-                st.markdown("`}, `")
-            else:
-                st.markdown(f"`{json_dumps(message_items)},`")
-
         with st.chat_message(role):
             dict_iter_render_message(message_items)
-        {% endraw %}
 
     def show_conversation() -> None:
         if "messages" not in st.session_state:
@@ -137,7 +47,7 @@ def start():
 {{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
 {% endif %}
         # Get base64 for multi modal object
-        resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in response.output.items()}
+        resolved_outputs = invoke._convert_multimedia_data_to_base64(response)
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
@@ -164,41 +74,23 @@ def start():
         result = invoker.invoke(data)
         return result
 
+    image = Image.open(Path(__file__).parent / "logo.png")
+    st.set_page_config(
+        layout="wide",
+        page_title="{{flow_name}} - Promptflow App",
+        page_icon=image,
+        menu_items={
+            'About': """
+            # This is a Promptflow App.
 
-    def extract_content(node):
-        if isinstance(node, NavigableString):
-            text = node.strip()
-            if text:
-                return [text]
-        elif isinstance(node, Tag):
-            if node.name == 'img':
-                prefix, base64_str = node['src'].split(',', 1)
-                return [{prefix: base64_str}]
-            else:
-                result = []
-                for child in node.contents:
-                    result.extend(extract_content(child))
-                return result
-        return []
-
-
-    def parse_html_content(html_content):
-        soup = BeautifulSoup(html_content, 'html.parser')
-        result = []
-        for p in soup.find_all('p'):
-            result.extend(extract_content(p))
-        return result
-
-
-    def parse_image_content(image_content, image_type):
-        if image_content is not None:
-            file_contents = image_content.read()
-            image_content = base64.b64encode(file_contents).decode('utf-8')
-            prefix = f"data:{image_type};base64"
-            return {prefix: image_content}
-
-
-    st.title("{{flow_name}} APP")
+            You can refer to [promptflow](https://github.com/microsoft/promptflow) for more information.
+            """
+        }
+    )
+    # Set primary button color here since button color of the same form need to be identical in streamlit, but we only need Run/Chat button to be blue.
+    st.config.set_option("theme.primaryColor", "#0F6CBD")
+    st.title("{{flow_name}}")
+    st.divider()
     st.chat_message("assistant").write("Hello, please input following flow inputs.")
     container = st.container()
     with container:
@@ -207,18 +99,18 @@ def start():
     with st.form(key='input_form', clear_on_submit=True):
         settings_path = os.path.join(os.path.dirname(__file__), "settings.json")
         if os.path.exists(settings_path):
-            with open(settings_path, "r") as file:
+            with open(settings_path, "r", encoding="utf-8") as file:
                 json_data = json.load(file)
             environment_variables = list(json_data.keys())
             for environment_variable in environment_variables:
-                secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
+                secret_input = st.sidebar.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
                 if secret_input != "":
                     os.environ[environment_variable] = secret_input
 
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
 {{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}')
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
 {% elif value_type == "image" %}
 {{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
 {% elif value_type == "string" %}
@@ -229,21 +121,24 @@ def start():
 {% endfor %}
 
         cols = st.columns(7)
-        submit_bt = cols[0].form_submit_button(label='Submit')
+        submit_bt = cols[0].form_submit_button(label='{{label}}', type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
         if submit_bt:
+            with st.spinner("Loading..."):
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
-{{ ' ' * indent_level * 3 }}{{flow_input}} = parse_html_content({{flow_input}})
+{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_list_from_html({{flow_input}})
 {% elif value_type == "image" %}
-{{ ' ' * indent_level * 3 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
+{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
 {% endif %}
 {% endfor %}
+                submit({{flow_inputs_params}})
 
-            submit({{flow_inputs_params}})
         if clear_bt:
-            clear_chat()
+            with st.spinner("Cleaning..."):
+                clear_chat()
+                st.rerun()
 
 if __name__ == "__main__":
     start()

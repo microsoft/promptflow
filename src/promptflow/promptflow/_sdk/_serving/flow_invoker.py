@@ -21,7 +21,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
-from promptflow._utils.multimedia_utils import persist_multimedia_data
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.executor import FlowExecutor
 from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 from promptflow.storage._run_storage import DefaultRunStorage
@@ -133,3 +133,6 @@ class FlowInvoker:
                 invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
             dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
+
+    def _convert_multimedia_data_to_base64(self, invoke_result):
+        return {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in invoke_result.output.items()}
