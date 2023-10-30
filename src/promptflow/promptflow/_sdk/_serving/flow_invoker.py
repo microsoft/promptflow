@@ -14,15 +14,16 @@ from promptflow._sdk._utils import (
     dump_flow_result,
     get_local_connections_from_executable,
     override_connection_config_with_environment_variable,
+    print_yellow_warning,
     resolve_connections_environment_variable_reference,
     update_environment_variables_with_connections,
-    print_yellow_warning,
 )
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
 from promptflow.executor import FlowExecutor
+from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 from promptflow.storage._run_storage import DefaultRunStorage
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -117,8 +118,13 @@ class FlowInvoker:
         logger.info(f"Validating flow input with data {data!r}")
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
-        result = self.executor.exec_line(data, allow_generator_output=self.streaming())
+        # Pass index 0 as extension require for dumped result.
+        # TODO: Remove this index after extension remove this requirement.
+        result = self.executor.exec_line(data, index=0, allow_generator_output=self.streaming())
         print_yellow_warning(f"Result: {result.output}")
+        if LINE_NUMBER_KEY in result.output:
+            # Remove line number from output
+            del result.output[LINE_NUMBER_KEY]
         return result
 
     def _dump_invoke_result(self, invoke_result):
