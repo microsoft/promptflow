@@ -3,8 +3,7 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Union
-
+from typing import Union, List
 from promptflow import tool
 from azure_open_ai import ChatLLM
 from divider import Divider
@@ -28,7 +27,7 @@ def get_imports(content):
     return import_statements
 
 
-async def async_generate_docstring(divided: list[str]):
+async def async_generate_docstring(divided: List[str]):
     llm = ChatLLM()
     divided = list(reversed(divided))
     all_divided = []
@@ -77,7 +76,7 @@ async def async_generate_docstring(divided: list[str]):
 
 
 @tool
-def generate_docstring(divided: list[str],
+def generate_docstring(divided: List[str],
                        connection: Union[AzureOpenAIConnection, OpenAIConnection] = None,
                        model: str = None):
     if isinstance(connection, AzureOpenAIConnection):
