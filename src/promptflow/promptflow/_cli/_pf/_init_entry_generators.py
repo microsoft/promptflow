@@ -254,6 +254,10 @@ class StreamlitFileGenerator(BaseGenerator):
         return self.flow_dag_path.as_posix()
 
     @property
+    def label(self):
+        return "Chat" if self.is_chat_flow else "Run"
+
+    @property
     def entry_template_keys(self):
         return [
             "flow_name",
@@ -262,8 +266,15 @@ class StreamlitFileGenerator(BaseGenerator):
             "flow_path",
             "is_chat_flow",
             "chat_history_input_name",
+            "label",
             "connection_provider",
         ]
+
+    def generate_to_file(self, target):
+        if Path(target).name == self.tpl_file.stem:
+            super().generate_to_file(target=target)
+        else:
+            shutil.copy(SERVE_TEMPLATE_PATH / Path(target).name, target)
 
 
 class ChatFlowDAGGenerator(BaseGenerator):
