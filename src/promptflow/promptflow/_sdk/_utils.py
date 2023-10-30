@@ -809,6 +809,7 @@ def get_local_connections_from_executable(executable, client, connections_to_ign
     """
 
     connection_names = executable.get_connection_names()
+    connections_to_ignore = connections_to_ignore or []
     result = {}
     for n in connection_names:
         if n not in connections_to_ignore:
