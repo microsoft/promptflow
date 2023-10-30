@@ -64,14 +64,13 @@ Once you've created a custom connection, use it in your flows:
     - Click the 'Create connection' plus sign in the CONNECTIONS section.
     ![create_custom_strong_type_connection_add_sign](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_add_sign.png)
     - Click 'Create connection' plus sign in the Custom category.
-    ![create_custom_strong_type_connection_in_custom_category](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_custom_category.png)
-  
-4. Fill in the `values` starting with `to-replace-with` in the connection template. 
-  
-  ![custom_strong_type_connection_template](../../media/how-to-guides/develop-a-tool/custom_strong_type_connection_template.png)
+    ![create_custom_strong_type_connection_in_custom_category](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_custom_category.png) 
+
+4. Fill in the `values` starting with `to-replace-with` in the connection template.
+![custom_strong_type_connection_template](../../media/how-to-guides/develop-a-tool/custom_strong_type_connection_template.png)
+
 5. Run the flow with the created custom strong type connection.
-  
-  ![use_custom_strong_type_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_strong_type_connection_in_flow.png)
+![use_custom_strong_type_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_strong_type_connection_in_flow.png)
 
 ##### With Script Tools:
 
@@ -79,6 +78,7 @@ Once you've created a custom connection, use it in your flows:
 
 2. Create a `CustomConnection`. Fill in the `keys` and `values` in the connection template.
   ![custom](../../media/how-to-guides/develop-a-tool/custom_connection_template.png)
+
 3. Run the flow with the created custom connection.
   ![use_custom_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_connection_in_flow.png)
 
