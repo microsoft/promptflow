@@ -10,7 +10,7 @@ Please make sure you have the latest version of [Prompt flow for VS Code](https:
 We'll build out an example tool to show how cascading inputs work. The `student_id` and `teacher_id` inputs will be controlled by the value selected for the `user_type` input. Here's how to configure this in the tool code and YAML.
 
 1. Develop the tool function, following the [cascading inputs example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_cascading_inputs.py). Key points:
-    * Use the `@tool` decorator to identify the function as a tool.
+    * Use the `@tool` decorator to mark the function as a tool.
     * Define `UserType` as an Enum class, as it accepts only a specific set of fixed values in this example. In fact, you can use other types depending on your own scenarios.
     * Conditionally use inputs in the tool logic based on `user_type`.
 
@@ -45,6 +45,7 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
 ```
 
 2. Generate a starting YAML for your tool per the [tool package guide](create-and-use-tool-package.md), then update it to enable cascading:
+
 Add `enabled_by` and `enabled_by_value` to control visibility of dependent inputs. See the [example YAML](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) for reference.
 
     * The `enabled_by` attribute specifies which input field controls the visibility of the dependent input field.
@@ -83,7 +84,7 @@ my_tool_package.tools.tool_with_cascading_inputs.my_tool:
 ## Use the tool in VS Code
 Once you package and share your tool, you can use it in VS Code per the [tool package guide](create-and-use-tool-package.md). We have a [demo flow](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/cascading-inputs-tool-showcase) you can try.
 
-Before selecting a `user_type`, the `student_id` and `teacher_id` inputs are hidden. Once you pick the user type, the corresponding input appears.
+Before selecting a `user_type`, the `student_id` and `teacher_id` inputs are hidden. Once you pick the `user_type`, the corresponding input appears.
 ![before_user_type_selected.png](../../media/how-to-guides/develop-a-tool/before_user_type_selected.png)
 
 However, once you select the `user_type` input, the corresponding input will be enabled and displayed.
