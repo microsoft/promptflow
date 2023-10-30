@@ -8,7 +8,7 @@ from streamlit_quill import st_quill
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
-from promptflow._utils.multimedia_utils import is_multimedia_dict, MIME_PATTERN
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, is_multimedia_dict, MIME_PATTERN
 
 invoker = None
 {% set indent_level = 4 %}
@@ -136,11 +136,14 @@ def start():
 {% else %}
 {{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
 {% endif %}
-        st.session_state.messages.append(("assistant", response))
-        session_state_history.update({"outputs": response})
+        # Get base64 for multi modal object
+        resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in response.output.items()}
+        st.session_state.messages.append(("assistant", resolved_outputs))
+        session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
+        invoker._dump_invoke_result(response)
         with container:
-            render_message("assistant", response)
+            render_message("assistant", resolved_outputs)
 
 
     def run_flow(data: dict) -> dict:

@@ -884,11 +884,6 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
         }
     dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
     dump_folder.mkdir(parents=True, exist_ok=True)
-    flow_serialize_result = _convert_base64_image_to_file(
-        flow_serialize_result,
-        flow_folder=flow_folder,
-        sub_dir=Path(PROMPT_FLOW_DIR_NAME) / PROMPT_FLOW_INTERMEDIATE_DIR_NAME
-    )
 
     with open(dump_folder / f"{prefix}.detail.json", "w") as f:
         json.dump(flow_serialize_result, f, indent=2)
@@ -904,34 +899,3 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w") as f:
             json.dump(output, f, indent=2)
-
-
-def _convert_base64_image_to_file(test_result, flow_folder, sub_dir):
-    """
-    Convert base64 to image path in the test result.
-
-    :param test_result: Test result
-    :param test_result: obj
-    :param flow_folder: Path to flow folder.
-    :param flow_folder: Path
-    :param sub_dir: Sub dir of the flow is used to record the image.
-    :param sub_dir: Path
-    """
-    def persist_base64(image):
-        image = create_image(image)
-        return persist_multimedia_data(image, base_dir=flow_folder, sub_dir=sub_dir)
-
-    if isinstance(test_result, dict):
-        if is_multimedia_dict(test_result) and _is_base64(list(test_result.values())[0]):
-            test_result = persist_base64(test_result)
-        else:
-            for k, v in test_result.items():
-                test_result[k] = _convert_base64_image_to_file(v, flow_folder, sub_dir)
-    elif isinstance(test_result, list):
-        test_result = [_convert_base64_image_to_file(item, flow_folder, sub_dir) for item in test_result]
-    elif isinstance(test_result, str):
-        base64_image_pattern = re.compile(r"^data:image/.*;base64,(.*)")
-        match = base64_image_pattern.match(test_result)
-        if match:
-            test_result = persist_base64(match.group(1))
-    return test_result

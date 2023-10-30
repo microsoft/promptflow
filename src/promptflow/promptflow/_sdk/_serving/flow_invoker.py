@@ -118,12 +118,11 @@ class FlowInvoker:
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
         result = self.executor.exec_line(data, allow_generator_output=self.streaming())
-        # Get base64 for multi modal object
-        resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in result.output.items()}
-        if self._dump_to:
-            result.output = persist_multimedia_data(
-                result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
-            )
-            dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
         print_yellow_warning(f"Result: {result.output}")
-        return resolved_outputs
+        return result
+
+    def _dump_invoke_result(self, invoke_result):
+        invoke_result.output = persist_multimedia_data(
+            invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
+        )
+        dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
