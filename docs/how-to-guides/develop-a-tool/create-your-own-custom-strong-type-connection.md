@@ -1,9 +1,12 @@
 # Create and Use Your Own Custom Strong Type Connection
-Connections serve as a secure method for managing credentials for external APIs and data sources. This document provides a step-by-step guide on how to create and use a custom strong type connection. The advantages of using a custom strong type connection are as follows:
+Connections provide a secure method for managing credentials for external APIs and data sources in Prompt flow. This guide explains how to create and use a custom strong type connection.
 
-* Enhanced user-friendly experience: Custom strong type connections offer an enhanced user-friendly experience compared to custom connections, as they eliminate the need to fill in connection keys.
-* Improved intellisense experience: Custom strong type connections enhance the intellisense experience, offering real-time suggestions and auto-completion for available keys.
-* Centralized information: Custom strong type connections provide a central location to access and view all available keys and value types. This centralization makes it easier to explore and create the connection.
+## What is a Custom Strong Type Connection?
+A custom strong type connection in Prompt flow allows you to define a custom connection class with strongly typed keys. This provides the following benefits:
+
+* Enhanced user experience - no need to manually enter connection keys.
+* Rich intellisense experience - defining key types enables real-time suggestions and auto-completion of available keys as you work in VS Code.
+* Central location to view available keys and data types.
 
 For other connections types, please refer to [Connections](https://microsoft.github.io/promptflow/concepts/concept-connections.html).
 
@@ -14,8 +17,17 @@ For other connections types, please refer to [Connections](https://microsoft.git
   pip install promptflow>=0.1.0b8
   ```
 
-## Create your own custom strong type connection
-Take [this file](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_strong_type_connection.py) as an example, you can create your custom strong type connection as belows:
+## Create a custom strong type connection
+Follow these steps to create a custom strong type connection:
+
+1. Define a Python class inheriting from `CustomStrongTypeConnection`.
+  > [!Note] Please avoid using the `CustomStrongTypeConnection` class directly.
+
+2. Use the Secret type to indicate secure keys. This enhances security by scrubbing secret keys.
+
+3. Document with docstrings explaining each key.
+
+For example:
 
 ```python
 from promptflow.connections import CustomStrongTypeConnection
@@ -35,66 +47,41 @@ class MyCustomConnection(CustomStrongTypeConnection):
 
 ```
 
-Make sure that you adhere to the following guidelines:
+See [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_strong_type_connection.py) for a complete implementation.
 
-* You can define your own custom connection using any desired name, but make sure it inherits from the `CustomStrongTypeConnection` class.
-  > [!Note] Please avoid using the `CustomStrongTypeConnection` class directly.
-* Use the `Secret` type to denote that a key should be treated as a secret. This enhances security by scrubbing secret keys.
-* You have the option to either include your custom connection class within your custom tool or separate it into a distinct Python file.
-* Improve clarity for users by documenting your custom strong type connection using docstrings. Use `param` and `type` to provide explanations for each key, as shown in the following example:
-  
-  ```python
-  """My custom strong type connection.
+## Use the connection in a flow
+Once you've created a custom connection, use it in your flows:
 
-  :param api_key: The api key get from "https://xxx.com".
-  :type api_key: Secret
-  :param api_base: The api base.
-  :type api_base: String
-  """
-  ```
-  
-  ```yaml
-  $schema: https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json
-  name: "to_replace_with_connection_name"
-  type: custom
-  custom_type: MyCustomConnection
-  module: my_tool_package.tools.my_tool_with_custom_strong_type_connection
-  package: test-custom-tools
-  package_version: 0.0.2
-  configs:
-    api_base: "This is a fake api base." # String type. The api base.
-  secrets:
-    api_key: <user-input> #  Secret type. The api key get from "https://xxx.com". Don't replace the '<user-input>' placeholder. The application will prompt you to enter a value when it runs.
-  ```
+##### With Package Tools:
 
-## Develop a flow using package tools with custom strong type connections
-To develop a flow using package tools with custom strong type connections, follow these steps:
-* Step1: Refer to the [Create and Use Tool Package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package in your local environment.
-  > [!Note] Once the new tool package is installed in your local environment, a window reload is necessary. This action ensures that the new tools and custom strong type connections become visible and accessible.
+1. Refer to the [Create and Use Tool Package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package containing the connection.
 
-* Step2: Develop a flow with custom tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-package-tool-showcase) as an example.
+2. Develop a flow with custom tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-package-tool-showcase) as an example.
 
-* Step3: Create a custom strong type connection using one of the following methods:
-  - If the connection type hasn't been created previously, click the 'Add connection' button to create the connection.
+3. Create a custom strong type connection using one of the following methods:
+    - If the connection type hasn't been created previously, click the 'Add connection' button to create the connection.
     ![create_custom_strong_type_connection_in_node_interface](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_node_interface.png)
-  - Click the 'Create connection' plus sign in the CONNECTIONS section.
+    - Click the 'Create connection' plus sign in the CONNECTIONS section.
     ![create_custom_strong_type_connection_add_sign](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_add_sign.png)
-  - Click 'Create connection' plus sign in the Custom category.
+    - Click 'Create connection' plus sign in the Custom category.
     ![create_custom_strong_type_connection_in_custom_category](../../media/how-to-guides/develop-a-tool/create_custom_strong_type_connection_in_custom_category.png)
-
-  Fill in the `values` starting with `to-replace-with` in the connection template.
+  
+4. Fill in the `values` starting with `to-replace-with` in the connection template. 
+  
   ![custom_strong_type_connection_template](../../media/how-to-guides/develop-a-tool/custom_strong_type_connection_template.png)
-
-* Step4: Use the created custom strong type connection in your flow and run.
+5. Run the flow with the created custom strong type connection.
+  
   ![use_custom_strong_type_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_strong_type_connection_in_flow.png)
 
-## Develop a flow using script tools with custom strong type connections
-To develop a flow using script tools with custom strong type connections, follow these steps:
-* Step1: Develop a flow with python script tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-script-tool-showcase) as an example.
-* Step2: Using a custom strong type connection in a script tool is slightly different from using it in a package tool. When creating the connection, you will create a `CustomConnection`. Fill in the `keys` and `values` in the connection template.
+##### With Script Tools:
+
+1. Develop a flow with python script tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-script-tool-showcase) as an example.
+
+2. Create a `CustomConnection`. Fill in the `keys` and `values` in the connection template.
   ![custom](../../media/how-to-guides/develop-a-tool/custom_connection_template.png)
-* Step3: Use the created custom connection in your flow.
+3. Run the flow with the created custom connection.
   ![use_custom_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_connection_in_flow.png)
+
 
 ## Local to cloud
 When creating the necessary connections in Azure AI, you will need to create a `CustomConnection`. In the node interface of your flow, this connection will be displayed as the `CustomConnection` type.
@@ -105,3 +92,9 @@ Here is an example command:
 ```
 pfazure run create --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g promptflow -w my-pf-eus --flow D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-package-tool-using-custom-strong-type-connection --data D:\proj\github\ms\promptflow\examples\flows\standard\flow-with-package-tool-using-custom-strong-type-connection\data.jsonl --runtime test-compute
 ```
+
+## FAQs
+
+### Why isn't the connection we created visible?
+
+Once the new tool package is installed in your local environment, a window reload is necessary. This action ensures that the new tools and custom strong type connections become visible and accessible.
