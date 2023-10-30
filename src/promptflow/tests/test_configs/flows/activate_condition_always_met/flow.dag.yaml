@@ -36,5 +36,5 @@ nodes:
     input1: ${nodeA.output}
     input2: ${nodeB.output}
   activate:
-    when: true
-    is: true
+    when: dummy
+    is: dummy
