@@ -21,7 +21,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_DIR_NAME
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._utils import (
     _generate_connections_dir,
@@ -32,14 +32,11 @@ from promptflow._sdk._utils import (
     refresh_connections_dir,
     resolve_connections_environment_variable_reference,
     snake_to_camel,
-    _convert_base64_image_to_file,
 )
 from promptflow._utils.load_data import load_data
-from promptflow._utils.multimedia_utils import _create_image_from_file, convert_multimedia_data_to_base64
 
 TEST_ROOT = Path(__file__).parent.parent.parent
 CONNECTION_ROOT = TEST_ROOT / "test_configs/connections"
-DATA_ROOT = TEST_ROOT / "test_configs/datas"
 
 
 @pytest.mark.unittest
