@@ -165,4 +165,5 @@ Alternatively, you can test your tool package using the script below to ensure t
 [Customize your tool icon](add-a-tool-icon.md)  
 [Add category and tags for tool](add-category-and-tags-for-tool.md)  
 [Use file path as tool input](use-file-path-as-tool-input.md)  
-[Creating Cascading Tool Inputs](create-cascading-tool-inputs.md)
+[Customize an LLM Tool](customize_an_llm_tool.md)  
+[Creating Cascading Tool Inputs](create-cascading-tool-inputs.md)   

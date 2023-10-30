@@ -304,3 +304,28 @@ class RunHistoryKeys:
 class ConnectionProvider(str, Enum):
     LOCAL = "local"
     AZUREML = "azureml"
+
+
+class FlowType:
+    STANDARD = "standard"
+    EVALUATION = "evaluation"
+    CHAT = "chat"
+
+    @staticmethod
+    def get_all_values():
+        values = [value for key, value in vars(FlowType).items() if isinstance(value, str) and key.isupper()]
+        return values
+
+
+CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE = {
+    FlowType.STANDARD: "default",
+    FlowType.EVALUATION: "evaluation",
+    FlowType.CHAT: "chat",
+}
+
+SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE = {value: key for key, value in CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE.items()}
+
+
+class AzureFlowSource:
+    LOCAL = "local"
+    AZURE = "azure"

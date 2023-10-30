@@ -11,7 +11,7 @@ We'll build out an example tool to show how cascading inputs work. The `student_
 
 1. Develop the tool function, following the [cascading inputs example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_cascading_inputs.py). Key points:
     * Use the `@tool` decorator to mark the function as a tool.
-    * Define `UserType` as an Enum class, as it accepts only a specific set of fixed values in this example. In fact, you can use other types depending on your own scenarios.
+    * Define `UserType` as an Enum class, as it accepts only a specific set of fixed values in this example.
     * Conditionally use inputs in the tool logic based on `user_type`.
 
 ```python
@@ -48,9 +48,9 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
 
     Add `enabled_by` and `enabled_by_value` to control visibility of dependent inputs. See the [example YAML](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) for reference.
 
-    * The `enabled_by` attribute specifies which input field controls the visibility of the dependent input field.
+    * The `enabled_by` attribute specifies the input field, which must be an enum type, that controls the visibility of the dependent input field.
 
-    * The `enabled_by_value` attribute defines the accepted values from the `enabled_by` field that will make this input field visible.
+    * The `enabled_by_value` attribute defines the accepted enum values from the enabled_by field that will make this dependent input field visible.
     > Note: `enabled_by_value` takes a list, allowing multiple values to enable an input.
 
 ```yaml
