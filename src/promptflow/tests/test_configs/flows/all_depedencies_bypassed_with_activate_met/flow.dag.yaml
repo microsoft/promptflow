@@ -11,7 +11,7 @@ nodes:
   type: python
   source:
     type: code
-    path: nodeA.py
+    path: pass_through.py
   inputs:
     input1: ${inputs.text}
   activate:
@@ -21,7 +21,7 @@ nodes:
   type: python
   source:
     type: code
-    path: nodeB.py
+    path: pass_through.py
   inputs:
     input1: ${nodeA.output}
   activate:

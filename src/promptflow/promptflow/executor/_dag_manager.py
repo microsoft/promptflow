@@ -111,8 +111,11 @@ class DAGManager:
 
         # Bypass node if the activate condition is not met
         if node.activate:
+            # If the node referenced by activate condition is bypassed, the current node should be bypassed
             if self._is_node_dependency_bypassed(node.activate.condition):
                 return True
+            # If a node has activate config, we will always use this config
+            # to determine whether the node should be bypassed.
             return not self._is_condition_met(node.activate.condition, node.activate.condition_value)
 
         # Bypass node if all of its node reference dependencies are bypassed
