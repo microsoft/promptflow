@@ -4,14 +4,15 @@
 import os
 from functools import partial
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 from promptflow._sdk._constants import ConnectionType
 from promptflow._sdk._errors import ConnectionNotFoundError
+from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk.operations._local_storage_operations import NodeRunRecord
 from promptflow._sdk.operations._test_submitter import TestSubmitter
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template
-from promptflow.contracts.flow import Node, ToolSourceType
+from promptflow.contracts.flow import Flow, Node, ToolSourceType
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import ResolveToolError
@@ -21,7 +22,8 @@ from promptflow.executor.flow_executor import LineResult
 from .tool_record import just_return, record_node_run
 
 
-def mock_update_run_func(self, run_info):
+def mock_update_run_func(self, run_info: NodeRunInfo):
+    # Some tests request the metrics in replay mode.
     run_id = run_info.run_id
     run_info.api_calls = self._collect_traces_from_nodes(run_id)
     child_run_infos = self.collect_child_node_runs(run_id)
@@ -31,6 +33,7 @@ def mock_update_run_func(self, run_info):
 
 
 def mock_persist_node_run(recording_folder: Path):
+    # Mock of LocalStorageOperations. persist_node_run, it will record the batch node run info in recording mode.
     def _mock_persist_node_run(self, run_info: NodeRunInfo) -> None:
         node_run_record = NodeRunRecord.from_run_info(run_info)
         node_folder = self._prepare_folder(self._node_infos_folder / node_run_record.NodeName)
@@ -57,20 +60,7 @@ def mock_flowoperations_test(recording_folder: Path):
         allow_generator_output: bool = True,
         **kwargs,
     ):
-        """Test flow or node.
-
-        :param flow: path to flow directory to test
-        :param inputs: Input data for the flow test
-        :param variant: Node & variant name in format of ${node_name.variant_name}, will use default variant
-        if not specified.
-        :param node: If specified it will only test this node, else it will test the flow.
-        :param environment_variables: Environment variables to set by specifying a property path and value.
-        Example: {"key1": "${my_connection.api_key}", "key2"="value2"}
-        The value reference to connection keys will be resolved to the actual value,
-        and all environment variables specified will be set into os.environ.
-        : param allow_generator_output: Whether return streaming output when flow has streaming output.
-        :return: Executor result
-        """
+        "Mock of FlowOperations.test, it will record the node run info in recording mode for flow/chat test."
         from promptflow._sdk._load_functions import load_flow
 
         inputs = inputs or {}
@@ -112,6 +102,7 @@ def mock_bulkresult_get_openai_metrics(self):
 
 
 def mock_toolresolver_resolve_tool_by_node(recording_folder: Path):
+    # Mock for _tool_resolver.py, currently llm nodes will be resolved with recording utils just_return.
     def _resolve_replay_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         # in replay mode, replace original tool with just_return tool
         # the tool itself just return saved record from storage_record.json
@@ -161,7 +152,8 @@ def mock_toolresolver_resolve_tool_by_node(recording_folder: Path):
     return _mock_toolresolver_resolve_tool_by_node
 
 
-def mock_get_local_connections_from_executable(executable, client):
+def mock_get_local_connections_from_executable(executable: Flow, client: Any | PFClient):
+    # Mock of get_connections, it should not return any connection in replay mode.
     connection_names = executable.get_connection_names()
     result = {}
     for n in connection_names:
