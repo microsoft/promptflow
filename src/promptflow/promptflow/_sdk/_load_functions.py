@@ -10,7 +10,7 @@ from dotenv import dotenv_values
 from ._utils import load_yaml
 from .entities import Run
 from .entities._connection import CustomConnection, _Connection
-from .entities._flow import ProtectedFlow
+from .entities._flow import Flow, ProtectedFlow
 
 
 def load_common(
@@ -62,17 +62,16 @@ def load_common(
 
 def load_flow(
     source: Union[str, PathLike, IO[AnyStr]],
-):
+) -> Flow:
     """Load flow from YAML file.
 
-    :param source: The local yaml source of a flow. Must be either a path to a local file.
+    :param source: The local yaml source of a flow. Must be a path to a local file.
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
     :return: A Flow object
     :rtype: Flow
     """
-    # TODO: decide whether to support setting context in here
     return ProtectedFlow.load(source)
 
 
@@ -80,10 +79,10 @@ def load_run(
     source: Union[str, PathLike, IO[AnyStr]],
     params_override: Optional[list] = None,
     **kwargs,
-):
+) -> Run:
     """Load run from YAML file.
 
-    :param source: The local yaml source of a run. Must be either a path to a local file.
+    :param source: The local yaml source of a run. Must be a path to a local file.
         If the source is a path, it will be open and read.
         An exception is raised if the file does not exist.
     :type source: Union[PathLike, str]
