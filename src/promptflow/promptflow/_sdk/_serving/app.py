@@ -25,6 +25,7 @@ from promptflow._sdk._serving.utils import (
     streaming_response_required,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
+from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow._version import VERSION
 
 from .swagger import generate_swagger
@@ -109,8 +110,11 @@ def score():
         data = load_request_data(app.flow, raw_data, logger)
 
     invoke_result = app.flow_invoker.invoke(data)
+    resolved_outputs = {
+        k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in invoke_result.output.items()
+    }
     # remove evaluation only fields
-    result_output = {k: v for k, v in invoke_result.output.items() if k not in app.response_fields_to_remove}
+    result_output = {k: v for k, v in resolved_outputs.items() if k not in app.response_fields_to_remove}
 
     response_creator = ResponseCreator(
         flow_run_result=result_output,

@@ -21,7 +21,7 @@ from promptflow._sdk._utils import (
 from promptflow._sdk.entities._connection import _Connection
 from promptflow._sdk.entities._flow import Flow
 from promptflow._sdk.operations._flow_operations import FlowOperations
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64, persist_multimedia_data
+from promptflow._utils.multimedia_utils import persist_multimedia_data
 from promptflow.executor import FlowExecutor
 from promptflow.executor.flow_executor import LINE_NUMBER_KEY
 from promptflow.storage._run_storage import DefaultRunStorage

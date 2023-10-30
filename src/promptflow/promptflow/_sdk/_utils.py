@@ -63,7 +63,6 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.tool import ToolType
-from promptflow._utils.multimedia_utils import _is_base64, create_image, persist_multimedia_data, is_multimedia_dict
 
 
 def snake_to_camel(name):
