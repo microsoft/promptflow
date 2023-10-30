@@ -7,6 +7,7 @@ from streamlit_quill import st_quill
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
+from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
 
 invoker = None
 {% set indent_level = 4 %}
@@ -47,7 +48,7 @@ def start():
 {{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
 {% endif %}
         # Get base64 for multi modal object
-        resolved_outputs = invoke._convert_multimedia_data_to_base64(response)
+        resolved_outputs = invoker._convert_multimedia_data_to_base64(response)
         st.session_state.messages.append(("assistant", resolved_outputs))
         session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
