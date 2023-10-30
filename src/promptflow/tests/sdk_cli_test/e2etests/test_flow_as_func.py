@@ -7,7 +7,7 @@ from types import GeneratorType
 import pytest
 
 from promptflow import load_flow
-from promptflow._sdk.entities import CustomConnection
+from promptflow._sdk.entities import AzureOpenAIConnection, CustomConnection
 from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
@@ -16,11 +16,11 @@ RUNS_DIR = "./tests/test_configs/runs"
 DATAS_DIR = "./tests/test_configs/datas"
 
 
-@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection")
+@pytest.mark.usefixtures("use_secrets_config_file", "setup_local_connection", "install_custom_tool_pkg")
 @pytest.mark.sdk_test
 @pytest.mark.e2etest
 class TestFlowAsFunc:
-    def test_flow_as_a_func(self):
+    def test_flow_as_a_func(self, azure_open_ai_connection: AzureOpenAIConnection):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
         result = f(key="unknown")
         assert result["output"] is None
@@ -76,7 +76,7 @@ class TestFlowAsFunc:
             f()
         assert "Required input(s) ['text'] are missing" in str(e.value)
 
-    def test_stream_output(self):
+    def test_stream_output(self, azure_open_ai_connection: AzureOpenAIConnection):
         f = load_flow(f"{FLOWS_DIR}/chat_flow_with_stream_output")
         f.context.streaming = True
         result = f(
@@ -92,7 +92,7 @@ class TestFlowAsFunc:
         result = f(key="key")
         assert result["output"] == "value"
 
-    def test_flow_as_a_func_with_variant(self):
+    def test_flow_as_a_func_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection):
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()
         f = load_flow(
             flow_path,
