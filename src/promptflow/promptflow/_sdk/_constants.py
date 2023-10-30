@@ -18,7 +18,7 @@ DEFAULT_VAR_ID = "default_variant_id"
 FLOW_TOOLS_JSON = "flow.tools.json"
 FLOW_TOOLS_JSON_GEN_TIMEOUT = 60
 PROMPT_FLOW_DIR_NAME = ".promptflow"
-PROMPT_FLOW_INTERMEDIATE_NAME = "intermediate"
+PROMPT_FLOW_INTERMEDIATE_DIR_NAME = "intermediate"
 HOME_PROMPT_FLOW_DIR = (Path.home() / PROMPT_FLOW_DIR_NAME).resolve()
 
 if not HOME_PROMPT_FLOW_DIR.is_dir():

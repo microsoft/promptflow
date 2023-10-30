@@ -47,7 +47,7 @@ from promptflow._sdk._constants import (
     NODE_VARIANTS,
     NODES,
     PROMPT_FLOW_DIR_NAME,
-    PROMPT_FLOW_INTERMEDIATE_NAME,
+    PROMPT_FLOW_INTERMEDIATE_DIR_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     USE_VARIANTS,
     VARIANTS,
@@ -884,10 +884,10 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
         }
     dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
     dump_folder.mkdir(parents=True, exist_ok=True)
-    flow_serialize_result = _resolve_base64_image_in_test_result(
+    flow_serialize_result = _convert_base64_image_to_file(
         flow_serialize_result,
         flow_folder=flow_folder,
-        sub_dir=Path(PROMPT_FLOW_DIR_NAME) / PROMPT_FLOW_INTERMEDIATE_NAME
+        sub_dir=Path(PROMPT_FLOW_DIR_NAME) / PROMPT_FLOW_INTERMEDIATE_DIR_NAME
     )
 
     with open(dump_folder / f"{prefix}.detail.json", "w") as f:
@@ -906,9 +906,9 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
             json.dump(output, f, indent=2)
 
 
-def _resolve_base64_image_in_test_result(test_result, flow_folder, sub_dir):
+def _convert_base64_image_to_file(test_result, flow_folder, sub_dir):
     """
-    Resolve base64 to image path in the test result.
+    Convert base64 to image path in the test result.
 
     :param test_result: Test result
     :param test_result: obj
@@ -926,9 +926,9 @@ def _resolve_base64_image_in_test_result(test_result, flow_folder, sub_dir):
             test_result = persist_base64(test_result)
         else:
             for k, v in test_result.items():
-                test_result[k] = _resolve_base64_image_in_test_result(v, flow_folder, sub_dir)
+                test_result[k] = _convert_base64_image_to_file(v, flow_folder, sub_dir)
     elif isinstance(test_result, list):
-        test_result = [_resolve_base64_image_in_test_result(item, flow_folder, sub_dir) for item in test_result]
+        test_result = [_convert_base64_image_to_file(item, flow_folder, sub_dir) for item in test_result]
     elif isinstance(test_result, str):
         base64_image_pattern = re.compile(r"^data:image/.*;base64,(.*)")
         match = base64_image_pattern.match(test_result)
