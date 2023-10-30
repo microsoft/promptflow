@@ -1,6 +1,13 @@
 # Release History
 
-## 0.1.0b8 (Upcoming)
+## 0.1.0b9 (Upcoming)
+
+### Features Added
+
+- [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
+
+
+## 0.1.0b8 (2023.10.26)
 
 ### Features Added
 - [Executor] Add average execution time and estimated execution time to batch run logs
