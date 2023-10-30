@@ -44,7 +44,7 @@ class QueueRunStorage(AbstractRunStorage):
 
 
 class HealthyEnsuredProcess:
-    def __init__(self, executor_creation_func, context=None):
+    def __init__(self, executor_creation_func, context):
         self.process = None
         self.input_queue = None
         self.output_queue = None
