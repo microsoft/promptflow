@@ -55,8 +55,9 @@ activate:
 
     ![output_bypassed](../media/how-to-guides/conditional-flow-with-activate/output_bypassed.png)
 
-3. In a conditional flow, if a node is bypassed, it status will be marked as `Bypassed`, as shown in the figure below. There are three situations in which the node will be bypassed.
-  ![bypassed_nodes](../media/how-to-guides/conditional-flow-with-activate/bypassed_nodes.png)
+3. In a conditional flow, if a node has activate config, we will always use this config to determine whether the node should be bypassed. If a node is bypassed, its status will be marked as "Bypassed", as shown in the figure below Show. There are three situations in which a node is bypassed.
+
+    ![bypassed_nodes](../media/how-to-guides/conditional-flow-with-activate/bypassed_nodes.png)
 
 
     (1) If a node has activate config and the value of `activate.when` is not equals to `activate.is`, it will be bypassed. If you want to fore a node to always be executed, you can set the activate config to `when dummy is dummy` which always meets the activate condtion.
