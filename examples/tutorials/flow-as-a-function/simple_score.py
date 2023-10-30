@@ -4,7 +4,6 @@ import logging
 from flask import Flask, jsonify, request
 
 from promptflow import load_flow
-from promptflow._sdk._serving.response_creator import ResponseCreator
 from promptflow.entities import FlowContext
 from promptflow.exceptions import SystemErrorException, UserErrorException
 
@@ -58,13 +57,11 @@ def score():
         # following command instead of from flow input
         overrides={"nodes.fetch_text_content_from_url.inputs.url": data["url"]},
     )
-    result_output = f(url="not used")
+    result_dict = f(url="not used")
 
-    response_creator = ResponseCreator(
-        flow_run_result=result_output,
-        accept_mimetypes=request.accept_mimetypes,
-    )
-    return response_creator.create_response()
+    # Note: if specified streaming=True in the flow context, the result will be a generator
+    # reference promptflow._sdk._serving.response_creator.ResponseCreator on how to handle it in app.
+    return jsonify(result_dict)
 
 
 def create_app(**kwargs):
