@@ -227,7 +227,9 @@ class TestLineExecutionProcessPool:
             )
             use_fork = line_execution_process_pool._use_fork
             assert use_fork == (multiprocessing.get_start_method() == "fork")
-            exexpected_log_message = "Failed to set start method to test, error: cannot find context for 'test'"
+            sys_start_methods = multiprocessing.get_all_start_methods()
+            exexpected_log_message = "Failed to set start method to 'test', start method test" \
+                f" is not in: {sys_start_methods}."
             mock_logger.warning.assert_called_once_with(exexpected_log_message)
 
     def test_get_multiprocessing_context(self):
