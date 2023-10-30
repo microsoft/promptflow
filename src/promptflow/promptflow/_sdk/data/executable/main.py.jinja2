@@ -157,7 +157,7 @@ def start():
                 os.chdir(flow)
             else:
                 os.chdir(flow.parent)
-            invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
+            invoker = FlowInvoker(flow, connection_provider="""{{ connection_provider }}""", dump_to=dump_path)
         result = invoker.invoke(data)
         return result
 

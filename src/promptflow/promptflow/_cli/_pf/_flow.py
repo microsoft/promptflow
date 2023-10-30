@@ -385,16 +385,20 @@ def test_flow(args):
     if args.multi_modal:
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
-                from streamlit.web import cli as st_cli
-                import streamlit_quill  # noqa: F401
                 import bs4  # noqa: F401
+                import streamlit_quill  # noqa: F401
+                from streamlit.web import cli as st_cli
             except ImportError as ex:
                 raise UserErrorException(
                     f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
                 )
             flow = load_flow(args.flow)
             script_path = os.path.join(temp_dir, "main.py")
-            StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script_path)
+            StreamlitFileGenerator(
+                flow_name=flow.name,
+                flow_dag_path=flow.flow_dag_path,
+                connection_provider=pf_client._ensure_connection_provider(),
+            ).generate_to_file(script_path)
             sys.argv = ["streamlit", "run", script_path, "--global.developmentMode=false"]
             st_cli.main()
     else:

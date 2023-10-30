@@ -13,8 +13,8 @@ from pathlib import Path
 from jinja2 import Environment, Template, meta
 
 from promptflow._sdk._constants import LOGGER_NAME
-from promptflow.contracts.flow import Flow as ExecutableFlow
 from promptflow._sdk.operations._flow_operations import FlowOperations
+from promptflow.contracts.flow import Flow as ExecutableFlow
 
 logger = logging.getLogger(LOGGER_NAME)
 TEMPLATE_PATH = Path(__file__).parent.parent / "data" / "entry_flow"
@@ -223,9 +223,10 @@ class FlowMetaYamlGenerator(BaseGenerator):
 
 
 class StreamlitFileGenerator(BaseGenerator):
-    def __init__(self, flow_name, flow_dag_path):
+    def __init__(self, flow_name, flow_dag_path, connection_provider):
         self.flow_name = flow_name
         self.flow_dag_path = Path(flow_dag_path)
+        self.connection_provider = connection_provider
         self.executable = ExecutableFlow.from_yaml(
             flow_file=Path(self.flow_dag_path.name), working_dir=self.flow_dag_path.parent
         )
@@ -233,8 +234,11 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def flow_inputs(self):
-        return {flow_input: (value.default, value.type.value) for flow_input, value in self.executable.inputs.items()
-                if not value.is_chat_history}
+        return {
+            flow_input: (value.default, value.type.value)
+            for flow_input, value in self.executable.inputs.items()
+            if not value.is_chat_history
+        }
 
     @property
     def flow_inputs_params(self):
@@ -251,8 +255,15 @@ class StreamlitFileGenerator(BaseGenerator):
 
     @property
     def entry_template_keys(self):
-        return ["flow_name", "flow_inputs", "flow_inputs_params", "flow_path", "is_chat_flow",
-                "chat_history_input_name"]
+        return [
+            "flow_name",
+            "flow_inputs",
+            "flow_inputs_params",
+            "flow_path",
+            "is_chat_flow",
+            "chat_history_input_name",
+            "connection_provider",
+        ]
 
 
 class ChatFlowDAGGenerator(BaseGenerator):
