@@ -1,5 +1,5 @@
 # Add Category and Tags for Tool
-To simplify the tool list and help users locate their target tools more easily, we've introduced `category` and `tags` features. The `category` feature helps organize tools into separate folders, while `tags` allow users to search and filter tools with matching tags.
+To simplify the tool list and help users locate their target tools easily, we've introduced `category` and `tags` features. The `category` feature helps organize tools into separate folders, while `tags` allow users to search and filter tools with matching tags.
 
 | name     | type | is_required | description |
 | ---------| -----| ---------- | ----------- |
