@@ -119,6 +119,7 @@ class FlowInvoker:
         validate_request_data(self.flow, data)
         logger.info(f"Execute flow with data {data!r}")
         # Pass index 0 as extension require for dumped result.
+        # TODO: Remove this index after extension remove this requirement.
         result = self.executor.exec_line(data, index=0, allow_generator_output=self.streaming())
         # Get base64 for multi modal object
         resolved_outputs = {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in result.output.items()}
