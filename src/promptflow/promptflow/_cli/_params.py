@@ -231,42 +231,6 @@ def add_param_all_results(parser):
     )
 
 
-def add_param_subscription(parser):
-    parser.add_argument(
-        "-s",
-        "--subscription",
-        dest="subscription_id",
-        type=str,
-        help=("ID of subscription. You can configure the default subscription \n" "using `az account set -s ID`."),
-    )
-
-
-def add_param_resource_group(parser):
-    parser.add_argument(
-        "-g",
-        "--resource-group",
-        dest="resource_group_name",
-        type=str,
-        help=(
-            "Name of resource group. You can configure the default group using `az \n"
-            "configure --defaults group=<name>`."
-        ),
-    )
-
-
-def add_param_workspace(parser):
-    parser.add_argument(
-        "-w",
-        "--workspace-name",
-        dest="workspace_name",
-        type=str,
-        help=(
-            "Name of the Azure ML workspace. You can configure the default group using \n"
-            "`az configure --defaults workspace=<name>`."
-        ),
-    )
-
-
 def add_param_variant(parser):
     parser.add_argument(
         "--variant",
