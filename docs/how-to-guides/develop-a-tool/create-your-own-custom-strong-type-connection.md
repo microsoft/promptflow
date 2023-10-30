@@ -1,7 +1,7 @@
 # Create and Use Your Own Custom Strong Type Connection
 Connections provide a secure method for managing credentials for external APIs and data sources in Prompt flow. This guide explains how to create and use a custom strong type connection.
 
-### What is a Custom Strong Type Connection?
+## What is a Custom Strong Type Connection?
 A custom strong type connection in Prompt flow allows you to define a custom connection class with strongly typed keys. This provides the following benefits:
 
 * Enhanced user experience - no need to manually enter connection keys.
