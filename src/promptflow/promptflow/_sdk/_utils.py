@@ -884,7 +884,7 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     dump_folder.mkdir(parents=True, exist_ok=True)
 
     with open(dump_folder / f"{prefix}.detail.json", "w", encoding=DEFAULT_ENCODING) as f:
-        json.dump(flow_serialize_result, f, indent=2)
+        json.dump(flow_serialize_result, f, indent=2, ensure_ascii=False)
     if node_result:
         metrics = flow_serialize_result["node_runs"][0]["metrics"]
         output = flow_serialize_result["node_runs"][0]["output"]
@@ -893,7 +893,7 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
         output = flow_serialize_result["flow_runs"][0]["output"]
     if metrics:
         with open(dump_folder / f"{prefix}.metrics.json", "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(metrics, f, indent=2)
+            json.dump(metrics, f, indent=2, ensure_ascii=False)
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(output, f, indent=2)
+            json.dump(output, f, indent=2, ensure_ascii=False)

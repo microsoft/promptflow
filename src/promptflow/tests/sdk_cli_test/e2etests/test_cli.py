@@ -262,7 +262,7 @@ class TestCli:
         assert run.tags == {"key": "val"}
         assert run.description == description
 
-    def test_pf_flow_test(self):
+    def test_pf_flow_test(self, capsys):
         run_pf_command(
             "flow",
             "test",
@@ -292,6 +292,30 @@ class TestCli:
         with open(log_path, "r") as f:
             log_content = f.read()
         assert previous_log_content not in log_content
+
+        # Test flow test with non-english input/output
+        question = "什么是 chat gpt"
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow",
+            "--inputs",
+            f"question=\"{question}\""
+        )
+        stdout, _ = capsys.readouterr()
+        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        with open(output_path, "r") as f:
+            outputs = json.load(f)
+            assert outputs["answer"] in stdout
+
+        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r") as f:
+            detail = json.load(f)
+            assert detail["flow_runs"][0]["inputs"]["question"] == question
+            assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
 
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1501,7 +1525,8 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/python_tool_with_composite_image",
+            r"D:\Project\github_promptflow\promptflow\src\promptflow\tests\test_configs\flows\python_tool_with_image_chat_input",
+            "--multi-modal"
         )
         output_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "output"
         assert output_path.exists()
