@@ -135,6 +135,14 @@ class LineExecutionProcessPool:
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
         multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        sys_start_methods = multiprocessing.get_all_start_methods()
+        if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
+            logger.warning(
+                f"Failed to set start method to '{multiprocessing_start_method}', "
+                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+            )
+            logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            multiprocessing_start_method = None
         self.context = get_multiprocessing_context(multiprocessing_start_method)
         use_fork = self.context.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
@@ -521,15 +529,6 @@ def get_available_max_worker_count():
 
 def get_multiprocessing_context(multiprocessing_start_method=None):
     if multiprocessing_start_method is not None:
-        sys_start_methods = multiprocessing.get_all_start_methods()
-        if multiprocessing_start_method not in sys_start_methods:
-            logger.warning(
-                f"Failed to set start method to '{multiprocessing_start_method}', "
-                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
-            )
-            context = multiprocessing.get_context()
-            logger.info(f"Set start method to default {context.get_start_method()}.")
-            return context
         context = multiprocessing.get_context(multiprocessing_start_method)
         logger.info(f"Set start method to {multiprocessing_start_method}.")
         return context

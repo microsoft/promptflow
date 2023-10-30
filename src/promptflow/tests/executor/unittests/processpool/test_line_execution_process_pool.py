@@ -232,13 +232,36 @@ class TestLineExecutionProcessPool:
                 f" is not in: {sys_start_methods}."
             mock_logger.warning.assert_called_once_with(exexpected_log_message)
 
+    @pytest.mark.parametrize(
+        "flow_folder",
+        [
+            SAMPLE_FLOW,
+        ],
+    )
+    def test_process_not_set_environment_variable(self, flow_folder, dev_connections):
+        executor = FlowExecutor.create(
+            get_yaml_file(flow_folder),
+            dev_connections,
+            line_timeout_sec=1,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        line_execution_process_pool = LineExecutionProcessPool(
+            executor,
+            nlines,
+            run_id,
+            "",
+            False,
+            None,
+        )
+        use_fork = line_execution_process_pool._use_fork
+        assert use_fork == (multiprocessing.get_start_method() == "fork")
+
     def test_get_multiprocessing_context(self):
         # Set default start method to spawn
         context = get_multiprocessing_context("spawn")
         assert context.get_start_method() == "spawn"
-        # Set start method which is not supported
-        context = get_multiprocessing_context("test")
-        assert context.get_start_method() == multiprocessing.get_start_method()
         # Not set start method
         context = get_multiprocessing_context()
         assert context.get_start_method() == multiprocessing.get_start_method()
