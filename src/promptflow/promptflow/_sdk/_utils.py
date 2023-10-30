@@ -803,10 +803,9 @@ def copy_tree_respect_template_and_ignore_file(source: Path, target: Path, rende
 def get_local_connections_from_executable(executable, client, connections_to_ignore: List[str] = None):
     """Get local connections from executable.
 
-    Please avoid using this function anymore, and we should remove this function once all references are removed.
     executable: The executable flow object.
     client: Local client to get connections.
-    connections_to_ignore: The connections to ignore.
+    connections_to_ignore: The connection names to ignore when getting connections.
     """
 
     connection_names = executable.get_connection_names()

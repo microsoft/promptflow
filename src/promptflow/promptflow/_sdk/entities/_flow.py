@@ -237,6 +237,15 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     # endregion
 
     def __call__(self, *args, **kwargs):
+        """Calling flow as a function, the inputs should be provided with key word arguments.
+        Returns the output of the flow.
+        The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
+        SystemErrorException: if the flow execution failed due to unexpected executor error.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: flow inputs with key word arguments.
+        :return:
+        """
         from promptflow._sdk.operations._test_submitter import TestSubmitter
 
         if args:

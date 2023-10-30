@@ -41,6 +41,15 @@ class TestFlowAsFunc:
         result = f(text="hello")
         assert result["output"]["secrets"] == {"k": "v"}
 
+    def test_overrides(self):
+        f = load_flow(f"{FLOWS_DIR}/print_env_var")
+        f.context.environment_variables = {"provided_key": "provided_value"}
+        # node print_env will take "provided_key" instead of flow input
+        f.context.overrides = {"nodes.print_env.inputs.key": "provided_key"}
+        # the key="unknown" will not take effect
+        result = f(key="unknown")
+        assert result["output"] == "provided_value"
+
     @pytest.mark.skip(reason="This experience has not finalized yet.")
     def test_flow_as_a_func_with_token_based_connection(self):
         class MyCustomConnection(CustomConnection):
@@ -73,6 +82,12 @@ class TestFlowAsFunc:
             ]
         )
         assert isinstance(result["answer"], GeneratorType)
+
+    def test_environment_variables(self):
+        f = load_flow(f"{FLOWS_DIR}/print_env_var")
+        f.context.environment_variables = {"key": "value"}
+        result = f(key="key")
+        assert result["output"] == "value"
 
     def test_flow_as_a_func_with_variant(self):
         flow_path = Path(f"{FLOWS_DIR}/web_classification").absolute()

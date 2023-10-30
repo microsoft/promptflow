@@ -13,6 +13,7 @@ from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
+from pydash import objects
 
 from promptflow._sdk._constants import (
     DAG_FILE_NAME,
@@ -154,6 +155,22 @@ def overwrite_connections(flow_path: Path, connections: dict, working_dir: PathL
         yaml.safe_dump(flow_dag, f)
 
 
+def overwrite_flow(flow_path: Path, params_overrides: dict):
+    if not params_overrides:
+        return
+    flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
+    # update flow dag & change nodes list to name: obj dict
+    flow_dag[NODES] = {node["name"]: node for node in flow_dag[NODES]}
+    # apply overrides on flow dag
+    for param, val in params_overrides.items():
+        objects.set_(flow_dag, param, val)
+    # revert nodes to list
+    flow_dag[NODES] = list(flow_dag[NODES].values())
+
+    with open(flow_path, "w", encoding=DEFAULT_ENCODING) as f:
+        yaml.safe_dump(flow_dag, f)
+
+
 def remove_additional_includes(flow_path: Path):
     flow_path, flow_dag = _load_flow_dag(flow_path=flow_path)
     flow_dag.pop("additional_includes", None)
@@ -168,6 +185,7 @@ def variant_overwrite_context(
     variant: str = None,
     connections: dict = None,
     *,
+    overrides: dict = None,
     drop_node_variants: bool = False,
 ):
     """Override variant and connections in the flow."""
@@ -180,6 +198,7 @@ def variant_overwrite_context(
             # always overwrite variant since we need to overwrite default variant if not specified.
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections)
+            overwrite_flow(Path(temp_dir), overrides)
             remove_additional_includes(Path(temp_dir))
             flow = load_flow(temp_dir)
             yield flow
@@ -191,6 +210,7 @@ def variant_overwrite_context(
             shutil.copy2(flow_dag_path.resolve().as_posix(), temp_dag_file)
             overwrite_variant(Path(temp_dir), tuning_node, variant, drop_node_variants=drop_node_variants)
             overwrite_connections(Path(temp_dir), connections, working_dir=flow_dir_path)
+            overwrite_flow(Path(temp_dir), overrides)
             flow = Flow(code=flow_dir_path, path=temp_dag_file)
             yield flow
 

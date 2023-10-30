@@ -56,6 +56,7 @@ class TestSubmitter:
             tuning_node=tuning_node,
             variant=node_variant,
             connections=self.flow_context.connections,
+            overrides=self.flow_context.overrides,
         ) as temp_flow:
             # TODO execute flow test in a separate process.
             with _change_working_dir(temp_flow.code):
