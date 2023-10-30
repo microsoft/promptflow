@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from pathlib import Path
@@ -127,3 +128,19 @@ def serving_client_llm_chat(mocker: MockerFixture):
 @pytest.fixture
 def serving_client_python_stream_tools(mocker: MockerFixture):
     return create_client_by_model("python_stream_tools", mocker)
+
+
+@pytest.fixture
+def sample_image():
+    image_path = (Path(MODEL_ROOT) / "python_tool_with_simple_image" / "logo.jpg").resolve()
+    return base64.b64encode(open(image_path, "rb").read()).decode("utf-8")
+
+
+@pytest.fixture
+def serving_client_image_python_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_simple_image", mocker)
+
+
+@pytest.fixture
+def serving_client_composite_image_flow(mocker: MockerFixture):
+    return create_client_by_model("python_tool_with_composite_image", mocker)
