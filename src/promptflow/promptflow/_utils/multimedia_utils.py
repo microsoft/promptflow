@@ -224,7 +224,7 @@ def _process_multimedia_dict_recursively(value: Any, process_func: Callable) -> 
         return [_process_multimedia_dict_recursively(item, process_func) for item in value]
     elif isinstance(value, dict):
         if is_multimedia_dict(value):
-            return process_func(value)
+            return process_func(**{"image_dict": value})
         else:
             return {k: _process_multimedia_dict_recursively(v, process_func) for k, v in value.items()}
     else:
