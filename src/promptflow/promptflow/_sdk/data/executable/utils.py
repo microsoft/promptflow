@@ -115,7 +115,10 @@ def extract_content(node):
     return []
 
 
-def parse_html_content(html_content):
+def parse_list_from_html(html_content):
+    """
+    Parse the html content to a list of strings and images.
+    """
     soup = BeautifulSoup(html_content, 'html.parser')
     result = []
     for p in soup.find_all('p'):

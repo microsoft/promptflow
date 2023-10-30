@@ -7,7 +7,7 @@ from streamlit_quill import st_quill
 
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
-from utils import dict_iter_render_message, parse_html_content, parse_image_content
+from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
 
 invoker = None
 {% set indent_level = 4 %}
@@ -96,7 +96,7 @@ def start():
     with st.form(key='input_form', clear_on_submit=True):
         settings_path = os.path.join(os.path.dirname(__file__), "settings.json")
         if os.path.exists(settings_path):
-            with open(settings_path, "r") as file:
+            with open(settings_path, "r", encoding="utf-8") as file:
                 json_data = json.load(file)
             environment_variables = list(json_data.keys())
             for environment_variable in environment_variables:
@@ -125,7 +125,7 @@ def start():
             with st.spinner("Loading..."):
 {% for flow_input, (default_value, value_type) in flow_inputs.items() %}
 {% if value_type == "list" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_html_content({{flow_input}})
+{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_list_from_html({{flow_input}})
 {% elif value_type == "image" %}
 {{ ' ' * indent_level * 4 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
 {% endif %}
