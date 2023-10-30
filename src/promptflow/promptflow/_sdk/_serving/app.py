@@ -25,7 +25,6 @@ from promptflow._sdk._serving.utils import (
     streaming_response_required,
 )
 from promptflow._sdk._utils import setup_user_agent_to_operation_context
-from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow._version import VERSION
 
 from .swagger import generate_swagger
