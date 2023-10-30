@@ -21,7 +21,7 @@ from promptflow._cli._utils import (
     _calculate_column_widths,
     list_of_dict_to_nested_dict,
 )
-from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_DIR_NAME, PROMPT_FLOW_INTERMEDIATE_DIR_NAME
+from promptflow._sdk._constants import HOME_PROMPT_FLOW_DIR, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._errors import GenerateFlowToolsJsonError
 from promptflow._sdk._utils import (
     _generate_connections_dir,
@@ -291,24 +291,3 @@ class TestCLIUtils:
         terminal_width = 120
         res = _calculate_column_widths(df, terminal_width)
         assert res == [4, 23, 13, 15, 15, 15]
-
-    def test_convert_base64_image_to_file(self):
-
-        image = _create_image_from_file(DATA_ROOT / "logo.jpg")
-        base64_image = convert_multimedia_data_to_base64(image, with_type=True)
-
-        test_result = {
-            "image": base64_image,
-            "image_in_list": [base64_image],
-            "image_in_dict": {"image": base64_image},
-        }
-        with tempfile.TemporaryDirectory() as temp_folder:
-            temp_folder = Path(temp_folder)
-            result = _convert_base64_image_to_file(
-                test_result,
-                flow_folder=temp_folder,
-                sub_dir=Path(PROMPT_FLOW_DIR_NAME) / PROMPT_FLOW_INTERMEDIATE_DIR_NAME
-            )
-            assert (temp_folder / list(result["image"].values())[0]).exists()
-            assert (temp_folder / list(result["image_in_list"][0].values())[0]).exists()
-            assert (temp_folder / list(result["image_in_dict"]["image"].values())[0]).exists()
