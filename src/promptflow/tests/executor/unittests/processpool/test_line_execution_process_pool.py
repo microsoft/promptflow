@@ -49,6 +49,25 @@ class TestLineExecutionProcessPool:
                 raise Exception(f"Invalid type of bulk input: {inputs}")
         return [self.get_line_inputs() for _ in range(nlinee)]
 
+    def create_line_execution_process_pool(self, dev_connections):
+        executor = FlowExecutor.create(
+            get_yaml_file(SAMPLE_FLOW),
+            dev_connections,
+            line_timeout_sec=1,
+        )
+        run_id = str(uuid.uuid4())
+        bulk_inputs = self.get_bulk_inputs()
+        nlines = len(bulk_inputs)
+        line_execution_process_pool = LineExecutionProcessPool(
+            executor,
+            nlines,
+            run_id,
+            "",
+            False,
+            None,
+        )
+        return line_execution_process_pool
+
     @pytest.mark.parametrize(
         "flow_folder",
         [
@@ -172,59 +191,17 @@ class TestLineExecutionProcessPool:
             assert line_result.run_info.error["code"] == "UserError"
             assert line_result.run_info.status == Status.Failed
 
-    @pytest.mark.parametrize(
-        "flow_folder",
-        [
-            SAMPLE_FLOW,
-        ],
-    )
-    def test_process_set_environment_variable_successed(self, flow_folder, dev_connections):
+    def test_process_set_environment_variable_successed(self, dev_connections):
         os.environ["PF_BATCH_METHOD"] = "spawn"
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
-        run_id = str(uuid.uuid4())
-        bulk_inputs = self.get_bulk_inputs()
-        nlines = len(bulk_inputs)
-        line_execution_process_pool = LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
-            "",
-            False,
-            None,
-        )
+        line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
         use_fork = line_execution_process_pool._use_fork
         assert use_fork is False
 
-    @pytest.mark.parametrize(
-        "flow_folder",
-        [
-            SAMPLE_FLOW,
-        ],
-    )
-    def test_process_set_environment_variable_failed(self, flow_folder, dev_connections):
+    def test_process_set_environment_variable_failed(self, dev_connections):
         with patch("promptflow.executor._line_execution_process_pool.logger") as mock_logger:
             mock_logger.warning.return_value = None
             os.environ["PF_BATCH_METHOD"] = "test"
-            executor = FlowExecutor.create(
-                get_yaml_file(flow_folder),
-                dev_connections,
-                line_timeout_sec=1,
-            )
-            run_id = str(uuid.uuid4())
-            bulk_inputs = self.get_bulk_inputs()
-            nlines = len(bulk_inputs)
-            line_execution_process_pool = LineExecutionProcessPool(
-                executor,
-                nlines,
-                run_id,
-                "",
-                False,
-                None,
-            )
+            line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
             use_fork = line_execution_process_pool._use_fork
             assert use_fork == (multiprocessing.get_start_method() == "fork")
             sys_start_methods = multiprocessing.get_all_start_methods()
@@ -232,29 +209,8 @@ class TestLineExecutionProcessPool:
                 f" is not in: {sys_start_methods}."
             mock_logger.warning.assert_called_once_with(exexpected_log_message)
 
-    @pytest.mark.parametrize(
-        "flow_folder",
-        [
-            SAMPLE_FLOW,
-        ],
-    )
-    def test_process_not_set_environment_variable(self, flow_folder, dev_connections):
-        executor = FlowExecutor.create(
-            get_yaml_file(flow_folder),
-            dev_connections,
-            line_timeout_sec=1,
-        )
-        run_id = str(uuid.uuid4())
-        bulk_inputs = self.get_bulk_inputs()
-        nlines = len(bulk_inputs)
-        line_execution_process_pool = LineExecutionProcessPool(
-            executor,
-            nlines,
-            run_id,
-            "",
-            False,
-            None,
-        )
+    def test_process_not_set_environment_variable(self, dev_connections):
+        line_execution_process_pool = self.create_line_execution_process_pool(dev_connections)
         use_fork = line_execution_process_pool._use_fork
         assert use_fork == (multiprocessing.get_start_method() == "fork")
 
