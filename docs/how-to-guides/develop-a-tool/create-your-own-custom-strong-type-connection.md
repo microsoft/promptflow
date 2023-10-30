@@ -52,7 +52,7 @@ See [this example](https://github.com/microsoft/promptflow/blob/main/examples/to
 ## Use the connection in a flow
 Once you've created a custom connection, use it in your flows:
 
-##### With Package Tools:
+#### With Package Tools:
 
 1. Refer to the [Create and Use Tool Package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package containing the connection.
 
@@ -72,7 +72,7 @@ Once you've created a custom connection, use it in your flows:
 5. Run the flow with the created custom strong type connection.
 ![use_custom_strong_type_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_strong_type_connection_in_flow.png)
 
-##### With Script Tools:
+#### With Script Tools:
 
 1. Develop a flow with python script tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-script-tool-showcase) as an example.
 
