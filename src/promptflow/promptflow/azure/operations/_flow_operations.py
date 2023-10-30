@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # ---------------------------------------------------------
 # pylint: disable=protected-access
-
+import json
 import logging
 import os
 import re
@@ -98,12 +98,12 @@ class FlowOperations(_ScopeDependentOperations):
 
         :param flow: The source of the flow to create.
         :type flow: Union[str, Path]
-        :param flow_name: The name of the flow to create. Default to be flow folder name + timestamp if not specified.
+        :param name: The name of the flow to create. Default to be flow folder name + timestamp if not specified.
             e.g. "web-classification-10-27-2023-14-19-10"
-        :type flow_name: str
-        :param flow_type: The type of the flow to create. One of ["standard", evaluation", "chat"].
+        :type name: str
+        :param type: The type of the flow to create. One of ["standard", evaluation", "chat"].
             Default to be "standard" if not specified.
-        :type flow_type: str
+        :type type: str
         :param description: The description of the flow to create. Default to be the description in flow yaml file.
         :type description: str
         :param tags: The tags of the flow to create. Default to be the tags in flow yaml file.
@@ -124,10 +124,13 @@ class FlowOperations(_ScopeDependentOperations):
             flow_definition_file_path=flow_definition_file_path,
             **kwargs,
         )
+        result_flow = Flow._from_rest_object(rest_flow)
+        flow_dict = result_flow._to_dict()
         flow_portal_url = self._get_flow_portal_url(rest_flow.flow_resource_id)
-        print(f"Flow created successfully, flow portal url:\n{flow_portal_url}")
+        flow_dict["flow_portal_url"] = flow_portal_url
+        print(f"Flow created successfully:\n{json.dumps(flow_dict, indent=4)}")
 
-        return azure_flow
+        return result_flow
 
     def _validate_flow_creation_parameters(self, source, flow_name, flow_type, **kwargs):
         """Validate the parameters for flow creation operation."""
@@ -168,7 +171,7 @@ class FlowOperations(_ScopeDependentOperations):
 
         return flow, flow_name, flow_type, kwargs
 
-    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, flow_name: str, ignore_tools_json=True) -> str:
+    def _resolve_flow_code_and_upload_to_file_share(self, flow: Flow, flow_name: str, ignore_tools_json=False) -> str:
         ops = OperationOrchestrator(self._all_operations, self._operation_scope, self._operation_config)
         file_share_flow_path = ""
 

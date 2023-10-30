@@ -113,7 +113,7 @@ def _get_flow_operation(subscription_id, resource_group, workspace_name):
 
 def create_flow(args: argparse.Namespace):
     """Create a flow for promptflow."""
-    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name)
+    pf = _get_azure_pf_client(args.subscription, args.resource_group, args.workspace_name, debug=args.debug)
     params = _parse_flow_metadata_args(args.params_override)
     pf.flows.create_or_update(
         flow=args.flow,

@@ -322,3 +322,10 @@ CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE = {
     FlowType.EVALUATION: "evaluation",
     FlowType.CHAT: "chat",
 }
+
+SERVICE_FLOW_TYPE_2_CLIENT_FLOW_TYPE = {value: key for key, value in CLIENT_FLOW_TYPE_2_SERVICE_FLOW_TYPE.items()}
+
+
+class AzureFlowSource:
+    LOCAL = "local"
+    AZURE = "azure"

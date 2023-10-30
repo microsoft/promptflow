@@ -27,7 +27,7 @@ data_dir = tests_root_dir / "test_configs/datas"
 @pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
 class TestFlow:
     def test_create_flow(self, remote_client, capfd):
-        flow_source = flow_test_dir / "web_classification/"
+        flow_source = flow_test_dir / "simple_fetch_url/"
         flow_name = f"{flow_source.name}_{uuid.uuid4()}"
         remote_client.flows.create_or_update(
             flow=flow_source, name=flow_name, type=FlowType.STANDARD, tags={"owner": "hod"}
