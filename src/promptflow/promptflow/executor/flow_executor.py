@@ -34,7 +34,6 @@ from promptflow.executor import _input_assignment_parser
 from promptflow.executor._errors import (
     InputMappingError,
     NodeOutputNotFound,
-    OutputReferenceBypassed,
     OutputReferenceNotExist,
     SingleNodeValidationError,
 )
@@ -938,18 +937,8 @@ class FlowExecutor:
                 # Note that the reduce node referenced in the output is not supported.
                 continue
             if node.name not in nodes_outputs:
-                if node.name in bypassed_nodes:
-                    raise OutputReferenceBypassed(
-                        message_format=(
-                            "The output '{output_name}' for flow is incorrect. "
-                            "The node '{node_name}' referenced by the output has been bypassed. "
-                            "Please refrain from using bypassed nodes as output sources."
-                        ),
-                        output_name=name,
-                        node_name=node.name,
-                    )
                 raise NodeOutputNotFound(
-                    message_format=(
+                        message_format=(
                         "The output '{output_name}' for flow is incorrect. "
                         "No outputs found for node '{node_name}'. Please review the problematic "
                         "output and rectify the error."
@@ -968,8 +957,6 @@ class FlowExecutor:
         outputs = {}
         nodes_outputs, bypassed_nodes = self._submit_to_scheduler(context, inputs, batch_nodes)
         outputs = self._extract_outputs(nodes_outputs, bypassed_nodes, inputs)
-        for node in bypassed_nodes.keys():
-            nodes_outputs[node] = None
         return outputs, nodes_outputs
 
     def _stringify_generator_output(self, outputs: dict):

@@ -93,6 +93,7 @@ class FlowNodesScheduler:
             for node in nodes:
                 node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
                 self._context.bypass_node(node, node_outputs)
+                self._dag_manager.complete_nodes({node.name: None})
         finally:
             self._context.end()
 
@@ -108,8 +109,8 @@ class FlowNodesScheduler:
         context = self._context.copy()
         try:
             context.start()
-            kwargs = dag_manager.get_node_valid_inputs(node)
             f = self._tools_manager.get_tool(node.name)
+            kwargs = dag_manager.get_node_valid_inputs(node, f)
             context.current_node = node
             result = f(**kwargs)
             context.current_node = None
