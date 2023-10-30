@@ -1165,7 +1165,7 @@ class TestCli:
             assert get_node_settings(Path(source)) != get_node_settings(new_flow_dag_path)
 
     @pytest.mark.skipif(
-        recording_or_replaying(), reason="Skip this test in record replay, missing deps as sdk_cli test."
+        recording_or_replaying(), reason="Skip this test in record replay, missing deps promptflow[executable]."
     )
     @pytest.mark.skipif(sys.platform == "win32", reason="Raise Exception: Process terminated with exit code 4294967295")
     def test_flow_build_executable(self):
