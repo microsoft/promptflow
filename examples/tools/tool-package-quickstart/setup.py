@@ -11,4 +11,9 @@ setup(
         "package_tools": ["my_tools = my_tool_package.tools.utils:list_package_tools"],
     },
     include_package_data=True,   # This line tells setuptools to include files from MANIFEST.in
+    extras_require={
+        "azure": [
+            "azure-ai-ml>=1.11.0,<2.0.0"
+        ]
+    },
 )
