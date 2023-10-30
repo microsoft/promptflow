@@ -433,7 +433,7 @@ def test_flow(args):
             TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
             # Print flow/node test result
             if isinstance(result.output, dict):
-                print(json.dumps(result.output, indent=4))
+                print(json.dumps(result.output, indent=4, ensure_ascii=False))
             else:
                 print(result.output)
 
