@@ -128,7 +128,8 @@ class FlowInvoker:
         return result
 
     def _dump_invoke_result(self, invoke_result):
-        invoke_result.output = persist_multimedia_data(
-            invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
-        )
-        dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
+        if self._dump_to:
+            invoke_result.output = persist_multimedia_data(
+                invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
+            )
+            dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
