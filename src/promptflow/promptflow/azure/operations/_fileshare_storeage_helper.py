@@ -203,6 +203,17 @@ class FlowFileStorageClient(FileStorageClient):
         """Check if the file share directory exists."""
         return self.directory_client.get_subdirectory_client(dest).exists()
 
+    def _check_file_share_file_exist(self, dest) -> bool:
+        """Check if the file share directory exists."""
+        if dest.startswith(self.file_share_prefix):
+            dest = dest.replace(f"{self.file_share_prefix}/", "")
+        file_client = self.directory_client.get_file_client(dest)
+        try:
+            file_client.get_file_properties()
+        except Exception:
+            return False
+        return True
+
     def _delete_file_share_directory(self, dir_client) -> None:
         """Recursively delete a directory with content in the file share."""
         for item in dir_client.list_directories_and_files():

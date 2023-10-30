@@ -29,9 +29,13 @@ class TestFlow:
     def test_create_flow(self, remote_client, capfd):
         flow_source = flow_test_dir / "simple_fetch_url/"
         flow_name = f"{flow_source.name}_{uuid.uuid4()}"
-        remote_client.flows.create_or_update(
-            flow=flow_source, name=flow_name, type=FlowType.STANDARD, tags={"owner": "hod"}
+        result = remote_client.flows.create_or_update(
+            flow=flow_source, name=flow_name, type=FlowType.STANDARD, tags={"owner": "sdk"}
         )
+        remote_flow_dag_path = result.path
+
+        # make sure the flow is created successfully
+        assert remote_client.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
         out, err = capfd.readouterr()
         assert "Flow created successfully" in out
 

@@ -202,6 +202,9 @@ class FlowOperations(_ScopeDependentOperations):
             )
             logger.debug("Created storage client for uploading flow to file share.")
 
+            # set storage client to flow operation, can be used in test case
+            self._storage_client = storage_client
+
             # check if the file share directory exists
             if storage_client._check_file_share_directory_exist(flow_name):
                 raise FlowOperationError(
