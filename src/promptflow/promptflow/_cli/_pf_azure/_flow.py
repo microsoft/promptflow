@@ -155,6 +155,8 @@ def download_flow(
 
 def _parse_flow_metadata_args(params: List[Dict[str, str]]) -> Dict:
     result, tags = {}, {}
+    if not params:
+        return result
     for param in params:
         for k, v in param.items():
             if k.startswith("tags."):
