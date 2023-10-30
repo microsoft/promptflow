@@ -110,10 +110,13 @@ class TestDAGManager:
             create_test_node("node1", input="value1"),
             create_test_node("node2", input="${node1.output}"),
         ]
+        
+        def f(input):
+            return input
         flow_inputs = {}
         dag_manager = DAGManager(nodes, flow_inputs)
         dag_manager.complete_nodes({"node1": {"output1": "value1"}})
-        valid_inputs = dag_manager.get_node_valid_inputs(nodes[1])
+        valid_inputs = dag_manager.get_node_valid_inputs(nodes[1], f)
         assert valid_inputs == {"test_input": {"output1": "value1"}, "test_input2": "hello world"}
 
     def test_get_bypassed_node_outputs(self):

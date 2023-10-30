@@ -51,7 +51,8 @@ class DAGManager:
         result = {}
         signature = inspect.signature(f).parameters
         for name, i in (node.inputs or {}).items():
-            if self._get_node_dependency_value(i) is None and signature[name].default is not inspect.Parameter.empty:
+            if signature.get(name) is None or (self._get_node_dependency_value(i) is None and \
+                                               signature[name].default is not inspect.Parameter.empty):
                 continue
             else:
                 result[name] = self._get_node_dependency_value(i)
