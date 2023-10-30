@@ -1,17 +1,15 @@
-# Create Custom LLM Tool
-In this document, we will guide you through the process of developing a tool with `custom_llm` type which can connect to a customized large language model with prompt.
-
-A Custom LLM is a large language model fine-tuned by yourself. If you find it has good performance and is useful, then you can follow this guidance to make it a tool so that it can be shared with others to increase its impact.
+# Customize an LLM Tool
+In this document, we will guide you through the process of customizing an LLM tool, allowing users to seamlessly connect to a large language model with prompt tuning experience using a `PromptTemplate`.
 
 ## Prerequisites
 - Please ensure that your [Prompt flow for VS Code](https://marketplace.visualstudio.com/items?itemName=prompt-flow.prompt-flow) is updated to version 1.2.0 or later.
 
-## How to create a custom LLM tool
+## How to customize an LLM tool
 Here we use [an existing tool package](https://github.com/microsoft/promptflow/tree/main/examples/tools/tool-package-quickstart/my_tool_package) as an example. If you want to create your own tool, please refer to [create and use tool package](create-and-use-tool-package.md).  
 
 1. Develop the tool code as in [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_llm_type.py).
-- Add a `CustomConnection` input to the tool, which is used to authenticate and establish a connection to the customized large language model.
-- Add a `PromptTemplate` input to the tool, which serves as an argument to be passed into the customized large language model.
+- Add a `CustomConnection` input to the tool, which is used to authenticate and establish a connection to the large language model.
+- Add a `PromptTemplate` input to the tool, which serves as an argument to be passed into the large language model.
 
     ```python
     from jinja2 import Template
@@ -36,14 +34,14 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
     ```
     cd D:\proj\github\promptflow\examples\tools\tool-package-quickstart
 
-    python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.tool_with_custom_llm_type -o my_tool_package\yamls\tool_with_custom_llm_type.yaml -n "My Custom LLM Tool" -d "This is a tool to demonstrate the custom_llm tool type" -t "custom_llm"
+    python D:\proj\github\promptflow\scripts\tool\generate_package_tool_meta.py -m my_tool_package.tools.tool_with_custom_llm_type -o my_tool_package\yamls\tool_with_custom_llm_type.yaml -n "My Custom LLM Tool" -d "This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate." -t "custom_llm"
     ```
     This command will generate a YAML file as follows:
 
     ```yaml
     my_tool_package.tools.tool_with_custom_llm_type.my_tool:
     name: My Custom LLM Tool
-    description: This is a tool to demonstrate the custom_llm tool type 
+    description: This is a tool to demonstrate how to customize an LLM tool with a PromptTemplate.
     # The type is custom_llm.
     type: custom_llm
     module: my_tool_package.tools.tool_with_custom_llm_type
@@ -54,7 +52,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
             - CustomConnection
     ```
 
-## Use custom LLM tool in VS Code extension
+## Use the custom LLM tool in VS Code extension
 Follow the steps to [build and install your tool package](create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](create-and-use-tool-package.md#use-your-tool-from-vscode-extension).  
 
 Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/tools/use-cases/custom_llm_tool_showcase/flow.dag.yaml) in VS Code extension.  

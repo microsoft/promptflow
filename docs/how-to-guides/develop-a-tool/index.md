@@ -9,5 +9,5 @@ create-and-use-tool-package
 add-a-tool-icon
 add-category-and-tags-for-tool
 use-file-path-as-tool-input
-create-custom-llm-tool
+customize_an_llm_tool
 ```
