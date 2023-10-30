@@ -17,6 +17,7 @@ ACTIVATE_FLOW_TEST_CASES = [
     "conditional_flow_with_activate",
     "activate_with_no_inputs",
     "all_depedencies_bypassed_with_activate_met",
+    "activate_condition_always_met",
 ]
 
 
