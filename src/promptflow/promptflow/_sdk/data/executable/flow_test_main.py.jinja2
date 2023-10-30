@@ -41,12 +41,8 @@ def start():
         session_state_history.update({"inputs": kwargs})
         with container:
             render_message("user", kwargs)
-        # Force append chat history to kwargs
-{% if is_chat_flow %}
-{{ ' ' * indent_level * 2 }}response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
-{% else %}
-{{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
-{% endif %}
+        # Append chat history to kwargs
+        response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
         st.session_state.messages.append(("assistant", response))
         session_state_history.update({"outputs": response})
         st.session_state.history.append(session_state_history)
@@ -57,18 +53,13 @@ def start():
     def run_flow(data: dict) -> dict:
         global invoker
         if not invoker:
-{% if flow_path %}
-{{ ' ' * indent_level * 3 }}flow = Path('{{flow_path}}')
-{{ ' ' * indent_level * 3 }}dump_path = Path('{{flow_path}}').parent
-{% else %}
-{{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
-{{ ' ' * indent_level * 3 }}dump_path = flow.parent
-{% endif %}
+            flow = Path('{{flow_path}}')
+            dump_path = Path('{{flow_path}}').parent
             if flow.is_dir():
                 os.chdir(flow)
             else:
                 os.chdir(flow.parent)
-            invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
+            invoker = FlowInvoker(flow, connection_provider="""{{ connection_provider }}""", dump_to=dump_path)
         result = invoker.invoke(data)
         return result
 
@@ -95,42 +86,16 @@ def start():
         show_conversation()
 
     with st.form(key='input_form', clear_on_submit=True):
-        settings_path = os.path.join(os.path.dirname(__file__), "settings.json")
-        if os.path.exists(settings_path):
-            with open(settings_path, "r", encoding="utf-8") as file:
-                json_data = json.load(file)
-            environment_variables = list(json_data.keys())
-            for environment_variable in environment_variables:
-                secret_input = st.sidebar.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
-                if secret_input != "":
-                    os.environ[environment_variable] = secret_input
-
-{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if value_type == "list" %}
-{{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
-{% elif value_type == "image" %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
-{% elif value_type == "string" %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-{% else %}
-{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder={{default_value}})
-{% endif %}
-{% endfor %}
+        st.text('{{chat_input_name}}')
+        {{chat_input_name}} = st_quill(html=True, toolbar=["image"], key='{{chat_input_name}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
 
         cols = st.columns(7)
-        submit_bt = cols[0].form_submit_button(label='{{label}}', type='primary')
+        submit_bt = cols[0].form_submit_button(label='Chat', type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
         if submit_bt:
             with st.spinner("Loading..."):
-{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
-{% if value_type == "list" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_list_from_html({{flow_input}})
-{% elif value_type == "image" %}
-{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
-{% endif %}
-{% endfor %}
+                {{chat_input_name}} = parse_list_from_html({{chat_input_name}})
                 submit({{flow_inputs_params}})
 
         if clear_bt:

@@ -181,8 +181,8 @@ def persist_multimedia_data(value: Any, base_dir: Path, sub_dir: Path = None):
     return recursive_process(value, process_funcs=serialization_funcs)
 
 
-def convert_multimedia_data_to_base64(value: Any, with_type=False, dict_type=False):
-    to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type, "dict_type": dict_type})}
+def convert_multimedia_data_to_base64(value: Any, with_type=False):
+    to_base64_funcs = {PFBytes: partial(PFBytes.to_base64, **{"with_type": with_type})}
     return recursive_process(value, process_funcs=to_base64_funcs)
 
 
