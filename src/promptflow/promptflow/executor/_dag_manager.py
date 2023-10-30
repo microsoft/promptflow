@@ -110,11 +110,10 @@ class DAGManager:
             return True
 
         # Bypass node if the activate condition is not met
-        if node.activate and (
-            self._is_node_dependency_bypassed(node.activate.condition)
-            or not self._is_condition_met(node.activate.condition, node.activate.condition_value)
-        ):
-            return True
+        if node.activate:
+            if self._is_node_dependency_bypassed(node.activate.condition):
+                return True
+            return not self._is_condition_met(node.activate.condition, node.activate.condition_value)
 
         # Bypass node if all of its node reference dependencies are bypassed
         node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
