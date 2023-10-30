@@ -52,7 +52,7 @@ Here we use [an existing tool package](https://github.com/microsoft/promptflow/t
             - CustomConnection
     ```
 
-## Use the custom LLM tool in VS Code extension
+## Use the tool in VS Code
 Follow the steps to [build and install your tool package](create-and-use-tool-package.md#build-and-share-the-tool-package) and [use your tool from VS Code extension](create-and-use-tool-package.md#use-your-tool-from-vscode-extension).  
 
 Here we use an existing flow to demonstrate the experience, open [this flow](https://github.com/microsoft/promptflow/blob/main/examples/tools/use-cases/custom_llm_tool_showcase/flow.dag.yaml) in VS Code extension.  
