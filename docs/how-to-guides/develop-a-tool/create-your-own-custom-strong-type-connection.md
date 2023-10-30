@@ -1,7 +1,7 @@
 # Create and Use Your Own Custom Strong Type Connection
 Connections provide a secure method for managing credentials for external APIs and data sources in Prompt flow. This guide explains how to create and use a custom strong type connection.
 
-## What is a Custom Strong Type Connection?
+### What is a Custom Strong Type Connection?
 A custom strong type connection in Prompt flow allows you to define a custom connection class with strongly typed keys. This provides the following benefits:
 
 * Enhanced user experience - no need to manually enter connection keys.
@@ -50,9 +50,9 @@ class MyCustomConnection(CustomStrongTypeConnection):
 See [this example](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/tools/tool_with_custom_strong_type_connection.py) for a complete implementation.
 
 ## Use the connection in a flow
-Once you've created a custom connection, use it in your flows:
+Once you create a custom strong type connection, here are two ways to use it in your flows:
 
-#### With Package Tools:
+### With Package Tools:
 
 1. Refer to the [Create and Use Tool Package](create-and-use-tool-package.md#create-custom-tool-package) to build and install your tool package containing the connection.
 
@@ -72,7 +72,7 @@ Once you've created a custom connection, use it in your flows:
 5. Run the flow with the created custom strong type connection.
 ![use_custom_strong_type_connection_in_flow](../../media/how-to-guides/develop-a-tool/use_custom_strong_type_connection_in_flow.png)
 
-#### With Script Tools:
+### With Script Tools:
 
 1. Develop a flow with python script tools. Please take [this folder](https://github.com/microsoft/promptflow/tree/main/examples/tools/use-cases/custom-strong-type-connection-script-tool-showcase) as an example.
 
@@ -95,6 +95,6 @@ pfazure run create --subscription 96aede12-2f73-41cb-b983-6d11a904839b -g prompt
 
 ## FAQs
 
-### Why isn't the connection we created visible?
+### I followed the steps to create a custom strong type connection, but it's not showing up. What could be the issue?
 
 Once the new tool package is installed in your local environment, a window reload is necessary. This action ensures that the new tools and custom strong type connections become visible and accessible.
