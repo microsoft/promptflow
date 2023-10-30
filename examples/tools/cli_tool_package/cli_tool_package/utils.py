@@ -16,7 +16,7 @@ def list_package_tools():
     pf_client = PFClient()
     script_files = Path(__file__).parent.glob("**/*.py")
     for file in script_files:
-        if not str(file).endswith("__init__.py") and "my_tool_1.py" in str(file):
+        if not str(file).endswith("__init__.py"):
             module_name = f'{package_name}.{Path(file).stem}'
 
             # Load the module from the file path
@@ -27,7 +27,3 @@ def list_package_tools():
             spec.loader.exec_module(module)
             tools.update(pf_client._tools.generate_tool_meta(module))
     return tools
-
-
-if __name__ == "__main__":
-    list_package_tools()

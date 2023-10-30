@@ -137,24 +137,26 @@ class ToolProvider(ABC):
 
 @dataclass
 class DynamicList:
-    function: Union[str, Callable]
-    func_kwargs: List = field(init=False)
+    function: InitVar[Union[str, Callable]]
     input_mapping: InitVar[Dict] = None
+    func_path: str = field(init=False)
+    func_kwargs: List = field(init=False)
 
-    def __post_init__(self, input_mapping):
+    def __post_init__(self, function, input_mapping):
         from promptflow.exceptions import UserErrorException
+        from promptflow.contracts.tool import ValueType
 
         # Validate function exist
-        if isinstance(self.function, str):
+        if isinstance(function, str):
             func = importlib.import_module(tool["module"])
-            func_name = self.function
-        elif isinstance(self.function, Callable):
-            func = self.function
-            func_name = f"{self.function.__module__}.{self.function.__name__}"
+            func_path = function
+        elif isinstance(function, Callable):
+            func = function
+            func_path = f"{function.__module__}.{function.__name__}"
         else:
             raise UserErrorException(
                 "Function has invalid type, please provide callable or function name for function.")
-        self.function = func_name
+        self.func_path = func_path
         self._func_obj = func
 
         # Get function input info
@@ -164,17 +166,15 @@ class DynamicList:
             if value.kind != value.VAR_KEYWORD and value.kind != value.VAR_POSITIONAL:
                 input_info = {"name": name}
                 if not value.annotation is inspect.Parameter.empty:
-                    # TODO type mapping
                     if get_origin(value.annotation):
                         input_info["type"] = [annotation.__name__ for annotation in get_args(value.annotation)]
                     else:
-                        input_info["type"] = [value.annotation.__name__]
+                        input_info["type"] = [ValueType.from_type(value.annotation)]
                 if name in input_mapping:
                     input_info["reference"] = f"${{inputs.{input_mapping[name]}}}"
                 input_info["optional"] = value.default is not inspect.Parameter.empty
                 if input_info["optional"]:
                     input_info["default"] = value.default
-                input_info["type"] = []
                 self.func_kwargs.append(input_info)
 
 
