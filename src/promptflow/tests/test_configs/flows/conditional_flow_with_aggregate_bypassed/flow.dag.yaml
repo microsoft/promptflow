@@ -1,0 +1,62 @@
+inputs:
+  case:
+    type: string
+    default: double
+    is_chat_input: false
+  value:
+    type: int
+    default: 1
+outputs:
+  output:
+    type: string
+    reference: ${collect_node.output}
+    evaluation_only: false
+    is_chat_output: false
+nodes:
+- name: double
+  type: python
+  source:
+    type: code
+    path: double.py
+  inputs:
+    input: ${inputs.value}
+  activate:
+    when: ${inputs.case}
+    is: double
+  aggregation: false
+- name: square
+  type: python
+  source:
+    type: code
+    path: square.py
+  inputs:
+    input: ${inputs.value}
+  activate:
+    when: ${inputs.case}
+    is: square
+  aggregation: false
+- name: aggregation_double
+  type: python
+  source:
+    type: code
+    path: aggregation_node.py
+  inputs:
+    input: ${double.output}
+  aggregation: true
+- name: aggregation_square
+  type: python
+  source:
+    type: code
+    path: aggregation_node.py
+  inputs:
+    input: ${square.output}
+  aggregation: true
+- name: collect_node
+  type: python
+  source:
+    type: code
+    path: collect_node.py
+  inputs:
+    input1: ${double.output}
+    input2: ${square.output}
+  aggregation: false

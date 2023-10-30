@@ -87,7 +87,7 @@ class Flow(FlowBase):
             # TODO: for file, we should read the yaml to get code and set path to source_path
             return cls(code=source_path.absolute().parent.as_posix(), **kwargs)
 
-        raise Exception("source must be a directory or a flow.dag.yaml file")
+        raise Exception("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk.operations._run_submitter import variant_overwrite_context
