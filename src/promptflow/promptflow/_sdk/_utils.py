@@ -47,6 +47,7 @@ from promptflow._sdk._constants import (
     NODE_VARIANTS,
     NODES,
     PROMPT_FLOW_DIR_NAME,
+    PROMPT_FLOW_INTERMEDIATE_NAME,
     REFRESH_CONNECTIONS_DIR_LOCK_PATH,
     USE_VARIANTS,
     VARIANTS,
@@ -63,6 +64,7 @@ from promptflow._sdk._vendor import IgnoreFile, get_ignore_file, get_upload_file
 from promptflow._utils.context_utils import _change_working_dir, inject_sys_path
 from promptflow._utils.dataclass_serializer import serialize
 from promptflow.contracts.tool import ToolType
+from promptflow._utils.multimedia_utils import _is_base64, create_image, persist_multimedia_data, is_multimedia_dict
 
 
 def snake_to_camel(name):
@@ -882,6 +884,11 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
         }
     dump_folder = Path(flow_folder) / PROMPT_FLOW_DIR_NAME
     dump_folder.mkdir(parents=True, exist_ok=True)
+    flow_serialize_result = _resolve_base64_image_in_test_result(
+        flow_serialize_result,
+        flow_folder=flow_folder,
+        sub_dir=Path(PROMPT_FLOW_DIR_NAME) / PROMPT_FLOW_INTERMEDIATE_NAME
+    )
 
     with open(dump_folder / f"{prefix}.detail.json", "w") as f:
         json.dump(flow_serialize_result, f, indent=2)
@@ -897,3 +904,34 @@ def dump_flow_result(flow_folder, prefix, flow_result=None, node_result=None):
     if output:
         with open(dump_folder / f"{prefix}.output.json", "w") as f:
             json.dump(output, f, indent=2)
+
+
+def _resolve_base64_image_in_test_result(test_result, flow_folder, sub_dir):
+    """
+    Resolve base64 to image path in the test result.
+
+    :param test_result: Test result
+    :param test_result: obj
+    :param flow_folder: Path to flow folder.
+    :param flow_folder: Path
+    :param sub_dir: Sub dir of the flow is used to record the image.
+    :param sub_dir: Path
+    """
+    def persist_base64(image):
+        image = create_image(image)
+        return persist_multimedia_data(image, base_dir=flow_folder, sub_dir=sub_dir)
+
+    if isinstance(test_result, dict):
+        if is_multimedia_dict(test_result) and _is_base64(list(test_result.values())[0]):
+            test_result = persist_base64(test_result)
+        else:
+            for k, v in test_result.items():
+                test_result[k] = _resolve_base64_image_in_test_result(v, flow_folder, sub_dir)
+    elif isinstance(test_result, list):
+        test_result = [_resolve_base64_image_in_test_result(item, flow_folder, sub_dir) for item in test_result]
+    elif isinstance(test_result, str):
+        base64_image_pattern = re.compile(r"^data:image/.*;base64,(.*)")
+        match = base64_image_pattern.match(test_result)
+        if match:
+            test_result = persist_base64(match.group(1))
+    return test_result
