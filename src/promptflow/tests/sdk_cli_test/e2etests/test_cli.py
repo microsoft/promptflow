@@ -1525,8 +1525,7 @@ class TestCli:
             "flow",
             "test",
             "--flow",
-            r"D:\Project\github_promptflow\promptflow\src\promptflow\tests\test_configs\flows\python_tool_with_image_chat_input",
-            "--multi-modal"
+            f"{FLOWS_DIR}/python_tool_with_composite_image",
         )
         output_path = Path(FLOWS_DIR) / "python_tool_with_composite_image" / ".promptflow" / "output"
         assert output_path.exists()
