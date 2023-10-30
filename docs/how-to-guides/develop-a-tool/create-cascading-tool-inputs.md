@@ -46,7 +46,7 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
 
 2. Generate a starting YAML for your tool per the [tool package guide](create-and-use-tool-package.md), then update it to enable cascading:
 
-Add `enabled_by` and `enabled_by_value` to control visibility of dependent inputs. See the [example YAML](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) for reference.
+    Add `enabled_by` and `enabled_by_value` to control visibility of dependent inputs. See the [example YAML](https://github.com/microsoft/promptflow/blob/main/examples/tools/tool-package-quickstart/my_tool_package/yamls/tool_with_cascading_inputs.yaml) for reference.
 
     * The `enabled_by` attribute specifies which input field controls the visibility of the dependent input field.
 
