@@ -132,7 +132,7 @@ def serving_client_python_stream_tools(mocker: MockerFixture):
 
 @pytest.fixture
 def sample_image():
-    image_path = Path(MODEL_ROOT) / "python_tool_with_simple_image" / "logo.jpg"
+    image_path = (Path(MODEL_ROOT) / "python_tool_with_simple_image" / "logo.jpg").resolve()
     return base64.b64encode(open(image_path, "rb").read()).decode("utf-8")
 
 
