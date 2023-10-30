@@ -23,7 +23,7 @@ def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, U
         cur_item = {
             "value": random_word,
             "display_value": f"{prefix}_{random_word}",
-            "hyperlink": f'https://www.google.com/search?q={random_word}',
+            "hyperlink": f'https://www.bing.com/search?q={random_word}',
             "description": f"this is {i} item",
         }
         result.append(cur_item)
@@ -31,6 +31,38 @@ def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, U
     return result
 
 
+def list_endpoint_names(subscription_id, resource_group_name, workspace_name, prefix: str = "") -> List[Dict[str, str]]:
+    """This is an example to show how to get Azure ML resource in tool input list function.
+
+    :param subscription_id: Azure subscription id.
+    :param resource_group_name: Azure resource group name.
+    :param workspace_name: Azure ML workspace name.
+    :param prefix: prefix to add to each item.
+    """
+    from azure.ai.ml import MLClient
+    from azure.identity import DefaultAzureCredential
+
+    credential = DefaultAzureCredential()
+    credential.get_token("https://management.azure.com/.default")
+
+    ml_client = MLClient(
+        credential=credential,
+        subscription_id=subscription_id,
+        resource_group_name=resource_group_name,
+        workspace_name=workspace_name)
+    result = []
+    for ep in ml_client.online_endpoints.list():
+        cur_item = {
+            "value": ep.name,
+            "display_value": f"{prefix}_{ep.name}",
+            # external link to jump to the endpoint page.
+            "hyperlink": f"https://ml.azure.com/endpoints/realtime/{ep.name}/detail?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
+            "description": f"this is endpoint: {ep.name}",
+        }
+        result.append(cur_item)
+    return result
+
+
 @tool
-def my_tool(input_text: list, input_prefix: str) -> str:
-    return f"Hello {input_prefix} {','.join(input_text)}"
+def my_tool(input_prefix: str, input_text: list, endpoint_name: str) -> str:
+    return f"Hello {input_prefix} {','.join(input_text)} {endpoint_name}"
