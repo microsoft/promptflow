@@ -7,11 +7,12 @@ import time
 import urllib.request
 
 from abc import abstractmethod
+from azure.ai.ml import MLClient
 from enum import Enum
-from typing import Any, Dict, List, Tuple, Mapping, Optional
+from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
 from urllib.request import HTTPError
 
-from promptflow import ToolProvider, tool
+from promptflow._core.tool import ToolProvider, tool
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.common import render_jinja_template, validate_role
@@ -25,7 +26,6 @@ from promptflow.tools.exception import (
 VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
-DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
 ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
 
 
@@ -49,6 +49,171 @@ def handle_oneline_endpoint_error(max_retries: int = 3,
                     time.sleep(delay)
         return wrapper
     return deco_retry
+
+
+class Endpoint:
+    def __init__(self,
+                 endpoint_name: str,
+                 endpoint_url: str,
+                 endpoint_key: str):
+        self.deployments: List[Deployment] = []
+        self.default_deployment: Deployment = None
+        self.endpoint_url = endpoint_url
+        self.endpoint_key = endpoint_key
+        self.endpoint_name = endpoint_name
+
+
+class Deployment:
+    def __init__(self,
+                 deployment_name: str,
+                 model_family: str):
+        self.model_family = model_family
+        self.deployment_name = deployment_name
+
+
+class EndpointsContainer:
+    def __init__(self) -> None:
+        self.__endpoints_and_deployments = None
+        self.__subscription_id = None
+        self.__resource_group_name = None
+        self.__workspace_name = None
+
+    def get_ml_client(self,
+                      subscription_id: str,
+                      resource_group_name: str,
+                      workspace_name: str) -> MLClient:
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        try:
+            return MLClient(
+                credential=credential,
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name)
+        except Exception as e:
+            message = "Unable to connect to AzureML. Please ensure the following environment variables are set: "
+            message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
+            message += "\nException: " + str(e)
+            raise OpenSourceLLMOnlineEndpointError(message=message)
+
+    def get_endpoints_and_deployments(self,
+                                      subscription_id: str,
+                                      resource_group_name: str,
+                                      workspace_name: str) -> List[Endpoint]:
+        if (self.__endpoints_and_deployments is not None
+                and self.__subscription_id == subscription_id
+                and self.__resource_group_name == resource_group_name
+                and self.__workspace_name == workspace_name
+                ):
+            return self.__endpoints_and_deployments
+
+        ml_client = self.get_ml_client(subscription_id, resource_group_name, workspace_name)
+        self.__subscription_id = subscription_id
+        self.__resource_group_name = resource_group_name
+        self.__workspace_name = workspace_name
+
+        list_of_endpoints: List[Endpoint] = []
+
+        for ep in ml_client.online_endpoints.list():
+            endpoint = Endpoint(
+                endpoint_name=ep.name,
+                endpoint_url=ep.scoring_uri,
+                endpoint_key=ml_client.online_endpoints.get_keys(ep.name).primary_key)
+
+            ordered_deployment_names = sorted(ep.traffic, key=lambda item: item[1])
+            deployments = ml_client.online_deployments.list(ep.name)
+
+            for deployment_name in ordered_deployment_names:
+                for d in deployments:
+                    if d.name == deployment_name:
+                        model_family = get_model_type(d.model)
+
+                        if model_family is None:
+                            continue
+
+                        deployment = Deployment(deployment_name=d.name, model_family=model_family)
+                        endpoint.deployments.append(deployment)
+
+                        # Deployment are ordered by traffic level, first in is default
+                        if endpoint.default_deployment is None:
+                            endpoint.default_deployment = deployment
+
+            if len(endpoint.deployments) > 0:
+                list_of_endpoints.append(endpoint)
+
+        self.__endpoints_and_deployments = list_of_endpoints
+        return self.__endpoints_and_deployments
+
+    def list_endpoint_names(self,
+                            subscription_id,
+                            resource_group_name,
+                            workspace_name
+                            ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+        '''Function for listing endpoints in the UX'''
+        endpoints_and_deployments = self.get_endpoints_and_deployments(
+            subscription_id,
+            resource_group_name,
+            workspace_name)
+
+        result = []
+        for e in endpoints_and_deployments:
+            result.append({
+                "value": e.endpoint_name,
+                "display_value": e.endpoint_name,
+                # "hyperlink": f'https://www.google.com/search?q={random_word}',
+                "description": f"this is {e.endpoint_name} item",
+            })
+        return result
+
+    def list_deployment_names(self,
+                              subscription_id,
+                              resource_group_name,
+                              workspace_name,
+                              endpoint_name: str
+                              ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+        '''Function for listing deployments in the UX'''
+        if endpoint_name is None:
+            return []
+
+        endpoints_and_deployments = self.get_endpoints_and_deployments(
+            subscription_id,
+            resource_group_name,
+            workspace_name)
+        for endpoint in endpoints_and_deployments:
+            if endpoint.endpoint_name == endpoint_name:
+                result = []
+                for d in endpoint.deployments:
+                    result.append({
+                        "value": d.deployment_name,
+                        "display_value": d.deployment_name,
+                        # "hyperlink": f'https://www.google.com/search?q={random_word}',
+                        "description": f"this is {d.deployment_name} item",
+                    })
+                return result
+        return []
+
+
+ENDPOINT_CONTAINER = EndpointsContainer()
+
+
+def list_endpoint_names(
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    return ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
+
+
+def list_deployment_names(
+        subscription_id: str,
+        resource_group_name: str,
+        workspace_name: str,
+        endpoint_name: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    return ENDPOINT_CONTAINER.list_deployment_names(
+        subscription_id,
+        resource_group_name,
+        workspace_name,
+        endpoint_name
+    )
 
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
@@ -83,61 +248,17 @@ def get_model_type(deployment_model: str) -> str:
     if m is None:
         raise ValueError(f"Unexpected model format: {deployment_model}")
     model = m[1].lower()
-    if model.startswith(ModelFamily.LLAMA.lower()):
+    if model.startswith("llama-2"):
         return ModelFamily.LLAMA
-    elif model.startswith(ModelFamily.FALCON.lower()):
+    elif model.startswith("tiiuae-falcon"):
         return ModelFamily.FALCON
-    elif model.startswith(ModelFamily.DOLLY.lower()):
+    elif model.startswith("databricks-dolly-v2"):
         return ModelFamily.DOLLY
     elif model.startswith("gpt2"):
         return ModelFamily.GPT2
     else:
-        raise ValueError(f"Unexpected model type: {model} derived from deployed model: {deployment_model}")
-
-
-def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
-    from azure.identity import DefaultAzureCredential
-    credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-
-    try:
-        from azure.ai.ml import MLClient
-        ml_client = MLClient(
-            credential=credential,
-            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
-            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
-            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
-    except Exception as e:
-        message = "Unable to connect to AzureML. Please ensure the following environment variables are set: "
-        message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
-        message += "\nException: " + str(e)
-        raise OpenSourceLLMOnlineEndpointError(message=message)
-
-    found = False
-    for ep in ml_client.online_endpoints.list():
-        if ep.name == endpoint_name:
-            endpoint_uri = ep.scoring_uri
-            endpoint_key = ml_client.online_endpoints.get_keys(ep.name).primary_key
-            found = True
-            break
-
-    if not found:
-        raise ValueError(f"Endpoint {endpoint_name} not found.")
-
-    found = False
-    if deployment_name is None:
-        deployment_name = sorted(ep.traffic, key=lambda item: item[1])[0]
-        found = True
-
-    for d in ml_client.online_deployments.list(ep.name):
-        if d.name == deployment_name:
-            model = get_model_type(d.model)
-            found = True
-            break
-
-    if not found:
-        raise ValueError(f"Deployment {deployment_name} not found.")
-
-    return (endpoint_uri, endpoint_key, model)
+        # Not found and\or handled. Ignore this endpoint\deployment
+        return None
 
 
 def get_deployment_from_connection(connection: CustomConnection) -> Tuple[str, str, str]:
@@ -441,18 +562,38 @@ class AzureMLOnlineEndpoint:
 
 class OpenSourceLLM(ToolProvider):
 
-    def __init__(self,
-                 connection: CustomConnection = None,
-                 endpoint_name: str = None):
+    def __init__(self, connection: CustomConnection = None):
         super().__init__()
 
-        self.endpoint_key = None
-        self.endpoint_name = endpoint_name
-
-        if endpoint_name is None or endpoint_name == DEFAULT_ENDPOINT_NAME:
+        if connection is not None:
             (self.endpoint_uri,
              self.endpoint_key,
              self.model_family) = get_deployment_from_connection(connection)
+        else:
+            self.endpoint_key = None
+
+    def get_deployment_from_endpoint(self, endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
+        endpoints_and_deployments = ENDPOINT_CONTAINER.get_endpoints_and_deployments(
+            subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
+            resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
+            workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME")
+        )
+
+        for ep in endpoints_and_deployments:
+            if ep.endpoint_name == endpoint_name:
+                if deployment_name is None:
+                    return (ep.endpoint_url,
+                            ep.endpoint_key,
+                            ep.default_deployment.model_family)
+                for d in ep.deployments:
+                    if d.deployment_name == deployment_name:
+                        return (ep.endpoint_url,
+                                ep.endpoint_key,
+                                d.model_family)
+
+        message = """Invalid endpoint and deployment values.
+Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
+        raise OpenSourceLLMUserError(message=message)
 
     @tool
     @handle_oneline_endpoint_error()
@@ -460,6 +601,7 @@ class OpenSourceLLM(ToolProvider):
         self,
         prompt: PromptTemplate,
         api: API,
+        endpoint_name: str = None,
         deployment_name: str = None,
         temperature: float = 1.0,
         max_new_tokens: int = 500,
@@ -467,12 +609,11 @@ class OpenSourceLLM(ToolProvider):
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
-        self.deployment_name = deployment_name
 
-        if self.endpoint_key is None and self.endpoint_name is not None:
+        if endpoint_name is not None:
             (self.endpoint_uri,
              self.endpoint_key,
-             self.model_family) = get_deployment_from_endpoint(self.endpoint_name, self.deployment_name)
+             self.model_family) = self.get_deployment_from_endpoint(endpoint_name, deployment_name)
 
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
 
@@ -491,7 +632,7 @@ class OpenSourceLLM(ToolProvider):
             endpoint_api_key=self.endpoint_key,
             model_family=self.model_family,
             content_formatter=content_formatter,
-            deployment_name=self.deployment_name,
+            deployment_name=deployment_name,
             model_kwargs=model_kwargs
         )
 
