@@ -7,4 +7,5 @@ We provide guides on how to develop a flow by writing a flow yaml from scratch i
 
 develop-standard-flow
 develop-chat-flow
+develop-evaluation-flow
 ```

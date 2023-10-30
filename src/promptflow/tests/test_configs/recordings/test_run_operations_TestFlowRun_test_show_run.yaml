@@ -1,0 +1,207 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000
+  response:
+    body:
+      string: '{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000",
+        "name": "00000", "type": "Microsoft.MachineLearningServices/workspaces", "location":
+        "eastus", "tags": {}, "etag": null, "kind": "Default", "sku": {"name": "Basic",
+        "tier": "Basic"}, "properties": {"discoveryUrl": "https://eastus.api.azureml.ms/discovery"}}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '3519'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.023'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - application/json
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      User-Agent:
+      - promptflow-sdk/0.0.1 azure-ai-ml/1.10.0 azsdk-python-mgmt-machinelearningservices/0.1.0
+        Python/3.10.13 (Windows-10-10.0.22621-SP0)
+    method: GET
+    uri: https://management.azure.com/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores?count=30&isDefault=true&orderByAsc=false
+  response:
+    body:
+      string: '{"value": [{"id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/datastores/workspaceblobstore",
+        "name": "workspaceblobstore", "type": "Microsoft.MachineLearningServices/workspaces/datastores",
+        "properties": {"description": null, "tags": null, "properties": null, "isDefault":
+        true, "credentials": {"credentialsType": "AccountKey"}, "intellectualProperty":
+        null, "subscriptionId": "00000000-0000-0000-0000-000000000000", "resourceGroup":
+        "00000", "datastoreType": "AzureBlob", "accountName": "fake_account_name",
+        "containerName": "fake-container-name", "endpoint": "core.windows.net", "protocol":
+        "https", "serviceDataAccessAuthIdentity": "WorkspaceSystemAssignedIdentity"},
+        "systemData": {"createdAt": "2023-04-08T02:53:06.5886442+00:00", "createdBy":
+        "779301c0-18b2-4cdc-801b-a0a3368fee0a", "createdByType": "Application", "lastModifiedAt":
+        "2023-04-08T02:53:07.521127+00:00", "lastModifiedBy": "779301c0-18b2-4cdc-801b-a0a3368fee0a",
+        "lastModifiedByType": "Application"}}]}'
+    headers:
+      cache-control:
+      - no-cache
+      content-length:
+      - '1372'
+      content-type:
+      - application/json; charset=utf-8
+      expires:
+      - '-1'
+      pragma:
+      - no-cache
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains
+      vary:
+      - Accept-Encoding
+      x-cache:
+      - CONFIG_NOCACHE
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.077'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"runId": "classification_accuracy_eval_default_20230808_153241_422491",
+      "selectRunMetadata": true, "selectRunDefinition": true, "selectJobSpecification":
+      true}'
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '160'
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.31.0
+    method: POST
+    uri: https://eastus.api.azureml.ms/history/v1.0/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/00000/providers/Microsoft.MachineLearningServices/workspaces/00000/rundata
+  response:
+    body:
+      string: '{"runMetadata": {"runNumber": 1691479972, "rootRunId": "classification_accuracy_eval_default_20230808_153241_422491",
+        "createdUtc": "2023-08-08T07:32:52.7610302+00:00", "createdBy": {"userObjectId":
+        "c05e0746-e125-4cb3-9213-a8b535eacd79", "userPuId": "10032000324F7449", "userIdp":
+        null, "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "Honglin
+        Du", "upn": null}, "userId": "c05e0746-e125-4cb3-9213-a8b535eacd79", "token":
+        null, "tokenExpiryTimeUtc": null, "error": null, "warnings": null, "revision":
+        4, "statusRevision": 2, "runUuid": "59a146b3-caca-4313-8e22-04385a10067b",
+        "parentRunUuid": null, "rootRunUuid": "59a146b3-caca-4313-8e22-04385a10067b",
+        "lastStartTimeUtc": null, "currentComputeTime": null, "computeDuration": "00:00:11.2161606",
+        "effectiveStartTimeUtc": null, "lastModifiedBy": {"userObjectId": "74013e41-d17e-462a-8db6-5c0e26c0368c",
+        "userPuId": null, "userIdp": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userAltSecId": null, "userIss": "https://sts.windows.net/00000000-0000-0000-0000-000000000000/",
+        "userTenantId": "00000000-0000-0000-0000-000000000000", "userName": "ec6824af-81f6-47fa-a07e-5a04ff0b94e7",
+        "upn": null}, "lastModifiedUtc": "2023-08-08T07:33:07.3638259+00:00", "duration":
+        "00:00:11.2161606", "cancelationReason": null, "currentAttemptId": 1, "runId":
+        "classification_accuracy_eval_default_20230808_153241_422491", "parentRunId":
+        null, "experimentId": "7238c773-2cc8-4158-832b-27fb908231e4", "status": "Completed",
+        "startTimeUtc": "2023-08-08T07:32:56.6377618+00:00", "endTimeUtc": "2023-08-08T07:33:07.8539224+00:00",
+        "scheduleId": null, "displayName": "classification_accuracy_eval_default_20230808_153241_422491",
+        "name": null, "dataContainerId": "dcid.classification_accuracy_eval_default_20230808_153241_422491",
+        "description": null, "hidden": false, "runType": "azureml.promptflow.FlowRun",
+        "runTypeV2": {"orchestrator": null, "traits": [], "attribution": "PromptFlow",
+        "computeType": "MIR_v2"}, "properties": {"azureml.promptflow.runtime_name":
+        "demo-mir", "azureml.promptflow.runtime_version": "20230801.v1", "azureml.promptflow.definition_file_name":
+        "flow.dag.yaml", "azureml.promptflow.input_data": "azureml://datastores/workspaceblobstore/paths/LocalUpload/312cca2af474e5f895013392b6b38f45/data.jsonl",
+        "azureml.promptflow.input_run_id": "web_classification_default_20230804_143634_056856",
+        "azureml.promptflow.inputs_mapping": "{\"groundtruth\":\"${data.answer}\",\"prediction\":\"${run.outputs.category}\"}",
+        "azureml.promptflow.snapshot_id": "e5d50c43-7ad2-4354-9ce4-4f56f0ea9a30",
+        "azureml.promptflow.total_tokens": "0"}, "parameters": {}, "actionUris": {},
+        "scriptName": null, "target": null, "uniqueChildRunComputeTargets": [], "tags":
+        {}, "settings": {}, "services": {}, "inputDatasets": [], "outputDatasets":
+        [], "runDefinition": null, "jobSpecification": null, "primaryMetricName":
+        null, "createdFrom": null, "cancelUri": null, "completeUri": null, "diagnosticsUri":
+        null, "computeRequest": null, "compute": null, "retainForLifetimeOfWorkspace":
+        false, "queueingInfo": null, "inputs": null, "outputs": {"flow_outputs": {"assetId":
+        "azureml://locations/eastus/workspaces/00000/data/azureml_classification_accuracy_eval_default_20230808_153241_422491_output_data_flow_outputs/versions/1",
+        "type": "UriFolder"}}}, "runDefinition": {"Nodes": [{"Name": "grade", "Tool":
+        "grade.py", "Comment": null, "Inputs": {"groundtruth": "${inputs.groundtruth}",
+        "prediction": "${inputs.prediction}"}, "Api": null, "Provider": null, "Connection":
+        null, "Module": null, "Reduce": false}, {"Name": "calculate_accuracy", "Tool":
+        "calculate_accuracy.py", "Comment": null, "Inputs": {"grades": "${grade.output}"},
+        "Api": null, "Provider": null, "Connection": null, "Module": null, "Reduce":
+        true}], "Tools": [{"Name": "grade.py", "Type": "python", "Inputs": {"groundtruth":
+        {"Name": null, "Type": ["string"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "model_list": null, "Capabilities":
+        null}, "prediction": {"Name": null, "Type": ["string"], "Default": null, "Description":
+        null, "Enum": null, "enabled_by": null, "enabled_by_type": null, "model_list":
+        null, "Capabilities": null}}, "Outputs": null, "Description": null, "connection_type":
+        null, "Module": null, "class_name": null, "Source": "grade.py", "LkgCode":
+        null, "Code": null, "Function": "grade", "action_type": null, "provider_config":
+        null, "function_config": null, "is_builtin": false, "package": null, "package_version":
+        null}, {"Name": "calculate_accuracy.py", "Type": "python", "Inputs": {"grades":
+        {"Name": null, "Type": ["object"], "Default": null, "Description": null, "Enum":
+        null, "enabled_by": null, "enabled_by_type": null, "model_list": null, "Capabilities":
+        null}}, "Outputs": null, "Description": null, "connection_type": null, "Module":
+        null, "class_name": null, "Source": "calculate_accuracy.py", "LkgCode": null,
+        "Code": null, "Function": "calculate_accuracy", "action_type": null, "provider_config":
+        null, "function_config": null, "is_builtin": false, "package": null, "package_version":
+        null}], "Codes": null, "Inputs": {"groundtruth": {"Name": null, "Type": "string",
+        "Default": "APP", "Description": "Please specify the groundtruth column, which
+        contains the true label to the outputs that your flow produces.", "is_chat_input":
+        false}, "prediction": {"Name": null, "Type": "string", "Default": "APP", "Description":
+        "Please specify the prediction column, which contains the predicted outputs
+        that your flow produces.", "is_chat_input": false}}, "Outputs": {"grade":
+        {"Name": null, "Type": "string", "Description": null, "Reference": "${grade.output}",
+        "evaluation_only": false, "is_chat_output": false}}}, "jobSpecification":
+        null, "systemSettings": null}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '7640'
+      content-type:
+      - application/json; charset=utf-8
+      strict-transport-security:
+      - max-age=15724800; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-request-time:
+      - '0.077'
+    status:
+      code: 200
+      message: OK
+version: 1
