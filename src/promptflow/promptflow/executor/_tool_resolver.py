@@ -14,6 +14,7 @@ from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
 from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
+from promptflow.contracts._errors import InvalidImageInput
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
@@ -108,8 +109,14 @@ class ToolResolver:
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
-                except Exception as e:
+                except ValueError as e:
                     msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type}."
+                    raise NodeInputValidationError(message=msg) from e
+                except InvalidImageInput as e:
+                    msg = (
+                        f"Input '{k} for node '{node.name}' of value {v.value} is not a valid image, "
+                        f"due to exception: {e}."
+                    )
                     raise NodeInputValidationError(message=msg) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.

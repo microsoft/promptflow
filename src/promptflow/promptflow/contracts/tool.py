@@ -132,6 +132,13 @@ class ValueType(str, Enum):
                 except Exception:
                     #  Ignore the exception since it might really be a string
                     pass
+        if self == ValueType.IMAGE:
+            try:
+                from promptflow._utils.multimedia_utils import create_image
+
+                return create_image(v)
+            except Exception as ex:
+                raise ValueError(f"Invalid image value {v!r}. Exception: {ex}") from ex
         # TODO: parse other types
         return v
 
