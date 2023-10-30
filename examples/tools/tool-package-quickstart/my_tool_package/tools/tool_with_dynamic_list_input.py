@@ -56,7 +56,8 @@ def list_endpoint_names(subscription_id, resource_group_name, workspace_name, pr
             "value": ep.name,
             "display_value": f"{prefix}_{ep.name}",
             # external link to jump to the endpoint page.
-            "hyperlink": f"https://ml.azure.com/endpoints/realtime/{ep.name}/detail?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
+            "hyperlink": f"https://ml.azure.com/endpoints/realtime/{ep.name}/detail?wsid=/subscriptions/{subscription_id}" \
+                "/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
             "description": f"this is endpoint: {ep.name}",
         }
         result.append(cur_item)
