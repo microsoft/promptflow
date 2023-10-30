@@ -5,6 +5,8 @@ Tool can define the listing experience and the corresponding request to enable t
 ## Prerequisites
 
 - Download private [Prompt flow for VS Code](https://aka.ms/pfvsctest) version "1.2.0-test1025", and install from VSIX file.
+![Install private extension](../../media/how-to-guides/develop-a-tool/install-private-extension.png)
+
 - Install dependencies.
 ```sh
 pip install promptflow==0.1.0b8.dev5 --extra-index-url https://azuremlsdktestpypi.azureedge.net/promptflow
