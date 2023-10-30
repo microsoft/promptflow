@@ -8,6 +8,7 @@ import pytest
 
 from promptflow import load_flow
 from promptflow._sdk.entities import CustomConnection
+from promptflow.entities import FlowContext
 from promptflow.exceptions import UserErrorException
 
 FLOWS_DIR = "./tests/test_configs/flows"
@@ -43,9 +44,11 @@ class TestFlowAsFunc:
 
     def test_overrides(self):
         f = load_flow(f"{FLOWS_DIR}/print_env_var")
-        f.context.environment_variables = {"provided_key": "provided_value"}
-        # node print_env will take "provided_key" instead of flow input
-        f.context.overrides = {"nodes.print_env.inputs.key": "provided_key"}
+        f.context = FlowContext(
+            environment_variables={"provided_key": "provided_value"},
+            # node print_env will take "provided_key" instead of flow input
+            overrides={"nodes.print_env.inputs.key": "provided_key"},
+        )
         # the key="unknown" will not take effect
         result = f(key="unknown")
         assert result["output"] == "provided_value"

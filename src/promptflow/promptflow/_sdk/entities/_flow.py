@@ -43,19 +43,29 @@ class FlowBase(abc.ABC):
 
 
 class FlowContext:
+    """Flow context entity. the settings on this context will be applied to the flow when executing.
+
+    :param connections: Connections for the flow.
+    :type connections: Optional[Dict[str, Dict]]
+    :param variant: Variant of the flow.
+    :type variant: Optional[str]
+    :param environment_variables: Environment variables for the flow.
+    :type environment_variables: Optional[Dict[str, str]]
+    :param variant: Overrides of the flow.
+    :type variant: Optional[Dict[str, Dict]]
+    :param streaming: Whether the flow's output need to be return in streaming mode.
+    :type streaming: Optional[bool]
+    """
+
     def __init__(
         self,
-        flow: Path,
         *,
         connections=None,
         variant=None,
         environment_variables=None,
         overrides=None,
         streaming=None,
-        connection_provider=None,
     ):
-        # TODO: make this read only
-        self.flow = flow
         self.connections, self.connection_objs = connections or {}, {}
         self.variant = variant
         self.environment_variables = environment_variables or {}
@@ -91,7 +101,7 @@ class Flow(FlowBase):
         self._code = Path(code)
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
-        self._context = FlowContext(flow=self.code)
+        self._context = FlowContext()
         self.variant = kwargs.pop("variant", None) or {}
         super().__init__(**kwargs)
 
@@ -116,6 +126,12 @@ class Flow(FlowBase):
     @property
     def context(self) -> FlowContext:
         return self._context
+
+    @context.setter
+    def context(self, val):
+        if not isinstance(val, FlowContext):
+            raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
+        self._context = val
 
     @classmethod
     def load(
