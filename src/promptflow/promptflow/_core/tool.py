@@ -47,7 +47,7 @@ def tool(
     name: str = None,
     description: str = None,
     type: str = None,
-    input_settings = None,
+    input_settings=None,
     **kwargs,
 ) -> Callable:
     """Decorator for tool functions. The decorated function will be registered as a tool and can be used in a flow.

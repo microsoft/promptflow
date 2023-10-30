@@ -131,7 +131,10 @@ def collect_tool_methods_with_init_inputs_in_module(m):
 
 
 def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False):
-    tool_type = getattr(f, "__type") or ToolType.PYTHON
+    try:
+        tool_type = getattr(f, "__type") or ToolType.PYTHON
+    except Exception as e:
+        raise e
     tool_name = getattr(f, "__name")
     description = getattr(f, "__description")
     if hasattr(f, "__tool") and isinstance(f.__tool, Tool):
@@ -139,7 +142,8 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
     if hasattr(f, "__original_function"):
         f = f.__original_function
     try:
-        inputs, _, _ = function_to_interface(f, initialize_inputs=initialize_inputs, gen_custom_type_conn=gen_custom_type_conn)
+        inputs, _, _ = function_to_interface(
+            f, initialize_inputs=initialize_inputs, gen_custom_type_conn=gen_custom_type_conn)
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise BadFunctionInterface(
@@ -241,8 +245,8 @@ def collect_tool_function_in_module(m):
 
 def generate_python_tool(name, content, source=None):
     m = load_python_module(content, source)
-    f = collect_tool_function_in_module(m)
-    tool = _parse_tool_from_function(f)
+    f, initialize_inputs = collect_tool_function_in_module(m)
+    tool = _parse_tool_from_function(f, initialize_inputs=initialize_inputs)
     tool.module = None
     if name is not None:
         tool.name = name

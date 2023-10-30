@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict
 from os import PathLike
 from pathlib import Path
-from typing import Union, Callable
+from typing import Union
 
 from promptflow._core.tool_meta_generator import is_tool, _parse_tool_from_function, asdict_without_none
 from promptflow._core.tools_manager import collect_package_tools
@@ -97,7 +97,10 @@ class ToolOperations:
                     dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
                     for func_input, reference_input in settings.dynamic_list.input_mapping.items():
                         if func_input not in dynamic_func_inputs:
-                            raise UserErrorException(f"Cannot find {func_input} in the inputs of dynamic_list func {settings.dynamic_list.function}")
+                            raise UserErrorException(
+                                f"Cannot find {func_input} in the inputs of "
+                                f"dynamic_list func {settings.dynamic_list.function}"
+                            )
                         if reference_input not in tool_inputs:
                             raise UserErrorException(f"Cannot find {reference_input} in the tool inputs.")
                 tool_inputs[input_name].update(asdict_without_none(settings))

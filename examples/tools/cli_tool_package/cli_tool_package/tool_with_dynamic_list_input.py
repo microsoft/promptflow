@@ -30,11 +30,17 @@ def my_list_func(prefix: str = "", size: int = 10, **kwargs) -> List[Dict[str, U
 
     return result
 
+
 dynamic_list_setting = DynamicList(function=my_list_func, input_mapping={"prefix": "input_prefix"})
 input_settings = {
     "input_text": InputSettings(dynamic_list=dynamic_list_setting, allow_manual_entry=True, is_multi_select=True)
 }
 
-@tool(name="My Tool with Dynamic List Input", description="This is my tool with dynamic list input", input_settings=input_settings)
+
+@tool(
+    name="My Tool with Dynamic List Input",
+    description="This is my tool with dynamic list input",
+    input_settings=input_settings
+)
 def my_tool(input_text: list, input_prefix: str) -> str:
     return f"Hello {input_prefix} {','.join(input_text)}"
