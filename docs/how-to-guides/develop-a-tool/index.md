@@ -8,4 +8,7 @@ We provide guides on how to develop a tool and use it.
 create-and-use-tool-package
 add-a-tool-icon
 add-category-and-tags-for-tool
+use-file-path-as-tool-input
+customize_an_llm_tool
+create-cascading-tool-inputs
 ```

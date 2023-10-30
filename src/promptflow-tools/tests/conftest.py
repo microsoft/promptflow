@@ -91,10 +91,10 @@ def open_source_llm_ws_service_connection() -> bool:
 
 
 @pytest.fixture(autouse=True)
-def skip_if_no_key(request, mocker):
+def skip_if_no_api_key(request, mocker):
     mocker.patch.dict(os.environ, {"PROMPTFLOW_CONNECTIONS": CONNECTION_FILE})
-    if request.node.get_closest_marker('skip_if_no_key'):
-        conn_name = request.node.get_closest_marker('skip_if_no_key').args[0]
+    if request.node.get_closest_marker('skip_if_no_api_key'):
+        conn_name = request.node.get_closest_marker('skip_if_no_api_key').args[0]
         connection = request.getfixturevalue(conn_name)
         # if dummy placeholder key, skip.
         if isinstance(connection, OpenAIConnection) or isinstance(connection, SerpConnection):

@@ -1,8 +1,9 @@
 from promptflow import tool
 from divider import Divider
+from typing import List
 
 
 @tool
-def combine_code(divided: list[str]):
+def combine_code(divided: List[str]):
     code = Divider.combine(divided)
     return code

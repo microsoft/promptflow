@@ -260,7 +260,7 @@ class TestHandleOpenAIError:
         assert mock_method.call_count == 1
         assert exc_info.value.error_codes == error_codes.split("/")
 
-    @pytest.mark.skip_if_no_key("open_ai_connection")
+    @pytest.mark.skip_if_no_api_key("open_ai_connection")
     def test_model_not_accept_functions_as_param(
             self, open_ai_connection, example_prompt_template, functions):
         with pytest.raises(WrappedOpenAIError) as exc_info:
