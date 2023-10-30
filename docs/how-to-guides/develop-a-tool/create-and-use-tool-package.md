@@ -167,4 +167,4 @@ Alternatively, you can test your tool package using the script below to ensure t
 [Use file path as tool input](use-file-path-as-tool-input.md)  
 [Customize an LLM Tool](customize_an_llm_tool.md)  
 [Creating Cascading Tool Inputs](create-cascading-tool-inputs.md)   
-[Create your own custom strong type connection](create-your-own-custom-strong-type-connection.md) 
+[Create and Use Your Own Custom Strong Type Connection](create-your-own-custom-strong-type-connection.md) 
