@@ -50,7 +50,7 @@ def my_tool(user_type: Enum, student_id: str = "", teacher_id: str = "") -> str:
 
     * The `enabled_by` attribute specifies the input field, which must be an enum type, that controls the visibility of the dependent input field.
 
-    * The `enabled_by_value` attribute defines the accepted enum values from the enabled_by field that will make this dependent input field visible.
+    * The `enabled_by_value` attribute defines the accepted enum values from the `enabled_by` field that will make this dependent input field visible.
     > Note: `enabled_by_value` takes a list, allowing multiple values to enable an input.
 
 ```yaml
