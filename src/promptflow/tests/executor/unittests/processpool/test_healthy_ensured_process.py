@@ -1,7 +1,7 @@
 import pytest
 
 from multiprocessing import Queue
-from promptflow.executor._line_execution_process_pool import HealthyEnsuredProcess
+from promptflow.executor._line_execution_process_pool import HealthyEnsuredProcess, get_multiprocessing_context
 
 from unittest.mock import patch
 import time
@@ -27,7 +27,8 @@ def end_process(healthy_ensured_process):
 class TestHealthyEnsuredProcess:
 
     def test_healthy_ensured_process(self):
-        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func)
+        context = get_multiprocessing_context("fork")
+        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, context)
         assert healthy_ensured_process.is_ready is False
         task_queue = Queue()
         healthy_ensured_process.start_new(task_queue)
@@ -37,7 +38,8 @@ class TestHealthyEnsuredProcess:
         assert healthy_ensured_process.process.is_alive() is False
 
     def test_unhealthy_process(self):
-        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func_timeout)
+        context = get_multiprocessing_context("fork")
+        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func_timeout, context)
         assert healthy_ensured_process.is_ready is False
         task_queue = Queue()
         healthy_ensured_process.start_new(task_queue)
@@ -47,7 +49,8 @@ class TestHealthyEnsuredProcess:
         assert healthy_ensured_process.process.is_alive() is False
 
     def test_format_current_process(self):
-        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func)
+        context = get_multiprocessing_context("fork")
+        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, context)
         healthy_ensured_process.process = patch(
             'promptflow.executor._line_execution_process_pool.Process', autospec=True)
         healthy_ensured_process.process.name = "process_name"
@@ -63,7 +66,8 @@ class TestHealthyEnsuredProcess:
 
     @patch('promptflow.executor._line_execution_process_pool.logger.info', autospec=True)
     def test_format_completed_process(self, mock_logger_info):
-        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func)
+        context = get_multiprocessing_context("fork")
+        healthy_ensured_process = HealthyEnsuredProcess(executor_creation_func, context)
         healthy_ensured_process.process = patch(
             'promptflow.executor._line_execution_process_pool.Process', autospec=True)
         healthy_ensured_process.process.name = "process_name"
