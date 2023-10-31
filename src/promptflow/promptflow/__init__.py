@@ -6,7 +6,7 @@ __path__ = __import__("pkgutil").extend_path(__path__, __name__)  # type: ignore
 from promptflow._core.metric_logger import log_metric
 
 # flake8: noqa
-from promptflow._core.tool import ToolProvider, InputSettings, DynamicList, tool
+from promptflow._core.tool import ToolProvider, tool
 
 # control plane sdk functions
 from promptflow._sdk._load_functions import load_flow, load_run
@@ -25,7 +25,5 @@ __all__ = [
     "load_run",
     "log_metric",
     "ToolProvider",
-    "InputSettings",
-    "DynamicList",
     "tool",
 ]

@@ -17,6 +17,7 @@ from promptflow._sdk.entities._connection import (
     FormRecognizerConnection,
 )
 from promptflow._sdk.entities._run import Run
+from promptflow._core.tool import InputSetting, DynamicList
 
 __all__ = [
     # Connection
@@ -30,4 +31,7 @@ __all__ = [
     "FormRecognizerConnection",
     # Run
     "Run",
+    # Tool
+    "InputSetting",
+    "DynamicList",
 ]

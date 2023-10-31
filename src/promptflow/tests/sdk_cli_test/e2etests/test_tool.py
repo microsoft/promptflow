@@ -2,7 +2,8 @@ import importlib.util
 from pathlib import Path
 
 import pytest
-from promptflow._core.tool import DynamicList, InputSettings, tool
+from promptflow._core.tool import tool
+from promptflow.entities import DynamicList, InputSetting
 from promptflow._sdk._pf_client import PFClient
 from promptflow.exceptions import UserErrorException
 
@@ -204,7 +205,7 @@ class TestCli:
         # value in reference doesn't exist in tool inputs
         invalid_dynamic_list_setting = DynamicList(function=my_list_func, input_mapping={"prefix": "invalid_input"})
         input_settings = {
-            "input_text": InputSettings(
+            "input_text": InputSetting(
                 dynamic_list=invalid_dynamic_list_setting,
                 allow_manual_entry=True,
                 is_multi_select=True
@@ -227,7 +228,7 @@ class TestCli:
         invalid_dynamic_list_setting = DynamicList(
             function=my_list_func, input_mapping={"invalid_input": "input_prefix"})
         input_settings = {
-            "input_text": InputSettings(
+            "input_text": InputSetting(
                 dynamic_list=invalid_dynamic_list_setting,
                 allow_manual_entry=True,
                 is_multi_select=True
@@ -249,7 +250,7 @@ class TestCli:
         # check required inputs of dynamic list func
         invalid_dynamic_list_setting = DynamicList(function=my_list_func, input_mapping={"size": "input_prefix"})
         input_settings = {
-            "input_text": InputSettings(dynamic_list=invalid_dynamic_list_setting, )
+            "input_text": InputSetting(dynamic_list=invalid_dynamic_list_setting, )
         }
 
         @tool(
@@ -266,7 +267,7 @@ class TestCli:
 
     def test_enabled_by_with_invalid_input(self):
         # value in enabled_by_value doesn't exist in tool inputs
-        input1_settings = InputSettings(enabled_by="invalid_input")
+        input1_settings = InputSetting(enabled_by="invalid_input")
 
         @tool(name="enabled_by_with_invalid_input", input_settings={"input1": input1_settings})
         def enabled_by_with_invalid_input(input1: str, input2: str):

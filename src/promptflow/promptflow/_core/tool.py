@@ -59,8 +59,8 @@ def tool(
     :type description: str
     :param type: The tool type.
     :type type: str
-    :param type: Input setting.
-    :type type: promptflow.InputSettings
+    :param input_settings: Dict of input setting.
+    :type input_settings: Dict[str, promptflow.entities.InputSetting]
     :return: The decorated function.
     :rtype: Callable
     """
@@ -144,8 +144,13 @@ class ToolProvider(ABC):
 
 @dataclass
 class DynamicList:
+
     function: InitVar[Union[str, Callable]]
+    """The dynamic list function."""
+
     input_mapping: InitVar[Dict] = None
+    """The mapping between dynamic list function inputs and tool inputs."""
+
     func_path: str = field(init=False)
     func_kwargs: List = field(init=False)
 
@@ -187,9 +192,20 @@ class DynamicList:
 
 
 @dataclass
-class InputSettings:
+class InputSetting:
+    """Settings of the tool input"""
+
     is_multi_select: bool = None
+    """Allow user to select multiple values."""
+
     allow_manual_entry: bool = None
+    """Allow user to enter input value manually."""
+
     enabled_by: str = None
+    """The input field which must be an enum type, that controls the visibility of the dependent input field."""
+
     enabled_by_value: List = None
+    """Defines the accepted enum values from the enabled_by field that will make this dependent input field visible."""
+
     dynamic_list: DynamicList = None
+    """Settings of dynamic list function."""
