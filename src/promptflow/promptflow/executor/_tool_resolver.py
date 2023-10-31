@@ -109,14 +109,14 @@ class ToolResolver:
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
                     updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
-                except ValueError as e:
-                    msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type}."
-                    raise NodeInputValidationError(message=msg) from e
                 except InvalidImageInput as e:
                     msg = (
                         f"Input '{k} for node '{node.name}' of value {v.value} is not a valid image, "
                         f"due to exception: {e}."
                     )
+                    raise NodeInputValidationError(message=msg) from e
+                except Exception as e:
+                    msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type}."
                     raise NodeInputValidationError(message=msg) from e
             else:
                 # The value type is in ValueType enum or is connection type. null connection has been handled before.
