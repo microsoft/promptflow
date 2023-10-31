@@ -104,7 +104,7 @@ class FlowInvoker:
         self.executor.enable_streaming_for_llm_flow(self.streaming)
         logger.info("Promptflow executor initiated successfully.")
 
-    def _invoke(self, data):
+    def _invoke(self, data: dict):
         """
         Process a flow request in the runtime.
 

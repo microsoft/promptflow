@@ -51,7 +51,7 @@ def start():
         st.session_state.history.append(session_state_history)
         invoker._dump_invoke_result(response)
         with container:
-            render_message("assistant", response)
+            render_message("assistant", resolved_outputs)
 
 
     def run_flow(data: dict) -> dict:
@@ -91,7 +91,15 @@ def start():
 
     with st.form(key='input_form', clear_on_submit=True):
         st.text('{{chat_input_name}}')
+        {% if chat_input_value_type == "list" %}
         {{chat_input_name}} = st_quill(html=True, toolbar=["image"], key='{{chat_input_name}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
+        {% elif chat_input_value_type == "image" %}
+        {{chat_input_name}} = st.file_uploader(label='{{chat_input_name}}')
+        {% elif chat_input_value_type == "string" %}
+        {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder='{{chat_input_default_value}}')
+        {% else %}
+        {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder={{chat_input_default_value}})
+        {% endif %}
 
         cols = st.columns(7)
         submit_bt = cols[0].form_submit_button(label='Chat', type='primary')
@@ -99,7 +107,11 @@ def start():
 
         if submit_bt:
             with st.spinner("Loading..."):
+                {% if chat_input_value_type == "list" %}
                 {{chat_input_name}} = parse_list_from_html({{chat_input_name}})
+                {% elif chat_input_value_type == "image" %}
+                {{chat_input_name}} = parse_image_content({{chat_input_name}}, {{chat_input_name}}.type if {{chat_input_name}} else None)
+                {% endif %}
                 submit({{flow_inputs_params}})
 
         if clear_bt:
