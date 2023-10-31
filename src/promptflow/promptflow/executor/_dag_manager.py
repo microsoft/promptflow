@@ -13,6 +13,7 @@ class DAGManager:
         self._pending_nodes = {node.name: node for node in nodes}
         self._completed_nodes_outputs = {}  # node name -> output
         self._bypassed_nodes = {}  # node name -> node
+        self._skipped_nodes = []
         # TODO: Validate the DAG to avoid circular dependencies
 
     @property
@@ -112,6 +113,7 @@ class DAGManager:
             # This is not a good practice, but we need to update the default output of bypassed node
             # to completed_nodes_outputs. We will remove these after skip config is deprecated.
             self.complete_nodes({node.name: skip_return})
+            self._skipped_nodes.append(node.name)
             return True
 
         # Bypass node if the activate condition is not met
@@ -149,4 +151,5 @@ class DAGManager:
             dependency.value_type == InputValueType.NODE_REFERENCE
             and dependency.value in self._bypassed_nodes
             and dependency.value not in self._completed_nodes_outputs
+            and dependency.value not in self._skipped_nodes
         )

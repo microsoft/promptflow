@@ -93,7 +93,7 @@ class FlowNodesScheduler:
             for node in nodes:
                 node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
                 self._context.bypass_node(node, node_outputs)
-                if node.name not in self._dag_manager.completed_nodes_outputs:
+                if node.name not in self._dag_manager._skipped_nodes:
                     self._dag_manager.complete_nodes({node.name: None})
         finally:
             self._context.end()
