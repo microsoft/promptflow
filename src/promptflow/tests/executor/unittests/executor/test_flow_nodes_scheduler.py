@@ -45,7 +45,8 @@ class TestFlowNodesScheduler:
 
     def test_bypass_nodes(self):
         executor = MagicMock()
-        dag_manager = MagicMock(spec=DAGManager, _bypassed_by_skip_config=[])
+
+        dag_manager = MagicMock(spec=DAGManager)
         node1 = MagicMock(spec=Node)
         node1.name = "node1"
         # The return value will be a list with one item for the first time.

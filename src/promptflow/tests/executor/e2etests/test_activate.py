@@ -89,6 +89,7 @@ class TestExecutorActivate:
         expected_result = get_flow_expected_result(flow_folder)
         expected_status_summary = get_flow_expected_status_summary(flow_folder)
         self.assert_activate_bulk_run_result(results, expected_result, expected_status_summary)
+
         # Validate the aggregate result
         assert results.aggr_results.node_run_infos["aggregation_double"].output == 3
         assert results.aggr_results.node_run_infos["aggregation_square"].output == 12.5
