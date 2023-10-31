@@ -97,7 +97,7 @@ class TestCli:
             def invalid_tool_type():
                 pass
 
-        assert exception.value == "Tool type invalid_type is not supported yet."
+        assert exception.value.message == "Tool type invalid_type is not supported yet."
 
     def test_tool_with_custom_connection(self):
         tool_path = TOOL_ROOT / "tool_with_custom_connection.py"
@@ -274,7 +274,7 @@ class TestCli:
 
         with pytest.raises(UserErrorException) as exception:
             _client._tools._serialize_tool(enabled_by_with_invalid_input)
-        assert "Cannot find the input \"invalid_input\"" in exception.value
+        assert "Cannot find the input \"invalid_input\"" in exception.value.message
 
     def test_tool_with_file_path_input(self):
         tool_path = TOOL_ROOT / "tool_with_file_path_input.py"

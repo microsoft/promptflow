@@ -9,7 +9,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-from promptflow._core.tool_meta_generator import is_tool, _parse_tool_from_function, asdict_without_none
+from promptflow._core.tool_meta_generator import _parse_tool_from_function, asdict_without_none, is_tool
 from promptflow._core.tools_manager import collect_package_tools
 from promptflow._utils.multimedia_utils import convert_multimedia_data_to_base64
 from promptflow.contracts.multimedia import Image
@@ -67,7 +67,8 @@ class ToolOperations:
             if settings.dynamic_list:
                 dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
                 has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
-                required_inputs = [k for k, v in dynamic_func_inputs.items() if v.default is inspect.Parameter.empty]
+                required_inputs = [k for k, v in dynamic_func_inputs.items() if
+                                   v.default is inspect.Parameter.empty and v.kind != v.VAR_KEYWORD]
                 if settings.dynamic_list._input_mapping:
                     # Validate input mapping in dynamic_list
                     for func_input, reference_input in settings.dynamic_list._input_mapping.items():
@@ -141,8 +142,8 @@ class ToolOperations:
         return image_url
 
     def list(
-        self,
-        flow: Union[str, PathLike] = None,
+            self,
+            flow: Union[str, PathLike] = None,
     ):
         """
         List all package tools in the environment and code tools in the flow.
