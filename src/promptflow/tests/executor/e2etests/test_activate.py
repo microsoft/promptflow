@@ -44,14 +44,8 @@ class TestExecutorActivate:
     def test_wrong_flow_activate(self, dev_connections):
         flow_folder = "all_nodes_bypassed"
         executor = FlowExecutor.create(get_yaml_file(flow_folder, WRONG_FLOW_ROOT), dev_connections)
-        with pytest.raises(OutputReferenceBypassed) as e:
-            executor.exec_line(get_flow_inputs(flow_folder, WRONG_FLOW_ROOT))
-        error_message = (
-            "The output 'result' for flow is incorrect. "
-            "The node 'third_node' referenced by the output has been bypassed. "
-            "Please refrain from using bypassed nodes as output sources."
-        )
-        assert str(e.value) == error_message, "Expected: {}, Actual: {}".format(error_message, str(e.value))
+        result = executor.exec_line(get_flow_inputs(flow_folder, WRONG_FLOW_ROOT))
+        assert result.output["result"] is None
 
     def assert_activate_bulk_run_result(self, result: BulkResult, expected_result, expected_status_summary):
         # Validate the flow outputs
