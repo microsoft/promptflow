@@ -108,10 +108,9 @@ def score():
         logger.info(f"Start loading request data '{raw_data}'.")
         data = load_request_data(app.flow, raw_data, logger)
 
-    invoke_result = app.flow_invoker.invoke(data)
-    resolved_outputs = app.flow_invoker._convert_multimedia_data_to_base64(invoke_result)
+    result_output = app.flow_invoker.invoke(data)
     # remove evaluation only fields
-    result_output = {k: v for k, v in resolved_outputs.items() if k not in app.response_fields_to_remove}
+    result_output = {k: v for k, v in result_output.items() if k not in app.response_fields_to_remove}
 
     response_creator = ResponseCreator(
         flow_run_result=result_output,
