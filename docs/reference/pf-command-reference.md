@@ -489,7 +489,7 @@ Local path to the data file.
 
 `--column-mapping`
 
-Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${run.inputs.xx}` and `${run.outputs.xx}` to refer to run inputs/outputs columns.
+Inputs column mapping, use `${data.xx}` to refer to data file columns, use `${run.inputs.xx}` to refer to referenced run's data file columns, and `${run.outputs.xx}` to refer to run outputs columns.
 
 `--run`
 
