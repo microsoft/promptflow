@@ -262,7 +262,7 @@ class TestCli:
         assert run.tags == {"key": "val"}
         assert run.description == description
 
-    def test_pf_flow_test(self, capsys):
+    def test_pf_flow_test(self):
         run_pf_command(
             "flow",
             "test",
@@ -293,7 +293,7 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
-        # Test flow test with non-english input/output
+    def test_pf_flow_test_with_non_english_input_output(self, capsys):
         question = "什么是 chat gpt"
         run_pf_command(
             "flow",
