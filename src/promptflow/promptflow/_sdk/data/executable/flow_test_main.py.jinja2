@@ -93,8 +93,6 @@ def start():
         st.text('{{chat_input_name}}')
         {% if chat_input_value_type == "list" %}
         {{chat_input_name}} = st_quill(html=True, toolbar=["image"], key='{{chat_input_name}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
-        {% elif chat_input_value_type == "image" %}
-        {{chat_input_name}} = st.file_uploader(label='{{chat_input_name}}')
         {% elif chat_input_value_type == "string" %}
         {{chat_input_name}} = st.text_input(label='{{chat_input_name}}', placeholder='{{chat_input_default_value}}')
         {% else %}
@@ -109,8 +107,6 @@ def start():
             with st.spinner("Loading..."):
                 {% if chat_input_value_type == "list" %}
                 {{chat_input_name}} = parse_list_from_html({{chat_input_name}})
-                {% elif chat_input_value_type == "image" %}
-                {{chat_input_name}} = parse_image_content({{chat_input_name}}, {{chat_input_name}}.type if {{chat_input_name}} else None)
                 {% endif %}
                 submit({{flow_inputs_params}})
 
