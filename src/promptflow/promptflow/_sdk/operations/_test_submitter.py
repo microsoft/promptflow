@@ -28,14 +28,14 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None, config=None):
+    def __init__(self, flow: Flow, variant=None, client=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
         self._variant = variant
         from .._pf_client import PFClient
 
-        self._client = PFClient(config=config)
+        self._client = client if client else PFClient()
 
     @property
     def dataplane_flow(self):
@@ -158,8 +158,11 @@ class TestSubmitter:
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
-                              stream=stream_log, credential_list=credential_list):
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            stream=stream_log,
+            credential_list=credential_list,
+        ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             flow_executor = FlowExecutor.create(
                 self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
@@ -201,8 +204,11 @@ class TestSubmitter:
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
-                              stream=stream, credential_list=credential_list):
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+            stream=stream,
+            credential_list=credential_list,
+        ):
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
