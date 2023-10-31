@@ -57,6 +57,35 @@ class ToolOperations:
                         tools.append((method, initialize_inputs))
         return tools
 
+    def _validate_input_settings(self, tool_inputs, input_settings):
+        for input_name, settings in input_settings.items():
+            if input_name not in tool_inputs:
+                raise UserErrorException(f"Cannot find {input_name} in tool inputs.")
+            if settings.enabled_by and settings.enabled_by not in tool_inputs:
+                raise UserErrorException(
+                    f"Cannot find the input \"{settings.enabled_by}\" for the enabled_by of {input_name}.")
+            if settings.dynamic_list:
+                dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
+                has_kwargs = any([param.kind == param.VAR_KEYWORD for param in dynamic_func_inputs.values()])
+                required_inputs = [k for k, v in dynamic_func_inputs.items() if v.default is inspect.Parameter.empty]
+                if settings.dynamic_list._input_mapping:
+                    # Validate input mapping in dynamic_list
+                    for func_input, reference_input in settings.dynamic_list._input_mapping.items():
+                        # Check invalid input name of dynamic list function
+                        if not has_kwargs and func_input not in dynamic_func_inputs:
+                            raise UserErrorException(
+                                f"Cannot find {func_input} in the inputs of "
+                                f"dynamic_list func {settings.dynamic_list.func_path}"
+                            )
+                        # Check invalid input name of tool
+                        if reference_input not in tool_inputs:
+                            raise UserErrorException(f"Cannot find {reference_input} in the tool inputs.")
+                        if func_input in required_inputs:
+                            required_inputs.remove(func_input)
+                # Check required input of dynamic_list function
+                if len(required_inputs) != 0:
+                    raise UserErrorException(f"Missing required input(s) of dynamic_list function: {required_inputs}")
+
     def _serialize_tool(self, tool_func, initialize_inputs=None):
         """
         Serialize tool obj to dict.
@@ -87,22 +116,8 @@ class ToolOperations:
         input_settings = getattr(tool_func, "__input_settings")
         if input_settings:
             tool_inputs = construct_tool.get("inputs", {})
+            self._validate_input_settings(tool_inputs, input_settings)
             for input_name, settings in input_settings.items():
-                if input_name not in tool_inputs:
-                    raise UserErrorException(f"Cannot find {input_name} in tool inputs.")
-                if settings.enabled_by and settings.enabled_by not in tool_inputs:
-                    raise UserErrorException(f"Cannot find {settings.enabled_by} for the enabled_by of {input_name}.")
-                if settings.dynamic_list and settings.dynamic_list.input_mapping:
-                    # Validate input mapping in dynamic_list
-                    dynamic_func_inputs = inspect.signature(settings.dynamic_list._func_obj).parameters
-                    for func_input, reference_input in settings.dynamic_list.input_mapping.items():
-                        if func_input not in dynamic_func_inputs:
-                            raise UserErrorException(
-                                f"Cannot find {func_input} in the inputs of "
-                                f"dynamic_list func {settings.dynamic_list.function}"
-                            )
-                        if reference_input not in tool_inputs:
-                            raise UserErrorException(f"Cannot find {reference_input} in the tool inputs.")
                 tool_inputs[input_name].update(asdict_without_none(settings))
         return tool_name, construct_tool
 

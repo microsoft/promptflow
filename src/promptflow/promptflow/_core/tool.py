@@ -20,6 +20,7 @@ class ToolType(str, Enum):
     PYTHON = "python"
     PROMPT = "prompt"
     _ACTION = "action"
+    CUSTOM_LLM = "custom_llm"
 
 
 class ToolInvoker(ABC):
@@ -65,6 +66,8 @@ def tool(
     """
 
     def tool_decorator(func: Callable) -> Callable:
+        from promptflow.exceptions import UserErrorException
+
         @functools.wraps(func)
         def new_f(*args, **kwargs):
             tool_invoker = ToolInvoker.active_instance()
@@ -72,6 +75,9 @@ def tool(
             if tool_invoker is None:
                 return func(*args, **kwargs)
             return tool_invoker.invoke_tool(func, *args, **kwargs)
+
+        if type is not None and type not in [k.value for k in ToolType]:
+            raise UserErrorException(f"Tool type {type} is not supported yet.")
 
         new_f.__original_function = func
         func.__wrapped_function = new_f
@@ -81,6 +87,7 @@ def tool(
         new_f.__type = type
         new_f.__input_settings = input_settings
         new_f.__extra_info = kwargs
+
         return new_f
 
     # enable use decorator without "()" if all arguments are default values
@@ -158,6 +165,7 @@ class DynamicList:
                 "Function has invalid type, please provide callable or function name for function.")
         self.func_path = func_path
         self._func_obj = func
+        self._input_mapping = input_mapping or {}
 
         # Get function input info
         self.func_kwargs = []
@@ -170,8 +178,8 @@ class DynamicList:
                         input_info["type"] = [annotation.__name__ for annotation in get_args(value.annotation)]
                     else:
                         input_info["type"] = [ValueType.from_type(value.annotation)]
-                if name in input_mapping:
-                    input_info["reference"] = f"${{inputs.{input_mapping[name]}}}"
+                if name in self._input_mapping:
+                    input_info["reference"] = f"${{inputs.{self._input_mapping[name]}}}"
                 input_info["optional"] = value.default is not inspect.Parameter.empty
                 if input_info["optional"]:
                     input_info["default"] = value.default
