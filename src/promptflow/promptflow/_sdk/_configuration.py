@@ -32,6 +32,8 @@ class Configuration(object):
     EXTENSION_EU_USER = "extension.eu_user"
     INSTALLATION_ID = "cli.installation_id"
     CONNECTION_PROVIDER = "connection.provider"
+    RECORDING_MODE = "cli.recording_mode"
+    RECORDING_FILE_OVERRIDE = "cli.recording_file_override"
     _instance = None
 
     def __init__(self, overrides=None):
@@ -176,6 +178,14 @@ class Configuration(object):
         if call_from_extension():
             return self.get_config(key=self.EXTENSION_EU_USER)
         return self.get_config(key=self.EU_USER)
+
+    def is_recording_mode(self) -> Optional[bool]:
+        """Check if recording mode is enabled."""
+        return self.get_config(key=self.RECORDING_MODE) == "record"
+
+    def get_recording_file_override(self) -> Optional[str]:
+        """Check if recording file is provided in the config."""
+        return self.get_config(key=self.RECORDING_FILE_OVERRIDE)
 
     def get_or_set_installation_id(self):
         """Get user id if exists, otherwise set installation id and return it."""

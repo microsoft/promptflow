@@ -91,6 +91,25 @@ class TestFlowRun:
         # write to user_dir/.promptflow/.runs
         assert ".promptflow" in run.properties["output_path"]
 
+    @pytest.mark.usefixtures("recording_enabled")
+    def test_basic_run_bulk_with_record(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf):
+        result = pf.run(
+            flow=f"{FLOWS_DIR}/web_classification",
+            data=f"{DATAS_DIR}/webClassification1.jsonl",
+            column_mapping={"url": "${data.url}"},
+        )
+        local_storage = LocalStorageOperations(result)
+        detail = local_storage.load_detail()
+        tuning_node = next((x for x in detail["node_runs"] if x["node"] == "summarize_text_content"), None)
+        # used default variant config
+        assert tuning_node["inputs"]["temperature"] == 0.3
+        assert "variant_0" in result.name
+
+        run = local_client.runs.get(name=result.name)
+        assert run.status == "Completed"
+        # write to user_dir/.promptflow/.runs
+        assert ".promptflow" in run.properties["output_path"]
+
     def test_basic_flow_with_variant(self, azure_open_ai_connection: AzureOpenAIConnection, local_client, pf) -> None:
         result = pf.run(
             flow=f"{FLOWS_DIR}/web_classification",

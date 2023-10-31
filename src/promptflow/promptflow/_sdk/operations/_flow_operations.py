@@ -15,6 +15,7 @@ import yaml
 
 from promptflow._sdk._constants import CHAT_HISTORY, DEFAULT_ENCODING, LOCAL_MGMT_DB_PATH
 from promptflow._sdk._load_functions import load_flow
+from promptflow._sdk._record_storage import RecordStorage
 from promptflow._sdk._utils import (
     _get_additional_includes,
     _merge_local_code_and_additional_includes,
@@ -108,6 +109,7 @@ class FlowOperations:
 
         inputs = inputs or {}
         flow = load_flow(flow)
+        record_storage = RecordStorage.get_instance(flow.code / RecordStorage.standard_record_name)
         with TestSubmitter(flow=flow, variant=variant, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter._resolve_data(
@@ -115,21 +117,27 @@ class FlowOperations:
             )
 
             if node:
-                return submitter.node_test(
+                output = submitter.node_test(
                     node_name=node,
                     flow_inputs=flow_inputs,
                     dependency_nodes_outputs=dependency_nodes_outputs,
                     environment_variables=environment_variables,
                     stream=True,
                 )
+                if record_storage:
+                    record_storage.record_node_run(output.run_info)
+                return output
             else:
-                return submitter.flow_test(
+                output = submitter.flow_test(
                     inputs=flow_inputs,
                     environment_variables=environment_variables,
                     stream_log=stream_log,
                     stream_output=stream_output,
                     allow_generator_output=allow_generator_output and is_chat_flow,
                 )
+                if record_storage:
+                    record_storage.record_node_run(output.run_info)
+                return output
 
     @staticmethod
     def _is_chat_flow(flow):

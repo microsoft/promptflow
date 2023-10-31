@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from promptflow._utils.utils import environment_variable_overwrite
 
 PROMOTFLOW_ROOT = Path(__file__) / "../../.."
 RUNTIME_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/runtime")
+RECORDINGS_TEST_CONFIGS_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/node_recordings").resolve()
 CONNECTION_FILE = (PROMOTFLOW_ROOT / "connections.json").resolve().absolute().as_posix()
 MODEL_ROOT = Path(PROMOTFLOW_ROOT / "tests/test_configs/flows")
 
@@ -144,3 +146,21 @@ def serving_client_image_python_flow(mocker: MockerFixture):
 @pytest.fixture
 def serving_client_composite_image_flow(mocker: MockerFixture):
     return create_client_by_model("python_tool_with_composite_image", mocker)
+
+
+@pytest.fixture
+def recording_enabled(mocker: MockerFixture):
+    patch = mocker.patch("promptflow._sdk._configuration.Configuration.is_recording_mode", return_value=True)
+    yield
+    patch.stop()
+
+
+@pytest.fixture
+def cli_recording_file_override(mocker: MockerFixture):
+    patch = mocker.patch(
+        "promptflow._sdk._configuration.Configuration.get_recording_file_override",
+        return_value=Path(RECORDINGS_TEST_CONFIGS_ROOT / "node_recordings/testcli_storage_record.json"),
+    )
+    yield
+    patch.stop()
+    shutil.rmtree(RECORDINGS_TEST_CONFIGS_ROOT / "node_recordings/testcli_storage_record.json", ignore_errors=True)

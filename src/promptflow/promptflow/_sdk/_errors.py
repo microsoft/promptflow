@@ -96,3 +96,15 @@ class FlowOperationError(PromptflowException):
     """Exception raised when flow operation failed."""
 
     pass
+
+
+class RecordItemMissingException(PromptflowException):
+    """Exception raised when record item missing."""
+
+    pass
+
+
+class RecordFileMissingException(PromptflowException):
+    """Exception raised when record file missing."""
+
+    pass

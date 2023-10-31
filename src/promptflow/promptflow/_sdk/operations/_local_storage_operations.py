@@ -26,6 +26,7 @@ from promptflow._sdk._constants import (
     get_run_output_path,
 )
 from promptflow._sdk._errors import BulkRunException
+from promptflow._sdk._record_storage import RecordStorage
 from promptflow._sdk._utils import generate_flow_tools_json
 from promptflow._sdk.entities import Run
 from promptflow._sdk.entities._flow import Flow
@@ -212,6 +213,7 @@ class LocalStorageOperations(AbstractRunStorage):
         self._exception_path = self.path / LocalStorageFilenames.EXCEPTION
 
         self._dump_meta_file()
+        RecordStorage.get_instance(run.flow / RecordStorage.standard_record_name)
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
@@ -389,6 +391,7 @@ class LocalStorageOperations(AbstractRunStorage):
         line_number = 0 if node_run_record.line_number is None else node_run_record.line_number
         filename = f"{str(line_number).zfill(self.LINE_NUMBER_WIDTH)}.jsonl"
         node_run_record.dump(node_folder / filename, run_name=self._run.name)
+        RecordStorage.get_instance().record_node_run(node_run_record.run_info)
 
     def persist_flow_run(self, run_info: FlowRunInfo) -> None:
         """Persist line run record to local storage."""

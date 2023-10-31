@@ -293,16 +293,73 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
-    def test_pf_flow_test_with_non_english_input_output(self, capsys):
-        question = "什么是 chat gpt"
+    @pytest.mark.usefixtures("recording_enabled")
+    def test_pf_flow_test_recording_enabled(self):
         run_pf_command(
             "flow",
             "test",
             "--flow",
-            f"{FLOWS_DIR}/chat_flow",
+            f"{FLOWS_DIR}/web_classification",
             "--inputs",
-            f"question=\"{question}\""
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer=Channel",
+            "evidence=Url",
         )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            previous_log_content = f.read()
+
+        # Test without input
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert previous_log_content not in log_content
+
+    @pytest.mark.usefixtures("recording_enabled", "cli_recording_file_override")
+    def test_pf_flow_test_recording_enabled_and_override_recording(self):
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+            "--inputs",
+            "url=https://www.youtube.com/watch?v=o5ZQyXaAv1g",
+            "answer=Channel",
+            "evidence=Url",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            previous_log_content = f.read()
+
+        # Test without input
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/web_classification",
+        )
+        output_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        log_path = Path(FLOWS_DIR) / "web_classification" / ".promptflow" / "flow.log"
+        with open(log_path, "r") as f:
+            log_content = f.read()
+        assert previous_log_content not in log_content
+
+    def test_pf_flow_test_with_non_english_input_output(self, capsys):
+        question = "什么是 chat gpt"
+        run_pf_command("flow", "test", "--flow", f"{FLOWS_DIR}/chat_flow", "--inputs", f'question="{question}"')
         stdout, _ = capsys.readouterr()
         output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
         assert output_path.exists()
