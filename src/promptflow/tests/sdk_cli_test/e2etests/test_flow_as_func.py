@@ -76,13 +76,14 @@ class TestFlowAsFunc:
             f()
         assert "Required input(s) ['text'] are missing" in str(e.value)
 
-    def test_stream_output(self, azure_open_ai_connection: AzureOpenAIConnection):
-        f = load_flow(f"{FLOWS_DIR}/chat_flow_with_stream_output")
+    def test_stream_output(self):
+        f = load_flow(f"{FLOWS_DIR}/chat_flow_with_python_node_streaming_output")
         f.context.streaming = True
         result = f(
             chat_history=[
                 {"inputs": {"chat_input": "Hi"}, "outputs": {"chat_output": "Hello! How can I assist you today?"}}
-            ]
+            ],
+            question="How are you?",
         )
         assert isinstance(result["answer"], GeneratorType)
 
