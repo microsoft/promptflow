@@ -233,7 +233,7 @@ class StreamlitFileGenerator(BaseGenerator):
         )
         self.is_chat_flow, self.chat_history_input_name, error_msg = FlowOperations._is_chat_flow(self.executable)
         if not self.is_chat_flow:
-            raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")
+            raise UserErrorException(f"Only support chat flow in ui mode, {error_msg}.")
 
     @property
     def chat_input_name(self):
