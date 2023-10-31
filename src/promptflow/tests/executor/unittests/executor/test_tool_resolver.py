@@ -202,16 +202,17 @@ class TestToolResolver:
 
         # Case 5: Literal value, invalid image in list
         tool = Tool(name="mock", type="python", inputs={"list_input": InputDefinition(type=[ValueType.LIST])})
+        invalid_image = {"data:image/jpg;base64": "invalid_image"}
         node = Node(
             name="mock",
             tool=tool,
-            inputs={"list_input": InputAssignment(value=[{"data:image/jpg;base64": "invalid_image"}], value_type=InputValueType.LITERAL)},
+            inputs={"list_input": InputAssignment(value=[invalid_image], value_type=InputValueType.LITERAL)},
         )
         connections = {}
         with pytest.raises(NodeInputValidationError) as e:
             tool_resolver = ToolResolver(working_dir=None, connections=connections)
             tool_resolver._convert_node_literal_input_types(node, tool)
-        message = "is not a valid image"
+        message = "Invalid base64 image"
         assert message in str(e.value), "Expected: {}, Actual: {}".format(message, str(e.value))
 
     def test_resolve_llm_connection_to_inputs(self):
