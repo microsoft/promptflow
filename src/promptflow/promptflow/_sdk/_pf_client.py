@@ -38,7 +38,7 @@ class PFClient:
         self._config = kwargs.get("config", None) or {}
         # Lazy init to avoid azure credential requires too early
         self._connections = None
-        self._flows = FlowOperations()
+        self._flows = FlowOperations(client=self)
         self._tools = ToolOperations()
         setup_user_agent_to_operation_context(USER_AGENT)
 
