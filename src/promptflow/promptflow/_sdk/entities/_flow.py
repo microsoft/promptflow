@@ -87,7 +87,7 @@ class Flow(FlowBase):
             # TODO: for file, we should read the yaml to get code and set path to source_path
             return cls(code=source_path.absolute().parent.as_posix(), **kwargs)
 
-        raise Exception("source must be a directory or a flow.dag.yaml file")
+        raise Exception("Source must be a directory or a 'flow.dag.yaml' file")
 
     def _init_executable(self, tuning_node=None, variant=None):
         from promptflow._sdk.operations._run_submitter import variant_overwrite_context
@@ -120,6 +120,7 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         super().__init__(code=code, **kwargs)
 
         self._flow_dir, self._dag_file_name = self._get_flow_definition(self.code)
+        self._executable = None
 
     @property
     def flow_dag_path(self) -> Path:
@@ -170,5 +171,22 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
     def _dump_for_validation(self) -> Dict:
         # Flow is read-only in control plane, so we always dump the flow from file
         return yaml.safe_load(self.flow_dag_path.read_text(encoding=DEFAULT_ENCODING))
+
+    # endregion
+
+    # region MLFlow model requirements
+    @property
+    def inputs(self):
+        # This is used for build mlflow model signature.
+        if not self._executable:
+            self._executable = self._init_executable()
+        return {k: v.type.value for k, v in self._executable.inputs.items()}
+
+    @property
+    def outputs(self):
+        # This is used for build mlflow model signature.
+        if not self._executable:
+            self._executable = self._init_executable()
+        return {k: v.type.value for k, v in self._executable.outputs.items()}
 
     # endregion

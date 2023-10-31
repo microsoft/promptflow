@@ -193,6 +193,16 @@ class LineExecutionTimeoutError(UserErrorException):
         )
 
 
+class EmptyLLMApiMapping(UserErrorException):
+    """Exception raised when connection_type_to_api_mapping is empty and llm node provider can't be inferred"""
+
+    def __init__(self):
+        super().__init__(
+            message="LLM api mapping is empty, please ensure 'promptflow-tools' package has been installed.",
+            target=ErrorTarget.EXECUTOR,
+        )
+
+
 class ResolveToolError(PromptflowException):
     """Exception raised when tool load failed.
 

@@ -12,6 +12,9 @@ on:
     paths: [ examples/flows/evaluation/eval-entity-match-rate/**, examples/*requirements.txt, .github/workflows/samples_flows_evaluation_eval_entity_match_rate.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest

@@ -52,13 +52,16 @@ pf flow test --flow . --inputs url='https://www.youtube.com/watch?v=kYqRtjDBci8'
 
 ```bash
 # create run using command line args
-pf run create --flow . --data ./data.jsonl --stream
+pf run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream
 
 # (Optional) create a random run name
 run_name="web_classification_"$(openssl rand -hex 12)
 # create run using yaml file, run_name will be used in following contents, --name is optional
 pf run create --file run.yml --stream --name $run_name
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
 
 ```bash
 # list run
@@ -96,14 +99,14 @@ az account set -s <your_subscription_id>
 az configure --defaults group=<your_resource_group_name> workspace=<your_workspace_name>
 
 # create run
-pfazure run create --flow . --data ./data.jsonl --stream --runtime demo-mir
-# pfazure run create --flow . --data ./data.jsonl --stream # automatic runtime
+pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream --runtime example-runtime-ci 
+# pfazure run create --flow . --data ./data.jsonl --column-mapping url='${data.url}' --stream # automatic runtime
 
 # (Optional) create a new random run name for further use
 run_name="web_classification_"$(openssl rand -hex 12)
 
 # create run using yaml file, --name is optional
-pfazure run create --file run.yml --runtime demo-mir --name $run_name
+pfazure run create --file run.yml --runtime example-runtime-ci --name $run_name
 # pfazure run create --file run.yml --stream --name $run_name # automatic runtime
 
 
@@ -117,8 +120,8 @@ prev_run_name=$run_name
 run_name="classification_accuracy_"$(openssl rand -hex 12)
 
 # create evaluation run, --name is optional
-pfazure run create --flow ../../evaluation/eval-classification-accuracy --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime demo-mir
-pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name --runtime demo-mir
+pfazure run create --flow ../../evaluation/eval-classification-accuracy --data ./data.jsonl --column-mapping groundtruth='${data.answer}' prediction='${run.outputs.category}' --run $prev_run_name --runtime example-runtime-ci
+pfazure run create --file run_evaluation.yml --run $prev_run_name --stream --name $run_name --runtime example-runtime-ci
 
 pfazure run stream --name $run_name
 pfazure run show --name $run_name

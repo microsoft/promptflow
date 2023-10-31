@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import List
 
 
 class Settings:
@@ -15,7 +16,7 @@ class Divider:
     language = 'py'
 
     @classmethod
-    def divide_file(cls, text) -> list[str]:
+    def divide_file(cls, text) -> List[str]:
         matches = list(re.finditer(Settings.divide_file[Divider.language], text))
         splitted_content = []
         min_pos = matches[0].start() if len(matches) > 0 else len(text)
@@ -28,7 +29,7 @@ class Divider:
         return splitted_content
 
     @classmethod
-    def divide_half(cls, text) -> list[str]:
+    def divide_half(cls, text) -> List[str]:
         """
         Divide the content into two parts, but ensure that the function body is not split.
         """
@@ -58,7 +59,7 @@ class Divider:
         return functions, pos
 
     @classmethod
-    def combine(cls, divided: list[str]):
+    def combine(cls, divided: List[str]):
         return ''.join(divided)
 
     @classmethod

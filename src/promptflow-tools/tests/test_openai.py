@@ -10,7 +10,7 @@ def openai_provider(open_ai_connection) -> OpenAI:
 
 
 @pytest.mark.usefixtures("use_secrets_config_file")
-@pytest.mark.skip_if_no_key("open_ai_connection")
+@pytest.mark.skip_if_no_api_key("open_ai_connection")
 class TestOpenAI:
     def test_openai_completion(self, openai_provider):
         prompt_template = "please complete this sentence: world war II "

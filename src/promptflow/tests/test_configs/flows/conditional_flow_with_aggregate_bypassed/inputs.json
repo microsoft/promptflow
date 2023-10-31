@@ -1,0 +1,18 @@
+[
+    {
+        "case": "double",
+        "value": 1
+    },
+    {
+        "case": "double",
+        "value": 2
+    },
+    {
+        "case": "square",
+        "value": 3
+    },
+    {
+        "case": "square",
+        "value": 4
+    }
+]

@@ -1,5 +1,6 @@
 import textwrap
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from ruamel.yaml import YAML
@@ -167,6 +168,7 @@ class TestToolsManager:
         }
 
         expected_template = {
+            "$schema": "https://azuremlschemas.azureedge.net/promptflow/latest/CustomStrongTypeConnection.schema.json",
             "name": "to_replace_with_connection_name",
             "type": "custom",
             "custom_type": "MyFirstConnection",
@@ -190,12 +192,24 @@ class TestToolsManager:
             package: test-custom-tools
             package_version: 0.0.2
             configs:
-              api_url: "This is a fake api url."  # String, The api url.
+              api_url: "This is a fake api url."  # String type. The api url.
             secrets:      # must-have
-              api_key: "to_replace_with_api_key"  # String, The api key.
+              api_key: "to_replace_with_api_key"  # String type. The api key.
             """
 
         content = templates["my_tool_package.tools.my_tool_with_custom_strong_type_connection.MyCustomConnection"]
         expected_template_str = textwrap.dedent(expected_template)
+        assert expected_template_str in content
 
-        assert content in expected_template_str
+    def test_gen_dynamic_list(self, mocked_ws_triple, mock_module_with_list_func):
+        from promptflow._sdk._utils import _gen_dynamic_list
+
+        func_path = "my_tool_package.tools.tool_with_dynamic_list_input.my_list_func"
+        func_kwargs = {"prefix": "My"}
+        result = _gen_dynamic_list({"func_path": func_path, "func_kwargs": func_kwargs})
+        assert len(result) == 2
+
+        # test gen_dynamic_list with ws_triple.
+        with patch("promptflow._cli._utils.get_workspace_triad_from_local", return_value=mocked_ws_triple):
+            result = _gen_dynamic_list({"func_path": func_path, "func_kwargs": func_kwargs})
+            assert len(result) == 2

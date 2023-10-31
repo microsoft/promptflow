@@ -42,8 +42,11 @@ pf flow test --flow . --input ./data/denormalized-flat.jsonl
 
 4. run with multiple lines input
 ```bash
-pf run create --flow . --data ./data
+pf run create --flow . --data ./data --column-mapping history='${data.history}' customer_info='${data.customer_info}'
 ```
+
+You can also skip providing `column-mapping` if provided data has same column name as the flow.
+Reference [here](https://aka.ms/pf/column-mapping) for default behavior when `column-mapping` not provided in CLI.
 
 5. list/show 
 

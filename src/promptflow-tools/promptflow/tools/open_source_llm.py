@@ -22,7 +22,7 @@ from promptflow.tools.exception import (
     ChatAPIInvalidRole
 )
 
-VALID_LLAMA_ROLES = {"user", "assistant"}
+VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
 DEFAULT_ENDPOINT_NAME = "-- please enter an endpoint name --"
@@ -140,7 +140,7 @@ def get_deployment_from_endpoint(endpoint_name: str, deployment_name: str = None
     return (endpoint_uri, endpoint_key, model)
 
 
-def get_deployment_from_connection(connection: CustomConnection, deployment_name: str = None) -> Tuple[str, str, str]:
+def get_deployment_from_connection(connection: CustomConnection) -> Tuple[str, str, str]:
     conn_dict = dict(connection)
     for key in REQUIRED_CONFIG_KEYS:
         if key not in conn_dict:
@@ -352,17 +352,7 @@ class ContentFormatterFactory:
 
 
 class AzureMLOnlineEndpoint:
-    """Azure ML Online Endpoint models.
-
-    Example:
-        .. code-block:: python
-
-            azure_llm = AzureMLModel(
-                endpoint_url="https://<your-endpoint>.<your_region>.inference.ml.azure.com/score",
-                endpoint_api_key="my-api-key",
-                content_formatter=content_formatter,
-            )
-    """  # noqa: E501
+    """Azure ML Online Endpoint models."""
 
     endpoint_url: str = ""
     """URL of pre-existing Endpoint. Should be passed to constructor or specified as
@@ -385,6 +375,7 @@ class AzureMLOnlineEndpoint:
         endpoint_url: str,
         endpoint_api_key: str,
         content_formatter: ContentFormatterBase,
+        model_family: ModelFamily,
         deployment_name: Optional[str] = None,
         model_kwargs: Optional[Dict] = None,
     ):
@@ -393,6 +384,7 @@ class AzureMLOnlineEndpoint:
         self.deployment_name = deployment_name
         self.content_formatter = content_formatter
         self.model_kwargs = model_kwargs
+        self.model_family = model_family
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -410,7 +402,10 @@ class AzureMLOnlineEndpoint:
     def _call_endpoint(self, body: bytes) -> bytes:
         """call."""
 
-        headers = {"Content-Type": "application/json", "Authorization": ("Bearer " + self.endpoint_api_key)}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": ("Bearer " + self.endpoint_api_key),
+            "x-ms-user-agent": "PromptFlow/OpenSourceLLM/" + self.model_family}
 
         # If this is not set it'll use the default deployment on the endpoint.
         if self.deployment_name is not None:
@@ -448,19 +443,16 @@ class OpenSourceLLM(ToolProvider):
 
     def __init__(self,
                  connection: CustomConnection = None,
-                 endpoint_name: str = None,
-                 deployment_name: str = None):
+                 endpoint_name: str = None):
         super().__init__()
 
-        self.deployment_name = deployment_name
-        if endpoint_name is not None and endpoint_name != DEFAULT_ENDPOINT_NAME:
+        self.endpoint_key = None
+        self.endpoint_name = endpoint_name
+
+        if endpoint_name is None or endpoint_name == DEFAULT_ENDPOINT_NAME:
             (self.endpoint_uri,
              self.endpoint_key,
-             self.model_family) = get_deployment_from_endpoint(endpoint_name, deployment_name)
-        else:
-            (self.endpoint_uri,
-             self.endpoint_key,
-             self.model_family) = get_deployment_from_connection(connection, deployment_name)
+             self.model_family) = get_deployment_from_connection(connection)
 
     @tool
     @handle_oneline_endpoint_error()
@@ -468,12 +460,20 @@ class OpenSourceLLM(ToolProvider):
         self,
         prompt: PromptTemplate,
         api: API,
+        deployment_name: str = None,
         temperature: float = 1.0,
         max_new_tokens: int = 500,
         top_p: float = 1.0,
         model_kwargs: Optional[Dict] = {},
         **kwargs
     ) -> str:
+        self.deployment_name = deployment_name
+
+        if self.endpoint_key is None and self.endpoint_name is not None:
+            (self.endpoint_uri,
+             self.endpoint_key,
+             self.model_family) = get_deployment_from_endpoint(self.endpoint_name, self.deployment_name)
+
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
 
         model_kwargs["top_p"] = top_p
@@ -489,6 +489,7 @@ class OpenSourceLLM(ToolProvider):
         llm = AzureMLOnlineEndpoint(
             endpoint_url=self.endpoint_uri,
             endpoint_api_key=self.endpoint_key,
+            model_family=self.model_family,
             content_formatter=content_formatter,
             deployment_name=self.deployment_name,
             model_kwargs=model_kwargs

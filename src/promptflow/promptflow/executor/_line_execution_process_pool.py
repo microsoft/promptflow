@@ -6,7 +6,7 @@ import queue
 from datetime import datetime
 from functools import partial
 from logging import INFO
-from multiprocessing import Manager, Process, Queue
+from multiprocessing import Manager, Queue
 from multiprocessing.pool import ThreadPool
 
 import psutil
@@ -15,8 +15,10 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
+from promptflow._utils.multimedia_utils import persist_multimedia_data, recursive_process
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
+from promptflow.contracts.multimedia import Image
 from promptflow.contracts.run_info import FlowRunInfo
 from promptflow.contracts.run_info import RunInfo as NodeRunInfo
 from promptflow.contracts.run_info import Status
@@ -42,16 +44,17 @@ class QueueRunStorage(AbstractRunStorage):
 
 
 class HealthyEnsuredProcess:
-    def __init__(self, executor_creation_func):
+    def __init__(self, executor_creation_func, context):
         self.process = None
         self.input_queue = None
         self.output_queue = None
         self.is_ready = False
         self._executor_creation_func = executor_creation_func
+        self.context = context
 
     def start_new(self, task_queue: Queue):
-        input_queue = Queue()
-        output_queue = Queue()
+        input_queue = self.context.Queue()
+        output_queue = self.context.Queue()
         self.input_queue = input_queue
         self.output_queue = output_queue
 
@@ -60,7 +63,7 @@ class HealthyEnsuredProcess:
         input_queue.put("start")
 
         current_log_context = LogContext.get_current()
-        process = Process(
+        process = self.context.Process(
             target=_process_wrapper,
             args=(
                 self._executor_creation_func,
@@ -124,13 +127,24 @@ class LineExecutionProcessPool:
         run_id,
         variant_id,
         validate_inputs,
+        output_dir,
     ):
         self._nlines = nlines
         self._run_id = run_id
         self._variant_id = variant_id
         self._validate_inputs = validate_inputs
         self._worker_count = flow_executor._worker_count
-        use_fork = multiprocessing.get_start_method() == "fork"
+        multiprocessing_start_method = os.environ.get("PF_BATCH_METHOD")
+        sys_start_methods = multiprocessing.get_all_start_methods()
+        if multiprocessing_start_method and multiprocessing_start_method not in sys_start_methods:
+            logger.warning(
+                f"Failed to set start method to '{multiprocessing_start_method}', "
+                f"start method {multiprocessing_start_method} is not in: {sys_start_methods}."
+            )
+            logger.info(f"Set start method to default {multiprocessing.get_start_method()}.")
+            multiprocessing_start_method = None
+        self.context = get_multiprocessing_context(multiprocessing_start_method)
+        use_fork = self.context.get_start_method() == "fork"
         # When using fork, we use this method to create the executor to avoid reloading the flow
         # which will introduce a lot more memory.
         if use_fork:
@@ -156,6 +170,7 @@ class LineExecutionProcessPool:
         self._flow_id = flow_executor._flow_id
         self._log_interval = flow_executor._log_interval
         self._line_timeout_sec = flow_executor._line_timeout_sec
+        self._output_dir = output_dir
 
     def __enter__(self):
         manager = Manager()
@@ -183,7 +198,7 @@ class LineExecutionProcessPool:
             self._pool.join()
 
     def _timeout_process_wrapper(self, run_start_time: datetime, task_queue: Queue, timeout_time, result_list):
-        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func)
+        healthy_ensured_process = HealthyEnsuredProcess(self._executor_creation_func, self.context)
         healthy_ensured_process.start_new(task_queue)
 
         if not healthy_ensured_process.process.is_alive():
@@ -210,6 +225,7 @@ class LineExecutionProcessPool:
                     message = healthy_ensured_process.get()
                     if isinstance(message, LineResult):
                         completed = True
+                        message = self._process_multimedia(message)
                         result_list.append(message)
                         break
                     elif isinstance(message, FlowRunInfo):
@@ -241,6 +257,42 @@ class LineExecutionProcessPool:
                 total_count=self._nlines,
                 formatter="Finished {count} / {total_count} lines.",
             )
+
+    def _process_multimedia(self, result: LineResult) -> LineResult:
+        """Replace multimedia data in line result with string place holder to prevent OOM
+        and persist multimedia data in output when batch running."""
+        if not self._output_dir:
+            return result
+        self._process_multimedia_in_flow_run(result.run_info)
+        for node_name, node_run_info in result.node_run_infos.items():
+            result.node_run_infos[node_name] = self._process_multimedia_in_node_run(node_run_info)
+        result.output = persist_multimedia_data(result.output, self._output_dir)
+        return result
+
+    def _process_multimedia_in_flow_run(self, run_info: FlowRunInfo):
+        if run_info.inputs:
+            run_info.inputs = self._persist_images(run_info.inputs)
+        if run_info.output:
+            serialized_output = self._persist_images(run_info.output)
+            run_info.output = serialized_output
+            run_info.result = None
+        if run_info.api_calls:
+            run_info.api_calls = self._persist_images(run_info.api_calls)
+
+    def _process_multimedia_in_node_run(self, run_info: NodeRunInfo):
+        if run_info.inputs:
+            run_info.inputs = self._persist_images(run_info.inputs)
+        if run_info.output:
+            serialized_output = self._persist_images(run_info.output)
+            run_info.output = serialized_output
+            run_info.result = None
+        if run_info.api_calls:
+            run_info.api_calls = self._persist_images(run_info.api_calls)
+        return run_info
+
+    def _persist_images(self, value):
+        serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
+        return recursive_process(value, process_funcs=serialization_funcs)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
@@ -349,12 +401,12 @@ def _exec_line(
         return line_result
     except Exception as e:
         logger.error(f"Line {index}, Process {os.getpid()} failed with exception: {e}")
-        if executor._run_tracker.flow_run_list:
-            logger.info(f"Line {index}, Process {os.getpid()} have been added to flow run list.")
-            run_info = executor._run_tracker.flow_run_list[0]
-        else:
-            logger.info(f"Line {index}, Process {os.getpid()} have not been added to flow run list.")
-            run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
+        flow_id = executor._flow_id
+        line_run_id = run_id if index is None else f"{run_id}_{index}"
+        # If line execution failed before start, there is no flow information in the run_tracker.
+        # So we call start_flow_run before handling exception to make sure the run_tracker has flow info.
+        executor._run_tracker.start_flow_run(flow_id, run_id, line_run_id, run_id)
+        run_info = executor._run_tracker.end_run(f"{run_id}_{index}", ex=e)
         output_queue.put(run_info)
         result = LineResult(
             output={},
@@ -362,7 +414,7 @@ def _exec_line(
             run_info=run_info,
             node_run_infos={},
         )
-    return result
+        return result
 
 
 def _process_wrapper(
@@ -473,3 +525,13 @@ def get_available_max_worker_count():
         available memory: {available_memory}, available max worker count: {available_max_worker_count}"""
     )
     return available_max_worker_count
+
+
+def get_multiprocessing_context(multiprocessing_start_method=None):
+    if multiprocessing_start_method is not None:
+        context = multiprocessing.get_context(multiprocessing_start_method)
+        logger.info(f"Set start method to {multiprocessing_start_method}.")
+        return context
+    else:
+        context = multiprocessing.get_context()
+        return context

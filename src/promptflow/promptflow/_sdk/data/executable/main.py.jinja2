@@ -1,74 +1,142 @@
 import json
 import os
-import streamlit as st
 from pathlib import Path
+from PIL import Image
+import streamlit as st
+from streamlit_quill import st_quill
 
-from promptflow._sdk._utils import print_yellow_warning
 from promptflow._sdk._serving.flow_invoker import FlowInvoker
 
+from utils import dict_iter_render_message, parse_list_from_html, parse_image_content
 
 invoker = None
-
+{% set indent_level = 4 %}
 
 def start():
     def clear_chat() -> None:
         st.session_state.messages = []
 
+    def render_message(role, message_items):
+        with st.chat_message(role):
+            dict_iter_render_message(message_items)
+
     def show_conversation() -> None:
         if "messages" not in st.session_state:
             st.session_state.messages = []
+            st.session_state.history = []
         if st.session_state.messages:
-            for role, message in st.session_state.messages:
-                st.chat_message(role).write(message)
+            for role, message_items in st.session_state.messages:
+                render_message(role, message_items)
+
+
+    def get_chat_history_from_session():
+        if "history" in st.session_state:
+            return st.session_state.history
+        return []
 
 
     def submit(**kwargs) -> None:
-        container.chat_message("user").write(json.dumps(kwargs))
-        st.session_state.messages.append(("user", json.dumps(kwargs)))
-        response = run_flow(kwargs)
-        container.chat_message("assistant").write(response)
+        st.session_state.messages.append(("user", kwargs))
+        session_state_history = dict()
+        session_state_history.update({"inputs": kwargs})
+        with container:
+            render_message("user", kwargs)
+        # Force append chat history to kwargs
+{% if is_chat_flow %}
+{{ ' ' * indent_level * 2 }}response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
+{% else %}
+{{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
+{% endif %}
         st.session_state.messages.append(("assistant", response))
+        session_state_history.update({"outputs": response})
+        st.session_state.history.append(session_state_history)
+        with container:
+            render_message("assistant", response)
 
 
     def run_flow(data: dict) -> dict:
         global invoker
         if not invoker:
-            flow = Path(__file__).parent / "flow"
-            os.chdir(flow)
-            invoker = FlowInvoker(flow, connection_provider="local")
+{% if flow_path %}
+{{ ' ' * indent_level * 3 }}flow = Path('{{flow_path}}')
+{{ ' ' * indent_level * 3 }}dump_path = Path('{{flow_path}}').parent
+{% else %}
+{{ ' ' * indent_level * 3 }}flow = Path(__file__).parent / "flow"
+{{ ' ' * indent_level * 3 }}dump_path = flow.parent
+{% endif %}
+            if flow.is_dir():
+                os.chdir(flow)
+            else:
+                os.chdir(flow.parent)
+            invoker = FlowInvoker(flow, connection_provider="local", dump_to=dump_path)
         result = invoker.invoke(data)
-        print_yellow_warning(f"Result: {result}")
         return result
 
+    image = Image.open(Path(__file__).parent / "logo.png")
+    st.set_page_config(
+        layout="wide",
+        page_title="{{flow_name}} - Promptflow App",
+        page_icon=image,
+        menu_items={
+            'About': """
+            # This is a Promptflow App.
 
-    st.title("{{flow_name}} APP")
-    st.chat_message("assistant").write("Hello, please input following flow inputs and connection keys.")
+            You can refer to [promptflow](https://github.com/microsoft/promptflow) for more information.
+            """
+        }
+    )
+    # Set primary button color here since button color of the same form need to be identical in streamlit, but we only need Run/Chat button to be blue.
+    st.config.set_option("theme.primaryColor", "#0F6CBD")
+    st.title("{{flow_name}}")
+    st.divider()
+    st.chat_message("assistant").write("Hello, please input following flow inputs.")
     container = st.container()
     with container:
         show_conversation()
 
     with st.form(key='input_form', clear_on_submit=True):
-        with open(os.path.join(os.path.dirname(__file__), "settings.json"), "r") as file:
-            json_data = json.load(file)
-        environment_variables = list(json_data.keys())
-        for environment_variable in environment_variables:
-            secret_input = st.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
-            if secret_input != "":
-                os.environ[environment_variable] = secret_input
+        settings_path = os.path.join(os.path.dirname(__file__), "settings.json")
+        if os.path.exists(settings_path):
+            with open(settings_path, "r", encoding="utf-8") as file:
+                json_data = json.load(file)
+            environment_variables = list(json_data.keys())
+            for environment_variable in environment_variables:
+                secret_input = st.sidebar.text_input(label=environment_variable, type="password", placeholder=f"Please input {environment_variable} here. If you input before, you can leave it blank.")
+                if secret_input != "":
+                    os.environ[environment_variable] = secret_input
 
-    {% for flow_input, default_value in flow_inputs.items() %}
-    {{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
-    {% endfor %}
+{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
+{% if value_type == "list" %}
+{{ ' ' * indent_level * 2 }}st.text('{{flow_input}}')
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st_quill(html=True, toolbar=["image"], key='{{flow_input}}', placeholder='Please enter the list values and use the image icon to upload a picture. Make sure to format each list item correctly with line breaks')
+{% elif value_type == "image" %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.file_uploader(label='{{flow_input}}')
+{% elif value_type == "string" %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder='{{default_value}}')
+{% else %}
+{{ ' ' * indent_level * 2 }}{{flow_input}} = st.text_input(label='{{flow_input}}', placeholder={{default_value}})
+{% endif %}
+{% endfor %}
 
         cols = st.columns(7)
-        submit_bt = cols[0].form_submit_button(label='Submit')
+        submit_bt = cols[0].form_submit_button(label='{{label}}', type='primary')
         clear_bt = cols[1].form_submit_button(label='Clear')
 
-    if submit_bt:
-        submit({{flow_inputs_params}})
+        if submit_bt:
+            with st.spinner("Loading..."):
+{% for flow_input, (default_value, value_type) in flow_inputs.items() %}
+{% if value_type == "list" %}
+{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_list_from_html({{flow_input}})
+{% elif value_type == "image" %}
+{{ ' ' * indent_level * 4 }}{{flow_input}} = parse_image_content({{flow_input}}, {{flow_input}}.type if {{flow_input}} else None)
+{% endif %}
+{% endfor %}
+                submit({{flow_inputs_params}})
 
-    if clear_bt:
-        clear_chat()
+        if clear_bt:
+            with st.spinner("Cleaning..."):
+                clear_chat()
+                st.rerun()
 
 if __name__ == "__main__":
     start()

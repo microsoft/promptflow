@@ -12,14 +12,15 @@ from typing import Callable, List, Optional
 
 from promptflow._core.connection_manager import ConnectionManager
 from promptflow._core.tools_manager import BuiltinsManager, ToolLoader, connection_type_to_api_mapping
+from promptflow._utils.multimedia_utils import create_image, load_multimedia_data_recursively
 from promptflow._utils.tool_utils import get_inputs_for_prompt_template, get_prompt_param_name_from_func
-from promptflow._utils.multimedia_utils import create_image
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node, ToolSourceType
 from promptflow.contracts.tool import ConnectionType, Tool, ToolType, ValueType
 from promptflow.contracts.types import PromptTemplate
 from promptflow.exceptions import ErrorTarget, PromptflowException, UserErrorException
 from promptflow.executor._errors import (
     ConnectionNotFound,
+    EmptyLLMApiMapping,
     InvalidConnectionType,
     InvalidCustomLLMTool,
     InvalidSource,
@@ -102,10 +103,11 @@ class ToolResolver:
                 else:
                     updated_inputs[k].value = self._convert_to_connection_value(k, v, node, tool_input.type)
             elif value_type == ValueType.IMAGE:
-                updated_inputs[k].value = create_image(v.value, self._working_dir)
+                updated_inputs[k].value = create_image(v.value)
             elif isinstance(value_type, ValueType):
                 try:
                     updated_inputs[k].value = value_type.parse(v.value)
+                    updated_inputs[k].value = load_multimedia_data_recursively(updated_inputs[k].value)
                 except Exception as e:
                     msg = f"Input '{k}' for node '{node.name}' of value {v.value} is not type {value_type}."
                     raise NodeInputValidationError(message=msg) from e
@@ -173,7 +175,7 @@ class ToolResolver:
         for input_name, input in prompt_tpl_inputs_mapping.items():
             if ValueType.IMAGE in input.type and input_name in node_inputs:
                 if node_inputs[input_name].value_type == InputValueType.LITERAL:
-                    node_inputs[input_name].value = create_image(node_inputs[input_name].value, self._working_dir)
+                    node_inputs[input_name].value = create_image(node_inputs[input_name].value)
         return node_inputs
 
     def _resolve_prompt_node(self, node: Node) -> ResolvedTool:
@@ -211,6 +213,8 @@ class ToolResolver:
     def _resolve_llm_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         connection = self._get_node_connection(node)
         if not node.provider:
+            if not connection_type_to_api_mapping:
+                raise EmptyLLMApiMapping()
             # If provider is not specified, try to resolve it from connection type
             node.provider = connection_type_to_api_mapping.get(type(connection).__name__)
         tool: Tool = self._tool_loader.load_tool_for_llm_node(node)
@@ -252,7 +256,7 @@ class ToolResolver:
         )
 
     def _resolve_script_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
-        m, f, tool = self._tool_loader.load_tool_for_script_node(node)
+        m, tool = self._tool_loader.load_tool_for_script_node(node)
         # We only want to load script tool module once.
         # Reloading the same module changes the ID of the class, which can cause issues with isinstance() checks.
         # This is important when working with connection class checks. For instance, in user tool script it writes:
@@ -263,7 +267,11 @@ class ToolResolver:
         # To avoid reloading, pass the loaded module to _convert_node_literal_input_types as an arg.
         if convert_input_types:
             node = self._convert_node_literal_input_types(node, tool, m)
-        return ResolvedTool(node=node, definition=tool, callable=f, init_args={})
+        callable, init_args = BuiltinsManager._load_tool_from_module(
+            m, tool.name, tool.module, tool.class_name, tool.function, node.inputs
+        )
+        self._remove_init_args(node.inputs, init_args)
+        return ResolvedTool(node=node, definition=tool, callable=callable, init_args=init_args)
 
     def _resolve_package_node(self, node: Node, convert_input_types=False) -> ResolvedTool:
         tool: Tool = self._tool_loader.load_tool_for_package_node(node)
