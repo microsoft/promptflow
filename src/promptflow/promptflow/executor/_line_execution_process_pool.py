@@ -15,7 +15,7 @@ from promptflow._core.operation_context import OperationContext
 from promptflow._core.run_tracker import RunTracker
 from promptflow._utils.exception_utils import ExceptionPresenter
 from promptflow._utils.logger_utils import LogContext, bulk_logger, logger
-from promptflow._utils.multimedia_utils import persist_multimedia_data, recursive_process
+from promptflow._utils.multimedia_utils import _process_recursively, persist_multimedia_data
 from promptflow._utils.thread_utils import RepeatLogTimer
 from promptflow._utils.utils import log_progress, set_context
 from promptflow.contracts.multimedia import Image
@@ -292,7 +292,7 @@ class LineExecutionProcessPool:
 
     def _persist_images(self, value):
         serialization_funcs = {Image: partial(Image.serialize, **{"encoder": None})}
-        return recursive_process(value, process_funcs=serialization_funcs)
+        return _process_recursively(value, process_funcs=serialization_funcs)
 
     def _generate_line_result_for_exception(self, inputs, run_id, line_number, flow_id, start_time, ex) -> LineResult:
         logger.error(f"Line {line_number}, Process {os.getpid()} failed with exception: {ex}")
