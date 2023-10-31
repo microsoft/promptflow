@@ -47,14 +47,11 @@ def start():
 {% else %}
 {{ ' ' * indent_level * 2 }}response = run_flow(kwargs)
 {% endif %}
-        # Get base64 for multi modal object
-        resolved_outputs = invoker._convert_multimedia_data_to_base64(response)
-        st.session_state.messages.append(("assistant", resolved_outputs))
-        session_state_history.update({"outputs": response.output})
+        st.session_state.messages.append(("assistant", response))
+        session_state_history.update({"outputs": response})
         st.session_state.history.append(session_state_history)
-        invoker._dump_invoke_result(response)
         with container:
-            render_message("assistant", resolved_outputs)
+            render_message("assistant", response)
 
 
     def run_flow(data: dict) -> dict:

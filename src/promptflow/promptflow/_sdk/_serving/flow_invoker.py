@@ -105,6 +105,14 @@ class FlowInvoker:
         logger.info("Promptflow executor initiated successfully.")
 
     def _invoke(self, data):
+        """
+        Process a flow request in the runtime.
+
+        :param data: The request data dict with flow input as keys, for example: {"question": "What is ChatGPT?"}.
+        :type data: dict
+        :return: The result of executor.
+        :rtype: ~promptflow.executor._result.LineResult
+        """
         logger.info(f"PromptFlow invoker received data: {data}")
 
         logger.info(f"Validating flow input with data {data!r}")
@@ -120,7 +128,7 @@ class FlowInvoker:
 
     def invoke(self, data: dict):
         """
-        Process a flow request in the runtime.
+        Process a flow request in the runtime and return the output of the executor.
 
         :param data: The request data dict with flow input as keys, for example: {"question": "What is ChatGPT?"}.
         :type data: dict
@@ -136,7 +144,8 @@ class FlowInvoker:
 
     def _convert_multimedia_data_to_base64(self, invoke_result):
         resolved_outputs = {
-            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in result.output.items()
+            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True)
+            for k, v in invoke_result.output.items()
         }
         return resolved_outputs
 

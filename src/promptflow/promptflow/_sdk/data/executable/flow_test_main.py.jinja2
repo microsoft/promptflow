@@ -44,9 +44,12 @@ def start():
             render_message("user", kwargs)
         # Append chat history to kwargs
         response = run_flow({'{{chat_history_input_name}}': get_chat_history_from_session(), **kwargs})
-        st.session_state.messages.append(("assistant", response))
-        session_state_history.update({"outputs": response})
+        # Get base64 for multi modal object
+        resolved_outputs = invoker._convert_multimedia_data_to_base64(response)
+        st.session_state.messages.append(("assistant", resolved_outputs))
+        session_state_history.update({"outputs": response.output})
         st.session_state.history.append(session_state_history)
+        invoker._dump_invoke_result(response)
         with container:
             render_message("assistant", response)
 
@@ -61,7 +64,7 @@ def start():
             else:
                 os.chdir(flow.parent)
             invoker = FlowInvoker(flow, connection_provider="""{{ connection_provider }}""", dump_to=dump_path)
-        result = invoker.invoke(data)
+        result = invoker._invoke(data)
         return result
 
     image = Image.open(Path(__file__).parent / "logo.png")
