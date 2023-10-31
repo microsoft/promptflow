@@ -401,7 +401,7 @@ class TestFlowRun:
         with pytest.raises(RunNotFoundError):
             pf.runs.get(name=name)
 
-    def test_eval_run_data_not_exist(self, pf):
+    def test_eval_run_data_deleted(self, pf):
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copy(f"{DATAS_DIR}/env_var_names.jsonl", temp_dir)
 
@@ -428,6 +428,42 @@ class TestFlowRun:
                     },
                 )
             assert "Please make sure it's not deleted." in str(e.value)
+
+    def test_eval_run_data_not_exist(self, pf):
+
+        base_run = pf.run(
+            flow=f"{FLOWS_DIR}/print_env_var",
+            data=f"{DATAS_DIR}/env_var_names.jsonl",
+        )
+        assert pf.runs.get(base_run.name).status == "Completed"
+
+        eval_run = pf.run(
+            flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+            run=base_run.name,
+            column_mapping={
+                "prediction": "${run.outputs.output}",
+                # evaluation reference run.inputs
+                # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                "variant_id": "${run.inputs.key}",
+                # can reference other columns in data which doesn't exist in base run's inputs
+                "groundtruth": "${run.inputs.extra_key}",
+            },
+        )
+
+        with pytest.raises(UserErrorException) as e:
+            pf.run(
+                flow=f"{FLOWS_DIR}/classification_accuracy_evaluation",
+                run=eval_run.name,
+                column_mapping={
+                    "prediction": "${run.outputs.output}",
+                    # evaluation reference run.inputs
+                    # NOTE: we need this value to guard behavior when a run reference another run's inputs
+                    "variant_id": "${run.inputs.key}",
+                    # can reference other columns in data which doesn't exist in base run's inputs
+                    "groundtruth": "${run.inputs.extra_key}",
+                },
+            )
+        assert "Please make sure it's not deleted." in str(e.value)
 
     def test_create_run_with_tags(self, pf):
         name = str(uuid.uuid4())
