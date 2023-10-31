@@ -181,13 +181,17 @@ class PFClient:
         """Run operations that can manage runs."""
         return self._runs
 
+    def _ensure_connection_provider(self) -> str:
+        if not self._connection_provider:
+            # Get a copy with config override instead of the config instance
+            self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+        return self._connection_provider
+
     @property
     def connections(self) -> ConnectionOperations:
         """Connection operations that can manage connections."""
         if not self._connections:
-            if not self._connection_provider:
-                # Get a copy with config override instead of the config instance
-                self._connection_provider = Configuration(overrides=self._config).get_connection_provider()
+            self._ensure_connection_provider()
             if self._connection_provider == ConnectionProvider.LOCAL.value:
                 logger.debug("Using local connection operations.")
                 self._connections = ConnectionOperations()

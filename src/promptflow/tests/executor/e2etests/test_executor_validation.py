@@ -187,6 +187,7 @@ class TestValidation:
         [
             ("simple_flow_with_python_tool", {"num11": "22"}, InputNotFound),
             ("simple_flow_with_python_tool", {"num": "hello"}, InputTypeError),
+            ("python_tool_with_simple_image_without_default", {}, InputNotFound),
         ],
     )
     def test_flow_run_input_type_invalid(self, flow_folder, line_input, error_class, dev_connections):

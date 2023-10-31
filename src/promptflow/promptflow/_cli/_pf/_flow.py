@@ -402,7 +402,11 @@ def test_flow(args):
                 os.path.join(temp_dir, "logo.png"),
             ]
             for script in script_path:
-                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script)
+                StreamlitFileGenerator(
+                    flow_name=flow.name,
+                    flow_dag_path=flow.flow_dag_path,
+                    connection_provider=pf_client._ensure_connection_provider(),
+                ).generate_to_file(script)
 
             sys.argv = [
                 "streamlit",
