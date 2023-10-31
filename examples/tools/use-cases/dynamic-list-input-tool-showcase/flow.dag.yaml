@@ -1,0 +1,17 @@
+inputs: {}
+outputs:
+  output:
+    type: string
+    reference: ${My_Tool_with_Dynamic_List_Input_cywc.output}
+nodes:
+- name: My_Tool_with_Dynamic_List_Input_cywc
+  type: python
+  source:
+    type: package
+    tool: my_tool_package.tools.tool_with_dynamic_list_input.my_tool
+  inputs:
+    input_prefix: hi
+    input_text:
+    - grape3
+    - elderberry5
+    endpoint_name: my_endpoint
