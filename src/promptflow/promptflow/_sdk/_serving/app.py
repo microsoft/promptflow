@@ -109,7 +109,7 @@ def score():
         data = load_request_data(app.flow, raw_data, logger)
 
     invoke_result = app.flow_invoker.invoke(data)
-    resolved_outputs = app.flow_invoker(invoke_result)
+    resolved_outputs = app.flow_invoker._convert_multimedia_data_to_base64(invoke_result)
     # remove evaluation only fields
     result_output = {k: v for k, v in resolved_outputs.items() if k not in app.response_fields_to_remove}
 
