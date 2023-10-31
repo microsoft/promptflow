@@ -11,4 +11,5 @@ add-category-and-tags-for-tool
 use-file-path-as-tool-input
 customize_an_llm_tool
 create-cascading-tool-inputs
+create-your-own-custom-strong-type-connection
 ```

@@ -110,11 +110,13 @@ class DAGManager:
             return True
 
         # Bypass node if the activate condition is not met
-        if node.activate and (
-            self._is_node_dependency_bypassed(node.activate.condition)
-            or not self._is_condition_met(node.activate.condition, node.activate.condition_value)
-        ):
-            return True
+        if node.activate:
+            # If the node referenced by activate condition is bypassed, the current node should be bypassed
+            if self._is_node_dependency_bypassed(node.activate.condition):
+                return True
+            # If a node has activate config, we will always use this config
+            # to determine whether the node should be bypassed.
+            return not self._is_condition_met(node.activate.condition, node.activate.condition_value)
 
         # Bypass node if all of its node reference dependencies are bypassed
         node_dependencies = [i for i in node.inputs.values() if i.value_type == InputValueType.NODE_REFERENCE]
@@ -138,7 +140,13 @@ class DAGManager:
         return _input_assignment_parser.parse_value(node_dependency, self._completed_nodes_outputs, self._flow_inputs)
 
     def _is_node_dependency_bypassed(self, dependency: InputAssignment) -> bool:
-        """Returns True if the dependencies of the condition are bypassed."""
+        """Returns True if the node dependency is bypassed.
+
+        There are three types of the node dependency:
+        1. The inputs of the node
+        2. The skip condition and skip return value of the node
+        3. The activate condition of the node
+        """
         # The node should not be bypassed when its dependency is bypassed by skip config and the dependency has outputs
         return (
             dependency.value_type == InputValueType.NODE_REFERENCE
