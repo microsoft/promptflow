@@ -16,6 +16,7 @@ from azure.ai.ml import MLClient
 from azure.ai.ml.constants._common import AZUREML_RESOURCE_PROVIDER, RESOURCE_ID_FORMAT
 from azure.ai.ml.entities import Data
 from azure.core.exceptions import ResourceNotFoundError
+from dotenv import load_dotenv
 from pytest_mock import MockerFixture
 
 from promptflow._telemetry.telemetry import TELEMETRY_ENABLED
@@ -32,6 +33,8 @@ from .recording_utilities import (
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
+
+load_dotenv()
 
 
 @pytest.fixture
