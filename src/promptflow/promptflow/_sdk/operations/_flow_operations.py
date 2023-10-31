@@ -418,6 +418,7 @@ class FlowOperations:
         flow_inputs_params = ",".join(flow_inputs_params)
 
         is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(executable)
+        label = "Chat" if is_chat_flow else "Run"
         copy_tree_respect_template_and_ignore_file(
             source=Path(__file__).parent.parent / "data" / "executable",
             target=output_dir,
@@ -430,6 +431,7 @@ class FlowOperations:
                 "flow_path": None,
                 "is_chat_flow": is_chat_flow,
                 "chat_history_input_name": chat_history_input_name,
+                "label": label,
             },
         )
         self._run_pyinstaller(output_dir)

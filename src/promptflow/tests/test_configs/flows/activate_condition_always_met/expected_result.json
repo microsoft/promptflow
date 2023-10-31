@@ -1,0 +1,12 @@
+[
+    {
+        "expected_node_count": 3,
+        "expected_outputs": {
+            "output": "Node A not executed. Node B not executed."
+        },
+        "expected_bypassed_nodes": [
+            "nodeA",
+            "nodeB"
+        ]
+    }
+]
