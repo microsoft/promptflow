@@ -112,8 +112,6 @@ def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_c
     all_inputs = {}
     input_defs = {}
     connection_types = []
-    # Initialize the counter for prompt template
-    prompt_template_count = 0
     # Collect all inputs from class and func
     if initialize_inputs:
         if any(k for k in initialize_inputs if k in sign.parameters):
@@ -128,12 +126,6 @@ def function_to_interface(f: Callable, initialize_inputs=None, gen_custom_type_c
     )
     # Resolve inputs to definitions.
     for k, v in all_inputs.items():
-        # Get value type from annotation
-        value_type = resolve_annotation(v.annotation)
-        if value_type is PromptTemplate:
-            # custom llm tool has prompt template as input, skip it
-            prompt_template_count += 1
-            continue
         input_def, is_connection = param_to_definition(v, gen_custom_type_conn=gen_custom_type_conn)
         input_defs[k] = input_def
         if is_connection:
