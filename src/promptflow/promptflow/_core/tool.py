@@ -165,7 +165,7 @@ class DynamicList:
         for name, value in inputs.items():
             if value.kind != value.VAR_KEYWORD and value.kind != value.VAR_POSITIONAL:
                 input_info = {"name": name}
-                if not value.annotation is inspect.Parameter.empty:
+                if value.annotation is not inspect.Parameter.empty:
                     if get_origin(value.annotation):
                         input_info["type"] = [annotation.__name__ for annotation in get_args(value.annotation)]
                     else:
