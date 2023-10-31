@@ -218,9 +218,7 @@ pf flow test --flow my-awesome-flow --node node_name --interactive
     add_param_multi_modal = lambda parser: parser.add_argument(  # noqa: E731
         "--multi-modal", action="store_true", help=argparse.SUPPRESS
     )
-    add_param_ui = lambda parser: parser.add_argument(  # noqa: E731
-        "--ui", action="store_true", help=argparse.SUPPRESS
-    )
+    add_param_ui = lambda parser: parser.add_argument("--ui", action="store_true", help=argparse.SUPPRESS)  # noqa: E731
     add_param_input = lambda parser: parser.add_argument("--input", type=str, help=argparse.SUPPRESS)  # noqa: E731
 
     add_params = [
@@ -389,22 +387,34 @@ def test_flow(args):
     if args.multi_modal or args.ui:
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
-                from streamlit.web import cli as st_cli
-                import streamlit_quill  # noqa: F401
                 import bs4  # noqa: F401
+                import streamlit_quill  # noqa: F401
+                from streamlit.web import cli as st_cli
             except ImportError as ex:
                 raise UserErrorException(
                     f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
                 )
             flow = load_flow(args.flow)
-
-            script_path = [os.path.join(temp_dir, "main.py"), os.path.join(temp_dir, "utils.py"),
-                           os.path.join(temp_dir, "logo.png")]
+            script_path = [
+                os.path.join(temp_dir, "main.py"),
+                os.path.join(temp_dir, "utils.py"),
+                os.path.join(temp_dir, "logo.png"),
+            ]
             for script in script_path:
-                StreamlitFileGenerator(flow_name=flow.name, flow_dag_path=flow.flow_dag_path).generate_to_file(script)
+                StreamlitFileGenerator(
+                    flow_name=flow.name,
+                    flow_dag_path=flow.flow_dag_path,
+                    connection_provider=pf_client._ensure_connection_provider(),
+                ).generate_to_file(script)
 
-            sys.argv = ["streamlit", "run", os.path.join(temp_dir, "main.py"), "--global.developmentMode=false",
-                        "--client.toolbarMode=viewer", "--browser.gatherUsageStats=false"]
+            sys.argv = [
+                "streamlit",
+                "run",
+                os.path.join(temp_dir, "main.py"),
+                "--global.developmentMode=false",
+                "--client.toolbarMode=viewer",
+                "--browser.gatherUsageStats=false",
+            ]
             st_cli.main()
     else:
         if args.interactive:
@@ -442,7 +452,7 @@ def test_flow(args):
             TestSubmitter._raise_error_when_test_failed(result, show_trace=args.node is not None)
             # Print flow/node test result
             if isinstance(result.output, dict):
-                print(json.dumps(result.output, indent=4))
+                print(json.dumps(result.output, indent=4, ensure_ascii=False))
             else:
                 print(result.output)
 
