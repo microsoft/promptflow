@@ -137,6 +137,12 @@ class Configuration(object):
                 )
 
         subscription_id, resource_group, workspace_name = MLClient._get_workspace_info(found_path)
+        if not (subscription_id and resource_group and workspace_name):
+            raise ValueError(
+                "The subscription_id, resource_group and workspace_name can not be empty. Got: "
+                f"subscription_id: {subscription_id}, resource_group: {resource_group}, "
+                f"workspace_name: {workspace_name}."
+            )
         return RESOURCE_ID_FORMAT.format(subscription_id, resource_group, AZUREML_RESOURCE_PROVIDER, workspace_name)
 
     def get_connection_provider(self) -> Optional[str]:

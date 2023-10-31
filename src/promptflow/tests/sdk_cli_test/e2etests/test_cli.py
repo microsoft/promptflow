@@ -934,7 +934,7 @@ class TestCli:
                 "flow",
                 "test",
                 "--flow",
-                f"{FLOWS_DIR}/chat_flow_with_multi_output",
+                f"{FLOWS_DIR}/chat_flow_with_multi_output_invalid",
                 "--interactive",
             )
         outerr = capsys.readouterr()

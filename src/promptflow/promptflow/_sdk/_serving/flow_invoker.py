@@ -121,18 +121,17 @@ class FlowInvoker:
         # Pass index 0 as extension require for dumped result.
         # TODO: Remove this index after extension remove this requirement.
         result = self.executor.exec_line(data, index=0, allow_generator_output=self.streaming())
-        print_yellow_warning(f"Result: {result.output}")
-        if LINE_NUMBER_KEY in result.output:
-            # Remove line number from output
-            del result.output[LINE_NUMBER_KEY]
-        return result
-
-    def _dump_invoke_result(self, invoke_result):
+        # Get base64 for multi modal object
+        resolved_outputs = {
+            k: convert_multimedia_data_to_base64(v, with_type=True, dict_type=True) for k, v in result.output.items()
+        }
         if self._dump_to:
-            invoke_result.output = persist_multimedia_data(
-                invoke_result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
+            result.output = persist_multimedia_data(
+                result.output, base_dir=self._dump_to, sub_dir=Path(".promptflow/output")
             )
-            dump_flow_result(flow_folder=self._dump_to, flow_result=invoke_result, prefix=self._dump_file_prefix)
-
-    def _convert_multimedia_data_to_base64(self, invoke_result):
-        return {k: convert_multimedia_data_to_base64(v, with_type=True) for k, v in invoke_result.output.items()}
+            dump_flow_result(flow_folder=self._dump_to, flow_result=result, prefix=self._dump_file_prefix)
+        print_yellow_warning(f"Result: {result.output}")
+        if LINE_NUMBER_KEY in resolved_outputs:
+            # Remove line number from output
+            del resolved_outputs[LINE_NUMBER_KEY]
+        return resolved_outputs
