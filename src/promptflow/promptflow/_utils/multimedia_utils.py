@@ -99,7 +99,13 @@ def _create_image_from_dict(image_dict: dict):
         if resource == "path":
             return _create_image_from_file(Path(v), mime_type=f"image/{format}")
         elif resource == "base64":
-            return _create_image_from_base64(v, mime_type=f"image/{format}")
+            if _is_base64(v):
+                return _create_image_from_base64(v, mime_type=f"image/{format}")
+            else:
+                raise InvalidImageInput(
+                    message_format=f"Invalid base64 image: {v}.",
+                    target=ErrorTarget.EXECUTOR,
+                )
         elif resource == "url":
             return _create_image_from_url(v, mime_type=f"image/{format}")
         else:
