@@ -66,12 +66,6 @@ def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
         return False
     raise Exception("Task Succeeded unexpectedly.")
 
-def create_local_custom_connection(name, customConnection:CustomConnection):
-    from promptflow import PFClient
-    
-    client = PFClient()    
-    customConnection.name = name
-    client.connections.create_or_update(customConnection)
 
 @pytest.fixture
 def gpt2_custom_connection():
@@ -79,7 +73,6 @@ def gpt2_custom_connection():
     # ConnectionManager.get() always returns 'default_connection' as connection name
     connection_name = "gpt2_connection"
     customConnection = ConnectionManager().get(connection_name)
-    create_local_custom_connection(connection_name, customConnection)
     return (connection_name, customConnection)
 
 
@@ -89,8 +82,8 @@ def llama_chat_custom_connection():
     # ConnectionManager.get() always returns 'default_connection' as connection name
     connection_name = "llama_chat_connection"
     customConnection = ConnectionManager().get(connection_name)
-    create_local_custom_connection(connection_name, customConnection)
     return (connection_name, customConnection)
+
 
 @pytest.fixture
 def open_source_llm_ws_service_connection() -> bool:
