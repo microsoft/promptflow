@@ -361,8 +361,6 @@ def _init_flow_by_template(flow_name, flow_type, overwrite=False, connection=Non
 @exception_handler("Flow test")
 def test_flow(args):
     from promptflow._sdk._load_functions import load_flow
-    from promptflow._sdk._utils import parse_variant
-    from promptflow._sdk.operations._test_submitter import TestSubmitter
 
     config = list_of_dict_to_dict(args.config)
     pf_client = PFClient(config=config)
