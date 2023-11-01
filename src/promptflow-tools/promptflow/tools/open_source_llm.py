@@ -311,7 +311,10 @@ class EndpointsContainer:
             result.append({
                 "value": f"onlineEndpoint/{e.endpoint_name}",
                 "display_value": f"[Online] {e.endpoint_name}",
-                "hyperlink": self.get_endpoint_url(e.endpoint_name, subscription_id, resource_group_name, workspace_name),
+                "hyperlink": self.get_endpoint_url(e.endpoint_name,
+                                                   subscription_id,
+                                                   resource_group_name,
+                                                   workspace_name),
                 "description": f"Online Endpoint:  {e.endpoint_name}",
             })
         return result
