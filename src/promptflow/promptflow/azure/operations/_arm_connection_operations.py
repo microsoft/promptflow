@@ -35,6 +35,13 @@ class ConnectionCategory(str, Enum):
     CustomKeys = "CustomKeys"
 
 
+def get_case_insensitive_key(d, key, default=None):
+    for k, v in d.items():
+        if k.lower() == key.lower():
+            return v
+    return default
+
+
 class ArmConnectionOperations(_ScopeDependentOperations):
     """ArmConnectionOperations.
 
@@ -96,13 +103,19 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         return data
 
     @classmethod
-    def validate_and_fallback_connection_type(cls, name, type_name, category):
+    def validate_and_fallback_connection_type(cls, name, type_name, category, metadata):
         if type_name:
             return type_name
         if category == ConnectionCategory.AzureOpenAI:
             return "AzureOpenAI"
         if category == ConnectionCategory.CognitiveSearch:
             return "CognitiveSearch"
+        if category == ConnectionCategory.CognitiveService:
+            kind = get_case_insensitive_key(metadata, "Kind")
+            if kind == "Content Safety":
+                return "AzureContentSafety"
+            if kind == "Form Recognizer":
+                return "FormRecognizer"
         raise UnknownConnectionType(
             message_format="Connection {name} is not recognized in PromptFlow, "
             "please make sure the connection is created in PromptFlow.",
@@ -139,19 +152,13 @@ class ArmConnectionOperations(_ScopeDependentOperations):
         #
         # Use Metadata property bag for ApiType, ApiVersion, Kind and other metadata fields
         properties = obj.properties
-        type_name = properties.metadata.get(f"{FLOW_META_PREFIX}connection_type")
-        type_name = cls.validate_and_fallback_connection_type(name, type_name, properties.category)
-        module = properties.metadata.get(f"{FLOW_META_PREFIX}module", "promptflow.connections")
+        type_name = get_case_insensitive_key(properties.metadata, f"{FLOW_META_PREFIX}connection_type")
+        type_name = cls.validate_and_fallback_connection_type(name, type_name, properties.category, properties.metadata)
+        module = get_case_insensitive_key(properties.metadata, f"{FLOW_META_PREFIX}module", "promptflow.connections")
         # Note: Category is connectionType in MT, but type name should be class name, which is flowValueType in MT.
         # Handle old connections here, see details: https://github.com/Azure/promptflow/tree/main/connections
         type_name = f"{type_name}Connection" if not type_name.endswith("Connection") else type_name
         meta = {"type": type_name, "module": module}
-
-        def get_case_insensitive_key(d, key):
-            for k, v in d.items():
-                if k.lower() == key.lower():
-                    return v
-            return None
 
         if properties.category == ConnectionCategory.AzureOpenAI:
             value = {
