@@ -130,7 +130,7 @@ def collect_tool_methods_with_init_inputs_in_module(m):
     return tools
 
 
-def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False):
+def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=False, skip_prompt_template=False):
     try:
         tool_type = getattr(f, "__type") or ToolType.PYTHON
     except Exception as e:
@@ -143,7 +143,8 @@ def _parse_tool_from_function(f, initialize_inputs=None, gen_custom_type_conn=Fa
         f = f.__original_function
     try:
         inputs, _, _ = function_to_interface(
-            f, initialize_inputs=initialize_inputs, gen_custom_type_conn=gen_custom_type_conn)
+            f, initialize_inputs=initialize_inputs, gen_custom_type_conn=gen_custom_type_conn,
+            skip_prompt_template=skip_prompt_template)
     except Exception as e:
         error_type_and_message = f"({e.__class__.__name__}) {e}"
         raise BadFunctionInterface(

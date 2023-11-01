@@ -98,7 +98,8 @@ class ToolOperations:
         :return: package tool name, serialized tool
         :rtype: str, Dict[str, str]
         """
-        tool = _parse_tool_from_function(tool_func, initialize_inputs=initialize_inputs, gen_custom_type_conn=True)
+        tool = _parse_tool_from_function(tool_func, initialize_inputs=initialize_inputs,
+                                         gen_custom_type_conn=True, skip_prompt_template=True)
         extra_info = getattr(tool_func, "__extra_info")
         tool_name = (
             f"{tool.module}.{tool.class_name}.{tool.function}"
