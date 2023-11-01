@@ -386,14 +386,6 @@ def test_flow(args):
 
     if args.multi_modal or args.ui:
         with tempfile.TemporaryDirectory() as temp_dir:
-            try:
-                import bs4  # noqa: F401
-                import streamlit_quill  # noqa: F401
-                from streamlit.web import cli as st_cli
-            except ImportError as ex:
-                raise UserErrorException(
-                    f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
-                )
             flow = load_flow(args.flow)
 
             script_path = [
@@ -407,16 +399,8 @@ def test_flow(args):
                     flow_dag_path=flow.flow_dag_path,
                     connection_provider=pf_client._ensure_connection_provider(),
                 ).generate_to_file(script)
-
-            sys.argv = [
-                "streamlit",
-                "run",
-                os.path.join(temp_dir, "main.py"),
-                "--global.developmentMode=false",
-                "--client.toolbarMode=viewer",
-                "--browser.gatherUsageStats=false",
-            ]
-            st_cli.main()
+            main_script_path = os.path.join(temp_dir, "main.py")
+            pf_client.flows._chat_with_ui(script=main_script_path)
     else:
         if args.interactive:
             pf_client.flows._chat(
@@ -427,7 +411,7 @@ def test_flow(args):
                 show_step_output=args.verbose,
             )
         else:
-            result = pf_client.flows._test(
+            result = pf_client.flows.test(
                 flow=args.flow,
                 inputs=inputs,
                 environment_variables=environment_variables,

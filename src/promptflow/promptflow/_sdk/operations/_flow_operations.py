@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import subprocess
+import sys
 from importlib.metadata import version
 from os import PathLike
 from pathlib import Path
@@ -161,6 +162,7 @@ class FlowOperations:
             error_msg = "chat_history is required in the inputs of chat flow"
         return is_chat_flow, chat_history_input_name, error_msg
 
+    @monitor_operation(activity_name="pf.flows._chat", activity_type=ActivityType.INTERNALCALL)
     def _chat(
         self,
         flow,
@@ -199,6 +201,26 @@ class FlowOperations:
                 environment_variables=environment_variables,
                 show_step_output=kwargs.get("show_step_output", False),
             )
+
+    @monitor_operation(activity_name="pf.flows._chat_with_ui", activity_type=ActivityType.INTERNALCALL)
+    def _chat_with_ui(self, script):
+        try:
+            import bs4  # noqa: F401
+            import streamlit_quill  # noqa: F401
+            from streamlit.web import cli as st_cli
+        except ImportError as ex:
+            raise UserErrorException(
+                f"Please try 'pip install promptflow[executable]' to install dependency, {ex.msg}."
+            )
+        sys.argv = [
+            "streamlit",
+            "run",
+            script,
+            "--global.developmentMode=false",
+            "--client.toolbarMode=viewer",
+            "--browser.gatherUsageStats=false",
+        ]
+        st_cli.main()
 
     def _build_environment_config(self, flow_dag_path: Path):
         flow_info = yaml.safe_load(flow_dag_path.read_text())
