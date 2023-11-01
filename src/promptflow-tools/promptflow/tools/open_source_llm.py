@@ -31,8 +31,8 @@ ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEG
 
 
 def handle_online_endpoint_error(max_retries: int = 3,
-                                  initial_delay: float = 1,
-                                  exponential_base: float = 2):
+                                 initial_delay: float = 1,
+                                 exponential_base: float = 2):
     def deco_retry(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -71,6 +71,7 @@ class Deployment:
         self.model_family = model_family
         self.deployment_name = deployment_name
 
+
 class CustomConnectionsContainer:
     def __init__(self) -> None:
         self.__endpoints_and_deployments = None
@@ -78,29 +79,27 @@ class CustomConnectionsContainer:
         self.__resource_group_name = None
         self.__workspace_name = None
 
-      
     def get_azure_custom_connection_names(self,
-                            subscription_id,
-                            resource_group_name,
-                            workspace_name
-                            ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+                                          subscription_id,
+                                          resource_group_name,
+                                          workspace_name) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
         result = []
 
         try:
             from azure.identity import DefaultAzureCredential
             from promptflow.azure import PFClient
             credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
-        except:
-            print("Skipping Azure PFClient.")
+        except Exception as e:
+            print(f"Skipping Azure PFClient. Exception: {e}")
             return result
-                
+
         try:
             azure_pf_client = PFClient(
                 credential=credential,
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name)
-        except Exception as e:
+        except Exception:
             message = "Skipping Azure PFClient. To connect, please ensure the following environment variables are set: "
             message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
             print(message)
@@ -115,28 +114,27 @@ class CustomConnectionsContainer:
                     result.append({
                         "value": f"connection/{c.name}",
                         "display_value": f"[Connection] {c.name}",
-                        #"hyperlink": f"https://ml.azure.com/endpoints/realtime/{e.endpoint_name}/detail?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
+                        # "hyperlink": "",
                         "description": f"Custom Connection:  {c.name}",
                     })
 
-                except:
+                except Exception:
                     # silently ignore unsupported model family
                     continue
 
         return result
-    
+
     def get_local_custom_connection_names(self) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-        
         result = []
         try:
             from promptflow import PFClient
-        except:
+        except Exception:
             print("Skipping Local PFClient.")
             return result
 
         pf = PFClient()
         connections = pf.connections.list()
-        
+
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -144,29 +142,29 @@ class CustomConnectionsContainer:
                     result.append({
                         "value": f"localConnection/{c.name}",
                         "display_value": f"[Local Connection] {c.name}",
-                        #"hyperlink": f"https://ml.azure.com/endpoints/realtime/{e.endpoint_name}/detail?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
+                        # "hyperlink": "",
                         "description": f"Local Custom Connection:  {c.name}",
                     })
 
-                except:
+                except Exception:
                     # silently ignore unsupported model family
                     continue
 
         return result
-    
+
     def get_endpoint_from_local_custom_connection(self, connection_name) -> Tuple[str, str, str]:
         from promptflow import PFClient
         pf = PFClient()
-        
+
         connection = pf.connections.get(connection_name, with_secrets=True)
-        
+
         return self.get_endpoint_from_custom_connection(connection)
-   
+
     def get_endpoint_from_azure_custom_connection(self,
-                            subscription_id,
-                            resource_group_name,
-                            workspace_name,
-                            connection_name) -> Tuple[str, str, str]:
+                                                  subscription_id,
+                                                  resource_group_name,
+                                                  workspace_name,
+                                                  connection_name) -> Tuple[str, str, str]:
         from promptflow.azure import PFClient
         from azure.identity import DefaultAzureCredential
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
@@ -176,7 +174,7 @@ class CustomConnectionsContainer:
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
                 workspace_name=workspace_name)
-        
+
         connection = azure_pf_client._arm_connections.get(connection_name)
 
         return self.get_endpoint_from_custom_connection(connection)
@@ -190,7 +188,7 @@ class CustomConnectionsContainer:
                     message=f"""Required key `{key}` not found in given custom connection.
 Required keys are: {accepted_keys}."""
                 )
-        
+
         for key in REQUIRED_SECRET_KEYS:
             if key not in conn_dict:
                 accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
@@ -198,7 +196,7 @@ Required keys are: {accepted_keys}."""
                     message=f"""Required secret key `{key}` not found in given custom connection.
 Required keys are: {accepted_keys}."""
                 )
-        
+
         model_family = validate_model_family(connection.configs['model_family'])
 
         return (connection.configs['endpoint_url'],
@@ -206,14 +204,17 @@ Required keys are: {accepted_keys}."""
                 model_family)
 
     def list_custom_connection_names(self,
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+                                     subscription_id: str,
+                                     resource_group_name: str,
+                                     workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
 
-        azure_custom_connections = self.get_azure_custom_connection_names(subscription_id, resource_group_name, workspace_name)
+        azure_custom_connections = self.get_azure_custom_connection_names(subscription_id,
+                                                                          resource_group_name,
+                                                                          workspace_name)
         local_custom_connections = self.get_local_custom_connection_names()
 
         return azure_custom_connections + local_custom_connections
+
 
 class EndpointsContainer:
     def __init__(self) -> None:
@@ -244,12 +245,11 @@ class EndpointsContainer:
                                       subscription_id: str,
                                       resource_group_name: str,
                                       workspace_name: str) -> List[Endpoint]:
-        
+ 
         if (self.__endpoints_and_deployments is not None
                 and self.__subscription_id == subscription_id
                 and self.__resource_group_name == resource_group_name
-                and self.__workspace_name == workspace_name
-                ):
+                and self.__workspace_name == workspace_name):
             return self.__endpoints_and_deployments
 
         ml_client = self.get_ml_client(subscription_id, resource_group_name, workspace_name)
@@ -341,24 +341,27 @@ class EndpointsContainer:
 ENDPOINT_CONTAINER = EndpointsContainer()
 CUSTOM_CONNECTION_CONTAINER = CustomConnectionsContainer()
 
-def parse_connection_type(connection_name: str) -> Tuple[str, str]:
-        connection_details = connection_name.split("/")        
-        return (connection_details[0].lower(), connection_details[1])
 
-def list_connection_names(
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+def parse_connection_type(connection_name: str) -> Tuple[str, str]:
+    connection_details = connection_name.split("/")
+    return (connection_details[0].lower(), connection_details[1])
+
+
+def list_connection_names(subscription_id: str,
+                          resource_group_name: str,
+                          workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     online_endpoints =  ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
-    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id, resource_group_name, workspace_name)
+    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id,
+                                                                                  resource_group_name,
+                                                                                  workspace_name)
 
     return online_endpoints + custom_connections
 
-def list_deployment_names(
-        subscription_id: str,
-        resource_group_name: str,
-        workspace_name: str,
-        connection: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+
+def list_deployment_names(subscription_id: str,
+                          resource_group_name: str,
+                          workspace_name: str,
+                          connection: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     
     if connection is None or connection.strip() == "" or "/" not in connection:
         return []
@@ -374,6 +377,7 @@ def list_deployment_names(
         )
     else:
         return []
+
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
     response_json = json.loads(output)
@@ -401,6 +405,7 @@ Instead, received {response_json} and access failed at key `{e}`.
 """
         raise OpenSourceLLMUserError(message=message)
 
+
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
@@ -418,6 +423,7 @@ def get_model_type(deployment_model: str) -> str:
         # Not found and\or handled. Ignore this endpoint\deployment
         return None
 
+
 def validate_model_family(model_family: str):
     try:
         return ModelFamily[model_family]
@@ -427,6 +433,7 @@ def validate_model_family(model_family: str):
             message=f"""Given model_family '{model_family}' not recognized.
 Supported models are: {accepted_models}."""
         )
+
 
 class ModelFamily(str, Enum):
     LLAMA = "LLaMa"
@@ -716,7 +723,7 @@ class OpenSourceLLM(ToolProvider):
                                      subscription_id: str,
                                      resource_group_name: str,
                                      workspace_name: str,
-                                     endpoint_name: str, 
+                                     endpoint_name: str,
                                      deployment_name: str = None) -> Tuple[str, str, str]:
         endpoints_and_deployments = ENDPOINT_CONTAINER.get_endpoints_and_deployments(
             subscription_id,
@@ -738,12 +745,12 @@ class OpenSourceLLM(ToolProvider):
         message = """Invalid endpoint and deployment values.
 Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
         raise OpenSourceLLMUserError(message=message)
-    
+
     def get_connection_details(self,
                                subscription_id: str,
                                resource_group_name: str,
                                workspace_name: str,
-                               connection: str, 
+                               connection: str,
                                deployment_name: str = None) -> Tuple[str, str, str]:
         
         (connection_type, connection_name) = parse_connection_type(connection)
@@ -751,9 +758,16 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         print(f"connection_type: {connection_type} connection_name: {connection_name}")
 
         if connection_type.lower() == "onlineendpoint":
-            return self.get_deployment_from_endpoint(subscription_id, resource_group_name, workspace_name, connection_name, deployment_name)
+            return self.get_deployment_from_endpoint(subscription_id,
+                                                     resource_group_name,
+                                                     workspace_name,
+                                                     connection_name,
+                                                     deployment_name)
         elif connection_type.lower() == "connection":
-            return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(subscription_id, resource_group_name, workspace_name, connection_name)
+            return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(subscription_id,
+                                                                                         resource_group_name,
+                                                                                         workspace_name,
+                                                                                         connection_name)
         elif connection_type.lower() == "localconnection":
             return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(connection_name)
         else:
@@ -811,3 +825,4 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         )
 
         return llm(prompt)
+    
