@@ -946,11 +946,10 @@ class FlowExecutor:
                     output_name=name,
                     node_name=node.name,
                 )
-            print("?", nodes_outputs)
-            if nodes_outputs:
+            if output.reference.value in bypassed_nodes:
                 logger.warning(
                     msg=(
-                        "The node referenced by output is bypassed, which is not recommended. "
+                        f"The node referenced by output:'{output.reference.value}' is bypassed, which is not recommended. "
                     )
                 )
             node_result = nodes_outputs[output.reference.value]

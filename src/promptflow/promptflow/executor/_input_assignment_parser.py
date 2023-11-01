@@ -41,6 +41,7 @@ def parse_value(i: InputAssignment, nodes_outputs: dict, flow_inputs: dict):
                 reference_section=i.section,
                 reference_node_name=i.value,
             )
+        print("?????????????",i.value, nodes_outputs)
         if i.value not in nodes_outputs:
             node_output_keys = [output_keys for output_keys in nodes_outputs.keys() if nodes_outputs]
             raise InputNotFoundFromAncestorNodeOutput(
