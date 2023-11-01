@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, TypeVar, Union
 
 from promptflow._constants import DEFAULT_ENCODING
-from promptflow._utils.logger_utils import logger
 
 T = TypeVar("T")
 
@@ -53,14 +52,6 @@ def is_json_serializable(value: Any) -> bool:
         return True
     except TypeError:
         return False
-
-
-def calculate_execution_time(func, *args, **kwargs):
-    start = time.time()
-    result = func(*args, **kwargs)
-    end = time.time()
-    logger.debug(f'Time elapsed for fuc "{func.__name__}": {end - start} seconds')
-    return result
 
 
 def load_json(file_path: Union[str, Path]) -> dict:
