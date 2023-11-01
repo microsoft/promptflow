@@ -188,7 +188,7 @@ class CustomConnectionsContainer:
                 accepted_keys = ",".join([key for key in REQUIRED_CONFIG_KEYS])
                 raise OpenSourceLLMKeyValidationError(
                     message=f"""Required key `{key}` not found in given custom connection.
-    Required keys are: {accepted_keys}."""
+Required keys are: {accepted_keys}."""
                 )
         
         for key in REQUIRED_SECRET_KEYS:
@@ -196,7 +196,7 @@ class CustomConnectionsContainer:
                 accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
                 raise OpenSourceLLMKeyValidationError(
                     message=f"""Required secret key `{key}` not found in given custom connection.
-    Required keys are: {accepted_keys}."""
+Required keys are: {accepted_keys}."""
                 )
         
         model_family = validate_model_family(connection.configs['model_family'])
@@ -359,6 +359,10 @@ def list_deployment_names(
         resource_group_name: str,
         workspace_name: str,
         connection: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    
+    if connection is None or connection.strip() == "" or "/" not in connection:
+        return []
+
     (endpoint_connection_type, endpoint_connection_name) = parse_connection_type(connection)
 
     if endpoint_connection_type == "onlineendpoint":
@@ -369,7 +373,7 @@ def list_deployment_names(
             endpoint_connection_name
         )
     else:
-        return None
+        return []
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
     response_json = json.loads(output)
@@ -779,12 +783,9 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         (self.endpoint_uri,
             self.endpoint_key,
             self.model_family) = self.get_connection_details(
-                # subscription_id=os.environ["AZUREML_ARM_SUBSCRIPTION"],
-                # resource_group_name=os.environ["AZUREML_ARM_RESOURCEGROUP"],
-                # workspace_name=os.environ["AZUREML_ARM_WORKSPACE_NAME"],
-                subscription_id="ba7979f7-d040-49c9-af1a-7414402bf622",
-                resource_group_name="gewoods_rg",
-                workspace_name="gewoods_ml",
+                subscription_id=os.environ["AZUREML_ARM_SUBSCRIPTION"],
+                resource_group_name=os.environ["AZUREML_ARM_RESOURCEGROUP"],
+                workspace_name=os.environ["AZUREML_ARM_WORKSPACE_NAME"],
                 connection=connection,
                 deployment_name=deployment_name)
 
