@@ -806,9 +806,9 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         (self.endpoint_uri,
             self.endpoint_key,
             self.model_family) = self.get_connection_details(
-                subscription_id=os.environ["AZUREML_ARM_SUBSCRIPTION"],
-                resource_group_name=os.environ["AZUREML_ARM_RESOURCEGROUP"],
-                workspace_name=os.environ["AZUREML_ARM_WORKSPACE_NAME"],
+                subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION", None),
+                resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
+                workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
                 connection=connection,
                 deployment_name=deployment_name)
 
