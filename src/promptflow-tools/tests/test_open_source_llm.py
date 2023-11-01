@@ -22,12 +22,12 @@ from promptflow.tools.open_source_llm import (
 
 @pytest.fixture
 def gpt2_provider(gpt2_custom_connection) -> OpenSourceLLM:
-    return f"localConnection/{gpt2_custom_connection.name}"
+    return f"localConnection/{gpt2_custom_connection[0]}"
 
 
 @pytest.fixture
 def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
-    return f"localConnection/{llama_chat_custom_connection.name}"
+    return f"localConnection/{llama_chat_custom_connection[0]}"
 
 
 @pytest.fixture
