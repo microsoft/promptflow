@@ -71,7 +71,7 @@ class Deployment:
         self.model_family = model_family
         self.deployment_name = deployment_name
 
-class ConnectionsContainer:
+class CustomConnectionsContainer:
     def __init__(self) -> None:
         self.__endpoints_and_deployments = None
         self.__subscription_id = None
@@ -79,7 +79,7 @@ class ConnectionsContainer:
         self.__workspace_name = None
 
       
-    def get_azure_connection_names(self,
+    def get_azure_custom_connection_names(self,
                             subscription_id,
                             resource_group_name,
                             workspace_name
@@ -125,7 +125,7 @@ class ConnectionsContainer:
 
         return result
     
-    def get_local_connection_names(self) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    def get_local_custom_connection_names(self) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
         
         result = []
         try:
@@ -154,18 +154,15 @@ class ConnectionsContainer:
 
         return result
     
-    def get_endpoint_from_local_connection(self, connection_name) -> Tuple[str, str, str]:
+    def get_endpoint_from_local_custom_connection(self, connection_name) -> Tuple[str, str, str]:
         from promptflow import PFClient
         pf = PFClient()
         
         connection = pf.connections.get(connection_name, with_secrets=True)
-        model_family = validate_model_family(connection.configs["model_family"])
-
-        return (connection.configs['endpoint_url'],
-            connection.secrets['endpoint_api_key'],
-            model_family)
+        
+        return self.get_endpoint_from_custom_connection(connection)
    
-    def get_endpoint_from_azure_connection(self,
+    def get_endpoint_from_azure_custom_connection(self,
                             subscription_id,
                             resource_group_name,
                             workspace_name,
@@ -181,21 +178,42 @@ class ConnectionsContainer:
                 workspace_name=workspace_name)
         
         connection = azure_pf_client._arm_connections.get(connection_name)
-        model_family = validate_model_family(connection.configs["model_family"])
+
+        return self.get_endpoint_from_custom_connection(connection)
+
+    def get_endpoint_from_custom_connection(self, connection: CustomConnection) -> Tuple[str, str, str]:
+        conn_dict = dict(connection)
+        for key in REQUIRED_CONFIG_KEYS:
+            if key not in conn_dict:
+                accepted_keys = ",".join([key for key in REQUIRED_CONFIG_KEYS])
+                raise OpenSourceLLMKeyValidationError(
+                    message=f"""Required key `{key}` not found in given custom connection.
+    Required keys are: {accepted_keys}."""
+                )
+        
+        for key in REQUIRED_SECRET_KEYS:
+            if key not in conn_dict:
+                accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
+                raise OpenSourceLLMKeyValidationError(
+                    message=f"""Required secret key `{key}` not found in given custom connection.
+    Required keys are: {accepted_keys}."""
+                )
+        
+        model_family = validate_model_family(connection.configs['model_family'])
 
         return (connection.configs['endpoint_url'],
-            connection.secrets['endpoint_api_key'],
-            model_family)
+                connection.secrets['endpoint_api_key'],
+                model_family)
 
-    def list_connection_names(self,
+    def list_custom_connection_names(self,
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
 
-        azure_connections = self.get_azure_connection_names(subscription_id, resource_group_name, workspace_name)
-        local_connections = self.get_local_connection_names()
+        azure_custom_connections = self.get_azure_custom_connection_names(subscription_id, resource_group_name, workspace_name)
+        local_custom_connections = self.get_local_custom_connection_names()
 
-        return azure_connections + local_connections
+        return azure_custom_connections + local_custom_connections
 
 class EndpointsContainer:
     def __init__(self) -> None:
@@ -321,30 +339,29 @@ class EndpointsContainer:
 
 
 ENDPOINT_CONTAINER = EndpointsContainer()
-CONNECTION_CONTAINER = ConnectionsContainer()
+CUSTOM_CONNECTION_CONTAINER = CustomConnectionsContainer()
 
-def parse_endpoint_name(endpoint_name: str) -> Tuple[str, str]:
-        endpoint_connection_details = endpoint_name.split("/")        
-        return (endpoint_connection_details[0], endpoint_connection_details[1])
+def parse_connection_type(connection_name: str) -> Tuple[str, str]:
+        connection_details = connection_name.split("/")        
+        return (connection_details[0].lower(), connection_details[1])
 
-def list_endpoint_names(
+def list_connection_names(
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     online_endpoints =  ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
-    custom_connections = CONNECTION_CONTAINER.list_connection_names(subscription_id, resource_group_name, workspace_name)
+    custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id, resource_group_name, workspace_name)
 
     return online_endpoints + custom_connections
-
 
 def list_deployment_names(
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str,
-        endpoint_name: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_name(endpoint_name)
+        connection: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    (endpoint_connection_type, endpoint_connection_name) = parse_connection_type(connection)
 
-    if endpoint_connection_type == "onlineEndpoint":
+    if endpoint_connection_type == "onlineendpoint":
         return ENDPOINT_CONTAINER.list_deployment_names(
             subscription_id,
             resource_group_name,
@@ -380,7 +397,6 @@ Instead, received {response_json} and access failed at key `{e}`.
 """
         raise OpenSourceLLMUserError(message=message)
 
-
 def get_model_type(deployment_model: str) -> str:
     m = re.match(r'azureml://registries/[^/]+/models/([^/]+)/versions/', deployment_model)
     if m is None:
@@ -397,31 +413,6 @@ def get_model_type(deployment_model: str) -> str:
     else:
         # Not found and\or handled. Ignore this endpoint\deployment
         return None
-
-
-def get_endpoint_from_connection(connection: CustomConnection) -> Tuple[str, str, str]:
-    conn_dict = dict(connection)
-    for key in REQUIRED_CONFIG_KEYS:
-        if key not in conn_dict:
-            accepted_keys = ",".join([key for key in REQUIRED_CONFIG_KEYS])
-            raise OpenSourceLLMKeyValidationError(
-                message=f"""Required key `{key}` not found in given custom connection.
-Required keys are: {accepted_keys}."""
-            )
-    
-    for key in REQUIRED_SECRET_KEYS:
-        if key not in conn_dict:
-            accepted_keys = ",".join([key for key in REQUIRED_SECRET_KEYS])
-            raise OpenSourceLLMKeyValidationError(
-                message=f"""Required secret key `{key}` not found in given custom connection.
-Required keys are: {accepted_keys}."""
-            )
-    
-    model_family = validate_model_family(connection.configs['model_family'])
-
-    return (connection.configs['endpoint_url'],
-            connection.secrets['endpoint_api_key'],
-            model_family)
 
 def validate_model_family(model_family: str):
     try:
@@ -714,15 +705,8 @@ class AzureMLOnlineEndpoint:
 
 class OpenSourceLLM(ToolProvider):
 
-    def __init__(self, connection: CustomConnection = None):
+    def __init__(self):
         super().__init__()
-
-        # if connection is not None:
-        #     (self.endpoint_uri,
-        #      self.endpoint_key,
-        #      self.model_family) = get_endpoint_from_connection(connection)
-        # else:
-        #     self.endpoint_key = None
 
     def get_deployment_from_endpoint(self,
                                      subscription_id: str,
@@ -751,27 +735,25 @@ class OpenSourceLLM(ToolProvider):
 Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
         raise OpenSourceLLMUserError(message=message)
     
-    def get_endpoint_connection_details(self, 
-                                        subscription_id: str,
-                                        resource_group_name: str,
-                                        workspace_name: str,
-                                        endpoint_name: str, 
-                                        deployment_name: str = None) -> Tuple[str, str, str]:
+    def get_connection_details(self,
+                               subscription_id: str,
+                               resource_group_name: str,
+                               workspace_name: str,
+                               connection: str, 
+                               deployment_name: str = None) -> Tuple[str, str, str]:
         
-        endpoint_connection_details = endpoint_name.split("/")
-        endpoint_connection_type = endpoint_connection_details[0]
-        endpoint_connection_name = endpoint_connection_details[1]
+        (connection_type, connection_name) = parse_connection_type(connection)
 
-        print(f"endpoint_connection_type: {endpoint_connection_type} endpoint_connection_name: {endpoint_connection_name}")
+        print(f"connection_type: {connection_type} connection_name: {connection_name}")
 
-        if endpoint_connection_type.lower() == "onlineendpoint":
-            return self.get_deployment_from_endpoint(subscription_id, resource_group_name, workspace_name, endpoint_connection_name, deployment_name)
-        elif endpoint_connection_type.lower() == "connection":
-            return CONNECTION_CONTAINER.get_endpoint_from_azure_connection(subscription_id, resource_group_name, workspace_name, endpoint_connection_name)
-        elif endpoint_connection_type.lower() == "localconnection":
-            return CONNECTION_CONTAINER.get_endpoint_from_local_connection(endpoint_connection_name)
+        if connection_type.lower() == "onlineendpoint":
+            return self.get_deployment_from_endpoint(subscription_id, resource_group_name, workspace_name, connection_name, deployment_name)
+        elif connection_type.lower() == "connection":
+            return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(subscription_id, resource_group_name, workspace_name, connection_name)
+        elif connection_type.lower() == "localconnection":
+            return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(connection_name)
         else:
-            raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
+            raise OpenSourceLLMUserError(message=f"Invalid connection type: {connection_type}")
 
     @tool
     @handle_online_endpoint_error()
@@ -779,7 +761,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         self,
         prompt: PromptTemplate,
         api: API,
-        endpoint_name: str = None,
+        connection: str = None,
         deployment_name: str = None,
         temperature: float = 1.0,
         max_new_tokens: int = 500,
@@ -789,20 +771,21 @@ Please ensure endpoint name and deployment names are correct, and the deployment
     ) -> str:
 
         # Sanitize deployment name. Empty deployment name is the same as None.
-        deployment_name = None if not deployment_name.strip() else deployment_name
+        if deployment_name is not None:
+            deployment_name = None if not deployment_name.strip() else deployment_name
 
-        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint_name}', deployment: '{deployment_name}'")
+        print(f"Executing Open Source LLM Tool for connection: '{connection}', deployment: '{deployment_name}'")
 
         (self.endpoint_uri,
             self.endpoint_key,
-            self.model_family) = self.get_endpoint_connection_details(
+            self.model_family) = self.get_connection_details(
                 # subscription_id=os.environ["AZUREML_ARM_SUBSCRIPTION"],
                 # resource_group_name=os.environ["AZUREML_ARM_RESOURCEGROUP"],
                 # workspace_name=os.environ["AZUREML_ARM_WORKSPACE_NAME"],
                 subscription_id="ba7979f7-d040-49c9-af1a-7414402bf622",
                 resource_group_name="gewoods_rg",
                 workspace_name="gewoods_ml",
-                endpoint_name=endpoint_name,
+                connection=connection,
                 deployment_name=deployment_name)
 
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
