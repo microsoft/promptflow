@@ -42,9 +42,8 @@ def handle_online_endpoint_error(max_retries: int = 3,
                     return func(*args, **kwargs)
                 except HTTPError as e:
                     if i == max_retries - 1:
-                        error_message = f"Exception hit calling Oneline Endpoint: {type(e).__name__}: {str(e)}"
+                        error_message = f"Exception hit calling Online Endpoint: {type(e).__name__}: {str(e)}"
                         print(error_message, file=sys.stderr)
-                        print(f"prakharg logs: error message:{error_message}")
                         raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
                     delay *= exponential_base
@@ -108,7 +107,6 @@ class ConnectionsContainer:
             return result
 
         connections = azure_pf_client._connections.list()
-        print("prakharg_logs: get_azure_connection_names connections: ", connections)
 
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
@@ -194,7 +192,6 @@ class ConnectionsContainer:
         resource_group_name: str,
         workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
 
-        print(f"prakharg logs: list_connection_names subscription_id: {subscription_id} resource_group_name: {resource_group_name} workspace_name: {workspace_name}")
         azure_connections = self.get_azure_connection_names(subscription_id, resource_group_name, workspace_name)
         local_connections = self.get_local_connection_names()
 
@@ -230,9 +227,6 @@ class EndpointsContainer:
                                       resource_group_name: str,
                                       workspace_name: str) -> List[Endpoint]:
         
-        print(f"prakharg_logs: get_endpoints_and_deployments subscription_id: {subscription_id} resource_group_name: {resource_group_name} workspace_name: {workspace_name}")
-        print(f"prakharg_logs: get_endpoints_and_deployments self.__subscription_id: {self.__subscription_id} self.__resource_group_name: {self.__resource_group_name} self.__workspace_name: {self.__workspace_name}")
-
         if (self.__endpoints_and_deployments is not None
                 and self.__subscription_id == subscription_id
                 and self.__resource_group_name == resource_group_name
@@ -358,7 +352,7 @@ def list_deployment_names(
             endpoint_connection_name
         )
     else:
-        return []
+        return None
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
     response_json = json.loads(output)
@@ -768,7 +762,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         endpoint_connection_type = endpoint_connection_details[0]
         endpoint_connection_name = endpoint_connection_details[1]
 
-        print(f"prakharg logs: endpoint_connection_type: {endpoint_connection_type} endpoint_connection_name: {endpoint_connection_name}")
+        print(f"endpoint_connection_type: {endpoint_connection_type} endpoint_connection_name: {endpoint_connection_name}")
 
         if endpoint_connection_type.lower() == "onlineendpoint":
             return self.get_deployment_from_endpoint(subscription_id, resource_group_name, workspace_name, endpoint_connection_name, deployment_name)
@@ -794,7 +788,10 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         **kwargs
     ) -> str:
 
-        print(f"prakharg_logs: call endpoint_name: {endpoint_name} deployment_name: {deployment_name}")
+        # Sanitize deployment name. Empty deployment name is the same as None.
+        deployment_name = None if not deployment_name.strip() else deployment_name
+
+        print(f"Executing Open Source LLM Tool for endpoint: '{endpoint_name}', deployment: '{deployment_name}'")
 
         (self.endpoint_uri,
             self.endpoint_key,
