@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
 from urllib.request import HTTPError
 
 from promptflow._core.tool import ToolProvider, tool
+from promptflow._sdk._constants import ConnectionType
 from promptflow.connections import CustomConnection
 from promptflow.contracts.types import PromptTemplate
 from promptflow.tools.common import render_jinja_template, validate_role
@@ -43,6 +44,7 @@ def handle_online_endpoint_error(max_retries: int = 3,
                     if i == max_retries - 1:
                         error_message = f"Exception hit calling Oneline Endpoint: {type(e).__name__}: {str(e)}"
                         print(error_message, file=sys.stderr)
+                        print(f"prakharg logs: error message:{error_message}")
                         raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
                     delay *= exponential_base
@@ -77,15 +79,24 @@ class ConnectionsContainer:
         self.__resource_group_name = None
         self.__workspace_name = None
 
-    def get_azure_pf_client(self,
-                      subscription_id: str,
-                      resource_group_name: str,
-                      workspace_name: str) -> MLClient:
-        from azure.identity import DefaultAzureCredential
-        from promptflow.azure import PFClient
-        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+      
+    def get_azure_connection_names(self,
+                            subscription_id,
+                            resource_group_name,
+                            workspace_name
+                            ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+        result = []
+
         try:
-            return PFClient(
+            from azure.identity import DefaultAzureCredential
+            from promptflow.azure import PFClient
+            credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        except:
+            print("Skipping Azure PFClient.")
+            return result
+                
+        try:
+            azure_pf_client = PFClient(
                 credential=credential,
                 subscription_id=subscription_id,
                 resource_group_name=resource_group_name,
@@ -94,19 +105,11 @@ class ConnectionsContainer:
             message = "Skipping Azure PFClient. To connect, please ensure the following environment variables are set: "
             message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
             print(message)
+            return result
 
-        
-    def get_azure_connection_names(self,
-                            subscription_id,
-                            resource_group_name,
-                            workspace_name
-                            ) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-        from promptflow._sdk._constants import ConnectionType
-        
-        azure_pf_client = self.get_azure_pf_client(subscription_id, resource_group_name, workspace_name)
         connections = azure_pf_client._connections.list()
+        print("prakharg_logs: get_azure_connection_names connections: ", connections)
 
-        result = []
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -125,13 +128,17 @@ class ConnectionsContainer:
         return result
     
     def get_local_connection_names(self) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-        from promptflow import PFClient
-        from promptflow._sdk._constants import ConnectionType
+        
+        result = []
+        try:
+            from promptflow import PFClient
+        except:
+            print("Skipping Local PFClient.")
+            return result
 
         pf = PFClient()
         connections = pf.connections.list()
-
-        result = []
+        
         for c in connections:
             if c.type == ConnectionType.CUSTOM and "model_family" in c.configs:
                 try:
@@ -149,11 +156,45 @@ class ConnectionsContainer:
 
         return result
     
+    def get_endpoint_from_local_connection(self, connection_name) -> Tuple[str, str, str]:
+        from promptflow import PFClient
+        pf = PFClient()
+        
+        connection = pf.connections.get(connection_name, with_secrets=True)
+        model_family = validate_model_family(connection.configs["model_family"])
+
+        return (connection.configs['endpoint_url'],
+            connection.secrets['endpoint_api_key'],
+            model_family)
+   
+    def get_endpoint_from_azure_connection(self,
+                            subscription_id,
+                            resource_group_name,
+                            workspace_name,
+                            connection_name) -> Tuple[str, str, str]:
+        from promptflow.azure import PFClient
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+
+        azure_pf_client = PFClient(
+                credential=credential,
+                subscription_id=subscription_id,
+                resource_group_name=resource_group_name,
+                workspace_name=workspace_name)
+        
+        connection = azure_pf_client._arm_connections.get(connection_name)
+        model_family = validate_model_family(connection.configs["model_family"])
+
+        return (connection.configs['endpoint_url'],
+            connection.secrets['endpoint_api_key'],
+            model_family)
+
     def list_connection_names(self,
         subscription_id: str,
         resource_group_name: str,
         workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
 
+        print(f"prakharg logs: list_connection_names subscription_id: {subscription_id} resource_group_name: {resource_group_name} workspace_name: {workspace_name}")
         azure_connections = self.get_azure_connection_names(subscription_id, resource_group_name, workspace_name)
         local_connections = self.get_local_connection_names()
 
@@ -288,6 +329,9 @@ class EndpointsContainer:
 ENDPOINT_CONTAINER = EndpointsContainer()
 CONNECTION_CONTAINER = ConnectionsContainer()
 
+def parse_endpoint_name(endpoint_name: str) -> Tuple[str, str]:
+        endpoint_connection_details = endpoint_name.split("/")        
+        return (endpoint_connection_details[0], endpoint_connection_details[1])
 
 def list_endpoint_names(
         subscription_id: str,
@@ -304,13 +348,17 @@ def list_deployment_names(
         resource_group_name: str,
         workspace_name: str,
         endpoint_name: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    return ENDPOINT_CONTAINER.list_deployment_names(
-        subscription_id,
-        resource_group_name,
-        workspace_name,
-        endpoint_name
-    )
+    (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_name(endpoint_name)
 
+    if endpoint_connection_type == "onlineEndpoint":
+        return ENDPOINT_CONTAINER.list_deployment_names(
+            subscription_id,
+            resource_group_name,
+            workspace_name,
+            endpoint_connection_name
+        )
+    else:
+        return []
 
 def format_generic_response_payload(output: bytes, response_key: str) -> str:
     response_json = json.loads(output)
@@ -675,22 +723,23 @@ class OpenSourceLLM(ToolProvider):
     def __init__(self, connection: CustomConnection = None):
         super().__init__()
 
-        if connection is not None:
-            (self.endpoint_uri,
-             self.endpoint_key,
-             self.model_family) = get_endpoint_from_connection(connection)
-        else:
-            self.endpoint_key = None
+        # if connection is not None:
+        #     (self.endpoint_uri,
+        #      self.endpoint_key,
+        #      self.model_family) = get_endpoint_from_connection(connection)
+        # else:
+        #     self.endpoint_key = None
 
-    def get_deployment_from_endpoint(self, endpoint_name: str, deployment_name: str = None) -> Tuple[str, str, str]:
+    def get_deployment_from_endpoint(self,
+                                     subscription_id: str,
+                                     resource_group_name: str,
+                                     workspace_name: str,
+                                     endpoint_name: str, 
+                                     deployment_name: str = None) -> Tuple[str, str, str]:
         endpoints_and_deployments = ENDPOINT_CONTAINER.get_endpoints_and_deployments(
-            # subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
-            # resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
-            # workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME")
-            subscription_id="ba7979f7-d040-49c9-af1a-7414402bf622",
-            resource_group_name="gewoods_rg",
-            workspace_name="gewoods_ml"
-        )
+            subscription_id,
+            resource_group_name,
+            workspace_name)
 
         for ep in endpoints_and_deployments:
             if ep.endpoint_name == endpoint_name:
@@ -708,16 +757,27 @@ class OpenSourceLLM(ToolProvider):
 Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
         raise OpenSourceLLMUserError(message=message)
     
-    # def get_endpoint_connection_details(self, endpoint_name: str, deployment_name: str = None):
-    #     endpoint_connection_details = endpoint_name.split("/")
-    #     endpoint_connection_type = endpoint_connection_details[0]
-    #     endpoint_connection_name = endpoint_connection_details[1]
+    def get_endpoint_connection_details(self, 
+                                        subscription_id: str,
+                                        resource_group_name: str,
+                                        workspace_name: str,
+                                        endpoint_name: str, 
+                                        deployment_name: str = None) -> Tuple[str, str, str]:
+        
+        endpoint_connection_details = endpoint_name.split("/")
+        endpoint_connection_type = endpoint_connection_details[0]
+        endpoint_connection_name = endpoint_connection_details[1]
 
-    #     if endpoint_connection_type == "onlineEndpoint":
-    #         return self.get_deployment_from_endpoint(endpoint_name, deployment_name)
-    #     elif endpoint_connection_type == "connection":
-    #         return CONNECTION_CONTAINER.
+        print(f"prakharg logs: endpoint_connection_type: {endpoint_connection_type} endpoint_connection_name: {endpoint_connection_name}")
 
+        if endpoint_connection_type.lower() == "onlineendpoint":
+            return self.get_deployment_from_endpoint(subscription_id, resource_group_name, workspace_name, endpoint_connection_name, deployment_name)
+        elif endpoint_connection_type.lower() == "connection":
+            return CONNECTION_CONTAINER.get_endpoint_from_azure_connection(subscription_id, resource_group_name, workspace_name, endpoint_connection_name)
+        elif endpoint_connection_type.lower() == "localconnection":
+            return CONNECTION_CONTAINER.get_endpoint_from_local_connection(endpoint_connection_name)
+        else:
+            raise OpenSourceLLMUserError(message=f"Invalid endpoint connection type: {endpoint_connection_type}")
 
     @tool
     @handle_online_endpoint_error()
@@ -736,12 +796,17 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
         print(f"prakharg_logs: call endpoint_name: {endpoint_name} deployment_name: {deployment_name}")
 
-
-
-        if endpoint_name is not None:
-            (self.endpoint_uri,
-             self.endpoint_key,
-             self.model_family) = self.get_deployment_from_endpoint(endpoint_name, deployment_name)
+        (self.endpoint_uri,
+            self.endpoint_key,
+            self.model_family) = self.get_endpoint_connection_details(
+                # subscription_id=os.environ["AZUREML_ARM_SUBSCRIPTION"],
+                # resource_group_name=os.environ["AZUREML_ARM_RESOURCEGROUP"],
+                # workspace_name=os.environ["AZUREML_ARM_WORKSPACE_NAME"],
+                subscription_id="ba7979f7-d040-49c9-af1a-7414402bf622",
+                resource_group_name="gewoods_rg",
+                workspace_name="gewoods_ml",
+                endpoint_name=endpoint_name,
+                deployment_name=deployment_name)
 
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
 
