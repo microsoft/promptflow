@@ -35,8 +35,8 @@ from promptflow.exceptions import UserErrorException
 class FlowOperations:
     """FlowOperations."""
 
-    def __init__(self):
-        pass
+    def __init__(self, client):
+        self._client = client
 
     @monitor_operation(activity_name="pf.flows.test", activity_type=ActivityType.PUBLICAPI)
     def test(
@@ -109,9 +109,7 @@ class FlowOperations:
         inputs = inputs or {}
         flow = load_flow(flow)
         flow.context.variant = variant
-        config = kwargs.get("config", None)
-
-        with TestSubmitter(flow=flow, flow_context=flow.context, config=config).init() as submitter:
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, _ = self._is_chat_flow(submitter.dataplane_flow)
             flow_inputs, dependency_nodes_outputs = submitter.resolve_data(
                 node_name=node, inputs=inputs, chat_history_name=chat_history_input_name
@@ -186,8 +184,7 @@ class FlowOperations:
 
         flow = load_flow(flow)
         flow.context.variant = variant
-        config = kwargs.get("config", None)
-        with TestSubmitter(flow=flow, flow_context=flow.context, config=config).init() as submitter:
+        with TestSubmitter(flow=flow, flow_context=flow.context, client=self._client).init() as submitter:
             is_chat_flow, chat_history_input_name, error_msg = self._is_chat_flow(submitter.dataplane_flow)
             if not is_chat_flow:
                 raise UserErrorException(f"Only support chat flow in interactive mode, {error_msg}.")

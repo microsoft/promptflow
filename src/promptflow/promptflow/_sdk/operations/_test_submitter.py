@@ -28,8 +28,7 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, flow_context: FlowContext, config=None):
-        self.flow_context = flow_context
+    def __init__(self, flow: Flow, flow_context: FlowContext, client=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
@@ -37,7 +36,7 @@ class TestSubmitter:
         self._variant = flow_context.variant
         from .._pf_client import PFClient
 
-        self._client = PFClient(config=config)
+        self._client = client if client else PFClient()
 
     @property
     def dataplane_flow(self):
