@@ -293,6 +293,30 @@ class TestCli:
             log_content = f.read()
         assert previous_log_content not in log_content
 
+    def test_pf_flow_test_with_non_english_input_output(self, capsys):
+        question = "什么是 chat gpt"
+        run_pf_command(
+            "flow",
+            "test",
+            "--flow",
+            f"{FLOWS_DIR}/chat_flow",
+            "--inputs",
+            f"question=\"{question}\""
+        )
+        stdout, _ = capsys.readouterr()
+        output_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.output.json"
+        assert output_path.exists()
+        with open(output_path, "r") as f:
+            outputs = json.load(f)
+            assert outputs["answer"] in stdout
+
+        detail_path = Path(FLOWS_DIR) / "chat_flow" / ".promptflow" / "flow.detail.json"
+        assert detail_path.exists()
+        with open(detail_path, "r") as f:
+            detail = json.load(f)
+            assert detail["flow_runs"][0]["inputs"]["question"] == question
+            assert detail["flow_runs"][0]["output"]["answer"] == outputs["answer"]
+
     def test_pf_flow_with_variant(self, capsys):
         with tempfile.TemporaryDirectory() as temp_dir:
             shutil.copytree((Path(FLOWS_DIR) / "web_classification").resolve().as_posix(), temp_dir, dirs_exist_ok=True)
@@ -934,7 +958,7 @@ class TestCli:
                 "flow",
                 "test",
                 "--flow",
-                f"{FLOWS_DIR}/chat_flow_with_multi_output",
+                f"{FLOWS_DIR}/chat_flow_with_multi_output_invalid",
                 "--interactive",
             )
         outerr = capsys.readouterr()

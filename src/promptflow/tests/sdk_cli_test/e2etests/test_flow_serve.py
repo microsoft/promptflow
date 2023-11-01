@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import pytest
 
@@ -239,3 +240,33 @@ def test_stream_python_nonstream_tools(
     else:
         result = response.json
         print(result)
+
+
+@pytest.mark.usefixtures("serving_client_image_python_flow", "setup_local_connection")
+@pytest.mark.e2etest
+def test_image_flow(serving_client_image_python_flow, sample_image):
+    response = serving_client_image_python_flow.post("/score", data=json.dumps({"image": sample_image}))
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert {"output"} == response.keys()
+    key_regex = re.compile(r"data:image/(.*);base64")
+    assert re.match(key_regex, list(response["output"].keys())[0])
+
+
+@pytest.mark.usefixtures("serving_client_composite_image_flow", "setup_local_connection")
+@pytest.mark.e2etest
+def test_list_image_flow(serving_client_composite_image_flow, sample_image):
+    image_dict = {"data:image/jpg;base64": sample_image}
+    response = serving_client_composite_image_flow.post(
+        "/score", data=json.dumps({"image_list": [image_dict], "image_dict": {"my_image": image_dict}})
+    )
+    assert (
+        response.status_code == 200
+    ), f"Response code indicates error {response.status_code} - {response.data.decode()}"
+    response = json.loads(response.data.decode())
+    assert {"output"} == response.keys()
+    assert (
+        "data:image/jpg;base64" in response["output"][0]
+    ), f"data:image/jpg;base64 not in output list {response['output']}"

@@ -90,3 +90,9 @@ class RunOperationParameterError(PromptflowException):
     """Exception raised when list run failed."""
 
     pass
+
+
+class FlowOperationError(PromptflowException):
+    """Exception raised when flow operation failed."""
+
+    pass

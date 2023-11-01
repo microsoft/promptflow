@@ -1,5 +1,5 @@
 # Flow with custom_llm tool
-This is a flow demonstrating how to use a `custom_llm` tool, `custom_llm` tool allows users to connect to a customized large language model which is fine-tuned by tool developer. 
+This is a flow demonstrating how to use a `custom_llm` tool, which enables users to seamlessly connect to a large language model with prompt tuning experience using a `PromptTemplate`.
 
 Tools used in this flow:
 - `custom_llm` Tool
