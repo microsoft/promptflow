@@ -6,11 +6,13 @@ import importlib
 import inspect
 import logging
 import re
+from datetime import datetime
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
+from promptflow._utils.logger_utils import logger
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -282,6 +284,10 @@ def load_function_from_function_path(func_path: str):
             f"Failed to parse function from function path: '{func_path}'. Expected format: format 'my_module.my_func'. "
             f"Detailed error: {e}"
         )
+
+
+def log_with_timestamp(message: str):
+    logger.debug(f"{datetime.now()} {message}")
 
 
 class DynamicListError(UserErrorException):
