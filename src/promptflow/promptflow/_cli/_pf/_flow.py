@@ -7,7 +7,6 @@ import importlib
 import json
 import logging
 import os
-import sys
 import tempfile
 import webbrowser
 from pathlib import Path
@@ -40,7 +39,6 @@ from promptflow._cli._utils import _copy_to_flow, activate_action, confirm, inje
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME, ConnectionProvider
 from promptflow._sdk._pf_client import PFClient
 from promptflow._sdk._utils import dump_flow_result
-from promptflow.exceptions import UserErrorException
 
 DEFAULT_CONNECTION = "open_ai_connection"
 DEFAULT_DEPLOYMENT = "gpt-35-turbo"
