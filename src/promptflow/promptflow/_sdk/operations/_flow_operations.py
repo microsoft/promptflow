@@ -24,6 +24,7 @@ from promptflow._sdk._utils import (
     generate_flow_tools_json,
     generate_random_string,
     parse_variant,
+    dump_flow_result,
 )
 from promptflow._sdk.entities._validation import ValidationResult
 from promptflow._sdk.operations._run_submitter import remove_additional_includes, variant_overwrite_context
@@ -72,6 +73,21 @@ class FlowOperations:
         result = self._test(
             flow=flow, inputs=inputs, variant=variant, node=node, environment_variables=environment_variables, **kwargs
         )
+
+        dump_test_result = kwargs.get("dump_test_result", False)
+        if dump_test_result:
+            # Dump flow/node test info
+            flow = load_flow(flow)
+            if node:
+                dump_flow_result(flow_folder=flow.code, node_result=result, prefix=f"flow-{node}.node")
+            else:
+                if variant:
+                    tuning_node, node_variant = parse_variant(variant)
+                    prefix = f"flow-{tuning_node}-{node_variant}"
+                else:
+                    prefix = "flow"
+                dump_flow_result(flow_folder=flow.code, flow_result=result, prefix=prefix)
+
         TestSubmitter._raise_error_when_test_failed(result, show_trace=node is not None)
         return result.output
 
