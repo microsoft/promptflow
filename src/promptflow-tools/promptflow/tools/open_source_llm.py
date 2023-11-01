@@ -245,7 +245,7 @@ class EndpointsContainer:
                                       subscription_id: str,
                                       resource_group_name: str,
                                       workspace_name: str) -> List[Endpoint]:
- 
+
         if (self.__endpoints_and_deployments is not None
                 and self.__subscription_id == subscription_id
                 and self.__resource_group_name == resource_group_name
@@ -255,7 +255,7 @@ class EndpointsContainer:
         ml_client = self.get_ml_client(subscription_id, resource_group_name, workspace_name)
         self.__subscription_id = subscription_id
         self.__resource_group_name = resource_group_name
-        self.__workspace_name = workspace_name        
+        self.__workspace_name = workspace_name
 
         list_of_endpoints: List[Endpoint] = []
 
@@ -289,6 +289,12 @@ class EndpointsContainer:
         self.__endpoints_and_deployments = list_of_endpoints
         return self.__endpoints_and_deployments
 
+    def get_endpoint_url(self, endpoint_name, subscription_id, resource_group_name, workspace_name):
+        return f"https://ml.azure.com/endpoints/realtime/{endpoint_name}" \
+            + f"/detail?wsid=/subscriptions/{subscription_id}" \
+            + f"/resourceGroups/{resource_group_name}" \
+            + f"/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}"
+
     def list_endpoint_names(self,
                             subscription_id,
                             resource_group_name,
@@ -305,7 +311,7 @@ class EndpointsContainer:
             result.append({
                 "value": f"onlineEndpoint/{e.endpoint_name}",
                 "display_value": f"[Online] {e.endpoint_name}",
-                "hyperlink": f"https://ml.azure.com/endpoints/realtime/{e.endpoint_name}/detail?wsid=/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}/providers/Microsoft.MachineLearningServices/workspaces/{workspace_name}",
+                "hyperlink": self.get_endpoint_url(e.endpoint_name, subscription_id, resource_group_name, workspace_name),
                 "description": f"Online Endpoint:  {e.endpoint_name}",
             })
         return result
@@ -350,7 +356,7 @@ def parse_connection_type(connection_name: str) -> Tuple[str, str]:
 def list_connection_names(subscription_id: str,
                           resource_group_name: str,
                           workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    online_endpoints =  ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
+    online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
     custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id,
                                                                                   resource_group_name,
                                                                                   workspace_name)
@@ -362,7 +368,7 @@ def list_deployment_names(subscription_id: str,
                           resource_group_name: str,
                           workspace_name: str,
                           connection: str = None) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-    
+
     if connection is None or connection.strip() == "" or "/" not in connection:
         return []
 
@@ -752,7 +758,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                                workspace_name: str,
                                connection: str,
                                deployment_name: str = None) -> Tuple[str, str, str]:
-        
+
         (connection_type, connection_name) = parse_connection_type(connection)
 
         print(f"connection_type: {connection_type} connection_name: {connection_name}")
@@ -825,4 +831,3 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         )
 
         return llm(prompt)
-    
