@@ -1,0 +1,54 @@
+my_tool_package.tools.mlindex_tool.my_tool:
+  function: my_tool
+  inputs:
+    index_type:
+      type:
+      - string
+      enum:
+        - Azure Cognitive Search
+        - FAISS
+    index:
+      type:
+      - MLIndex
+      dynamic_list:
+        func_path: my_tool_package.tools.mlindex_tool.list_indexes
+        func_kwargs: 
+        - name: keyword
+          type: 
+          - string
+          optional: true
+          reference: ${inputs.index_name_keyword}
+        - name: index_type
+          type: 
+          - string
+          optional: true
+          reference: ${inputs.index_type}
+      allow_manual_entry: false
+      is_multi_select: false
+    index_name_keyword:
+      type:
+      - string
+    # mutate below tool input if user selects 'Azure Cognitive Search' index type.
+    acs_param:
+      type:
+      - string
+      enabled_by: index_type
+      enabled_by_value: [Azure Cognitive Search]
+    # mutate below tool input if user selects 'FAISS' index type.
+    faiss_param:
+      type:
+      - string
+      enabled_by: index_type
+      enabled_by_value: [FAISS]
+    # other params
+    vector:
+      type:
+      - list
+    top_k:
+      default: '3'
+      type:
+      - int
+  module: my_tool_package.tools.mlindex_tool
+  name: MLIndex Tool
+  description: This is my tool combined dynamic list and enabled by
+  type: python

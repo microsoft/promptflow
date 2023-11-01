@@ -1,10 +1,10 @@
 from setuptools import find_packages, setup
 
-PACKAGE_NAME = "my-tools-package"
+PACKAGE_NAME = "chjinche-test-tools-package"
 
 setup(
     name=PACKAGE_NAME,
-    version="0.0.8",
+    version="0.0.8.2023110106",
     description="This is my tools package",
     packages=find_packages(),
     entry_points={
