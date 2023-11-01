@@ -8,3 +8,4 @@ pypandoc # for markdown reader
 pypandoc_binary # pypandoc pandoc backend
 panflute # for pandoc filters
 jinja2 # for readme generations
+tornado>=6.3.3 # not directly required, pinned by Snyk to avoid a vulnerability
