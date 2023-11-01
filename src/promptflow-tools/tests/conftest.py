@@ -69,7 +69,7 @@ def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
 
 @pytest.fixture
 def gpt2_custom_connection():
-    # temporary workaround since 
+    # temporary workaround since
     # ConnectionManager.get() always returns 'default_connection' as connection name
     connection_name = "gpt2_connection"
     return (connection_name, ConnectionManager().get(connection_name))
@@ -77,7 +77,7 @@ def gpt2_custom_connection():
 
 @pytest.fixture
 def llama_chat_custom_connection():
-    # temporary workaround since 
+    # temporary workaround since
     # ConnectionManager.get() always returns 'default_connection' as connection name
     connection_name = "llama_chat_connection"
     return (connection_name, ConnectionManager().get("llama_chat_connection"))

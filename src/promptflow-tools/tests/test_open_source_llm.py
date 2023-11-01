@@ -139,7 +139,7 @@ user:
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection)
+        tmp = copy.deepcopy(gpt2_custom_connection[1])
         del tmp.configs['endpoint_url']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
@@ -150,7 +150,7 @@ Required keys are: endpoint_url,model_family."""
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection)
+        tmp = copy.deepcopy(gpt2_custom_connection[1])
         del tmp.secrets['endpoint_api_key']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
@@ -163,7 +163,7 @@ Required keys are: endpoint_api_key.""")
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection)
+        tmp = copy.deepcopy(gpt2_custom_connection[1])
         del tmp.configs['model_family']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
