@@ -350,7 +350,10 @@ user:
         assert len(deployments) == 0
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_happy_path(self):
+    def test_open_source_llm_dynamic_list_happy_path(self, endpoints_provider):
+        # workaround to set env variables from service credential
+        print(endpoints_provider)
+        
         endpoints = list_connection_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
