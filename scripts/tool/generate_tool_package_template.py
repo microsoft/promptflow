@@ -2,7 +2,6 @@ import argparse
 import os
 import re
 from jinja2 import Environment, FileSystemLoader
-from pathlib import Path
 
 
 def make_pythonic_variable_name(input_string):
