@@ -10,6 +10,7 @@ from pathlib import Path
 from types import GeneratorType
 from typing import Any, Mapping
 
+from promptflow._internal import ConnectionManager
 from promptflow._sdk._constants import LOGGER_NAME, PROMPT_FLOW_DIR_NAME
 from promptflow._sdk._utils import dump_flow_result, parse_variant
 from promptflow._sdk.entities._flow import Flow
@@ -27,14 +28,14 @@ logger = logging.getLogger(LOGGER_NAME)
 
 
 class TestSubmitter:
-    def __init__(self, flow: Flow, variant=None, config=None):
+    def __init__(self, flow: Flow, variant=None, client=None):
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
         self._variant = variant
         from .._pf_client import PFClient
 
-        self._client = PFClient(config=config)
+        self._client = client if client else PFClient()
 
     @property
     def dataplane_flow(self):
@@ -144,22 +145,29 @@ class TestSubmitter:
         stream_log: bool = True,
         allow_generator_output: bool = False,
         connections: dict = None,  # executable connections dict, to avoid http call each time in chat mode
+        stream_output: bool = True,
     ):
         from promptflow.executor.flow_executor import LINE_NUMBER_KEY, FlowExecutor
 
         if not connections:
             connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+        credential_list = ConnectionManager(connections).get_secret_list()
+
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         environment_variables = environment_variables if environment_variables else {}
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log", stream=stream_log):
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / "flow.log",
+            stream=stream_log,
+            credential_list=credential_list,
+        ):
             storage = DefaultRunStorage(base_dir=self.flow.code, sub_dir=Path(".promptflow/intermediate"))
             flow_executor = FlowExecutor.create(
                 self.flow.path, connections, self.flow.code, storage=storage, raise_ex=False
             )
-            flow_executor.enable_streaming_for_llm_flow(lambda: True)
+            flow_executor.enable_streaming_for_llm_flow(lambda: stream_output)
             line_result = flow_executor.exec_line(inputs, index=0, allow_generator_output=allow_generator_output)
             line_result.output = persist_multimedia_data(
                 line_result.output, base_dir=self.flow.code, sub_dir=Path(".promptflow/output")
@@ -190,11 +198,17 @@ class TestSubmitter:
         from promptflow.executor import FlowExecutor
 
         connections = SubmitterHelper.resolve_connections(flow=self.flow, client=self._client)
+        credential_list = ConnectionManager(connections).get_secret_list()
+
         # resolve environment variables
         SubmitterHelper.resolve_environment_variables(environment_variables=environment_variables, client=self._client)
         SubmitterHelper.init_env(environment_variables=environment_variables)
 
-        with LoggerOperations(file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log", stream=stream):
+        with LoggerOperations(
+            file_path=self.flow.code / PROMPT_FLOW_DIR_NAME / f"{node_name}.node.log",
+            stream=stream,
+            credential_list=credential_list,
+        ):
             result = FlowExecutor.load_and_exec_node(
                 self.flow.path,
                 node_name,
@@ -322,6 +336,7 @@ class TestSubmitter:
                 stream_log=False,
                 allow_generator_output=True,
                 connections=connections,
+                stream_output=True,
             )
             self._raise_error_when_test_failed(flow_result, show_trace=True)
             show_node_log_and_output(flow_result.node_run_infos, show_step_output)

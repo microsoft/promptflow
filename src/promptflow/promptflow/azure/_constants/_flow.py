@@ -16,11 +16,12 @@ class FlowJobType:
 
 # Use this storage since it's the storage used by notebook
 DEFAULT_STORAGE = "workspaceworkingdirectory"
-PROMPTFLOW_FILE_SHARE_DIR = "Promptflows"
+PROMPTFLOW_FILE_SHARE_DIR = "promptflow"
 
 CLOUD_RUNS_PAGE_SIZE = 25  # align with UX
 
 SESSION_CREATION_TIMEOUT_SECONDS = 10 * 60  # 10 minutes
+SESSION_CREATION_TIMEOUT_ENV_VAR = "PROMPTFLOW_SESSION_CREATION_TIMEOUT_SECONDS"
 PYTHON_REQUIREMENTS_TXT = "python_requirements_txt"
 BASE_IMAGE = "image"
 

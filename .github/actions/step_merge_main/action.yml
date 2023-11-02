@@ -1,0 +1,11 @@
+name: step_merge_main
+runs:
+  using: composite
+  steps:
+  - name: Merge main to current branch
+    working-directory: ${{ github.workspace }}
+    shell: pwsh
+    run: |
+      git config --global user.name 'prompt flow fundamental'
+      git config --global user.email 'aml-pt-eng@microsoft.com'
+      git pull --no-ff origin main

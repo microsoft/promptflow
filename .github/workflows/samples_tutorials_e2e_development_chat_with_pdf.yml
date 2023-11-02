@@ -12,6 +12,9 @@ on:
     paths: [ examples/**, .github/workflows/samples_tutorials_e2e_development_chat_with_pdf.yml ]
   workflow_dispatch:
 
+env:
+  IS_IN_CI_PIPELINE: "true"
+
 jobs:
   samples_readme_ci:
     runs-on: ubuntu-latest

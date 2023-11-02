@@ -81,6 +81,7 @@ jobs:
         gci env:* | sort-object name
         az account show
         pip install langchain
+        pip install numexpr
         python scripts/building/run_coverage_tests.py `
           -p ${{ github.workspace }}/src/promptflow/promptflow `
           -t ${{ github.workspace }}/src/promptflow/tests/executor/e2etests ${{ github.workspace }}/src/promptflow/tests/executor/unittests `

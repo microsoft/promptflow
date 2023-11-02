@@ -60,7 +60,8 @@ class TestRunInfo:
                 properties=json.dumps({}),
             ).dump()
         runs = RunInfo.list(max_results=3, list_view_type=ListViewType.ALL)
-        assert runs[0].created_on > runs[1].created_on > runs[2].created_on
+        # in very edge case, the created_on can be same, so use ">=" here
+        assert runs[0].created_on >= runs[1].created_on >= runs[2].created_on
 
     def test_archive(self, run_name: str) -> None:
         run_info = RunInfo.get(run_name)
