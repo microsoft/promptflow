@@ -178,7 +178,8 @@ class TestCli:
         assert outputs["output"][0] == local_aoai_connection.api_base
 
     def test_connection_overwrite(self, local_alt_aoai_connection):
-        with pytest.raises(Exception) as e:
+        # CLi command will fail with SystemExit
+        with pytest.raises(SystemExit):
             run_pf_command(
                 "run",
                 "create",
@@ -189,7 +190,6 @@ class TestCli:
                 "--connection",
                 "classify_with_llm.connection=not_exist",
             )
-        assert "Connection 'not_exist' required" in str(e.value)
 
         f = io.StringIO()
         with contextlib.redirect_stdout(f):

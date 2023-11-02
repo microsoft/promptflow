@@ -21,6 +21,7 @@ from promptflow._sdk._constants import (
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
 from .._constants import DAG_FILE_NAME
+from ._connection import _Connection
 from ._validation import SchemaValidatableMixin
 
 logger = logging.getLogger(LOGGER_NAME)
@@ -41,6 +42,54 @@ class FlowBase(abc.ABC):
         return cls, "flow"
 
 
+class FlowContext:
+    """Flow context entity. the settings on this context will be applied to the flow when executing.
+
+    :param connections: Connections for the flow.
+    :type connections: Optional[Dict[str, Dict]]
+    :param variant: Variant of the flow.
+    :type variant: Optional[str]
+    :param environment_variables: Environment variables for the flow.
+    :type environment_variables: Optional[Dict[str, str]]
+    :param variant: Overrides of the flow.
+    :type variant: Optional[Dict[str, Dict]]
+    :param streaming: Whether the flow's output need to be return in streaming mode.
+    :type streaming: Optional[bool]
+    """
+
+    def __init__(
+        self,
+        *,
+        connections=None,
+        variant=None,
+        environment_variables=None,
+        overrides=None,
+        streaming=None,
+    ):
+        self.connections, self.connection_objs = connections or {}, {}
+        self.variant = variant
+        self.environment_variables = environment_variables or {}
+        self.overrides = overrides or {}
+        self.streaming = streaming
+        # self.connection_provider = connection_provider
+
+    def resolve_connections(self):
+        # resolve connections and create placeholder for connection objects
+        for _, v in self.connections.items():
+            if isinstance(v, dict):
+                for k, conn in v.items():
+                    if isinstance(conn, _Connection):
+                        name = self._get_connection_obj_name(conn)
+                        v[k] = name
+                        self.connection_objs[name] = conn
+
+    @classmethod
+    def _get_connection_obj_name(cls, connection):
+        # create a unique connection name for connection obj
+        connection_name = f"connection_{id(connection)}"
+        return connection_name
+
+
 class Flow(FlowBase):
     """This class is used to represent a flow."""
 
@@ -52,6 +101,8 @@ class Flow(FlowBase):
         self._code = Path(code)
         path = kwargs.pop("path", None)
         self._path = Path(path) if path else None
+        self._context = FlowContext()
+        self.variant = kwargs.pop("variant", None) or {}
         super().__init__(**kwargs)
 
     @property
@@ -71,6 +122,16 @@ class Flow(FlowBase):
                 target=ErrorTarget.CONTROL_PLANE_SDK,
             )
         return flow_file
+
+    @property
+    def context(self) -> FlowContext:
+        return self._context
+
+    @context.setter
+    def context(self, val):
+        if not isinstance(val, FlowContext):
+            raise UserErrorException("context must be a FlowContext object, got {type(val)} instead.")
+        self._context = val
 
     @classmethod
     def load(
@@ -190,3 +251,25 @@ class ProtectedFlow(Flow, SchemaValidatableMixin):
         return {k: v.type.value for k, v in self._executable.outputs.items()}
 
     # endregion
+
+    def __call__(self, *args, **kwargs):
+        """Calling flow as a function, the inputs should be provided with key word arguments.
+        Returns the output of the flow.
+        The function call throws UserErrorException: if the flow is not valid or the inputs are not valid.
+        SystemErrorException: if the flow execution failed due to unexpected executor error.
+
+        :param args: positional arguments are not supported.
+        :param kwargs: flow inputs with key word arguments.
+        :return:
+        """
+        from promptflow._sdk.operations._test_submitter import TestSubmitter
+
+        if args:
+            raise UserErrorException("Flow can only be called with keyword arguments.")
+        with TestSubmitter(flow=self, flow_context=self.context).init() as submitter:
+            # validate inputs
+            flow_inputs, _ = submitter.resolve_data(inputs=kwargs)
+            result = submitter.exec_with_inputs(
+                inputs=flow_inputs,
+            )
+        return result.output
