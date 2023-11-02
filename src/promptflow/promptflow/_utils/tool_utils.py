@@ -232,10 +232,6 @@ def validate_dynamic_list_func_response_type(response: Any, f: str):
                 raise ListFunctionResponseError(f"{f} response dict key must be a string. {key} is not a string.")
             if not is_json_serializable(value):
                 raise ListFunctionResponseError(f"{f} response dict value {value} is not json serializable.")
-            if not isinstance(value, (str, int, float, list, Dict)):
-                raise ListFunctionResponseError(
-                    f"{f} response dict value must be a string, int, float, list or dict. {value} is not supported."
-                )
 
 
 def append_workspace_triple_to_func_input_params(
