@@ -704,15 +704,94 @@ class LlamaContentFormatter(ContentFormatterBase):
             print(error_message, file=sys.stderr)
             raise OpenSourceLLMOnlineEndpointError(message=error_message)
 
+class ServerlessLlamaContentFormatter(ContentFormatterBase):
+    """Content formatter for LLaMa"""
+
+    def __init__(self, api: API, chat_history: Optional[str] = ""):
+        super().__init__()
+        self.api = api
+        self.chat_history = chat_history
+        self.model_id = "llama-2-7b-hf"
+
+    @staticmethod
+    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
+        # LLaMa only supports below roles.
+        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
+        chunks = re.split(separator, chat_str)
+
+        # remove any empty chunks
+        chunks = [c.strip() for c in chunks if c.strip()]
+
+        chat_list = []
+        for index in range(0, len(chunks), 2):
+            role = chunks[index].lower()
+
+            # Check if prompt follows chat api message format and has valid role.
+            try:
+                validate_role(role, VALID_LLAMA_ROLES)
+            except ChatAPIInvalidRole as e:
+                raise OpenSourceLLMUserError(message=e.message)
+
+            if len(chunks) <= index + 1:
+                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
+                raise OpenSourceLLMUserError(message=message)
+
+            chat_list.append({
+                "role": role,
+                "content": chunks[index+1]
+            })
+
+        return chat_list
+
+    def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
+        """Formats the request according the the chosen api"""
+        # Modify max_tokens key for serverless
+        model_kwargs["max_tokens"] = model_kwargs["max_new_tokens"]
+        if self.api == API.CHAT:
+            messages = ServerlessLlamaContentFormatter.parse_chat(self.chat_history)
+            base_body =  {
+                "model": self.model_id,
+                "messages": messages,
+                "n": 1,
+            }
+            base_body.update(model_kwargs)
+
+        else:
+            prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
+            base_body =  {
+                "model": self.model_id,
+                "prompt": prompt_value,
+                "n": 1,
+            }
+            base_body.update(model_kwargs)
+        
+        return json.dumps(base_body)
+
+    def format_response_payload(self, output: bytes) -> str:
+        """Formats response"""
+        response_json = json.loads(output)
+        print(f"response json {response_json}")
+        if self.api == API.CHAT and "choices" in response_json:
+            return response_json["choices"][0]["message"]["content"]
+        elif self.api == API.COMPLETION and "choices" in response_json:
+            return response_json["choices"][0]["text"]
+        else:
+            error_message = f"Unexpected response format. Response: {response_json}"
+            print(error_message, file=sys.stderr)
+            raise OpenSourceLLMOnlineEndpointError(message=error_message)
+
 
 class ContentFormatterFactory:
     """Factory class for supported models"""
 
     def get_content_formatter(
-        model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = []
+        model_family: ModelFamily, api: API, chat_history: Optional[List[Dict]] = [], endpoint_url: Optional[str] = ""
     ) -> ContentFormatterBase:
         if model_family == ModelFamily.LLAMA:
-            return LlamaContentFormatter(chat_history=chat_history, api=api)
+            if "serverless.ml.azure.com" in endpoint_url:
+                return ServerlessLlamaContentFormatter(chat_history=chat_history, api=api)
+            else:
+                return LlamaContentFormatter(chat_history=chat_history, api=api)
         elif model_family == ModelFamily.DOLLY:
             return DollyContentFormatter()
         elif model_family == ModelFamily.GPT2:
@@ -912,8 +991,15 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         content_formatter = ContentFormatterFactory.get_content_formatter(
             model_family=self.model_family,
             api=api,
-            chat_history=prompt
+            chat_history=prompt,
+            endpoint_url=self.endpoint_uri
         )
+
+        if isinstance(content_formatter, ServerlessLlamaContentFormatter):
+            if api == API.CHAT:
+                self.endpoint_uri += "/v1/chat/completions"
+            else:
+                self.endpoint_uri += "/v1/completions"
 
         llm = AzureMLOnlineEndpoint(
             endpoint_url=self.endpoint_uri,
