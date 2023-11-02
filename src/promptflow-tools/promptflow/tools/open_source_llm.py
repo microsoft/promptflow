@@ -570,6 +570,36 @@ class ContentFormatterBase:
             r'\\\1',
             prompt)
 
+    @staticmethod
+    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
+        # LLaMa only supports below roles.
+        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
+        chunks = re.split(separator, chat_str)
+
+        # remove any empty chunks
+        chunks = [c.strip() for c in chunks if c.strip()]
+
+        chat_list = []
+        for index in range(0, len(chunks), 2):
+            role = chunks[index].lower()
+
+            # Check if prompt follows chat api message format and has valid role.
+            try:
+                validate_role(role, VALID_LLAMA_ROLES)
+            except ChatAPIInvalidRole as e:
+                raise OpenSourceLLMUserError(message=e.message)
+
+            if len(chunks) <= index + 1:
+                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
+                raise OpenSourceLLMUserError(message=message)
+
+            chat_list.append({
+                "role": role,
+                "content": chunks[index+1]
+            })
+
+        return chat_list
+
     @abstractmethod
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request body according to the input schema of
@@ -641,43 +671,13 @@ class LlamaContentFormatter(ContentFormatterBase):
         self.api = api
         self.chat_history = chat_history
 
-    @staticmethod
-    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
-        # LLaMa only supports below roles.
-        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
-        chunks = re.split(separator, chat_str)
-
-        # remove any empty chunks
-        chunks = [c.strip() for c in chunks if c.strip()]
-
-        chat_list = []
-        for index in range(0, len(chunks), 2):
-            role = chunks[index].lower()
-
-            # Check if prompt follows chat api message format and has valid role.
-            try:
-                validate_role(role, VALID_LLAMA_ROLES)
-            except ChatAPIInvalidRole as e:
-                raise OpenSourceLLMUserError(message=e.message)
-
-            if len(chunks) <= index + 1:
-                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
-                raise OpenSourceLLMUserError(message=message)
-
-            chat_list.append({
-                "role": role,
-                "content": chunks[index+1]
-            })
-
-        return chat_list
-
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request according the the chosen api"""
         if "do_sample" not in model_kwargs:
             model_kwargs["do_sample"] = True
 
         if self.api == API.CHAT:
-            prompt_value = LlamaContentFormatter.parse_chat(self.chat_history)
+            prompt_value = ContentFormatterBase.parse_chat(self.chat_history)
         else:
             prompt_value = [ContentFormatterBase.escape_special_characters(prompt)]
 
@@ -713,42 +713,12 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
         self.chat_history = chat_history
         self.model_id = "llama-2-7b-hf"
 
-    @staticmethod
-    def parse_chat(chat_str: str) -> List[Dict[str, str]]:
-        # LLaMa only supports below roles.
-        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
-        chunks = re.split(separator, chat_str)
-
-        # remove any empty chunks
-        chunks = [c.strip() for c in chunks if c.strip()]
-
-        chat_list = []
-        for index in range(0, len(chunks), 2):
-            role = chunks[index].lower()
-
-            # Check if prompt follows chat api message format and has valid role.
-            try:
-                validate_role(role, VALID_LLAMA_ROLES)
-            except ChatAPIInvalidRole as e:
-                raise OpenSourceLLMUserError(message=e.message)
-
-            if len(chunks) <= index + 1:
-                message = "Unexpected chat format. Please ensure the query matches the chat format of the model used."
-                raise OpenSourceLLMUserError(message=message)
-
-            chat_list.append({
-                "role": role,
-                "content": chunks[index+1]
-            })
-
-        return chat_list
-
     def format_request_payload(self, prompt: str, model_kwargs: Dict) -> str:
         """Formats the request according the the chosen api"""
         # Modify max_tokens key for serverless
         model_kwargs["max_tokens"] = model_kwargs["max_new_tokens"]
         if self.api == API.CHAT:
-            messages = ServerlessLlamaContentFormatter.parse_chat(self.chat_history)
+            messages = ContentFormatterBase.parse_chat(self.chat_history)
             base_body =  {
                 "model": self.model_id,
                 "messages": messages,
@@ -919,11 +889,24 @@ class OpenSourceLLM(ToolProvider):
 Please ensure endpoint name and deployment names are correct, and the deployment was successfull."""
         raise OpenSourceLLMUserError(message=message)
 
+    def sanitize_endpoint_url(self,
+                              endpoint_url: str,
+                              api_type: API):
+        if "serverless.ml.azure.com" in endpoint_url:
+            if api_type == API.CHAT:
+                if not endpoint_url.endswith("/v1/chat/completions"):
+                    return endpoint_url + "/v1/chat/completions"
+            else:
+                if not endpoint_url.endswith("/v1/completions"):
+                    return endpoint_url + "/v1/completions"
+        return endpoint_url
+
     def get_connection_details(self,
                                subscription_id: str,
                                resource_group_name: str,
                                workspace_name: str,
                                connection: str,
+                               api_type: API,
                                deployment_name: str = None) -> Tuple[str, str, str]:
 
         (connection_type, connection_name) = parse_connection_type(connection)
@@ -931,25 +914,26 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         print(f"connection_type: {connection_type} connection_name: {connection_name}")
 
         if connection_type.lower() == "serverlessendpoint":
-            return SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(subscription_id,
+            (endpoint_url, endpoint_key, model_family) = SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(subscription_id,
                                                                              resource_group_name,
                                                                              workspace_name,
                                                                              connection_name)
         elif connection_type.lower() == "onlineendpoint":
-            return self.get_deployment_from_endpoint(subscription_id,
+            (endpoint_url, endpoint_key, model_family) = self.get_deployment_from_endpoint(subscription_id,
                                                      resource_group_name,
                                                      workspace_name,
                                                      connection_name,
                                                      deployment_name)
         elif connection_type.lower() == "connection":
-            return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(subscription_id,
+            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_azure_custom_connection(subscription_id,
                                                                                          resource_group_name,
                                                                                          workspace_name,
                                                                                          connection_name)
         elif connection_type.lower() == "localconnection":
-            return CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(connection_name)
+            (endpoint_url, endpoint_key, model_family) = CUSTOM_CONNECTION_CONTAINER.get_endpoint_from_local_custom_connection(connection_name)
         else:
             raise OpenSourceLLMUserError(message=f"Invalid connection type: {connection_type}")
+        return (self.sanitize_endpoint_url(endpoint_url, api_type), endpoint_key, model_family)
 
     @tool
     @handle_online_endpoint_error()
@@ -979,6 +963,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
                 resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP", None),
                 workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME", None),
                 connection=connection,
+                api_type=api,
                 deployment_name=deployment_name)
 
         prompt = render_jinja_template(prompt, trim_blocks=True, keep_trailing_newline=True, **kwargs)
@@ -993,12 +978,6 @@ Please ensure endpoint name and deployment names are correct, and the deployment
             chat_history=prompt,
             endpoint_url=self.endpoint_uri
         )
-
-        if isinstance(content_formatter, ServerlessLlamaContentFormatter):
-            if api == API.CHAT:
-                self.endpoint_uri += "/v1/chat/completions"
-            else:
-                self.endpoint_uri += "/v1/completions"
 
         llm = AzureMLOnlineEndpoint(
             endpoint_url=self.endpoint_uri,
