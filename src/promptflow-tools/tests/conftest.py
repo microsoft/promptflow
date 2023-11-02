@@ -69,7 +69,7 @@ def verify_oss_llm_custom_connection(connection: CustomConnection) -> bool:
 
 @pytest.fixture
 def gpt2_custom_connection():
-    return ConnectionManager().get("gpt2_connection")    
+    return ConnectionManager().get("gpt2_connection")
 
 
 @pytest.fixture

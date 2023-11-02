@@ -4,7 +4,6 @@ import pytest
 from typing import List, Dict
 
 from promptflow.tools.exception import (
-    OpenSourceLLMOnlineEndpointError,
     OpenSourceLLMUserError,
     OpenSourceLLMKeyValidationError
 )

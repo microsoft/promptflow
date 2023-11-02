@@ -27,9 +27,6 @@ VALID_LLAMA_ROLES = {"system", "user", "assistant"}
 REQUIRED_CONFIG_KEYS = ["endpoint_url", "model_family"]
 REQUIRED_SECRET_KEYS = ["endpoint_api_key"]
 ENDPOINT_REQUIRED_ENV_VARS = ["AZUREML_ARM_SUBSCRIPTION", "AZUREML_ARM_RESOURCEGROUP", "AZUREML_ARM_WORKSPACE_NAME"]
-os.environ["AZUREML_ARM_SUBSCRIPTION"]="ba7979f7-d040-49c9-af1a-7414402bf622"
-os.environ["AZUREML_ARM_RESOURCEGROUP"]="gewoods_rg"
-os.environ["AZUREML_ARM_WORKSPACE_NAME"]="gewoods_ml"
 
 
 def handle_online_endpoint_error(max_retries: int = 3,
