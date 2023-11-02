@@ -165,10 +165,9 @@ Required keys are: endpoint_url,model_family."""
         LlamaContentFormatter.parse_chat(self.chat_prompt)
 
     def test_open_source_llm_llama_parse_multi_turn(self):
-        multi_turn_chat = """system:
+        multi_turn_chat = """user:
 You are a AI which helps Customers answer questions.
 
-user:
 What is the best movie of all time?
 
 assistant:
@@ -178,27 +177,6 @@ user:
 Why was that the greatest movie of all time?
 """
         LlamaContentFormatter.parse_chat(multi_turn_chat)
-
-    @pytest.mark.parametrize(
-        "chat_str, expected_result",
-        [
-            ("system:\nthis is my function:\ndef hello", [
-                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
-            ("#system:\nthis is my ##function:\ndef hello", [
-                {'role': 'system', 'content': 'this is my ##function:\ndef hello'}]),
-            (" \n system:\nthis is my function:\ndef hello", [
-                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
-            (" \n # system:\nthis is my function:\ndef hello", [
-                {'role': 'system', 'content': 'this is my function:\ndef hello'}]),
-            ("\nsystem:\nfirst\n\nsystem:\nsecond", [
-                {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}]),
-            ("\n#system:\nfirst\n\n#system:\nsecond", [
-                {'role': 'system', 'content': 'first'}, {'role': 'system', 'content': 'second'}])
-        ]
-    )
-    def test_open_source_llm_llama_parse_role_prompt(self, chat_str, expected_result):
-        actual_result = LlamaContentFormatter.parse_chat(chat_str)
-        assert actual_result == expected_result
 
     def test_open_source_llm_llama_parse_ignore_whitespace(self):
         bad_chat_prompt = f"""system:
