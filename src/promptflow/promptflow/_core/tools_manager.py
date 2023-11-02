@@ -30,9 +30,12 @@ from promptflow._utils.connection_utils import (
 from promptflow._utils.tool_utils import (
     DynamicListError,
     append_workspace_triple_to_func_input_params,
+    flow_log_info_with_timestamp,
+    flow_log_with_timestamp,
     function_to_tool_definition,
     get_prompt_param_name_from_func,
     load_function_from_function_path,
+    log_info_with_timestamp,
     log_with_timestamp,
     validate_dynamic_list_func_response_type,
 )
@@ -187,15 +190,24 @@ def gen_dynamic_list(func_path: str, func_input_params_dict: Dict, ws_triple_dic
         if input_param not in func_sig_params:
             raise ValueError(f"Input parameter '{input_param}' not in function's arguments")
     log_with_timestamp(f"Start to append workspace triple to function {func.__name__} input params.")
+    flow_log_with_timestamp(f"Start to append workspace triple to function {func.__name__} input params.")
+    flow_log_info_with_timestamp(f"Start to append workspace triple to function {func.__name__} input params.")
+    log_info_with_timestamp(f"Start to append workspace triple to function {func.__name__} input params.")
     combined_func_input_params = append_workspace_triple_to_func_input_params(
         func_sig_params, func_input_params_dict, ws_triple_dict
     )
     log_with_timestamp(f"Start to execute list func {func.__name__}.")
+    flow_log_with_timestamp(f"Start to execute list func {func.__name__}.")
+    flow_log_info_with_timestamp(f"Start to execute list func {func.__name__}.")
+    log_info_with_timestamp(f"Start to execute list func {func.__name__}.")
     try:
         result = func(**combined_func_input_params)
     except Exception as e:
         raise DynamicListError(f"Error when calling function {func.__name__}: {e}")
     log_with_timestamp(f"End to execute list func {func.__name__}.")
+    flow_log_with_timestamp(f"End to execute list func {func.__name__}.")
+    flow_log_info_with_timestamp(f"End to execute list func {func.__name__}.")
+    log_info_with_timestamp(f"End to execute list func {func.__name__}.")
     # validate response is of required format. Throw correct message if response is empty.
     validate_dynamic_list_func_response_type(result, func.__name__)
 

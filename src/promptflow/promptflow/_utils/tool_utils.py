@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Union, get_args, get_origin
 
 from jinja2 import Environment, meta
 
-from promptflow._utils.logger_utils import logger
+from promptflow._utils.logger_utils import flow_logger, logger
 from promptflow._utils.utils import is_json_serializable
 from promptflow.exceptions import ErrorTarget, UserErrorException
 
@@ -284,6 +284,18 @@ def load_function_from_function_path(func_path: str):
 
 def log_with_timestamp(message: str):
     logger.debug(f"{datetime.now()} {message}")
+
+
+def log_info_with_timestamp(message: str):
+    logger.info(f"{datetime.now()} {message}")
+
+
+def flow_log_info_with_timestamp(message: str):
+    flow_logger.info(f"{datetime.now()} {message}")
+
+
+def flow_log_with_timestamp(message: str):
+    flow_logger.debug(f"{datetime.now()} {message}")
 
 
 class DynamicListError(UserErrorException):
