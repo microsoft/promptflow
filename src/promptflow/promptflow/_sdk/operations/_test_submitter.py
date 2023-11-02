@@ -32,6 +32,7 @@ class TestSubmitter:
         self.flow = flow
         self._origin_flow = flow
         self._dataplane_flow = None
+        self.flow_context = flow_context
         # TODO: remove this
         self._variant = flow_context.variant
         from .._pf_client import PFClient
