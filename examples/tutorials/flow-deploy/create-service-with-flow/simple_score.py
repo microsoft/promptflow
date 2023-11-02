@@ -62,7 +62,8 @@ def score():
         if "temperature" in data
         else {},
     )
-    result_dict = f(url=data.get("url"))
+    # data in request will be passed to flow as kwargs
+    result_dict = f(**data)
     # Note: if specified streaming=True in the flow context, the result will be a generator
     # reference promptflow._sdk._serving.response_creator.ResponseCreator on how to handle it in app.
     return jsonify(result_dict)
