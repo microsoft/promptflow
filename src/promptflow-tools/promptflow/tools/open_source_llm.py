@@ -770,7 +770,6 @@ class ServerlessLlamaContentFormatter(ContentFormatterBase):
     def format_response_payload(self, output: bytes) -> str:
         """Formats response"""
         response_json = json.loads(output)
-        print(f"response json {response_json}")
         if self.api == API.CHAT and "choices" in response_json:
             return response_json["choices"][0]["message"]["content"]
         elif self.api == API.COMPLETION and "choices" in response_json:
