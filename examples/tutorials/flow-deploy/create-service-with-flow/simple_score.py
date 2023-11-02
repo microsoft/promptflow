@@ -53,16 +53,16 @@ def score():
     # load flow as a function
     f = load_flow("../../../flows/standard/web-classification")
     # configure flow contexts
-    if data.get("url"):
-        f.context = FlowContext(
-            # override flow connections, the overrides may come from the request
-            # connections={"classify_with_llm.connection": "another_ai_connection"},
-            # override the flow nodes' inputs or other flow configs, the overrides may come from the request
-            # **Note**: after this change, node "fetch_text_content_from_url" will take inputs from the
-            # following command instead of from flow input
-            overrides={"nodes.fetch_text_content_from_url.inputs.url": data["url"]},
-        )
-    result_dict = f(url="not used")
+    f.context = FlowContext(
+        # override flow connections, the overrides may come from the request
+        # connections={"classify_with_llm.connection": "another_ai_connection"},
+        # override the flow nodes' inputs or other flow configs, the overrides may come from the request
+        # **Note**: after this change, node "classify_with_llm" will take input temperature from request
+        overrides={"nodes.classify_with_llm.inputs.temperature": float(data["temperature"])}
+        if "temperature" in data
+        else {},
+    )
+    result_dict = f(url=data.get("url"))
     # Note: if specified streaming=True in the flow context, the result will be a generator
     # reference promptflow._sdk._serving.response_creator.ResponseCreator on how to handle it in app.
     return jsonify(result_dict)
