@@ -71,6 +71,90 @@ class Deployment:
         self.model_family = model_family
         self.deployment_name = deployment_name
 
+class ServerlessEndpointsContainer:
+    API_VERSION = "2023-08-01-preview"
+    SUBSCRIPTION_ID="2d385bf4-0756-4a76-aa95-28bf9ed3b625"
+    RESOURCE_GROUP = "rg-pritamdaimaster2"
+    WORKSPACE_NAME = "pritamdtestmaster"
+
+    def _get_headers(self):
+        from azure.identity import DefaultAzureCredential
+        credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
+        token = credential.get_token("https://management.azure.com/.default").token
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        return headers
+
+    def get_serverless_arm_url(self, subscription_id, resource_group, workspace_name, suffix=None):
+        suffix = "" if suffix is None else f"/{suffix}"
+        return f"https://management.azure.com/subscriptions/{self.SUBSCRIPTION_ID}" \
+            + f"/resourceGroups/{self.RESOURCE_GROUP}/providers/Microsoft.MachineLearningServices" \
+            + f"/workspaces/{self.WORKSPACE_NAME}/serverlessEndpoints{suffix}?api-version={self.API_VERSION}"
+
+    def _list(self, subscription_id, resource_group, workspace_name):
+        
+        headers =self._get_headers()
+        url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name)
+       
+        req = urllib.request.Request(url=url, headers=headers)
+        response = urllib.request.urlopen(req, timeout=50)
+        result = response.read() 
+        return json.loads(result)['value']
+    
+    def _validate_model_family(self, serverless_endpoint):
+        try:
+            if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta' 
+                and "llama" in serverless_endpoint.get('properties', {}).get('offer', {}).get('offerName')
+                and serverless_endpoint.get('properties', {}).get('provisioningState') == "Succeeded"):
+                return ModelFamily.LLAMA
+        except Exception as ex:
+            print(f"Ignoring endpoint {serverless_endpoint['id']} due to error: {ex}")
+            return None
+    
+    def list_serverless_endpoints(self, subscription_id, resource_group, workspace_name):
+        serverlessEndpoints = self._list(subscription_id, resource_group, workspace_name)
+
+        result = []
+        for e in serverlessEndpoints:
+            if (self._validate_model_family(e)):
+                result.append({
+                    "value": f"serverlessEndpoint/{e['name']}",
+                    "display_value": f"[Serverless] {e['name']}",
+                    #"hyperlink": self.get_endpoint_url(e.endpoint_name)                                                   
+                    "description": f"Serverless Endpoint:  {e['name']}",
+                })
+
+        return result
+    
+    def _list_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
+        headers =self._get_headers()
+        url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, f"{serverless_endpoint_name}/listKeys")
+
+        req = urllib.request.Request(url=url, data = str.encode(""), headers=headers)
+        response = urllib.request.urlopen(req, timeout=50)
+        result = response.read() 
+        return json.loads(result)
+
+    def get_serverless_endpoint(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
+        headers =self._get_headers()
+        url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
+
+        req = urllib.request.Request(url=url, headers=headers)
+        response = urllib.request.urlopen(req, timeout=50)
+        result = response.read() 
+        return json.loads(result)
+
+
+    def get_serverless_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name) -> Tuple[str, str, str]:
+        endpoint = self.get_serverless_endpoint(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
+        endpoint_url = endpoint.get('properties', {}).get('inferenceEndpoint', {}).get('uri')
+        model_family = self._validate_model_family(endpoint)
+        endpoint_key = self._list_endpoint_key(subscription_id, resource_group, workspace_name, serverless_endpoint_name)['primaryKey']
+        return (endpoint_url,
+            endpoint_key,
+            model_family)
 
 class CustomConnectionsContainer:
     def __init__(self) -> None:
@@ -349,6 +433,7 @@ class EndpointsContainer:
 
 ENDPOINT_CONTAINER = EndpointsContainer()
 CUSTOM_CONNECTION_CONTAINER = CustomConnectionsContainer()
+SERVERLESS_ENDPOINT_CONTAINER = ServerlessEndpointsContainer()
 
 
 def parse_connection_type(connection_name: str) -> Tuple[str, str]:
@@ -359,12 +444,13 @@ def parse_connection_type(connection_name: str) -> Tuple[str, str]:
 def list_connection_names(subscription_id: str,
                           resource_group_name: str,
                           workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+    serverless_endpoints = SERVERLESS_ENDPOINT_CONTAINER.list_serverless_endpoints(subscription_id, resource_group_name, workspace_name)
     online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
     custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id,
                                                                                   resource_group_name,
                                                                                   workspace_name)
 
-    return online_endpoints + custom_connections
+    return serverless_endpoints + online_endpoints + custom_connections
 
 
 def list_deployment_names(subscription_id: str,
@@ -766,7 +852,12 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
         print(f"connection_type: {connection_type} connection_name: {connection_name}")
 
-        if connection_type.lower() == "onlineendpoint":
+        if connection_type.lower() == "serverlessendpoint":
+            return SERVERLESS_ENDPOINT_CONTAINER.get_serverless_endpoint_key(subscription_id,
+                                                                             resource_group_name,
+                                                                             workspace_name,
+                                                                             connection_name)
+        elif connection_type.lower() == "onlineendpoint":
             return self.get_deployment_from_endpoint(subscription_id,
                                                      resource_group_name,
                                                      workspace_name,
