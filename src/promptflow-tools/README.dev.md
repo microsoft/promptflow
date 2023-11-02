@@ -11,7 +11,7 @@ pip install pytest pytest-mock
 
 - Create connection config file by `cp connections.json.example connections.json`.
 - Fill in fields manually in `connections.json`.
-- `cd tests` and run `pytest -s -v` to run all tests
+- `cd tests` and run `pytest -s -v` to run all tests.
 
 ## Run tests in CI
 
