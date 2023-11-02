@@ -266,6 +266,7 @@ class TestToolUtils:
                 ]
             ),
             ([{"value": "fig0"}, {"value": "kiwi1"}]),
+            ([{"value": None}]),
             ([{"value": "fig0", "display_value": "My_fig0"}, {"value": "kiwi1", "display_value": "My_kiwi1"}]),
             (
                 [
