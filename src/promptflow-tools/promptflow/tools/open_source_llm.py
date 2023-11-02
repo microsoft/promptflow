@@ -274,8 +274,8 @@ class LlamaContentFormatter(ContentFormatterBase):
     @staticmethod
     def parse_chat(chat_str: str) -> List[Dict[str, str]]:
         # LLaMa only supports below roles.
-        separator = r"(?i)\n*(system|user|assistant)\s*:\s*\n"
-        chunks = re.split(separator, chat_str)
+        separator = r"(?i)\n+\s*#?\s*(system|user|assistant)\s*:\s*\n"
+        chunks = re.split(separator, '\n'+chat_str)
 
         # remove any empty chunks
         chunks = [c.strip() for c in chunks if c.strip()]

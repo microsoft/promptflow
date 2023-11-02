@@ -25,6 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest_mock
           pip install azure-identity azure-keyvault-secrets
+          pip install azure-ai-ml
           pip install -r ./src/promptflow-tools/requirements.txt
       - name: Generate configs
         run: |
