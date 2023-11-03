@@ -19,18 +19,22 @@ logger = logging.getLogger(__name__)
 @app.errorhandler(Exception)
 def handle_error(e):
     if isinstance(e, UserErrorException):
-        return jsonify({"message": e.message}), 400
+        return jsonify({"message": e.message, "additional_info": e.additional_info}), 400
     elif isinstance(e, SystemErrorException):
-        return jsonify({"message": e.message}), 500
+        return jsonify({"message": e.message, "additional_info": e.additional_info}), 500
     else:
         from promptflow._internal import ErrorResponse, ExceptionPresenter
 
         # handle other unexpected errors, can use internal class to format them
         # but interface may change in the future
         presenter = ExceptionPresenter.create(e)
-        resp = ErrorResponse(presenter.to_dict())
+        trace_back = presenter.formatted_traceback
+
+        resp = ErrorResponse(presenter.to_dict(include_debug_info=False))
         response_code = resp.response_code
-        return jsonify(resp.to_simplified_dict()), response_code
+        result = resp.to_simplified_dict()
+        result.update({"trace_back": trace_back})
+        return jsonify(result), response_code
 
 
 @app.route("/health", methods=["GET"])
@@ -47,18 +51,19 @@ def score():
     data = json.loads(raw_data)
 
     # load flow as a function
-    f = load_flow("../../flows/standard/web-classification")
+    f = load_flow("../../../flows/standard/web-classification")
     # configure flow contexts
     f.context = FlowContext(
         # override flow connections, the overrides may come from the request
         # connections={"classify_with_llm.connection": "another_ai_connection"},
         # override the flow nodes' inputs or other flow configs, the overrides may come from the request
-        # **Note**: after this change, node "fetch_text_content_from_url" will take inputs from the
-        # following command instead of from flow input
-        overrides={"nodes.fetch_text_content_from_url.inputs.url": data["url"]},
+        # **Note**: after this change, node "classify_with_llm" will take input temperature from request
+        overrides={"nodes.classify_with_llm.inputs.temperature": float(data["temperature"])}
+        if "temperature" in data
+        else {},
     )
-    result_dict = f(url="not used")
-
+    # data in request will be passed to flow as kwargs
+    result_dict = f(**data)
     # Note: if specified streaming=True in the flow context, the result will be a generator
     # reference promptflow._sdk._serving.response_creator.ResponseCreator on how to handle it in app.
     return jsonify(result_dict)
