@@ -21,11 +21,6 @@ from promptflow.tools.open_source_llm import (
 
 
 @pytest.fixture
-def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
-    return f"localConnection/{llama_chat_custom_connection[0]}"
-
-
-@pytest.fixture
 def endpoints_provider(open_source_llm_ws_service_connection) -> Dict[str, List[str]]:
     if not open_source_llm_ws_service_connection:
         pytest.skip("Service Credential not available")
@@ -98,13 +93,6 @@ user:
             connection=self.gpt2_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_completion_connection(self, chat_endpoints_provider):
-        response = self.stateless_os_llm.call(
-            self.chat_prompt,
-            API.CHAT,
-            connection=self.gpt2_connection)
-        assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_with_deploy(self, chat_endpoints_provider):
@@ -144,7 +132,7 @@ user:
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_url_chat(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection[1])
+        tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['endpoint_url']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
@@ -155,7 +143,7 @@ Required keys are: endpoint_url,model_family."""
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_key_chat(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection[1])
+        tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.secrets['endpoint_api_key']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()
@@ -168,7 +156,7 @@ Required keys are: endpoint_api_key.""")
 
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_con_model_chat(self, gpt2_custom_connection):
-        tmp = copy.deepcopy(gpt2_custom_connection[1])
+        tmp = copy.deepcopy(gpt2_custom_connection)
         del tmp.configs['model_family']
         with pytest.raises(OpenSourceLLMKeyValidationError) as exc_info:
             customConnectionsContainer = CustomConnectionsContainer()

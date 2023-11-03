@@ -7,7 +7,6 @@ import time
 import urllib.request
 
 from abc import abstractmethod
-from azure.ai.ml import MLClient
 from enum import Enum
 from typing import Any, Dict, List, Tuple, Mapping, Optional, Union
 from urllib.request import HTTPError
@@ -74,7 +73,7 @@ class Deployment:
 
 class CustomConnectionsContainer:
     def __init__(self) -> None:
-        self.__endpoints_and_deployments = None
+        self.__azure_custom_connections = None
         self.__subscription_id = None
         self.__resource_group_name = None
         self.__workspace_name = None
@@ -83,8 +82,14 @@ class CustomConnectionsContainer:
                                           subscription_id,
                                           resource_group_name,
                                           workspace_name) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
-        result = []
 
+        if (self.__azure_custom_connections is not None
+                and self.__subscription_id == subscription_id
+                and self.__resource_group_name == resource_group_name
+                and self.__workspace_name == workspace_name):
+            return self.__azure_custom_connections
+        
+        result = []
         try:
             from azure.identity import DefaultAzureCredential
             from promptflow.azure import PFClient
@@ -121,6 +126,11 @@ class CustomConnectionsContainer:
                 except Exception:
                     # silently ignore unsupported model family
                     continue
+
+        self.__subscription_id = subscription_id
+        self.__resource_group_name = resource_group_name
+        self.__workspace_name = workspace_name
+        self.__azure_custom_connections = result
 
         return result
 
@@ -226,8 +236,9 @@ class EndpointsContainer:
     def get_ml_client(self,
                       subscription_id: str,
                       resource_group_name: str,
-                      workspace_name: str) -> MLClient:
-        from azure.identity import DefaultAzureCredential
+                      workspace_name: str):
+        from azure.ai.ml import MLClient
+        from azure.identity import DefaultAzureCredential        
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
         try:
             return MLClient(
@@ -340,7 +351,7 @@ class EndpointsContainer:
                     result.append({
                         "value": d.deployment_name,
                         "display_value": d.deployment_name,
-                        # "hyperlink": f'https://www.google.com/search?q={random_word}',
+                        # "hyperlink": '',
                         "description": f"this is {d.deployment_name} item",
                     })
                 return result
@@ -453,7 +464,6 @@ class ModelFamily(str, Enum):
     @classmethod
     def _missing_(cls, value):
         value = value.lower()
-        print(value)
         for member in cls:
             if member.lower() == value:
                 return member

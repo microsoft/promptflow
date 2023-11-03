@@ -55,7 +55,7 @@ class ConnectionManager:
                 secret_keys = connection_dict.get("secret_keys", [])
                 secrets = {k: v for k, v in value.items() if k in secret_keys}
                 configs = {k: v for k, v in value.items() if k not in secrets}
-                connection_value = connection_class(name=key, configs=configs, secrets=secrets)
+                connection_value = connection_class(configs=configs, secrets=secrets)
                 if CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY in configs:
                     connection_value.custom_type = configs[CustomStrongTypeConnectionConfigs.PROMPTFLOW_TYPE_KEY]
             else:
