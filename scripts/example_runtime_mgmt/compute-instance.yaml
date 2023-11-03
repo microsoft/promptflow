@@ -1,0 +1,4 @@
+$schema: https://azuremlschemas.azureedge.net/latest/computeInstance.schema.json
+name: ci-lin-cpu-sp
+type: computeinstance
+size: Standard_E4s_v3
