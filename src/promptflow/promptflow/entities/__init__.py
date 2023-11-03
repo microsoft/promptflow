@@ -17,9 +17,10 @@ from promptflow._sdk.entities._connection import (
     FormRecognizerConnection,
 )
 from promptflow._sdk.entities._run import Run
+from promptflow._sdk.entities._flow import FlowContext
 
 __all__ = [
-    # Connection
+    # region Connection
     "AzureContentSafetyConnection",
     "AzureOpenAIConnection",
     "OpenAIConnection",
@@ -28,6 +29,11 @@ __all__ = [
     "SerpConnection",
     "QdrantConnection",
     "FormRecognizerConnection",
-    # Run
+    # endregion
+    # region Run
     "Run",
+    # endregion
+    # region Flow
+    "FlowContext",
+    # endregion
 ]
