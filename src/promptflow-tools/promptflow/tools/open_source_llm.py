@@ -88,7 +88,7 @@ class CustomConnectionsContainer:
                 and self.__resource_group_name == resource_group_name
                 and self.__workspace_name == workspace_name):
             return self.__azure_custom_connections
-        
+
         result = []
         try:
             from azure.identity import DefaultAzureCredential
@@ -238,7 +238,7 @@ class EndpointsContainer:
                       resource_group_name: str,
                       workspace_name: str):
         from azure.ai.ml import MLClient
-        from azure.identity import DefaultAzureCredential        
+        from azure.identity import DefaultAzureCredential      
         credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
         try:
             return MLClient(

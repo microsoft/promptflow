@@ -93,7 +93,6 @@ user:
             connection=self.gpt2_connection)
         assert len(response) > 25
 
-
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_completion_with_deploy(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
