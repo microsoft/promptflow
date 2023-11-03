@@ -101,6 +101,14 @@ user:
             connection=gpt2_provider)
         assert len(response) > 25
 
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_completion_connection(self, chat_endpoints_provider):
+        response = self.stateless_os_llm.call(
+            self.chat_prompt,
+            API.CHAT,
+            connection=f"connection/gpt2_connection")
+        assert len(response) > 25
+
     @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
     def test_open_source_llm_completion_with_deploy(self, gpt2_provider):
         response = self.stateless_os_llm.call(
