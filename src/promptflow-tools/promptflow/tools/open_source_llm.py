@@ -95,7 +95,7 @@ class CustomConnectionsContainer:
             from promptflow.azure import PFClient as AzurePFClient
             credential = DefaultAzureCredential(exclude_interactive_browser_credential=False)
         except Exception as e:
-            print(f"Skipping Azure PFClient. Exception: {e}")
+            print(f"Skipping Azure PFClient. Exception: {e}", file=sys.stderr)
             return result
 
         try:
@@ -107,7 +107,7 @@ class CustomConnectionsContainer:
         except Exception:
             message = "Skipping Azure PFClient. To connect, please ensure the following environment variables are set: "
             message += ",".join(ENDPOINT_REQUIRED_ENV_VARS)
-            print(message)
+            print(message, file=sys.stderr)
             return result
 
         connections = azure_pf_client._connections.list()
@@ -139,7 +139,7 @@ class CustomConnectionsContainer:
         try:
             from promptflow import PFClient as LocalPFClient
         except Exception as e:
-            print("Skipping Local PFClient. Exception: {e}")
+            print(f"Skipping Local PFClient. Exception: {e}", file=sys.stderr)
             return result
 
         pf = LocalPFClient()
@@ -368,8 +368,8 @@ def parse_endpoint_connection_type(endpoint_connection_name: str) -> Tuple[str, 
 
 
 def list_endpoint_names(subscription_id: str,
-                          resource_group_name: str,
-                          workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
+                        resource_group_name: str,
+                        workspace_name: str) -> List[Dict[str, Union[str, int, float, list, Dict]]]:
     online_endpoints = ENDPOINT_CONTAINER.list_endpoint_names(subscription_id, resource_group_name, workspace_name)
     custom_connections = CUSTOM_CONNECTION_CONTAINER.list_custom_connection_names(subscription_id,
                                                                                   resource_group_name,
@@ -766,15 +766,16 @@ Please ensure endpoint name and deployment names are correct, and the deployment
         raise OpenSourceLLMUserError(message=message)
 
     def get_endpoint_details(self,
-                               subscription_id: str,
-                               resource_group_name: str,
-                               workspace_name: str,
-                               endpoint: str,
-                               deployment_name: str = None) -> Tuple[str, str, str]:
+                             subscription_id: str,
+                             resource_group_name: str,
+                             workspace_name: str,
+                             endpoint: str,
+                             deployment_name: str = None) -> Tuple[str, str, str]:
 
         (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
 
-        print(f"endpoint_connection_type: {endpoint_connection_type} endpoint_connection_name: {endpoint_connection_name}")
+        print(f"endpoint_connection_type: {endpoint_connection_type}" \
+              + f"endpoint_connection_name: {endpoint_connection_name}")
 
         if endpoint_connection_type.lower() == "onlineendpoint":
             return self.get_deployment_from_endpoint(subscription_id,
