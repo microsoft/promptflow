@@ -8,6 +8,7 @@ import pytest
 
 from promptflow._cli._pf_azure._flow import list_flows
 from promptflow._sdk._constants import FlowType
+from promptflow.azure import PFClient
 
 from .._azure_utils import DEFAULT_TEST_TIMEOUT, PYTEST_TIMEOUT_METHOD
 
@@ -16,7 +17,6 @@ flow_test_dir = tests_root_dir / "test_configs/flows"
 data_dir = tests_root_dir / "test_configs/datas"
 
 
-# TODO: enable the following tests after test CI can access test workspace
 @pytest.mark.timeout(timeout=DEFAULT_TEST_TIMEOUT, method=PYTEST_TIMEOUT_METHOD)
 @pytest.mark.e2etest
 @pytest.mark.usefixtures(
@@ -24,20 +24,19 @@ data_dir = tests_root_dir / "test_configs/datas"
     "single_worker_thread_pool",
     "vcr_recording",
 )
-@pytest.mark.skip(reason="Enable this after recording is ready for flow operations.")
 class TestFlow:
-    def test_create_flow(self, remote_client):
+    def test_create_flow(self, pf: PFClient):
         flow_source = flow_test_dir / "simple_fetch_url/"
         flow_name = f"{flow_source.name}_{uuid.uuid4()}"
         description = "test flow"
         tags = {"owner": "sdk"}
-        result = remote_client.flows.create_or_update(
+        result = pf.flows.create_or_update(
             flow=flow_source, name=flow_name, type=FlowType.STANDARD, description=description, tags=tags
         )
         remote_flow_dag_path = result.path
 
         # make sure the flow is created successfully
-        assert remote_client.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
+        assert pf.flows._storage_client._check_file_share_file_exist(remote_flow_dag_path) is True
         assert result.name == flow_name
         assert result.type == FlowType.STANDARD
         assert result.tags == tags

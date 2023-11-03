@@ -44,6 +44,7 @@ class AzureResourceProcessor(RecordingProcessor):
         # datastore related
         self.storage_account_names = set()
         self.storage_container_names = set()
+        self.file_share_names = set()
 
     def _sanitize_request_url_for_storage(self, uri: str) -> str:
         # this instance will store storage account names and container names
@@ -52,6 +53,8 @@ class AzureResourceProcessor(RecordingProcessor):
             uri = uri.replace(account_name, SanitizedValues.FAKE_ACCOUNT_NAME)
         for container_name in self.storage_container_names:
             uri = uri.replace(container_name, SanitizedValues.FAKE_CONTAINER_NAME)
+        for file_share_name in self.file_share_names:
+            uri = uri.replace(file_share_name, SanitizedValues.FAKE_FILE_SHARE_NAME)
         return uri
 
     def process_request(self, request: Request) -> Request:
@@ -112,9 +115,16 @@ class AzureResourceProcessor(RecordingProcessor):
         body["properties"]["subscriptionId"] = SanitizedValues.SUBSCRIPTION_ID
         body["properties"]["resourceGroup"] = SanitizedValues.RESOURCE_GROUP_NAME
         self.storage_account_names.add(body["properties"]["accountName"])
-        self.storage_container_names.add(body["properties"]["containerName"])
         body["properties"]["accountName"] = SanitizedValues.FAKE_ACCOUNT_NAME
-        body["properties"]["containerName"] = SanitizedValues.FAKE_CONTAINER_NAME
+        # blob storage
+        if "containerName" in body["properties"]:
+            self.storage_container_names.add(body["properties"]["containerName"])
+            body["properties"]["containerName"] = SanitizedValues.FAKE_CONTAINER_NAME
+        # file share
+        elif "fileShareName" in body["properties"]:
+            self.file_share_names.add(body["properties"]["fileShareName"])
+            body["properties"]["fileShareName"] = SanitizedValues.FAKE_FILE_SHARE_NAME
+
         return body
 
 

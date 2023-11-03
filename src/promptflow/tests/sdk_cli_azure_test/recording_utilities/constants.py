@@ -47,6 +47,7 @@ class SanitizedValues:
     FAKE_KEY = "this is fake key"
     FAKE_ACCOUNT_NAME = "fake_account_name"
     FAKE_CONTAINER_NAME = "fake-container-name"
+    FAKE_FILE_SHARE_NAME = "fake-file-share-name"
     # aoai connection
     FAKE_API_BASE = "https://fake.openai.azure.com"
     # storage
@@ -63,4 +64,5 @@ class AzureMLResourceTypes:
 TEST_CLASSES_FOR_RUN_INTEGRATION_TEST_RECORDING = [
     "TestCliWithAzure",
     "TestFlowRun",
+    "TestFlow",
 ]
