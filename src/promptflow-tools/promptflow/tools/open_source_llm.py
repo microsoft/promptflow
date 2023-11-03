@@ -774,8 +774,7 @@ Please ensure endpoint name and deployment names are correct, and the deployment
 
         (endpoint_connection_type, endpoint_connection_name) = parse_endpoint_connection_type(endpoint)
 
-        print(f"endpoint_connection_type: {endpoint_connection_type}" \
-              + f"endpoint_connection_name: {endpoint_connection_name}")
+        print(f"endpoint_connection_type: {endpoint_connection_type} name: {endpoint_connection_name}")
 
         if endpoint_connection_type.lower() == "onlineendpoint":
             return self.get_deployment_from_endpoint(subscription_id,
