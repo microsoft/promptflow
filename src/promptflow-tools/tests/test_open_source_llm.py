@@ -21,11 +21,6 @@ from promptflow.tools.open_source_llm import (
 
 
 @pytest.fixture
-def gpt2_provider(open_source_llm_ws_service_connection) -> str:
-    return "connection/gpt2_connection"
-
-
-@pytest.fixture
 def llama_chat_provider(llama_chat_custom_connection) -> OpenSourceLLM:
     return f"localConnection/{llama_chat_custom_connection[0]}"
 
@@ -86,6 +81,8 @@ def completion_endpoints_provider(endpoints_provider: Dict[str, List[str]]) -> D
 @pytest.mark.usefixtures("use_secrets_config_file")
 class TestOpenSourceLLM:
     stateless_os_llm = OpenSourceLLM()
+    gpt2_connection = "connection/gpt2_connection"
+    llama_connection = "connection/llama_chat_connection"
     completion_prompt = "In the context of Azure ML, what does the ML stand for?"
     chat_prompt = """system:
 You are a AI which helps Customers answer questions.
@@ -93,54 +90,54 @@ You are a AI which helps Customers answer questions.
 user:
 """ + completion_prompt
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_completion(self, gpt2_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_completion(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            connection=gpt2_provider)
+            connection=self.gpt2_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_completion_connection(self, gpt2_provider):
+    def test_open_source_llm_completion_connection(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=gpt2_provider)
+            connection=self.gpt2_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_completion_with_deploy(self, gpt2_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_completion_with_deploy(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            connection=gpt2_provider,
+            connection=self.gpt2_connection,
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_chat(self, gpt2_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_chat(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=gpt2_provider,)
+            connection=self.gpt2_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_chat_with_deploy(self, gpt2_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_chat_with_deploy(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=gpt2_provider,
+            connection=self.gpt2_connection,
             deployment_name="gpt2-9")
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("gpt2_custom_connection")
-    def test_open_source_llm_chat_with_max_length(self, gpt2_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_chat_with_max_length(self, chat_endpoints_provider):
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=gpt2_provider,
+            connection=self.gpt2_connection,
             max_new_tokens=2)
         # GPT-2 doesn't take this parameter
         assert len(response) > 25
@@ -273,13 +270,13 @@ user:
                     deployment_name=deployment_name)
                 assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("llama_chat_custom_connection")
-    def test_open_source_llm_llama_chat(self, llama_chat_provider):
-        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, connection=llama_chat_provider)
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_chat(self, chat_endpoints_provider):
+        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, connection=self.llama_connection)
         assert len(response) > 25
 
-    @pytest.mark.skip_if_no_api_key("llama_chat_custom_connection")
-    def test_open_source_llm_llama_chat_history(self, llama_chat_provider):
+    @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
+    def test_open_source_llm_llama_chat_history(self, chat_endpoints_provider):
         chat_history_prompt = """user:
 * Given the following conversation history and the users next question, answer the next question.
 If the conversation is irrelevant or empty, just restate the original question.
@@ -302,7 +299,7 @@ user:
         response = self.stateless_os_llm.call(
             chat_history_prompt,
             API.CHAT,
-            connection=llama_chat_provider,
+            connection=self.llama_connection,
             chat_history=[
                 {
                     "inputs":
@@ -358,9 +355,9 @@ user:
         assert len(deployments) == 0
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
-    def test_open_source_llm_dynamic_list_happy_path(self, endpoints_provider):
+    def test_open_source_llm_dynamic_list_happy_path(self, chat_endpoints_provider):
         # workaround to set env variables from service credential
-        print(endpoints_provider)
+        print(chat_endpoints_provider)
 
         endpoints = list_connection_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
