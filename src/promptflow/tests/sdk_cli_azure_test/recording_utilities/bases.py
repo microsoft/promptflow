@@ -79,7 +79,7 @@ class PFAzureIntegrationTestRecording:
             before_record_request=self._process_request_recording,
             before_record_response=self._process_response_recording,
             decode_compressed_response=True,
-            record_mode="none" if not self.is_live else "all",
+            record_mode="none" if not is_replay() else "all",
             filter_headers=FILTER_HEADERS,
         )
 
