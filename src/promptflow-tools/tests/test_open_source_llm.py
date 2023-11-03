@@ -12,7 +12,7 @@ from promptflow.tools.open_source_llm import (
     API,
     ContentFormatterBase,
     LlamaContentFormatter,
-    list_connection_names,
+    list_endpoint_names,
     list_deployment_names,
     CustomConnectionsContainer,
     get_model_type,
@@ -90,7 +90,7 @@ user:
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            connection=self.gpt2_connection)
+            endpoint=self.gpt2_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
@@ -98,7 +98,7 @@ user:
         response = self.stateless_os_llm.call(
             self.completion_prompt,
             API.COMPLETION,
-            connection=self.gpt2_connection,
+            endpoint=self.gpt2_connection,
             deployment_name="gpt2-9")
         assert len(response) > 25
 
@@ -107,7 +107,7 @@ user:
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=self.gpt2_connection)
+            endpoint=self.gpt2_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
@@ -115,7 +115,7 @@ user:
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=self.gpt2_connection,
+            endpoint=self.gpt2_connection,
             deployment_name="gpt2-9")
         assert len(response) > 25
 
@@ -124,7 +124,7 @@ user:
         response = self.stateless_os_llm.call(
             self.chat_prompt,
             API.CHAT,
-            connection=self.gpt2_connection,
+            endpoint=self.gpt2_connection,
             max_new_tokens=2)
         # GPT-2 doesn't take this parameter
         assert len(response) > 25
@@ -223,7 +223,7 @@ user:
             response = self.stateless_os_llm.call(
                 self.chat_prompt,
                 API.CHAT,
-                connection=f"onlineEndpoint/{endpoint_name}")
+                endpoint=f"onlineEndpoint/{endpoint_name}")
             assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
@@ -233,7 +233,7 @@ user:
                 response = self.stateless_os_llm.call(
                     self.chat_prompt,
                     API.CHAT,
-                    connection=f"onlineEndpoint/{endpoint_name}",
+                    endpoint=f"onlineEndpoint/{endpoint_name}",
                     deployment_name=deployment_name)
                 assert len(response) > 25
 
@@ -243,7 +243,7 @@ user:
             response = self.stateless_os_llm.call(
                 self.completion_prompt,
                 API.COMPLETION,
-                connection=f"onlineEndpoint/{endpoint_name}")
+                endpoint=f"onlineEndpoint/{endpoint_name}")
             assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
@@ -253,13 +253,13 @@ user:
                 response = self.stateless_os_llm.call(
                     self.completion_prompt,
                     API.COMPLETION,
-                    connection=f"onlineEndpoint/{endpoint_name}",
+                    endpoint=f"onlineEndpoint/{endpoint_name}",
                     deployment_name=deployment_name)
                 assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
     def test_open_source_llm_llama_chat(self, chat_endpoints_provider):
-        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, connection=self.llama_connection)
+        response = self.stateless_os_llm.call(self.chat_prompt, API.CHAT, endpoint=self.llama_connection)
         assert len(response) > 25
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
@@ -286,7 +286,7 @@ user:
         response = self.stateless_os_llm.call(
             chat_history_prompt,
             API.CHAT,
-            connection=self.llama_connection,
+            endpoint=self.llama_connection,
             chat_history=[
                 {
                     "inputs":
@@ -324,21 +324,21 @@ user:
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
-            connection=None)
+            endpoint=None)
         assert len(deployments) == 0
 
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
-            connection='')
+            endpoint='')
         assert len(deployments) == 0
 
         deployments = list_deployment_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
-            connection='fake_endpoint name')
+            endpoint='fake_endpoint name')
         assert len(deployments) == 0
 
     @pytest.mark.skip_if_no_api_key("open_source_llm_ws_service_connection")
@@ -346,7 +346,7 @@ user:
         # workaround to set env variables from service credential
         print(chat_endpoints_provider)
 
-        endpoints = list_connection_names(
+        endpoints = list_endpoint_names(
             subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
             resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
             workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"))
@@ -362,14 +362,14 @@ user:
             response = self.stateless_os_llm.call(
                 prompt,
                 api_type,
-                connection=endpoint['value'])
+                endpoint=endpoint['value'])
             assert len(response) > 25
 
             deployments = list_deployment_names(
                 subscription_id=os.getenv("AZUREML_ARM_SUBSCRIPTION"),
                 resource_group_name=os.getenv("AZUREML_ARM_RESOURCEGROUP"),
                 workspace_name=os.getenv("AZUREML_ARM_WORKSPACE_NAME"),
-                connection=endpoint['value'])
+                endpoint=endpoint['value'])
             if "onlineEndpoint" in endpoint['value']:
                 assert len(deployments) > 0
             else:
@@ -379,7 +379,7 @@ user:
                 response = self.stateless_os_llm.call(
                     prompt,
                     api_type,
-                    connection=endpoint['value'],
+                    endpoint=endpoint['value'],
                     deployment_name=deployment['value'])
                 assert len(response) > 25
 
