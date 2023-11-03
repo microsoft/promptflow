@@ -67,7 +67,7 @@ def mock_workspace_get(*args, **kwargs) -> Workspace:
     )
 
 
-def get_pf_client_for_playback() -> PFClient:
+def get_pf_client_for_replay() -> PFClient:
     ml_client = MLClient(
         credential=FakeTokenCredential(),
         subscription_id=SanitizedValues.SUBSCRIPTION_ID,

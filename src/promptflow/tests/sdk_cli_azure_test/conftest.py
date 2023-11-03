@@ -24,7 +24,7 @@ from promptflow._utils.utils import environment_variable_overwrite
 from promptflow.azure import PFClient
 
 from ._azure_utils import get_cred
-from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_playback, is_live, is_replay
+from .recording_utilities import PFAzureIntegrationTestRecording, get_pf_client_for_replay, is_live, is_replay
 
 FLOWS_DIR = "./tests/test_configs/flows"
 DATAS_DIR = "./tests/test_configs/datas"
@@ -62,7 +62,7 @@ def ml_client(
 @pytest.fixture
 def remote_client() -> PFClient:
     if is_replay():
-        yield get_pf_client_for_playback()
+        yield get_pf_client_for_replay()
     else:
         # enable telemetry for CI
         with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
@@ -84,7 +84,7 @@ def remote_workspace_resource_id() -> str:
 @pytest.fixture
 def remote_client_int() -> PFClient:
     if is_replay():
-        yield get_pf_client_for_playback()
+        yield get_pf_client_for_replay()
     else:
         # enable telemetry for non-playback CI
         with environment_variable_overwrite(TELEMETRY_ENABLED, "true"):
