@@ -14,15 +14,23 @@ from vcr.request import Request
 
 from promptflow.azure import PFClient
 
-from .constants import SKIP_LIVE_RECORDING, TEST_RUN_LIVE, SanitizedValues
+from .constants import ENVIRON_TEST_MODE, SanitizedValues, TestMode
+
+
+def get_test_mode_from_environ() -> str:
+    return os.getenv(ENVIRON_TEST_MODE, TestMode.LIVE)
 
 
 def is_live() -> bool:
-    return os.getenv(TEST_RUN_LIVE, "true") == "true"
+    return get_test_mode_from_environ() == TestMode.LIVE
 
 
-def is_live_and_not_recording() -> bool:
-    return is_live() and os.getenv(SKIP_LIVE_RECORDING, "true") == "true"
+def is_record() -> bool:
+    return get_test_mode_from_environ() == TestMode.RECORD
+
+
+def is_replay() -> bool:
+    return get_test_mode_from_environ() == TestMode.REPLAY
 
 
 class FakeTokenCredential:
