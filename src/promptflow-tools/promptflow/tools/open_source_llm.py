@@ -94,14 +94,22 @@ class ServerlessEndpointsContainer:
 
     def _list(self, subscription_id, resource_group, workspace_name):
         
-        headers =self._get_headers()
+        try:
+            headers =self._get_headers()
+        except Exception as e:
+            print(f"Unable to get token for ARM. Skipping serverless endpoints. Exception: {e}", file=sys.stderr)
+            return []
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name)
        
-        req = urllib.request.Request(url=url, headers=headers)
-        response = urllib.request.urlopen(req, timeout=50)
-        result = response.read() 
-        return json.loads(result)['value']
-    
+        try:
+            req = urllib.request.Request(url=url, headers=headers)
+            response = urllib.request.urlopen(req, timeout=50)
+            result = response.read() 
+            return json.loads(result)['value']
+        except Exception as e:
+            print(f"Error encountered when listing serverless endpoints. Exception: {e}", file=sys.stderr)
+            return []
+        
     def _validate_model_family(self, serverless_endpoint):
         try:
             if (serverless_endpoint.get('properties', {}).get('offer', {}).get('publisher') == 'Meta' 
@@ -128,23 +136,36 @@ class ServerlessEndpointsContainer:
         return result
     
     def _list_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
-        headers =self._get_headers()
-        url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, f"{serverless_endpoint_name}/listKeys")
+        try:
+            headers =self._get_headers()
+        except Exception as e:
+            print(f"Unable to get token for ARM. Exception: {e}", file=sys.stderr)
+            raise 
 
-        req = urllib.request.Request(url=url, data = str.encode(""), headers=headers)
-        response = urllib.request.urlopen(req, timeout=50)
-        result = response.read() 
-        return json.loads(result)
+        url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, f"{serverless_endpoint_name}/listKeys")
+        try:
+            req = urllib.request.Request(url=url, data = str.encode(""), headers=headers)
+            response = urllib.request.urlopen(req, timeout=50)
+            result = response.read() 
+            return json.loads(result)
+        except Exception as e:
+            print(f"Unable to get key from selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
     def get_serverless_endpoint(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name):
-        headers =self._get_headers()
+        try:
+            headers =self._get_headers()
+        except Exception as e:
+            print(f"Unable to get token for ARM. Exception: {e}", file=sys.stderr)
+            raise 
         url = self.get_serverless_arm_url(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
 
-        req = urllib.request.Request(url=url, headers=headers)
-        response = urllib.request.urlopen(req, timeout=50)
-        result = response.read() 
-        return json.loads(result)
-
+        try:
+            req = urllib.request.Request(url=url, headers=headers)
+            response = urllib.request.urlopen(req, timeout=50)
+            result = response.read() 
+            return json.loads(result)
+        except Exception as e:
+            print(f"Unable to get selected serverless endpoint. Exception: {e}", file=sys.stderr)
 
     def get_serverless_endpoint_key(self, subscription_id, resource_group, workspace_name, serverless_endpoint_name) -> Tuple[str, str, str]:
         endpoint = self.get_serverless_endpoint(subscription_id, resource_group, workspace_name, serverless_endpoint_name)
