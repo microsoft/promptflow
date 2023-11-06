@@ -4,6 +4,7 @@
 
 ### Features Added
 
+- [Executor] Add `enable_kwargs` tag in tools.json for customer python tool.
 - [SDK/CLI] Support `pfazure flow create`. Create a flow on Azure AI from local flow folder.
 
 

@@ -70,7 +70,7 @@ class ToolOperations:
         if hasattr(f, "__original_function"):
             f = getattr(f, "__original_function")
         try:
-            inputs, _, _ = function_to_interface(f, initialize_inputs=initialize_inputs)
+            inputs, _, _, _ = function_to_interface(f, initialize_inputs=initialize_inputs)
         except Exception as e:
             raise UserErrorException(f"Failed to parse interface for tool {f.__name__}, reason: {e}") from e
         class_name = None
