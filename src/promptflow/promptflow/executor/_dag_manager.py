@@ -51,12 +51,11 @@ class DAGManager:
         results = {}
         signature = inspect.signature(f).parameters
         for name, i in (node.inputs or {}).items():
-            if (
-                self._get_node_dependency_value(i) is None
-                and signature.get(name) is not None
-                and signature[name].default is not inspect.Parameter.empty
-            ):
-                continue
+            if self._is_node_dependency_bypassed(i):
+                if signature.get(name) is not None and signature[name].default is not inspect.Parameter.empty:
+                    continue
+                else:
+                    results[name] = None
             else:
                 results[name] = self._get_node_dependency_value(i)
         return results
@@ -159,5 +158,5 @@ class DAGManager:
         return (
             dependency.value_type == InputValueType.NODE_REFERENCE
             and dependency.value in self._bypassed_nodes
-            and self._completed_nodes_outputs.get(dependency.value) is None
+            and dependency.value not in self._completed_nodes_outputs
         )

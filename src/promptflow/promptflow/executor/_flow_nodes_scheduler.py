@@ -65,6 +65,8 @@ class FlowNodesScheduler:
                         unfinished_future.cancel()
                     # Even we raise exception here, still need to wait all running jobs finish to exit.
                     raise e
+        for node in self._dag_manager.bypassed_nodes.keys():
+            self._dag_manager.completed_nodes_outputs[node] = None
         return self._dag_manager.completed_nodes_outputs, self._dag_manager.bypassed_nodes
 
     def _execute_nodes(self, executor: ThreadPoolExecutor):
@@ -93,8 +95,6 @@ class FlowNodesScheduler:
             for node in nodes:
                 node_outputs = self._dag_manager.get_bypassed_node_outputs(node)
                 self._context.bypass_node(node, node_outputs)
-                if node_outputs is None:
-                    self._dag_manager.complete_nodes({node.name: None})
         finally:
             self._context.end()
 

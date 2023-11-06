@@ -946,6 +946,13 @@ class FlowExecutor:
                     output_name=name,
                     node_name=node.name,
                 )
+            if output.reference.value in bypassed_nodes:
+                logger.warning(
+                    msg=(
+                        f"The node referenced by output:'{output.reference.value}' is bypassed, \
+                            which is not recommended. "
+                    )
+                )
             node_result = nodes_outputs[output.reference.value]
             outputs[name] = _input_assignment_parser.parse_node_property(
                 output.reference.value, node_result, output.reference.property
