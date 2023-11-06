@@ -11,7 +11,6 @@ from constants import (
     COMPUTE_INSTANCE_YAML,
     ENVIRONMENT_YAML,
     RUNTIME_NAME,
-    WORKSPACE_ID_LOOKUP,
 )
 from pfs_runtime_helper import PFSRuntimeHelper
 
@@ -50,12 +49,13 @@ def delete_compute_instance(ml_client: MLClient, name: str) -> None:
 def create_environment(ml_client: MLClient) -> str:
     environment = load_environment(source=ENVIRONMENT_YAML)
     env = ml_client.environments.create_or_update(environment)
-    # get workspace id from hard code lookup table
-    subscription_id = ml_client._operation_scope.subscription_id
+    # get workspace id from REST workspace object
     resource_group_name = ml_client._operation_scope.resource_group_name
     workspace_name = ml_client._operation_scope.workspace_name
     location = ml_client.workspaces.get(name=workspace_name).location
-    workspace_id = WORKSPACE_ID_LOOKUP[f"{subscription_id}/{resource_group_name}/{workspace_name}"]
+    workspace_id = ml_client._workspaces._operation.get(
+        resource_group_name=resource_group_name, workspace_name=workspace_name
+    ).workspace_id
     # concat environment asset id
     asset_id = (
         f"azureml://locations/{location}/workspaces/{workspace_id}"
