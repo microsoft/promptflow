@@ -137,13 +137,13 @@ class NodeRunRecord:
             lock.acquire()
             try:
                 with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
-                    json.dump(asdict(self), f)
+                    json.dump(asdict(self), f, ensure_ascii=False)
             finally:
                 lock.release()
         else:
             # for normal nodes in other line runs, directly write
             with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
-                json.dump(asdict(self), f)
+                json.dump(asdict(self), f, ensure_ascii=False)
 
 
 @dataclass
@@ -172,7 +172,7 @@ class LineRunRecord:
 
     def dump(self, path: Path) -> None:
         with open(path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(asdict(self), f)
+            json.dump(asdict(self), f, ensure_ascii=False)
 
 
 class LocalStorageOperations(AbstractRunStorage):
@@ -215,7 +215,7 @@ class LocalStorageOperations(AbstractRunStorage):
 
     def _dump_meta_file(self) -> None:
         with open(self._meta_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f)
+            json.dump({"batch_size": LOCAL_STORAGE_BATCH_SIZE}, f, ensure_ascii=False)
 
     def dump_snapshot(self, flow: Flow) -> None:
         """Dump flow directory to snapshot folder, input file will be dumped after the run."""
@@ -257,17 +257,12 @@ class LocalStorageOperations(AbstractRunStorage):
         df = pd.DataFrame(inputs)
         with open(self._inputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
             # policy: http://policheck.azurewebsites.net/Pages/TermInfo.aspx?LCID=9&TermID=203588
-            df.to_json(f, "records", lines=True)
+            df.to_json(f, "records", lines=True, force_ascii=False)
 
     def load_inputs(self) -> RunInputs:
         with open(self._inputs_path, mode="r", encoding=DEFAULT_ENCODING) as f:
             df = pd.read_json(f, orient="records", lines=True)
             return df.to_dict("list")
-
-    def dump_outputs(self, outputs: RunOutputs) -> None:
-        df = pd.DataFrame(outputs)
-        with open(self._outputs_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            df.to_json(f, "records", lines=True)
 
     def load_outputs(self) -> RunOutputs:
         # for legacy run, simply read the output file and return as list of dict
@@ -290,7 +285,7 @@ class LocalStorageOperations(AbstractRunStorage):
     def dump_metrics(self, metrics: Optional[RunMetrics]) -> None:
         metrics = metrics or dict()
         with open(self._metrics_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(metrics, f)
+            json.dump(metrics, f, ensure_ascii=False)
 
     def dump_exception(self, exception: Exception, bulk_results: BulkResult) -> None:
         """Dump exception to local storage.
@@ -342,7 +337,9 @@ class LocalStorageOperations(AbstractRunStorage):
                 line_errors={"errors": errors},
             )
         with open(self._exception_path, mode="w", encoding=DEFAULT_ENCODING) as f:
-            json.dump(PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f)
+            json.dump(
+                PromptflowExceptionPresenter.create(exception).to_dict(include_debug_info=True), f, ensure_ascii=False
+            )
 
     def load_exception(self) -> Dict:
         try:
