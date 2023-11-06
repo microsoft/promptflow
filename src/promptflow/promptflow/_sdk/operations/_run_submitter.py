@@ -321,12 +321,14 @@ class RunSubmitter:
         # create run to db when fully prepared to run in executor, otherwise won't create it
         run._dump()  # pylint: disable=protected-access
         try:
-            bulk_result = batch_engine.run(
-                input_dirs=input_dirs,
-                inputs_mapping=column_mapping,
-                output_dir=local_storage.outputs_folder,
-                run_id=run_id,
-            )
+            # run executor in flow's directory because the flow default inputs path is relative to flow's directory
+            with _change_working_dir(flow.code):
+                bulk_result = batch_engine.run(
+                    input_dirs=input_dirs,
+                    inputs_mapping=column_mapping,
+                    output_dir=local_storage.outputs_folder,
+                    run_id=run_id,
+                )
             # Filter the failed line result
             failed_line_result = [
                 result for result in bulk_result.line_results if result.run_info.status == Status.Failed
