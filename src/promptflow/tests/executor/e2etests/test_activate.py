@@ -1,7 +1,6 @@
 import pytest
 
 from promptflow.contracts.run_info import Status
-from promptflow.executor._errors import OutputReferenceBypassed
 from promptflow.executor.flow_executor import BulkResult, FlowExecutor, LineResult
 
 from ..utils import (

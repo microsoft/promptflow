@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, List, Mapping, Callable
+from typing import Any, Callable, List, Mapping
 
 from promptflow.contracts.flow import InputAssignment, InputValueType, Node
 from promptflow.executor import _input_assignment_parser
@@ -51,12 +51,11 @@ class DAGManager:
         results = {}
         signature = inspect.signature(f).parameters
         for name, i in (node.inputs or {}).items():
-            if (
-                self._is_node_dependency_bypassed(i)
-                and signature.get(name) is not None
-                and signature[name].default is not inspect.Parameter.empty
-            ):
-                continue
+            if self._is_node_dependency_bypassed(i):
+                if signature.get(name) is not None and signature[name].default is not inspect.Parameter.empty:
+                    continue
+                else:
+                    results[name] = None
             else:
                 results[name] = self._get_node_dependency_value(i)
         return results
