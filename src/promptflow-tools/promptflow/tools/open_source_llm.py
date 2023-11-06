@@ -495,7 +495,7 @@ def list_endpoint_names(subscription_id: str,
                                                                                   resource_group_name,
                                                                                   workspace_name)
 
-    return serverless_endpoints + online_endpoints + custom_connections
+    return custom_connections + serverless_endpoints + online_endpoints
 
 
 def list_deployment_names(subscription_id: str,
