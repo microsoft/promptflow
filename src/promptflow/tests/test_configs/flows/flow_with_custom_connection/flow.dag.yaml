@@ -1,0 +1,17 @@
+inputs:
+  text:
+    type: string
+outputs:
+  output:
+    type: object
+    reference: ${hello_node.output}
+nodes:
+- inputs:
+    text: ${inputs.text}
+    connection: basic_custom_connection
+  name: hello_node
+  type: python
+  source:
+    type: code
+    path: hello.py
+node_variants: {}
